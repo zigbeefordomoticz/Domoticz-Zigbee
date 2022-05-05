@@ -70,6 +70,10 @@
 </plugin>
 """
 
+import pathlib
+
+from pkg_resources import DistributionNotFound
+
 import Domoticz
 
 try:
@@ -82,6 +86,7 @@ import json
 import sys
 import threading
 import time
+import os
 
 from Classes.AdminWidgets import AdminWidgets
 # from Classes.APS import APSManagement
@@ -139,7 +144,7 @@ TIMEDOUT_START = 10  # Timeoud for the all startup
 TIMEDOUT_FIRMWARE = 5  # HB before request Firmware again
 TEMPO_START_ZIGATE = 1  # Nb HB before requesting a Start_Zigate
 
-
+REQUIRES = ["aiohttp", "aiosqlite>=0.16.0", "crccheck", "pycryptodome", "voluptuous"]
 class BasePlugin:
     enabled = False
 
@@ -252,6 +257,9 @@ class BasePlugin:
     def onStart(self):
         Domoticz.Log("Zigbee for Domoticz plugin started!")
         assert sys.version_info >= (3, 4)  # nosec
+        
+        if check_requirements( self ):
+            return
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in (
             "USB",
@@ -354,6 +362,10 @@ class BasePlugin:
         self.pluginconf = PluginConf(
             self.zigbee_communitation, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
+
+        # Create Domoticz Sub menu
+        if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
+            install_Z4D_to_domoticz_custom_ui( )
 
         # Create the adminStatusWidget if needed
         self.PluginHealth["Flag"] = 4
@@ -540,7 +552,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
-            return
+
 
         elif self.transport == "ZigpyZiGate":
             # Zigpy related modules
@@ -652,12 +664,12 @@ class BasePlugin:
             self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
-            
+          
         else:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
             return
 
-        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate" ):
+        if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
             self.ControllerLink.open_zigate_connection()
 
@@ -665,7 +677,7 @@ class BasePlugin:
         if self.iaszonemgt is None:
             # Create IAS Zone object
             # Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ControllerLink)
-            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.log, self.zigbee_communitation, self.FirmwareVersion)
+            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communitation, self.FirmwareVersion)
 
             # Starting WebServer
         if self.webserver is None:
@@ -680,6 +692,8 @@ class BasePlugin:
 
     def onStop(self):
         Domoticz.Log("onStop()")
+        uninstall_Z4D_to_domoticz_custom_ui()
+
         if self.log:
             self.log.logging("Plugin", "Log", "onStop called")
             self.log.logging("Plugin", "Log", "onStop calling (1) domoticzDb DeviceStatus closed")
@@ -1008,13 +1022,13 @@ class BasePlugin:
                 zigateInit_Phase2(self)
                 return
 
-        if not self.InitPhase3:
+        if self.transport != "None" and not self.InitPhase3:
             zigateInit_Phase3(self)
             return
 
         # Checking Version
         self.pluginParameters["TimeStamp"] = int(time.time())
-        if self.pluginconf.pluginConf["internetAccess"] and (
+        if self.transport != "None" and self.pluginconf.pluginConf["internetAccess"] and (
             self.pluginParameters["available"] is None or self.HeartbeatCount % (12 * 3600 // HEARTBEAT) == 0
         ):
             (
@@ -1056,7 +1070,7 @@ class BasePlugin:
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
 
-        self.iaszonemgt.IAS_heartbeat()
+        #self.iaszonemgt.IAS_heartbeat()
 
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)
@@ -1200,9 +1214,7 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
     
     self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
         
-    
-    
-    
+
 def decodeConnection(connection):
 
     decoded = {}
@@ -1307,7 +1319,7 @@ def zigateInit_Phase3(self):
 
     self.pluginParameters["FirmwareVersion"] = self.FirmwareVersion
 
-    if self.zigbee_communitation == "native" and not check_firmware_level(self):
+    if self.transport != "None" and self.zigbee_communitation == "native" and not check_firmware_level(self):
         self.log.logging("Plugin", "Debug", "Firmware not ready")
         return
 
@@ -1403,8 +1415,11 @@ def zigateInit_Phase3(self):
 
     elif int(self.FirmwareBranch) >= 20:
         self.log.logging(
-            "Plugin", "Status", "Plugin with zigpy layer, firmware %s-%s correctly initialized" % (self.FirmwareMajorVersion, self.FirmwareVersion))
-           
+            "Plugin", "Status", "Plugin with Zigpy, Coordinator %s firmware %s correctly initialized" % (
+                self.pluginParameters["CoordinatorModel"], self.pluginParameters["DisplayFirmwareVersion"]))
+
+
+
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
         zigate_get_nwk_state(self)
@@ -1634,7 +1649,30 @@ def check_python_modules_version( self ):
             flag = False
             
     return flag
-            
+  
+def check_requirements( self ):
+
+    from pathlib import Path
+
+    import pkg_resources
+
+    _filename = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
+
+    Domoticz.Status("Checking Python modules %s" %_filename)
+    requirements = pkg_resources.parse_requirements(_filename.open())
+    for requirements in requirements:
+        req = str(requirements)
+        try:
+            pkg_resources.require(req)
+        except DistributionNotFound:
+            Domoticz.Error("Looks like %s python module is not installed. Make sure to install the required python3 module" %req)
+            Domoticz.Error("Use the command:")
+            Domoticz.Error("sudo pip3 install -r requirements.txt")
+            return True
+    return False          
+        
+    
+              
 def debuging_information(self, mode):
     self.log.logging("Plugin", mode, "Is GC enabled: %s" % gc.isenabled())
     self.log.logging("Plugin", mode, "DomoticzVersion: %s" % Parameters["DomoticzVersion"])
@@ -1724,3 +1762,40 @@ def DumpHTTPResponseToLog(httpDict):
                     Domoticz.Log("------->'" + y + "':'" + str(httpDict[x][y]) + "'")
             else:
                 Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
+
+
+def install_Z4D_to_domoticz_custom_ui():
+
+    line1 = '<iframe id="%s"' %Parameters['Name'] +  'style="width:100%;height:800px;overflow:scroll;">\n'
+    line2 = '</iframe>\n'
+    line3 = '\n'
+    line4 = '<script>\n'
+    line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = "http://" + location.hostname + ":%s/";\n' %Parameters['Mode4']
+    line6 = '</script>\n'
+
+    custom_file = Parameters['StartupFolder'] + 'www/templates/' + f"{Parameters['Name']}" + '.html'
+    Domoticz.Log(f"Installing plugin custom page {custom_file} ")
+
+    try:
+        with open( custom_file, "wt") as z4d_html_file:
+            z4d_html_file.write( line1 )
+            z4d_html_file.write( line2 )
+            z4d_html_file.write( line3 )
+            z4d_html_file.write( line4 )
+            z4d_html_file.write( line5 )
+            z4d_html_file.write( line6 )
+    except Exception as e:
+        Domoticz.Error('Error during installing plugin custom page')
+        Domoticz.Error(repr(e))
+
+
+def uninstall_Z4D_to_domoticz_custom_ui():
+
+    custom_file = Parameters['StartupFolder'] + 'www/templates/' + f"{Parameters['Name']}" + '.html'
+    try:
+        if os.path.exists(custom_file ):
+            os.remove(custom_file )
+
+    except Exception as e:
+        Domoticz.Error('Error during installing plugin custom page')
+        Domoticz.Error(repr(e))

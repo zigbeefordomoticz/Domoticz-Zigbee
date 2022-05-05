@@ -138,25 +138,20 @@ def getClusterListforEP(self, NWKID, Ep):
     return ClusterList
 
 
-def getEpForCluster(self, nwkid, ClusterId):
+def getEpForCluster(self, nwkid, ClusterId, strict=False):
     """
     Return the Ep or a list of Ep associated to the ClusterId
     If not found return Ep: 01
+    If strict is True, then None will return if there is no Cluster found
     """
 
-    EPout = [
-        tmpEp
-        for tmpEp in list(self.ListOfDevices[nwkid]["Ep"].keys())
-        if ClusterId in self.ListOfDevices[nwkid]["Ep"][tmpEp]
-    ]
-
-    if not EPout:
-        return EPout
-
-    if len(self.ListOfDevices[nwkid]["Ep"]) == 1:
-        return [self.ListOfDevices[nwkid]["Ep"].keys()]
-
-    return EPout
+    EPlist = []
+    for x in list(self.ListOfDevices[nwkid]["Ep"].keys() ):
+        if x in EPlist:
+            continue
+        if ClusterId in self.ListOfDevices[nwkid]["Ep"][x]:
+            EPlist.append( str(x) )
+    return EPlist
 
 
 def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
@@ -287,13 +282,13 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     if self.groupmgt:
         # We should check if this belongs to a group
         self.groupmgt.update_due_to_nwk_id_change(old_NwkId, new_NwkId)
-
+        
+    self.ListOfDevices[new_NwkId]["PreviousStatus"] = self.ListOfDevices[new_NwkId]["Status"]
     if self.ListOfDevices[new_NwkId]["Status"] in ("Left", "Leave"):
         Domoticz.Log(
             "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s"
             % (self.ListOfDevices[new_NwkId]["Status"], new_NwkId)
         )
-        self.ListOfDevices[new_NwkId]["PreviousStatus"] = self.ListOfDevices[new_NwkId]["Status"]
         self.ListOfDevices[new_NwkId]["Status"] = "inDB"
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
 

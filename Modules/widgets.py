@@ -40,9 +40,7 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5",
         "Language": {
-            "fr-FR": {
-                "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5"
-            }
+            "fr-FR": { "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5"}
         },
     },
     "Smoke": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
@@ -67,7 +65,8 @@ SWITCH_LVL_MATRIX = {
         "01": (1, "01"),
         "ForceUpdate": False,
         "LevelNames": "Off|On|+|-|Long +|Long -|Release",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Marche|+|-|Long +|Long -|Rel."}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Marche|+|-|Long +|Long -|Rel."}},
     },
     "TINT_REMOTE_WHITE": {
         "00": (0, "00"),  # Off
@@ -92,9 +91,7 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",
         "Language": {
-            "fr-FR": {
-                "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",
-            }
+            "fr-FR": { "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",}
         },
     },
     "Button": {"01": (1, "On"), "ForceUpdate": True},
@@ -111,7 +108,8 @@ SWITCH_LVL_MATRIX = {
         "03": (3, "30"),
         "ForceUpdate": True,
         "LevelNames": "Off|Click|Double Click|Long Click",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Click|Double Click|Long Click"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Click|Double Click|Long Click"}},
     },
     "Generic_5_buttons": {
         "00": (0, "00"),
@@ -121,7 +119,8 @@ SWITCH_LVL_MATRIX = {
         "04": (4, "40"),
         "ForceUpdate": True,
         "LevelNames": "button1|button2|button3|button4|button5",
-        "Language": {"fr-FR": {"LevelNames": "Bouton1|Bouton2|Bouton3|Bouton4|Bouton5"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Bouton1|Bouton2|Bouton3|Bouton4|Bouton5"}},
     },
     "AqaraOppleMiddleBulb": {
         "00": (0, "00"),
@@ -131,7 +130,8 @@ SWITCH_LVL_MATRIX = {
         "04": (4, "40"),
         "ForceUpdate": True,
         "LevelNames": "Off|On|-|+|Release",
-        "Language": {"fr-FR": {"LevelNames": "Eteindre|Marche|-|+|Arrêt"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Eteindre|Marche|-|+|Arrêt"}},
     },
     "AqaraOppleMiddle": {
         "00": (0, "00"),
@@ -142,7 +142,8 @@ SWITCH_LVL_MATRIX = {
         "05": (5, "50"),
         "ForceUpdate": True,
         "LevelNames": "off|Click|Double click|Tripple click|Long click|Release",
-        "Language": {"fr-FR": {"LevelNames": "off|Clic|Double clic|Triple clic|Long clic|Relacher"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "off|Clic|Double clic|Triple clic|Long clic|Relacher"}},
     },
     "GenericLvlControl": {
         "off": (1, "10"),
@@ -152,7 +153,8 @@ SWITCH_LVL_MATRIX = {
         "stop": (5, "50"),
         "ForceUpdate": True,
         "LevelNames": "Off|Off|On|Dim +|Dim -|Stop",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Eteindre|Marche|Monter|Descendre|Arrêt"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Eteindre|Marche|Monter|Descendre|Arrêt"}},
     },
     "HueSmartButton": {"toggle": (1, "10"), "move": (3, "30"), "LevelNames": "Off|toggle|move", "Language": {}},
     "LegrandSelector": {
@@ -164,7 +166,8 @@ SWITCH_LVL_MATRIX = {
         "02": (5, "50"),
         "ForceUpdate": True,
         "LevelNames": "Off|On|Dim +|Dim -|Stop|Toggle",
-        "Language": {"fr-FR": {"LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt|Toggle"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt|Toggle"}},
     },
     "SwitchAQ2": {
         "1": (0, "00"),
@@ -179,7 +182,8 @@ SWITCH_LVL_MATRIX = {
         "255": (3, "30"),
         "ForceUpdate": True,
         "LevelNames": "One click|Two clicks|Tree clicks|Four+ clicks",
-        "Language": {"fr-FR": {"LevelNames": "Simple click|Double click|Triple click|Quadruple+ click"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Simple click|Double click|Triple click|Quadruple+ click"}},
     },
     "SwitchAQ3": {
         "1": (0, "00"),
@@ -192,48 +196,46 @@ SWITCH_LVL_MATRIX = {
         "00": (0, "00"),
         "ForceUpdate": True,
         "LevelNames": "Click|Double click|Long click|Release click|Shake",
-        "Language": {"fr-FR": {"LevelNames": "Click|Double click|Long click|Relacher click|Remuer"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Click|Double click|Long click|Relacher click|Remuer"}},
     },
     "DSwitch": {
         "LevelNames": "Off|Left Click|Right Click|Both Click",
         "ForceUpdate": True,
-        "Language": {"fr-FR": {"LevelNames": "Off|Left Click|Right Click|Both Click"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Left Click|Right Click|Both Click"}},
     },
     "DButton": {
         "ForceUpdate": True,
         "LevelNames": "Off|Switch 1|Switch 2|Both_Click",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Click Gauche|Click Droit|Click des 2"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Click Gauche|Click Droit|Click des 2"}},
     },
     "DButton_3": {
         "ForceUpdate": True,
         "LevelNames": "Off|Left click|Left Double click|Left Long click|Right click|Right Double Click|Right Long click|Both click|Both Double click|Both Long click",
         "Language": {
-            "fr-FR": {
-                "LevelNames": "Arrêt|Click Gauche|Double click Gauche|Long Click Gauche|Click Droit|Double Click Droit|Long Click Droit|Click des 2|Double Click des 2|Long Click des 2"
-            }
+            "fr-FR": { "LevelNames": "Arrêt|Click Gauche|Double click Gauche|Long Click Gauche|Click Droit|Double Click Droit|Long Click Droit|Click des 2|Double Click des 2|Long Click des 2"}
         },
     },
     "Toggle": {
         "ForceUpdate": True,
         "LevelNames": "Off|On|Toggle",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Marche|Bascule"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Marche|Bascule"}},
     },
     "Aqara": {
         "ForceUpdate": True,
         "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
         "Language": {
-            "fr-FR": {
-                "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire"
-            }
+            "fr-FR": { "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire"}
         },
     },
     "XCube": {
         "ForceUpdate": True,
         "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
         "Language": {
-            "fr-FR": {
-                "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire"
-            }
+            "fr-FR": { "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire" }
         },
     },
     "Vibration": {
@@ -243,7 +245,8 @@ SWITCH_LVL_MATRIX = {
         "30": (3, "30"),
         "ForceUpdate": False,
         "LevelNames": "Off|Tilt|Vibrate|Free Fall",
-        "Language": {"fr": {"LevelNames": "Arrêt|Incliner|Vibrer|Chute libre"}},
+        "Language": {
+            "fr": {"LevelNames": "Arrêt|Incliner|Vibrer|Chute libre"}},
     },
     "SwitchIKEA": {
         "00": (0, "Off"),
@@ -253,20 +256,19 @@ SWITCH_LVL_MATRIX = {
         "04": (4, "40"),
         "ForceUpdate": True,
         "LevelNames": "Off|On|Push Up|Push Down|Release",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Marche|Appuyer Haut|Appuyer Bas|Relacher"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Marche|Appuyer Haut|Appuyer Bas|Relacher"}},
     },
-
     "blindIKEA": {
         "00": (1,"10"),
         "01": (2,"20"),
         "02": (3,"30"),
         "ForceUpdate": True,
         "LevelNames": "Off|Open|Close|Stop",
-        "Language": {"fr-FR": {"LevelNames": "Off|Ouvrir|Fermer|Arreter"}}
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Ouvrir|Fermer|Arreter"}}
     },
-
     "Ikea_Round_OnOff": {"00": "00", "toggle": (1, "10"), "ForceUpdate": True},
-
     "Ikea_Round_5b": {
         "00": (0, "00"),
         "toggle": (1, "10"),
@@ -279,15 +281,13 @@ SWITCH_LVL_MATRIX = {
         "hold_down": (8, "80"),
         "release_down": (9, "90"),
         "right_hold": (10, "100"),
-        "release_down": (11, "110"),
+        #"release_down": (11, "110"),
         "left_hold": (12, "120"),
-        "release_down": (13, "130"),
+        #"release_down": (13, "130"),
         "ForceUpdate": True,
         "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release",
         "Language": {
-            "fr-FR": {
-                "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"
-            }
+            "fr-FR": { "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"}
         },
     },
     "ThermoModeEHZBRTS": {
@@ -301,7 +301,8 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": False,
         "LevelNames": "Off| Manual| Schedule| Manual Energy Saver| Schedule Energy Saver| Holiday| Holiday Frost Protection",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt| Manuel| Programmé| Mode Eco. manuel| Mode Eco. Programmé| Congés| Hors Gel"}
+            "fr-FR": {
+                "LevelNames": "Arrêt| Manuel| Programmé| Mode Eco. manuel| Mode Eco. Programmé| Congés| Hors Gel"}
         },
     },
     "ThermoMode": {
@@ -313,7 +314,8 @@ SWITCH_LVL_MATRIX = {
         "07": (5, "50"),  # Fan
         "ForceUpdate": False,
         "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}},
     },
     "ThermoMode_2": {
         0: (0, "Off"),
@@ -321,7 +323,8 @@ SWITCH_LVL_MATRIX = {
         2: (2, "20"),
         "ForceUpdate": True,
         "LevelNames": "Off|Auto|Manual",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
     },
     "ThermoMode_3": {
         0: (0, "Off"),  # Off Ok Acova
@@ -340,7 +343,8 @@ SWITCH_LVL_MATRIX = {
         4: (4, "30"),    # Holiday
         "ForceUpdate": True,
         "LevelNames": "Off|Auto|Manual|Temp Hand|Holidays",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
     },
     "ThermoMode_5": {
         0: (0, "Off"),  # 
@@ -349,7 +353,8 @@ SWITCH_LVL_MATRIX = {
         3: (3, "20"),   # Away
         "ForceUpdate": True,
         "LevelNames": "Off|Auto|Manual|Away",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Manual|Away"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Manual|Away"}},
     },   
       
     "HeatingStatus": {
@@ -358,36 +363,42 @@ SWITCH_LVL_MATRIX = {
         2: (2, "20"),
         "ForceUpdate": True,
         "LevelNames": "Off|Heating|Not Heating",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Allumer|Eteind"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Allumer|Eteind"}},
     },
     "HACTMODE": {
         "00": (1, "10"),
         "03": (2, "20"),
         "ForceUpdate": False,
         "LevelNames": "Off|Conventional|Fil Pilote",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}},
     },
     "ContractPower": {
         "ForceUpdate": False,
         "LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA",
-        "Language": {"fr-FR": {"LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA"}},
     },
     "FIP": {
         "ForceUpdate": True,
         "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Confort|Confort -1|Confort -2|Eco|Hors Gel|Arrêt"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Confort|Confort -1|Confort -2|Eco|Hors Gel|Arrêt"}},
     },
     "LegranCableMode": {
         "0100": (1, "10"),  # Normal
         "0200": (2, "20"),  # FIP
         "ForceUpdate": False,
         "LevelNames": "Off|Conventional|Fil Pilote",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}},
     },
     "AlarmWD": {
         "ForceUpdate": True,
         "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
-        "Language": {"fr-FR": {"LevelNames": "Arrêter|Alarme|Sirène|Flash|Armer|Désarmer"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêter|Alarme|Sirène|Flash|Armer|Désarmer"}},
     },
     "TuyaSiren": {
         "ForceUpdate": True,
@@ -398,21 +409,24 @@ SWITCH_LVL_MATRIX = {
         "04": (4, "40"),
         "05": (5, "50"),
         "LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5",
-        "Languages": {"fr-FR": {"LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5"}},
+        "Languages": {
+            "fr-FR": {"LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5"}},
     },
     "TuyaSirenHumi": {
         "ForceUpdate": True,
         "00": (0, "00"),
         "01": (1, "10"),
         "LevelNames": "Off|Alarm Humidity",
-        "Languages": {"fr-FR": {"LevelNames": "Off|Alarm Humidité"}},
+        "Languages": {
+            "fr-FR": {"LevelNames": "Off|Alarm Humidité"}},
     },
     "TuyaSirenTemp": {
         "ForceUpdate": True,
         "00": (0, "00"),
         "01": (1, "10"),
         "LevelNames": "Off|Alarm Temperature",
-        "Languages": {"fr-FR": {"LevelNames": "Off|Alarm Température"}},
+        "Languages": {
+            "fr-FR": {"LevelNames": "Off|Alarm Température"}},
     },
     "OrviboRemoteSquare": {
         0: (0, "Off"),
@@ -431,9 +445,7 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release",
         "Language": {
-            "fr-FR": {
-                "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"
-            }
+            "fr-FR": { "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"}
         },
     },
     "Alarm": {
@@ -472,7 +484,8 @@ SWITCH_LVL_MATRIX = {
         "04": (4, "40"),  # Disarm - Command 0x00 - Payload Disarm 0x00
         "ForceUpdate": True,
         "LevelNames": "Off|Emergency|Arm Day (Home Zones Only)|Arm All Zones|Disarm",
-        "Language": {"fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}},
     },
     "FanControl": {
         "00": (0, "00"),  # Off
@@ -482,7 +495,8 @@ SWITCH_LVL_MATRIX = {
         "03": (4, "40"),  # Fort
         "ForceUpdate": True,
         "LevelNames": "Off|Auto|Low|Medium|High",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Auto|Bas|Moyen|Fort"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Bas|Moyen|Fort"}},
     },
     "ACMode_2": {
         "00": (0, "00"),  # Off
@@ -492,24 +506,32 @@ SWITCH_LVL_MATRIX = {
         "07": (4, "40"),  # Fan
         "ForceUpdate": True,
         "LevelNames": "Off|Cool|Heat|Dry|Fan",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"},
+            "es-ES": {"LevelNames": "Off|Frío||Calefacción|Deshumidificador|Ventilador"}
+            },
     },
-    "ACMode": {
+    "CAC221ACMode": {
         "00": (0, "00"),  # Off
-        "03": (1, "10"),  # Cool
-        "04": (2, "20"),  # Heat
-        "08": (3, "30"),  # Dry
-        "07": (4, "40"),  # Fan
+        "01": (1, "10"),  # Auto
+        "03": (2, "20"),  # Cool
+        "04": (2, "30"),  # Heat
+        "08": (3, "40"),  # Dry
+        "07": (4, "50"),  # Fan
         "ForceUpdate": False,
-        "LevelNames": "Off|Cool|Heat|Dry|Fan",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"}},
+        "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"},
+            "es-ES": {"LevelNames": "Off|Auto|Frío||Calefacción|Deshumidificador|Ventilador"}},
     },
     "ACSwing": {
         "00": (0, "00"),  # Off - All wings stopped
         "01": (1, "10"),  # On Mode
         "ForceUpdate": True,
         "LevelNames": "Off|On",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Allumé"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Allumé"},
+            },
     },
     "KF204Switch": {
         "00": (0, "00"),  # Off
@@ -519,6 +541,21 @@ SWITCH_LVL_MATRIX = {
         "04": (4, "40"),  # Button + ( Up )
         "ForceUpdate": True,
         "LevelNames": "Off|0|X|+|-",
-        "Language": {"fr-FR": {"LevelNames": "Off|0|X|+|-"}},
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|0|X|+|-"},
+            },
+    },
+    "ACMode": {
+        "00": (0, "00"),  # Off
+        "03": (1, "10"),  # Cool
+        "04": (2, "20"),  # Heat
+        "08": (3, "30"),  # Dry
+        "07": (4, "40"),  # Fan
+        "ForceUpdate": False,
+        "LevelNames": "Off|Cool|Heat|Dry|Fan",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"},
+            "es-ES": {"LevelNames": "Off|Frío||Calefacción|Deshumidificador|Ventilador"}
+            },
     },
 }

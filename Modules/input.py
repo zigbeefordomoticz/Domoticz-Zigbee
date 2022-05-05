@@ -63,8 +63,8 @@ from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
 from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import FIRMWARE_BRANCH
-from Zigbee.zclCommands import zcl_ias_zone_enroll_response
 from Modules.zigbeeVersionTable import set_display_firmware_version
+from Zigbee.zclCommands import zcl_IAS_default_response
 
 
 def ZigateRead(self, Devices, Data):
@@ -461,7 +461,7 @@ def Decode0302(self, Devices, MsgData, MsgLQI):  # PDM Load
     rejoin_legrand_reset(self)
 
 
-def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrolment Request Response
+def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrollment Request Response
 
     self.log.logging("Input", "Log", "Decode0400 - message: %s" % MsgData)
     # 02 0000 01 01 00 00
@@ -485,7 +485,7 @@ def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrolment Request Response
     )
 
     if self.iaszonemgt:
-        self.iaszonemgt.receiveIASenrollmentRequestResponse(SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId)
+        self.iaszonemgt.IAS_zone_enroll_request_response(SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId)
 
 
 # Responses
@@ -2809,6 +2809,11 @@ def Decode8100(self, Devices, MsgData, MsgLQI):
     MsgClusterId = MsgData[8:12]
 
     self.statistics._clusterOK += 1
+    
+    if MsgClusterId == "0500":
+        self.log.logging("Input", "Log", "Read Attributed Request Response n Cluster 0x0500 for %s" % (MsgSrcAddr))
+        self.iaszonemgt.IAS_CIE_service_discovery_response( MsgSrcAddr, MsgSrcEp, MsgData)
+        
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8100")
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
@@ -3273,7 +3278,7 @@ def Decode8110_raw(
             )
 
     if MsgClusterId == "0500":
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 3, MsgAttrStatus)
+        self.iaszonemgt.IAS_CIE_write_response( MsgSrcAddr, MsgSrcEp, MsgAttrStatus)
 
 
 def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
@@ -3490,7 +3495,9 @@ def Decode8400(self, Devices, MsgData, MsgLQI):
         % (nwkid, ep, sqn, zonetype, manufacturercode),
     )
 
-    zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, ep, "00", "00", sqn=sqn, ackIsDisabled=False)
+    self.iaszonemgt.IAS_zone_enroll_request(nwkid, ep, zonetype, sqn)
+    
+
         
         
 def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change notification
@@ -3532,6 +3539,11 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     # 5a 02 0500 02 0ffd 0010 00 ff 0001
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
+    if self.zigbee_communitation == "zigpy":
+        # For instance needed by Frient/Develco Motion detector, which request a default response to disable the Alarm
+        zcl_IAS_default_response( self, MsgSrcAddr, ZIGATE_EP, MsgEp, "00", MsgSQN)
+
+    
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
     if MsgSrcAddr not in self.ListOfDevices:
@@ -3634,13 +3646,12 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     value = MsgZoneStatus[2:4]
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] in (
-        "3AFE14010402000D",
-        "3AFE28010402000D",
+        "3AFE14010402000D", "3AFE28010402000D",
         "MOSZB-140",
-        "TS0202",
-        "TS0202-_TZ3210_jijr1sss",
+        "TS0202","TS0202-_TZ3210_jijr1sss",
     ):  # Konke Motion Sensor, Devlco/Frient Motion
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
+        
     elif self.ListOfDevices[MsgSrcAddr]["Model"] in (
         "lumi.sensor_magnet",
         "lumi.sensor_magnet.aq2",
@@ -3648,15 +3659,9 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         "lumi.magnet.acn001",
     ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
+        
     elif Model not in ("RC-EF-3.0", "RC-EM"):
-        MajDomoDevice(
-            self,
-            Devices,
-            MsgSrcAddr,
-            MsgEp,
-            MsgClusterId,
-            "%02d" % (alarm1 or alarm2),
-        )
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
 
     # if self.ListOfDevices[MsgSrcAddr]["Model"] in (  'MOSZB-140',):
     #    # Tamper is inverse
