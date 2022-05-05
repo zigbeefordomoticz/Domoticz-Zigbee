@@ -25,7 +25,8 @@ from Modules.readAttributes import ReadAttributeRequest_0001
 from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import (get_and_inc_ZCL_SQN, getAttributeValue,
                            is_ack_tobe_disabled,
-                           retreive_cmd_payload_from_8002)
+                           retreive_cmd_payload_from_8002,
+                           checkAndStoreAttributeValue)
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
 
@@ -1080,6 +1081,10 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
         data = ( "0bb8" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT",) else "0dac" )
 
     elif attr == "0012":  # occupied setpoint temp
+        if "Schneider" in self.ListOfDevices[NWKID ] and "BoostDemand" in self.ListOfDevices[NWKID ]["Schneider"]:
+            # Let's remove this flag which prevent the Report Attribute to override it
+            del self.ListOfDevices[NWKID ]["Schneider"]["BoostDemand"]
+
         dataType = "29"
         value = int(schneider_find_attribute_and_set(self, NWKID, EPout, ClusterID, attr, 2000))
         data = "%04X" % value
@@ -1096,6 +1101,9 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
         # In case of iTRV, it looks like we have to trigger the heating demand.
         # In case the new setpoint is above the local temp, and the Heating Demand is 0, let's enable it
         define_heating_demand_for_iTRV(self, NWKID)
+        if "Schneider" in self.ListOfDevices[NWKID ] and "BoostDemand" in self.ListOfDevices[NWKID ]["Schneider"]:
+            # Let's remove this flag which prevent the Report Attribute to override it
+            del self.ListOfDevices[NWKID ]["Schneider"]["BoostDemand"]
 
         dataType = "20"  # uint8
         #data = "%02x" % self.ListOfDevices[NWKID]["Ep"]["01"]["0201"]["0008"]
@@ -1141,7 +1149,7 @@ def schneider_thermostat_answer_attribute_request(self, NWKID, EPout, ClusterID,
 
 def define_heating_demand_for_iTRV(self, NwkId):
     # We force to use Ep 0x01 even if the iTRV is communicating on Ep 0x02
-    
+
     if "Model" not in self.ListOfDevices[NwkId] or self.ListOfDevices[NwkId]["Model"] not in ( "Wiser2-Thermostat", "iTRV",):
         return
 
@@ -1152,7 +1160,7 @@ def define_heating_demand_for_iTRV(self, NwkId):
         "define_heating_demand_for_iTRV: 0x0000 = %s (%s) 0x0012 %s (%s)" %(
             schneider_find_attribute(self, NwkId, "01", "0201", "0000"), type(schneider_find_attribute(self, NwkId, "01", "0201", "0000")),
             schneider_find_attribute(self, NwkId, "01", "0201", "0012"), type(schneider_find_attribute(self, NwkId, "01", "0201", "0012"))))
-    
+
     if local_temp == 0x8000:
         # We use the inside Temp sensor, let's get local temperature
         local_temp = int( 100 * schneider_find_attribute(self, NwkId, "01", "0201", "0000") )
@@ -1162,7 +1170,7 @@ def define_heating_demand_for_iTRV(self, NwkId):
         "Debug",
         "define_heating_demand_for_iTRV: Local_temp: %s , Target: %s gap: %s" %(
             local_temp, int(schneider_find_attribute(self, NwkId, "01", "0201", "0012")), gap_temp))
-    
+
     if ( schneider_find_attribute_and_set( self, NwkId, "01", "0201", "0008", 0 ) == 0 and  gap_temp < 0):
         if gap_temp < -500:
             self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"] = 100
@@ -1695,7 +1703,7 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID, attr, defaultVa
         found = self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr]
         if newValue is not None:
             self.log.logging(
-                "Schneider", "Debug", "schneider_find_attribute_or_set : setting new value %s" % newValue, NWKID
+                "Schneider", "Debug", "schneider_find_attribute_or_set : setting new value %s on %s/%s" % (newValue, NWKID, EP), NWKID
             )
             self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = newValue
     return found
@@ -1805,7 +1813,7 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
 
     if ClusterId is None:
         return
-    
+
     if AttributesConfig is None:
         # AttributesConfig is not defined, so lets get it from the Model
         if "Model" not in self.ListOfDevices[NwkId]:
@@ -1839,6 +1847,57 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
         NwkId, Ep, cluster_list, ClusterId, "00", "00", "0000", ListOfAttributesToConfigure)
     
 
+# Management of EH-ZB-VACT, iTRV
+def receiving_heatingdemand_attribute( self, Devices, NwkId, Ep, value, MsgClusterId, MsgAttrID):
+    
+    self.log.logging( "Schneider", "Debug", "receiving_heatingdemand_attribute -- for device %s / %s" % ( NwkId, Ep))
+    if "Schneider" in self.ListOfDevices[NwkId ] and "BoostDemand" in self.ListOfDevices[NwkId ]["Schneider"] and self.ListOfDevices[NwkId ]["Schneider"]["BoostDemand"]:
+        # Do nothing, as there is a Boost demand in progress
+        return
+    checkAndStoreAttributeValue(self, NwkId, Ep, MsgClusterId, MsgAttrID, value)
+
+
+def receiving_heatingpoint_attribute( self, Devices, NwkId, Ep, ValueTemp, value, ClusterId, AttributeId):
+
+    if "Schneider" in self.ListOfDevices[NwkId ] and "BoostDemand" in self.ListOfDevices[NwkId ]["Schneider"] and self.ListOfDevices[NwkId ]["Schneider"]["BoostDemand"]:
+        # Do nothing, as there is a Boost demand in progress
+        return
+
+    self.log.logging( "Schneider", "Debug", "receiving_heatingpoint_attribute - ValueTemp: %s" % int(((ValueTemp * 100) * 2) / 2), NwkId, )
+    if "Schneider" not in self.ListOfDevices[NwkId]:
+        self.log.logging( "Schneider", "Debug", "receiving_heatingpoint_attribute - Updating because Schneider do not exist")
+        # No Schneider section, so we assumed Setpoint has been updated manualy.
+        self.ListOfDevices[NwkId]["Schneider"] = {"Target SetPoint": None, "TimeStamp SetPoint": None}
+        checkAndStoreAttributeValue(self, NwkId, Ep, ClusterId, AttributeId, int(value))
+        MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, ValueTemp, Attribute_=AttributeId)
+        return
+
+    if "Target SetPoint" not in self.ListOfDevices[NwkId]["Schneider"]:
+        self.log.logging( "Schneider", "Debug", "receiving_heatingpoint_attribute - Updating because Target SetPoint do not exist")
+        # No Target Setpoint, so we assumed Setpoint has been updated manualy.
+        checkAndStoreAttributeValue(self, NwkId, Ep, ClusterId, AttributeId, int(value))
+        self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"] = None
+        self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] = None
+        MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, ValueTemp, Attribute_=AttributeId)
+        return
+
+    if self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"] is None:
+        self.log.logging( "Schneider", "Debug", "receiving_heatingpoint_attribute - Updating because Target SetPoint is None")
+        # Target is None
+        checkAndStoreAttributeValue(self, NwkId, Ep, ClusterId, AttributeId, int(value))
+        MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, ValueTemp, Attribute_=AttributeId)
+        return
+
+    if self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"] == int(((ValueTemp * 100) * 2) / 2):
+        # Existing Target equal Local Setpoint in Device
+        checkAndStoreAttributeValue(self, NwkId, Ep, ClusterId, AttributeId, int(value))
+        self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"] = None
+        self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] = None
+        MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, ValueTemp, Attribute_=AttributeId)
+        return
+
+    # We reach here because most-likely there is a Target SetPoint defined, and the value we receive is not the same.
+    self.log.logging( "Schneider", "Debug", "receiving_heatingpoint_attribute - ValueTemp: %s nothing done" % int(((ValueTemp * 100) * 2) / 2), NwkId, )
 
 
 # Wiser New Version
@@ -1873,49 +1932,45 @@ def change_setpoint_for_time(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID
     if "Model" in self.ListOfDevices[srcNWKID] and self.ListOfDevices[srcNWKID]["Model"] in ("iTRV"):
         EPout = "01"
 
+    if "Schneider" not in self.ListOfDevices[srcNWKID ]:
+        self.ListOfDevices[srcNWKID ]["Schneider"] ={}
+
     if action == "0102":  # Increase temp for CCTFR6100
-        self.log.logging(
-            "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration)
-        )
+        self.log.logging( "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration))
         override_setpoint(self, srcNWKID, EPout, setpoint, duration)
         schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
+        self.ListOfDevices[srcNWKID ]["Schneider"]["BoostDemand"] = True
 
     elif action == "0103":
         # Set setpoint On
-        self.log.logging(
-            "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration)
-        )
+        self.log.logging( "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration) )
         override_setpoint(self, srcNWKID, EPout, setpoint, duration)
         schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
+        self.ListOfDevices[srcNWKID ]["Schneider"]["BoostDemand"] = True
 
 
     elif action == "0202":  # Decrease temp for CCTFR6100
-        self.log.logging(
-            "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration)
-        )
+        self.log.logging( "Schneider", "Debug", "change_setpoint_for_time -- Setpoint to %s for %s min" % (setpoint, duration) )
         override_setpoint(self, srcNWKID, EPout, setpoint, duration)
         schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
+        self.ListOfDevices[srcNWKID ]["Schneider"]["BoostDemand"] = True
 
     elif action == "0300":
         # Disable setpoint
         self.log.logging("Schneider", "Debug", "change_setpoint_for_time -- Cancel setpoint")
-        if (
-            "Schneider" in self.ListOfDevices[srcNWKID]
-            and "ThermostatOverride" in self.ListOfDevices[srcNWKID]["Schneider"]
-        ):
+        if ( "Schneider" in self.ListOfDevices[srcNWKID] and "ThermostatOverride" in self.ListOfDevices[srcNWKID]["Schneider"] ):
             # previous_setpoint = self.ListOfDevices[srcNWKID]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"]
             schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, "0201", setpoint)
             del self.ListOfDevices[srcNWKID]["Schneider"]["ThermostatOverride"]
+            del self.ListOfDevices[srcNWKID ]["Schneider"]["BoostDemand"]
 
     else:
-        self.log.logging(
-            "Schneider",
-            "Error",
-            "change_setpoint_for_time -- Unknown action: %s setpoint: %s duration: %s" % (action, setpoint, duration),
-        )
+        self.log.logging( "Schneider", "Error", "change_setpoint_for_time -- Unknown action: %s setpoint: %s duration: %s" % (action, setpoint, duration), )
 
-
+    
 def check_end_of_override_setpoint(self, Devices, NwkId, Ep):
+
+    #self.log.logging( "Schneider", "Debug", "check_end_of_override_setpoint -- for device %s / %s" % ( NwkId, Ep))
 
     if (
         "Schneider" in self.ListOfDevices[NwkId]
@@ -1924,33 +1979,38 @@ def check_end_of_override_setpoint(self, Devices, NwkId, Ep):
         and "OverrideDuration" in self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]
         and "CurrentSetpoint" in self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]
     ):
-        if (
-            time()
-            > self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideStartTime"]
-            + self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideDuration"]
-        ):
+        ThermostatOverride = self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideSetpoint"]
+        OverrideStartTime = self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideStartTime"]
+        OverrideDuration = self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideDuration"]
+        CurrentSetpoint = self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"]
+
+        remaining_time = int(OverrideStartTime + OverrideDuration - time()) 
+
+        self.log.logging(
+            "Schneider",
+            "Debug",
+            "check_end_of_override_setpoint -- remains %s seconds prior to revert Setpoint to %s (from override %s)" % ( 
+                remaining_time, CurrentSetpoint, ThermostatOverride, ),
+        )
+
+        if remaining_time <= 0:
             self.log.logging(
                 "Schneider",
                 "Debug",
                 "check_end_of_override_setpoint -- Time to update the Thermostat back from %s to %s" % (
-                    self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideSetpoint"],
-                    self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"], 
-                    ),
+                    ThermostatOverride, CurrentSetpoint, ),
             )
-            setpoint = self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"]
+            setpoint = CurrentSetpoint
             schneider_setpoint_thermostat(self, NwkId, setpoint)
-            schneider_update_ThermostatDevice(
-                self,
-                Devices,
-                NwkId,
-                Ep,
-                "0201",
-                setpoint,
-            )
+            schneider_update_ThermostatDevice( self, Devices, NwkId, Ep, "0201", setpoint, )
             del self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]
+            self.ListOfDevices[NwkId ]["Schneider"]["BoostDemand"] = True
 
 
 def override_setpoint(self, NwkId, Ep, override, duration):
+
+    self.log.logging( "Schneider", "Debug", "override_setpoint -- NwkId: %s Ep: %s Override: %s Duration: %s" % (
+        NwkId, Ep, override, duration))
 
     if "Schneider" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Schneider"] = {}
@@ -1962,10 +2022,25 @@ def override_setpoint(self, NwkId, Ep, override, duration):
     if current_setpoint == {}:
         current_setpoint = 2000
 
+
+    if "Param" in self.ListOfDevices[NwkId]:
+        if "OverrideDurationInMinutes" in self.ListOfDevices[NwkId]["Param"]:
+            self.log.logging( "Schneider", "Debug", "override_setpoint -- Duration: %s" % (duration))
+            duration = self.ListOfDevices[NwkId]["Param"]["OverrideDurationInMinutes"]
+            self.log.logging( "Schneider", "Debug", "override_setpoint -- Get from Device Param Duration: %s" % (duration))
+            
+        if "OverrideTempInDegree" in self.ListOfDevices[NwkId]["Param"]:
+            if current_setpoint < override:
+                override = current_setpoint + ( self.ListOfDevices[NwkId]["Param"]["OverrideTempInDegree"] * 100)
+            else:
+                override = current_setpoint - ( self.ListOfDevices[NwkId]["Param"]["OverrideTempInDegree"] * 100)
+            self.log.logging( "Schneider", "Debug", "override_setpoint -- override: %s" % (override))
+
     self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"] = current_setpoint
     self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideSetpoint"] = override
     self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideDuration"] = duration * 60
     self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideStartTime"] = time()
+    self.ListOfDevices[NwkId ]["Schneider"]["BoostDemand"] = True
 
 
 def iTRV_open_window_detection(self, NwkId, enable=False):
