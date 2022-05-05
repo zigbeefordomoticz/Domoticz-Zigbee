@@ -982,7 +982,6 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             VoltageConverter = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "VoltageConverter")
             if VoltageConverter:
                 value = round( value / VoltageConverter, 1)
-
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
 
     elif MsgAttrID == "0021":  # Battery %
@@ -2643,10 +2642,23 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "001c":  # System Mode
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)     
+        #if (
+        #    value == 0x01  # Auto
+        #    and "Model" in self.ListOfDevices[MsgSrcAddr]
+        #    and self.ListOfDevices[MsgSrcAddr]["Model"] in ("AC211", "AC221", "CAC221")
+        #    and "Param" in self.ListOfDevices[ MsgSrcAddr ] 
+        #    and "CAC221ForceAuto2Off" in self.ListOfDevices[ MsgSrcAddr ]["Param"] 
+        #    and self.ListOfDevices[ MsgSrcAddr ]["Param"]["CAC221ForceAuto2Off"]
+        #):
+        #    self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s Forcing Mode to Off (CasaIA CAC221)" % (value), MsgSrcAddr)
+        #    value = 0x00
+        #    self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
+        #    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)  
+            
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID)
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-        # We shoudl also force Shutdown of FanControl and eventualy Wong
+        # We shoudl also force Shutdown of FanControl and eventualy Wing
         if value == 0x00 and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("AC211", "AC221", "CAC221"):
             # Shutdown the other widgets
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0202", "%02x" % 0x0)
@@ -3489,7 +3501,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 MsgSrcAddr,
             )
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["EnrolledStatus"] = int(MsgClusterData, 16)
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 5, MsgClusterData)
+
 
     elif MsgAttrID == "0001":  # ZoneType
         if int(MsgClusterData, 16) in ZONE_TYPE:
@@ -3509,10 +3521,8 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 "ReadCluster0500 - Device: %s - Unknown ZoneType: %s" % (MsgSrcAddr, MsgClusterData),
                 MsgSrcAddr,
             )
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 5, MsgClusterData)
 
     elif MsgAttrID == "0002":  # Zone Status
-        # self.iaszonemgt.receiveIASmessages( MsgSrcAddr, MsgSrcEp,  5, MsgClusterData)     #Not needed for enrollment procedure
         if MsgClusterData != "" and MsgAttType in ("19", "21"):
             alarm1 = int(MsgClusterData, 16) & 0b0000000000000001
             alarm2 = (int(MsgClusterData, 16) & 0b0000000000000010) >> 1
@@ -3584,7 +3594,6 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "0010":  # IAS CIE Address
         self.log.logging("Cluster", "Debug", "ReadCluster0500 - IAS CIE Address: %s" % MsgClusterData, MsgSrcAddr)
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 7, MsgClusterData)
 
     elif MsgAttrID == "0011":  # Zone ID
         self.log.logging("Cluster", "Debug", "ReadCluster0500 - ZoneID : %s" % MsgClusterData, MsgSrcAddr)
@@ -3621,6 +3630,30 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if "IAS WD" not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]["IAS WD"] = {}
         self.ListOfDevices[MsgSrcAddr]["IAS WD"]["MaxDuration"] = decodeAttribute(self, MsgAttType, MsgClusterData)
+
+    elif MsgAttrID == "f000":
+        # Looks like a reporting from the TS0216 / _TYZB01_8scntis1 - Heiman looks like Alarm
+        # 0x00: Off
+        # 0x01: Alarm
+        # 0x02: Strobe
+        # 0x03: Alarm + Strobe
+        RPT_ATTR_WIDGET = {
+            "00": "00",
+            "01": "20",
+            "02": "30",
+            "03": "10"
+        }
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - 0502 - %s/%s  %s %s %s %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            MsgSrcAddr,
+        )
+        if MsgClusterData not in RPT_ATTR_WIDGET:
+            return
+
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, RPT_ATTR_WIDGET[MsgClusterData ])
+        
 
     elif MsgAttrID == "fffd":
         self.log.logging(

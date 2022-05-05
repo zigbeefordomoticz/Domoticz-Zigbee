@@ -34,7 +34,8 @@ from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                    zcl_raw_remove_group_member_ship,
                                    zcl_raw_send_group_member_ship_identify,
                                    zcl_raw_window_covering,
-                                   zcl_raw_write_attributeNoResponse)
+                                   zcl_raw_write_attributeNoResponse,
+                                   zcl_raw_default_response)
 
 DEFAULT_ACK_MODE = False
 
@@ -497,6 +498,8 @@ def zcl_group_move_to_colour(self, nwkid, EPin, EPout, colorX, colorY, transitio
 
 # Cluster 0500 ( 0x0400 )
 
+def zcl_IAS_default_response( self, nwkid, EPin, EPout, response_to_command, sqn):
+    zcl_raw_default_response( self, nwkid, EPin, EPout, "0500", response_to_command, sqn)
 
 def zcl_ias_zone_enroll_response(self, nwkid, EPin, EPout, response_code, zone_id, sqn=None, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_ias_zone_enroll_response %s %s %s %s %s %s" % (nwkid, EPin, EPout, response_code, zone_id, sqn))

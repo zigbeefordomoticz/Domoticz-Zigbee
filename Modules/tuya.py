@@ -195,9 +195,16 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     EPout = "01"
     self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s ----- 0x13 in 0x0000/0xffde" % nwkid)
     if parkside:
-        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "0d", ackIsDisabled=True)
+        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "0d", ackIsDisabled=False)
+
+    elif _ModelName == "TS0216":
+        # Heiman like siren
+        # Just do the Regitsration
+        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", TUYA_MANUF_CODE, "01", "ffde", "20", "13", ackIsDisabled=False)
+        return
     else:
-        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=True)
+        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
+
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Zigbee Device Reset
     if device_reset:

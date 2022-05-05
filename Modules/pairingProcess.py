@@ -157,6 +157,7 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
 
 
 def interview_state_8043(self, NWKID, RIA, knownModel, status):
+    # At that stage, we have at least One Ep Description
     self.log.logging(
         "Pairing",
         "Debug",
@@ -170,12 +171,16 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
 
     self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
 
+    # IAS Enrollment if required
+    self.iaszonemgt.IAS_device_enrollment(NWKID)
+
     if knownModel:
         self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Model Name: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Model"]))
         return "CreateDB"  # Fast track
 
-    self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
-    ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
+    if "Model" not in self.ListOfDevices[NWKID] or self.ListOfDevices[NWKID]["Model"] in ( "", {}):
+        self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
+        ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
     request_node_descriptor(self, NWKID, RIA=None, status=None)
 
@@ -249,7 +254,11 @@ def request_next_Ep(self, Nwkid):
     for iterEp in self.ListOfDevices[Nwkid]["Ep"]:
         if is_fake_ep(self, Nwkid, iterEp):
             continue
-        
+
+        # Skip Green Zigbee EndPoint
+        if iterEp == 'f2' and self.zigbee_communitation == 'zigpy':
+            continue
+
         # Let's request only 1 Ep, in order wait for the response and then request the next one
         if not self.ListOfDevices[Nwkid]["Ep"][ iterEp ]:
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", Nwkid, iterEp))
@@ -402,6 +411,9 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
             "Device: %s - Config Source: %s Ep Details: %s" % (NWKID, self.ListOfDevices[NWKID]["ConfigSource"], str(self.ListOfDevices[NWKID]["Ep"])),
         )
 
+    # IAS Enrollment if required
+    self.iaszonemgt.IAS_device_enrollment(NWKID)
+
     zigbee_provision_device(self, Devices, NWKID, RIA, status)
 
     # Reset HB in order to force Read Attribute Status
@@ -448,7 +460,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     device_interview(self, NWKID)
 
     # 4. IAS Enrollment
-    handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status)
+    #handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status)
 
     # Other stuff
     scan_device_for_group_memebership(self, NWKID)
@@ -497,6 +509,10 @@ def binding_needed_clusters_with_zigate(self, NWKID):
                 for y in cluster_to_bind:
                     if y not in self.DeviceConf[_model]["Ep"][x]:
                         continue
+                    if y == "0500":
+                        # Binding will be done in IAS
+                        continue
+
                     self.log.logging("Pairing", "Debug", "Request a Bind for %s/%s on Cluster %s" % (NWKID, x, y))
                     # If option enabled, unbind
                     if self.pluginconf.pluginConf["doUnbindBind"]:
@@ -510,6 +526,10 @@ def binding_needed_clusters_with_zigate(self, NWKID):
         for ep in self.ListOfDevices[NWKID]["Epv2"]:
             if "ClusterIn" in self.ListOfDevices[NWKID]["Epv2"][ep]:
                 for iterBindCluster in self.ListOfDevices[NWKID]["Epv2"][ep]["ClusterIn"]:
+                    if iterBindCluster == "0500":
+                        # Binding will be done in IAS
+                        continue
+
                     self.log.logging("Pairing", "Debug", "Request a Bind for %s/%s on ClusterIn %s" % (NWKID, ep, iterBindCluster))
                     if self.pluginconf.pluginConf["doUnbindBind"]:
                         unbindDevice(self, self.ListOfDevices[NWKID]["IEEE"], ep, iterBindCluster)
@@ -545,7 +565,7 @@ def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
         # IAS Zone
         # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
         self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" % (RIA, NWKID, status))
-        self.iaszonemgt.IASZone_triggerenrollement(NWKID, iterEp)
+        self.iaszonemgt.IAS_device_enrollment(NWKID, iterEp)
 
         if "0502" in self.ListOfDevices[NWKID]["Ep"][iterEp]:
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" % (RIA, NWKID, status))
@@ -676,6 +696,10 @@ def handle_device_specific_needs(self, Devices, NWKID):
     elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-Parkside-Watering-Timer", "TS0601-_TZE200_nklqjk62"):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, device_reset=True, parkside=True)
+
+    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0216", ):
+        # Do just the registration
+        tuya_registration(self, NWKID )
 
     elif self.ListOfDevices[NWKID]["Model"] == "SPZB0001":
         thermostat_Calibration(self, NWKID, 0x00)
