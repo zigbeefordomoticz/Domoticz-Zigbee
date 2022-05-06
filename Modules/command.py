@@ -1135,9 +1135,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 self.iaszonemgt.alarm_off(NWKID, EPout)
             elif Level == 10:  # Alarm
                 self.iaszonemgt.alarm_on(NWKID, EPout)
-            elif Level == 20:  # Siren
+            elif Level == 20:  # Siren Only
                 self.iaszonemgt.siren_only(NWKID, EPout)
-            elif Level == 30:  # Strobe
+            elif Level == 30:  # Strobe Only
                 self.iaszonemgt.strobe_only(NWKID, EPout)
             elif Level == 40:  # Armed - Squawk
                 self.iaszonemgt.write_IAS_WD_Squawk(NWKID, EPout, "armed")
