@@ -502,17 +502,26 @@ def zcl_raw_ias_wd_command_start_warning(self, EPin, EPout, nwkid, warning_mode=
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
+    if warning_mode == strobe_mode == 0x00:
+        warning_duration = 0x00
     # Warnindg mode , Strobe, Sirene Level
-    field1 = 0x00
-    field1 = field1 & 0xF0 | (warning_mode << 4)
-    field1 = field1 & 0xF7 | ((strobe_mode & 0x01) << 2)
-    field1 = field1 & 0xFC | (siren_level & 0x03)
+    #field1 = 0x00
+    #field1 = field1 & 0xF0 | (warning_mode << 4)           # bit 8-4 Warning Mode
+    #field1 = field1 & 0xF7 | ((strobe_mode & 0x01) << 2)   # bit 3-2 Strobe 
+    #field1 = field1 & 0xFC | (siren_level & 0x03)          # bit 1-0 Siren Level 
 
     payload = "%02x" % cluster_frame + sqn + cmd
-    payload += "%02x" % field1 + "%04x" % struct.unpack(">H", struct.pack("H", warning_duration))[0] + "%02x" % (strobe_duty) + "%02x" % (strobe_level)
+    payload += "%02x" % startwarning_payload(self, nwkid, warning_mode, strobe_mode, siren_level) + "%04x" % struct.unpack(">H", struct.pack("H", warning_duration))[0] + "%02x" % (strobe_duty) + "%02x" % (strobe_level)
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
+def startwarning_payload(self, nwkid, warning_mode, strobe_mode, siren_level):
+    
+    if "Model" not in self.ListOfDevices[nwkid] or self.ListOfDevices[nwkid]["Model"] not in ('SIRZB-110', 'SRAC-23B-ZBSR', 'AV201029A', 'AV201024A'):
+        return (warning_mode << 4) + (strobe_mode << 2) + siren_level
+    if strobe_mode and not warning_mode:
+        return (warning_mode << 4) + (strobe_mode << 2) + siren_level
+    return warning_mode + ( (strobe_mode) << 4) + (siren_level << 6)
 
 def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe, squawk_level, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_raw_ias_wd_command_squawk %s %s %s %s" % (nwkid, squawk_mode, strobe, squawk_level))
@@ -522,12 +531,19 @@ def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe,
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
-    field1 = 0x0000
-    field1 = field1 & 0xF0 | (squawk_mode << 4)
-    field1 = field1 & 0xF7 | ((strobe & 0x01) << 3)
-    field1 = field1 & 0xFC | (squawk_level & 0x03)
+    #field1 = 0x0000
+    #field1 = field1 & 0xF0 | (squawk_mode << 4)       # bit 8-4  Squawk mode
+    #field1 = field1 & 0xF7 | ((strobe & 0x01) << 3)   # bit   3  Strobe 
+    #field1 = field1 & 0xFC | (squawk_level & 0x03)    # bit   1  Squawk level
+    field1 = squawk_payload(self, nwkid,squawk_mode,strobe, squawk_level )
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % field1
 
     self.log.logging("zclCommand", "Debug", "zcl_raw_ias_wd_command_squawk %s payload: %s (field1 %s)" % (nwkid, payload, field1))
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
+
+def squawk_payload(self, nwkid,squawk_mode,strobe, squawk_level ):
+    
+    if "Model" not in self.ListOfDevices[nwkid] or self.ListOfDevices[nwkid]["Model"] not in ('SIRZB-110', 'SRAC-23B-ZBSR', 'AV201029A', 'AV201024A'):
+        return (squawk_mode << 4) + (strobe << 3) + squawk_level
+    return (squawk_mode) + (strobe << 4) + (squawk_level << 6)
