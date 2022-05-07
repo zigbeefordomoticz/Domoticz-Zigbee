@@ -7,10 +7,7 @@ assignees: ''
 
 ---
 
-Starting Plugin 4.7, there are some tools which allow to share all information collected during the pairing/discovery process.
-
-
-![Export Device List raw (json)](https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/Images/ExportDevicesRaw.png)
+![Export Device List raw (json)](https://github.com/zigbeefordomoticz/wiki/blob/master/Images/ExportDevicesRaw.png)
 
 1. Got to the Tools Menu
 1. Select Plugin Raw Devices (json)
