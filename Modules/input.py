@@ -410,7 +410,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
         if MsgClusterId == "0000" and Attribute == "f000" and manuf_name in ("1021", "Legrand" ):
             if self.pluginconf.pluginConf["LegrandCompatibilityMode"]:
                 operation_time = int(time.time() - self.statistics._start)
-                read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "23", Attribute, operation_time, manuf_code=MsgManufCode)
+                read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "23", Attribute, str(operation_time), manuf_code=MsgManufCode)
         else:
             self.log.logging(
                 "Input",
@@ -2063,7 +2063,15 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
         "Debug",
         "Decode8043 - Received SQN: %s Addr: %s Len: %s Status: %s Data: %s" % (MsgDataSQN, MsgDataShAddr, MsgDataLenght, MsgDataStatus, MsgData),
     )
-
+    
+    if MsgDataShAddr not in self.ListOfDevices:
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8043 receives a message from a non existing device %s" % MsgDataShAddr,
+        )
+        return
+    
     if "SQN" in self.ListOfDevices[MsgDataShAddr] and MsgDataSQN == self.ListOfDevices[MsgDataShAddr]["SQN"]:
         return
     
