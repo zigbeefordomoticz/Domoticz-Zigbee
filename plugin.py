@@ -258,6 +258,7 @@ class BasePlugin:
         assert sys.version_info >= (3, 4)  # nosec
         
         if check_requirements( self ):
+            self.onStop()
             return
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in (
@@ -290,6 +291,7 @@ class BasePlugin:
                 "Please cross-check the plugin starting parameters Mode1: %s Mode2: %s and make sure you have restarted Domoticz after updating the plugin"
                 % (Parameters["Mode1"] == "V1", Parameters["Mode2"])
             )
+            self.onStop()
             return
 
         # Set plugin heartbeat to 1s
@@ -304,6 +306,7 @@ class BasePlugin:
                 _pluginversion = json.load(versionfile)
             except Exception as e:
                 Domoticz.Error("Error when opening: %s -- %s" % (Parameters["HomeFolder"] + VERSION_FILENAME, e))
+                self.onStop()
                 return
 
         self.pluginParameters["PluginBranch"] = _pluginversion["branch"]
@@ -340,14 +343,18 @@ class BasePlugin:
                     % (Parameters["DomoticzVersion"], major, minor)
                 )
                 self.VersionNewFashion = False
+                self.onStop()
                 return
+                
         elif len(lst_version) != 3:
             Domoticz.Error(
                 "Domoticz version %s unknown not supported, please upgrade to a more recent"
                 % (Parameters["DomoticzVersion"])
             )
             self.VersionNewFashion = False
+            self.onStop()
             return
+            
         else:
             major, minor = lst_version[0].split(".")
             build = lst_version[2].strip(")")
@@ -428,7 +435,9 @@ class BasePlugin:
         # if type(self.DeviceConf) is not dict:
         if not isinstance(self.DeviceConf, dict):
             self.log.logging("Plugin", "Error", "DeviceConf initialisation failure!!! %s" % type(self.DeviceConf))
+            self.onStop()
             return
+            
 
         # Import DeviceList.txt Filename is : DeviceListName
         self.log.logging("Plugin", "Status", "load ListOfDevice")
@@ -439,7 +448,9 @@ class BasePlugin:
                 "Error",
                 "Please cross-check your log ... You must be on V3 of the DeviceList and all DeviceID in Domoticz converted to IEEE",
             )
+            self.onStop()
             return
+            
 
         self.log.logging("Plugin", "Debug", "ListOfDevices : ")
         for e in self.ListOfDevices.items():
@@ -467,6 +478,9 @@ class BasePlugin:
                 import serial
             except:
                 Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+                self.onStop()
+                return
+            
             from Classes.ZigateTransport.Transport import ZigateTransport
             
             self.pythonModuleVersion["serial"] = (serial.__version__)
@@ -495,7 +509,9 @@ class BasePlugin:
                 import serial
             except:
                 Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
-
+                self.onStop()
+                return
+                
             self.pythonModuleVersion["serial"] = (serial.__version__)
             self.pythonModuleVersion["dns"] = (dns.__version__)
             check_python_modules_version( self )
@@ -523,7 +539,9 @@ class BasePlugin:
                 import dns
             except:
                 Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
-
+                self.onStop()
+                return
+                
             self.pythonModuleVersion["dns"] = (dns.__version__)
             check_python_modules_version( self )
             
@@ -560,7 +578,9 @@ class BasePlugin:
                 import serial
             except:
                 Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
-
+                self.onStop()
+                return
+                
             import zigpy
             import zigpy_zigate
             from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -574,7 +594,7 @@ class BasePlugin:
             self.pythonModuleVersion["zigpy_zigate"] = (zigpy_zigate.__version__)
             check_python_modules_version( self )
             
-            
+           
             self.zigbee_communitation = "zigpy"
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on zigate")
@@ -589,7 +609,9 @@ class BasePlugin:
                 import serial
             except:
                 Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
-
+                self.onStop()
+                return
+                
             import zigpy
             import zigpy_znp
             from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -617,7 +639,9 @@ class BasePlugin:
                 import serial
             except:
                 Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
-
+                self.onStop()
+                return
+                
             import zigpy
             import zigpy_deconz
             from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -643,7 +667,9 @@ class BasePlugin:
                 import serial
             except:
                 Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
-
+                self.onStop()
+                return
+            
             import bellows
             import zigpy
             from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -666,7 +692,9 @@ class BasePlugin:
           
         else:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
+            self.onStop()
             return
+            
 
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
@@ -689,53 +717,65 @@ class BasePlugin:
 
         self.busy = False
 
-    def onStop(self):
+    def onStop(self):  # sourcery skip: class-extract-method
         Domoticz.Log("onStop()")
         uninstall_Z4D_to_domoticz_custom_ui()
 
-        if self.log:
+        if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop called")
             self.log.logging("Plugin", "Log", "onStop calling (1) domoticzDb DeviceStatus closed")
-        if self.domoticzdb_DeviceStatus:
+            
+        if self.pluginconf and self.domoticzdb_DeviceStatus:
             self.domoticzdb_DeviceStatus.closeDB()
-        if self.log:
+            
+        if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop calling (2) domoticzDb Hardware closed")
-        if self.domoticzdb_Hardware:
+            
+        if self.pluginconf and self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
-        if self.log:
+            
+        if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop calling (3) Transport off")
-        if self.ControllerLink:
+            
+        if self.pluginconf and self.ControllerLink:
             self.ControllerLink.thread_transport_shutdown()
             self.ControllerLink.close_zigate_connection()
 
-        if self.log:
+        if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop calling (4) WebServer off")
-        if self.webserver:
+            
+        if self.pluginconf and self.webserver:
             self.webserver.onStop()
-        if self.log:
+            
+        if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop called (4) WebServer off")
-        if self.log:
+            
+        if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop calling (5) Plugin Database saved")
-        WriteDeviceList(self, 0)
-        if self.log:
+          
+        if self.pluginconf:
+            WriteDeviceList(self, 0)
+        
+        if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop called (5) Plugin Database saved")
 
-        self.statistics.printSummary()
-        self.statistics.writeReport()
+        if self.pluginconf and self.statistics:
+            self.statistics.printSummary()
+            self.statistics.writeReport()
 
-        if self.log:
+        if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop calling (6) Close Logging Management")
-        if self.log:
             self.log.closeLogFile()
-        self.log.logging("Plugin", "Log", "onStop called (6) Close Logging Management")
+            self.log.logging("Plugin", "Log", "onStop called (6) Close Logging Management")
 
         for thread in threading.enumerate():
             if thread.name != threading.current_thread().name:
-                self.log.logging("Plugin", "Log", "'" + thread.name + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+                Domoticz.Log( "'" + thread.name + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
         self.PluginHealth["Flag"] = 3
         self.PluginHealth["Txt"] = "No Communication"
-        self.adminWidgets.updateStatusWidget(Devices, "No Communication")
+        if self.adminWidgets:
+            self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
     def onDeviceRemoved(self, Unit):
         if self.log:
@@ -1422,7 +1462,7 @@ def zigateInit_Phase3(self):
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
         zigate_get_nwk_state(self)
-        #sendZigateCmd(self, "0009", "")
+
 
 
 def check_firmware_level(self):
@@ -1669,9 +1709,7 @@ def check_requirements( self ):
             Domoticz.Error("sudo pip3 install -r requirements.txt")
             return True
     return False          
-        
-    
-              
+                     
 def debuging_information(self, mode):
     self.log.logging("Plugin", mode, "Is GC enabled: %s" % gc.isenabled())
     self.log.logging("Plugin", mode, "DomoticzVersion: %s" % Parameters["DomoticzVersion"])
