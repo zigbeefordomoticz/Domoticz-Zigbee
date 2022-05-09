@@ -541,7 +541,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
 
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
             self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
-            if Profile == 0x0000 and  Cluster == 0x0005:
+            if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[0:8] not in ( "00:04:74", ):
                 # Most likely for the CasaIA devices which seems to have issue
                 self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 5 secondes ")
                 await asyncio.sleep( 6 )
