@@ -204,7 +204,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
 
         if "Param" in self.ListOfDevices[NWKID]:
             if "resetMotiondelay" in self.ListOfDevices[NWKID]["Param"]:
-                TimedOutMotion = self.ListOfDevices[NWKID]["Param"]["resetMotiondelay"]
+                TimedOutMotion = int(self.ListOfDevices[NWKID]["Param"]["resetMotiondelay"])
             if "resetSwitchSelectorPushButton" in self.ListOfDevices[NWKID]["Param"]:
                 TimedOutSwitchButton = self.ListOfDevices[NWKID]["Param"]["resetSwitchSelectorPushButton"]
 
@@ -247,7 +247,7 @@ def resetMotion(self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl,
         if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion(Devices[unit].ID) > 0:
             return
 
-    if (now - lastupdate) >= TimedOut:
+    if (now - lastupdate) >= TimedOut:  
         Devices[unit].Update(nValue=0, sValue="Off")
         self.log.logging(
             "Widget",
