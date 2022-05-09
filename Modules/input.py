@@ -394,7 +394,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
             self.log.logging(
                 "Schneider",
                 "Debug",
-                "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+                "Decode0100 - Sqn: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
                 % (
                     MsgSqn,
                     MsgSrcAddr,
@@ -408,9 +408,28 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                 ),
             )
         if MsgClusterId == "0000" and Attribute == "f000" and manuf_name in ("1021", "Legrand" ):
+            self.log.logging(
+                "Legrand",
+                "Debug",
+                "Decode0100 - Sqn: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+                % (
+                    MsgSqn,
+                    MsgSrcAddr,
+                    MsgSrcEp,
+                    MsgDstEp,
+                    MsgClusterId,
+                    MsgDirection,
+                    MsgManufSpec,
+                    MsgManufCode,
+                    nbAttribute,
+                ),
+            )
+
             if self.pluginconf.pluginConf["LegrandCompatibilityMode"]:
                 operation_time = int(time.time() - self.statistics._start)
-                read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "23", Attribute, str(operation_time), manuf_code=MsgManufCode)
+                self.log.logging( "Legrand", "Debug", "------> Operation time: %s" %operation_time,MsgSrcAddr)
+
+                read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "23", Attribute, "%08x" %operation_time, manuf_code=MsgManufCode)
         else:
             self.log.logging(
                 "Input",

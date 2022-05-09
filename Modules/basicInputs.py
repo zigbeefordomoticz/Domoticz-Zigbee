@@ -40,8 +40,6 @@ def read_attribute_response(self, nwkid, ep, sqn, cluster, status, data_type, at
     #    %( nwkid, ep, sqn, cluster, status, data_type, attribute, value))
 
     cmd = "01"  # Attribute Response
-    if manuf_code == "0000":
-        manuf_specific = "00"
 
     attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(attribute, 16)))[0]
 
@@ -56,5 +54,5 @@ def read_attribute_response(self, nwkid, ep, sqn, cluster, status, data_type, at
     if status == "00":
         payload += data_type + encode_endian_data(value, data_type)
 
-    # self.log.logging( None, 'Log', "read_attribute_response - %s/%s Cluster: %s Payload: %s" %(nwkid, ep, cluster, payload))
+    self.log.logging( "Input", 'Log', "read_attribute_response - %s/%s Cluster: %s Payload: %s" %(nwkid, ep, cluster, payload))
     raw_APS_request(self, nwkid, ep, cluster, "0104", payload, zigate_ep=ZIGATE_EP)
