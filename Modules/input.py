@@ -407,7 +407,8 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                     nbAttribute,
                 ),
             )
-        if MsgClusterId == "0000" and Attribute == "f000" and manuf_name in ("1021", "Legrand" ):
+
+        elif MsgClusterId == "0000" and Attribute == "f000" and manuf_name in ("1021", "Legrand" ):
             self.log.logging(
                 "Legrand",
                 "Debug",
@@ -428,8 +429,12 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
             if self.pluginconf.pluginConf["LegrandCompatibilityMode"]:
                 operation_time = int(time.time() - self.statistics._start)
                 self.log.logging( "Legrand", "Debug", "------> Operation time: %s" %operation_time,MsgSrcAddr)
-
                 read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "23", Attribute, "%08x" %operation_time, manuf_code=MsgManufCode)
+
+        elif MsgClusterId == "0000" and Attribute == "0000":
+            # ZCL Version - Version 0x03
+            read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "20", Attribute, "%02x" %0x03, manuf_code=MsgManufCode)
+
         else:
             self.log.logging(
                 "Input",
