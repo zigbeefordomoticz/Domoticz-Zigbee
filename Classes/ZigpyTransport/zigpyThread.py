@@ -40,6 +40,7 @@ from Classes.ZigpyTransport.tools import handle_thread_error
 from zigpy.exceptions import DeliveryError, InvalidResponse
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
+from Modules.macPrefix import casaiaPrefix_zigpy
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
@@ -541,9 +542,9 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
 
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
             self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
-            if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[0:8] not in ( "00:04:74", ):
+            if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in (casaiaPrefix_zigpy,):
                 # Most likely for the CasaIA devices which seems to have issue
-                self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command waiting 5 secondes ")
+                self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 6 secondes for CASA.IA Confirm Key")
                 await asyncio.sleep( 6 )
 
             # Slow down the through put when too many commands. Try to not overload the coordinators
