@@ -323,7 +323,7 @@ def casaia_AC211_check_irPairing(self, NwkId):
 
     if "Model" in self.ListOfDevices[NwkId]:
         if self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
-            self.log.logging("CasaIA", "Log", "casaia_check_irPairing - %s Send IR Pairing code" % NwkId)
+            self.log.logging("CasaIA", "Debug", "casaia_check_irPairing - %s Send IR Pairing code" % NwkId)
 
             casaia_ac211_ir_pairing(self, NwkId)
             AC211_ReadPairingCodeRequest(self, NwkId)

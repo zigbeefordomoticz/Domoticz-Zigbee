@@ -260,7 +260,7 @@ def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
 
     
 def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
-    self.log.logging("Input", "Log", "Decode0042 - Node_Desc_req: %s" % MsgData)
+    self.log.logging("Input", "Debug", "Decode0042 - Node_Desc_req: %s" % MsgData)
     #  sqn + SrcNwkId + SrcEndPoint + nwkid
     #  01 / 0012/ 4b0021600542000000
     sqn = MsgData[:2]
@@ -301,7 +301,7 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
         
         payload = sqn + status + nwkid + manuf_code16 + max_in_size16 + max_out_size16 + server_mask16 + descriptor_capability8
         payload += mac_capa8 + max_buf_size8 + bitfield16
-    self.log.logging("Input", "Log", "Decode0042 - response payload: %s" %payload)
+    self.log.logging("Input", "Debug", "Decode0042 - response payload: %s" %payload)
     raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
     
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
@@ -1966,7 +1966,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     if status != "00":
         self.log.logging(
             "Input",
-            "Log",
+            "Debug",
             "Decode8042 - Reception of Node Descriptor for %s with status %s" %(addr, status))
         return
             
@@ -2838,7 +2838,7 @@ def Decode8100(self, Devices, MsgData, MsgLQI):
     self.statistics._clusterOK += 1
     
     if MsgClusterId == "0500":
-        self.log.logging("Input", "Log", "Read Attributed Request Response n Cluster 0x0500 for %s" % (MsgSrcAddr))
+        self.log.logging("Input", "Debug", "Read Attributed Request Response on Cluster 0x0500 for %s" % (MsgSrcAddr))
         self.iaszonemgt.IAS_CIE_service_discovery_response( MsgSrcAddr, MsgSrcEp, MsgData)
         
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8100")
