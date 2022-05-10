@@ -42,12 +42,13 @@ def read_attribute_response(self, nwkid, ep, sqn, cluster, status, data_type, at
     cmd = "01"  # Attribute Response
 
     attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(attribute, 16)))[0]
-
+    
     if manuf_code == "0000":
         cluster_frame = "18"  # Profile-wide, Server to Client, Disable default Response
         payload = cluster_frame + sqn + cmd
     else:
-        cluster_frame = "28"  # Manufacturer Specific , Server to Client, Disable default Response
+        manuf_code = "%04x" % struct.unpack("H", struct.pack(">H", int(manuf_code, 16)))[0]
+        cluster_frame = "1C"  # Profile-wide, Manufacturer Specific , Server to Client, Disable default Response
         payload = cluster_frame + manuf_code + sqn + cmd
 
     payload += attribute + status
