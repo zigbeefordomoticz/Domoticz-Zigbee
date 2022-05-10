@@ -50,7 +50,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
             "09": "Query Device Specific File response",
         }
         if Command in OTA_UPGRADE_COMMAND:
-            self.log.logging("zclDecoder", "Log", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
+            self.log.logging("zclDecoder", "Debug", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
             return frame
 
     if ClusterId == "0500" and is_direction_to_server(fcf) and Command == "00":

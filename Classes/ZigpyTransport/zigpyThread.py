@@ -528,7 +528,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
 
     try:
         async with _limit_concurrency(self, destination, sequence):
-            self.log.logging( "TransportZigpy", "Log", "transport_request: _limit_concurrency %s %s" %(destination, sequence))
+            self.log.logging( "TransportZigpy", "Debug", "transport_request: _limit_concurrency %s %s" %(destination, sequence))
             if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:
                 self.log.logging(
                     "TransportZigpy",
@@ -540,10 +540,10 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                 return
 
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
-            self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
+            self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
             if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[0:8] not in ( "00:04:74", ):
                 # Most likely for the CasaIA devices which seems to have issue
-                self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 5 secondes ")
+                self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command waiting 5 secondes ")
                 await asyncio.sleep( 6 )
 
             # Slow down the through put when too many commands. Try to not overload the coordinators
