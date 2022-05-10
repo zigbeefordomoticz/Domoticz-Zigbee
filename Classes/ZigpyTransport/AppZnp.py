@@ -129,12 +129,12 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             dev = self.get_device(ieee)
             logging.debug("handle_join waiting 1s for zigbee initialisation")
             time.sleep(1.0)
-            LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
+            LOGGER.debug("Device 0x%04x (%s) joined the network", nwk, ieee)
         except KeyError:
             logging.debug("handle_join waiting 1s for zigbee initialisation")
             time.sleep(1.0)
             dev = self.add_device(ieee, nwk)
-            LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
+            LOGGER.debug("New device 0x%04x (%s) joined the network", nwk, ieee)
 
         if dev.nwk != nwk:
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)

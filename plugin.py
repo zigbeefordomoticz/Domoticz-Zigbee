@@ -1193,7 +1193,7 @@ class BasePlugin:
         return True
 
 def networksize_update(self):
-    self.log.logging("Plugin", "Log", "Devices size has changed , let's write ListOfDevices on disk")
+    self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
     routers, enddevices = how_many_devices(self)
     self.pluginParameters["NetworkSize"] = "Total: %s | Routers: %s | End Devices: %s" %(
         routers + enddevices, routers, enddevices)
