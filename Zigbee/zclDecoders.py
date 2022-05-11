@@ -11,13 +11,32 @@ from Zigbee.encoder_tools import encapsulate_plugin_frame, decode_endian_data
 from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE, ZIGATE_EP
 from Zigbee.zclRawCommands import zcl_raw_default_response
 
-
+def is_duplicate_zcl_frame(self, Nwkid, ClusterId, Sqn):
+    
+    if self.zigbee_communitation != "zigpy":
+        return False
+    if Nwkid not in self.ListOfDevices:
+        return False
+    if "ZCL-IN-SQN" not in self.ListOfDevices[ Nwkid ]:
+        self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"] = {}
+    if ClusterId not in self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"]:
+        self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ] = Sqn
+        return False
+    if Sqn == self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ]:
+        return True
+    self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ] = Sqn
+    return False
+    
 def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame):
     # We are receiving an ZCL message
 
     fcf = Payload[:2]
     default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
 
+    if is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn):
+        self.log.logging("zclDecoder", "Log", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
+        return None
+    
     if not default_response_disable:
         # Let's answer
         self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
@@ -363,7 +382,7 @@ def buildframe_for_cluster_0003(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
 
 # Cluster 0x0004 - Groups
 
-def buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data ):
+def buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     if Command == "00":
         return buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
     if Command == "01":
