@@ -106,6 +106,9 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
 def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
     self.log.logging("zclCommand", "Log", f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}")
 
+    if response_to_command == "0b":
+        # Never return a default response to a default response
+        return
     cmd = "0b"
     if orig_fcf is None:
         frame_control_field = "%02x"  %0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
