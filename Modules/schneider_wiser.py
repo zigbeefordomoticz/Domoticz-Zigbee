@@ -1358,7 +1358,7 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
         srcNWKID,
     )
 
-    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(MsgPayload)
+    default_response, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(MsgPayload)
     self.log.logging("Schneider", "Debug", "         -- SQN: %s, CMD: %s, Data: %s" % (Sqn, Command, Data), srcNWKID)
 
     if ClusterID == "0201":  # Thermostat cluster

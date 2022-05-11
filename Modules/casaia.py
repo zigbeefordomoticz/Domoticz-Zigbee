@@ -96,6 +96,7 @@ def casaiaReadRawAPS(self, Devices, NwkId, srcEp, ClusterId, dstNWKID, dstEP, Ms
         return
     _Model = self.ListOfDevices[NwkId]["Model"]
     (
+        default_response,
         GlobalCommand,
         Sqn,
         ManufacturerCode,
