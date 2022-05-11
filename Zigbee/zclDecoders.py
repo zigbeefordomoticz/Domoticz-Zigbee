@@ -8,15 +8,23 @@
 import struct
 from Modules.tools import retreive_cmd_payload_from_8002, is_direction_to_client, is_direction_to_server
 from Zigbee.encoder_tools import encapsulate_plugin_frame, decode_endian_data
-from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
+from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE, ZIGATE_EP
+from Zigbee.zclRawCommands import zcl_raw_default_response
 
 
 def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame):
+    # We are receiving an ZCL message
 
     fcf = Payload[:2]
-    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
-    self.log.logging("zclDecoder", "Debug", "zcl_decoders GlobalCommand: %s Sqn: %s ManufCode: %s Command: %s Data: %s Payload: %s" %(
-        GlobalCommand, Sqn, ManufacturerCode, Command, Data, Payload))
+    default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
+
+    if not default_response_disable:
+        # Let's answer
+        self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
+        zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf )
+
+    self.log.logging("zclDecoder", "Debug", "zcl_decoders Zcl.ddr: %s GlobalCommand: %s Sqn: %s ManufCode: %s Command: %s Data: %s Payload: %s" %(
+        default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data, Payload))
 
     if GlobalCommand:
         return buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data )

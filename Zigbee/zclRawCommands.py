@@ -6,7 +6,7 @@
 
 import struct
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import get_and_inc_ZCL_SQN
+from Modules.tools import get_and_inc_ZCL_SQN, direction, build_fcf
 from Zigbee.encoder_tools import decode_endian_data
 
 DEFAULT_ACK_MODE = False
@@ -103,14 +103,28 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
     return sqn
     
-def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_command, sqn):
-    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command}")
+def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
+    self.log.logging("zclCommand", "Log", f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}")
 
     cmd = "0b"
-    cluster_frame = 0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
-    fcf = "%02x" % cluster_frame
-    payload = fcf + sqn + cmd + response_to_command + "00"
-    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}")
+    if orig_fcf is None:
+        frame_control_field = "%02x"  %0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
+    else:
+        # The frame control field SHALL be specified as follows. The frame type sub-field SHALL be set to indicate
+        # a global command (0b00). The manufacturer specific sub-field SHALL be set to 0 if this command is being
+        # sent in response to a command defined for any cluster in the ZCL or 1 if this command is being sent in
+        # response to a manufacturer specific command.
+        zcl_frame_type = "0"
+        zcl_manuf_specific = "1" if (manufcode and manufcode != "0000") else "0"
+        zcl_target_direction = "%02x" %( not direction( orig_fcf ))
+        zcl_disabled_default = "0"
+        frame_control_field = build_fcf(zcl_frame_type, zcl_manuf_specific, zcl_target_direction, zcl_disabled_default)
+    
+    payload = frame_control_field 
+    if manufcode and manufcode != "0000":
+        payload += manufcode[2:4] + manufcode[:2]
+    payload += sqn + cmd + response_to_command + command_status
+    self.log.logging("zclCommand", "Log", f"zcl_raw_default_response ==== payload: {payload}")
 
     raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=False)
     return sqn
