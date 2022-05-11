@@ -1835,8 +1835,9 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
     ListOfAttributesToConfigure = AttributesConfig.keys()
     self.log.logging( "Schneider", "Debug", "schneider_UpdateConfigureReporting - ClusterId: %s ClusterList: %s ListOfAttribute: %s" %(
         ClusterId, str(cluster_list), str(ListOfAttributesToConfigure)))
-    self.configureReporting.prepare_and_send_configure_reporting(
-        NwkId, Ep, cluster_list, ClusterId, "00", "00", "0000", ListOfAttributesToConfigure)
+    if self.configureReporting:
+        self.configureReporting.prepare_and_send_configure_reporting(
+            NwkId, Ep, cluster_list, ClusterId, "00", "00", "0000", ListOfAttributesToConfigure)
     
 
 
