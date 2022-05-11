@@ -8,6 +8,24 @@
 import struct
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
+def is_duplicate_zdp_frame(self, Nwkid, ClusterId, Sqn):
+    
+    if self.zigbee_communitation != "zigpy":
+        return False
+    if Nwkid not in self.ListOfDevices:
+        return False
+    if Nwkid == "0000":
+        return False
+    if "ZDP-IN-SQN" not in self.ListOfDevices[ Nwkid ]:
+        self.ListOfDevices[ Nwkid ]["ZDP-IN-SQN"] = {}
+    if ClusterId not in self.ListOfDevices[ Nwkid ]["ZDP-IN-SQN"]:
+        self.ListOfDevices[ Nwkid ]["ZDP-IN-SQN"][ ClusterId ] = Sqn
+        return False
+    if Sqn == self.ListOfDevices[ Nwkid ]["ZDP-IN-SQN"][ ClusterId ]:
+        return True
+    self.ListOfDevices[ Nwkid ]["ZDP-IN-SQN"][ ClusterId ] = Sqn
+    return False
+
 
 def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame):
     # self.logging_8002( 'Debug', "zdp_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
@@ -364,7 +382,7 @@ def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, P
             idx += 2
 
             # bitfield1 + bitfield2 joing in NXP stack
-            devicetype =     bitfield1 & 0x03
+            devicetype = bitfield1 & 0x03
             rxonwhenidle = ( bitfield1 & 0x0C) >> 2
             relationship = ( bitfield1 & 0x70) >> 4
             permitjoining = bitfield2 & 0x03
