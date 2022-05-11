@@ -65,6 +65,7 @@ from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
 from Modules.zigbeeVersionTable import FIRMWARE_BRANCH
 from Modules.zigbeeVersionTable import set_display_firmware_version
 from Zigbee.zclCommands import zcl_IAS_default_response
+from Zigbee.zclRawCommands import zcl_raw_default_response
 
 
 def ZigateRead(self, Devices, Data):
@@ -2955,6 +2956,15 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     updLQI(self, MsgSrcAddr, MsgLQI)
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
 
+    if ( 
+        self.zigbee_communitation == "zigpy" 
+        and "Model" in self.ListOfDevices[MsgSrcAddr] 
+        and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "SML001",)
+        and MsgClusterId in ("0406", "0400")
+    ):
+        # Send a default response to Report Attribute
+        zcl_raw_default_response( self, MsgSrcAddr, ZIGATE_EP, MsgSrcEp, MsgClusterId, "0a", MsgSQN)
+        
     self.statistics._clusterOK += 1
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8102")
 
