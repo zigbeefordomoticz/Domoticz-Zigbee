@@ -6,7 +6,7 @@
 
 import struct
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import get_and_inc_ZCL_SQN, direction, build_fcf
+from Modules.tools import get_and_inc_ZCL_SQN, direction, build_fcf, is_ack_tobe_disabled
 from Zigbee.encoder_tools import decode_endian_data
 
 DEFAULT_ACK_MODE = False
@@ -106,6 +106,9 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
 def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
     self.log.logging("zclCommand", "Log", f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}")
 
+    if "disableZCLDefaultResponse" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["disableZCLDefaultResponse"]:
+        return
+    
     if response_to_command == "0b":
         # Never return a default response to a default response
         return
@@ -129,7 +132,7 @@ def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_com
     payload += sqn + cmd + response_to_command + command_status
     self.log.logging("zclCommand", "Log", f"zcl_raw_default_response ==== payload: {payload}")
 
-    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=False)
+    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=is_ack_tobe_disabled(self, nwkid))
     return sqn
     
     

@@ -1321,6 +1321,15 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "disableZCLDefaultResponse": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+  
+            },
             "ControllerInHybridMode": {
                 "type": "bool",
                 "default": 0,
