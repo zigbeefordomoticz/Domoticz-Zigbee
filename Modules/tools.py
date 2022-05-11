@@ -971,9 +971,11 @@ def retreive_cmd_payload_from_8002(Payload):
     fcf = Payload[:2]
 
     GlobalCommand = is_golbalcommand(fcf)
+    zbee_zcl_ddr = disable_default_response(fcf)
+
     if GlobalCommand is None:
         Domoticz.Error("Strange payload: %s" % Payload)
-        return (None, None, None, None, None)
+        return (None, None, None, None, None, None)
 
     if is_manufspecific_8002_payload(fcf):
         ManufacturerCode = Payload[4:6] + Payload[2:4]
@@ -986,7 +988,7 @@ def retreive_cmd_payload_from_8002(Payload):
         Data = Payload[6:]
 
     # Domoticz.Log("retreive_cmd_payload_from_8002 ======> Payload: %s " %Data)
-    return (GlobalCommand, Sqn, ManufacturerCode, Command, Data)
+    return (zbee_zcl_ddr, GlobalCommand, Sqn, ManufacturerCode, Command, Data)
 
 def direction(fcf):
     # If direction = 1 Server to Client
@@ -995,6 +997,9 @@ def direction(fcf):
     if not is_hex(fcf) or len(fcf) != 2:
         return None
     return (int(fcf, 16) & 0x08) >> 3
+
+def disable_default_response(fcf):
+    return (int(fcf,16) & 0x10) >> 4
 
 def is_direction_to_client(fcf):
     return direction(fcf) == 0x1
@@ -1007,10 +1012,11 @@ def is_golbalcommand(fcf):
         return None
     return (int(fcf, 16) & 0b00000011) == 0
 
-
+def frame_type(fcf):
+    return (int(fcf, 16) & 0b00000011)
+    
 def is_manufspecific_8002_payload(fcf):
     return ((int(fcf, 16) & 0b00000100) >> 2) == 1
-
 
 def build_fcf(frame_type, manuf_spec, direction, disabled_default):
     fcf = 0b00000000 | int(frame_type, 16)
