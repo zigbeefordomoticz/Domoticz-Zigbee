@@ -120,7 +120,7 @@ def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_com
         zcl_frame_type = "0"
         zcl_manuf_specific = "1" if (manufcode and manufcode != "0000") else "0"
         zcl_target_direction = "%02x" %( not direction( orig_fcf ))
-        zcl_disabled_default = "0"
+        zcl_disabled_default = "1"
         frame_control_field = build_fcf(zcl_frame_type, zcl_manuf_specific, zcl_target_direction, zcl_disabled_default)
     
     payload = frame_control_field 
