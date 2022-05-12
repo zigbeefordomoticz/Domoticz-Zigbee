@@ -127,11 +127,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         try:
             dev = self.get_device(ieee)
-            logging.debug("handle_join waiting 1s for zigbee initialisation")
+            #logging.debug("handle_join waiting 1s for zigbee initialisation")
             time.sleep(1.0)
             LOGGER.debug("Device 0x%04x (%s) joined the network", nwk, ieee)
         except KeyError:
-            logging.debug("handle_join waiting 1s for zigbee initialisation")
+            #logging.debug("handle_join waiting 1s for zigbee initialisation")
             time.sleep(1.0)
             dev = self.add_device(ieee, nwk)
             LOGGER.debug("New device 0x%04x (%s) joined the network", nwk, ieee)

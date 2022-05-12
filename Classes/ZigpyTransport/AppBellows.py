@@ -126,8 +126,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         try:
             dev = self.get_device(ieee)
+            time.sleep(1.0)
             LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
         except KeyError:
+            time.sleep(1.0)
             dev = self.add_device(ieee, nwk)
             LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
 
