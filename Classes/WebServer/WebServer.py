@@ -70,6 +70,7 @@ class WebServer(object):
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import DumpHTTPResponseToLog, keepConnectionAlive
     from Classes.WebServer.rest_PluginUpgrade import rest_plugin_upgrade
+    from Classes.WebServer.rest_CfgReporting import rest_cfgrpt_ondemand
 
     hearbeats = 0
 
@@ -118,6 +119,7 @@ class WebServer(object):
         self.pluginParameters = PluginParameters
         self.networkmap = None
         self.networkenergy = None
+        self.configureReporting = None
 
         self.permitTojoin = permitTojoin
 
@@ -150,6 +152,9 @@ class WebServer(object):
     def update_networkmap(self, networkmap):
         self.networkmap = networkmap
 
+    def update_configureReporting(self,configureReporting ):
+        self.configureReporting = configureReporting
+        
     def add_element_to_devices_in_pairing_mode( self, nwkid):
         if nwkid not in self.DevicesInPairingMode:
             self.DevicesInPairingMode.append( nwkid )
