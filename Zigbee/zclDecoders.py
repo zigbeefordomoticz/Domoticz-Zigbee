@@ -36,7 +36,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
     if is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn):
         self.log.logging("zclDecoder", "Log", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
         return None
-    
+
     if not default_response_disable:
         # Let's answer
         self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
@@ -368,11 +368,11 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
 
 def buildframe_for_cluster_0003(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data ):
     if Command == "00":  # Identify
-        self.log.logging("zclDecoder", "Log", "buildframe_for_cluster_0003 - Identify command Time: %s" % Data[:4])
+        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Identify command Time: %s" % Data[:4])
         return None
 
     if Command == "01":  # Identify Query
-        self.log.logging("zclDecoder", "Log", "buildframe_for_cluster_0003 - Identify Query ")
+        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Identify Query ")
         return None
 
     if Command == "40":  # Trigger effect

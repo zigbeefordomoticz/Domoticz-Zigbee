@@ -104,7 +104,7 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     return sqn
     
 def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
-    self.log.logging("zclCommand", "Log", f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}")
+    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}")
 
     if response_to_command == "0b":
         # Never return a default response to a default response
@@ -127,7 +127,7 @@ def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_com
     if manufcode and manufcode != "0000":
         payload += manufcode[2:4] + manufcode[:2]
     payload += sqn + cmd + response_to_command + command_status
-    self.log.logging("zclCommand", "Log", f"zcl_raw_default_response ==== payload: {payload}")
+    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}")
 
     raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=False)
     return sqn
@@ -182,7 +182,7 @@ def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, dir
 # Cluster 0004: Groups
 
 def zcl_raw_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_add_group_membership %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_add_group_membership %s %s %s %s" % (nwkid, epin, epout, GrpId))
     
     cmd = "00"
     cluster = "0004"
@@ -197,7 +197,7 @@ def zcl_raw_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=
     
 
 def zcl_raw_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_check_group_member_ship %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_check_group_member_ship %s %s %s %s" % (nwkid, epin, epout, GrpId))
     
     cmd = "01"
     cluster = "0004"
@@ -212,7 +212,7 @@ def zcl_raw_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabl
 
 
 def zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_list, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_look_for_group_member_ship %s %s %s %s %s" % (nwkid, epin, epout, nbgroup, group_list))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_look_for_group_member_ship %s %s %s %s %s" % (nwkid, epin, epout, nbgroup, group_list))
     
     cmd = "02"
     cluster = "0004"
@@ -234,7 +234,7 @@ def zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_
 
 
 def zcl_raw_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_remove_group_member_ship %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_remove_group_member_ship %s %s %s %s" % (nwkid, epin, epout, GrpId))
     
     cmd = "03"
     cluster = "0004"
@@ -249,7 +249,7 @@ def zcl_raw_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisab
 
 
 def zcl_raw_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_remove_group_member_ship %s %s %s" % (nwkid, epin, epout))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_remove_group_member_ship %s %s %s" % (nwkid, epin, epout))
     
     cmd = "05"
     cluster = "0004"
@@ -264,7 +264,7 @@ def zcl_raw_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_AC
 
 
 def zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_send_group_member_ship_identify %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_send_group_member_ship_identify %s %s %s %s" % (nwkid, epin, epout, GrpId))
 
     cmd = "06"
     cluster = "0004"
