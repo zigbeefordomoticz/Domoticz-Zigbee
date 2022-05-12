@@ -342,7 +342,7 @@ def casaia_AC211_check_irPairing(self, NwkId):
 
 def restart_plugin_reset_ModuleIRCode(self, nwkid=None):
 
-    self.log.logging("CasaIA", "Log", "casaia_check_irPairing %s " % nwkid)
+    self.log.logging("CasaIA", "Debug", "casaia_check_irPairing %s " % nwkid)
     list_of_device_to_reset = (
         [
             nwkid,
