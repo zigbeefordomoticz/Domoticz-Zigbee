@@ -113,11 +113,11 @@ Your first place to get support is via the Forums.
 
 In order to provide stability and also provide more recent development, Zigbee for Domoticz plugin has the following channels
 
-* __beta6__: Current developpement branch and allow TI CCxxxx , Silicon Labs and deConz coordinators on top of ZiGate coordinators.
-* __stable6__: default branch for
-  * [ZiGate](https://zigate.fr) models knwon today,
-  * [Electrolama](https://electrolama.com/) models as well as the Texas Instrument CCxxx based coordinators,
-  * [Elelabs](https://elelabs.com/products/elelabs-usb-adapter.html) as well as the Silicon Labs based coordinators.
+* __beta6__: Current developement branch adds [ConBee/RaspBee (deconz) compatibility](https://github.com/zigpy/zigpy-deconz) on top of ZiGate/TI/Silabs support in stable branch.
+* __stable6__: default branch provides stable support for these types of Zigbee Coordinator adapters/dongles/sticks/modules:
+  * [ZiGate](https://zigate.fr) models known today,
+  * [Electrolama zzh/zoe](https://electrolama.com/) models as well as [other Texas Instruments CC26x2/CC13x2 based adapters](https://github.com/zigpy/bellows/blob/dev/README.md#hardware-requirement) with newer [Z-Stack_3.x.0 firmware](https://github.com/Koenkk/Z-Stack-firmware/tree/master/coordinator/Z-Stack_3.x.0/bin),
+  * [Elelabs](https://elelabs.com/shop/)/[Popp](https://popp.eu/zb-stick/) models as well as [other Silicon Labs EFR32MG1x/EFR32MG2x based adapters](https://github.com/zigpy/zigpy-znp/blob/dev/README.md#hardware-requirements) with newer [EZSP v8 firmware](https://github.com/grobasoz/zigbee-firmware/).
 
 * Not supported
   * __stable5__: Support ALL ZiGate models known today and requires Domoticz 2020.x at minima (not supported anymore)
