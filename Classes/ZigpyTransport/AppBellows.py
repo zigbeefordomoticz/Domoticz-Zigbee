@@ -5,6 +5,7 @@
 #
 
 import binascii
+import time
 import logging
 from typing import Any, Optional
 
