@@ -76,20 +76,10 @@ class ConfigureReporting:
         self.log.logging("ConfigureReporting", logType, message, nwkid, context)
 
     def processConfigureReporting(self, NwkId=None):
-        """
-        processConfigureReporting( self,  NWKID=None)
-        Called by heartbeat to configure Reporting of all connected object, based on their corresponding cluster
-
-        Synopsis:
-        - for each Device
-            if they support Cluster we want to configure Reporting
-
-        """
 
         if NwkId:
             configure_reporting_for_one_device( self, NwkId, False, )
             return
-
         for key in list(self.ListOfDevices.keys()):
             if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
                 self.logging(
@@ -98,10 +88,14 @@ class ConfigureReporting:
                     nwkid=NwkId,
                 )
                 return  # Will do at the next round
-
             configure_reporting_for_one_device(self, key, True)
 
-    # Decode 0x8120
+    def cfg_reporting_on_demand(self, nwkid):
+        # Remove Cfg Rpt tracking attributes
+        if "ConfigureReporting" in self.ListOfDevices[nwkid]:
+            del self.ListOfDevices[nwkid]["ConfigureReporting"]
+        configure_reporting_for_one_device(self, nwkid, False)
+
     def read_configure_reporting_response(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
         if self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16) and MsgAttributeId:
             set_status_datastruct(
@@ -161,7 +155,7 @@ class ConfigureReporting:
 
 
 def configure_reporting_for_one_device(self, key, batchMode):
-    self.logging("Debug", f"configure_reporting_for_one_device - key: {key} single: {batchMode}", nwkid=key)
+    self.logging("Debug", f"configure_reporting_for_one_device - key: {key} batchMode: {batchMode}", nwkid=key)
     # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
     if key == "0000":
         return
@@ -732,8 +726,3 @@ def composite_value(data_type):
     )
 
 
-def cfg_reporting_on_demand(self, nwkid):
-
-    # Remove Cfg Rpt tracking attributes
-    if "ConfigureReporting" in self.ListOfDevices[nwkid]:
-        del self.ListOfDevices[nwkid]["ConfigureReporting"]

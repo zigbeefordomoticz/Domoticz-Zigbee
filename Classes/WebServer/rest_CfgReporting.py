@@ -14,9 +14,8 @@ def rest_cfgrpt_ondemand(self, verb, data, parameters):
     # Trigger a Cfg Reporting on a specific Device
 
     _response = prepResponseMessage(self, setupHeadersResponse())
-    if self.configureReporting is None and verb != "GET" and len(parameters) != 1:
+    if self.configureReporting is None or verb != "GET" or len(parameters) != 1:
         self.logging("Debug", f"rest_cfgrpt_ondemand incorrect request {verb} {data} {parameters}")
-
         return _response
 
     if parameters[0] not in self.ListOfDevices:
