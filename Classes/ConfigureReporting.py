@@ -75,6 +75,8 @@ class ConfigureReporting:
     def logging(self, logType, message, nwkid=None, context=None):
         self.log.logging("ConfigureReporting", logType, message, nwkid, context)
 
+    # Commands
+    
     def processConfigureReporting(self, NwkId=None):
 
         if NwkId:
@@ -96,6 +98,123 @@ class ConfigureReporting:
             del self.ListOfDevices[nwkid]["ConfigureReporting"]
         configure_reporting_for_one_device(self, nwkid, False)
 
+    def prepare_and_send_configure_reporting(
+        self, key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure
+    ):
+
+        # Create the list of Attribute reporting configuration for a specific cluster
+        # Finally send the command
+        self.logging("Debug", f"------ prepare_and_send_configure_reporting - key: {key} ep: {Ep} cluster: {cluster} Cfg: {cluster_configuration}", nwkid=key)
+
+        maxAttributesPerRequest = MAX_ATTR_PER_REQ
+        if self.pluginconf.pluginConf["breakConfigureReporting"]:
+            maxAttributesPerRequest = 1
+
+        attribute_reporting_configuration = []
+        for attr in ListOfAttributesToConfigure:
+            attrType = cluster_configuration[attr]["DataType"]
+            minInter = cluster_configuration[attr]["MinInterval"]
+            maxInter = cluster_configuration[attr]["MaxInterval"]
+            timeOut = cluster_configuration[attr]["TimeOut"]
+            chgFlag = cluster_configuration[attr]["Change"]
+
+            if analog_value(int(attrType, 16)):
+                # Analog values: For attributes with 'analog' data type (see 2.6.2), the "rptChg" has the same data type as the attribute. The sign (if any) of the reportable change field is ignored.
+                attribute_reporting_record = {
+                    "Attribute": attr,
+                    "DataType": attrType,
+                    "minInter": minInter,
+                    "maxInter": maxInter,
+                    "rptChg": chgFlag,
+                    "timeOut": timeOut,
+                }
+            elif discrete_value(int(attrType, 16)):
+                # Discrete value: For attributes of 'discrete' data type (see 2.6.2), "rptChg" field is omitted.
+                attribute_reporting_record = {
+                    "Attribute": attr,
+                    "DataType": attrType,
+                    "minInter": minInter,
+                    "maxInter": maxInter,
+                    "timeOut": timeOut,
+                }
+            elif composite_value(int(attrType, 16)):
+                # Composite value: assumed "rptChg" is omitted
+                attribute_reporting_record = {
+                    "Attribute": attr,
+                    "DataType": attrType,
+                    "minInter": minInter,
+                    "maxInter": maxInter,
+                    "timeOut": timeOut,
+                }
+            else:
+                self.logging(
+                    "Error",
+                    f"--------> prepare_and_send_configure_reporting - Unexpected Data Type: Cluster: {cluster} Attribut: {attr} DataType: {attrType}",
+                )
+                continue
+
+            attribute_reporting_configuration.append(attribute_reporting_record)
+
+            if len(attribute_reporting_configuration) == maxAttributesPerRequest:
+                self.send_configure_reporting_attributes_set(
+                    key,
+                    ZIGATE_EP,
+                    Ep,
+                    cluster,
+                    direction,
+                    manufacturer_spec,
+                    manufacturer,
+                    attribute_reporting_configuration,
+                )
+                # Reset the Lenght to 0
+                attribute_reporting_configuration = []
+
+        # Send remaining records
+        if attribute_reporting_configuration:
+            self.send_configure_reporting_attributes_set(
+                key,
+                ZIGATE_EP,
+                Ep,
+                cluster,
+                direction,
+                manufacturer_spec,
+                manufacturer,
+                attribute_reporting_configuration,
+            )
+
+    def send_configure_reporting_attributes_set(
+        self,
+        key,
+        ZIGATE_EP,
+        Ep,
+        cluster,
+        direction,
+        manufacturer_spec,
+        manufacturer,
+        attribute_reporting_configuration,
+    ):
+        self.logging(
+            "Debug",
+            f"----------> send_configure_reporting_attributes_set Reporting {key}/{Ep} on cluster {cluster} Len: {len(attribute_reporting_configuration)} Attribute List: {str(attribute_reporting_configuration)}",
+            nwkid=key,
+        )
+
+        i_sqn = zcl_configure_reporting_requestv2(
+            self,
+            key,
+            ZIGATE_EP,
+            Ep,
+            cluster,
+            direction,
+            manufacturer_spec,
+            manufacturer,
+            attribute_reporting_configuration,
+            is_ack_tobe_disabled(self, key),
+        )
+        for x in attribute_reporting_configuration:
+            set_isqn_datastruct(self, "ConfigureReporting", key, Ep, cluster, x["Attribute"], i_sqn)
+
+    # Receiving messages
     def read_configure_reporting_response(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
         if self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16) and MsgAttributeId:
             set_status_datastruct(
@@ -153,6 +272,30 @@ class ConfigureReporting:
                     MsgSrcAddr,
                 )
 
+    def read_report_configure_response(self, MsgData, MsgLQI):  # Read Configure Report response
+        MsgSQN = MsgData[:2]
+        MsgNwkId = MsgData[2:6]
+        MsgEp = MsgData[6:8]
+        MsgClusterId = MsgData[8:12]
+        MsgStatus = MsgData[12:14]
+
+        if MsgStatus != "00":
+
+            return
+
+        MsgAttributeDataType = MsgData[14:16]
+        MsgAttribute = MsgData[16:20]
+        MsgMaximumReportingInterval = MsgData[20:24]
+        MsgMinimumReportingInterval = MsgData[24:28]
+
+        self.logging(
+            "Log",
+            f"Read Configure Reporting response - NwkId: {MsgNwkId} Ep: {MsgEp} Cluster: {MsgClusterId} Attribute: {MsgAttribute} DataType: {MsgAttributeDataType} Max: {MsgMaximumReportingInterval} Min: {MsgMinimumReportingInterval}",
+            MsgNwkId,
+        )
+
+
+####
 
 def configure_reporting_for_one_device(self, key, batchMode):
     self.logging("Debug", f"configure_reporting_for_one_device - key: {key} batchMode: {batchMode}", nwkid=key)
@@ -297,8 +440,7 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, cluster_configur
         if manufacturer_code:
             # Send what we have
             if ListOfAttributesToConfigure:
-                prepare_and_send_configure_reporting(
-                    self,
+                self.prepare_and_send_configure_reporting(
                     key,
                     Ep,
                     cluster_configuration,
@@ -316,8 +458,7 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, cluster_configur
             manufacturer_spec = "01"
 
             ListOfAttributesToConfigure.append(attr)
-            prepare_and_send_configure_reporting(
-                self,
+            self.prepare_and_send_configure_reporting(
                 key,
                 Ep,
                 cluster_configuration,
@@ -339,8 +480,7 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, cluster_configur
         ListOfAttributesToConfigure.append(attr)
         self.logging("Debug", f"------> configure_reporting_for_one_cluster  {key}/{Ep} Cluster {cluster} Adding attr: {attr} ", nwkid=key)
 
-        prepare_and_send_configure_reporting(
-            self,
+        self.prepare_and_send_configure_reporting(
             key,
             Ep,
             cluster_configuration,
@@ -350,126 +490,6 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, cluster_configur
             manufacturer,
             ListOfAttributesToConfigure,
         )
-
-
-def prepare_and_send_configure_reporting(
-    self, key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure
-):
-    
-    # Create the list of Attribute reporting configuration for a specific cluster
-    # Finally send the command
-    self.logging("Debug", f"------ prepare_and_send_configure_reporting - key: {key} ep: {Ep} cluster: {cluster} Cfg: {cluster_configuration}", nwkid=key)
-
-    maxAttributesPerRequest = MAX_ATTR_PER_REQ
-    if self.pluginconf.pluginConf["breakConfigureReporting"]:
-        maxAttributesPerRequest = 1
-
-    attribute_reporting_configuration = []
-    for attr in ListOfAttributesToConfigure:
-        attrType = cluster_configuration[attr]["DataType"]
-        minInter = cluster_configuration[attr]["MinInterval"]
-        maxInter = cluster_configuration[attr]["MaxInterval"]
-        timeOut = cluster_configuration[attr]["TimeOut"]
-        chgFlag = cluster_configuration[attr]["Change"]
-
-        if analog_value(int(attrType, 16)):
-            # Analog values: For attributes with 'analog' data type (see 2.6.2), the "rptChg" has the same data type as the attribute. The sign (if any) of the reportable change field is ignored.
-            attribute_reporting_record = {
-                "Attribute": attr,
-                "DataType": attrType,
-                "minInter": minInter,
-                "maxInter": maxInter,
-                "rptChg": chgFlag,
-                "timeOut": timeOut,
-            }
-        elif discrete_value(int(attrType, 16)):
-            # Discrete value: For attributes of 'discrete' data type (see 2.6.2), "rptChg" field is omitted.
-            attribute_reporting_record = {
-                "Attribute": attr,
-                "DataType": attrType,
-                "minInter": minInter,
-                "maxInter": maxInter,
-                "timeOut": timeOut,
-            }
-        elif composite_value(int(attrType, 16)):
-            # Composite value: assumed "rptChg" is omitted
-            attribute_reporting_record = {
-                "Attribute": attr,
-                "DataType": attrType,
-                "minInter": minInter,
-                "maxInter": maxInter,
-                "timeOut": timeOut,
-            }
-        else:
-            self.logging(
-                "Error",
-                f"--------> prepare_and_send_configure_reporting - Unexpected Data Type: Cluster: {cluster} Attribut: {attr} DataType: {attrType}",
-            )
-            continue
-
-        attribute_reporting_configuration.append(attribute_reporting_record)
-
-        if len(attribute_reporting_configuration) == maxAttributesPerRequest:
-            send_configure_reporting_attributes_set(
-                self,
-                key,
-                ZIGATE_EP,
-                Ep,
-                cluster,
-                direction,
-                manufacturer_spec,
-                manufacturer,
-                attribute_reporting_configuration,
-            )
-            # Reset the Lenght to 0
-            attribute_reporting_configuration = []
-
-    # Send remaining records
-    if attribute_reporting_configuration:
-        send_configure_reporting_attributes_set(
-            self,
-            key,
-            ZIGATE_EP,
-            Ep,
-            cluster,
-            direction,
-            manufacturer_spec,
-            manufacturer,
-            attribute_reporting_configuration,
-        )
-
-
-def send_configure_reporting_attributes_set(
-    self,
-    key,
-    ZIGATE_EP,
-    Ep,
-    cluster,
-    direction,
-    manufacturer_spec,
-    manufacturer,
-    attribute_reporting_configuration,
-):
-    self.logging(
-        "Debug",
-        f"----------> send_configure_reporting_attributes_set Reporting {key}/{Ep} on cluster {cluster} Len: {len(attribute_reporting_configuration)} Attribute List: {str(attribute_reporting_configuration)}",
-        nwkid=key,
-    )
-
-    i_sqn = zcl_configure_reporting_requestv2(
-        self,
-        key,
-        ZIGATE_EP,
-        Ep,
-        cluster,
-        direction,
-        manufacturer_spec,
-        manufacturer,
-        attribute_reporting_configuration,
-        is_ack_tobe_disabled(self, key),
-    )
-    for x in attribute_reporting_configuration:
-        set_isqn_datastruct(self, "ConfigureReporting", key, Ep, cluster, x["Attribute"], i_sqn)
 
 
 
@@ -493,30 +513,6 @@ def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list
         nb_attribute,
         str_attribute_list,
         is_ack_tobe_disabled(self, nwkid),
-    )
-
-
-# decode 0x8122
-def read_report_configure_response(self, MsgData, MsgLQI):  # Read Configure Report response
-    MsgSQN = MsgData[:2]
-    MsgNwkId = MsgData[2:6]
-    MsgEp = MsgData[6:8]
-    MsgClusterId = MsgData[8:12]
-    MsgStatus = MsgData[12:14]
-
-    if MsgStatus != "00":
-
-        return
-
-    MsgAttributeDataType = MsgData[14:16]
-    MsgAttribute = MsgData[16:20]
-    MsgMaximumReportingInterval = MsgData[20:24]
-    MsgMinimumReportingInterval = MsgData[24:28]
-
-    self.logging(
-        "Log",
-        f"Read Configure Reporting response - NwkId: {MsgNwkId} Ep: {MsgEp} Cluster: {MsgClusterId} Attribute: {MsgAttribute} DataType: {MsgAttributeDataType} Max: {MsgMaximumReportingInterval} Min: {MsgMinimumReportingInterval}",
-        MsgNwkId,
     )
 
 
@@ -724,5 +720,3 @@ def composite_value(data_type):
         0x50,
         0x51,
     )
-
-
