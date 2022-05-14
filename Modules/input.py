@@ -119,6 +119,7 @@ def ZigateRead(self, Devices, Data):
         "8063": Decode8063,
         "8085": Decode8085,
         "8095": Decode8095,
+        "80a5": Decode80A5,
         "80a6": Decode80A6,
         "80a7": Decode80A7,
         "8100": Decode8100,
@@ -4349,6 +4350,32 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
             MsgSrcAddr,
         )
+
+
+def Decode80A5(self, Devices, MsgData, MsgLQI):
+    MsgSrcAddr = MsgData[10:14]
+    MsgPayload = MsgData[16 : len(MsgData)]
+    #Recall Scene
+    GroupID = MsgPayload[2:4] + MsgPayload[0:2] #endian conversion
+    SceneID = MsgPayload[4:6]
+    TransitionTime = 0        
+    if len(MsgPayload) == 10 and MsgPayload[6:10] != 'ffff':
+        TransitionTime = int(MsgPayload[8:10] + MsgPayload[6:8],16)/10
+
+    self.log.logging("Input", "Debug", "Recall Scene: Group ID: %s Scene ID: %s Transition Time: %ss" %(GroupID, SceneID, str(TransitionTime)), MsgSrcAddr)
+
+    if MsgSrcAddr not in self.ListOfDevices or "Model" not in self.ListOfDevices[MsgSrcAddr]:
+        return
+
+    _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
+
+    if _ModelName == 'Remote switch Wake up  Sleep':
+        if GroupID == 'fff4':
+            MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "00")
+            Domoticz.Status('Herrrre')
+        elif GroupID == 'fff5':
+            MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "01")    
+
 
 
 def Decode80A7(self, Devices, MsgData, MsgLQI):
