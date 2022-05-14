@@ -4369,7 +4369,7 @@ def Decode80A5(self, Devices, MsgData, MsgLQI):
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
 
-    if _ModelName == 'Remote switch Wake up  Sleep':
+    if _ModelName == 'Remote switch Wake up Sleep':
         if GroupID == 'fff4':
             MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "00")
             Domoticz.Status('Herrrre')
