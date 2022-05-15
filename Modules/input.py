@@ -4356,11 +4356,11 @@ def Decode80A5(self, Devices, MsgData, MsgLQI):
     MsgSrcAddr = MsgData[10:14]
     MsgPayload = MsgData[16 : len(MsgData)]
     #Recall Scene
-    GroupID = MsgPayload[2:4] + MsgPayload[0:2] #endian conversion
+    GroupID = MsgPayload[0:4]
     SceneID = MsgPayload[4:6]
-    TransitionTime = 0        
+    TransitionTime = 0    
     if len(MsgPayload) == 10 and MsgPayload[6:10] != 'ffff':
-        TransitionTime = int(MsgPayload[8:10] + MsgPayload[6:8],16)/10
+        TransitionTime = int(MsgPayload[6:10],16)/10
 
     self.log.logging("Input", "Debug", "Recall Scene: Group ID: %s Scene ID: %s Transition Time: %ss" %(GroupID, SceneID, str(TransitionTime)), MsgSrcAddr)
 
