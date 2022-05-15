@@ -467,7 +467,14 @@ def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId,
 
 def buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     if Command == "05": #Recall Scene
-        buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId + Command + Data
+        GroupID = decode_endian_data(Data[0:4], "09")
+        SceneID = Data[4:6]
+        TransitionTime = 'ffff'
+
+        if len(Data) == 10:
+            TransitionTime = decode_endian_data(Data[6:10],"21")
+
+        buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId + Command + GroupID + SceneID + TransitionTime
         return encapsulate_plugin_frame("80a5", buildPayload, frame[len(frame) - 4 : len(frame) - 2])        
 
 
