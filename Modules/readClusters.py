@@ -354,8 +354,9 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # decode the Attribute
         AttrModelName = decodeAttribute(self, MsgAttType, MsgClusterData[0:idx], handleErrors=True)  # In case there is an error while decoding then return ''
 
-        # Continue Cleanup and remove '/'
+        # Continue Cleanup and remove '/' and double spaces
         modelName = AttrModelName.replace("/", "")
+        modelName = AttrModelName.replace("  ", " ")
 
         manufacturer_name = ""
         if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]:

@@ -1,0 +1,52 @@
+{
+    "_comment": "Legrand Netatmo Scene Sleep Wake Up",
+    "_version": "0.1",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0001": "",
+            "0003": "",
+            "0005": "",
+            "000f": "",
+            "0020": "",
+            "0019": "",
+            "Type": "LegrandSleepWakeupSelector"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [
+        "0001",
+        "0003"
+    ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [
+            "0000",
+            "0001",
+            "0002",
+            "0003",
+            "0004",
+            "0005",
+            "0006",
+            "0007",
+            "000a",
+            "4000",
+            "f000"
+        ],
+        "0001": [
+            "0020"
+        ],
+        "0005": [],
+        "000f": [
+            "0051"
+        ],
+        "fc01": [
+            "0000",
+            "0001"
+        ],
+	"0019": []
+    },
+    "BatteryDevice": 1,
+    "Param": {},
+    "GroupMembership": []
+}

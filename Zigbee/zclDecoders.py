@@ -54,6 +54,9 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
     if ClusterId == "0004":
         return buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
 
+    if ClusterId == "0005" and Command == "05": #Only Recall Scene supported
+        return buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
+
     if ClusterId == "0006":
         # Remote report
         return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint,TargetEp, ClusterId, ManufacturerCode, Command, Data)
@@ -460,10 +463,22 @@ def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId,
     return encapsulate_plugin_frame("8063", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
+# Cluster 0x0005 - Scenes
+
+def buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+    if Command == "05": #Recall Scene
+        GroupID = decode_endian_data(Data[0:4], "09")
+        SceneID = Data[4:6]
+        TransitionTime = 'ffff'
+
+        if len(Data) == 10:
+            TransitionTime = decode_endian_data(Data[6:10],"21")
+
+        buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId + Command + GroupID + SceneID + TransitionTime
+        return encapsulate_plugin_frame("80a5", buildPayload, frame[len(frame) - 4 : len(frame) - 2])        
 
 
 # Cluster 0x0006
-
 
 def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
     # sourcery skip: assign-if-exp
