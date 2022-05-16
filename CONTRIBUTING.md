@@ -1,7 +1,7 @@
 ## Contributing
-Thank you for considering contributing to Zigate plugin. It is people like you that make the Domoticz Zigate plugin such a great and powerful tool.
+Thank you for considering contributing to Zigbee for Domoticz plugin. It is people like you that make it such a great and powerful tool.
 
-You can contirbute on different matters :
+You can contribute on different matters :
 
 * Testing purpose 
 Contributors will help in the testing of the beta and pre-release.
@@ -11,8 +11,8 @@ You don't need to have specific known-how or knowledge, you'll have to run and t
 Contributors will help in developping/contributing to the plugin documentation, in order to improve the end user experience
 
 * User Interface
-The current stage of the plugin, doesn't provide any User Interface, nor Admin Interface.
-We feel that is an importat area, which will enhanced drastically the User Experience.
+
+We are looking for help on improving the User Interface. We have already a nice look and feel of our plugin Web interface, but there is room for further improvement and many on CSS side.
 
 Technology to be used:
 - html 
@@ -20,7 +20,6 @@ Technology to be used:
 - jquery
 - css
 
-You want to develop web pages in order to Administrate, Interact with the plugin data, let us known.
 
 * Plugin core
 The plugin is written in Python3. The integration with Domoticz is done over the 'Python Plugin Framework' provided by domoticz.
