@@ -3574,9 +3574,9 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     # 5a 02 0500 02 0ffd 0010 00 ff 0001
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
-    if self.zigbee_communitation == "zigpy":
-        # For instance needed by Frient/Develco Motion detector, which request a default response to disable the Alarm
-        zcl_IAS_default_response( self, MsgSrcAddr, ZIGATE_EP, MsgEp, "00", MsgSQN)
+    #if self.zigbee_communitation == "zigpy":
+    #    # For instance needed by Frient/Develco Motion detector, which request a default response to disable the Alarm
+    #    zcl_IAS_default_response( self, MsgSrcAddr, ZIGATE_EP, MsgEp, "00", MsgSQN)
 
     
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
