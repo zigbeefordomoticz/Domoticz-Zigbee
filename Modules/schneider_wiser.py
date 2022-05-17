@@ -1805,7 +1805,7 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
 
     if ClusterId is None:
         return
-    
+
     if AttributesConfig is None:
         # AttributesConfig is not defined, so lets get it from the Model
         if "Model" not in self.ListOfDevices[NwkId]:
@@ -1828,16 +1828,12 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
             "Attributes"
         ]
 
-    cluster_list = {
-        ClusterId: { "Attributes": AttributesConfig}
-    }
-    
     ListOfAttributesToConfigure = AttributesConfig.keys()
     self.log.logging( "Schneider", "Debug", "schneider_UpdateConfigureReporting - ClusterId: %s ClusterList: %s ListOfAttribute: %s" %(
-        ClusterId, str(cluster_list), str(ListOfAttributesToConfigure)))
+        ClusterId, str(AttributesConfig), str(ListOfAttributesToConfigure)))
     if self.configureReporting:
         self.configureReporting.prepare_and_send_configure_reporting(
-            NwkId, Ep, cluster_list, ClusterId, "00", "00", "0000", ListOfAttributesToConfigure)
+            NwkId, Ep, AttributesConfig, ClusterId, "00", "00", "0000", ListOfAttributesToConfigure)
     
 
 

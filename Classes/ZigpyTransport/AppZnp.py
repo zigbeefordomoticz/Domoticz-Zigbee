@@ -301,11 +301,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         try:
             dev = self.get_device(ieee)
-            logging.debug("handle_join waiting 1s for zigbee initialisation")
+            #logging.debug("handle_join waiting 1s for zigbee initialisation")
             time.sleep(1.0)
             LOGGER.debug("Device 0x%04x (%s) joined the network", nwk, ieee)
         except KeyError:
-            logging.debug("handle_join waiting 1s for zigbee initialisation")
+            #logging.debug("handle_join waiting 1s for zigbee initialisation")
             time.sleep(1.0)
             dev = self.add_device(ieee, nwk)
             LOGGER.debug("New device 0x%04x (%s) joined the network", nwk, ieee)
@@ -335,6 +335,12 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
     ) -> None:
+        if sender is None or profile is None or cluster is None:
+            self.log.logging("TransportZigpy", "Error", "handle_message sender: %s profile: %s cluster: %s sep: %s dep: %s message: %s" %(
+                str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
+            # drop the paquet 
+            return
+
         if sender.nwk == 0x0000:
             self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))

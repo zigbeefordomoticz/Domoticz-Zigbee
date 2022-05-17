@@ -1399,6 +1399,8 @@ def zigateInit_Phase3(self):
                 self.IEEE2NWK,
                 self.ControllerIEEE
             )
+        if self.configureReporting:
+            self.webserver.update_configureReporting(self.configureReporting )
 
     # Enable Group Management
     if self.groupmgt is None and self.pluginconf.pluginConf["enablegroupmanagement"]:
