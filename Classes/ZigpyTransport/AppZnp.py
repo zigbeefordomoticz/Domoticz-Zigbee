@@ -89,7 +89,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
 
     async def _startup(self, auto_form=False, force_form=False, read_only=False):
-        assert self._znp is None
+        assert self._znp is None  # nosec
 
         znp = ZNP(self.config)
         await znp.connect()
@@ -125,7 +125,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         elif not is_configured:
             if not auto_form:
                 raise RuntimeError("Cannot start application, network is not formed")
-            elif read_only:
+            if read_only:
                 raise RuntimeError(
                     "Cannot start application, network is not formed and read-only"
                 )
