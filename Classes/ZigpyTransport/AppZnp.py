@@ -161,9 +161,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
     ) -> None:
-        if profile is None or cluster is None:
+        if sender is None or profile is None or cluster is None:
             self.log.logging("TransportZigpy", "Error", "handle_message sender: %s profile: %s cluster: %s sep: %s dep: %s message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
+            # drop the paquet 
             return
 
         if sender.nwk == 0x0000:

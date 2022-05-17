@@ -160,6 +160,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         message: bytes,
         dst_addressing: Addressing,
     ) -> None:
+        if sender is None or profile is None or cluster is None:
+            # drop the paquet 
+            return
+
         if sender.nwk == 0x0000:
             self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))

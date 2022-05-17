@@ -316,7 +316,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     updLQI(self, MsgSrcAddr, MsgLQI)
     timeStamped(self, MsgSrcAddr, 0x0100)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-
+    
     if MsgSrcAddr not in self.ListOfDevices:
         return
 
