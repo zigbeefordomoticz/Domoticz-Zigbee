@@ -21,8 +21,8 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device, timedOutDevice
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster)
-from Modules.tools import DeviceExist  # get_isqn_datastruct,
-from Modules.tools import (checkAndStoreAttributeValue, checkAttribute,
+from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
+                           checkAttribute, get_deviceconf_parameter_value,
                            getEPforClusterType, is_hex, set_status_datastruct,
                            set_timestamp_datastruct, voltage2batteryP)
 from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
@@ -31,10 +31,12 @@ from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_SMARTAIR_MANUFACTURER, TUYA_SWITCH_MANUFACTURER,
                           TUYA_THERMOSTAT_MANUFACTURER, TUYA_TS0601_MODEL_NAME,
                           TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
-                          TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER, TUYA_eTRV4_MANUFACTURER)
+                          TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER,
+                          TUYA_eTRV4_MANUFACTURER)
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
+from Modules.batterieManagement import UpdateBatteryAttribute
 
 # from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
 
@@ -352,8 +354,9 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # decode the Attribute
         AttrModelName = decodeAttribute(self, MsgAttType, MsgClusterData[0:idx], handleErrors=True)  # In case there is an error while decoding then return ''
 
-        # Continue Cleanup and remove '/'
+        # Continue Cleanup and remove '/' and double spaces
         modelName = AttrModelName.replace("/", "")
+        modelName = AttrModelName.replace("  ", " ")
 
         manufacturer_name = ""
         if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]:
@@ -975,17 +978,11 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "0020":  # Battery Voltage
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         self.log.logging("Cluster", "Debug", "readCluster 0001 - %s Battery: %s V" % (MsgSrcAddr, value), MsgSrcAddr)
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in (
-            "MOSZB-140",
-            "HMSZB-110",
-            "EH-ZB-BMS",
-            "DWS312-E",
-            "CDWS312",
-            "CTHS317ET",
-            "CMS323",
-            "PIR323-A",
-        ):
-            value = round(value / 10, 1)
+ 
+        if "Model" in self.ListOfDevices[MsgSrcAddr]:
+            VoltageConverter = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "VoltageConverter")
+            if VoltageConverter:
+                value = round( value / VoltageConverter, 1)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
 
     elif MsgAttrID == "0021":  # Battery %
@@ -994,6 +991,7 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "RC-EM",
         ):
             return
+        
         if value == 0xFF:
             # Invalid measure
             self.log.logging(
@@ -1042,190 +1040,6 @@ def Cluster0001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp)
     # End of Cluster0001
-
-
-def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
-
-    XIAOMI_BATTERY_DEVICES = (
-        "lumi.remote.b28ac1",
-        "lumi.remote.b286opcn01",
-        "lumi.remote.b486opcn01",
-        "lumi.remote.b686opcn01",
-        "lumi.remote.b286opcn01-bulb",
-        "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b686opcn01-bulb",
-        "lumi.sen_ill.mgl01",
-    )
-
-    BATTERY_200PERCENT = (
-        "CTHS317ET",
-        "CDWS312",
-        "CMS323",
-        "PIR323-A",
-        "PIR323",
-        "DWS312-E",
-        "DWS312",
-        "TS0207-waterleak",
-        "FYRTUR block-out roller blind",
-        "KADRILJ roller blind",
-        "TRADFRI openclose remote",
-        "Danalock V3",
-        "V3-BTZB",
-        "SML001",
-        "RWL021",
-        "SPZB0001",
-        "WarningDevice",
-        "SmokeSensor-N",
-        "SmokeSensor-EM",
-        "SMOK_V16",
-        "RH3001",
-        "TS0201",
-        "TS0201-_TZ3000_qaaysllp",
-        "COSensor-N",
-        "COSensor-EF-3.0",
-        "COSensor-EM",
-        "TS0043",
-        "TS0044",
-        "TS004F",
-        "TS004F-_TZ3000_xabckq1v",
-        "TH01",
-        "66666",
-        "DS01",
-        "DSO1",
-        "WB01",
-        "WB-01",
-        "TS0041",
-        "TS0202",
-        "TS0202-_TZ3210_jijr1sss",
-        "TS0201-_TZ3000_mxzo5rhf"
-    )
-
-    BATTERY_3VOLTS = (
-        "lumi.sen_ill.mgl01",
-        "3AFE130104020015",
-        "3AFE140103020000",
-        "3AFE14010402000D",
-        "3AFE170100510001",
-    ) + LEGRAND_REMOTES
-
-    BATTERY_15_VOLTS = ()
-    BATTERY_30_VOLTS = (
-        "MOSZB-140",
-        "HMSZB-110",
-        "3AFE130104020015",
-        "3AFE140103020000",
-        "3AFE14010402000D",
-        "3AFE170100510001",
-        "SmokeSensor-EM",
-        "COSensor-EM",
-        "TS0201-_TZ3000_mxzo5rhf"
-    ) + LEGRAND_REMOTES
-    BATTERY_45_VOLTS = ("EH-ZB-RTS",)
-
-    BATTERY_BASED_DEVICES = BATTERY_200PERCENT + BATTERY_3VOLTS + BATTERY_15_VOLTS + BATTERY_30_VOLTS + BATTERY_45_VOLTS + XIAOMI_BATTERY_DEVICES
-
-    if self.ListOfDevices[MsgSrcAddr]["PowerSource"] == "Main" or self.ListOfDevices[MsgSrcAddr]["MacCapa"] in (
-        "84",
-        "8e",
-    ):
-        # There is hack to be done here, as they are some devices which are Battery based and are annouced as 0x84 !
-        if "Model" in self.ListOfDevices[MsgSrcAddr]:
-            # This should reflect the main voltage.
-            # Cleanup Battery in case.
-            if self.ListOfDevices[MsgSrcAddr]["Model"] not in BATTERY_BASED_DEVICES:
-                self.ListOfDevices[MsgSrcAddr]["Battery"] = {}
-                return
-
-    # Compute Battery %
-    mainVolt = battVolt = battRemainingVolt = battRemainPer = None
-
-    if "0000" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]:
-        mainVolt = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0000"])
-
-    if "0010" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]:
-        battVolt = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0010"])
-
-    if "0020" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"] and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0020"] != {}:
-        battRemainingVolt = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0020"])
-
-    if "0021" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"] and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0021"] != {}:
-        battRemainPer = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0021"])
-
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s " % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], mainVolt, battVolt, battRemainingVolt, battRemainPer),
-        MsgSrcAddr,
-    )
-
-    value = None
-    # Based on % ( 0x0021 )
-    if battRemainPer:
-        value = battRemainPer
-        if "Model" in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]["Model"] in BATTERY_200PERCENT:
-                value = round(battRemainPer / 2)
-        # Domoticz.Log("Value from battRemainingVolt : %s" %value)
-
-    # Based on Remaining Voltage
-    elif battRemainingVolt:
-        max_voltage = 30
-        min_voltage = 25
-
-        # NOT USED
-        # if "0001" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
-        #     if "0036" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]:
-        #         if (
-        #             self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0036"] != {}
-        #             and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0036"] != ""
-        #         ):
-        #             battery_voltage_threshold = round(
-        #                 int(str(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0036"])) / 10
-        #             )
-
-        if "Model" in self.ListOfDevices[MsgSrcAddr]:
-            # if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
-            #    max_voltage = 30
-            #    min_voltage = 25
-
-            if self.ListOfDevices[MsgSrcAddr]["Model"] == "EH-ZB-RTS":
-                max_voltage = 3 * 1.5 * 10  # 3 * 1.5v batteries in RTS - value are stored in volts * 10
-                min_voltage = 3 * 1 * 10
-
-            elif self.ListOfDevices[MsgSrcAddr]["Model"] == "EH-ZB-BMS":
-                max_voltage = 60
-                min_voltage = 30
-
-            elif self.ListOfDevices[MsgSrcAddr]["Model"] == "EH-ZB-VACT":
-                max_voltage = 2 * 1.5
-                min_voltage = 2 * 1
-
-        value = voltage2batteryP(battRemainingVolt, max_voltage, min_voltage)
-        # Domoticz.Log("Value from battRemainingVolt : %s with %s %s %s" %(value, battRemainingVolt, max_voltage, min_voltage))
-
-    # else:
-    #    Domoticz.Log("battRelainingVolt: %s %s, battReainPer: %s %s" %( battRemainingVolt, type(battRemainingVolt),
-    #    battRemainingVolt, type(battRemainingVolt) ))
-
-    if value:
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "readCluster 0001 - Device: %s Model: %s Updating battery %s to %s" % (
-                MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], self.ListOfDevices[MsgSrcAddr]["Battery"], value),
-            MsgSrcAddr,
-        )
-        self.ListOfDevices[MsgSrcAddr]["BatteryUpdateTime"] = int(time())
-        if value != self.ListOfDevices[MsgSrcAddr]["Battery"]:
-            self.ListOfDevices[MsgSrcAddr]["Battery"] = value
-            Update_Battery_Device(self, Devices, MsgSrcAddr, value)
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "readCluster 0001 - Device: %s Model: %s Updating battery to %s" % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]["Model"], value),
-                MsgSrcAddr,
-            )
-
 
 def Cluster0002(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # Device Temperature Configuration
@@ -2709,7 +2523,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # We do report if AC211 and AC in Cool mode
             if MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
                 if "001c" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-                    if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["001c"] == 0x03:
+                    if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["001c"] in (0x03, 0x01):
                         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_="0012")
 
     elif MsgAttrID == "0012":  # Heat Setpoint (Zinte16)
@@ -2725,7 +2539,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 # We do report if AC211 and AC in Heat mode
                 if MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
                     if "001c" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-                        if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["001c"] == 0x04:
+                        if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["001c"] in (0x04, 0x01):
                             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
 
             elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("EH-ZB-VACT", 'iTRV'):
@@ -2827,12 +2641,25 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-    elif MsgAttrID == "001c":
+    elif MsgAttrID == "001c":  # System Mode
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)     
+        #if (
+        #    value == 0x01  # Auto
+        #    and "Model" in self.ListOfDevices[MsgSrcAddr]
+        #    and self.ListOfDevices[MsgSrcAddr]["Model"] in ("AC211", "AC221", "CAC221")
+        #    and "Param" in self.ListOfDevices[ MsgSrcAddr ] 
+        #    and "CAC221ForceAuto2Off" in self.ListOfDevices[ MsgSrcAddr ]["Param"] 
+        #    and self.ListOfDevices[ MsgSrcAddr ]["Param"]["CAC221ForceAuto2Off"]
+        #):
+        #    self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s Forcing Mode to Off (CasaIA CAC221)" % (value), MsgSrcAddr)
+        #    value = 0x00
+        #    self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
+        #    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)  
+            
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID)
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-        # We shoudl also force Shutdown of FanControl and eventualy Wong
+        # We shoudl also force Shutdown of FanControl and eventualy Wing
         if value == 0x00 and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("AC211", "AC221", "CAC221"):
             # Shutdown the other widgets
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0202", "%02x" % 0x0)
@@ -3675,7 +3502,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 MsgSrcAddr,
             )
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["EnrolledStatus"] = int(MsgClusterData, 16)
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 5, MsgClusterData)
+
 
     elif MsgAttrID == "0001":  # ZoneType
         if int(MsgClusterData, 16) in ZONE_TYPE:
@@ -3695,10 +3522,8 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 "ReadCluster0500 - Device: %s - Unknown ZoneType: %s" % (MsgSrcAddr, MsgClusterData),
                 MsgSrcAddr,
             )
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 5, MsgClusterData)
 
     elif MsgAttrID == "0002":  # Zone Status
-        # self.iaszonemgt.receiveIASmessages( MsgSrcAddr, MsgSrcEp,  5, MsgClusterData)     #Not needed for enrollment procedure
         if MsgClusterData != "" and MsgAttType in ("19", "21"):
             alarm1 = int(MsgClusterData, 16) & 0b0000000000000001
             alarm2 = (int(MsgClusterData, 16) & 0b0000000000000010) >> 1
@@ -3770,7 +3595,6 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "0010":  # IAS CIE Address
         self.log.logging("Cluster", "Debug", "ReadCluster0500 - IAS CIE Address: %s" % MsgClusterData, MsgSrcAddr)
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 7, MsgClusterData)
 
     elif MsgAttrID == "0011":  # Zone ID
         self.log.logging("Cluster", "Debug", "ReadCluster0500 - ZoneID : %s" % MsgClusterData, MsgSrcAddr)
@@ -3807,6 +3631,30 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if "IAS WD" not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]["IAS WD"] = {}
         self.ListOfDevices[MsgSrcAddr]["IAS WD"]["MaxDuration"] = decodeAttribute(self, MsgAttType, MsgClusterData)
+
+    elif MsgAttrID == "f000":
+        # Looks like a reporting from the TS0216 / _TYZB01_8scntis1 - Heiman looks like Alarm
+        # 0x00: Off
+        # 0x01: Alarm
+        # 0x02: Strobe
+        # 0x03: Alarm + Strobe
+        RPT_ATTR_WIDGET = {
+            "00": "00",
+            "01": "20",
+            "02": "30",
+            "03": "10"
+        }
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - 0502 - %s/%s  %s %s %s %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            MsgSrcAddr,
+        )
+        if MsgClusterData not in RPT_ATTR_WIDGET:
+            return
+
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, RPT_ATTR_WIDGET[MsgClusterData ])
+        
 
     elif MsgAttrID == "fffd":
         self.log.logging(

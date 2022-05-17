@@ -60,6 +60,8 @@
 		]
 	},
 	"PollingEnabled": 1,
+	        "BatteryDevice": 1,
+	 "BatteryPercentageConverter": 2,
 	"Param": {
 		"TempPollingFreq": 300,
 		"HumiPollingFreq": 300,

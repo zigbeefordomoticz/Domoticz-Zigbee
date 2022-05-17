@@ -7,6 +7,7 @@
 import binascii
 import logging
 from typing import Any, Optional
+import time
 
 import zigpy.appdb
 import zigpy.config
@@ -85,8 +86,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 RspStatus=t.Status.SUCCESS,
             )
 
-
-
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
@@ -128,10 +127,14 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         try:
             dev = self.get_device(ieee)
-            LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
+            logging.debug("handle_join waiting 1s for zigbee initialisation")
+            time.sleep(1.0)
+            LOGGER.debug("Device 0x%04x (%s) joined the network", nwk, ieee)
         except KeyError:
+            logging.debug("handle_join waiting 1s for zigbee initialisation")
+            time.sleep(1.0)
             dev = self.add_device(ieee, nwk)
-            LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
+            LOGGER.debug("New device 0x%04x (%s) joined the network", nwk, ieee)
 
         if dev.nwk != nwk:
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
@@ -169,7 +172,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
             self.callBackFunction( build_plugin_8014_frame_content(self, str(sender), binascii.hexlify(message).decode("utf-8") ) )
             return
-        
+
         if cluster == 0x8034:
             # This has been handle via on_zdo_mgmt_leave_rsp()
             self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
@@ -196,7 +199,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
                     str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
 
-            
+
         if sender.lqi is None:
             sender.lqi = 0x00
 
@@ -209,7 +212,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
                 str(addr), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi),
         )
-        
+
         if addr:
             plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
             self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))

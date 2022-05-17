@@ -61,7 +61,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
     self.log.logging("Widget", "Debug", "------> ClusterType = " + str(ClusterType), NWKID)
 
     ClusterTypeList = RetreiveWidgetTypeList(self, Devices, NWKID)
-
+    self.log.logging("Widget", "Debug", "------> ClusterTypeList = " + str(ClusterTypeList), NWKID)
+    
     if len(ClusterTypeList) == 0:
         # We don't have any widgets associated to the NwkId
         return
@@ -79,16 +80,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             "----> processing WidgetEp: %s, WidgetId: %s, WidgetType: %s" % (WidgetEp, WidgetId, WidgetType),
             NWKID,
         )
-        if WidgetType not in WidgetByPassEpMatch:
+        if WidgetType not in WidgetByPassEpMatch and WidgetEp != Ep:
             # We need to make sure that we are on the right Endpoint
-            if WidgetEp != Ep:
-                self.log.logging(
-                    "Widget",
-                    "Debug",
-                    "------> skiping this WidgetEp as do not match Ep : %s %s" % (WidgetEp, Ep),
-                    NWKID,
-                )
-                continue
+            self.log.logging( "Widget", "Debug", "------> skiping this WidgetEp as do not match Ep : %s %s" % (WidgetEp, Ep), NWKID,)
+            continue
 
         DeviceUnit = 0
         for x in Devices:  # Found the Device Unit
@@ -96,8 +91,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 DeviceUnit = x
                 break
         if DeviceUnit == 0:
-            Domoticz.Error("Device %s not found !!!" % WidgetId)
-            return
+            self.log.logging( "Widget", "Error", "Device %s not found !!!" % WidgetId, NWKID)
+            continue
 
         Switchtype = Devices[DeviceUnit].SwitchType
         Subtype = Devices[DeviceUnit].SubType
@@ -116,7 +111,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         self.log.logging(
             "Widget",
             "Debug",
-            "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" % (ClusterType, WidgetEp, WidgetId, WidgetType, Attribute_),
+            "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" % (
+                ClusterType, WidgetEp, WidgetId, WidgetType, Attribute_),
             NWKID,
         )
 
@@ -399,6 +395,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if "ThermoMode" in ClusterType:  # Thermostat Mode
+            self.log.logging("Widget", "Debug", "ThermoMode %s WidgetType: %s Value: %s (%s) Attribute_: %s" % ( 
+                NWKID, WidgetType, value, type(value), Attribute_), NWKID)
 
             if WidgetType == "ThermoModeEHZBRTS" and Attribute_ == "e010":  # Thermostat Wiser
                 # value is str
@@ -545,11 +543,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-
-            elif WidgetType in ("ThermoMode", "ACMode") and Attribute_ == "001c":
+            elif WidgetType in ("ThermoMode", "ACMode",  ) and Attribute_ == "001c":
                 # value seems to come as int or str. To be fixed
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode %s type: %s" % (value, type(value)), NWKID)
-
                 if value in THERMOSTAT_MODE_2_LEVEL:
                     if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
                         UpdateDevice_v2(self, Devices, DeviceUnit, 0, "00", BatteryLevel, SignalLevel)
@@ -561,6 +557,25 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         UpdateDevice_v2(self, Devices, DeviceUnit, 3, "30", BatteryLevel, SignalLevel)
                     elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
                         UpdateDevice_v2(self, Devices, DeviceUnit, 4, "40", BatteryLevel, SignalLevel)
+                        
+            elif  WidgetType in ("CAC221ACMode",  ) and Attribute_ == "001c":
+                self.log.logging("Widget", "Debug", "------>  Thermostat CAC221ACMode %s type: %s" % (value, type(value)), NWKID)
+                if value in THERMOSTAT_MODE_2_LEVEL:
+                    if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 0, "00", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "10":  # Auto
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 1, "10", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "20":  # Cool
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 2, "20", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "30":  # Heat
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 3, "30", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "40":  # Dry
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 4, "40", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 5, "50", BatteryLevel, SignalLevel)
+    
+                
+                
 
         if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
@@ -950,7 +965,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 and WidgetEp in self.ListOfDevices[NWKID]["Ep"]
                 and "0201" in self.ListOfDevices[NWKID]["Ep"][WidgetEp]
                 and "001c" in self.ListOfDevices[NWKID]["Ep"][WidgetEp]["0201"]
-                and self.ListOfDevices[NWKID]["Ep"][WidgetEp]["0201"]["001c"] == 0x0
+                and self.ListOfDevices[NWKID]["Ep"][WidgetEp]["0201"]["001c"] == 0x00
             ):
                 # Thermo mode is Off, let's switch off Wing and Fan
                 self.log.logging("Widget", "Debug", "------> Switch off as System Mode is Off")

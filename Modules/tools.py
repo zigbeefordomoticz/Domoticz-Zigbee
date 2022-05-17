@@ -138,25 +138,20 @@ def getClusterListforEP(self, NWKID, Ep):
     return ClusterList
 
 
-def getEpForCluster(self, nwkid, ClusterId):
+def getEpForCluster(self, nwkid, ClusterId, strict=False):
     """
     Return the Ep or a list of Ep associated to the ClusterId
     If not found return Ep: 01
+    If strict is True, then None will return if there is no Cluster found
     """
 
-    EPout = [
-        tmpEp
-        for tmpEp in list(self.ListOfDevices[nwkid]["Ep"].keys())
-        if ClusterId in self.ListOfDevices[nwkid]["Ep"][tmpEp]
-    ]
-
-    if not EPout:
-        return EPout
-
-    if len(self.ListOfDevices[nwkid]["Ep"]) == 1:
-        return [self.ListOfDevices[nwkid]["Ep"].keys()]
-
-    return EPout
+    EPlist = []
+    for x in list(self.ListOfDevices[nwkid]["Ep"].keys() ):
+        if x in EPlist:
+            continue
+        if ClusterId in self.ListOfDevices[nwkid]["Ep"][x]:
+            EPlist.append( str(x) )
+    return EPlist
 
 
 def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
@@ -287,7 +282,8 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     if self.groupmgt:
         # We should check if this belongs to a group
         self.groupmgt.update_due_to_nwk_id_change(old_NwkId, new_NwkId)
-
+        
+    self.ListOfDevices[new_NwkId]["PreviousStatus"] = self.ListOfDevices[new_NwkId]["Status"]
     if self.ListOfDevices[new_NwkId]["Status"] in ("Left", "Leave"):
         Domoticz.Log(
             "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s"
@@ -511,6 +507,15 @@ def is_fake_ep( self, nwkid, ep):
         and ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["FakeEp"]
     )
 
+def is_bind_ep( self, nwkid, ep):
+
+    return (
+        "Model" not in self.ListOfDevices[nwkid]
+        or self.ListOfDevices[nwkid]["Model"] not in self.DeviceConf
+        or "bindEp" not in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]
+        or ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["bindEp"]
+    )
+    
 
 def getTypebyCluster(self, Cluster):
     clustersType = {
@@ -667,22 +672,22 @@ def rgb_to_hsl(rgb):
     b = float(b / 255)
     high = max(r, g, b)
     low = min(r, g, b)
-    h, s, l = ((high + low) / 2,) * 3
+    var_h, var_s, var_l = ((high + low) / 2,) * 3
 
     if high == low:
-        h = 0.0
-        s = 0.0
+        var_h = 0.0
+        var_s = 0.0
     else:
         d = high - low
-        s = d / (2 - high - low) if l > 0.5 else d / (high + low)
-        h = {
+        var_s = d / (2 - high - low) if var_l > 0.5 else d / (high + low)
+        var_h = {
             r: (g - b) / d + (6 if g < b else 0),
             g: (b - r) / d + 2,
             b: (r - g) / d + 4,
         }[high]
-        h /= 6
+        var_h /= 6
 
-    return h, s, l
+    return var_h, var_s, var_l
 
 
 def decodeMacCapa(inMacCapa):
@@ -966,9 +971,11 @@ def retreive_cmd_payload_from_8002(Payload):
     fcf = Payload[:2]
 
     GlobalCommand = is_golbalcommand(fcf)
+    zbee_zcl_ddr = disable_default_response(fcf)
+
     if GlobalCommand is None:
         Domoticz.Error("Strange payload: %s" % Payload)
-        return (None, None, None, None, None)
+        return (None, None, None, None, None, None)
 
     if is_manufspecific_8002_payload(fcf):
         ManufacturerCode = Payload[4:6] + Payload[2:4]
@@ -981,7 +988,7 @@ def retreive_cmd_payload_from_8002(Payload):
         Data = Payload[6:]
 
     # Domoticz.Log("retreive_cmd_payload_from_8002 ======> Payload: %s " %Data)
-    return (GlobalCommand, Sqn, ManufacturerCode, Command, Data)
+    return (zbee_zcl_ddr, GlobalCommand, Sqn, ManufacturerCode, Command, Data)
 
 def direction(fcf):
     # If direction = 1 Server to Client
@@ -990,6 +997,9 @@ def direction(fcf):
     if not is_hex(fcf) or len(fcf) != 2:
         return None
     return (int(fcf, 16) & 0x08) >> 3
+
+def disable_default_response(fcf):
+    return (int(fcf,16) & 0x10) >> 4
 
 def is_direction_to_client(fcf):
     return direction(fcf) == 0x1
@@ -1002,10 +1012,11 @@ def is_golbalcommand(fcf):
         return None
     return (int(fcf, 16) & 0b00000011) == 0
 
-
+def frame_type(fcf):
+    return (int(fcf, 16) & 0b00000011)
+    
 def is_manufspecific_8002_payload(fcf):
     return ((int(fcf, 16) & 0b00000100) >> 2) == 1
-
 
 def build_fcf(frame_type, manuf_spec, direction, disabled_default):
     fcf = 0b00000000 | int(frame_type, 16)
@@ -1423,3 +1434,11 @@ def how_many_devices(self):
             continue
 
     return routers, enddevices
+
+def get_deviceconf_parameter_value(self, model, attribute, return_default=None):
+    
+    if model not in self.DeviceConf:
+        return return_default
+    if attribute not in self.DeviceConf[ model ]:
+        return return_default
+    return self.DeviceConf[ model ][ attribute ]

@@ -1358,7 +1358,7 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
         srcNWKID,
     )
 
-    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(MsgPayload)
+    default_response, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(MsgPayload)
     self.log.logging("Schneider", "Debug", "         -- SQN: %s, CMD: %s, Data: %s" % (Sqn, Command, Data), srcNWKID)
 
     if ClusterID == "0201":  # Thermostat cluster
@@ -1463,7 +1463,7 @@ def wiserhome_ZCLVersion_response(self, Devices, srcNWKID, srcEp, Sqn):
 
 def wiser_read_attribute_request(self, NwkId, Ep, Sqn, ClusterId, Attribute):
 
-    if self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x031C:
+    if self.zigbee_communitation == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x031C:
         # We shouldn't reach here, as the firmware itself will reject and respond.
         wiser_unsupported_attribute(self, NwkId, Ep, Sqn, ClusterId, Attribute)
     else:
@@ -1835,8 +1835,9 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
     ListOfAttributesToConfigure = AttributesConfig.keys()
     self.log.logging( "Schneider", "Debug", "schneider_UpdateConfigureReporting - ClusterId: %s ClusterList: %s ListOfAttribute: %s" %(
         ClusterId, str(cluster_list), str(ListOfAttributesToConfigure)))
-    self.configureReporting.prepare_and_send_configure_reporting(
-        NwkId, Ep, cluster_list, ClusterId, "00", "00", "0000", ListOfAttributesToConfigure)
+    if self.configureReporting:
+        self.configureReporting.prepare_and_send_configure_reporting(
+            NwkId, Ep, cluster_list, ClusterId, "00", "00", "0000", ListOfAttributesToConfigure)
     
 
 

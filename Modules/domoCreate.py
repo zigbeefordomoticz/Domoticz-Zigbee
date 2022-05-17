@@ -373,17 +373,16 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t in ( "SwitchAlarm", ):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=0, Image=13)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch Alarm" % (t), NWKID)
-
                 
             if t in ("FanControl",):  # 6
                 Options = createSwitchSelector(self, 6, DeviceType=t, OffHidden=False, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options, Image=7)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl" % (t), NWKID)
 
-            if t in ("ACSwing", "TuyaSirenHumi", "TuyaSirenTemp"):  # 2
+            if t in ("ACSwing", "TuyaSirenHumi", "TuyaSirenTemp", "LegrandSleepWakeupSelector"):  # 2
                 Options = createSwitchSelector(self, 2, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACSwing" % (t), NWKID)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACSwing" % (t), NWKID)           
 
             # 3 Selectors, Style 0
             if t in ("Toggle", "ThermoMode_2"):
@@ -440,6 +439,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = createSwitchSelector(self, 5, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACMode" % (t), NWKID)
+            if t in ("CAC221ACMode",):
+                Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
+                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in CAC221ACMode" % (t), NWKID)
 
             # 6 Selectors, Style 1
             if t in (
@@ -461,7 +464,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" % (t), NWKID)
 
             # 6 Selectors, Style 1
-            if t in ("AlarmWD",):
+            if t in ("AlarmWD", ):
                 Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AlarmWD" % (t), NWKID)

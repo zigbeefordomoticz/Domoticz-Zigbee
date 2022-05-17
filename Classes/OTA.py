@@ -475,7 +475,7 @@ class OTAManagement(object):
         if fieldcontrol:
             hardwareversion = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[18:22], 16)))[0]
 
-        logging(self, "Log", "OTA Query Next Image request for %s/%s [%s] - %s %s %s %s" % (
+        logging(self, "Debug", "OTA Query Next Image request for %s/%s [%s] - %s %s %s %s" % (
             srcnwkid, srcep, Sqn, fieldcontrol, manufcode, imagetype, currentVersion ))
         
         if "OTAClient" not in self.ListOfDevices[srcnwkid]:
@@ -1302,7 +1302,7 @@ def query_next_image_response( self, nwkid, ep, sqn, status, manufcode="", image
     # Disable default response is 0x00 for all OTA request commands sent from client to server
     # Disable default response is 0x01 for all OTA response commands (sent from server to client) 
 
-    logging(self, "Log", "OTA Query Next Image response for %s/%s [%s] - %s" % (
+    logging(self, "Debug", "OTA Query Next Image response for %s/%s [%s] - %s" % (
         nwkid, ep, sqn, status ))
 
     command = '02'

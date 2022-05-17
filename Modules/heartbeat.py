@@ -128,7 +128,7 @@ def check_delay_binding( self, NwkId, model ):
     # Profalux is the first one, but could get others
     # At pairing we need to leave time for the remote to get binded to the VR
     # Once it is done, then we can overwrite the binding
-    
+
     if "DelayBindingAtPairing" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"] == "Completed":
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s DelayBindingAtPairing: %s" % (
             NwkId, self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"]), NwkId, )

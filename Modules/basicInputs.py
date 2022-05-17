@@ -40,21 +40,20 @@ def read_attribute_response(self, nwkid, ep, sqn, cluster, status, data_type, at
     #    %( nwkid, ep, sqn, cluster, status, data_type, attribute, value))
 
     cmd = "01"  # Attribute Response
-    if manuf_code == "0000":
-        manuf_specific = "00"
 
     attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(attribute, 16)))[0]
-
+    
     if manuf_code == "0000":
         cluster_frame = "18"  # Profile-wide, Server to Client, Disable default Response
         payload = cluster_frame + sqn + cmd
     else:
-        cluster_frame = "28"  # Manufacturer Specific , Server to Client, Disable default Response
+        manuf_code = "%04x" % struct.unpack("H", struct.pack(">H", int(manuf_code, 16)))[0]
+        cluster_frame = "1C"  # Profile-wide, Manufacturer Specific , Server to Client, Disable default Response
         payload = cluster_frame + manuf_code + sqn + cmd
 
     payload += attribute + status
     if status == "00":
         payload += data_type + encode_endian_data(value, data_type)
 
-    # self.log.logging( None, 'Log', "read_attribute_response - %s/%s Cluster: %s Payload: %s" %(nwkid, ep, cluster, payload))
+    self.log.logging( "Input", 'Debug', "read_attribute_response - %s/%s Cluster: %s Payload: %s" %(nwkid, ep, cluster, payload))
     raw_APS_request(self, nwkid, ep, cluster, "0104", payload, zigate_ep=ZIGATE_EP)

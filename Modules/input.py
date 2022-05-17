@@ -63,8 +63,9 @@ from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
 from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import FIRMWARE_BRANCH
-from Zigbee.zclCommands import zcl_ias_zone_enroll_response
 from Modules.zigbeeVersionTable import set_display_firmware_version
+from Zigbee.zclCommands import zcl_IAS_default_response
+from Zigbee.zclRawCommands import zcl_raw_default_response
 
 
 def ZigateRead(self, Devices, Data):
@@ -118,6 +119,7 @@ def ZigateRead(self, Devices, Data):
         "8063": Decode8063,
         "8085": Decode8085,
         "8095": Decode8095,
+        "80a5": Decode80A5,
         "80a6": Decode80A6,
         "80a7": Decode80A7,
         "8100": Decode8100,
@@ -260,7 +262,7 @@ def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
 
     
 def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
-    self.log.logging("Input", "Log", "Decode0042 - Node_Desc_req: %s" % MsgData)
+    self.log.logging("Input", "Debug", "Decode0042 - Node_Desc_req: %s" % MsgData)
     #  sqn + SrcNwkId + SrcEndPoint + nwkid
     #  01 / 0012/ 4b0021600542000000
     sqn = MsgData[:2]
@@ -301,7 +303,7 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
         
         payload = sqn + status + nwkid + manuf_code16 + max_in_size16 + max_out_size16 + server_mask16 + descriptor_capability8
         payload += mac_capa8 + max_buf_size8 + bitfield16
-    self.log.logging("Input", "Log", "Decode0042 - response payload: %s" %payload)
+    self.log.logging("Input", "Debug", "Decode0042 - response payload: %s" %payload)
     raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
     
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
@@ -394,7 +396,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
             self.log.logging(
                 "Schneider",
                 "Debug",
-                "Decode0100 - Mode: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+                "Decode0100 - Sqn: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
                 % (
                     MsgSqn,
                     MsgSrcAddr,
@@ -407,10 +409,34 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
                     nbAttribute,
                 ),
             )
-        if MsgClusterId == "0000" and Attribute == "f000" and manuf_name in ("1021", "Legrand" ):
+
+        elif MsgClusterId == "0000" and Attribute == "f000" and manuf_name in ("1021", "Legrand" ):
+            self.log.logging(
+                "Legrand",
+                "Debug",
+                "Decode0100 - Sqn: %s NwkId: %s SrcEP: %s DstEp: %s ClusterId: %s Direction: %s ManufSpec: %s ManufCode: %s nbAttribute: %s"
+                % (
+                    MsgSqn,
+                    MsgSrcAddr,
+                    MsgSrcEp,
+                    MsgDstEp,
+                    MsgClusterId,
+                    MsgDirection,
+                    MsgManufSpec,
+                    MsgManufCode,
+                    nbAttribute,
+                ),
+            )
+
             if self.pluginconf.pluginConf["LegrandCompatibilityMode"]:
-                operation_time = time() - self.statistics._start
-                read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "23", Attribute, operation_time, manuf_code=MsgManufCode)
+                operation_time = int(time.time() - self.statistics._start)
+                self.log.logging( "Legrand", "Debug", "------> Operation time: %s" %operation_time,MsgSrcAddr)
+                read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "23", Attribute, "%08x" %operation_time, manuf_code=MsgManufCode)
+
+        elif MsgClusterId == "0000" and Attribute == "0000":
+            # ZCL Version - Version 0x03
+            read_attribute_response(self, MsgSrcAddr, MsgSrcEp, MsgSqn, MsgClusterId, "00", "20", Attribute, "%02x" %0x03, manuf_code=MsgManufCode)
+
         else:
             self.log.logging(
                 "Input",
@@ -461,7 +487,7 @@ def Decode0302(self, Devices, MsgData, MsgLQI):  # PDM Load
     rejoin_legrand_reset(self)
 
 
-def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrolment Request Response
+def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrollment Request Response
 
     self.log.logging("Input", "Log", "Decode0400 - message: %s" % MsgData)
     # 02 0000 01 01 00 00
@@ -485,7 +511,7 @@ def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrolment Request Response
     )
 
     if self.iaszonemgt:
-        self.iaszonemgt.receiveIASenrollmentRequestResponse(SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId)
+        self.iaszonemgt.IAS_zone_enroll_request_response(SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId)
 
 
 # Responses
@@ -745,6 +771,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         return
 
     (
+        default_response,
         GlobalCommand,
         Sqn,
         ManufacturerCode,
@@ -1011,7 +1038,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         return
 
     # At that stage IEEE is set to 0x0000 which is correct for the Coordinator
-    if extaddr not in self.IEEE2NWK and self.IEEE2NWK != addr:
+    if extaddr not in self.IEEE2NWK or self.IEEE2NWK[ extaddr ] != addr or addr not in self.ListOfDevices or extaddr != self.ListOfDevices[ addr ]['IEEE']:
         initLODZigate(self, addr, extaddr)
 
     if self.currentChannel != int(Channel, 16):
@@ -1947,7 +1974,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     if status != "00":
         self.log.logging(
             "Input",
-            "Log",
+            "Debug",
             "Decode8042 - Reception of Node Descriptor for %s with status %s" %(addr, status))
         return
             
@@ -2063,7 +2090,15 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
         "Debug",
         "Decode8043 - Received SQN: %s Addr: %s Len: %s Status: %s Data: %s" % (MsgDataSQN, MsgDataShAddr, MsgDataLenght, MsgDataStatus, MsgData),
     )
-
+    
+    if MsgDataShAddr not in self.ListOfDevices:
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8043 receives a message from a non existing device %s" % MsgDataShAddr,
+        )
+        return
+    
     if "SQN" in self.ListOfDevices[MsgDataShAddr] and MsgDataSQN == self.ListOfDevices[MsgDataShAddr]["SQN"]:
         return
     
@@ -2809,6 +2844,11 @@ def Decode8100(self, Devices, MsgData, MsgLQI):
     MsgClusterId = MsgData[8:12]
 
     self.statistics._clusterOK += 1
+    
+    if MsgClusterId == "0500":
+        self.log.logging("Input", "Debug", "Read Attributed Request Response on Cluster 0x0500 for %s" % (MsgSrcAddr))
+        self.iaszonemgt.IAS_CIE_service_discovery_response( MsgSrcAddr, MsgSrcEp, MsgData)
+        
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, "8100")
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
@@ -3273,7 +3313,7 @@ def Decode8110_raw(
             )
 
     if MsgClusterId == "0500":
-        self.iaszonemgt.receiveIASmessages(MsgSrcAddr, MsgSrcEp, 3, MsgAttrStatus)
+        self.iaszonemgt.IAS_CIE_write_response( MsgSrcAddr, MsgSrcEp, MsgAttrStatus)
 
 
 def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
@@ -3490,7 +3530,9 @@ def Decode8400(self, Devices, MsgData, MsgLQI):
         % (nwkid, ep, sqn, zonetype, manufacturercode),
     )
 
-    zcl_ias_zone_enroll_response(self, nwkid, ZIGATE_EP, ep, "00", "00", sqn=sqn, ackIsDisabled=False)
+    self.iaszonemgt.IAS_zone_enroll_request(nwkid, ep, zonetype, sqn)
+    
+
         
         
 def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change notification
@@ -3532,6 +3574,11 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     # 5a 02 0500 02 0ffd 0010 00 ff 0001
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
+    if self.zigbee_communitation == "zigpy":
+        # For instance needed by Frient/Develco Motion detector, which request a default response to disable the Alarm
+        zcl_IAS_default_response( self, MsgSrcAddr, ZIGATE_EP, MsgEp, "00", MsgSQN)
+
+    
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
     if MsgSrcAddr not in self.ListOfDevices:
@@ -3634,13 +3681,12 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     value = MsgZoneStatus[2:4]
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] in (
-        "3AFE14010402000D",
-        "3AFE28010402000D",
+        "3AFE14010402000D", "3AFE28010402000D",
         "MOSZB-140",
-        "TS0202",
-        "TS0202-_TZ3210_jijr1sss",
+        "TS0202","TS0202-_TZ3210_jijr1sss",
     ):  # Konke Motion Sensor, Devlco/Frient Motion
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
+        
     elif self.ListOfDevices[MsgSrcAddr]["Model"] in (
         "lumi.sensor_magnet",
         "lumi.sensor_magnet.aq2",
@@ -3648,15 +3694,9 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         "lumi.magnet.acn001",
     ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
+        
     elif Model not in ("RC-EF-3.0", "RC-EM"):
-        MajDomoDevice(
-            self,
-            Devices,
-            MsgSrcAddr,
-            MsgEp,
-            MsgClusterId,
-            "%02d" % (alarm1 or alarm2),
-        )
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
 
     # if self.ListOfDevices[MsgSrcAddr]["Model"] in (  'MOSZB-140',):
     #    # Tamper is inverse
@@ -4310,6 +4350,31 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
             MsgSrcAddr,
         )
+
+
+def Decode80A5(self, Devices, MsgData, MsgLQI):
+    MsgSrcAddr = MsgData[10:14]
+    MsgPayload = MsgData[16 : len(MsgData)]
+    #Recall Scene
+    GroupID = MsgPayload[0:4]
+    SceneID = MsgPayload[4:6]
+    TransitionTime = 0    
+    if len(MsgPayload) == 10 and MsgPayload[6:10] != 'ffff':
+        TransitionTime = int(MsgPayload[6:10],16)/10
+
+    self.log.logging("Input", "Debug", "Recall Scene: Group ID: %s Scene ID: %s Transition Time: %ss" %(GroupID, SceneID, str(TransitionTime)), MsgSrcAddr)
+
+    if MsgSrcAddr not in self.ListOfDevices or "Model" not in self.ListOfDevices[MsgSrcAddr]:
+        return
+
+    _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
+
+    if _ModelName == 'Remote switch Wake up Sleep':
+        if GroupID == 'fff4':
+            MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "00")
+        elif GroupID == 'fff5':
+            MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "01")    
+
 
 
 def Decode80A7(self, Devices, MsgData, MsgLQI):

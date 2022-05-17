@@ -213,6 +213,11 @@ def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttribute
     attributeList = []
     self.log.logging("ReadAttributes", "Debug2", "attributes: " + str(ListOfAttributes), nwkid=addr)
     for x in ListOfAttributes:
+        if EpOut == 'f2':
+            # Zigbee Green skiping
+            self.log.logging("ReadAttributes", "Debug", "Skiping Read attribute on GreenZigbee Ep: %s Cluster: %s Attribute: %s" %( EpOut, Cluster, x), nwkid=addr)
+            continue
+        
         Attr_ = "%04x" % (x)
         if skipThisAttribute(self, addr, EpOut, Cluster, Attr_):
             # Domoticz.Log("Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_))
@@ -902,11 +907,13 @@ def ReadAttributeRequest_0201(self, key):
         manufacturer_code = "0000"
 
         if ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e") or (
+            ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "113c") or
             "Manufacturer Name" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric"
         ):
             # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
             if self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric":
                 manufacturer_code = "105e"
+
             elif self.ListOfDevices[key]["Manufacturer Name"] in ("OWON", "CASAIA"):
                 manufacturer_code = "113c"
 

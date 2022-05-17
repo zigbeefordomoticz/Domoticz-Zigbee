@@ -52,5 +52,7 @@
 			"0021"
 		],
 		"0006": []
-	}
+	},
+	        "BatteryDevice": 1,
+	 "BatteryPercentageConverter": 2
 }

@@ -19,6 +19,9 @@ from queue import Queue, PriorityQueue
 import logging
 from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
 
+LOG_ERROR_HISTORY = "PluginZigbee_log_error_history.json"
+LOG_FILE = "/PluginZigbee_"
+
 class LoggingManagement:
     def __init__(self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
         self._newError = False
@@ -143,7 +146,7 @@ class LoggingManagement:
         if not self.pluginconf.pluginConf["enablePluginLogging"]:
             return
 
-        logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigbee_" + "%02d" % self.HardwareID + ".log"
+        logfilename = self.pluginconf.pluginConf["pluginLogs"] + LOG_FILE + "%02d" % self.HardwareID + ".log"
         _backupCount = 7  # Keep 7 days of Logging
         _maxBytes = 0
         if "loggingBackupCount" in self.pluginconf.pluginConf:
@@ -167,7 +170,7 @@ class LoggingManagement:
             )
 
     def open_log_history(self):
-        jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + "Zigate_log_error_history.json"
+        jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + LOG_ERROR_HISTORY
         try:
             handle = open(jsonLogHistory, "r", encoding="utf-8")
         except Exception as e:
@@ -410,7 +413,7 @@ def loggingBuildContext(self, thread_name, module, message, nwkid, context):
 
 
 def loggingWriteErrorHistory(self):
-    jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + "Zigate_log_error_history.json"
+    jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + LOG_ERROR_HISTORY
     with open(jsonLogHistory, "w", encoding="utf-8") as json_file:
         try:
             json.dump(dict(self.LogErrorHistory), json_file)

@@ -8,6 +8,7 @@ from time import time
 
 from Modules.zigateConsts import CLUSTERS_LIST
 from Zigbee.zdpCommands import ( zdp_binding_device, zdp_unbinding_device)
+from Modules.tools import is_fake_ep
 
 def bindGroup(self, ieee, ep, cluster, groupid):
 
@@ -158,6 +159,9 @@ def bindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
 
     nwkid = self.IEEE2NWK[ieee]
 
+    if is_fake_ep(self, nwkid, ep):
+        return
+            
     self.log.logging(
         "Binding",
         "Debug",

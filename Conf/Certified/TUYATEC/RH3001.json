@@ -1,0 +1,14 @@
+{
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0001": "",
+            "0003": "",
+            "0050": "",
+            "Type": "Door"
+        }
+    },
+    "Type": "",
+            "BatteryDevice": 1,
+    "BatteryPercentageConverter": 2
+}

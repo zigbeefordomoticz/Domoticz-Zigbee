@@ -133,5 +133,9 @@
       "e201",
       "e202"
     ]
-  }
+  },
+  "BatteryDevice": 1,
+  "VoltageConverter": 10,
+  "MaxBatteryVoltage": 60,
+  "MinBatteryVoltage": 30
 }

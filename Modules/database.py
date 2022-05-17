@@ -98,7 +98,15 @@ BUILD_ATTRIBUTES = (
     "DelayBindingAtPairing"
 )
 
-MANUFACTURER_ATTRIBUTES = ("Legrand", "Schneider", "Lumi", "LUMI", "CASA.IA", "Tuya", "ZLinky")
+MANUFACTURER_ATTRIBUTES = (
+    "Legrand", 
+    "Schneider", 
+    "Lumi", 
+    "LUMI", 
+    "CASA.IA", 
+    "Tuya", 
+    "ZLinky"
+    )
 
 
 def _copyfile(source, dest, move=True):
@@ -524,7 +532,9 @@ def checkListOfDevice2Devices(self, Devices):
                     + " not found in Plugin Database",
                 )
             else:
-                Domoticz.Error(
+                self.log.logging(
+                    "Database",
+                    "Error",
                     "checkListOfDevice2Devices - "
                     + str(Devices[x].Name)
                     + " - "

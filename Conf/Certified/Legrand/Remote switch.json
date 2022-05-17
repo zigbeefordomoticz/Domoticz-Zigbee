@@ -42,8 +42,10 @@
 		"fc01": [
 			"0000",
 			"0001"
-		]
+		],
+		"0019": []
 	},
+	"BatteryDevice": 1,
 	"Param": {
 		"netatmoReleaseButton": 0
 	}
