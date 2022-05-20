@@ -1243,3 +1243,27 @@ def tuya_garage_door_action( self, NwkId, action):
     action = "0101"
     data = "%02x" % int(action)
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+    
+def tuya_garage_run_time(self, NwkId, duration):
+    # 0006/0402/0004/0000001e  30 secondes
+    # 0007/0402/0004/0000003c  60 secondes
+    
+    EPout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "0402"
+    data = "%04x" % int(duration)
+    tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+def tuya_garage_timeout(self, NwkId, duration):
+    # 0008/0502/0004/0000012c  300 secondes - 5 minutes
+
+    EPout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "0502"
+    data = "%04x" % int(duration)
+    tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
