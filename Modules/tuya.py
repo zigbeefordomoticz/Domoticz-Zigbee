@@ -1233,16 +1233,17 @@ def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterI
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
         
 
-def tuya_garage_door_action( self, NwkId, action):
+def tuya_garage_door_action( self, NwkId, onoff):
     # 000f/0101/0001/00
     # 0010/0101/0001/01
-    self.log.logging("Tuya", "Debug", "tuya_garage_door_action - action %s" % action, NwkId)
+    self.log.logging("Tuya", "Debug", "tuya_garage_door_action - action %s" % onoff, NwkId)
     EPout = "01"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0101"
-    data = "%02x" % int(action)
+    data = "%02x" %int(onoff)
+    self.log.logging("Tuya", "Debug", "tuya_garage_door_action - action %s data: %s" % (action,data), NwkId)
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
     
 def tuya_garage_run_time(self, NwkId, duration):
