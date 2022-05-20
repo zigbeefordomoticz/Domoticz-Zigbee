@@ -243,6 +243,11 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             # Profalux offer a Manufacturer command to make Stop on Cluster 0x0008
             profalux_stop(self, NWKID)
 
+        elif _model_name in ( "TS0601-_TZE200_nklqjk62", ):
+            self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
+            tuya_garage_door_action( self, NWKID, "02")
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+
         elif DeviceType in ("WindowCovering", "VenetianInverted", "Venetian", "Vanne", "VanneInverted"): 
             if _model_name in ("PR412", "CPR412", "CPR412-E"):
                 profalux_stop(self, NWKID)
@@ -278,7 +283,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         
         if _model_name in ( "TS0601-_TZE200_nklqjk62", ):
             self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
-            tuya_garage_door_action( self, NWKID, "00")
+            tuya_garage_door_action( self, NWKID, "01")
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
@@ -544,7 +549,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             
         if _model_name in ("TS0601-_TZE200_nklqjk62", ):
             self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
-            tuya_garage_door_action( self, NWKID, "01")
+            tuya_garage_door_action( self, NWKID, "00")
             UpdateDevice_v2(self, Devices, Unit, 0, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
