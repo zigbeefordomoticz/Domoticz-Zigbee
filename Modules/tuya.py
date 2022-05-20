@@ -1236,6 +1236,7 @@ def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterI
 def tuya_garage_door_action( self, NwkId, action):
     # 000f/0101/0001/00
     # 0010/0101/0001/01
+    self.log.logging("Tuya", "Debug", "tuya_garage_door_action - action %s" % action, NwkId)
     EPout = "01"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
@@ -1247,7 +1248,7 @@ def tuya_garage_door_action( self, NwkId, action):
 def tuya_garage_run_time(self, NwkId, duration):
     # 0006/0402/0004/0000001e  30 secondes
     # 0007/0402/0004/0000003c  60 secondes
-    
+    self.log.logging("Tuya", "Debug", "tuya_garage_run_time - duration %s" % duration, NwkId)
     EPout = "01"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
@@ -1259,7 +1260,7 @@ def tuya_garage_run_time(self, NwkId, duration):
 
 def tuya_garage_timeout(self, NwkId, duration):
     # 0008/0502/0004/0000012c  300 secondes - 5 minutes
-
+    self.log.logging("Tuya", "Debug", "tuya_garage_timeout - duration %s" % duration, NwkId)
     EPout = "01"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
