@@ -1212,16 +1212,22 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
 def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     if dp == 0x01:
-        # Switch
+        # Switch / Trigger
         self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Switch %s" % int(data, 16), NwkId)
         MajDomoDevice(self, Devices, NwkId, "01", "0006", "%02x" %(int(data, 16)) )
-        store_tuya_attribute(self, NwkId, "Door", data)
-        
+        store_tuya_attribute(self, NwkId, "DoorSwitch", data)
+
     elif dp == 0x03:
-        # Door: 0x00 => Closed, 0x01 => Open
-        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door %s" % int(data, 16), NwkId)
+        # Door Contact: 0x00 => Closed, 0x01 => Open
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door Contact %s" % int(data, 16), NwkId)
         MajDomoDevice(self, Devices, NwkId, "01", "0500", "%02x" %(int(data, 16)) )
-        store_tuya_attribute(self, NwkId, "Door", data)
+        store_tuya_attribute(self, NwkId, "DoorContact", data)
+
+    elif dp == 0x0c:
+        # Door Status
+        # 00a8 0c 04 0001 02
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door Status %s" % int(data, 16), NwkId)
+        store_tuya_attribute(self, NwkId, "DoorStatus", data)
         
     else:
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)

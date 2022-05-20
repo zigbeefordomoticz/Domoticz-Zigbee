@@ -270,13 +270,13 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             NWKID,
         )
 
-        if _model_name in ("TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", ):
+        if _model_name in ( "TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", ):
             self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Switches Gang/EPout: %s" % EPout)
             tuya_switch_command(self, NWKID, "00", gang=int(EPout, 16))
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
         
-        if _model_name in ("TS0601-_TZE200nklqjk62", ):
+        if _model_name in ( "TS0601-_TZE200_nklqjk62", ):
             self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
             tuya_garage_door_action( self, NWKID, "00")
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -542,7 +542,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.iaszonemgt.iaswd_develco_warning(NWKID, EPout, "01")
             return
             
-        if _model_name in ("TS0601-_TZE200nklqjk62", ):
+        if _model_name in ("TS0601-_TZE200_nklqjk62", ):
             self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
             tuya_garage_door_action( self, NWKID, "01")
             UpdateDevice_v2(self, Devices, Unit, 0, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
