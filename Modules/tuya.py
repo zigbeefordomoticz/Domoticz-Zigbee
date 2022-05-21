@@ -1285,6 +1285,7 @@ def tuya_external_switch_mode( self, NwkId, mode):
  
     self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - mode %s" % mode, NwkId)
     if mode not in TUYA_SWITCH_MODE:
+        self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - None existing mode %s" % mode, NwkId)
         return
     EPout = "01"
     mode = "%02x" %TUYA_SWITCH_MODE [ mode ]
