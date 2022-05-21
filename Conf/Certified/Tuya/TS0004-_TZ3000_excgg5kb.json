@@ -58,14 +58,16 @@
 	},
 	"ReadAttributes": {
 		"0000": [
+			"0004",
 			"0000",
 			"0001",
+			"0005",
+			"0007",
+			"fffe",
 			"0002",
 			"0003",
 			"0004",
-			"0005",
-			"0006",
-			"0007"
+			"0006"
 		],
 		"0006": [
 			"0000",
@@ -98,6 +100,7 @@
 		]
 	},
 	"Param": {
-		"TuyaSwitchMode": "Toggle"
+		"TuyaSwitchMode": "Toggle",
+		"PowerOnAfterOffOn": "2"
 	}
 }
