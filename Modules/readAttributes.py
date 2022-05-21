@@ -126,13 +126,13 @@ ATTRIBUTES = {
         0x0508,
     ],
     "0b05": [0x0000],  # Tuya
-    "e001": [0xd011],  # Tuya TS004F
+    "e000": [0xd001, 0xd002, 0xd003 ],
+    "e001": [0xd010, 0xd011, 0xd030 ],  # Tuya TS004F
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],   # Legrand
     "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
 }
-
 
 def ReadAttributeReq(
     self,
@@ -906,9 +906,12 @@ def ReadAttributeRequest_0201(self, key):
         listAttrGeneric = []
         manufacturer_code = "0000"
 
-        if ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e") or (
-            ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "113c") or
-            "Manufacturer Name" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric"
+        if ( 
+            ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e") 
+            or (
+                ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "113c") 
+                or ( "Manufacturer Name" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric")
+            )
         ):
             # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
             if self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric":
