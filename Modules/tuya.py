@@ -38,6 +38,7 @@ from Modules.zigateConsts import ZIGATE_EP
 
 TUYA_MANUF_CODE = "1002"
 
+
 #   "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
 
 TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f",)
@@ -1269,3 +1270,22 @@ def tuya_garage_timeout(self, NwkId, duration):
     action = "0502"
     data = "%04x" % int(duration)
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+
+TUYA_CLUSTER_EOOO_ID = "e000"
+TUYA_CLUSTER_EOO1_ID = "e001"
+TUYA_SWITCH_MODE = {
+    "Toggle": 0x00,
+    "State": 0x01,
+    "Momentary": 0x02
+}
+
+def tuya_external_switch_mode( self, NwkId, mode):
+ 
+    self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - mode %s" % mode, NwkId)
+    if mode not in TUYA_SWITCH_MODE:
+        return
+    EPout = "01"
+    mode = "%02x" %TUYA_SWITCH_MODE [ mode ]
+    write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)

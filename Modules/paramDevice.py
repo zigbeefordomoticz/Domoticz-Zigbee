@@ -34,9 +34,10 @@ from Modules.schneider_wiser import (iTRV_open_window_detection,
 from Modules.tools import getEpForCluster
 from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
                           tuya_cmd_ts004F, tuya_energy_childLock,
+                          tuya_external_switch_mode, tuya_garage_run_time,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
                           tuya_window_cover_calibration,
-                          tuya_window_cover_motor_reversal, tuya_garage_run_time)
+                          tuya_window_cover_motor_reversal)
 from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
                                tuya_siren2_alarm_melody,
                                tuya_siren2_alarm_volume)
@@ -220,7 +221,8 @@ DEVICE_PARAMETERS = {
     "TuyaAlarmDuration": tuya_siren2_alarm_duration,
     "TuyaAlarmMelody": tuya_siren2_alarm_melody,
     "SireneMaxAlarmDuration": ias_wd_sirene_max_alarm_dureation,
-    "TuyaGarageOpenerRunTime": tuya_garage_run_time
+    "TuyaGarageOpenerRunTime": tuya_garage_run_time,
+    "TuyaSwitchMode": tuya_external_switch_mode
 }
 
 def sanity_check_of_param(self, NwkId):
