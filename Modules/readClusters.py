@@ -356,7 +356,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
         # Continue Cleanup and remove '/' and double spaces
         modelName = AttrModelName.replace("/", "")
-        modelName = AttrModelName.replace("  ", " ")
+        modelName = modelName.replace("  ", " ")
 
         manufacturer_name = ""
         if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]:
