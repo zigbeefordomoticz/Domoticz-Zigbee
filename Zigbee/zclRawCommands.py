@@ -376,9 +376,9 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + "%02x" % WINDOW_COVERING_COMMANDS[command]
-    if command == ("GoToLiftValue", "GoToTiltValue"):
+    if command in ( "GoToLiftValue", "GoToTiltValue"):
         payload += level
-    elif command == ("GoToLiftPercentage", "GoToTiltPercentage"):
+    elif command in ( "GoToLiftPercentage", "GoToTiltPercentage"):
         payload += percentage
 
     self.log.logging("zclCommand", "Error", "zcl_raw_window_covering payload %s %s" % (nwkid, payload))
