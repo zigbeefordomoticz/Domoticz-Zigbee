@@ -125,7 +125,7 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
         self.logging("Error", f"rest_cfgrpt_ondemand_with_config missing infos in data %s !!! {verb} {data} {parameters}")
         return _response
 
-    nwkid = data[ "NwkId"]
+    nwkid = data[ "Nwkid"]
     cluster_list = data[ "Clusters" ]
 
     if nwkid not in self.ListOfDevices:
@@ -136,6 +136,7 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
         self.logging("Debug", f"rest_cfgrpt_ondemand_with_config will override Config Reporting for {nwkid} !!! ")
 
     # Sanity check on the cluster list
+    self.logging("Debug", f"rest_cfgrpt_ondemand_with_config_put  let's do the work on {cluster_list} for {nwkid}")
     error_found = False
     for x in cluster_list:
         if "Attributes" not in cluster_list[ x ]:
@@ -143,12 +144,12 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
             error_found = True
             continue
         for y in cluster_list[ x ][ "Attributes" ]:
-            if "Min" not in cluster_list[ x ][ "Attributes" ][ y ]:
+            if "MinInterval" not in cluster_list[ x ][ "Attributes" ][ y ] and len(cluster_list[ x ][ "Attributes" ][ y ]["MinInterval"]) == 4:
                 self.logging("Error", f"rest_cfgrpt_ondemand_with_config missing 'Min' in  {cluster_list[ x ][ 'Attributes' ][ y ]} !!! ")
                 error_found = True
                 continue
 
-            if "Max" not in cluster_list[ x ][ "Attributes" ][ y ]:
+            if "MaxInterval" not in cluster_list[ x ][ "Attributes" ][ y ] and len(cluster_list[ x ][ "Attributes" ][ y ]["MaxInterval"]) :
                 self.logging("Error", f"rest_cfgrpt_ondemand_with_config missing 'Max' in  {cluster_list[ x ][ 'Attributes' ][ y ]} !!! ")
                 error_found = True
                 continue
