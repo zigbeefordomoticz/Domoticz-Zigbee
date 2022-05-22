@@ -361,6 +361,7 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
     Cluster = "0102"
     WINDOW_COVERING_COMMANDS = {"Up": 0x00, "Down": 0x01, "Stop": 0x02, "GoToLiftValue": 0x04, "GoToLiftPercentage": 0x05, "GoToTiltValue": 0x07, "GoToTiltPercentage": 0x08}
     if command not in WINDOW_COVERING_COMMANDS:
+        self.log.logging("zclCommand", "Error", "zcl_raw_window_covering UNKNOW COMMAND drop it %s %s %s %s %s" % (nwkid, EPout, command, level, percentage))
         return
 
     # Cluster Frame:
@@ -375,11 +376,12 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + "%02x" % WINDOW_COVERING_COMMANDS[command]
-    if command == ("GoToLiftValue", "GoToTiltValue"):
+    if command in ( "GoToLiftValue", "GoToTiltValue"):
         payload += level
-    elif command == ("GoToLiftPercentage", "GoToTiltPercentage"):
+    elif command in ( "GoToLiftPercentage", "GoToTiltPercentage"):
         payload += percentage
 
+    self.log.logging("zclCommand", "Error", "zcl_raw_window_covering payload %s %s" % (nwkid, payload))
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 

@@ -54,7 +54,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
     if ClusterId == "0004":
         return buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
 
-    if ClusterId == "0005" and Command == "05": #Only Recall Scene supported
+    if ClusterId == "0005" and Command == "05":  # Only Recall Scene supported
         return buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
 
     if ClusterId == "0006":
@@ -137,7 +137,7 @@ def buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPo
     if Command == "0a":  # Report attributes
         return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
-    if Command == "0b":  #
+    if Command == "0b":  # Default Response
         return frame
 
     if Command == "0d":  # Discover Attributes Response
@@ -466,7 +466,7 @@ def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId,
 # Cluster 0x0005 - Scenes
 
 def buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    if Command == "05": #Recall Scene
+    if Command == "05":  # Recall Scene
         GroupID = decode_endian_data(Data[0:4], "09")
         SceneID = Data[4:6]
         TransitionTime = 'ffff'

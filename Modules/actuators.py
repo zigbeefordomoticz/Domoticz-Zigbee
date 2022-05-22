@@ -24,7 +24,7 @@ from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
                                 zcl_window_covering_off,
                                 zcl_window_covering_on,
                                 zcl_window_covering_stop,
-                                zcl_window_coverting_level)
+                                zcl_window_covering_level, zcl_window_covering_percentage)
 
 from Modules.basicOutputs import set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
@@ -141,13 +141,13 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010"):
             value = 1
         elif value >= 100:
             value = 99
-        value = "%02x" % value
         self.log.logging(
             "Command",
             "Log",
             "WindowCovering - Lift Percentage Command - %s/%s value: 0x%s %s" % (nwkid, EPout, value, value),
         )
-        zcl_window_coverting_level(self, nwkid, EPout, value)
+        value = "%02x" % value
+        zcl_window_covering_percentage(self, nwkid, EPout, value)
     else:
         OnOff = "01"  # 00 = off, 01 = on
         if value == 100:
