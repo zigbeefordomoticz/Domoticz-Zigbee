@@ -151,6 +151,8 @@ def getEpForCluster(self, nwkid, ClusterId, strict=False):
             continue
         if ClusterId in self.ListOfDevices[nwkid]["Ep"][x]:
             EPlist.append( str(x) )
+    if strict and not EPlist:
+        return None
     return EPlist
 
 

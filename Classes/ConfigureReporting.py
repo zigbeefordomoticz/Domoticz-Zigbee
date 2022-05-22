@@ -294,6 +294,21 @@ class ConfigureReporting:
             MsgNwkId,
         )
 
+    def retreive_configuration_reporting_definition(self, NwkId):
+    
+        if "ParamConfigureReporting" in self.ListOfDevices[NwkId]:
+            return self.ListOfDevices[NwkId][ "ParamConfigureReporting" ]
+
+        if (
+            "Model" in self.ListOfDevices[NwkId]
+            and self.ListOfDevices[NwkId]["Model"] != {}
+            and self.ListOfDevices[NwkId]["Model"] in self.DeviceConf
+            and "ConfigureReporting" in self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]
+        ):
+            return self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting"]
+        
+        return CFG_RPT_ATTRIBUTESbyCLUSTERS
+
 
 ####
 
@@ -320,7 +335,7 @@ def configure_reporting_for_one_device(self, key, batchMode):
     if batchMode and "Health" in self.ListOfDevices[key] and self.ListOfDevices[key]["Health"] == "Not Reachable":
         return
 
-    cfgrpt_configuration = retreive_configuration_reporting_definition(self, key)
+    cfgrpt_configuration = self.retreive_configuration_reporting_definition( key)
 
     self.logging("Debug", f"configure_reporting_for_one_device - processing {key} with {cfgrpt_configuration}", nwkid=key)
 
@@ -492,8 +507,6 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, cluster_configur
         )
 
 
-
-
 def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
 
     nb_attribute = "%02x" % len(attribute_list)
@@ -514,18 +527,6 @@ def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list
         str_attribute_list,
         is_ack_tobe_disabled(self, nwkid),
     )
-
-
-def retreive_configuration_reporting_definition(self, NwkId):
-
-    if (
-        "Model" in self.ListOfDevices[NwkId]
-        and self.ListOfDevices[NwkId]["Model"] != {}
-        and self.ListOfDevices[NwkId]["Model"] in self.DeviceConf
-        and "ConfigureReporting" in self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]
-    ):
-        return self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting"]
-    return CFG_RPT_ATTRIBUTESbyCLUSTERS
 
 
 def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
