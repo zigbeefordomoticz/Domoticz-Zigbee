@@ -32,24 +32,6 @@ def rest_cfgrpt_ondemand(self, verb, data, parameters):
 
 def rest_cfgrpt_ondemand_with_config(self, verb, data, parameters ):
 
-    # wget --method=PUT \
-    #      --body-data='{ 
-    #                       "Nwkid": nwkid, 
-    #                       "Clusters": {
-    #                                       "0006": {
-    #                                                  "Attributes": { 
-    #                                                                   "0000": { "Min": "000A", "Max": "0C30", "Change": "01" },
-    #                                                                   "0001": { "Min": "000A", "Max": "0C30", "Change": "01" }
-    #                                                  },
-    #                                       "0008": {
-    #                                                  "Attributes": { 
-    #                                                                   "0000": { "Min": "000A", "Max": "0C30", "Change": "01" },
-    #                                                                   "0001": { "Min": "000A", "Max": "0C30", "Change": "01" }
-    #                                                  }
-    #                                      }
-    #                       }
-    #                    }' \
-    #     http://127.0.0.1:9442/rest-zigate/1/cfgrpt-ondemand-config
 
     self.logging("Debug", f"rest_cfgrpt_ondemand_with_config  {verb} {data} {parameters}")
     
@@ -101,33 +83,59 @@ def rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _respons
     cfg_rpt_record = get_cfg_rpt_record( self, deviceId )
 
     self.logging("Debug", f"rest_cfgrpt_ondemand_with_config_get  {cfg_rpt_record}")
-    _response["Data"] = json.dumps( cfg_rpt_record )
+    _response["Data"] = convert_to_json( cfg_rpt_record )
     
     return _response
 
 def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _response):
+    # wget --method=PUT \
+    #      --body-data='{ 
+    #               "Nwkid": nwkid, 
+    #               "Clusters":
+    #                    [
+    #                        {
+    #                            "ClusterId": "0006", 
+    #                            "Attributes": [
+    #                                {
+    #                                    "Attribute": "0000", 
+    #                                    "Infos": [{"DataType": "10"}, {"MinInterval": "0001"}, {"MaxInterval": "012C"}, {"TimeOut": "0FFF"}, {"Change": "01"}]}]}, 
+    #                        {
+    #                            "ClusterId": "0702", 
+    #                            "Attributes": [
+    #                                {
+    #                                    "Attribute": "0000", 
+    #                                    "Infos": [{"DataType": "25"}, {"MinInterval": "FFFF"}, {"MaxInterval": "0000"}, {"TimeOut": "0000"}, {"Change": "000000000000000a"}]}]},
+    #                        {
+    #                            "ClusterId": "0b04", 
+    #                            "Attributes": [
+    #                                {
+    #                                    "Attribute": "0505", 
+    #                                    "Infos": [{"DataType": "21"}, {"MinInterval": "0005"}, {"MaxInterval": "012C"}, {"TimeOut": "0000"}, {"Change": "000a"}]}, 
+    #                                {
+    #                                    "Attribute": "0508", 
+    #                                    "Infos": [{"DataType": "21"}, {"MinInterval": "0005"}, {"MaxInterval": "012C"}, {"TimeOut": "0000"}, {"Change": "000a"}]},
+    #                                {
+    #                                    "Attribute": "050b", "Infos": [{"DataType": "29"}, {"MinInterval": "0005"}, {"MaxInterval": "012C"}, {"TimeOut": "0000"}, {"Change": "000a"}]}]}]
+    #                    }' \
+    #     http://127.0.0.1:9442/rest-zigate/1/cfgrpt-ondemand-config
+
     # Put the device specific configure reporting to the device infos
     self.logging("Debug", f"rest_cfgrpt_ondemand_with_config_put  {verb} {data} {parameters}")
-    
     if data is None:
         self.logging("Error", f"rest_cfgrpt_ondemand_with_config incorrect request no data !!! {verb} {data} {parameters}")
         return _response
-
     if len(parameters) != 0:
         self.logging("Error", f"rest_cfgrpt_ondemand_with_config incorrect request existing parameters !!! {verb} {data} {parameters}")
         return _response
-
     # We receive a JSON 
     data = data.decode("utf8")
     data = json.loads(data)
-
     if "Nwkid" not in data and "Clusters" not in data:
         self.logging("Error", f"rest_cfgrpt_ondemand_with_config missing infos in data %s !!! {verb} {data} {parameters}")
         return _response
-
     nwkid = data[ "Nwkid"]
+    cluster_config_reporting = {}
     cluster_list = data[ "Clusters" ]
-
     if nwkid not in self.ListOfDevices:
         self.logging("Error", f"rest_cfgrpt_ondemand_with_config unknown devices NwkId: {nwkid} !!! ")
         return _response
@@ -137,39 +145,61 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
 
     # Sanity check on the cluster list
     self.logging("Debug", f"rest_cfgrpt_ondemand_with_config_put  let's do the work on {cluster_list} for {nwkid}")
-    error_found = False
-    for x in cluster_list:
-        if "Attributes" not in cluster_list[ x ]:
-            self.logging("Error", f"rest_cfgrpt_ondemand_with_config missing 'Attributes' in  {cluster_list[ x ]} !!! ")
-            error_found = True
+    for cluster_info in cluster_list:
+        if "ClusterId" not in cluster_info:
             continue
-        for y in cluster_list[ x ][ "Attributes" ]:
-            if "MinInterval" not in cluster_list[ x ][ "Attributes" ][ y ] and len(cluster_list[ x ][ "Attributes" ][ y ]["MinInterval"]) == 4:
-                self.logging("Error", f"rest_cfgrpt_ondemand_with_config missing 'Min' in  {cluster_list[ x ][ 'Attributes' ][ y ]} !!! ")
-                error_found = True
+        cluster_config_reporting[ cluster_info["ClusterId"] ] = {}
+        if "Attributes" not in cluster_info:
+            continue
+        cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"] = {}
+        attributes_list = cluster_info[ "Attributes"]
+        
+        for attribute in attributes_list:
+            if "Attribute" not in attribute:
                 continue
-
-            if "MaxInterval" not in cluster_list[ x ][ "Attributes" ][ y ] and len(cluster_list[ x ][ "Attributes" ][ y ]["MaxInterval"]) :
-                self.logging("Error", f"rest_cfgrpt_ondemand_with_config missing 'Max' in  {cluster_list[ x ][ 'Attributes' ][ y ]} !!! ")
-                error_found = True
-                continue
-
-            if "Change" not in cluster_list[ x ][ "Attributes" ][ y ]:
-                self.logging("Error", f"rest_cfgrpt_ondemand_with_config missing 'Change' in  {cluster_list[ x ][ 'Attributes' ][ y ]} !!! ")
-                error_found = True
-                continue
-
-    if error_found:
-        action = {"Name": "Configure reporting record NOT updated - error found, please check logs", "TimeStamp": int(time.time())}
-    else:
-        self.ListOfDevices[ nwkid ][ "ParamConfigureReporting" ] = cluster_list
-        action = {"Name": "Configure reporting record updated", "TimeStamp": int(time.time())}
+            cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ] = {}
+            for info in attribute["Infos"]:
+                if "MinInterval" in info:
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["MinInterval"] = info["MinInterval"]
+                if "MaxInterval" in info:
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["MaxInterval"] = info["MaxInterval"]
+                if "TimeOut" in info:
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["TimeOut"] = info["TimeOut"]
+                if "Change" in info:
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["Change"] = info["Change"]
+                if "DataType" in info:
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["DataType"] = info["DataType"]
+    self.ListOfDevices[ nwkid ][ "ParamConfigureReporting" ] = cluster_config_reporting
+    action = {"Name": "Configure reporting record updated", "TimeStamp": int(time.time())}
 
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
 
 
+def convert_to_json( data ):
+    # {"0006": {"Attributes": {"0000": {"DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "01"}}}, 
+    #  "0702": {"Attributes": {"0000": {"DataType": "25", "MinInterval": "FFFF", "MaxInterval": "0000", "TimeOut": "0000", "Change": "000000000000000a"}}}, 
+    #  "0b04": {"Attributes": {"0505": {"DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"},
+    #                          "0508": {"DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"}, 
+    #                          "050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"}}}}
+    cluster_list = []
+    for cluster in data:
+        cluster_info = {"ClusterId": cluster, "Attributes": []}
+        for attribute in data[ cluster ]["Attributes"]:
+            attributes_info = {}
+            attributes_info[ "Attribute" ]= attribute
+            attributes_info[ "Infos"] = []
+            for item in data[ cluster ]["Attributes"][ attribute ]:
+                info = {}
+                info[ item ] = data[ cluster ]["Attributes"][ attribute ][ item ]
+                attributes_info[ "Infos"].append(info )
+            cluster_info[ "Attributes"].append( attributes_info )
+            
+        cluster_list.append( cluster_info )
+    return json.dumps(  cluster_list )
 
+            
+    
 def get_cfg_rpt_record(self, NwkId):
 
     if "ParamConfigureReporting" in self.ListOfDevices[NwkId]:
