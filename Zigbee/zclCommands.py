@@ -421,8 +421,17 @@ def zcl_group_window_covering_off(self, nwkid, epin, EPout):
     return send_zigatecmd_raw(self, "00FA", data)
 
 
-def zcl_window_coverting_level(self, nwkid, EPout, percentage, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Debug", "zcl_window_coverting_level %s %s %s" % (nwkid, EPout, percentage))
+def zcl_window_covering_level(self, nwkid, EPout, level, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_window_covering_level %s %s %s" % (nwkid, EPout, level))
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftValue", level=level, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
+    data = ZIGATE_EP + EPout + "04" + level
+    if ackIsDisabled:
+        return send_zigatecmd_zcl_noack(self, nwkid, "00FA", data)
+    return send_zigatecmd_zcl_ack(self, nwkid, "00FA", data)
+
+def zcl_window_covering_percentage(self, nwkid, EPout, percentage, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_window_covering_percentage %s %s %s" % (nwkid, EPout, percentage))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftPercentage", percentage=percentage, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
     data = ZIGATE_EP + EPout + "05" + percentage
@@ -430,12 +439,20 @@ def zcl_window_coverting_level(self, nwkid, EPout, percentage, ackIsDisabled=DEF
         return send_zigatecmd_zcl_noack(self, nwkid, "00FA", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "00FA", data)
 
-
-def zcl_group_window_covering_level(self, nwkid, epin, EPout, percentage):
+def zcl_group_window_covering_level(self, nwkid, epin, EPout, level):
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftPercentage", percentage=percentage, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE)
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftPercentage", level=level, groupaddrmode=True, ackIsDisabled=DEFAULT_ACK_MODE)
+    data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "04" + level
+    return send_zigatecmd_raw(self, "00FA", data)
+
+
+def zcl_group_window_covering_percentage(self, nwkid, epin, EPout, percentage):
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftPercentage", percentage=percentage, groupaddrmode=True, ackIsDisabled=DEFAULT_ACK_MODE)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "05" + percentage
     return send_zigatecmd_raw(self, "00FA", data)
+
+
 
 
 # Cluster 0300
