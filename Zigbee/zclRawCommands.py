@@ -114,7 +114,7 @@ def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_com
         return
     cmd = "0b"
     if orig_fcf is None:
-        frame_control_field = "%02x"  %0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
+        frame_control_field = "%02x" %0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
     else:
         # The frame control field SHALL be specified as follows. The frame type sub-field SHALL be set to indicate
         # a global command (0b00). The manufacturer specific sub-field SHALL be set to 0 if this command is being
@@ -228,7 +228,7 @@ def zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_
     payload += sqn + cmd + nbgroup  
 
     idx = 0
-    while  idx < int(nbgroup,16)*4:
+    while  idx < int(nbgroup,16) * 4:
         payload += decode_endian_data( group_list[ idx : idx + 4 ], "21")
         idx += 4
 
@@ -375,9 +375,9 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + "%02x" % WINDOW_COVERING_COMMANDS[command]
-    if command in ("MovetoLevel", "MovetoLevelWithOnOff"):
+    if command == ("GoToLiftValue", "GoToTiltValue"):
         payload += level
-    elif command == ("GoToLiftValue", "GoToTiltValue"):
+    elif command == ("GoToLiftPercentage", "GoToTiltPercentage"):
         payload += percentage
 
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
