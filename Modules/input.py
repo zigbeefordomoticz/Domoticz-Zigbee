@@ -215,6 +215,7 @@ def extract_messge_infos( Data):
 
 def Decode0040(self, Devices, MsgData, MsgLQI):  # NWK_addr_req
     self.log.logging("Input", "Log", "Decode0040 - NWK_addr_req: %s" % MsgData)
+    
     # sqn + ieee + u8RequestType + u8StartIndex
     sqn = MsgData[:2]
     srcNwkId = MsgData[2:6]
@@ -222,14 +223,26 @@ def Decode0040(self, Devices, MsgData, MsgLQI):  # NWK_addr_req
     ieee = MsgData[8:24]
     reqType = MsgData[24:26]
     startIndex = MsgData[26:28]
-    
-    controller_ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(self.ControllerIEEE, 16)))[0]
-    controller_nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ControllerNWKID, 16)))[0]
+
+    self.log.logging("Input", "Log", "      source req nwkid: %s" % srcNwkId)
+    self.log.logging("Input", "Log", "      request IEEE    : %s" % ieee)
+    self.log.logging("Input", "Log", "      request Type    : %s" % reqType)
+    self.log.logging("Input", "Log", "      request Idx     : %s" % startIndex)
+
     # we should answer: sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
     Cluster = "8000"
     if ieee == self.ControllerIEEE:
+        controller_ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(self.ControllerIEEE, 16)))[0]
+        controller_nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ControllerNWKID, 16)))[0]
         status = "00"
         payload = sqn + status + controller_ieee + controller_nwkid + "00"
+        
+    elif ieee in self.IEEE2NWK:
+        device_ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(ieee, 16)))[0]
+        device_nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(self.IEEE2NWK[ ieee ], 16)))[0]
+        status = "00"
+        payload = sqn + status + device_ieee + device_nwkid + "00"
+
     else:
         status = "81"  # Device not found
         payload = sqn + status + ieee
