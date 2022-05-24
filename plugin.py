@@ -69,6 +69,9 @@
 </plugin>
 """
 
+import sys
+sys.modules["_asyncio"] = None
+
 import pathlib
 
 from pkg_resources import DistributionNotFound
