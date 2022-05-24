@@ -41,7 +41,7 @@ TUYA_MANUF_CODE = "1002"
 
 #   "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
 
-TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f",)
+TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f", "_TZ3000_ksw8qtmt", )
 TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4", "_TZ3000_tk3s5tyg")
 
 
