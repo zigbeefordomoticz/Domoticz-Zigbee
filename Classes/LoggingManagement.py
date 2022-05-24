@@ -86,10 +86,8 @@ class LoggingManagement:
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareMajorVersion"] = FirmwareMajorVersion
 
     def zigpy_login(self):
-        if (
-            "debugTransportZigpyZNP" in self.pluginconf.pluginConf
-            and self.pluginconf.pluginConf["debugTransportZigpyZNP"]
-        ):
+        if ( "debugTransportZigpyZNP" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugTransportZigpyZNP"] ):
+            # Debug ZNP
             requests_logger = logging.getLogger("zigpy")
             requests_logger.setLevel(logging.DEBUG)
             requests_logger = logging.getLogger("zigpy_znp")
@@ -97,10 +95,8 @@ class LoggingManagement:
             requests_logger = logging.getLogger("AppZnp")
             requests_logger.setLevel(logging.DEBUG)
 
-        elif (
-            "debugTransportZigpyEZSP" in self.pluginconf.pluginConf
-            and self.pluginconf.pluginConf["debugTransportZigpyEZSP"]
-        ):
+        elif ( "debugTransportZigpyEZSP" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugTransportZigpyEZSP"] ):
+            # Debug Bellows/Ezsp
             requests_logger = logging.getLogger("zigpy")
             requests_logger.setLevel(logging.DEBUG)
             requests_logger = logging.getLogger("bellows")
@@ -108,10 +104,8 @@ class LoggingManagement:
             requests_logger = logging.getLogger("AppEzsp")
             requests_logger.setLevel(logging.DEBUG)
 
-        elif (
-            "debugTransportZigpyZigate" in self.pluginconf.pluginConf
-            and self.pluginconf.pluginConf["debugTransportZigpyZigate"]
-        ):
+        elif ( "debugTransportZigpyZigate" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugTransportZigpyZigate"] ):
+            # Debug Zigate
             requests_logger = logging.getLogger("zigpy")
             requests_logger.setLevel(logging.DEBUG)
             requests_logger = logging.getLogger("zigpy_zigate")
@@ -119,10 +113,8 @@ class LoggingManagement:
             requests_logger = logging.getLogger("AppZigate")
             requests_logger.setLevel(logging.DEBUG)
             
-        elif (
-            "debugTransportZigpydeCONZ" in self.pluginconf.pluginConf 
-            and self.pluginconf.pluginConf["debugTransportZigpydeCONZ"]
-        ):
+        elif ( "debugTransportZigpydeCONZ" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugTransportZigpydeCONZ"] ):
+            # Debug deConz
             requests_logger = logging.getLogger("zigpy")
             requests_logger.setLevel(logging.DEBUG)
             requests_logger = logging.getLogger("zigpy_deconz")
@@ -131,11 +123,28 @@ class LoggingManagement:
             requests_logger.setLevel(logging.DEBUG)
 
         else:
+            # Set to Warning Level
             requests_logger = logging.getLogger("zigpy")
             requests_logger.setLevel(logging.WARNING)
+            
             requests_logger = logging.getLogger("zigpy_znp")
             requests_logger.setLevel(logging.WARNING)
+            requests_logger = logging.getLogger("AppZnp")
+            requests_logger.setLevel(logging.WARNING)
+            
             requests_logger = logging.getLogger("zigpy_zigate")
+            requests_logger.setLevel(logging.WARNING)
+            requests_logger = logging.getLogger("AppZigate")
+            requests_logger.setLevel(logging.WARNING)
+
+            requests_logger = logging.getLogger("zigpy_deconz")
+            requests_logger.setLevel(logging.WARNING)
+            requests_logger = logging.getLogger("AppDeconz")
+            requests_logger.setLevel(logging.WARNING)
+            
+            requests_logger = logging.getLogger("bellows")
+            requests_logger.setLevel(logging.WARNING)
+            requests_logger = logging.getLogger("AppEzsp")
             requests_logger.setLevel(logging.WARNING)
 
     def openLogFile(self):
@@ -459,9 +468,10 @@ def logging_thread(self):
             ) = logging_tupple
             try:
                 context = eval(context)
-            except:
+            except Exception as e:
                 Domoticz.Error("Something went wrong and catch: context: %s" % str(context))
-                Domoticz.Error("logging_thread unexpected tupple %s" % (str(logging_tupple)))
+                Domoticz.Error("      logging_thread unexpected tupple %s" % (str(logging_tupple)))
+                Domoticz.Error("      Error %s" % (str(e)))
                 return
             if logType == "Error":
                 loggingError(self, thread_name, module, message, nwkid, context)
