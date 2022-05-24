@@ -356,7 +356,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
         # Continue Cleanup and remove '/' and double spaces
         modelName = AttrModelName.replace("/", "")
-        modelName = AttrModelName.replace("  ", " ")
+        modelName = modelName.replace("  ", " ")
 
         manufacturer_name = ""
         if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr]:
@@ -385,7 +385,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name == "_TZ3000_pmz6mjyu":
                 # MOES MS-104BZ-1
                 modelName = "TS011F-2Gang-switches"
-            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak", "_TZ3000_typdpbpg", ):
+            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak", "_TZ3000_typdpbpg", "_TZ3000_ksw8qtmt", ):
                 modelName = "TS011F-plug"
 
         elif modelName == "TS0201":
