@@ -43,48 +43,6 @@
           "MinInterval": "003C",
           "TimeOut": "0000"
         },
-        "4000": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4001": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4002": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4100": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4101": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4102": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
         "0400": {
           "Change": "00000064",
           "DataType": "2a",
@@ -92,7 +50,56 @@
           "MinInterval": "000a",
           "TimeOut": "0000"
         },
+        "4000": {
+          "ManufSpecific": "113c",
+          "Change": "00000000000003E8",
+          "DataType": "25",
+          "MaxInterval": "0E10",
+          "MinInterval": "003C",
+          "TimeOut": "0000"
+        },
+        "4001": {
+          "ManufSpecific": "113c",
+          "Change": "00000000000003E8",
+          "DataType": "25",
+          "MaxInterval": "0E10",
+          "MinInterval": "003C",
+          "TimeOut": "0000"
+        },
+        "4002": {
+          "ManufSpecific": "113c",
+          "Change": "00000000000003E8",
+          "DataType": "25",
+          "MaxInterval": "0E10",
+          "MinInterval": "003C",
+          "TimeOut": "0000"
+        },
+        "4100": {
+          "ManufSpecific": "113c",
+          "Change": "00000000000003E8",
+          "DataType": "25",
+          "MaxInterval": "0E10",
+          "MinInterval": "003C",
+          "TimeOut": "0000"
+        },
+        "4101": {
+          "ManufSpecific": "113c",
+          "Change": "00000000000003E8",
+          "DataType": "25",
+          "MaxInterval": "0E10",
+          "MinInterval": "003C",
+          "TimeOut": "0000"
+        },
+        "4102": {
+          "ManufSpecific": "113c",
+          "Change": "00000000000003E8",
+          "DataType": "25",
+          "MaxInterval": "0E10",
+          "MinInterval": "003C",
+          "TimeOut": "0000"
+        },
         "2000": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "2a",
           "MaxInterval": "012C",
@@ -100,6 +107,7 @@
           "TimeOut": "0000"
         },
         "2001": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "2a",
           "MaxInterval": "012C",
@@ -107,6 +115,7 @@
           "TimeOut": "0000"
         },
         "2002": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "2a",
           "MaxInterval": "012C",
@@ -114,6 +123,7 @@
           "TimeOut": "0000"
         },
         "2100": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "2a",
           "MaxInterval": "012C",
@@ -121,6 +131,7 @@
           "TimeOut": "0000"
         },
         "2101": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "2a",
           "MaxInterval": "012C",
@@ -128,6 +139,7 @@
           "TimeOut": "0000"
         },
         "2102": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "2a",
           "MaxInterval": "012C",
@@ -135,6 +147,7 @@
           "TimeOut": "0000"
         },
         "3000": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "22",
           "MaxInterval": "0E10",
@@ -142,6 +155,7 @@
           "TimeOut": "0000"
         },
         "3001": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "22",
           "MaxInterval": "0E10",
@@ -149,6 +163,7 @@
           "TimeOut": "0000"
         },
         "3002": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "22",
           "MaxInterval": "0E10",
@@ -156,6 +171,7 @@
           "TimeOut": "0000"
         },
         "3100": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "22",
           "MaxInterval": "012C",
@@ -163,6 +179,7 @@
           "TimeOut": "0000"
         },
         "3101": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "22",
           "MaxInterval": "012C",
@@ -170,6 +187,7 @@
           "TimeOut": "0000"
         },
         "3102": {
+          "ManufSpecific": "113c",
           "Change": "00000064",
           "DataType": "22",
           "MaxInterval": "012C",
@@ -187,8 +205,7 @@
       "0003",
       "0004",
       "0005",
-      "0006",
-      "0007"
+      "0006"
     ],
     "0003": [],
     "0702": [
@@ -199,7 +216,32 @@
       "0302",
       "0303",
       "0306",
-      "0400"
-    ]
+      "0400",
+      "2000",
+      "2001",
+      "2002",
+      "2100",
+      "2101",
+      "2102",
+      "2103",
+      "3000",
+      "3001",
+      "3002",
+      "3100",
+      "3101",
+      "3102",
+      "3103",
+      "4000",
+      "4001",
+      "4002",
+      "4100",
+      "4101",
+      "4102",
+      "4103"
+    ],
+    "0019": []
+  },
+  "Param": {
+    "PowerPollingFreq": 3600
   }
 }

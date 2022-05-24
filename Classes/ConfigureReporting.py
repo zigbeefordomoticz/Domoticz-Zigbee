@@ -14,7 +14,7 @@ import time
 
 import Domoticz
 from Modules.basicOutputs import ieee_addr_request
-from Modules.bindings import bindDevice
+from Modules.bindings import bindDevice, unbindDevice
 from Modules.tools import (
     get_isqn_datastruct,
     get_list_isqn_attr_datastruct,
@@ -540,7 +540,8 @@ def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
             del self.ListOfDevices[nwkid]["Bind"][Ep][cluster]
         if "IEEE" in self.ListOfDevices[nwkid]:
             self.logging("Debug", f"---> configureReporting - requested Bind for {nwkid} on Cluster: {cluster}", nwkid=nwkid)
-
+            if self.pluginconf.pluginConf["doUnbindBind"]:
+                unbindDevice(self, self.ListOfDevices[nwkid]["IEEE"], Ep, cluster)
             bindDevice(self, self.ListOfDevices[nwkid]["IEEE"], Ep, cluster)
         else:
             self.logging("Error", f"configureReporting - inconsitency on {nwkid} no IEEE found : {str(self.ListOfDevices[nwkid])} ")
