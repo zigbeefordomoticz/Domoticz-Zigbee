@@ -70,8 +70,6 @@
 """
 
 import sys
-sys.modules["_asyncio"] = None
-
 import pathlib
 
 from pkg_resources import DistributionNotFound
@@ -415,6 +413,11 @@ class BasePlugin:
         self.domoticzdb_Hardware = DomoticzDB_Hardware(
             Parameters["Database"], self.pluginconf, self.HardwareID, self.log
         )
+        
+        if self.zigbee_communitation and self.domoticzdb_Hardware.multiinstances_z4d_plugin_instance():
+            self.log.logging("Plugin", "Status", "Multi instances plugin detected. Enable zigpy workaround")
+            sys.modules["_asyncio"] = None
+        
         if "LogLevel" not in self.pluginParameters:
             log_level = self.domoticzdb_Hardware.get_loglevel_value()
             if log_level:

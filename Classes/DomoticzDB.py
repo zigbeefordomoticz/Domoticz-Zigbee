@@ -223,6 +223,27 @@ class DomoticzDB_Hardware:
         self.closeDB()
         return None
 
+    def multiinstances_z4d_plugin_instance(self):
+        if self.dbCursor is None:
+            self._openDB()
+            try:
+                self.dbCursor.execute("SELECT count(*) FROM Hardware WHERE Extra = 'Zigate' ")
+                value = int( self.dbCursor.fetchone()[0] )
+                self.logging("Log", "Multi Instance query %s" %value)
+            except Exception as e :
+                self.logging("Error", "Error while querying Multi Instance - %s" %e)
+                value = 0
+        
+            if int(value) > 1:
+                return True
+            return False
+            self.closeDB()
+            return value
+        
+        self.closeDB()
+        return None
+
+
 
 class DomoticzDB_DeviceStatus:
     def __init__(self, database, pluginconf, hardwareID, log):
