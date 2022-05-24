@@ -1321,6 +1321,15 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "forceZigpy_noasyncio": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+  
+            },
             "disableZCLDefaultResponse": {
                 "type": "bool",
                 "default": 0,
