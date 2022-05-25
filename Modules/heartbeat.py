@@ -366,7 +366,6 @@ def pingRetryDueToBadHealth(self, NwkId):
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
         lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
         zdp_NWK_address_request(self, "fffc", lookup_ieee)
-        zdp_IEEE_address_request(self, "fffc", NwkId, )
         submitPing(self, NwkId)
         return
 
@@ -382,7 +381,6 @@ def pingRetryDueToBadHealth(self, NwkId):
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
         lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
         zdp_NWK_address_request(self, "fffc", lookup_ieee)
-        zdp_IEEE_address_request(self, "fffc", NwkId, )
 
         submitPing(self, NwkId)
 
