@@ -655,11 +655,23 @@ def processKnownDevices(self, Devices, NWKID):
 
                 func(self, NWKID)
 
-    if ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] and not self.busy and self.ControllerLink.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)):
-        mgmt_rtg(self, NWKID, "RoutingTable")
+    if ( 
+        _mainPowered 
+        and "RoutingTableRequestFeq" in self.pluginconf.pluginConf
+        and self.pluginconf.pluginConf["RoutingTableRequestFeq"] 
+        and (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)
+    ):
+        if not self.busy and self.ControllerLink.loadTransmit() < 3:
+            mgmt_rtg(self, NWKID, "RoutingTable")
+        else:
+            rescheduleAction = True
 
-    if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] and not self.busy and self.ControllerLink.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)):
-        mgmt_rtg(self, NWKID, "BindingTable")
+    #if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] 
+    #    and (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)):
+    #    if not self.busy and self.ControllerLink.loadTransmit() < 3 
+    #        mgmt_rtg(self, NWKID, "BindingTable")
+    #    else:
+    #        rescheduleAction = True
 
 
     # Experimental
