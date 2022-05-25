@@ -696,11 +696,11 @@ def processKnownDevices(self, Devices, NWKID):
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NWKID)
 
     # Do Attribute Disocvery if needed
-    if  night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
+    if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
         rescheduleAction = rescheduleAction or attributeDiscovery(self, NWKID)
 
     # If corresponding Attributes not present, let's do a Request Node Description
-    if  night_shift_jobs( self ) and not enabledEndDevicePolling and ((intHB % 1800) == 0):
+    if night_shift_jobs( self ) and not enabledEndDevicePolling and ((intHB % 1800) == 0):
         req_node_descriptor = False
         if (
             "Manufacturer" not in self.ListOfDevices[NWKID]
