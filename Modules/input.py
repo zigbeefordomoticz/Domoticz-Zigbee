@@ -20,6 +20,9 @@ from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                              sqn_get_internal_sqn_from_app_sqn,
                                              sqn_get_internal_sqn_from_aps_sqn)
 from Zigbee.decode8002 import decode8002_and_process
+from Zigbee.zclCommands import zcl_IAS_default_response
+from Zigbee.zclRawCommands import zcl_raw_default_response
+from Zigbee.zdpCommands import zdp_NWK_address_request
 
 from Modules.basicInputs import read_attribute_response
 from Modules.basicOutputs import (getListofAttribute, send_default_response,
@@ -58,14 +61,12 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            set_request_phase_datastruct, set_status_datastruct,
                            timeStamped, updLQI, updSQN)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
-                                  LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST, ZIGATE_EP,
-                                  ZIGBEE_COMMAND_IDENTIFIER)
+                                  LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
+                                  ZIGATE_EP, ZIGBEE_COMMAND_IDENTIFIER)
 from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
-from Modules.zigbeeVersionTable import FIRMWARE_BRANCH
-from Modules.zigbeeVersionTable import set_display_firmware_version
-from Zigbee.zclCommands import zcl_IAS_default_response
-from Zigbee.zclRawCommands import zcl_raw_default_response
+from Modules.zigbeeVersionTable import (FIRMWARE_BRANCH,
+                                        set_display_firmware_version)
 
 
 def ZigateRead(self, Devices, Data):
@@ -1858,46 +1859,51 @@ def Decode8034(self, Devices, MsgData, MsgLQI):  # Complex Descriptor response
 
 def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
     # MsgLen = len(MsgData)
-
+    # 0180020034ff000000800000000200000200000000bb57fe01008d15008a7d00ff03
+    # 00/00/00158d0001fe57bb7d8a/00
+    self.log.logging( "Input", "Log", "Decode8040 - payload %s" %(MsgData))
     MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgIEEE = MsgData[4:20]
-    if MsgDataStatus == "00":
-        MsgShortAddress = MsgData[20:24]
-        MsgNumAssocDevices = MsgData[24:26]
-        MsgStartIndex = MsgData[26:28]
-        MsgDeviceList = MsgData[28 : len(MsgData)]
+
+    self.log.logging( "Input", "Log", "Decode8040 - Reception of Network Address response %s with status %s" %(MsgIEEE, MsgDataStatus))
 
     if MsgDataStatus != "00":
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8040 - Reception of Node Descriptor for %s with status %s" %(MsgIEEE, MsgDataStatus))
         return
 
-    self.log.logging(
-        "Input",
-        "Status",
-        "Network Address response, Sequence number: "
-        + MsgSequenceNumber
-        + " Status: "
-        + DisplayStatusCode(MsgDataStatus)
-        + " IEEE: "
-        + MsgIEEE
-        + " Short Address: "
-        + MsgShortAddress
-        + " number of associated devices: "
-        + MsgNumAssocDevices
-        + " Start Index: "
-        + MsgStartIndex
-        + " Device List: "
-        + MsgDeviceList,
-    )
+    MsgShortAddress = MsgData[20:24]
+    extendedResponse = False
+    if len(MsgData) > 26:
+        extendedResponse = True
+        MsgNumAssocDevices = int( MsgData[24:26], 16)
+        MsgStartIndex = int( MsgData[26:28], 16)
+        MsgDeviceList = MsgData[28:]
+
+    self.log.logging( "Input", "Log", "Network Address response, [%s] Status: %s Ieee: %s NwkId: %s" %(
+        MsgSequenceNumber, DisplayStatusCode(MsgDataStatus), MsgIEEE, MsgShortAddress))
+
+    if extendedResponse:
+        self.log.logging( "Input", "Log", "                        , Nb Associated Devices: %s Idx: %s Device List: %s" %(
+            MsgNumAssocDevices, MsgStartIndex, MsgDeviceList))
+
+    if extendedResponse and ( MsgStartIndex + len(MsgDeviceList) // 4) != MsgNumAssocDevices :
+        self.log.logging(
+            "Input", 
+            "Debug", 
+            "Decode 8040 - Receive an IEEE: %s with a NwkId: %s but would need to continue to get all associated devices" % (MsgIEEE, MsgShortAddress)
+        )
+        Network_Address_response_request_next_index(self, MsgShortAddress, MsgIEEE, MsgStartIndex, len(MsgDeviceList) // 4)
 
     if MsgShortAddress in self.ListOfDevices:
         self.log.logging(
             "Input", "Debug", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress)
         )
+        if extendedResponse:
+            store_NwkAddr_Associated_Devices( self, MsgShortAddress, MsgStartIndex, MsgDeviceList)
+        timeStamped(self, MsgShortAddress, 0x8041)
+        loggingMessages(self, "8040", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
+        lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
+
         return
 
     # We might check if we didn't have a change in the IEEE <-> NwkId
@@ -1907,17 +1913,38 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
         self.log.logging(
             "Input",
             "Log",
-            "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),
+            "Decode 8040 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),
         )
         if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
-            self.log.logging("Input", "Log", "Decode 8041 - Not able to reconnect (unknown device)")
+            self.log.logging("Input", "Log", "Decode 8040 - Not able to reconnect (unknown device)")
             return
 
+    if extendedResponse:
+        store_NwkAddr_Associated_Devices( self, MsgShortAddress, MsgStartIndex, MsgDeviceList)
+
     timeStamped(self, MsgShortAddress, 0x8041)
-    loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
+    loggingMessages(self, "8040", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
     lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
 
+def Network_Address_response_request_next_index(self, nwkid, ieee, index, ActualDevicesListed):
+    new_index = "%02x" %( index + ActualDevicesListed )
+    self.log.logging("Input", "Log", "          Network_Address_response_request_next_index - %s Index: %s" %( nwkid, new_index))
+    zdp_NWK_address_request(self, nwkid, ieee, u8RequestType="01", u8StartIndex=new_index)
+    
+def store_NwkAddr_Associated_Devices( self, nwkid, Index, device_associated_list):
+    self.log.logging("Input", "Log", "          store_NwkAddr_Associated_Devices - %s %s" %( nwkid, device_associated_list))
 
+    if Index == 0:
+        self.ListOfDevices[ nwkid ]["NwkAddr Device Associated"] = []
+    
+    idx = 0
+    while idx < len(device_associated_list):
+        device_id = device_associated_list[idx:idx+4]
+        if device_id not in self.ListOfDevices[ nwkid ]["NwkAddr Device Associated"]:
+            self.ListOfDevices[ nwkid ]["NwkAddr Device Associated"].append( device_id )
+        idx += 4
+
+      
 def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     # MsgLen = len(MsgData)
 

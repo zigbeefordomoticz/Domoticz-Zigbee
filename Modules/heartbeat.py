@@ -13,7 +13,8 @@
 import time
 
 import Domoticz
-from Zigbee.zdpCommands import zdp_node_descriptor_request
+from Zigbee.zdpCommands import (zdp_node_descriptor_request,
+                                zdp_NWK_address_request, zdp_IEEE_address_request)
 
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
@@ -348,6 +349,8 @@ def pingRetryDueToBadHealth(self, NwkId):
         self.log.logging("Heartbeat", "Debug", "--------> ping Retry 1 Check %s" % NwkId, NwkId)
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
+        lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
+        zdp_NWK_address_request(self, "0000", lookup_ieee)
         submitPing(self, NwkId)
         return
 
@@ -361,6 +364,9 @@ def pingRetryDueToBadHealth(self, NwkId):
         self.log.logging("Heartbeat", "Debug", "--------> ping Retry 2 Check %s" % NwkId, NwkId)
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
+        lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
+        zdp_NWK_address_request(self, "fffc", lookup_ieee)
+        zdp_IEEE_address_request(self, "fffc", NwkId, )
         submitPing(self, NwkId)
         return
 
@@ -374,6 +380,10 @@ def pingRetryDueToBadHealth(self, NwkId):
         self.log.logging("Heartbeat", "Debug", "--------> ping Retry 3 (last) Check %s" % NwkId, NwkId)
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
+        lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
+        zdp_NWK_address_request(self, "fffc", lookup_ieee)
+        zdp_IEEE_address_request(self, "fffc", NwkId, )
+
         submitPing(self, NwkId)
 
 
@@ -498,6 +508,7 @@ def processKnownDevices(self, Devices, NWKID):
 
     # Hack bad devices
     ReArrangeMacCapaBasedOnModel(self, NWKID, self.ListOfDevices[NWKID]["MacCapa"])
+
 
     # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
     _mainPowered = mainPoweredDevice(self, NWKID)
@@ -651,6 +662,19 @@ def processKnownDevices(self, Devices, NWKID):
 
     if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] and not self.busy and self.ControllerLink.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)):
         mgmt_rtg(self, NWKID, "BindingTable")
+
+
+    # Experimental
+    if (
+        _mainPowered 
+        and "broadcastNwkAddressRequest" in self.pluginconf.pluginConf 
+        and self.pluginconf.pluginConf["broadcastNwkAddressRequest"]
+        and not self.busy and self.ControllerLink.loadTransmit() < 3 
+        and (intHB % ( self.pluginconf.pluginConf["broadcastNwkAddressRequest"] // HEARTBEAT) == 0)
+    ):
+        lookup_ieee = self.ListOfDevices[ NWKID ]['IEEE']
+        zdp_NWK_address_request(self, "fffc", lookup_ieee, u8RequestType="01")
+        #zdp_IEEE_address_request(self, "fffc", NWKID, )
 
 
     # Reenforcement of Legrand devices options if required
