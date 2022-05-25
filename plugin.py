@@ -69,12 +69,11 @@
 </plugin>
 """
 
-import sys
 import pathlib
-
-from pkg_resources import DistributionNotFound
+import sys
 
 import Domoticz
+from pkg_resources import DistributionNotFound
 
 try:
     from Domoticz import Devices, Images, Parameters, Settings
@@ -83,10 +82,10 @@ except ImportError:
 
 import gc
 import json
+import os
 import sys
 import threading
 import time
-import os
 
 from Classes.AdminWidgets import AdminWidgets
 # from Classes.APS import APSManagement
@@ -103,8 +102,7 @@ from Classes.PluginConf import PluginConf
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
 from Modules.basicOutputs import (ZigatePermitToJoin,
-                                  do_Many_To_One_RouteRequest,
-                                  ieee_addr_request, leaveRequest,
+                                  do_Many_To_One_RouteRequest, leaveRequest,
                                   setExtendedPANID, setTimeServer,
                                   start_Zigate, zigateBlueLed)
 from Modules.casaia import restart_plugin_reset_ModuleIRCode

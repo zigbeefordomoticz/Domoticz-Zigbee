@@ -1321,6 +1321,14 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "broadcastNwkAddressRequest": {
+                "type": "int",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
             "forceZigpy_noasyncio": {
                 "type": "bool",
                 "default": 0,
@@ -1328,7 +1336,6 @@ SETTINGS = {
                 "restart": 0,
                 "hidden": False,
                 "Advanced": True,
-  
             },
             "disableZCLDefaultResponse": {
                 "type": "bool",

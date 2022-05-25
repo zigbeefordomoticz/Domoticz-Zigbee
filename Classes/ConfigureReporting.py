@@ -13,27 +13,22 @@
 import time
 
 import Domoticz
-from Modules.basicOutputs import ieee_addr_request
 from Modules.bindings import bindDevice, unbindDevice
-from Modules.tools import (
-    get_isqn_datastruct,
-    get_list_isqn_attr_datastruct,
-    getClusterListforEP,
-    is_ack_tobe_disabled,
-    is_attr_unvalid_datastruct,
-    is_bind_ep,
-    is_fake_ep,
-    is_time_to_perform_work,
-    mainPoweredDevice,
-    reset_attr_datastruct,
-    set_isqn_datastruct,
-    set_status_datastruct,
-    set_timestamp_datastruct,
-)
-from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, CFG_RPT_ATTRIBUTESbyCLUSTERS
-from Zigbee.zclCommands import zcl_configure_reporting_requestv2, zcl_read_report_config_request
+from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
+                           getClusterListforEP, is_ack_tobe_disabled,
+                           is_attr_unvalid_datastruct, is_bind_ep, is_fake_ep,
+                           is_time_to_perform_work, mainPoweredDevice,
+                           reset_attr_datastruct, set_isqn_datastruct,
+                           set_status_datastruct, set_timestamp_datastruct)
+from Modules.zigateConsts import (MAX_LOAD_ZIGATE, ZIGATE_EP,
+                                  CFG_RPT_ATTRIBUTESbyCLUSTERS)
+from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
+                                zcl_read_report_config_request)
+from Zigbee.zdpCommands import (zdp_IEEE_address_request,
+                                zdp_NWK_address_request)
 
-from Classes.ZigateTransport.sqnMgmt import TYPE_APP_ZCL, sqn_get_internal_sqn_from_app_sqn
+from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
+                                             sqn_get_internal_sqn_from_app_sqn)
 
 MAX_ATTR_PER_REQ = 3
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
@@ -530,7 +525,8 @@ def retreive_configuration_reporting_definition(self, NwkId):
 
 def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
     if batchMode and self.pluginconf.pluginConf["allowReBindingClusters"]:
-        ieee_addr_request(self, nwkid)
+        lookup_ieee = self.ListOfDevices[nwkid]["IEEE"]
+        zdp_NWK_address_request(self, "fffc", lookup_ieee, )
         # Correctif 22 Novembre. Delete only for the specific cluster and not the all Set
         if (
             "Bind" in self.ListOfDevices[nwkid]

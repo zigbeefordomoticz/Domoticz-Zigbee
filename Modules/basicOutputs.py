@@ -34,10 +34,10 @@ from Zigbee.zdpRawCommands import (zdp_management_binding_table_request,
 from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
                                        send_zigatecmd_zcl_noack)
-from Modules.tools import (build_fcf, getListOfEpForCluster,
-                           is_ack_tobe_disabled, is_hex, mainPoweredDevice,
-                           set_isqn_datastruct, set_request_datastruct,
-                           set_timestamp_datastruct, get_and_inc_ZDP_SQN)
+from Modules.tools import (build_fcf, get_and_inc_ZDP_SQN,
+                           getListOfEpForCluster, is_ack_tobe_disabled, is_hex,
+                           mainPoweredDevice, set_isqn_datastruct,
+                           set_request_datastruct, set_timestamp_datastruct)
 from Modules.zigateCommands import (zigate_blueled,
                                     zigate_firmware_default_response,
                                     zigate_get_nwk_state, zigate_get_time,
@@ -688,13 +688,6 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
         )
 
 
-def ieee_addr_request(self, lookup):
-    u8RequestType = "00"
-    u8StartIndex = "00"
-    zdp_IEEE_address_request(self, lookup, u8RequestType , u8StartIndex)
-    #sendZigateCmd(self, "0041", "02" + nwkid + u8RequestType + u8StartIndex)
-
-
 def unknown_device_nwkid(self, nwkid):
 
     if nwkid in self.UnknownDevices:
@@ -706,7 +699,7 @@ def unknown_device_nwkid(self, nwkid):
     # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
     if self.networkmap and not self.networkmap.NetworkMapPhase():
         self.networkmap.start_scan()
-    ieee_addr_request(self, nwkid)
+    zdp_IEEE_address_request(self, "fffd", nwkid, )
 
 
 def send_default_response(

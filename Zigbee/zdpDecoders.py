@@ -272,11 +272,10 @@ def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
     status = Payload[2:4]
     ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[4:20], 16)))[0]
     if status != "00":
-        
         buildPayload = sqn + status + ieee
     else:
         nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
-    
+
         self.log.logging("zdpDecoder", "Debug", "buildframe_nwk_address_response sqn: %s status: %s ieee: %s nwkid: %s" %( sqn, status, ieee, nwkid))
         NumAssocDev = Payload[24:26] if len(Payload) > 24 else ""
         StartIndex = Payload[26:28] if len(Payload) > 26 else ""
