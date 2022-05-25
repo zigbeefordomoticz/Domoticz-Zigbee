@@ -15,15 +15,17 @@ def rest_cfgrpt_ondemand(self, verb, data, parameters):
     # Trigger a Cfg Reporting on a specific Device
 
     _response = prepResponseMessage(self, setupHeadersResponse())
-    if self.configureReporting is None or verb != "GET" or len(parameters) != 1:
+    if self.ControllerData and self.configureReporting is None or verb != "GET" or len(parameters) != 1:
         self.logging("Error", f"rest_cfgrpt_ondemand incorrect request {verb} {data} {parameters}")
         return _response
 
-    if parameters[0] not in self.ListOfDevices:
+    if self.ControllerData and parameters[0] not in self.ListOfDevices:
         self.logging("Error", "rest_cfgrpt_ondemand requested on %s doesn't exist" % parameters[0])
         return _response
 
-    self.configureReporting.cfg_reporting_on_demand( parameters[0] )
+    if self.ControllerData:
+        self.configureReporting.cfg_reporting_on_demand( parameters[0] )
+        
     self.logging("Debug", f"rest_cfgrpt_ondemand requested on {parameters[0]}")
 
     _response["Data"] = json.dumps({"status": "Configure Reporting requested"}, )
@@ -43,18 +45,22 @@ def rest_cfgrpt_ondemand_with_config(self, verb, data, parameters ):
         self.logging("Error", f"rest_cfgrpt_ondemand_with_config incorrect request only PUT allowed {verb} {data} {parameters}")
         return _response
 
-    if self.configureReporting is None:
+    if self.ControllerData and self.configureReporting is None:
         self.logging("Debug", f"rest_cfgrpt_ondemand_with_config configureReporting not ready yet !!!{verb} {data} {parameters}")
         return _response
 
     if verb == "PUT":
-        return rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _response)
+        if self.ControllerData:
+            return rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _response)
+        return fake_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _response)
     
     if verb == "DELETE":
         return rest_cfgrpt_ondemand_with_config_delete(self, verb, data, parameters , _response)
 
     if verb == "GET":
-        return rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response)
+        if self.ControllerData:
+            return rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response)
+        return fake_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response)
        
         
 def rest_cfgrpt_ondemand_with_config_delete(self, verb, data, parameters , _response):
@@ -76,6 +82,7 @@ def rest_cfgrpt_ondemand_with_config_delete(self, verb, data, parameters , _resp
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
 
+
 def rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response):
     
     self.logging("Debug", f"rest_cfgrpt_ondemand_with_config_get  {verb} {data} {parameters}")
@@ -86,6 +93,12 @@ def rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _respons
     _response["Data"] = convert_to_json( cfg_rpt_record )
     
     return _response
+
+def fake_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response):
+    cluster_list = [{"ClusterId": "0702", "Attributes": [{"Attribute": "0000", "Infos": [{"DataType": "25"}, {"MinInterval": "0005"}, {"MaxInterval": "012C"}, {"TimeOut": "0000"}, {"Change": "0000000000000001"}]}]}, {"ClusterId": "0b04", "Attributes": [{"Attribute": "0505", "Infos": [{"DataType": "21"}, {"MinInterval": "0001"}, {"MaxInterval": "0005"}, {"TimeOut": "0000"}, {"Change": "0001"}]}, {"Attribute": "0508", "Infos": [{"DataType": "21"}, {"MinInterval": "0001"}, {"MaxInterval": "012C"}, {"TimeOut": "0000"}, {"Change": "0001"}]}, {"Attribute": "050b", "Infos": [{"DataType": "29"}, {"MinInterval": "0001"}, {"MaxInterval": "0005"}, {"TimeOut": "0000"}, {"Change": "0001"}]}]}]
+    _response["Data"] = json.dumps(  cluster_list )
+    return  _response
+
 
 def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _response):
     # wget --method=PUT \
@@ -176,6 +189,11 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
     return _response
 
 
+def fake_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _response):
+    action = {"Name": "Configure reporting record updated", "TimeStamp": int(time.time())}
+    _response["Data"] = json.dumps(action, sort_keys=True)
+    return _response
+
 def convert_to_json( data ):
     # {"0006": {"Attributes": {"0000": {"DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "01"}}}, 
     #  "0702": {"Attributes": {"0000": {"DataType": "25", "MinInterval": "FFFF", "MaxInterval": "0000", "TimeOut": "0000", "Change": "000000000000000a"}}}, 
@@ -198,8 +216,7 @@ def convert_to_json( data ):
         cluster_list.append( cluster_info )
     return json.dumps(  cluster_list )
 
-            
-    
+               
 def get_cfg_rpt_record(self, NwkId):
 
     if "ParamConfigureReporting" in self.ListOfDevices[NwkId]:
