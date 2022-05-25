@@ -1442,3 +1442,20 @@ def get_deviceconf_parameter_value(self, model, attribute, return_default=None):
     if attribute not in self.DeviceConf[ model ]:
         return return_default
     return self.DeviceConf[ model ][ attribute ]
+
+
+def night_shift_jobs( self ):
+    # If NighShift not enable, then alwasy return True
+    # Otherwise return True only if between midnight and 6am
+    
+    if not self.pluginconf.pluginConf["NightShift"]:
+        return True
+    
+    start = datetime.time(23, 0, 0)
+    end = datetime.time(6, 0, 0)
+    current = datetime.datetime.now().time()
+    
+    if start <= current <= end:
+        return True
+    return False
+    

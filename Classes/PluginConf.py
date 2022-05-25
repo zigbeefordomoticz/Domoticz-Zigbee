@@ -79,6 +79,15 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": False,
             },
+            "NightShift": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 1,
+                "hidden": False,
+                "Advanced": False,
+ 
+            }
         },
     },
     "GroupManagement": {
