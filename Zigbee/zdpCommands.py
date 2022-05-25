@@ -29,7 +29,7 @@ def zdp_NWK_address_request(self, router_nwkid, lookup_ieee, u8RequestType="00",
     # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
     # zdp_raw_NWK_address_request(self, router, ieee, u8RequestType, u8StartIndex)
     
-    self.log.logging("zdpCommand", "Log", "zdp_NWK_address_request %s %s %s" % (lookup_ieee, u8RequestType, u8StartIndex))
+    self.log.logging("zdpCommand", "Debug", "zdp_NWK_address_request %s %s %s" % (lookup_ieee, u8RequestType, u8StartIndex))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zdp_raw_NWK_address_request(self, router_nwkid, lookup_ieee, u8RequestType, u8StartIndex)
     return send_zigatecmd_raw(self, "0040", "02" + router_nwkid + lookup_ieee + u8RequestType + u8StartIndex)
@@ -40,7 +40,7 @@ def zdp_IEEE_address_request(self, router_nwkid, lookup_nwkid, u8RequestType="00
     # zdp_raw_IEEE_address_request(self, router, nwkid, u8RequestType, u8StartIndex):
     # always send to node of interest rather than a cache
     
-    self.log.logging("zdpCommand", "Log", "zdp_IEEE_address_request %s %s %s" % (lookup_nwkid, u8RequestType, u8StartIndex))
+    self.log.logging("zdpCommand", "Debug", "zdp_IEEE_address_request %s %s %s" % (lookup_nwkid, u8RequestType, u8StartIndex))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zdp_raw_IEEE_address_request(self, router_nwkid, lookup_nwkid, u8RequestType, u8StartIndex)
     return send_zigatecmd_raw(self, "0041", "02" + router_nwkid + lookup_nwkid + u8RequestType + u8StartIndex)
