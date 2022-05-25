@@ -252,6 +252,7 @@ def Decode0040(self, Devices, MsgData, MsgLQI):  # NWK_addr_req
 
 def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
     self.log.logging("Input", "Log", "Decode0041 - IEEE_addr_req: %s" % MsgData)
+
     # sqn + nwkid + u8RequestType + u8StartIndex
     sqn = MsgData[:2]
     srcNwkId = MsgData[2:6]
@@ -259,7 +260,12 @@ def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
     nwkid = MsgData[8:12]
     reqType = MsgData[12:14]
     startIndex = MsgData[14:16]
-    
+
+    self.log.logging("Input", "Log", "      source req nwkid: %s" % srcNwkId)
+    self.log.logging("Input", "Log", "      request NwkId    : %s" % nwkid)
+    self.log.logging("Input", "Log", "      request Type    : %s" % reqType)
+    self.log.logging("Input", "Log", "      request Idx     : %s" % startIndex)
+
     # we should answer: sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
     Cluster = "8001"
     if nwkid == self.ControllerNWKID:
@@ -267,11 +273,19 @@ def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
         controller_ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(self.ControllerIEEE, 16)))[0]
         controller_nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ControllerNWKID, 16)))[0]
         payload = sqn + status + controller_ieee + controller_nwkid + "00"
+
+    elif nwkid in self.ListOfDevices:
+        status = "00"
+        device_ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(self.ListOfDevices[nwkid]['IEEE'], 16)))[0]
+        device_nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ControllerNWKID, 16)))[0]
+        payload = sqn + status + device_ieee + device_nwkid + "00"
+
     else:
         status = "81"  # Device not found
-        payload = sqn + status + srcNwkId
-    raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
+        payload = sqn + status + nwkid
     self.log.logging("Input", "Log", "Decode0041 - response payload: %s" %payload)
+    raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
+
 
     
 def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
@@ -4373,7 +4387,7 @@ def Decode80A5(self, Devices, MsgData, MsgLQI):
     SceneID = MsgPayload[4:6]
     TransitionTime = 0    
     if len(MsgPayload) == 10 and MsgPayload[6:10] != 'ffff':
-        TransitionTime = int(MsgPayload[6:10],16)/10
+        TransitionTime = int(MsgPayload[6:10],16) / 10
 
     self.log.logging("Input", "Debug", "Recall Scene: Group ID: %s Scene ID: %s Transition Time: %ss" %(GroupID, SceneID, str(TransitionTime)), MsgSrcAddr)
 
