@@ -667,17 +667,13 @@ def processKnownDevices(self, Devices, NWKID):
         _mainPowered 
         and "broadcastNwkAddressRequest" in self.pluginconf.pluginConf 
         and self.pluginconf.pluginConf["broadcastNwkAddressRequest"]
-        and not self.busy and self.ControllerLink.loadTransmit() < 3 
         and (intHB % ( self.pluginconf.pluginConf["broadcastNwkAddressRequest"] // HEARTBEAT) == 0)
     ):
-        lookup_ieee = self.ListOfDevices[ NWKID ]['IEEE']
-        zdp_NWK_address_request(self, "fffc", lookup_ieee, u8RequestType="01")
-        #zdp_IEEE_address_request(self, "fffc", NWKID, )
-
-
-    # Reenforcement of Legrand devices options if required
-    #if (self.HeartbeatCount % LEGRAND_FEATURES) == 0:
-    #    rescheduleAction = rescheduleAction or legrandReenforcement(self, NWKID)
+        if not self.busy and self.ControllerLink.loadTransmit() < 3:
+            lookup_ieee = self.ListOfDevices[ NWKID ]['IEEE']
+            zdp_NWK_address_request(self, "fffc", lookup_ieee, u8RequestType="01")
+        else:
+            rescheduleAction = True
 
     # Call Schneider Reenforcement if needed
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
