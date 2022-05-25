@@ -30,155 +30,8 @@
   "bindEp": [
     "01"
   ],
-  "ClusterToBind": [
-    "0702"
-  ],
-  "ConfigureReporting": {
-    "0702": {
-      "Attributes": {
-        "0000": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4000": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4001": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4002": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4100": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4101": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "4102": {
-          "Change": "00000000000003E8",
-          "DataType": "25",
-          "MaxInterval": "0E10",
-          "MinInterval": "003C",
-          "TimeOut": "0000"
-        },
-        "0400": {
-          "Change": "00000064",
-          "DataType": "2a",
-          "MaxInterval": "012C",
-          "MinInterval": "000a",
-          "TimeOut": "0000"
-        },
-        "2000": {
-          "Change": "00000064",
-          "DataType": "2a",
-          "MaxInterval": "012C",
-          "MinInterval": "000a",
-          "TimeOut": "0000"
-        },
-        "2001": {
-          "Change": "00000064",
-          "DataType": "2a",
-          "MaxInterval": "012C",
-          "MinInterval": "000a",
-          "TimeOut": "0000"
-        },
-        "2002": {
-          "Change": "00000064",
-          "DataType": "2a",
-          "MaxInterval": "012C",
-          "MinInterval": "000a",
-          "TimeOut": "0000"
-        },
-        "2100": {
-          "Change": "00000064",
-          "DataType": "2a",
-          "MaxInterval": "012C",
-          "MinInterval": "000a",
-          "TimeOut": "0000"
-        },
-        "2101": {
-          "Change": "00000064",
-          "DataType": "2a",
-          "MaxInterval": "012C",
-          "MinInterval": "000a",
-          "TimeOut": "0000"
-        },
-        "2102": {
-          "Change": "00000064",
-          "DataType": "2a",
-          "MaxInterval": "012C",
-          "MinInterval": "000a",
-          "TimeOut": "0000"
-        },
-        "3000": {
-          "Change": "00000064",
-          "DataType": "22",
-          "MaxInterval": "0E10",
-          "MinInterval": "012C",
-          "TimeOut": "0000"
-        },
-        "3001": {
-          "Change": "00000064",
-          "DataType": "22",
-          "MaxInterval": "0E10",
-          "MinInterval": "012C",
-          "TimeOut": "0000"
-        },
-        "3002": {
-          "Change": "00000064",
-          "DataType": "22",
-          "MaxInterval": "0E10",
-          "MinInterval": "012C",
-          "TimeOut": "0000"
-        },
-        "3100": {
-          "Change": "00000064",
-          "DataType": "22",
-          "MaxInterval": "012C",
-          "MinInterval": "000a",
-          "TimeOut": "0000"
-        },
-        "3101": {
-          "Change": "00000064",
-          "DataType": "22",
-          "MaxInterval": "012C",
-          "MinInterval": "000a",
-          "TimeOut": "0000"
-        },
-        "3102": {
-          "Change": "00000064",
-          "DataType": "22",
-          "MaxInterval": "012C",
-          "MinInterval": "000a",
-          "TimeOut": "0000"
-        }
-      }
-    }
-  },
+  "ClusterToBind": [],
+  "ConfigureReporting": {},
   "ReadAttributes": {
     "0000": [
       "0000",
@@ -187,8 +40,7 @@
       "0003",
       "0004",
       "0005",
-      "0006",
-      "0007"
+      "0006"
     ],
     "0003": [],
     "0702": [
@@ -199,7 +51,32 @@
       "0302",
       "0303",
       "0306",
-      "0400"
-    ]
+      "0400",
+      "2000",
+      "2001",
+      "2002",
+      "2100",
+      "2101",
+      "2102",
+      "2103",
+      "3000",
+      "3001",
+      "3002",
+      "3100",
+      "3101",
+      "3102",
+      "3103",
+      "4000",
+      "4001",
+      "4002",
+      "4100",
+      "4101",
+      "4102",
+      "4103"
+    ],
+    "0019": []
+  },
+  "Param": {
+    "PowerPollingFreq": 0
   }
 }
