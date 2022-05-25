@@ -95,7 +95,7 @@ def rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _respons
     return _response
 
 def fake_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response):
-    cluster_list = [{"ClusterId": "0702", "Attributes": [{"Attribute": "0000", "Infos": [{"DataType": "25"}, {"MinInterval": "0005"}, {"MaxInterval": "012C"}, {"TimeOut": "0000"}, {"Change": "0000000000000001"}]}]}, {"ClusterId": "0b04", "Attributes": [{"Attribute": "0505", "Infos": [{"DataType": "21"}, {"MinInterval": "0001"}, {"MaxInterval": "0005"}, {"TimeOut": "0000"}, {"Change": "0001"}]}, {"Attribute": "0508", "Infos": [{"DataType": "21"}, {"MinInterval": "0001"}, {"MaxInterval": "012C"}, {"TimeOut": "0000"}, {"Change": "0001"}]}, {"Attribute": "050b", "Infos": [{"DataType": "29"}, {"MinInterval": "0001"}, {"MaxInterval": "0005"}, {"TimeOut": "0000"}, {"Change": "0001"}]}]}]
+    cluster_list = [{"ClusterId": "0702", "Attributes": [{"Attribute": "0000", "Infos": [{"DataType": "25", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0000000000000001"}]}]}, {"ClusterId": "0b04", "Attributes": [{"Attribute": "0505", "Infos": [{"DataType": "21", "MinInterval": "0001", "MaxInterval": "0005", "TimeOut": "0000", "Change": "0001"}]}, {"Attribute": "0508", "Infos": [{"DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001"}]}, {"Attribute": "050b", "Infos": [{"DataType": "29", "MinInterval": "0001", "MaxInterval": "0005", "TimeOut": "0000", "Change": "0001"}]}]}]
     _response["Data"] = json.dumps(  cluster_list )
     return  _response
 
@@ -204,15 +204,10 @@ def convert_to_json( data ):
     for cluster in data:
         cluster_info = {"ClusterId": cluster, "Attributes": []}
         for attribute in data[ cluster ]["Attributes"]:
-            attributes_info = {}
-            attributes_info[ "Attribute" ]= attribute
-            attributes_info[ "Infos"] = []
-            for item in data[ cluster ]["Attributes"][ attribute ]:
-                info = {}
-                info[ item ] = data[ cluster ]["Attributes"][ attribute ][ item ]
-                attributes_info[ "Infos"].append(info )
+            infos = {item: data[cluster]["Attributes"][attribute][item] for item in data[cluster]["Attributes"][attribute]}
+            attributes_info = {"Attribute": attribute, "Infos": [ infos ] }
             cluster_info[ "Attributes"].append( attributes_info )
-            
+
         cluster_list.append( cluster_info )
     return json.dumps(  cluster_list )
 
