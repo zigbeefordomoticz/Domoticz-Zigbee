@@ -657,6 +657,7 @@ def processKnownDevices(self, Devices, NWKID):
 
     if ( 
         _mainPowered 
+        and self.zigbee_communitation == "zigpy"
         and "RoutingTableRequestFeq" in self.pluginconf.pluginConf
         and self.pluginconf.pluginConf["RoutingTableRequestFeq"] 
         and (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)
