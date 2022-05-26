@@ -1339,7 +1339,7 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
-            "broadcastNwkAddressRequest": {
+            "AssociatedDevicesTable": {
                 "type": "int",
                 "default": 0,
                 "current": None,
