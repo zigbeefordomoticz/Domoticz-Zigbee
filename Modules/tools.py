@@ -1451,7 +1451,7 @@ def night_shift_jobs( self ):
     # Otherwise return True only if between midnight and 6am
 
     if not self.pluginconf.pluginConf["NightShift"]:
-        Domoticz.Log("Always On" )
+        # Domoticz.Log("Always On" )
         return True
 
     current = datetime.datetime.now().time()
