@@ -388,18 +388,20 @@ def collect_routing_table(self):
     _topo = []
     for x in self.ListOfDevices:
         for y in extract_routes(self, x):
-            _relation = {"Father": get_node_name( self, x), "Child": get_node_name( self, y), "_lnkqty": 0, "DeviceType": find_device_type(self, y)}
-
+            _relation = {
+                "Father": get_node_name( self, x), 
+                "Child": get_node_name( self, y), 
+                "_lnkqty": get_lqi_from_neighbours(self, x, y), 
+                "DeviceType": find_device_type(self, y)
+                }
             self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], x, _relation["Child"], y, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append(_relation)
-    Domoticz.Log("Topologoy: %s" %_topo)
     return _topo
 
        
         
 def extract_routes( self, node):
-    
     node_routes = []
     if "RoutingTable" in self.ListOfDevices[ node ]:
         for route in self.ListOfDevices[ node ][ "RoutingTable" ]["Devices"]:
@@ -407,3 +409,14 @@ def extract_routes( self, node):
 
     return node_routes            
         
+
+def get_lqi_from_neighbours(self, father, child):
+    if "Neighbours" in self.ListOfDevices[ father ] and len(self.ListOfDevices[ father ]["Neighbours"]) > 0:
+        item = self.ListOfDevices[ father ]["Neighbours"][ len(self.ListOfDevices[ father ]["Neighbours"]) - 1]
+        for item2 in item["Devices"]:
+            for node in item2:
+                if node != child:
+                    continue
+                return item2[ node ]["_lnkqty"] 
+    return 1
+                    
