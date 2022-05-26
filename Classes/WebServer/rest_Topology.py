@@ -418,8 +418,8 @@ def collect_routing_table(self):
 
        
 def collect_associated_devices( self, node):
-    if "AssociatedDevices"  in self.ListOfDevices[ node ]:
-        return list(self.ListOfDevices[ node ]["AssociatedDevices"])
+    if "AssociatedDevices" in self.ListOfDevices[ node ]:
+        return list(self.ListOfDevices[ node ]["AssociatedDevices"]["Devices"])
     return []
         
         
