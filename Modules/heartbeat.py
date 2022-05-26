@@ -681,9 +681,9 @@ def processKnownDevices(self, Devices, NWKID):
     if (
         _mainPowered 
         and night_shift_jobs( self )
-        and "broadcastNwkAddressRequest" in self.pluginconf.pluginConf 
-        and self.pluginconf.pluginConf["broadcastNwkAddressRequest"]
-        and (intHB % ( self.pluginconf.pluginConf["broadcastNwkAddressRequest"] // HEARTBEAT) == 0)
+        and "AssociatedDevicesTable" in self.pluginconf.pluginConf 
+        and self.pluginconf.pluginConf["AssociatedDevicesTable"]
+        and (intHB % ( self.pluginconf.pluginConf["AssociatedDevicesTable"] // HEARTBEAT) == 0)
     ):
         if not self.busy and self.ControllerLink.loadTransmit() < 3:
             lookup_ieee = self.ListOfDevices[ NWKID ]['IEEE']

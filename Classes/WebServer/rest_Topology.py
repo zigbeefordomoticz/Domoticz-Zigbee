@@ -386,20 +386,42 @@ def find_device_type(self, node):
 def collect_routing_table(self):
     
     _topo = []
-    for x in self.ListOfDevices:
-        for y in extract_routes(self, x):
+    for father in self.ListOfDevices:
+        for child in extract_routes(self, father):
+            if child not in self.ListOfDevices:
+                continue
             _relation = {
-                "Father": get_node_name( self, x), 
-                "Child": get_node_name( self, y), 
-                "_lnkqty": get_lqi_from_neighbours(self, x, y), 
-                "DeviceType": find_device_type(self, y)
+                "Father": get_node_name( self, father), 
+                "Child": get_node_name( self, child), 
+                "_lnkqty": get_lqi_from_neighbours(self, father, child), 
+                "DeviceType": find_device_type(self, child)
                 }
-            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
-                _relation["Father"], x, _relation["Child"], y, _relation["_lnkqty"], _relation["DeviceType"]),)
-            _topo.append(_relation)
+            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+                _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
+            _topo.append( _relation ) 
+            
+        for child in collect_associated_devices( self, father):
+            if child not in self.ListOfDevices:
+                continue
+            _relation = {
+                "Father": get_node_name( self, father), 
+                "Child": get_node_name( self, child), 
+                "_lnkqty": get_lqi_from_neighbours(self, father, child), 
+                "DeviceType": find_device_type(self, child)
+                }
+            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+                _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
+            if _relation not in _topo:
+                _topo.append( _relation )
+            
     return _topo
 
        
+def collect_associated_devices( self, node):
+    if "AssociatedDevices"  in self.ListOfDevices[ node ]:
+        return list(self.ListOfDevices[ node ]["AssociatedDevices"])
+    return []
+        
         
 def extract_routes( self, node):
     node_routes = []
