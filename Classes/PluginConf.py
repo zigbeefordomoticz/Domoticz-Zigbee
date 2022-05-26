@@ -79,6 +79,15 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": False,
             },
+            "NightShift": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+ 
+            }
         },
     },
     "GroupManagement": {
@@ -1383,7 +1392,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": True,
+                "hidden": False,
                 "Advanced": True,
             },
             "BindingTableRequestFeq": {
