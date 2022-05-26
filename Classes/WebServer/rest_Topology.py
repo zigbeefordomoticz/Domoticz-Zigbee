@@ -101,8 +101,7 @@ def rest_netTopologie(self, verb, data, parameters):
         return _response
 
     if verb == "GET":
-        
-            
+           
         if len(parameters) == 0:
             # Send list of Time Stamps
             if len(self.ControllerData) == 0:
@@ -110,7 +109,10 @@ def rest_netTopologie(self, verb, data, parameters):
             _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
         elif len(parameters) == 1:
-
+            
+            if self.pluginconf.pluginConf["TopologyOnRoutingTable"]:
+                _response["Data"] = json.dumps(collect_routing_table(self), sort_keys=True)
+            else:
                 if len(self.ControllerData) == 0:
                     _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
                 else:
@@ -378,3 +380,30 @@ def find_device_type(self, node):
         if self.ListOfDevices[node]["DeviceType"] == "RFD":
             return "End Device"
     return None
+
+
+
+def collect_routing_table(self):
+    
+    _topo = []
+    for x in self.ListOfDevices:
+        for y in extract_routes(self, x):
+            _relation = {"Father": get_node_name( self, x), "Child": get_node_name( self, y), "_lnkqty": 0, "DeviceType": find_device_type(self, y)}
+
+            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+                _relation["Father"], x, _relation["Child"], y, _relation["_lnkqty"], _relation["DeviceType"]),)
+            _topo.append(_relation)
+    Domoticz.Log("Topologoy: %s" %_topo)
+    return _topo
+
+       
+        
+def extract_routes( self, node):
+    
+    node_routes = []
+    if "RoutingTable" in self.ListOfDevices[ node ]:
+        for route in self.ListOfDevices[ node ][ "RoutingTable" ]["Devices"]:
+            node_routes.extend(item for item in route if route[item]["Status"] == "Active (0)")
+
+    return node_routes            
+        
