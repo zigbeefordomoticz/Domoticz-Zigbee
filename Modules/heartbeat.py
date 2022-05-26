@@ -500,6 +500,7 @@ def submitPing(self, NwkId):
 def processKnownDevices(self, Devices, NWKID):
     # Begin
     # Normalize Hearbeat value if needed
+
     intHB = int(self.ListOfDevices[NWKID]["Heartbeat"])
     if intHB > 0xFFFF:
         intHB -= 0xFFF0
@@ -507,7 +508,6 @@ def processKnownDevices(self, Devices, NWKID):
 
     # Hack bad devices
     ReArrangeMacCapaBasedOnModel(self, NWKID, self.ListOfDevices[NWKID]["MacCapa"])
-
 
     # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
     _mainPowered = mainPoweredDevice(self, NWKID)

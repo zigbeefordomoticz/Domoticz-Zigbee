@@ -26,7 +26,7 @@ SETTINGS = {
                 "type": "bool",
                 "default": 0,
                 "current": None,
-                "restart": 0,
+                "restart": 1,
                 "hidden": False,
                 "Advanced": False,
             },
@@ -83,7 +83,7 @@ SETTINGS = {
                 "type": "bool",
                 "default": 0,
                 "current": None,
-                "restart": 1,
+                "restart": 0,
                 "hidden": False,
                 "Advanced": False,
  

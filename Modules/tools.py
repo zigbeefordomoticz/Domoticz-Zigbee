@@ -1316,7 +1316,9 @@ def setConfigItem(Key=None, Attribute="", Value=None):
     return Config
 
 
-def getConfigItem(Key=None, Attribute="", Default={}):
+def getConfigItem(Key=None, Attribute="", Default = None):
+    if Default is None:
+        Default = {}
     Value = Default
     try:
         Config = Domoticz.Configuration()
@@ -1452,13 +1454,23 @@ def night_shift_jobs( self ):
         Domoticz.Log("Always On" )
         return True
 
-    start = datetime.time(23, 0, 0)
-    end = datetime.time(6, 0, 0)
     current = datetime.datetime.now().time()
-    
+
+    # Check against first part of the night
+    start = datetime.time(23, 0,0)
+    end = datetime.time(23,59,59)
+
     if start <= current <= end:
-        Domoticz.Log("Inside of Night Shift period %s %s %s" %( start, current, end))
+        #Domoticz.Log("Inside of Night Shift period %s %s %s" %( start, current, end))
         return True
-    Domoticz.Log("Outside of Night Shift period %s %s %s" %( start, current, end))
+
+    # Check against the second part of the night
+    start = datetime.time(0, 0,0)
+    end = datetime.time(6,0,0)
+    if start <= current <= end:
+        #Domoticz.Log("Inside of Night Shift period %s %s %s" %( start, current, end))
+        return True
+
+    #Domoticz.Log("Outside of Night Shift period %s %s %s" %( start, current, end))
     return False
     
