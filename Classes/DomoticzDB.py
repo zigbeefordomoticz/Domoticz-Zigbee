@@ -214,8 +214,8 @@ class DomoticzDB_Hardware:
                 self.dbConn.commit()
                 self.closeDB()
                 return None
-            # else:
-            #    self.logging(  "Log", "Dz LogLevel --> Value: %s" %value)
+            #else:
+            #   self.logging(  "Log", "Dz LogLevel --> Value: %s" %value)
             self.dbConn.commit()
             self.closeDB()
             return value
@@ -229,17 +229,16 @@ class DomoticzDB_Hardware:
             try:
                 self.dbCursor.execute("SELECT count(*) FROM Hardware WHERE Extra = 'Zigate' ")
                 value = int( self.dbCursor.fetchone()[0] )
-                self.logging("Log", "Multi Instance query %s" %value)
+                #self.logging("Log", "Multi Instance query %s" %value)
             except Exception as e :
                 self.logging("Error", "Error while querying Multi Instance - %s" %e)
                 value = 0
         
             if int(value) > 1:
+                self.closeDB()
                 return True
-            return False
             self.closeDB()
-            return value
-        
+            return False
         self.closeDB()
         return None
 
