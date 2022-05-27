@@ -214,8 +214,8 @@ class DomoticzDB_Hardware:
                 self.dbConn.commit()
                 self.closeDB()
                 return None
-            # else:
-            #    self.logging(  "Log", "Dz LogLevel --> Value: %s" %value)
+            #else:
+            #   self.logging(  "Log", "Dz LogLevel --> Value: %s" %value)
             self.dbConn.commit()
             self.closeDB()
             return value
@@ -224,24 +224,22 @@ class DomoticzDB_Hardware:
         return None
 
     def multiinstances_z4d_plugin_instance(self):
-        if self.dbCursor is None:
-            self._openDB()
-            try:
-                self.dbCursor.execute("SELECT count(*) FROM Hardware WHERE Extra = 'Zigate' ")
-                value = int( self.dbCursor.fetchone()[0] )
-                self.logging("Log", "Multi Instance query %s" %value)
-            except Exception as e :
-                self.logging("Error", "Error while querying Multi Instance - %s" %e)
-                value = 0
-        
-            if int(value) > 1:
-                return True
-            return False
+        if self.dbCursor is not None:
+            return None
+        self._openDB()
+        try:
+            self.dbCursor.execute("SELECT count(*) FROM Hardware WHERE Extra = 'Zigate' ")
+            value = int( self.dbCursor.fetchone()[0] )
+            #self.logging("Log", "Multi Instance query %s" %value)
+        except Exception as e:
+            self.logging("Error", f"Error while querying Multi Instance - {e}")
+            value = 0
+        if value > 1:
             self.closeDB()
-            return value
-        
+            return True
         self.closeDB()
-        return None
+        return False
+        return True
 
 
 
