@@ -733,12 +733,6 @@ class BasePlugin:
             self.domoticzdb_DeviceStatus.closeDB()
             
         if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop calling (2) domoticzDb Hardware closed")
-            
-        if self.pluginconf and self.domoticzdb_Hardware:
-            self.domoticzdb_Hardware.closeDB()
-            
-        if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop calling (3) Transport off")
             
         if self.pluginconf and self.ControllerLink:
