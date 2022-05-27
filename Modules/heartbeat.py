@@ -13,7 +13,9 @@
 import time
 
 import Domoticz
-from Zigbee.zdpCommands import zdp_node_descriptor_request
+from Zigbee.zdpCommands import (zdp_IEEE_address_request,
+                                zdp_node_descriptor_request,
+                                zdp_NWK_address_request)
 
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
@@ -33,6 +35,7 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0201_0012,
                                     ReadAttributeRequest_0402,
                                     ReadAttributeRequest_0405,
+                                    ReadAttributeRequest_0702_PC321,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
@@ -40,7 +43,7 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
 from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
                            is_hex, is_time_to_perform_work, mainPoweredDevice,
-                           removeNwkInList)
+                           night_shift_jobs, removeNwkInList)
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 # Read Attribute trigger: Every 10"
@@ -191,6 +194,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "PollingCusterff66": ReadAttributeRequest_ff66,
         "OnOffPollingFreq": ManufSpecOnOffPolling,
         "PowerPollingFreq": ReadAttributeRequest_0b04_050b_0505_0508,
+        "PC321PollingFreq": ReadAttributeRequest_0702_PC321,
         "AC201Polling": pollingCasaia,
         "TuyaPing": ping_tuya_device,
         "BatteryPollingFreq": ReadAttributeRequest_0001,
@@ -346,6 +350,8 @@ def pingRetryDueToBadHealth(self, NwkId):
         self.log.logging("Heartbeat", "Debug", "--------> ping Retry 1 Check %s" % NwkId, NwkId)
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
+        lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
+        zdp_NWK_address_request(self, "0000", lookup_ieee)
         submitPing(self, NwkId)
         return
 
@@ -359,6 +365,8 @@ def pingRetryDueToBadHealth(self, NwkId):
         self.log.logging("Heartbeat", "Debug", "--------> ping Retry 2 Check %s" % NwkId, NwkId)
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
+        lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
+        zdp_NWK_address_request(self, "fffc", lookup_ieee)
         submitPing(self, NwkId)
         return
 
@@ -372,6 +380,9 @@ def pingRetryDueToBadHealth(self, NwkId):
         self.log.logging("Heartbeat", "Debug", "--------> ping Retry 3 (last) Check %s" % NwkId, NwkId)
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
+        lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
+        zdp_NWK_address_request(self, "fffc", lookup_ieee)
+
         submitPing(self, NwkId)
 
 
@@ -489,6 +500,7 @@ def submitPing(self, NwkId):
 def processKnownDevices(self, Devices, NWKID):
     # Begin
     # Normalize Hearbeat value if needed
+
     intHB = int(self.ListOfDevices[NWKID]["Heartbeat"])
     if intHB > 0xFFFF:
         intHB -= 0xFFF0
@@ -644,27 +656,51 @@ def processKnownDevices(self, Devices, NWKID):
 
                 func(self, NWKID)
 
-    if ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] and not self.busy and self.ControllerLink.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)):
-        mgmt_rtg(self, NWKID, "RoutingTable")
+    if ( 
+        _mainPowered 
+        and night_shift_jobs( self )
+        and self.zigbee_communitation == "zigpy"
+        and "RoutingTableRequestFeq" in self.pluginconf.pluginConf
+        and self.pluginconf.pluginConf["RoutingTableRequestFeq"] 
+        and (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)
+    ):
+        if not self.busy and self.ControllerLink.loadTransmit() < 3:
+            mgmt_rtg(self, NWKID, "RoutingTable")
+        else:
+            rescheduleAction = True
 
-    if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] and not self.busy and self.ControllerLink.loadTransmit() < 3 and (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)):
-        mgmt_rtg(self, NWKID, "BindingTable")
+    #if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] 
+    #    and (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)):
+    #    if not self.busy and self.ControllerLink.loadTransmit() < 3 
+    #        mgmt_rtg(self, NWKID, "BindingTable")
+    #    else:
+    #        rescheduleAction = True
 
 
-    # Reenforcement of Legrand devices options if required
-    #if (self.HeartbeatCount % LEGRAND_FEATURES) == 0:
-    #    rescheduleAction = rescheduleAction or legrandReenforcement(self, NWKID)
+    # Experimental
+    if (
+        _mainPowered 
+        and night_shift_jobs( self )
+        and "broadcastNwkAddressRequest" in self.pluginconf.pluginConf 
+        and self.pluginconf.pluginConf["broadcastNwkAddressRequest"]
+        and (intHB % ( self.pluginconf.pluginConf["broadcastNwkAddressRequest"] // HEARTBEAT) == 0)
+    ):
+        if not self.busy and self.ControllerLink.loadTransmit() < 3:
+            lookup_ieee = self.ListOfDevices[ NWKID ]['IEEE']
+            zdp_NWK_address_request(self, "fffc", lookup_ieee, u8RequestType="01")
+        else:
+            rescheduleAction = True
 
     # Call Schneider Reenforcement if needed
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NWKID)
 
     # Do Attribute Disocvery if needed
-    if _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
+    if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
         rescheduleAction = rescheduleAction or attributeDiscovery(self, NWKID)
 
     # If corresponding Attributes not present, let's do a Request Node Description
-    if not enabledEndDevicePolling and ((intHB % 1800) == 0):
+    if night_shift_jobs( self ) and not enabledEndDevicePolling and ((intHB % 1800) == 0):
         req_node_descriptor = False
         if (
             "Manufacturer" not in self.ListOfDevices[NWKID]
@@ -680,17 +716,13 @@ def processKnownDevices(self, Devices, NWKID):
         ):
             req_node_descriptor = True
 
-        if req_node_descriptor and not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
-            self.log.logging(
-                "Heartbeat",
-                "Debug",
-                "-- - skip ReadAttribute for now ... system too busy (%s/%s) for %s" % (self.busy, self.ControllerLink.loadTransmit(), NWKID),
-                NWKID,
-            )
-            Domoticz.Status("Requesting Node Descriptor for %s" % NWKID)
-
-            #sendZigateCmd(self, "0042", str(NWKID), ackIsDisabled=True)  # Request a Node Descriptor
-            zdp_node_descriptor_request(self, NWKID)
+        if ( req_node_descriptor and night_shift_jobs( self ) ):
+            
+            if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
+                #sendZigateCmd(self, "0042", str(NWKID), ackIsDisabled=True)  # Request a Node Descriptor
+                zdp_node_descriptor_request(self, NWKID)
+            else:
+                rescheduleAction = True
 
     if rescheduleAction and intHB != 0:  # Reschedule is set because Zigate was busy or Queue was too long to process
         self.ListOfDevices[NWKID]["Heartbeat"] = str(intHB - 1)  # So next round it trigger again
@@ -809,7 +841,7 @@ def processListOfDevices(self, Devices):
         )
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
-    if (self.HeartbeatCount > QUIET_AFTER_START) and ((self.HeartbeatCount % CONFIGURERPRT_FEQ)) == 0:
+    if night_shift_jobs( self ) and (self.HeartbeatCount > QUIET_AFTER_START) and ((self.HeartbeatCount % CONFIGURERPRT_FEQ)) == 0:
         # Trigger Configure Reporting to eligeable devices
         if self.configureReporting:
             self.configureReporting.processConfigureReporting()
@@ -817,6 +849,8 @@ def processListOfDevices(self, Devices):
     # Network Topology management
     # if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_TOPO_START):
     #    self.log.logging( "Heartbeat", 'Debug', "processListOfDevices Time for Network Topology")
+    
+    
     # Network Topology
     if self.networkmap:
         phase = self.networkmap.NetworkMapPhase()

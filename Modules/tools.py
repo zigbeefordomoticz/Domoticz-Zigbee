@@ -1318,7 +1318,9 @@ def setConfigItem(Key=None, Attribute="", Value=None):
     return Config
 
 
-def getConfigItem(Key=None, Attribute="", Default={}):
+def getConfigItem(Key=None, Attribute="", Default = None):
+    if Default is None:
+        Default = {}
     Value = Default
     try:
         Config = Domoticz.Configuration()
@@ -1444,3 +1446,33 @@ def get_deviceconf_parameter_value(self, model, attribute, return_default=None):
     if attribute not in self.DeviceConf[ model ]:
         return return_default
     return self.DeviceConf[ model ][ attribute ]
+
+
+def night_shift_jobs( self ):
+    # If NighShift not enable, then alwasy return True
+    # Otherwise return True only if between midnight and 6am
+
+    if not self.pluginconf.pluginConf["NightShift"]:
+        # Domoticz.Log("Always On" )
+        return True
+
+    current = datetime.datetime.now().time()
+
+    # Check against first part of the night
+    start = datetime.time(23, 0,0)
+    end = datetime.time(23,59,59)
+
+    if start <= current <= end:
+        #Domoticz.Log("Inside of Night Shift period %s %s %s" %( start, current, end))
+        return True
+
+    # Check against the second part of the night
+    start = datetime.time(0, 0,0)
+    end = datetime.time(6,0,0)
+    if start <= current <= end:
+        #Domoticz.Log("Inside of Night Shift period %s %s %s" %( start, current, end))
+        return True
+
+    #Domoticz.Log("Outside of Night Shift period %s %s %s" %( start, current, end))
+    return False
+    

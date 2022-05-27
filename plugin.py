@@ -70,10 +70,10 @@
 """
 
 import pathlib
-
-from pkg_resources import DistributionNotFound
+import sys
 
 import Domoticz
+from pkg_resources import DistributionNotFound
 
 try:
     from Domoticz import Devices, Images, Parameters, Settings
@@ -82,10 +82,10 @@ except ImportError:
 
 import gc
 import json
+import os
 import sys
 import threading
 import time
-import os
 
 from Classes.AdminWidgets import AdminWidgets
 # from Classes.APS import APSManagement
@@ -102,8 +102,7 @@ from Classes.PluginConf import PluginConf
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
 from Modules.basicOutputs import (ZigatePermitToJoin,
-                                  do_Many_To_One_RouteRequest,
-                                  ieee_addr_request, leaveRequest,
+                                  do_Many_To_One_RouteRequest, leaveRequest,
                                   setExtendedPANID, setTimeServer,
                                   start_Zigate, zigateBlueLed)
 from Modules.casaia import restart_plugin_reset_ModuleIRCode
@@ -412,6 +411,11 @@ class BasePlugin:
         self.domoticzdb_Hardware = DomoticzDB_Hardware(
             Parameters["Database"], self.pluginconf, self.HardwareID, self.log
         )
+        
+        if self.zigbee_communitation and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.multiinstances_z4d_plugin_instance()):
+            self.log.logging("Plugin", "Status", "Multi instances plugin detected. Enable zigpy workaround")
+            sys.modules["_asyncio"] = None
+        
         if "LogLevel" not in self.pluginParameters:
             log_level = self.domoticzdb_Hardware.get_loglevel_value()
             if log_level:
@@ -725,14 +729,8 @@ class BasePlugin:
             self.log.logging("Plugin", "Log", "onStop called")
             self.log.logging("Plugin", "Log", "onStop calling (1) domoticzDb DeviceStatus closed")
             
-        if self.pluginconf and self.domoticzdb_DeviceStatus:
-            self.domoticzdb_DeviceStatus.closeDB()
-            
         if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop calling (2) domoticzDb Hardware closed")
-            
-        if self.pluginconf and self.domoticzdb_Hardware:
-            self.domoticzdb_Hardware.closeDB()
             
         if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop calling (3) Transport off")

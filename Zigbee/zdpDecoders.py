@@ -47,7 +47,7 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         # Power_Desc_req
         self.log.logging("zdpDecoder", "Log", "Power_Desc_req NOT IMPLEMENTED YET")
         return frame
-    
+
     if ClusterId == "0036":
         self.log.logging("zdpDecoder", "Log", "Mgmt_Permit_Joining_req NOT IMPLEMENTED %s" %Payload)
         return None
@@ -103,12 +103,9 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         # Mgmt_Lqi_rsp
         return buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
 
-    if ClusterId == "8032":
-        # Mgmt_Rtg_rsp
-        return buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
-
-    if ClusterId == "8033":
+    if ClusterId in ( "8032", "8033"):
         # handle directly as raw in Modules/inputs/Decode8002
+        # Mgmt_Rtg_rsp and Mgmt_Bind_rsp
         return frame
 
     if ClusterId == "8034":
@@ -272,11 +269,10 @@ def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
     status = Payload[2:4]
     ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[4:20], 16)))[0]
     if status != "00":
-        
         buildPayload = sqn + status + ieee
     else:
         nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
-    
+
         self.log.logging("zdpDecoder", "Debug", "buildframe_nwk_address_response sqn: %s status: %s ieee: %s nwkid: %s" %( sqn, status, ieee, nwkid))
         NumAssocDev = Payload[24:26] if len(Payload) > 24 else ""
         StartIndex = Payload[26:28] if len(Payload) > 26 else ""
@@ -401,13 +397,6 @@ def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, P
         
         
     return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
-
-
-
-def buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_routing_response NOT IMPLEMENTED YET")
-    return frame
-
 
 def buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     self.log.logging("zdpDecoder", "Debug", "buildframe_leave_response")

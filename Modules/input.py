@@ -20,6 +20,9 @@ from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                              sqn_get_internal_sqn_from_app_sqn,
                                              sqn_get_internal_sqn_from_aps_sqn)
 from Zigbee.decode8002 import decode8002_and_process
+from Zigbee.zclCommands import zcl_IAS_default_response
+from Zigbee.zclRawCommands import zcl_raw_default_response
+from Zigbee.zdpCommands import zdp_NWK_address_request
 
 from Modules.basicInputs import read_attribute_response
 from Modules.basicOutputs import (getListofAttribute, send_default_response,
@@ -58,14 +61,12 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            set_request_phase_datastruct, set_status_datastruct,
                            timeStamped, updLQI, updSQN)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
-                                  LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST, ZIGATE_EP,
-                                  ZIGBEE_COMMAND_IDENTIFIER)
+                                  LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
+                                  ZIGATE_EP, ZIGBEE_COMMAND_IDENTIFIER)
 from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
-from Modules.zigbeeVersionTable import FIRMWARE_BRANCH
-from Modules.zigbeeVersionTable import set_display_firmware_version
-from Zigbee.zclCommands import zcl_IAS_default_response
-from Zigbee.zclRawCommands import zcl_raw_default_response
+from Modules.zigbeeVersionTable import (FIRMWARE_BRANCH,
+                                        set_display_firmware_version)
 
 
 def ZigateRead(self, Devices, Data):
@@ -214,7 +215,7 @@ def extract_messge_infos( Data):
     return MsgType, MsgData, MsgLQI
 
 def Decode0040(self, Devices, MsgData, MsgLQI):  # NWK_addr_req
-    self.log.logging("Input", "Log", "Decode0040 - NWK_addr_req: %s" % MsgData)
+    self.log.logging("Input", "Debug", "Decode0040 - NWK_addr_req: %s" % MsgData)
     
     # sqn + ieee + u8RequestType + u8StartIndex
     sqn = MsgData[:2]
@@ -224,10 +225,10 @@ def Decode0040(self, Devices, MsgData, MsgLQI):  # NWK_addr_req
     reqType = MsgData[24:26]
     startIndex = MsgData[26:28]
 
-    self.log.logging("Input", "Log", "      source req nwkid: %s" % srcNwkId)
-    self.log.logging("Input", "Log", "      request IEEE    : %s" % ieee)
-    self.log.logging("Input", "Log", "      request Type    : %s" % reqType)
-    self.log.logging("Input", "Log", "      request Idx     : %s" % startIndex)
+    self.log.logging("Input", "Debug", "      source req nwkid: %s" % srcNwkId)
+    self.log.logging("Input", "Debug", "      request IEEE    : %s" % ieee)
+    self.log.logging("Input", "Debug", "      request Type    : %s" % reqType)
+    self.log.logging("Input", "Debug", "      request Idx     : %s" % startIndex)
 
     # we should answer: sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
     Cluster = "8000"
@@ -246,12 +247,13 @@ def Decode0040(self, Devices, MsgData, MsgLQI):  # NWK_addr_req
     else:
         status = "81"  # Device not found
         payload = sqn + status + ieee
-    self.log.logging("Input", "Log", "Decode0040 - response payload: %s" %payload)
+    self.log.logging("Input", "Debug", "Decode0040 - response payload: %s" %payload)
     raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
     
 
 def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
-    self.log.logging("Input", "Log", "Decode0041 - IEEE_addr_req: %s" % MsgData)
+    self.log.logging("Input", "Debug", "Decode0041 - IEEE_addr_req: %s" % MsgData)
+
     # sqn + nwkid + u8RequestType + u8StartIndex
     sqn = MsgData[:2]
     srcNwkId = MsgData[2:6]
@@ -259,7 +261,12 @@ def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
     nwkid = MsgData[8:12]
     reqType = MsgData[12:14]
     startIndex = MsgData[14:16]
-    
+
+    self.log.logging("Input", "Debug", "      source req nwkid: %s" % srcNwkId)
+    self.log.logging("Input", "Debug", "      request NwkId    : %s" % nwkid)
+    self.log.logging("Input", "Debug", "      request Type    : %s" % reqType)
+    self.log.logging("Input", "Debug", "      request Idx     : %s" % startIndex)
+
     # we should answer: sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
     Cluster = "8001"
     if nwkid == self.ControllerNWKID:
@@ -267,11 +274,19 @@ def Decode0041(self, Devices, MsgData, MsgLQI):  # IEEE_addr_req
         controller_ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(self.ControllerIEEE, 16)))[0]
         controller_nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ControllerNWKID, 16)))[0]
         payload = sqn + status + controller_ieee + controller_nwkid + "00"
+
+    elif nwkid in self.ListOfDevices:
+        status = "00"
+        device_ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(self.ListOfDevices[nwkid]['IEEE'], 16)))[0]
+        device_nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ControllerNWKID, 16)))[0]
+        payload = sqn + status + device_ieee + device_nwkid + "00"
+
     else:
         status = "81"  # Device not found
-        payload = sqn + status + srcNwkId
+        payload = sqn + status + nwkid
+    self.log.logging("Input", "Debug", "Decode0041 - response payload: %s" %payload)
     raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
-    self.log.logging("Input", "Log", "Decode0041 - response payload: %s" %payload)
+
 
     
 def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
@@ -461,7 +476,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 
 def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
 
-    self.log.logging("Input", "Log", "Decode0110 - message: %s" % MsgData)
+    self.log.logging("Input", "Debug", "Decode0110 - message: %s" % MsgData)
     MsgSqn = MsgData[0:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
@@ -487,7 +502,7 @@ def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
 
         self.log.logging(
             "Input",
-            "Log",
+            "Debug",
             "Decode0110 - Sqn: %s NwkId: %s Ep: %s Cluster: %s Manuf: %s Attribute: %s Type: %s Value: %s"
             % (MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufCode, Attribute, DataType, DataValue),
         )
@@ -502,7 +517,7 @@ def Decode0302(self, Devices, MsgData, MsgLQI):  # PDM Load
 
 def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrollment Request Response
 
-    self.log.logging("Input", "Log", "Decode0400 - message: %s" % MsgData)
+    self.log.logging("Input", "Debug", "Decode0400 - message: %s" % MsgData)
     # 02 0000 01 01 00 00
     # 02 0000 04 01 00 00
     # 02 426b 04 01 00 5c
@@ -973,7 +988,7 @@ def Decode8005(self, Devices, MsgData, MsgLQI):  # Command list
 
 def Decode8006(self, Devices, MsgData, MsgLQI):  # Non “Factory new” Restart
 
-    self.log.logging("Input", "Log", "Decode8006 - MsgData: %s" % (MsgData))
+    self.log.logging("Input", "Debug", "Decode8006 - MsgData: %s" % (MsgData))
 
     Status = MsgData[0:2]
     if Status == "00":
@@ -1007,7 +1022,7 @@ def Decode8007(self, Devices, MsgData, MsgLQI):  # “Factory new” Restart
 
 def Decode8008(self, Devices, MsgData, MsgLQI):  # ZiGate Heartbeat ( ZiGate V2 firmware 320)
 
-    self.log.logging("Input", "Log", "Decode8008: heartbeat:" + MsgData)
+    self.log.logging("Input", "Debug", "Decode8008: heartbeat:" + MsgData)
 
 
 def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm v3.0d)
@@ -1844,46 +1859,51 @@ def Decode8034(self, Devices, MsgData, MsgLQI):  # Complex Descriptor response
 
 def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
     # MsgLen = len(MsgData)
-
+    # 0180020034ff000000800000000200000200000000bb57fe01008d15008a7d00ff03
+    # 00/00/00158d0001fe57bb7d8a/00
+    self.log.logging( "Input", "Debug", "Decode8040 - payload %s" %(MsgData))
     MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgIEEE = MsgData[4:20]
-    if MsgDataStatus == "00":
-        MsgShortAddress = MsgData[20:24]
-        MsgNumAssocDevices = MsgData[24:26]
-        MsgStartIndex = MsgData[26:28]
-        MsgDeviceList = MsgData[28 : len(MsgData)]
+
+    self.log.logging( "Input", "Debug", "Decode8040 - Reception of Network Address response %s with status %s" %(MsgIEEE, MsgDataStatus))
 
     if MsgDataStatus != "00":
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8040 - Reception of Node Descriptor for %s with status %s" %(MsgIEEE, MsgDataStatus))
         return
 
-    self.log.logging(
-        "Input",
-        "Status",
-        "Network Address response, Sequence number: "
-        + MsgSequenceNumber
-        + " Status: "
-        + DisplayStatusCode(MsgDataStatus)
-        + " IEEE: "
-        + MsgIEEE
-        + " Short Address: "
-        + MsgShortAddress
-        + " number of associated devices: "
-        + MsgNumAssocDevices
-        + " Start Index: "
-        + MsgStartIndex
-        + " Device List: "
-        + MsgDeviceList,
-    )
+    MsgShortAddress = MsgData[20:24]
+    extendedResponse = False
+    if len(MsgData) > 26:
+        extendedResponse = True
+        MsgNumAssocDevices = int( MsgData[24:26], 16)
+        MsgStartIndex = int( MsgData[26:28], 16)
+        MsgDeviceList = MsgData[28:]
+
+    self.log.logging( "Input", "Debug", "Network Address response, [%s] Status: %s Ieee: %s NwkId: %s" %(
+        MsgSequenceNumber, DisplayStatusCode(MsgDataStatus), MsgIEEE, MsgShortAddress))
+
+    if extendedResponse:
+        self.log.logging( "Input", "Debug", "                        , Nb Associated Devices: %s Idx: %s Device List: %s" %(
+            MsgNumAssocDevices, MsgStartIndex, MsgDeviceList))
+
+    if extendedResponse and ( MsgStartIndex + len(MsgDeviceList) // 4) != MsgNumAssocDevices :
+        self.log.logging(
+            "Input", 
+            "Debug", 
+            "Decode 8040 - Receive an IEEE: %s with a NwkId: %s but would need to continue to get all associated devices" % (MsgIEEE, MsgShortAddress)
+        )
+        Network_Address_response_request_next_index(self, MsgShortAddress, MsgIEEE, MsgStartIndex, len(MsgDeviceList) // 4)
 
     if MsgShortAddress in self.ListOfDevices:
         self.log.logging(
             "Input", "Debug", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress)
         )
+        if extendedResponse:
+            store_NwkAddr_Associated_Devices( self, MsgShortAddress, MsgStartIndex, MsgDeviceList)
+        timeStamped(self, MsgShortAddress, 0x8041)
+        loggingMessages(self, "8040", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
+        lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
+
         return
 
     # We might check if we didn't have a change in the IEEE <-> NwkId
@@ -1893,17 +1913,38 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
         self.log.logging(
             "Input",
             "Log",
-            "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),
+            "Decode 8040 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),
         )
         if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
-            self.log.logging("Input", "Log", "Decode 8041 - Not able to reconnect (unknown device)")
+            self.log.logging("Input", "Debug", "Decode 8040 - Not able to reconnect (unknown device)")
             return
 
+    if extendedResponse:
+        store_NwkAddr_Associated_Devices( self, MsgShortAddress, MsgStartIndex, MsgDeviceList)
+
     timeStamped(self, MsgShortAddress, 0x8041)
-    loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
+    loggingMessages(self, "8040", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
     lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
 
+def Network_Address_response_request_next_index(self, nwkid, ieee, index, ActualDevicesListed):
+    new_index = "%02x" %( index + ActualDevicesListed )
+    self.log.logging("Input", "Debug", "          Network_Address_response_request_next_index - %s Index: %s" %( nwkid, new_index))
+    zdp_NWK_address_request(self, nwkid, ieee, u8RequestType="01", u8StartIndex=new_index)
+    
+def store_NwkAddr_Associated_Devices( self, nwkid, Index, device_associated_list):
+    self.log.logging("Input", "Debug", "          store_NwkAddr_Associated_Devices - %s %s" %( nwkid, device_associated_list))
 
+    if Index == 0:
+        self.ListOfDevices[ nwkid ]["NWKAddrAssocDevList"] = []
+    
+    idx = 0
+    while idx < len(device_associated_list):
+        device_id = device_associated_list[idx:idx + 4]
+        if device_id not in self.ListOfDevices[ nwkid ]["NWKAddrAssocDevList"]:
+            self.ListOfDevices[ nwkid ]["NWKAddrAssocDevList"].append( device_id )
+        idx += 4
+
+      
 def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     # MsgLen = len(MsgData)
 
@@ -1919,14 +1960,14 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     if MsgDataStatus != "00":
         self.log.logging(
             "Input",
-            "Log",
-            "Decode8041 - Reception of Node Descriptor for %s with status %s" %(MsgIEEE, MsgDataStatus))
+            "Debug",
+            "Decode8041 - Reception of IEEE Address response for %s with status %s" %(MsgIEEE, MsgDataStatus))
 
         return
 
     self.log.logging(
         "Input",
-        "Log",
+        "Debug",
         "Decode8041 - IEEE Address response, Sequence number: "
         + MsgSequenceNumber
         + " Status: "
@@ -4373,7 +4414,7 @@ def Decode80A5(self, Devices, MsgData, MsgLQI):
     SceneID = MsgPayload[4:6]
     TransitionTime = 0    
     if len(MsgPayload) == 10 and MsgPayload[6:10] != 'ffff':
-        TransitionTime = int(MsgPayload[6:10],16)/10
+        TransitionTime = int(MsgPayload[6:10],16) / 10
 
     self.log.logging("Input", "Debug", "Recall Scene: Group ID: %s Scene ID: %s Transition Time: %ss" %(GroupID, SceneID, str(TransitionTime)), MsgSrcAddr)
 
