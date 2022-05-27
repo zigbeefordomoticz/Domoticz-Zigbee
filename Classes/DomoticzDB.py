@@ -14,19 +14,18 @@
 import Domoticz
 
 from base64 import b64decode
-from time import time
+import time
 from datetime import datetime
 from Classes.LoggingManagement import LoggingManagement
 import urllib
 import json
+from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
 CACHE_TIMEOUT = (15 * 60) + 15  # num seconds
 
 DOMOTICZ_SETTINGS_API = "json.htm?type=settings"
 DOMOTICZ_HARDWARE_API = "json.htm?type=hardware"
 DOMOTICZ_DEVICEST_API = "json.htm?type=devices&rid="
-
-
 
 
 class DomoticzDB_Preferences:
@@ -56,17 +55,23 @@ class DomoticzDB_Preferences:
 
     def retreiveWebUserNamePassword(self):
         # sourcery skip: replace-interpolation-with-fstring
-        self.logging("Debug", "retreiveWebUserNamePassword %s %s" %('', ''))
-        return '', ''
+        webUserName = webPassword = ''
+        if 'WebPassword' in self.preferences:
+            webPassword = self.preferences['WebPassword']
+        if 'WebUserName' in self.preferences:
+            webUserName = self.preferences['WebUserName']
+        self.logging("Debug", "retreiveWebUserNamePassword %s %s" %(webUserName, webPassword))   
+        return webUserName, webPassword
 
 
 
 class DomoticzDB_Hardware:
-    def __init__(self, database, pluginconf, hardwareID, log):
+    def __init__(self, database, pluginconf, hardwareID, log, pluginParameters):
         self.hardware = {}
         self.HardwareID = hardwareID
         self.pluginconf = pluginconf
         self.log = log
+        self.pluginParameters = pluginParameters
         self.load_hardware()
 
     def load_hardware(self):  
@@ -81,10 +86,11 @@ class DomoticzDB_Hardware:
     def logging(self, logType, message):
         self.log.logging("DZDB", logType, message)
 
-    def disableErasePDM(self):
+    def disableErasePDM(self,  webUserName, webPassword):
         # sourcery skip: replace-interpolation-with-fstring
-        self.logging("Debug", "disableErasePDM %s " %("Not implemented Yet"))
-        
+        # To disable the ErasePDM, we have to restart the plugin
+        # This is usally done after ErasePDM
+        restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False,  webUserName=webUserName, webPassword=webPassword)
 
     def get_loglevel_value(self):
         # sourcery skip: replace-interpolation-with-fstring

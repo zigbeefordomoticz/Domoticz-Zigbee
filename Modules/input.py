@@ -1017,6 +1017,7 @@ def Decode8007(self, Devices, MsgData, MsgLQI):  # “Factory new” Restart
     # self.startZigateNeeded = self.HeartbeatCount
     # if self.HeartbeatCount == 0:
     #    self.startZigateNeeded = 1
+    self.ErasePDMDone = True
     self.log.logging("Input", "Status", "'Factory new' Restart status: %s" % (Status))
 
 
