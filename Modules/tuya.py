@@ -118,6 +118,7 @@ TUYA_THERMOSTAT_MANUFACTURER = (
     "_TZE200_aoclfnxz",
     "_TYST11_zuhszj9s",
     "_TYST11_jeaxp72v",
+    "_TZE200_dzuqwsyg"    # https://www.domoticz.com/forum/viewtopic.php?p=290066#p290066
 )
 #TUYA_eTRV1_MANUFACTURER = (
 #    "_TZE200_kfvq6avy",
