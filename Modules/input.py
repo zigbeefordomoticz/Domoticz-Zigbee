@@ -1104,6 +1104,9 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         "Zigbee Coordinator ieee: %s , short addr: %s" % (self.ControllerIEEE, self.ControllerNWKID),
     )
 
+    # In case of Zigpy, this means that eventually we had formed the new Network
+    if self.zigbee_communitation == 'zigpy':
+        self.ErasePDMDone = True
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
     if str(PanID) == "0":
         self.log.logging("Input", "Status", "Network state DOWN ! ")

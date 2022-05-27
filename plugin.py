@@ -1016,7 +1016,7 @@ class BasePlugin:
             self.log.logging(
                 "Plugin",
                 "Debug",
-                "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s"
+                "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s ErasePDMinProgress: %s ErasePDMDone: %s"
                 % (
                     self.busy,
                     self.PluginHealth,
@@ -1026,6 +1026,8 @@ class BasePlugin:
                     self.InitPhase2,
                     self.InitPhase3,
                     self.ControllerLink.pdm_lock_status(),
+                    self.ErasePDMinProgress,
+                    self.ErasePDMDone,
                 ),
             )
 
@@ -1270,23 +1272,18 @@ def zigateInit_Phase1(self):
     # Check if we have to Erase PDM.
 
     if self.zigbee_communitation == "native" and Parameters["Mode3"] == "True" and not self.ErasePDMDone and not self.ErasePDMinProgress:  # Erase PDM
-        if not self.ErasePDMDone:
-            self.ErasePDMinProgress = True
-            zigate_erase_eeprom(self)
-            self.log.logging("Plugin", "Status", "Erase Zigate PDM")
-            #sendZigateCmd(self, "0012", "")
-            self.PDMready = False
-            self.startZigateNeeded = 1
-            self.HeartbeatCount = 1
-            update_DB_device_status_to_reinit( self )
-            return
-    elif self.zigbee_communitation == "zigpy" and Parameters["Mode3"] == "True" and not self.ErasePDMDone: 
-        if not self.ErasePDMDone:
-            self.ErasePDMDone = True
-            update_DB_device_status_to_reinit( self )
-        
-        # After an Erase PDM we have to do a full start of Zigate
-        self.log.logging("Plugin", "Debug", "----> starZigate")
+        zigate_erase_eeprom(self)
+        self.log.logging("Plugin", "Status", "Erase Zigate PDM")
+        #sendZigateCmd(self, "0012", "")
+        self.PDMready = False
+        self.startZigateNeeded = 1
+        self.HeartbeatCount = 1
+        update_DB_device_status_to_reinit( self )
+        return
+    elif self.zigbee_communitation == "zigpy" and Parameters["Mode3"] == "True" and not self.ErasePDMDone and not self.ErasePDMinProgress: 
+        self.log.logging("Plugin", "Status", "Form a new network requested")
+        self.ErasePDMinProgress = True
+        update_DB_device_status_to_reinit( self )
         return
 
     self.busy = False
@@ -1348,8 +1345,10 @@ def zigateInit_Phase3(self):
     if self.FirmwareVersion is None:
         return
 
-    if Parameters["Mode3"] == "True" and self.ErasePDMDone and self.domoticzdb_Hardware:
+    if self.transport != "None" and Parameters["Mode3"] == "True" and self.ErasePDMDone and self.domoticzdb_Hardware:
+        self.log.logging("Plugin", "Debug", "let's update Mode3 is needed")
         self.domoticzdb_Hardware.disableErasePDM( self.WebUsername, self.WebPassword)
+
 
     self.InitPhase3 = True
 
