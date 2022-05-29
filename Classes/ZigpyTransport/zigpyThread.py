@@ -165,23 +165,28 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         permit_to_join_timer=self.permit_to_join_timer,
     )
 
+
     if new_network:
         # Assume that the new network has been created
         self.log.logging(
             "TransportZigpy",
             "Status",
             "Assuming new network formed")
-        self.ErasePDMDone = True
-        
+        self.ErasePDMDone = True  
+
+    self.log.logging( "TransportZigpy", "Status", "Network settings")
+    self.log.logging( "TransportZigpy", "Status", "  Channel: %s" %self.app.channel)
+    self.log.logging( "TransportZigpy", "Status", "  PAN ID: 0x%04X" %self.app.pan_id)
+    self.log.logging( "TransportZigpy", "Status", "  Extended PAN ID: %s" %self.app.extended_pan_id)
+    self.log.logging( "TransportZigpy", "Status", "  Device IEEE: %s" %self.app.ieee)
+    self.log.logging( "TransportZigpy", "Status", "  Device NWK: 0x%04X" %self.app.nwk)
+    self.log.logging( "TransportZigpy", "Debug", "  Network key: " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
+    
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
 
     # Send Controller Active Node and Node Descriptor
-    self.forwarder_queue.put(
-        build_plugin_8045_frame_list_controller_ep(
-            self,
-        )
-    )
+    self.forwarder_queue.put( build_plugin_8045_frame_list_controller_ep( self, ) )
 
     self.log.logging(
         "TransportZigpy",
@@ -200,11 +205,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     )
 
     # Let send a 0302 to simulate an Off/on
-    self.forwarder_queue.put(
-        build_plugin_0302_frame_content(
-            self,
-        )
-    )
+    self.forwarder_queue.put( build_plugin_0302_frame_content( self, ) )
 
     # Run forever
     await worker_loop(self)
