@@ -25,6 +25,7 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
+import  bellows.exception 
 from Classes.ZigpyTransport.AppBellows import App_bellows
 from Classes.ZigpyTransport.AppDeconz import App_deconz
 from Classes.ZigpyTransport.AppZigate import App_zigate
@@ -37,10 +38,10 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8043_frame_list_node_descriptor,
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
-from zigpy.exceptions import DeliveryError, InvalidResponse
+from Modules.macPrefix import casaiaPrefix_zigpy
+from zigpy.exceptions import DeliveryError, InvalidResponse, ControllerException
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
-from Modules.macPrefix import casaiaPrefix_zigpy
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
@@ -354,6 +355,7 @@ async def dispatch_command(self, data):
 
 
 async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
+    # sourcery skip: replace-interpolation-with-fstring
     # data = {
     #    'Profile': int(profileId, 16),
     #    'Cluster': int(cluster, 16),
@@ -531,6 +533,7 @@ def check_transport_readiness(self):
         return True
         
 async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False ):
+    # sourcery skip: replace-interpolation-with-fstring    
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
     if not check_transport_readiness:
@@ -561,6 +564,22 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
             if self._currently_waiting_requests_list[_ieee]:
                 multi = 1.5
             await asyncio.sleep( multi * WAITING_TIME_BETWEEN_COMMANDS)
+
+    except bellows.exception.EzspError as e:
+        self.log.logging("TransportZigpy", "Debug", "process_raw_command - bellows.exception.EzspError : %s" % e, _nwkid)
+        await asyncio.sleep( 1.0)
+        return
+    
+    except bellows.exception.ControllerError as e:
+        self.log.logging("TransportZigpy", "Debug", "process_raw_command - bellows.exception.ControllerError : %s" % e, _nwkid)
+        await asyncio.sleep( 1.0)
+        return
+        
+    except ControllerException as e:
+        self.log.logging("TransportZigpy", "Debug", "process_raw_command - ControllerException : %s" % e, _nwkid)
+        await asyncio.sleep( 1.0)
+        return
+        
 
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
