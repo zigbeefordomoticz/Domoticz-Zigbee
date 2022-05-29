@@ -604,7 +604,7 @@ class BasePlugin:
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on zigate")
             
-            self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -634,7 +634,7 @@ class BasePlugin:
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on ZNP")
             
-            self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -662,7 +662,7 @@ class BasePlugin:
             
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on deCONZ")            
-            self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -691,7 +691,7 @@ class BasePlugin:
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on EZSP")
 
-            self.ControllerLink= ZigpyTransport( self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
             self.ControllerLink.open_zigate_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
           
@@ -1308,7 +1308,7 @@ def zigateInit_Phase2(self):
             self.log.logging(
                 "Plugin",
                 "Error",
-                "We are having difficulties to start Zigate. Basically we are not receiving what we expect from Zigate",
+                "We are having difficulties to start Zigate. Basically we are not receiving what we expect from CIE",
             )
             self.log.logging("Plugin", "Error", "Plugin is not started ...")
         return

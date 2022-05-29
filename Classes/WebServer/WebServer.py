@@ -242,7 +242,9 @@ class WebServer(object):
                 coordinator_infos["Branch Version"] = self.ControllerData["Branch Version"]
                 coordinator_infos["Major Version"] = self.ControllerData["Major Version"] 
                 coordinator_infos["Minor Version"] = self.ControllerData["Minor Version"] 
-
+                if "Network key" in self.ControllerData:
+                    coordinator_infos[ "Network Key"] = self.ControllerData["Network key"] 
+                                      
                 if 0 <= int(self.ControllerData["Branch Version"]) < 20:   
                     coordinator_infos["Display Firmware Version"] = "Zig - %s" % self.ControllerData["Minor Version"] 
                 elif 20 <= int(self.ControllerData["Branch Version"]) < 30:

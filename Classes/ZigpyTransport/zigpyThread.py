@@ -181,6 +181,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     self.log.logging( "TransportZigpy", "Status", "  Device IEEE: %s" %self.app.ieee)
     self.log.logging( "TransportZigpy", "Status", "  Device NWK: 0x%04X" %self.app.nwk)
     self.log.logging( "TransportZigpy", "Debug", "  Network key: " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
+    self.ControllerData["Network key"]   =  ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key )
     
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
