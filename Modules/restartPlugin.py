@@ -12,7 +12,7 @@ import Domoticz
 CURL_COMMAND = "/usr/bin/curl"
 
 
-def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, webUserName='', webPassword=''):
+def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_api="http://127.0.0.1:8080"):
     # sourcery skip: replace-interpolation-with-fstring
 
     if not os.path.isfile(CURL_COMMAND):
@@ -22,11 +22,12 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, webUserNam
     erasePDM = "True" if erasePDM else "False"
     enabled = "false" if stop else "true"
 
-    if webUserName and webPassword:
-        url = "http://%s:%s@127.0.0.1:%s" % (self.WebUsername, self.WebPassword, self.pluginconf.pluginConf["port"])
-    else:
-        url = "http://127.0.0.1:%s" % self.pluginconf.pluginConf["port"]
+    #if webUserName and webPassword:
+    #    url = "http://%s:%s@127.0.0.1:%s" % (self.WebUsername, self.WebPassword, self.pluginconf.pluginConf["port"])
+    #else:
+    #    url = "http://127.0.0.1:%s" % self.pluginconf.pluginConf["port"]
 
+    url = url_base_api
     url += "/json.htm?type=command&param=updatehardware&htype=94"
     url += "&idx=%s" % self.pluginParameters["HardwareID"]
     url += "&name=%s" % self.pluginParameters["Name"].replace(" ", "%20")
