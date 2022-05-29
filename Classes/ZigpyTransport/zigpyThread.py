@@ -152,7 +152,6 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
             "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x"
             % (set_channel, set_channel, set_extendedPanId),
         )
-        self.ErasePDMDone = True
         new_network = True
     else:
         new_network = False
@@ -165,6 +164,15 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         log=self.log,
         permit_to_join_timer=self.permit_to_join_timer,
     )
+
+
+    if new_network:
+        # Assume that the new network has been created
+        self.log.logging(
+            "TransportZigpy",
+            "Status",
+            "Assuming new network formed")
+        self.ErasePDMDone = True  
 
     self.log.logging( "TransportZigpy", "Status", "Network settings")
     self.log.logging( "TransportZigpy", "Status", "  Channel: %s" %self.app.channel)
