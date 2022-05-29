@@ -802,7 +802,10 @@ class WebServer(object):
                         "Battery",
                     ):
                         if item in self.ListOfDevices[x]:
-                            if item == "MacCapa":
+                            if item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, ):
+                                if "IASBattery" in self.ListOfDevices[x]:
+                                    device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
+                            elif item == "MacCapa":
                                 device["MacCapa"] = []
                                 mac_capability = int(self.ListOfDevices[x][item], 16)
                                 AltPAN = mac_capability & 0x00000001
@@ -953,8 +956,11 @@ class WebServer(object):
                         "Stack Version",
                         "HW Version",
                     ):
+                        if attribut == "Battery" and attribut in self.ListOfDevices[item] and self.ListOfDevices[item]["Battery"] in ( {}, ):
+                            if "IASBattery" in self.ListOfDevices[item]:
+                                device[attribut] = str(self.ListOfDevices[item][ "IASBattery" ])
 
-                        if attribut in self.ListOfDevices[item]:
+                        elif attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
                                 device[attribut] = ""
 
