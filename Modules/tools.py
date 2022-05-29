@@ -737,7 +737,7 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
         return inMacCapa
 
     # Convert battery annouced devices to main powered / Make sure that you do the reverse n NetworkMap
-    if self.ListOfDevices[nwkid]["Model"] in ("TI0001", "TS0011", "TS0013", "TS0601-switch", "TS0601-2Gangs-switch", "ZBMINI-L",):
+    if self.ListOfDevices[nwkid]["Model"] in ("TI0001", "TS0011", "TS0013", "TS0601-switch", "TS0601-2Gangs-switch", ):
         # Livol Switch, must be converted to Main Powered
         # Patch some status as Device Annouced doesn't provide much info
         self.ListOfDevices[nwkid]["LogicalType"] = "Router"
@@ -802,7 +802,7 @@ def mainPoweredDevice(self, nwkid):
         mainPower = False
 
     # These are device annouced as Battery, but are Main Powered ( some time without neutral)
-    if model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch"):
+    if model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch", "ZBMINI-L",):
         mainPower = True
 
 
@@ -1316,7 +1316,7 @@ def setConfigItem(Key=None, Attribute="", Value=None):
     return Config
 
 
-def getConfigItem(Key=None, Attribute="", Default = None):
+def getConfigItem(Key=None, Attribute="", Default=None):
     if Default is None:
         Default = {}
     Value = Default
@@ -1473,4 +1473,3 @@ def night_shift_jobs( self ):
 
     #Domoticz.Log("Outside of Night Shift period %s %s %s" %( start, current, end))
     return False
-    
