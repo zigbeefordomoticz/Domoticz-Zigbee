@@ -485,6 +485,21 @@ def receive_min_temperature(self, Devices, model_target, NwkId, srcEp, ClusterID
     )
     store_tuya_attribute(self, NwkId, "MinSetpoint", data)
 
+def receive_fan(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    self.log.logging(
+        "Tuya", "Debug", "receive_fan - Nwkid: %s/%s : %s" % (NwkId, srcEp, int(data, 16))
+    )
+    store_tuya_attribute(self, NwkId, "FanSpeed", data)
+    
+    FAN_MODE_MAPPING = {
+        0x03: "05",  # Auto
+        0x00: "01",  # Low
+        0x01: "02",  # Moyen
+        0x02: "03",  # Fort
+    }
+    MajDomoDevice(self, Devices, NwkId, srcEp, "0202", int(data, 16) + 1, Attribute_="001c")
+    
+    
 
 eTRV_MATRIX = {
     "TS0601-thermostat": {
@@ -502,6 +517,7 @@ eTRV_MATRIX = {
             0x10: receive_setpoint,  # Ok
             0x18: receive_temperature,  # Ok
             0x1b: receive_calibration,
+            0x1c: receive_fan,
             0x24: receive_heating_state,
             0x28: receive_childlock,
             0x1B: receive_calibration,
@@ -513,6 +529,7 @@ eTRV_MATRIX = {
             "ScheduleMode": 0x03,  # 01 Manual, 00 Schedule
             "SetPoint": 0x10,  # Ok
             "Calibration": 0x1B,
+            "FanSpeed": 0x1c,
             "ChildLock": 0x28,
             "Calibration": 0x1B,
             "SensorMode": 0x2B,
@@ -1141,6 +1158,26 @@ def tuya_trv_switch_onoff(self, nwkid, onoff):
         cmd = "00"  # Command
         data = "%02x" % onoff
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+def tuya_fan_speed(self, nwkid, speed):
+    self.log.logging("Tuya", "Debug", "tuya_fan_speed - %s Speed: %s" % (nwkid, speed))
+
+    if speed not in (0x00, 0x01, 0x02, 0x03):
+        self.log.logging("Tuya", "Debug", "tuya_fan_speed - %s Speed: %s Not supported" % (nwkid, speed))
+        return
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    dp = get_datapoint_command(self, nwkid, "FanSpeed")
+    self.log.logging("Tuya", "Debug", "tuya_trv_switch_onoff - %s dp for FanSpeed: %s" % (nwkid, dp))
+    if dp:
+        action = "%02x04" % dp
+        # determine which Endpoint
+        EPout = "01"
+        cluster_frame = "11"
+        cmd = "00"  # Command
+        data = "%02x" % speed
+        tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
 
 
 def tuya_trv_reset_schedule(self, nwkid, schedule):

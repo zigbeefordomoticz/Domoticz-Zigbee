@@ -37,7 +37,7 @@ from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
 from Modules.tuyaSiren import (tuya_siren2_trigger, tuya_siren_alarm,
                                tuya_siren_humi_alarm, tuya_siren_temp_alarm)
 from Modules.tuyaTRV import (tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
-                             tuya_trv_mode, tuya_trv_onoff)
+                             tuya_trv_mode, tuya_trv_onoff, tuya_fan_speed)
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
@@ -1024,6 +1024,19 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 casaia_ac201_fan_control(self, NWKID, Level)
                 return
 
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "TS0601-_TZE200_dzuqwsyg":
+                FAN_SPEED_MAPPING = {
+                    0: None,
+                    10: 0x03,
+                    20: 0x00,
+                    30: 0x01,
+                    40: 0x02,
+                }
+                if Level in FAN_SPEED_MAPPING:
+                    tuya_fan_speed(self, NWKID, FAN_SPEED_MAPPING[ Level ])
+                    UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+                    return 
+                
             FAN_MODE = {
                 0: "Off",
                 20: "Low",
