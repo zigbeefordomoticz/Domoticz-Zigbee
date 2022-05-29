@@ -3585,6 +3585,20 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 return
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02d" % (alarm1 or alarm2))
 
+            if batter:
+                # Battery Warning
+                self.log.logging(
+                    "Input",
+                    "Log",
+                    "Decode8401 Low Battery or defective battery: Device: %s %s/%s" % (MsgSrcAddr, batdef, batter),
+                    MsgSrcAddr,
+                )
+                self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 5
+            else:
+                # Battery Ok
+                self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 100  # set to 100%
+
+
         else:
             self.log.logging(
                 "Cluster",
