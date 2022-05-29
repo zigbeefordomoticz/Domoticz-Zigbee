@@ -12,6 +12,7 @@
 
 
 import Domoticz
+import socket
 
 from base64 import b64decode
 import time
@@ -149,4 +150,31 @@ class DomoticzDB_DeviceStatus:
         """
         Retreive the AddjValue of Device.ID
         """
-        return self.extract_AddValue( ID, 'AddjValue')      
+        return self.extract_AddValue( ID, 'AddjValue')
+    
+    
+def open_and_read( self, url ):
+    
+    retry = 3
+    while retry:
+        try:
+            with urllib.request.urlopen(url) as response:
+                return response.read()
+        except urllib.error.HTTPError as e:
+            if e.code in [429, 504]: # 429=too many requests, 504=gateway timeout
+                reason = f'{e.code} {str(e.reason)}'
+            elif isinstance(e.reason, socket.timeout):
+                reason = f'HTTPError socket.timeout {e.reason} - {e}'
+            else:
+                raise
+        except urllib.error.URLError as e:
+            if isinstance(e.reason, socket.timeout):
+                reason = f'URLError socket.timeout {e.reason} - {e}'
+            else:
+                raise
+        except socket.timeout as e:
+            reason = f'socket.timeout {e}'
+        netloc = urllib.parse.urlsplit(url).netloc # e.g. nominatim.openstreetmap.org
+        self.logging("Error", f'*** {netloc} {reason}; will retry')
+        time.sleep(1)
+        retry -= 1
