@@ -1025,8 +1025,15 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 return
 
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "TS0601-_TZE200_dzuqwsyg":
+                self.log.logging(
+                    "Command",
+                    "Log",
+                    "mgtCommand : Fan Control: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
+                    % (NWKID, EPout, Unit, DeviceType, Level),
+                    NWKID,
+                )
+
                 FAN_SPEED_MAPPING = {
-                    0: None,
                     10: 0x03,
                     20: 0x00,
                     30: 0x01,
@@ -1036,6 +1043,14 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                     tuya_fan_speed(self, NWKID, FAN_SPEED_MAPPING[ Level ])
                     UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
                     return 
+                
+                self.log.logging(
+                    "Command",
+                    "Log",
+                    "mgtCommand : Fan Control not expected Level : %s EPout: %s Unit: %s DeviceType: %s Level: %s "
+                    % (NWKID, EPout, Unit, DeviceType, Level),
+                    NWKID,
+                )
                 
             FAN_MODE = {
                 0: "Off",
