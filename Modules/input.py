@@ -1230,6 +1230,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
     if self.ControllerLink:
         self.ControllerLink.update_ZiGate_Version(self.FirmwareVersion, self.FirmwareMajorVersion)
 
+    if self.networkmap:
+        self.networkmap.update_firmware(self.FirmwareVersion)
+        
     if self.log:
         self.log.loggingUpdateFirmware(self.FirmwareVersion, self.FirmwareMajorVersion)
 

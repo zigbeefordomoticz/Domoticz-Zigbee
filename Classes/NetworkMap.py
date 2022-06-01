@@ -42,11 +42,15 @@ class NetworkMap:
         self.Devices = Devices
         self.HardwareID = HardwareID
         self.log = log
+        self.FirmwareVersion = None
 
         self._NetworkMapPhase = 0
         self.LQIreqInProgress = []
         self.LQIticks = 0
         self.Neighbours = {}  # Table of Neighbours
+
+    def update_firmware(self, firmwareversion):
+        self.FirmwareVersion = firmwareversion
 
     def logging(self, logType, message):
         self.log.logging("NetworkMap", logType, message)
