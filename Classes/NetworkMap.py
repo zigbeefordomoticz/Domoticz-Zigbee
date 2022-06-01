@@ -29,7 +29,7 @@ import os.path
 import time
 from datetime import datetime
 
-from Zigbee.zdpCommands import zdp_nwk_lqi_request,  zdp_NWK_address_request
+from Zigbee.zdpCommands import zdp_nwk_lqi_request, zdp_NWK_address_request
 from Modules.mgmt_rtg import mgmt_rtg
 
 
