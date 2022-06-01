@@ -31,6 +31,7 @@ TUYA_eTRV_MODEL = (
     "TS0601-_TZE200_b6wax7g0",      # BRT-100  MOES by Tuya
     "TS0601-_TZE200_chyvmhay",      # Lidl Valve
     "TS0601-thermostat",
+    "TS0601-_TZE200_dzuqwsyg",
     "uhszj9s",
     "GbxAXL2",
     "88teujp",
