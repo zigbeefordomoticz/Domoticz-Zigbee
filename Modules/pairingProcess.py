@@ -454,7 +454,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     # 2 Enable Configure Reporting for any applicable cluster/attributes
     if not delay_binding_and_reporting(self, NWKID):
         self.log.logging("Pairing", "Debug", "Request Configure Reporting for %s" % NWKID)
-        self.configureReporting.processConfigureReporting(NWKID)
+        self.configureReporting.processConfigureReporting(NwkId=NWKID)
 
     # 3 Read attributes
     device_interview(self, NWKID)

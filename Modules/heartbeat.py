@@ -182,7 +182,7 @@ def check_delay_binding( self, NwkId, model ):
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s request Configure Reporting (and so bindings)" % (
             NwkId), NwkId, )
         binding_needed_clusters_with_zigate(self, NwkId)
-        self.configureReporting.processConfigureReporting( NWKID=NwkId ) 
+        self.configureReporting.processConfigureReporting( NwkId=NwkId ) 
         self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"] = "Completed"
 
         

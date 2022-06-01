@@ -25,6 +25,7 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
+import  bellows.exception 
 from Classes.ZigpyTransport.AppBellows import App_bellows
 from Classes.ZigpyTransport.AppDeconz import App_deconz
 from Classes.ZigpyTransport.AppZigate import App_zigate
@@ -37,10 +38,10 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8043_frame_list_node_descriptor,
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
-from zigpy.exceptions import DeliveryError, InvalidResponse
+from Modules.macPrefix import casaiaPrefix_zigpy
+from zigpy.exceptions import DeliveryError, InvalidResponse, ControllerException
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
-from Modules.macPrefix import casaiaPrefix_zigpy
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
@@ -152,7 +153,6 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
             "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x"
             % (set_channel, set_channel, set_extendedPanId),
         )
-        self.ErasePDMDone = True
         new_network = True
     else:
         new_network = False
@@ -166,15 +166,29 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         permit_to_join_timer=self.permit_to_join_timer,
     )
 
+
+    if new_network:
+        # Assume that the new network has been created
+        self.log.logging(
+            "TransportZigpy",
+            "Status",
+            "Assuming new network formed")
+        self.ErasePDMDone = True  
+
+    self.log.logging( "TransportZigpy", "Status", "Network settings")
+    self.log.logging( "TransportZigpy", "Status", "  Channel: %s" %self.app.channel)
+    self.log.logging( "TransportZigpy", "Status", "  PAN ID: 0x%04X" %self.app.pan_id)
+    self.log.logging( "TransportZigpy", "Status", "  Extended PAN ID: %s" %self.app.extended_pan_id)
+    self.log.logging( "TransportZigpy", "Status", "  Device IEEE: %s" %self.app.ieee)
+    self.log.logging( "TransportZigpy", "Status", "  Device NWK: 0x%04X" %self.app.nwk)
+    self.log.logging( "TransportZigpy", "Debug", "  Network key: " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
+    self.ControllerData["Network key"]   =  ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key )
+    
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
 
     # Send Controller Active Node and Node Descriptor
-    self.forwarder_queue.put(
-        build_plugin_8045_frame_list_controller_ep(
-            self,
-        )
-    )
+    self.forwarder_queue.put( build_plugin_8045_frame_list_controller_ep( self, ) )
 
     self.log.logging(
         "TransportZigpy",
@@ -193,11 +207,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     )
 
     # Let send a 0302 to simulate an Off/on
-    self.forwarder_queue.put(
-        build_plugin_0302_frame_content(
-            self,
-        )
-    )
+    self.forwarder_queue.put( build_plugin_0302_frame_content( self, ) )
 
     # Run forever
     await worker_loop(self)
@@ -345,6 +355,7 @@ async def dispatch_command(self, data):
 
 
 async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
+    # sourcery skip: replace-interpolation-with-fstring
     # data = {
     #    'Profile': int(profileId, 16),
     #    'Cluster': int(cluster, 16),
@@ -522,6 +533,7 @@ def check_transport_readiness(self):
         return True
         
 async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False ):
+    # sourcery skip: replace-interpolation-with-fstring    
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
     if not check_transport_readiness:
@@ -552,6 +564,22 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
             if self._currently_waiting_requests_list[_ieee]:
                 multi = 1.5
             await asyncio.sleep( multi * WAITING_TIME_BETWEEN_COMMANDS)
+
+    except bellows.exception.EzspError as e:
+        self.log.logging("TransportZigpy", "Debug", "process_raw_command - bellows.exception.EzspError : %s" % e, _nwkid)
+        await asyncio.sleep( 1.0)
+        return
+    
+    except bellows.exception.ControllerError as e:
+        self.log.logging("TransportZigpy", "Debug", "process_raw_command - bellows.exception.ControllerError : %s" % e, _nwkid)
+        await asyncio.sleep( 1.0)
+        return
+        
+    except ControllerException as e:
+        self.log.logging("TransportZigpy", "Debug", "process_raw_command - ControllerException : %s" % e, _nwkid)
+        await asyncio.sleep( 1.0)
+        return
+        
 
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry

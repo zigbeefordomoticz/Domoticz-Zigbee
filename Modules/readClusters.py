@@ -3585,6 +3585,20 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 return
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02d" % (alarm1 or alarm2))
 
+            if batter:
+                # Battery Warning
+                self.log.logging(
+                    "Input",
+                    "Log",
+                    "Decode8401 Low Battery or defective battery: Device: %s %s/%s" % (MsgSrcAddr, batdef, batter),
+                    MsgSrcAddr,
+                )
+                self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 5
+            else:
+                # Battery Ok
+                self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 100  # set to 100%
+
+
         else:
             self.log.logging(
                 "Cluster",
@@ -3765,7 +3779,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(conso), Attribute_="0000")
 
     elif MsgAttrID == "0001":  # CURRENT_SUMMATION_RECEIVED
-        self.log.logging("Cluster", "Debug", "Cluster0702 - CURRENT_SUMMATION_RECEIVED %s " % (value), MsgSrcAddr)
+        self.log.logging("Cluster", "Log", "Cluster0702 - CURRENT_SUMMATION_RECEIVED %s " % (value), MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0002":  # Current Max Demand Delivered
@@ -5053,3 +5067,14 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
         # Isse Current on the corresponding Ampere
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0b04", str(value), Attribute_=_tmpattr)
+
+
+    elif MsgAttrID in ( "0207", ):
+        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
+        self.log.logging(
+            "Cluster",
+            "Log",
+            "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s / Value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
+            MsgSrcAddr,
+        )

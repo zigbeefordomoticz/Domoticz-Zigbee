@@ -1017,6 +1017,7 @@ def Decode8007(self, Devices, MsgData, MsgLQI):  # “Factory new” Restart
     # self.startZigateNeeded = self.HeartbeatCount
     # if self.HeartbeatCount == 0:
     #    self.startZigateNeeded = 1
+    self.ErasePDMDone = True
     self.log.logging("Input", "Status", "'Factory new' Restart status: %s" % (Status))
 
 
@@ -1103,6 +1104,9 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         "Zigbee Coordinator ieee: %s , short addr: %s" % (self.ControllerIEEE, self.ControllerNWKID),
     )
 
+    # In case of Zigpy, this means that eventually we had formed the new Network
+    if self.zigbee_communitation == 'zigpy':
+        self.ErasePDMDone = True
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
     if str(PanID) == "0":
         self.log.logging("Input", "Status", "Network state DOWN ! ")
@@ -3762,14 +3766,16 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0009", "00")
 
     if battery:
+        # Battery Warning
         self.log.logging(
             "Input",
             "Log",
             "Decode8401 Low Battery or defective battery: Device: %s %s/%s" % (MsgSrcAddr, battdef, battery),
             MsgSrcAddr,
         )
-        self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 1
+        self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 5
     else:
+        # Battery Ok
         self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 100  # set to 100%
 
     if "IAS" in self.ListOfDevices[MsgSrcAddr] and "ZoneStatus" in self.ListOfDevices[MsgSrcAddr]["IAS"]:
