@@ -501,7 +501,7 @@ def receive_fan(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, 
     }
     if int(data,16) not in FAN_MODE_MAPPING:
         return
-    mode =  FAN_MODE_MAPPING[ int(data,16)]
+    mode = FAN_MODE_MAPPING[ int(data,16)]
     MajDomoDevice(self, Devices, NwkId, srcEp, "0202", mode, Attribute_="001c")
     
     
