@@ -43,6 +43,7 @@ TUYA_eTRV_MODEL = (
 eTRV_MODELS = {
     # Thermostat
     "TS0601-thermostat": "TS0601-thermostat",
+    "TS0601-_TZE200_dzuqwsyg": "TS0601-thermostat",
     
     # Siterwell GS361A-H04
     "ivfvd7h": "TS0601-eTRV1",
