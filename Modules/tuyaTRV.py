@@ -77,7 +77,7 @@ def tuya_eTRV_registration(self, nwkid, device_reset=False):
     write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific)
-    if device_reset and get_model_name(self, nwkid) not in ("TS0601-thermostat",):
+    if device_reset and get_model_name(self, nwkid) not in ("TS0601-thermostat", "TS0601-_TZE200_dzuqwsyg"):
         payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
         raw_APS_request(
             self,
@@ -134,7 +134,7 @@ def receive_onoff(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
     store_tuya_attribute(self, NwkId, "Switch", data)
 
     # Update ThermoOnOff widget ( 6501 )
-    if model_target in ["TS0601-thermostat", "TS0601-eTRV3"]:
+    if model_target in ["TS0601-thermostat", "TS0601-eTRV3", "TS0601-_TZE200_dzuqwsyg"]:
         store_tuya_attribute(self, NwkId, "Switch", data)
         if data == "00":
             checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "Off")
@@ -1017,7 +1017,7 @@ def tuya_setpoint(self, nwkid, setpoint_value):
         # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
 
         model_name = get_model_name(self, nwkid) 
-        if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0"]:
+        if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-_TZE200_dzuqwsyg"]:
             tuya_trv_brt100_set_mode(self, nwkid, 0x01)   # Force to be in Manual
             # Setpoint is defined in ° and not centidegree
             setpoint_value = setpoint_value // 100
@@ -1056,6 +1056,7 @@ def tuya_trv_mode(self, nwkid, mode):
     if get_model_name(self, nwkid) in (
         "TS0601-eTRV3",
         "TS0601-thermostat",
+        "TS0601-_TZE200_dzuqwsyg",
     ):
         self.log.logging("Tuya", "Debug", "1", nwkid)
         if mode == 0:  # Switch Off
@@ -1069,7 +1070,7 @@ def tuya_trv_mode(self, nwkid, mode):
                 self.log.logging("Tuya", "Debug", "1.2.1", nwkid)
                 tuya_trv_switch_onoff(self, nwkid, 0x01)
 
-    if get_model_name(self, nwkid) in ("TS0601-thermostat",):
+    if get_model_name(self, nwkid) in ("TS0601-thermostat", "TS0601-_TZE200_dzuqwsyg"):
         self.log.logging("Tuya", "Debug", "2", nwkid)
         if mode == 10:
             self.log.logging("Tuya", "Debug", "2.1", nwkid)
@@ -1134,7 +1135,7 @@ def tuya_trv_switch_mode(self, nwkid, mode):
             action = "%02x04" % dp  # Mode
 
         # Set data value
-        if get_model_name(self, nwkid) == "TS0601-thermostat":
+        if get_model_name(self, nwkid) in ("TS0601-thermostat", "TS0601-_TZE200_dzuqwsyg",):
             data = "00" if mode == 10 else "01"
         elif get_model_name(self, nwkid) == "TS0601-eTRV3":
             data = "01" if mode == 10 else "00"
