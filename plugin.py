@@ -44,6 +44,11 @@
         <param field="Port" label="Port" width="150px" required="true" default="9999">
             <description><br/>Set the Radio Coordinator Port (9999 by default)</description>
         </param>
+        <param field="Mode5" label="API base url <br/>(http://username:password@127.0.0.1:port)" width="250px" default="http://127.0.0.1:/8080" required="true" >
+            <description>
+                <br/><h3>Domoticz Json/API base</h3>In case Domoticz listen to an other port change 8080 by what ever is the port, 
+                and if you have setup an authentication please add the username:password</description>
+        </param>
         <param field="Mode4" label="WebUI port" width="75px" required="true" default="9440" >
             <description><br/><h3>Plugin definition</h3><br/>Set the plugin Dashboard port (9440 by default, None to disable)<br/>
             To access the plugin WebUI, replace your DomoticZ port (8080 by default) in your web adress by your WebUI port (9440 by default).</description>
@@ -63,11 +68,6 @@
                 <options>
                             <option label="None" value="2"  default="true"/>
                 </options>
-        </param>
-        <param field="Mode5" label="API base url <br/>(http://username:password@127.0.0.1:port)" width="250px" default="http://127.0.0.1:/8080" required="true" >
-            <description>
-                <br/><h3>Domoticz Json/API base</h3>In case Domoticz listen to an other port change 8080 by what ever is the port, 
-                and if you have setup an authentication please add the username:password</description>
         </param>
             
     </params>
@@ -300,7 +300,7 @@ class BasePlugin:
             return
 
         if Parameters["Mode5"] == "" or "http://" not in Parameters["Mode5"]:
-            Domoticz.Error("Please cross-check the Hardware setting. >%s< You must set the API base URL" %Parameters["Mode5"])
+            Domoticz.Error("Please cross-check the Domoticz Hardware settingi for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
             self.onStop()
          
            
