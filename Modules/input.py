@@ -1939,13 +1939,14 @@ def store_NwkAddr_Associated_Devices( self, nwkid, Index, device_associated_list
     self.log.logging("Input", "Debug", "          store_NwkAddr_Associated_Devices - %s %s" %( nwkid, device_associated_list))
 
     if Index == 0:
-        self.ListOfDevices[ nwkid ]["NWKAddrAssocDevList"] = []
+        self.ListOfDevices[ nwkid ]["AssociatedDevices"] = {}
+        self.ListOfDevices[ nwkid ]["AssociatedDevices"] = {'Devices': [], 'TimeStamp' : time.time() }
     
     idx = 0
     while idx < len(device_associated_list):
         device_id = device_associated_list[idx:idx + 4]
-        if device_id not in self.ListOfDevices[ nwkid ]["NWKAddrAssocDevList"]:
-            self.ListOfDevices[ nwkid ]["NWKAddrAssocDevList"].append( device_id )
+        if device_id not in self.ListOfDevices[ nwkid ]["AssociatedDevices"]["Devices"]:
+            self.ListOfDevices[ nwkid ]["AssociatedDevices"]["Devices"].append( device_id )
         idx += 4
 
       

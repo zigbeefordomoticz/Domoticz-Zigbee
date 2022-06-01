@@ -43,7 +43,7 @@ CLUSTER_TO_TABLE = {
 
 def mgmt_rtg(self, nwkid, table):
 
-    #Domoticz.Log("=======> mgmt_rtg: %s %s" %(nwkid, table))
+    # Domoticz.Log("=======> mgmt_rtg: %s %s" %(nwkid, table))
     if (
         table == "BindingTable"
         and "Param" in self.ListOfDevices[nwkid] and "BindingTableRequest" in self.ListOfDevices[nwkid]["Param"]

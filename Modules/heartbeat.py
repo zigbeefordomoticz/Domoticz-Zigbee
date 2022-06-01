@@ -681,9 +681,9 @@ def processKnownDevices(self, Devices, NWKID):
     if (
         _mainPowered 
         and night_shift_jobs( self )
-        and "broadcastNwkAddressRequest" in self.pluginconf.pluginConf 
-        and self.pluginconf.pluginConf["broadcastNwkAddressRequest"]
-        and (intHB % ( self.pluginconf.pluginConf["broadcastNwkAddressRequest"] // HEARTBEAT) == 0)
+        and "AssociatedDevicesTable" in self.pluginconf.pluginConf 
+        and self.pluginconf.pluginConf["AssociatedDevicesTable"]
+        and (intHB % ( self.pluginconf.pluginConf["AssociatedDevicesTable"] // HEARTBEAT) == 0)
     ):
         if not self.busy and self.ControllerLink.loadTransmit() < 3:
             lookup_ieee = self.ListOfDevices[ NWKID ]['IEEE']
@@ -849,7 +849,28 @@ def processListOfDevices(self, Devices):
     # Network Topology management
     # if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_TOPO_START):
     #    self.log.logging( "Heartbeat", 'Debug', "processListOfDevices Time for Network Topology")
+
+    if ( 
+        night_shift_jobs( self )
+        and self.zigbee_communitation == "zigpy"
+        and "RoutingTableRequestFeq" in self.pluginconf.pluginConf
+        and self.pluginconf.pluginConf["RoutingTableRequestFeq"] 
+        and (self.HeartbeatCount % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)
+    ):
+        if not self.busy and self.ControllerLink.loadTransmit() < 3:
+            mgmt_rtg(self, "0000", "RoutingTable")
+
     
+    if (
+        night_shift_jobs( self )
+        and "AssociatedDevicesTable" in self.pluginconf.pluginConf 
+        and self.pluginconf.pluginConf["AssociatedDevicesTable"]
+        and (self.HeartbeatCount % ( self.pluginconf.pluginConf["AssociatedDevicesTable"] // HEARTBEAT) == 0)
+    ):
+        if not self.busy and self.ControllerLink.loadTransmit() < 3:
+            lookup_ieee = self.ControllerIEEE
+            zdp_NWK_address_request(self, "0000", lookup_ieee, u8RequestType="01")
+
     
     # Network Topology
     if self.networkmap:

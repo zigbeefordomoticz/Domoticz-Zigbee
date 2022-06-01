@@ -29,7 +29,8 @@ import os.path
 import time
 from datetime import datetime
 
-from Zigbee.zdpCommands import zdp_nwk_lqi_request
+from Zigbee.zdpCommands import zdp_nwk_lqi_request, zdp_NWK_address_request
+from Modules.mgmt_rtg import mgmt_rtg
 
 
 class NetworkMap:
@@ -151,24 +152,6 @@ def _initNeighbours(self):
     # Will popoulate the Neghours dict with all Main Powered Devices
     self.logging("Debug", "_initNeighbours")
 
-    # for nwkid in self.ListOfDevices:
-    #    tobescanned = False
-    #    if nwkid == '0000':
-    #        tobescanned = True
-    #    elif 'LogicalType' in self.ListOfDevices[nwkid]:
-    #        if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
-    #            tobescanned = True
-    #        if 'DeviceType' in self.ListOfDevices[nwkid]:
-    #            if self.ListOfDevices[nwkid]['DeviceType'] == 'FFD':
-    #                tobescanned = True
-    #        if 'MacCapa' in self.ListOfDevices[nwkid]:
-    #            if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
-    #                tobescanned = True
-
-    #    if not tobescanned:
-    #        continue
-    #    _initNeighboursTableEntry( self, nwkid )
-    tobescanned = True
     _initNeighboursTableEntry(self, "0000")
 
 
@@ -180,11 +163,11 @@ def _initNeighboursTableEntry(self, nwkid):
         return
 
     self.logging("Debug", "_initNeighboursTableEntry - %s" % nwkid)
-    self.Neighbours[nwkid] = {}
-    self.Neighbours[nwkid]["Status"] = "ScanRequired"
-    self.Neighbours[nwkid]["TableMaxSize"] = 0
-    self.Neighbours[nwkid]["TableCurSize"] = 0
-    self.Neighbours[nwkid]["Neighbours"] = {}
+    self.Neighbours[nwkid] = {"Status": "ScanRequired", "TableMaxSize": 0, "TableCurSize": 0, "Neighbours": {}}
+
+    # New router, let's trigger Routing Table and Associated Devices
+    mgmt_rtg(self, nwkid, "RoutingTable")
+    zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
 
 
 def is_a_router(self, nwkid):
@@ -373,7 +356,7 @@ def LQIreq(self, nwkid="0000"):
 
     if nwkid not in self.Neighbours:
         _initNeighboursTableEntry(self, nwkid)
-
+        
     tobescanned = False
     if nwkid != "0000" and nwkid not in self.ListOfDevices:
         return
