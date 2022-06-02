@@ -110,7 +110,7 @@ class DomoticzDB_Hardware:
 
 
 class DomoticzDB_DeviceStatus:
-    def __init__(self, api_base_url,  pluginconf, hardwareID, log):
+    def __init__(self, api_base_url, pluginconf, hardwareID, log):
         self.api_base_url = api_base_url
         self.HardwareID = hardwareID
         self.pluginconf = pluginconf
