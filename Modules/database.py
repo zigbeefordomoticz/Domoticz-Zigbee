@@ -83,6 +83,7 @@ BUILD_ATTRIBUTES = (
     "NeighbourTableSize",
     "BindingTable",
     "RoutingTable",
+    "AssociatedDevices",
     "Battery",
     "BatteryUpdateTime",
     "GroupMemberShip",

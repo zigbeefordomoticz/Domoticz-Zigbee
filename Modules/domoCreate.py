@@ -66,13 +66,22 @@ def deviceName(self, NWKID, DeviceType, IEEE_, EP_):
 
     return devName
 
+def how_many_slot_available( Devices ):
+    return sum(x not in Devices for x in range( 1, 255 ))
+
 
 def FreeUnit(self, Devices, nbunit_=1):
     """
     FreeUnit
     Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
     """
-    FreeUnit = ""
+    if how_many_slot_available( Devices ) <= 5:
+        self.log.logging("Widget", "Status", "It seems that you can create only 5 Domoticz widgets more !!!")
+    elif how_many_slot_available( Devices ) <= 15:
+        self.log.logging("Widget", "Status", "It seems that you can create only 15 Domoticz widgets more !!")
+    elif how_many_slot_available( Devices ) <= 30:
+        self.log.logging("Widget", "Status", "It seems that you can create only 30 Domoticz widgets more !")
+        
     for x in range(1, 255):
         if x not in Devices:
             if nbunit_ == 1:

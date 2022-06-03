@@ -101,8 +101,7 @@ def rest_netTopologie(self, verb, data, parameters):
         return _response
 
     if verb == "GET":
-        
-            
+           
         if len(parameters) == 0:
             # Send list of Time Stamps
             if len(self.ControllerData) == 0:
@@ -110,7 +109,10 @@ def rest_netTopologie(self, verb, data, parameters):
             _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
         elif len(parameters) == 1:
-
+            
+            if self.pluginconf.pluginConf["TopologyOnRoutingTable"]:
+                _response["Data"] = json.dumps(collect_routing_table(self), sort_keys=True)
+            else:
                 if len(self.ControllerData) == 0:
                     _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
                 else:
@@ -153,7 +155,7 @@ def extract_report(self, reportLQI):
 
     if is_sibling_required(reportLQI) or self.pluginconf.pluginConf["Sibling"]:
         reportLQI = check_sibbling(self, reportLQI)
-    
+
     self.logging("Debug", "AFTER Sibling report" )
     for item in reportLQI:
         for x in reportLQI[item]["Neighbours"]:
@@ -260,8 +262,7 @@ def get_node_name( self, node):
         return "Zigbee Coordinator"
     if node not in self.ListOfDevices:
         return node
-    if "ZDeviceName" in self.ListOfDevices[node]:
-        if self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
+    if "ZDeviceName" in self.ListOfDevices[node] and self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
             return self.ListOfDevices[node]["ZDeviceName"]
     return node
     
@@ -378,3 +379,62 @@ def find_device_type(self, node):
         if self.ListOfDevices[node]["DeviceType"] == "RFD":
             return "End Device"
     return None
+
+
+
+def collect_routing_table(self):
+    
+    _topo = []
+    for father in self.ListOfDevices:
+        for child in extract_routes(self, father):
+            if child not in self.ListOfDevices:
+                continue
+            _relation = {
+                "Father": get_node_name( self, father), 
+                "Child": get_node_name( self, child), 
+                "_lnkqty": get_lqi_from_neighbours(self, father, child), 
+                "DeviceType": find_device_type(self, child)
+                }
+            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+                _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
+            _topo.append( _relation ) 
+            
+        for child in collect_associated_devices( self, father):
+            if child not in self.ListOfDevices:
+                continue
+            _relation = {
+                "Father": get_node_name( self, father), 
+                "Child": get_node_name( self, child), 
+                "_lnkqty": get_lqi_from_neighbours(self, father, child), 
+                "DeviceType": find_device_type(self, child)
+                }
+            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+                _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
+            if _relation not in _topo:
+                _topo.append( _relation )
+    return _topo
+
+       
+def collect_associated_devices( self, node):
+    if "AssociatedDevices" in self.ListOfDevices[ node ]:
+        return list(self.ListOfDevices[ node ]["AssociatedDevices"]["Devices"])
+    return []
+        
+        
+def extract_routes( self, node):
+    node_routes = []
+    if "RoutingTable" in self.ListOfDevices[ node ]:
+        for route in self.ListOfDevices[ node ][ "RoutingTable" ]["Devices"]:
+            node_routes.extend(item for item in route if route[item]["Status"] == "Active (0)")
+    return node_routes            
+        
+
+def get_lqi_from_neighbours(self, father, child):
+    if "Neighbours" in self.ListOfDevices[ father ] and len(self.ListOfDevices[ father ]["Neighbours"]) > 0:
+        item = self.ListOfDevices[ father ]["Neighbours"][ len(self.ListOfDevices[ father ]["Neighbours"]) - 1]
+        for item2 in item["Devices"]:
+            for node in item2:
+                if node != child:
+                    continue
+                return item2[ node ]["_lnkqty"] 
+    return 1

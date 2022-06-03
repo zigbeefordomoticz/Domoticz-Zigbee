@@ -189,6 +189,15 @@ SETTINGS = {
     "WebInterface": {
         "Order": 4,
         "param": {
+            "TopologyOnRoutingTable": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+            },
+
             "Sibling": {
                 "type": "bool",
                 "default": 1,
@@ -1330,7 +1339,7 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
-            "broadcastNwkAddressRequest": {
+            "AssociatedDevicesTable": {
                 "type": "int",
                 "default": 0,
                 "current": None,
