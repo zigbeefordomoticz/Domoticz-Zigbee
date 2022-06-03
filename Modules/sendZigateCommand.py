@@ -229,7 +229,7 @@ def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, paylo
 
     # In case of Firmware < 31e 0x0530 is always on noack even if address mode 0x02 is used.
     overwrittenackIsDisabled = ackIsDisabled
-    if self.FirmwareVersion and self.FirmwareVersion <= "031d":
+    if self.zigbee_communitation == 'zigate' and self.FirmwareVersion and self.FirmwareVersion <= "031d":
         ackIsDisabled = False  # Force the usage of 0x02 address mode
         overwrittenackIsDisabled = True  # Indicate that we are without Ack
 
