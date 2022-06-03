@@ -192,12 +192,10 @@ def is_a_router(self, nwkid):
     if "LogicalType" in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]["LogicalType"] == "Router":
             return True
-        if "DeviceType" in self.ListOfDevices[nwkid]:
-            if self.ListOfDevices[nwkid]["DeviceType"] == "FFD":
-                return True
-        if "MacCapa" in self.ListOfDevices[nwkid]:
-            if self.ListOfDevices[nwkid]["MacCapa"] == "8e":
-                return True
+        if "DeviceType" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["DeviceType"] == "FFD":
+            return True
+        if "MacCapa" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["MacCapa"] == "8e":
+            return True
     return False
 
 

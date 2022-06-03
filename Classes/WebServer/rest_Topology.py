@@ -155,7 +155,7 @@ def extract_report(self, reportLQI):
 
     if is_sibling_required(reportLQI) or self.pluginconf.pluginConf["Sibling"]:
         reportLQI = check_sibbling(self, reportLQI)
-    
+
     self.logging("Debug", "AFTER Sibling report" )
     for item in reportLQI:
         for x in reportLQI[item]["Neighbours"]:
@@ -262,8 +262,7 @@ def get_node_name( self, node):
         return "Zigbee Coordinator"
     if node not in self.ListOfDevices:
         return node
-    if "ZDeviceName" in self.ListOfDevices[node]:
-        if self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
+    if "ZDeviceName" in self.ListOfDevices[node] and self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
             return self.ListOfDevices[node]["ZDeviceName"]
     return node
     
@@ -396,7 +395,7 @@ def collect_routing_table(self):
                 "_lnkqty": get_lqi_from_neighbours(self, father, child), 
                 "DeviceType": find_device_type(self, child)
                 }
-            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append( _relation ) 
             
@@ -409,11 +408,10 @@ def collect_routing_table(self):
                 "_lnkqty": get_lqi_from_neighbours(self, father, child), 
                 "DeviceType": find_device_type(self, child)
                 }
-            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
             if _relation not in _topo:
                 _topo.append( _relation )
-            
     return _topo
 
        
@@ -428,7 +426,6 @@ def extract_routes( self, node):
     if "RoutingTable" in self.ListOfDevices[ node ]:
         for route in self.ListOfDevices[ node ][ "RoutingTable" ]["Devices"]:
             node_routes.extend(item for item in route if route[item]["Status"] == "Active (0)")
-
     return node_routes            
         
 
@@ -441,4 +438,3 @@ def get_lqi_from_neighbours(self, father, child):
                     continue
                 return item2[ node ]["_lnkqty"] 
     return 1
-                    
