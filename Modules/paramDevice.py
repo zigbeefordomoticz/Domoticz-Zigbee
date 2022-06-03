@@ -36,7 +36,7 @@ from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
                           tuya_cmd_ts004F, tuya_energy_childLock,
                           tuya_external_switch_mode, tuya_garage_run_time,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
-                          tuya_window_cover_calibration,
+                          tuya_window_cover_calibration, tuya_TS0004_indicate_light, tuya_TS0004_back_light, SmartRelayStatus01, SmartRelayStatus02, SmartRelayStatus03, SmartRelayStatus04,
                           tuya_window_cover_motor_reversal)
 from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
                                tuya_siren2_alarm_melody,
@@ -223,7 +223,13 @@ DEVICE_PARAMETERS = {
     "TuyaAlarmMelody": tuya_siren2_alarm_melody,
     "SireneMaxAlarmDuration": ias_wd_sirene_max_alarm_dureation,
     "TuyaGarageOpenerRunTime": tuya_garage_run_time,
-    "TuyaSwitchMode": tuya_external_switch_mode
+    "TuyaSwitchMode": tuya_external_switch_mode,
+    "SmartSwitchBackLight": tuya_TS0004_back_light,
+    "SmartSwitchIndicateLight": tuya_TS0004_indicate_light,  
+    "SmartRelayStatus01": SmartRelayStatus01,
+    "SmartRelayStatus02": SmartRelayStatus02,
+    "SmartRelayStatus03": SmartRelayStatus03,
+    "SmartRelayStatus04": SmartRelayStatus04,  
 }
 
 def sanity_check_of_param(self, NwkId):
