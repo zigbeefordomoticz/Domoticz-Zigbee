@@ -58,10 +58,6 @@
 	"Param": {
 		"SmartSwitchBackLight": 1,
 		"SmartSwitchIndicateLight": 1,
-		"SmartRelayStatus01": 0,
-		"SmartRelayStatus02": 0,
-		"SmartRelayStatus03": 0,
-		"SmartRelayStatus04": 0,
 		"PowerOnAfterOffOn": "0"
 	}
 }

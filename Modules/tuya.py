@@ -1289,7 +1289,7 @@ def tuya_external_switch_mode( self, NwkId, mode):
         self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - None existing mode %s" % mode, NwkId)
         return
     EPout = "01"
-    mode = "%02x" %TUYA_SWITCH_MODE [ mode ]
+    mode = "%02x" %TUYA_SWITCH_MODE [mode]
     write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_TS0004_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)
 
 def tuya_TS0004_back_light(self, nwkid, mode):
@@ -1306,10 +1306,19 @@ def tuya_TS0004_indicate_light(self, nwkid, mode):
         return
 
 def SmartRelayStatus_by_ep( self, nwkid, ep, mode):
+    
     if int(mode) in {0, 1, 2}:
-        write_attribute(self, nwkid, ZIGATE_EP, ep, "e001", "0000", "00", "d010", "30", "%02x" %int(mode), ackIsDisabled=False)
-    else:
         return
+    if ep not in self.ListOfDevices[nwkid]["Ep"]:
+        self.log.logging("Heartbeat", "Error", "No ep: %s" %ep, nwkid)
+        return
+    if "e001" not in self.ListOfDevices[nwkid]["Ep"][ ep ]:
+        self.log.logging("Heartbeat", "Log", "No Cluster: %s" %"e001", nwkid)
+        return
+    if "d010" not in self.ListOfDevices[nwkid]["Ep"][ ep ][ "e001" ]:
+        self.log.logging("Heartbeat", "Log", "No Attribute: %s" %"d010", nwkid)
+
+    write_attribute(self, nwkid, ZIGATE_EP, ep, "e001", "0000", "00", "d010", "30", "%02x" %int(mode), ackIsDisabled=False)
 
     
 def SmartRelayStatus01(self, nwkid, mode):
@@ -1323,3 +1332,15 @@ def SmartRelayStatus03(self, nwkid, mode):
 
 def SmartRelayStatus04(self, nwkid, mode):
     SmartRelayStatus_by_ep( self, nwkid, "04", mode)
+
+def _check_tuya_attribute(self, nwkid, ep, cluster, attribute ):
+    if ep not in self.ListOfDevices[nwkid]["Ep"]:
+        self.log.logging("Heartbeat", "Log", "No ep: %s" %ep, nwkid)
+        return False
+    if cluster not in self.ListOfDevices[nwkid]["Ep"][ ep ]:
+        self.log.logging("Heartbeat", "Log", "No Cluster: %s" %cluster, nwkid)
+        return False
+    if attribute not in self.ListOfDevices[nwkid]["Ep"][ ep ][ cluster ]:
+        self.log.logging("Heartbeat", "Log", "No Attribute: %s" %attribute, nwkid)
+        return False
+    return True

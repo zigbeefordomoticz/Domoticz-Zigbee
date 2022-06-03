@@ -649,43 +649,35 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
     if key not in self.ListOfDevices:
         self.log.logging("BasicOutput", "Error", "set_PowerOn_OnOff for %s not found" % (key), key)
         return
+    
     model_name = ""
     if "Model" in self.ListOfDevices[key]:
         model_name = self.ListOfDevices[key]["Model"]
+        
     manuf_spec = "00"
     manuf_id = "0000"
 
     ListOfEp = getListOfEpForCluster(self, key, "0006")
     cluster_id = "0006"
     attribute = "4003"
+    data_type = "30"  #
 
-    if model_name in ( "TS0121", "TS0115", "TS011F-multiprise", "TS011F-2Gang-switches", "TS011F-plug" , "TS0004-_TZ3000_excgg5kb"):
+    if model_name in ( "TS0121", "TS0115", "TS011F-multiprise", "TS011F-2Gang-switches", "TS011F-plug" , "TS0004-_TZ3000_excgg5kb", ):
         attribute = "8002"
         if OnOffMode == 0xFF:
             OnOffMode = 0x02
 
-    data_type = "30"  #
-    ListOfEp = getListOfEpForCluster(self, key, "0006")
+    if model_name in ( "TS0004-_TZ3000_excgg5kb",):
+        ListOfEp = ( "01", )
+        
+    self.log.logging( "BasicOutput", "Debug", "set_PowerOn_OnOff for %s - OnOff: %s %s %s" % (key, OnOffMode, attribute, ListOfEp), key )
+    
     for EPout in ListOfEp:
-        data = "%02x" % OnOffMode
-        self.log.logging(
-            "BasicOutput", "Debug", "set_PowerOn_OnOff for %s/%s - OnOff: %s" % (key, EPout, OnOffMode), key
-        )
+        data = "%02x" % int(OnOffMode)
+        self.log.logging( "BasicOutput", "Debug", "set_PowerOn_OnOff for %s/%s - OnOff: %s" % (key, EPout, OnOffMode), key )
         if attribute in self.ListOfDevices[key]["Ep"][EPout]["0006"]:
             del self.ListOfDevices[key]["Ep"][EPout]["0006"][attribute]
-        return write_attribute(
-            self,
-            key,
-            ZIGATE_EP,
-            EPout,
-            cluster_id,
-            manuf_id,
-            manuf_spec,
-            attribute,
-            data_type,
-            data,
-            ackIsDisabled=True,
-        )
+        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True, )
 
 
 def unknown_device_nwkid(self, nwkid):
