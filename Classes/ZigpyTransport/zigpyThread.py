@@ -25,7 +25,7 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
-import  bellows.exception 
+import bellows.exception 
 from Classes.ZigpyTransport.AppBellows import App_bellows
 from Classes.ZigpyTransport.AppDeconz import App_deconz
 from Classes.ZigpyTransport.AppZigate import App_zigate
@@ -182,7 +182,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     self.log.logging( "TransportZigpy", "Status", "  Device IEEE: %s" %self.app.ieee)
     self.log.logging( "TransportZigpy", "Status", "  Device NWK: 0x%04X" %self.app.nwk)
     self.log.logging( "TransportZigpy", "Debug", "  Network key: " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
-    self.ControllerData["Network key"]   =  ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key )
+    self.ControllerData["Network key"] = ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key )
     
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
