@@ -112,6 +112,7 @@ from Modules.command import mgtCommand
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               importDeviceConfV2)
+from Modules.domoCreate import how_many_slot_available
 from Modules.domoTools import ResetDevice
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
@@ -720,6 +721,7 @@ class BasePlugin:
                     "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"]
                 )
 
+        self.log.logging("Plugin", "Status", "Domoticz Widgets usage is at %s %%" % round( ( ( 255 - how_many_slot_available( Devices )) / 255 ) * 100, 1 ))
         self.busy = False
 
     def onStop(self):  # sourcery skip: class-extract-method
