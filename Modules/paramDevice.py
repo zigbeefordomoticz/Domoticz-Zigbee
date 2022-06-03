@@ -32,11 +32,14 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
 from Modules.schneider_wiser import (iTRV_open_window_detection,
                                      wiser_home_lockout_thermostat)
 from Modules.tools import getEpForCluster
-from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
+from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
+                          SmartRelayStatus03, SmartRelayStatus04,
+                          get_tuya_attribute, tuya_backlight_command,
                           tuya_cmd_ts004F, tuya_energy_childLock,
                           tuya_external_switch_mode, tuya_garage_run_time,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
-                          tuya_window_cover_calibration, tuya_TS0004_indicate_light, tuya_TS0004_back_light, SmartRelayStatus01, SmartRelayStatus02, SmartRelayStatus03, SmartRelayStatus04,
+                          tuya_TS0004_back_light, tuya_TS0004_indicate_light,
+                          tuya_window_cover_calibration,
                           tuya_window_cover_motor_reversal)
 from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
                                tuya_siren2_alarm_melody,
