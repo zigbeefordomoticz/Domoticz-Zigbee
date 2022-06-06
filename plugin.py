@@ -44,6 +44,11 @@
         <param field="Port" label="Port" width="150px" required="true" default="9999">
             <description><br/>Set the Radio Coordinator Port (9999 by default)</description>
         </param>
+        <param field="Mode5" label="API base url <br/>(http://username:password@127.0.0.1:port)" width="250px" default="http://127.0.0.1:/8080" required="true" >
+            <description>
+                <br/><h3>Domoticz Json/API base</h3>In case Domoticz listen to an other port change 8080 by what ever is the port, 
+                and if you have setup an authentication please add the username:password</description>
+        </param>
         <param field="Mode4" label="WebUI port" width="75px" required="true" default="9440" >
             <description><br/><h3>Plugin definition</h3><br/>Set the plugin Dashboard port (9440 by default, None to disable)<br/>
             To access the plugin WebUI, replace your DomoticZ port (8080 by default) in your web adress by your WebUI port (9440 by default).</description>
@@ -58,13 +63,13 @@
                 <option label="False" value="False" default="true" />
             </options>
         </param>
-                <param field="Mode6" label="Debugging" width="150px" required="true" default="None">
-        <description><br/><h3>Plugin debug</h3>This debugging option has been moved to the WebUI > Tools > Debug<br/>
-        </description>
-            <options>
-                        <option label="None" value="2"  default="true"/>
-            </options>
+        <param field="Mode6" label="Debugging" width="150px"  default="None" required="true">
+            <description><br/><h3>Plugin debug</h3>This debugging option has been moved to the WebUI > Tools > Debug<br/></description>
+                <options>
+                            <option label="None" value="2"  default="true"/>
+                </options>
         </param>
+            
     </params>
 </plugin>
 """
@@ -295,6 +300,12 @@ class BasePlugin:
             self.onStop()
             return
 
+        if Parameters["Mode5"] == "" or "http://" not in Parameters["Mode5"]:
+            Domoticz.Error("Please cross-check the Domoticz Hardware settingi for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
+            self.onStop()
+         
+           
+            
         # Set plugin heartbeat to 1s
         Domoticz.Heartbeat(1)
 
@@ -406,12 +417,12 @@ class BasePlugin:
         self.StartupFolder = Parameters["StartupFolder"]
 
         self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus(
-            Parameters["Database"], self.pluginconf, self.HardwareID, self.log
+            Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log
         )
 
         self.log.logging("Plugin", "Debug", "   - Hardware table")
         self.domoticzdb_Hardware = DomoticzDB_Hardware(
-            Parameters["Database"], self.pluginconf, self.HardwareID, self.log, self.pluginParameters
+            Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log, self.pluginParameters
         )
         
         if self.zigbee_communitation and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.multiinstances_z4d_plugin_instance()):
@@ -424,7 +435,7 @@ class BasePlugin:
                 self.pluginParameters["LogLevel"] = log_level
                 self.log.logging("Plugin", "Debug", "LogLevel: %s" % self.pluginParameters["LogLevel"])
         self.log.logging("Plugin", "Debug", "   - Preferences table")
-        self.domoticzdb_Preferences = DomoticzDB_Preferences(Parameters["Database"], self.pluginconf, self.log)
+        self.domoticzdb_Preferences = DomoticzDB_Preferences(Parameters["Mode5"], self.pluginconf, self.log)
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
         # Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
 
@@ -1003,7 +1014,7 @@ class BasePlugin:
 
             if self.internalHB > 120:
                 debuging_information(self, "Log")
-                restartPluginViaDomoticzJsonApi(self, stop=True)
+                restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
 
             if (self.internalHB % 10) == 0:
                 self.log.logging(
@@ -1611,7 +1622,7 @@ def pingZigate(self):
             # self.connectionState = 0
             # self.Ping['TimeStamp'] = int(time.time())
             # self.ControllerLink.re_conn()
-            restartPluginViaDomoticzJsonApi(self)
+            restartPluginViaDomoticzJsonApi(self, url_base_api=Parameters["Mode5"])
 
         elif (self.Ping["Nb Ticks"] % 3) == 0:
             zdp_get_permit_joint_status(self)
