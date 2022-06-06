@@ -135,7 +135,7 @@ def receive_onoff(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
     store_tuya_attribute(self, NwkId, "Switch", data)
 
     # Update ThermoOnOff widget ( 6501 )
-    if model_target in ["TS0601-thermostat", "TS0601-eTRV3", "TS0601-_TZE200_dzuqwsyg"]:
+    if model_target in ["TS0601-thermostat", "TS0601-eTRV3", ]:
         store_tuya_attribute(self, NwkId, "Switch", data)
         if data == "00":
             checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "Off")
@@ -243,7 +243,7 @@ def receive_manual_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, ds
     )
     store_tuya_attribute(self, NwkId, "ManualMode", data)
     
-    if get_model_name(self, NwkId) in ("TS0601-_TZE200_dzuqwsyg",):
+    if model_target in ("TS0601-_TZE200_dzuqwsyg",):
         self.log.logging("Tuya", "Debug", "receive_manual_mode - Nwkid: %s/%s Thermostat Mode " % (NwkId, srcEp))
         MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data,16) + 1, Attribute_="001c")
         return
@@ -1278,7 +1278,12 @@ def get_model_name(self, nwkid):
     _ModelName = self.ListOfDevices[nwkid]["Model"]
     return eTRV_MODELS[_ModelName] if _ModelName in eTRV_MODELS else "TS0601-eTRV1"
 
+def device_model_name( self, nwkid ):
+    if "Model" not in self.ListOfDevices[nwkid]:
+            return None
+    return self.ListOfDevices[nwkid]["Model"]
 
+    
 def get_datapoint_command(self, nwkid, cmd):
     _model_name = get_model_name(self, nwkid)
     if _model_name not in eTRV_MATRIX:
