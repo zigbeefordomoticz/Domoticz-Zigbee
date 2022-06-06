@@ -335,7 +335,7 @@ def receive_calibration(self, Devices, model_target, NwkId, srcEp, ClusterID, ds
         "Tuya", "Debug", "receive_calibration - Nwkid: %s/%s Calibration: %s" % (NwkId, srcEp, int(data, 16))
     )
     store_tuya_attribute(self, NwkId, "Calibration", data)
-
+    tuya_set_calibration_if_needed(self, NwkId)
 
 def receive_program_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging(
