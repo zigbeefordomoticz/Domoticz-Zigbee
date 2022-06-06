@@ -211,13 +211,18 @@ def receive_manual_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, ds
         "receive_manual_mode - Nwkid: %s/%s Dp: %s DataType: %s ManualMode: %s" % (NwkId, srcEp, dp, datatype, data),
     )
     store_tuya_attribute(self, NwkId, "ManualMode", data)
+    
+    if get_model_name(self, NwkId) in ("TS0601-_TZE200_dzuqwsyg",):
+        self.log.logging("Tuya", "Debug", "receive_manual_mode - Nwkid: %s/%s Thermostat Mode " % (NwkId, srcEp))
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data,16), Attribute_="001c")
+        return
+    
     if data == "00":
         # Thermostat Mode Auto / As Manual mode is Off
         self.log.logging("Tuya", "Debug", "receive_manual_mode - Nwkid: %s/%s Manual Mode Off" % (NwkId, srcEp))
         MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 2, Attribute_="001c")
         checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "Manual")
-
-
+        
 def receive_schedule_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Specific to Thermostat.
     # Indicate if the Schedule mode is On or Off
@@ -723,7 +728,28 @@ def tuya_lidl_set_mode(self, nwkid, mode):
         data = "%02x" % mode
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
-    
+def tuya_coil_fan_thermostat(self, nwkid, mode):
+    # (0, "00"),  # Off
+    # (1, "10"),  # Cool
+    # (2, "20"),  # Heat
+    # (3, "30"),  # Fan
+
+    self.log.logging("Tuya", "Debug", "tuya_coil_fan_thermostat - %s mode: %s" % (nwkid, mode))
+    if mode not in (0x00, 0x01, 0x02, ):
+        return
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    dp = get_datapoint_command(self, nwkid, "ManualMode")
+    self.log.logging("Tuya", "Debug", "tuya_coil_fan_thermostat - %s dp for mode: %s" % (nwkid, dp))
+    if dp:
+        action = "%02x04" % dp
+        # determine which Endpoint
+        EPout = "01"
+        cluster_frame = "11"
+        cmd = "00"  # Command
+        data = "%02x" % mode
+        tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+   
 def tuya_trv_brt100_set_mode(self, nwkid, mode):
     # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday
     self.log.logging("Tuya", "Debug", "tuya_trv_brt100_set_mode - %s mode: %s" % (nwkid, mode))
