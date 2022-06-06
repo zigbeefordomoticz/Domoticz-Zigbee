@@ -24,15 +24,16 @@ from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
 CACHE_TIMEOUT = (15 * 60) + 15  # num seconds
 
-DOMOTICZ_SETTINGS_API = "json.htm?type=settings"
-DOMOTICZ_HARDWARE_API = "json.htm?type=hardware"
-DOMOTICZ_DEVICEST_API = "json.htm?type=devices&rid="
+DOMOTICZ_SETTINGS_API = "/json.htm?type=settings"
+DOMOTICZ_HARDWARE_API = "/json.htm?type=hardware"
+DOMOTICZ_DEVICEST_API = "/json.htm?type=devices&rid="
 
 
 class DomoticzDB_Preferences:
     # sourcery skip: replace-interpolation-with-fstring
     
-    def __init__(self, database, pluginconf, log):
+    def __init__(self, api_base_url, pluginconf, log):
+        self.api_base_url = api_base_url
         self.preferences = {}
         self.pluginconf = pluginconf
         self.log = log
@@ -41,7 +42,7 @@ class DomoticzDB_Preferences:
 
     def load_preferences(self):
         # sourcery skip: replace-interpolation-with-fstring
-        url = "http://127.0.0.1:%s/%s" %(self.pluginconf.pluginConf["port"], DOMOTICZ_SETTINGS_API)
+        url = self.api_base_url + DOMOTICZ_HARDWARE_API
         response = urllib.request.urlopen( url )
         self.preferences = json.loads( response.read() )
         
@@ -67,7 +68,9 @@ class DomoticzDB_Preferences:
 
 
 class DomoticzDB_Hardware:
-    def __init__(self, database, pluginconf, hardwareID, log, pluginParameters):
+    def __init__(self, api_base_url, pluginconf, hardwareID, log, pluginParameters):
+        self.api_base_url = api_base_url
+
         self.hardware = {}
         self.HardwareID = hardwareID
         self.pluginconf = pluginconf
@@ -77,7 +80,8 @@ class DomoticzDB_Hardware:
 
     def load_hardware(self):  
         # sourcery skip: replace-interpolation-with-fstring
-        url = "http://127.0.0.1:%s/%s" %(self.pluginconf.pluginConf["port"], DOMOTICZ_HARDWARE_API)
+        url = self.api_base_url + DOMOTICZ_HARDWARE_API
+        
         response = urllib.request.urlopen( url )
         result = json.loads( response.read() )
         for x in result['result']:
@@ -106,8 +110,8 @@ class DomoticzDB_Hardware:
 
 
 class DomoticzDB_DeviceStatus:
-    def __init__(self, database, pluginconf, hardwareID, log):
-        self.database = database
+    def __init__(self, api_base_url, pluginconf, hardwareID, log):
+        self.api_base_url = api_base_url
         self.HardwareID = hardwareID
         self.pluginconf = pluginconf
         self.log = log
@@ -117,8 +121,10 @@ class DomoticzDB_DeviceStatus:
         self.log.logging("DZDB", logType, message)
 
     def get_device_status(self, ID):
+        # "http://%s:%s@127.0.0.1:%s" 
         # sourcery skip: replace-interpolation-with-fstring
-        url = "http://127.0.0.1:%s/%s%s" %(self.pluginconf.pluginConf["port"], DOMOTICZ_DEVICEST_API, "%s" %ID)
+        url = self.api_base_url + DOMOTICZ_DEVICEST_API + "%s" %ID
+        
         response = urllib.request.urlopen( url )
         result = json.loads( response.read() )
         self.logging("Debug", "Result: %s" %result)
@@ -143,7 +149,6 @@ class DomoticzDB_DeviceStatus:
         Retreive the TmeeOut Motion value of Device.ID
         """
         return self.extract_AddValue( ID, 'AddjValue')  
-
 
     def retreiveAddjValue_temp(self, ID):
         # sourcery skip: replace-interpolation-with-fstring
