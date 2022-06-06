@@ -214,7 +214,7 @@ def receive_manual_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, ds
     
     if get_model_name(self, NwkId) in ("TS0601-_TZE200_dzuqwsyg",):
         self.log.logging("Tuya", "Debug", "receive_manual_mode - Nwkid: %s/%s Thermostat Mode " % (NwkId, srcEp))
-        MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data,16), Attribute_="001c")
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data,16) + 1, Attribute_="001c")
         return
     
     if data == "00":
