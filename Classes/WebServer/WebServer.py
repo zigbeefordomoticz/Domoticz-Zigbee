@@ -376,7 +376,7 @@ class WebServer(object):
         if verb == "GET":
             from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
-            restartPluginViaDomoticzJsonApi(self)
+            restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=self.pluginParameters["Mode5"])
 
             info = {"Text": "Plugin restarted", "TimeStamp": int(time())}
             _response["Data"] = json.dumps(info, sort_keys=True)
