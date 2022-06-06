@@ -145,6 +145,26 @@ def receive_onoff(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
             checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "On")
             MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 1, Attribute_="6501")  # ThermoOnOff to On
 
+    elif model_target in ["TS0601-_TZE200_dzuqwsyg",]:
+        if data == "00":
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="6501")  # ThermoOnOff to Off
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="001c")  # ThermoMode_6 to Off
+            
+        else:
+            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "On")
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 1, Attribute_="6501")  # ThermoOnOff to On
+            # Let's check what Mode we are 
+            mode = get_tuya_attribute( self, NwkId, "ManualMode")
+            if mode == "00":
+                # Cooling
+                MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 1, Attribute_="001c")  # ThermoMode_6 to Cool
+            elif mode == "01":
+                # Heating
+                MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 2, Attribute_="001c")  # ThermoMode_6 to Heat
+            elif mode == "02":
+                # Fan
+                MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 3, Attribute_="001c")  # ThermoMode_6 to Fan
+        
     else:
         checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", data)
 
@@ -165,7 +185,18 @@ def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
     )
     store_tuya_attribute(self, NwkId, "ChangeMode", data)
 
-    if data == "00":
+    if model_target in ["TS0601-_TZE200_dzuqwsyg", ]:
+        if data == "00":
+            self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Program" % (NwkId, srcEp))
+            
+        elif data == "01":
+            self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Hold" % (NwkId, srcEp))
+            
+        else:
+            self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to unknow" % (NwkId, srcEp))
+            
+            
+    elif data == "00":
         if get_model_name(self, NwkId) == "TS0601-eTRV3":
             # Mode Manual
             self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Manual" % (NwkId, srcEp))
@@ -524,6 +555,7 @@ eTRV_MATRIX = {
             0x01: receive_onoff,  # Ok - On / Off
             0x02: receive_manual_mode,
             0x03: receive_schedule_mode,
+            0x04: receive_preset,
             0x10: receive_setpoint,  # Ok
             0x18: receive_temperature,  # Ok
             0x1b: receive_calibration,
