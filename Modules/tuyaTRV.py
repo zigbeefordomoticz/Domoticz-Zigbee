@@ -12,6 +12,7 @@
 # https://github.com/zigpy/zha-device-handlers/issues/357
 
 import Domoticz
+import re
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
@@ -135,17 +136,7 @@ def receive_onoff(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
     store_tuya_attribute(self, NwkId, "Switch", data)
 
     # Update ThermoOnOff widget ( 6501 )
-    if model_target in ["TS0601-thermostat", "TS0601-eTRV3", ]:
-        store_tuya_attribute(self, NwkId, "Switch", data)
-        if data == "00":
-            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "Off")
-            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="6501")  # ThermoOnOff to Off
-            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="001c")  # ThermoMode_2 to Off
-        else:
-            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "On")
-            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 1, Attribute_="6501")  # ThermoOnOff to On
-
-    elif model_target in ["TS0601-_TZE200_dzuqwsyg",]:
+    if re.search('/ThermoMode_6/',self.ListOfDevices[NwkId]["Ep"][srcEp]["Type"]):
         if data == "00":
             MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="6501")  # ThermoOnOff to Off
             MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="001c")  # ThermoMode_6 to Off
@@ -165,6 +156,16 @@ def receive_onoff(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
                 # Fan
                 MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 3, Attribute_="001c")  # ThermoMode_6 to Fan
         
+    elif model_target in ["TS0601-thermostat", "TS0601-eTRV3", ]:
+        store_tuya_attribute(self, NwkId, "Switch", data)
+        if data == "00":
+            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "Off")
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="6501")  # ThermoOnOff to Off
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="001c")  # ThermoMode_2 to Off
+        else:
+            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "On")
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 1, Attribute_="6501")  # ThermoOnOff to On
+
     else:
         checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", data)
 
@@ -185,7 +186,7 @@ def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
     )
     store_tuya_attribute(self, NwkId, "ChangeMode", data)
 
-    if model_target in ["TS0601-_TZE200_dzuqwsyg", ]:
+    if re.search('/ThermoMode_6/',self.ListOfDevices[NwkId]["Ep"][srcEp]["Type"]):
         if data == "00":
             self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Program" % (NwkId, srcEp))
             
@@ -243,7 +244,7 @@ def receive_manual_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, ds
     )
     store_tuya_attribute(self, NwkId, "ManualMode", data)
     
-    if model_target in ("TS0601-_TZE200_dzuqwsyg",):
+    if re.search('/ThermoMode_6/',self.ListOfDevices[NwkId]["Ep"][srcEp]["Type"]):
         self.log.logging("Tuya", "Debug", "receive_manual_mode - Nwkid: %s/%s Thermostat Mode " % (NwkId, srcEp))
         MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data,16) + 1, Attribute_="001c")
         return
