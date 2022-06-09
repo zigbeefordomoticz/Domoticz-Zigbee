@@ -1857,6 +1857,7 @@ def cancel_override_attribute( self, NwkId ):
         return
     if "ThermostatOverride" not in self.ListOfDevices[NwkId]["Schneider"]:
         return
+    self.log.logging("Schneider", "Status", "Cancelling current temperature override for {Nwkid}")
     del self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]
     self.ListOfDevices[NwkId ]["Schneider"]["BoostDemand"] = True
 
@@ -1903,10 +1904,13 @@ def override_setpoint(self, NwkId, Ep, override, duration):
 
     self.log.logging("Schneider", "Debug", f"override_setpoint -- NwkId: {NwkId} Ep: {Ep} Override: {override} Duration: {duration}")
 
+    override_base_setpoint = None
+    if "Schneider" in self.ListOfDevices[NwkId] and "ThermostatOverride" in self.ListOfDevices[NwkId]["Schneider"]:
+            override_base_setpoint = self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"]
 
     if "Schneider" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["Schneider"] = {}
-    if "ThermostatOverride" not in self.ListOfDevices[NwkId]["Schneider"]:
+            self.ListOfDevices[NwkId]["Schneider"]
+    if "ThermostatOverride" not in self.ListOfDevices[NwkId]["Schneider"]:      
         self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"] = {}
 
     # Get current Setpoint
@@ -1925,12 +1929,15 @@ def override_setpoint(self, NwkId, Ep, override, duration):
         if "OverrideTempInDegree" in self.ListOfDevices[NwkId]["Param"]:
             if current_setpoint < override:
                 override = current_setpoint + ( self.ListOfDevices[NwkId]["Param"]["OverrideTempInDegree"] * 100)
+                override = min(override, 3000)
             else:
                 override = current_setpoint - ( self.ListOfDevices[NwkId]["Param"]["OverrideTempInDegree"] * 100)
+                override = max(override, 700)
             self.log.logging("Schneider", "Debug", f"override_setpoint -- override: {override}")
 
 
-    self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"] = current_setpoint
+    self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["CurrentSetpoint"] = override_base_setpoint or current_setpoint
+
     self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideSetpoint"] = override
     self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideDuration"] = duration * 60
     self.ListOfDevices[NwkId]["Schneider"]["ThermostatOverride"]["OverrideStartTime"] = time()
@@ -1983,7 +1990,6 @@ def iTRV_local_temperature(self, NwkId):
     if room_temperature is None:
         return 0x8000
     return room_temperature
-
 
 def get_wiserroom(self, NwkId):
     self.log.logging("Schneider", "Debug", f"get_wiserroom for: {NwkId}")
