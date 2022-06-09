@@ -31,7 +31,7 @@ TUYA_eTRV_MODEL = (
     "TS0601-_TZE200_b6wax7g0",      # BRT-100  MOES by Tuya
     "TS0601-_TZE200_chyvmhay",      # Lidl Valve
     "TS0601-thermostat",
-    "TS0601-_TZE200_dzuqwsyg",
+    "TS0601-_TZE200_dzuqwsyg",      # Tuya Thermostat with Cooling & Fan control
     "uhszj9s",
     "GbxAXL2",
     "88teujp",
@@ -44,7 +44,7 @@ TUYA_eTRV_MODEL = (
 eTRV_MODELS = {
     # Thermostat
     "TS0601-thermostat": "TS0601-thermostat",
-    "TS0601-_TZE200_dzuqwsyg": "TS0601-thermostat",
+    "TS0601-_TZE200_dzuqwsyg": "TS0601-thermostat-Coil",
     
     # Siterwell GS361A-H04
     "ivfvd7h": "TS0601-eTRV1",
@@ -78,7 +78,7 @@ def tuya_eTRV_registration(self, nwkid, device_reset=False):
     write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific)
-    if device_reset and get_model_name(self, nwkid) not in ("TS0601-thermostat", "TS0601-_TZE200_dzuqwsyg"):
+    if device_reset and get_model_name(self, nwkid) not in ("TS0601-thermostat", "TS0601-thermostat-Coil"):
         payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
         raw_APS_request(
             self,
@@ -577,6 +577,36 @@ eTRV_MATRIX = {
             "SensorMode": 0x2B,
         },
     },
+    "TS0601-thermostat-Coil": {
+        # Thermostat with Cooling and Fan control
+        "FromDevice": {  # 
+            0x01: receive_onoff,  # Ok - On / Off
+            0x02: receive_manual_mode,
+            0x03: receive_schedule_mode,
+            0x04: receive_preset,
+            0x10: receive_setpoint,  # Ok
+            0x18: receive_temperature,  # Ok
+            0x1b: receive_calibration,
+            0x1c: receive_fan,
+            0x24: receive_heating_state,
+            0x28: receive_childlock,
+            0x1B: receive_calibration,
+            0x2B: receive_sensor_mode,
+        },
+        "ToDevice": {
+            "Switch": 0x01,  # Ok On / Off
+            "ManualMode": 0x02,  # ????
+            "ScheduleMode": 0x03,  # 01 Manual, 00 Schedule
+            "SetPoint": 0x10,  # Ok
+            "Calibration": 0x1B,
+            "FanSpeed": 0x1c,
+            "ChildLock": 0x28,
+            "Calibration": 0x1B,
+            "SensorMode": 0x2B,
+        },
+    },
+    
+    
     # eTRV
     "TS0601-eTRV1": {
         "FromDevice": {  # Confirmed with @d2e2n2o _TYST11_zivfvd7h
@@ -1076,7 +1106,7 @@ def tuya_setpoint(self, nwkid, setpoint_value):
         # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
 
         model_name = get_model_name(self, nwkid) 
-        if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-_TZE200_dzuqwsyg"]:
+        if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-thermostat-Coil"]:
             tuya_trv_brt100_set_mode(self, nwkid, 0x01)   # Force to be in Manual
             # Setpoint is defined in ° and not centidegree
             setpoint_value = setpoint_value // 100
@@ -1115,7 +1145,7 @@ def tuya_trv_mode(self, nwkid, mode):
     if get_model_name(self, nwkid) in (
         "TS0601-eTRV3",
         "TS0601-thermostat",
-        "TS0601-_TZE200_dzuqwsyg",
+        "TS0601-thermostat-Coil"
     ):
         self.log.logging("Tuya", "Debug", "1", nwkid)
         if mode == 0:  # Switch Off
@@ -1129,7 +1159,7 @@ def tuya_trv_mode(self, nwkid, mode):
                 self.log.logging("Tuya", "Debug", "1.2.1", nwkid)
                 tuya_trv_switch_onoff(self, nwkid, 0x01)
 
-    if get_model_name(self, nwkid) in ("TS0601-thermostat", "TS0601-_TZE200_dzuqwsyg"):
+    if get_model_name(self, nwkid) in ("TS0601-thermostat", "TS0601-thermostat-Coil"):
         self.log.logging("Tuya", "Debug", "2", nwkid)
         if mode == 10:
             self.log.logging("Tuya", "Debug", "2.1", nwkid)
@@ -1194,7 +1224,7 @@ def tuya_trv_switch_mode(self, nwkid, mode):
             action = "%02x04" % dp  # Mode
 
         # Set data value
-        if get_model_name(self, nwkid) in ("TS0601-thermostat", "TS0601-_TZE200_dzuqwsyg",):
+        if get_model_name(self, nwkid) in ("TS0601-thermostat", "TS0601-thermostat-Coil"):
             data = "00" if mode == 10 else "01"
         elif get_model_name(self, nwkid) == "TS0601-eTRV3":
             data = "01" if mode == 10 else "00"
