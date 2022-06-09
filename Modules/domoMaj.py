@@ -1460,17 +1460,18 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
         self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] = 1
 
     self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] += 1
-    if self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] > 3:
+    if self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] > 5:
         self.log.logging(
             "Widget",
             "Error",
             "Aberrant %s: %s (below %s or above %s) for device: %s" % (value_type, value, expected_min, expected_max, NwkId),
             NwkId,
         )
+        del self.ListOfDevices[NwkId][_attribute]
     else:
         self.log.logging(
             "Widget",
-            "Log",
+            "Debug",
             "Aberrant %s: %s (below % or above %s) for device: %s [%s]"
             % (
                 value_type,
