@@ -293,7 +293,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
     # Reset the device Hearbeat, This should allow to trigger Read Request
     zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
 
-    self.configureReporting.processConfigureReporting(NWKID=NwkId)
+    self.configureReporting.processConfigureReporting(NwkId=NwkId)
 
     self.ListOfDevices[NwkId]["PairingInProgress"] = False
 

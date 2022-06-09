@@ -42,6 +42,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
             "Verbs": {"PUT"},
             "function": self.rest_casa_device_ircode_update,
         },
+        "cfgrpt-ondemand": {"Name": "cfgrpt-ondemand", "Verbs": {"GET"}, "function": self.rest_cfgrpt_ondemand},
         "change-channel": {"Name": "change-channel", "Verbs": {"PUT"}, "function": self.rest_change_channel},
         "clear-error-history": {
             "Name": "clear-error-history",

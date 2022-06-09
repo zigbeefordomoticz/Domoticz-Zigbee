@@ -8,15 +8,42 @@
 import struct
 from Modules.tools import retreive_cmd_payload_from_8002, is_direction_to_client, is_direction_to_server
 from Zigbee.encoder_tools import encapsulate_plugin_frame, decode_endian_data
-from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE
+from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE, ZIGATE_EP
+from Zigbee.zclRawCommands import zcl_raw_default_response
 
-
+def is_duplicate_zcl_frame(self, Nwkid, ClusterId, Sqn):
+    
+    if self.zigbee_communitation != "zigpy":
+        return False
+    if Nwkid not in self.ListOfDevices:
+        return False
+    if "ZCL-IN-SQN" not in self.ListOfDevices[ Nwkid ]:
+        self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"] = {}
+    if ClusterId not in self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"]:
+        self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ] = Sqn
+        return False
+    if Sqn == self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ]:
+        return True
+    self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ] = Sqn
+    return False
+    
 def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame):
+    # We are receiving an ZCL message
 
     fcf = Payload[:2]
-    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
-    self.log.logging("zclDecoder", "Debug", "zcl_decoders GlobalCommand: %s Sqn: %s ManufCode: %s Command: %s Data: %s Payload: %s" %(
-        GlobalCommand, Sqn, ManufacturerCode, Command, Data, Payload))
+    default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
+
+    if self.zigbee_communitation == "zigpy" and is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn):
+        self.log.logging("zclDecoder", "Debug", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
+        return None
+ 
+    if self.zigbee_communitation == "zigpy" and  not default_response_disable:
+        # Let's answer
+        self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
+        zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf )
+
+    self.log.logging("zclDecoder", "Debug", "zcl_decoders Zcl.ddr: %s GlobalCommand: %s Sqn: %s ManufCode: %s Command: %s Data: %s Payload: %s" %(
+        default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data, Payload))
 
     if GlobalCommand:
         return buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data )
@@ -26,6 +53,9 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
 
     if ClusterId == "0004":
         return buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
+
+    if ClusterId == "0005" and Command == "05":  # Only Recall Scene supported
+        return buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
 
     if ClusterId == "0006":
         # Remote report
@@ -50,7 +80,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
             "09": "Query Device Specific File response",
         }
         if Command in OTA_UPGRADE_COMMAND:
-            self.log.logging("zclDecoder", "Log", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
+            self.log.logging("zclDecoder", "Debug", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
             return frame
 
     if ClusterId == "0500" and is_direction_to_server(fcf) and Command == "00":
@@ -107,7 +137,7 @@ def buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPo
     if Command == "0a":  # Report attributes
         return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
-    if Command == "0b":  #
+    if Command == "0b":  # Default Response
         return frame
 
     if Command == "0d":  # Discover Attributes Response
@@ -341,11 +371,11 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
 
 def buildframe_for_cluster_0003(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data ):
     if Command == "00":  # Identify
-        self.log.logging("zclDecoder", "Log", "buildframe_for_cluster_0003 - Identify command Time: %s" % Data[:4])
+        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Identify command Time: %s" % Data[:4])
         return None
 
     if Command == "01":  # Identify Query
-        self.log.logging("zclDecoder", "Log", "buildframe_for_cluster_0003 - Identify Query ")
+        self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_0003 - Identify Query ")
         return None
 
     if Command == "40":  # Trigger effect
@@ -355,7 +385,7 @@ def buildframe_for_cluster_0003(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
 
 # Cluster 0x0004 - Groups
 
-def buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data ):
+def buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     if Command == "00":
         return buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
     if Command == "01":
@@ -433,10 +463,22 @@ def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId,
     return encapsulate_plugin_frame("8063", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
+# Cluster 0x0005 - Scenes
+
+def buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+    if Command == "05":  # Recall Scene
+        GroupID = decode_endian_data(Data[0:4], "09")
+        SceneID = Data[4:6]
+        TransitionTime = 'ffff'
+
+        if len(Data) == 10:
+            TransitionTime = decode_endian_data(Data[6:10],"21")
+
+        buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId + Command + GroupID + SceneID + TransitionTime
+        return encapsulate_plugin_frame("80a5", buildPayload, frame[len(frame) - 4 : len(frame) - 2])        
 
 
 # Cluster 0x0006
-
 
 def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
     # sourcery skip: assign-if-exp

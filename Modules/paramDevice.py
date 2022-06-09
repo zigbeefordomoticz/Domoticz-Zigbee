@@ -34,6 +34,7 @@ from Modules.schneider_wiser import (iTRV_open_window_detection,
 from Modules.tools import getEpForCluster
 from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
                           tuya_cmd_ts004F, tuya_energy_childLock,
+                          tuya_external_switch_mode, tuya_garage_run_time,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
                           tuya_window_cover_calibration,
                           tuya_window_cover_motor_reversal)
@@ -126,7 +127,8 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         "TS0115",
         "TS011F-multiprise",
         "TS011F-2Gang-switches",
-        "TS011F-plug"
+        "TS011F-plug",
+        "TS0004"
     ):
         self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s TUYA Manufacturer" % (nwkid, mode), nwkid)
         # Tuya ( 'TS0121' BlitzWolf )
@@ -219,7 +221,9 @@ DEVICE_PARAMETERS = {
     "TuyaAlarmLevel": tuya_siren2_alarm_volume,
     "TuyaAlarmDuration": tuya_siren2_alarm_duration,
     "TuyaAlarmMelody": tuya_siren2_alarm_melody,
-    "SireneMaxAlarmDuration": ias_wd_sirene_max_alarm_dureation
+    "SireneMaxAlarmDuration": ias_wd_sirene_max_alarm_dureation,
+    "TuyaGarageOpenerRunTime": tuya_garage_run_time,
+    "TuyaSwitchMode": tuya_external_switch_mode
 }
 
 def sanity_check_of_param(self, NwkId):

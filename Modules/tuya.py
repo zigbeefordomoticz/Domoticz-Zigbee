@@ -38,9 +38,10 @@ from Modules.zigateConsts import ZIGATE_EP
 
 TUYA_MANUF_CODE = "1002"
 
+
 #   "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
 
-TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f",)
+TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f", "_TZ3000_ksw8qtmt", )
 TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4", "_TZ3000_tk3s5tyg")
 
 
@@ -117,6 +118,7 @@ TUYA_THERMOSTAT_MANUFACTURER = (
     "_TZE200_aoclfnxz",
     "_TYST11_zuhszj9s",
     "_TYST11_jeaxp72v",
+    "_TZE200_dzuqwsyg"    # https://www.domoticz.com/forum/viewtopic.php?p=290066#p290066
 )
 #TUYA_eTRV1_MANUFACTURER = (
 #    "_TZE200_kfvq6avy",
@@ -1212,28 +1214,80 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
 def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     if dp == 0x01:
-        # Switch
+        # Switch / Trigger
         self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Switch %s" % int(data, 16), NwkId)
         MajDomoDevice(self, Devices, NwkId, "01", "0006", "%02x" %(int(data, 16)) )
-        store_tuya_attribute(self, NwkId, "Door", data)
-        
+        store_tuya_attribute(self, NwkId, "DoorSwitch", data)
+
     elif dp == 0x03:
-        # Door: 0x00 => Closed, 0x01 => Open
-        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door %s" % int(data, 16), NwkId)
+        # Door Contact: 0x00 => Closed, 0x01 => Open
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door Contact %s" % int(data, 16), NwkId)
         MajDomoDevice(self, Devices, NwkId, "01", "0500", "%02x" %(int(data, 16)) )
-        store_tuya_attribute(self, NwkId, "Door", data)
+        store_tuya_attribute(self, NwkId, "DoorContact", data)
+
+    elif dp == 0x0c:
+        # Door Status
+        # 00a8 0c 04 0001 02
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door Status %s" % int(data, 16), NwkId)
+        store_tuya_attribute(self, NwkId, "DoorStatus", data)
         
     else:
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
         
 
-def tuya_garage_door_action( self, NwkId, action):
+def tuya_garage_door_action( self, NwkId, onoff):
     # 000f/0101/0001/00
     # 0010/0101/0001/01
+    self.log.logging("Tuya", "Debug", "tuya_garage_door_action - action %s" % onoff, NwkId)
     EPout = "01"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0101"
-    data = "%02x" % int(action)
+    data = "%02x" %int(onoff)
+    self.log.logging("Tuya", "Debug", "tuya_garage_door_action - action %s data: %s" % (action,data), NwkId)
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+    
+def tuya_garage_run_time(self, NwkId, duration):
+    # 0006/0402/0004/0000001e  30 secondes
+    # 0007/0402/0004/0000003c  60 secondes
+    self.log.logging("Tuya", "Debug", "tuya_garage_run_time - duration %s" % duration, NwkId)
+    EPout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "0402"
+    data = "%04x" % int(duration)
+    tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+def tuya_garage_timeout(self, NwkId, duration):
+    # 0008/0502/0004/0000012c  300 secondes - 5 minutes
+    self.log.logging("Tuya", "Debug", "tuya_garage_timeout - duration %s" % duration, NwkId)
+    EPout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "0502"
+    data = "%04x" % int(duration)
+    tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+TUYA_TS0004_MANUF_CODE = "1141"
+TUYA_CLUSTER_EOOO_ID = "e000"
+TUYA_CLUSTER_EOO1_ID = "e001"
+TUYA_SWITCH_MODE = {
+    "Toggle": 0x00,
+    "State": 0x01,
+    "Momentary": 0x02
+}
+
+def tuya_external_switch_mode( self, NwkId, mode):
+ 
+    self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - mode %s" % mode, NwkId)
+    if mode not in TUYA_SWITCH_MODE:
+        self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - None existing mode %s" % mode, NwkId)
+        return
+    EPout = "01"
+    mode = "%02x" %TUYA_SWITCH_MODE [ mode ]
+    write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_TS0004_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)

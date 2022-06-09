@@ -12,6 +12,7 @@ from Zigbee.zdpDecoders import zdp_decoders
 def decode8002_and_process(self, frame):
 
     ProfileId, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload = extract_nwk_infos_from_8002(frame)
+    
     self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileId: %04x %s %s" % (
         int(ProfileId,16), SrcNwkId, frame))
     self.log.logging("Transport8002", "Debug", "decode8002_and_process ProfileID: %04x NwkId: %s Ep: %s Cluster: %s Payload: %s" % (
@@ -25,6 +26,10 @@ def decode8002_and_process(self, frame):
         self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZDP frame: %s" % frame)
         return frame
 
+    if self.zigbee_communitation == "zigpy" and SrcNwkId not in self.ListOfDevices:
+        self.log.logging("Transport8002", "Log", "decode8002_and_process unknown NwkId: %s for ZCL frame %s" % (SrcNwkId,frame))
+        return None
+    
     # Z-Stack doesn't provide Profile Information, so we should assumed that if it is not 0x0000 (ZDP) it is then ZCL
     frame = zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame)
     self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZCL frame: %s" % frame)

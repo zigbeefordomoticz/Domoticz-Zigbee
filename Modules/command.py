@@ -243,6 +243,11 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             # Profalux offer a Manufacturer command to make Stop on Cluster 0x0008
             profalux_stop(self, NWKID)
 
+        elif _model_name in ( "TS0601-_TZE200_nklqjk62", ):
+            self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
+            tuya_garage_door_action( self, NWKID, "02")
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+
         elif DeviceType in ("WindowCovering", "VenetianInverted", "Venetian", "Vanne", "VanneInverted"): 
             if _model_name in ("PR412", "CPR412", "CPR412-E"):
                 profalux_stop(self, NWKID)
@@ -270,13 +275,13 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             NWKID,
         )
 
-        if _model_name in ("TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", ):
+        if _model_name in ( "TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", ):
             self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Switches Gang/EPout: %s" % EPout)
             tuya_switch_command(self, NWKID, "00", gang=int(EPout, 16))
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
         
-        if _model_name in ("TS0601-_TZE200nklqjk62", ):
+        if _model_name in ( "TS0601-_TZE200_nklqjk62", ):
             self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
             tuya_garage_door_action( self, NWKID, "00")
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -542,10 +547,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.iaszonemgt.iaswd_develco_warning(NWKID, EPout, "01")
             return
             
-        if _model_name in ("TS0601-_TZE200nklqjk62", ):
-            self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya Garage Door %s" % NWKID)
+        if _model_name in ("TS0601-_TZE200_nklqjk62", ):
+            self.log.logging("Command", "Debug", "mgtCommand : On for Tuya Garage Door %s" % NWKID)
             tuya_garage_door_action( self, NWKID, "01")
-            UpdateDevice_v2(self, Devices, Unit, 0, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
         if _model_name == "TS0601-Parkside-Watering-Timer":
@@ -1135,9 +1140,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 self.iaszonemgt.alarm_off(NWKID, EPout)
             elif Level == 10:  # Alarm
                 self.iaszonemgt.alarm_on(NWKID, EPout)
-            elif Level == 20:  # Siren
+            elif Level == 20:  # Siren Only
                 self.iaszonemgt.siren_only(NWKID, EPout)
-            elif Level == 30:  # Strobe
+            elif Level == 30:  # Strobe Only
                 self.iaszonemgt.strobe_only(NWKID, EPout)
             elif Level == 40:  # Armed - Squawk
                 self.iaszonemgt.write_IAS_WD_Squawk(NWKID, EPout, "armed")

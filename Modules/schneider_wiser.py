@@ -1292,10 +1292,8 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
     """
     self.log.logging("Schneider", "Debug", f"Schneider read raw APS nwkid: {srcNWKID} ep: {srcEp} , clusterId: {ClusterID}, dstnwkid: {dstNWKID}, dstep: {dstEP}, payload: {MsgPayload}", srcNWKID)
 
-
-    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(MsgPayload)
-    self.log.logging("Schneider", "Debug", f"         -- SQN: {Sqn}, CMD: {Command}, Data: {Data}", srcNWKID)
-
+    default_response, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(MsgPayload)
+    self.log.logging("Schneider", "Debug", "         -- SQN: %s, CMD: %s, Data: %s" % (Sqn, Command, Data), srcNWKID)
 
     if ClusterID == "0201":  # Thermostat cluster
         if GlobalCommand and Command == "00":  # read attributes
@@ -1719,15 +1717,12 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
             "Attributes"
         ]
 
-    cluster_list = {
-        ClusterId: { "Attributes": AttributesConfig}
-    }
-
     ListOfAttributesToConfigure = AttributesConfig.keys()
-    self.log.logging("Schneider", "Debug", f"schneider_UpdateConfigureReporting - ClusterId: {ClusterId} ClusterList: {cluster_list} ListOfAttribute: {str(ListOfAttributesToConfigure)}")
-
-    self.configureReporting.prepare_and_send_configure_reporting(
-        NwkId, Ep, cluster_list, ClusterId, "00", "00", "0000", ListOfAttributesToConfigure)
+    self.log.logging( "Schneider", "Debug", "schneider_UpdateConfigureReporting - ClusterId: %s ClusterList: %s ListOfAttribute: %s" %(
+        ClusterId, str(AttributesConfig), str(ListOfAttributesToConfigure)))
+    if self.configureReporting:
+        self.configureReporting.prepare_and_send_configure_reporting(
+            NwkId, Ep, AttributesConfig, ClusterId, "00", "00", "0000", ListOfAttributesToConfigure)
     
 
 # Management of EH-ZB-VACT, iTRV

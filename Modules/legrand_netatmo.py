@@ -69,7 +69,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         % (srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload),
     )
     # At Device Annoucement 0x00 and 0x05 are sent by device
-    GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(MsgPayload)
+    default_response, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(MsgPayload)
     self.log.logging(
         "Legrand",
         "Debug",

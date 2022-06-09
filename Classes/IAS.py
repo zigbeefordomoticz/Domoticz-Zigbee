@@ -20,6 +20,7 @@ from Zigbee.zclCommands import (zcl_ias_wd_command_squawk,
                                 zcl_ias_wd_command_start_warning,
                                 zcl_ias_zone_enroll_response,
                                 zcl_read_attribute, zcl_write_attribute)
+from Zigbee.zdpCommands import zdp_simple_descriptor_request
 
 from Modules.basicOutputs import write_attribute
 from Modules.sendZigateCommand import raw_APS_request
@@ -173,7 +174,7 @@ class IAS_Zone_Management:
 
         if NwkId not in self.ListOfDevices:
             return
-        
+
         if is_device_enrollment_completed(self, NwkId):
             return
 
@@ -202,6 +203,10 @@ class IAS_Zone_Management:
             IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZONE_ID)
             check_IAS_CIE_Address(self, NwkId, Ep)
             IAS_CIE_service_discovery( self, NwkId, Ep)
+            if  Ep not in self.ListOfDevices[NwkId]["Ep"] or self.ListOfDevices[NwkId]["Ep"][ Ep ] in ( "", {}):
+                # If we get the enrollment at the begin, it will then define the End Point, and we won't request it
+                zdp_simple_descriptor_request(self, NwkId, Ep)
+                
             bindDevice(self, self.ListOfDevices[ NwkId ]['IEEE'], Ep, "0500")
             if is_device_enrollment_completed(self, NwkId):
                 self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled2"
@@ -285,6 +290,7 @@ class IAS_Zone_Management:
             squawk_mode = 0x01
             strobe = 0x00
             squawk_level = 0x00
+            
         elif SquawkMode == 'armed':
             squawk_mode = 0x00
             strobe = 0x01
@@ -294,10 +300,13 @@ class IAS_Zone_Management:
 
     def warningMode(self, NwkId, ep, mode="both", siren_level=0x01, warning_duration=0x01, strobe_duty=0x32, strobe_level=0x00):
 
+        if mode in ( "siren", "both") and "Param" in self.ListOfDevices[ NwkId ] and "sirenLevel" in self.ListOfDevices[ NwkId ]["Param"]:
+            siren_level = self.ListOfDevices[ NwkId ]["Param"]["sirenLevel"]  
+        if mode in ( "strobe", "both") and "Param" in self.ListOfDevices[ NwkId ] and "sirenLevel" in self.ListOfDevices[ NwkId ]["Param"]:    
+            strobe_duty = self.ListOfDevices[ NwkId ]["Param"]["strobeDutyCycle"] 
+    
         strobe_mode, warning_mode, strobe_level, warning_duration = ias_sirene_mode( self, NwkId , mode , warning_duration)
         self.logging("Debug", f"warningMode - Mode: {bin(warning_mode)}, Duration: {warning_duration}, Duty: {strobe_duty}, Level: {strobe_level}")
-        #if "Model" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["Model"] == "TS0216":
-        #    warning_duration = 0x0000
         zcl_ias_wd_command_start_warning(self, ZIGATE_EP, ep, NwkId, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level, groupaddrmode=False, ackIsDisabled=False)
 
     def siren_both(self, NwkId, ep):
@@ -374,8 +383,11 @@ def ias_sirene_mode( self, NwkId , mode, warning_duration ):
         if mode == "strobe" and "alarmStrobeCode" in self.ListOfDevices[NwkId]["Param"]:
             strobe_mode = int(self.ListOfDevices[NwkId]["Param"]["alarmStrobeCode"])
 
-        if mode == "siren" and "alarmSirenCode" in self.ListOfDevices[NwkId]["Param"]:
+        if mode in ("siren","both") and "alarmSirenCode" in self.ListOfDevices[NwkId]["Param"]:
             warning_mode = int(self.ListOfDevices[NwkId]["Param"]["alarmSirenCode"])
+
+        if mode in ("strobe", "both") and "strobeLevel" in self.ListOfDevices[ NwkId ]["Param"]:
+            strobe_level = self.ListOfDevices[ NwkId ]["Param"]["strobeLevel"]        
 
     return strobe_mode, warning_mode, strobe_level, warning_duration
 

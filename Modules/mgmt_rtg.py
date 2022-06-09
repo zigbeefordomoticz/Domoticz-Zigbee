@@ -43,7 +43,7 @@ CLUSTER_TO_TABLE = {
 
 def mgmt_rtg(self, nwkid, table):
 
-    #Domoticz.Log("=======> mgmt_rtg: %s %s" %(nwkid, table))
+    # Domoticz.Log("=======> mgmt_rtg: %s %s" %(nwkid, table))
     if (
         table == "BindingTable"
         and "Param" in self.ListOfDevices[nwkid] and "BindingTableRequest" in self.ListOfDevices[nwkid]["Param"]
@@ -155,12 +155,13 @@ def mgmt_routingtable_response( self, srcnwkid, MsgSourcePoint, MsgClusterID, ds
             }
         }
 
-        routing_record[target_nwkid]["MemoryConstrained"] = device_memory_constraint
-        routing_record[target_nwkid]["ManyToOne"] = many_to_one
-        routing_record[target_nwkid]["RouteRecordRequired"] = route_record_required
-        routing_record[target_nwkid]["NextHopNwkId"] = next_hop
-
-        self.ListOfDevices[srcnwkid]["RoutingTable"]["Devices"].append(routing_record)
+        if device_status not in ( 0x02, 0x03, 0x05, 0x06, 0x07):
+            routing_record[target_nwkid]["MemoryConstrained"] = device_memory_constraint
+            routing_record[target_nwkid]["ManyToOne"] = many_to_one
+            routing_record[target_nwkid]["RouteRecordRequired"] = route_record_required
+            routing_record[target_nwkid]["NextHopNwkId"] = next_hop
+    
+            self.ListOfDevices[srcnwkid]["RoutingTable"]["Devices"].append(routing_record)
 
     if int(RoutingTableIndex, 16) + int(RoutingTableListCount, 16) < int(RoutingTableSize, 16):
         mgt_routing_req(self, srcnwkid, "%02x" % (int(RoutingTableIndex, 16) + int(RoutingTableListCount, 16)))

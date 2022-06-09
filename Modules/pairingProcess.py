@@ -260,7 +260,7 @@ def request_next_Ep(self, Nwkid):
             continue
 
         # Let's request only 1 Ep, in order wait for the response and then request the next one
-        if not self.ListOfDevices[Nwkid]["Ep"][ iterEp ]:
+        if iterEp not in self.ListOfDevices[Nwkid]["Ep"] or not self.ListOfDevices[Nwkid]["Ep"][ iterEp ] or self.ListOfDevices[Nwkid]["Ep"][ iterEp ] in ( "", {}):
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", Nwkid, iterEp))
             zdp_simple_descriptor_request(self, Nwkid, iterEp)
             return False
@@ -454,7 +454,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     # 2 Enable Configure Reporting for any applicable cluster/attributes
     if not delay_binding_and_reporting(self, NWKID):
         self.log.logging("Pairing", "Debug", "Request Configure Reporting for %s" % NWKID)
-        self.configureReporting.processConfigureReporting(NWKID)
+        self.configureReporting.processConfigureReporting(NwkId=NWKID)
 
     # 3 Read attributes
     device_interview(self, NWKID)
@@ -493,7 +493,7 @@ def binding_needed_clusters_with_zigate(self, NWKID):
 
     # Do we have to follow Certified Conf file, or look for standard mecanishm ?
     if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] not in ( {}, "") and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
-        self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID))
+        self.log.logging("Pairing", "Debug", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID))
         _model = self.ListOfDevices[NWKID]["Model"]
 
         # Check if we have to unbind clusters
@@ -504,7 +504,7 @@ def binding_needed_clusters_with_zigate(self, NWKID):
         # Check if we have specific clusters to Bind
         if "ClusterToBind" in self.DeviceConf[_model]:
             cluster_to_bind = self.DeviceConf[_model]["ClusterToBind"]
-            self.log.logging("Pairing", "Log", "%s Binding cluster based on Conf: %s" % (NWKID, str(cluster_to_bind)))
+            self.log.logging("Pairing", "Debug", "%s Binding cluster based on Conf: %s" % (NWKID, str(cluster_to_bind)))
             for x in self.DeviceConf[_model]["Ep"]:
                 for y in cluster_to_bind:
                     if y not in self.DeviceConf[_model]["Ep"][x]:

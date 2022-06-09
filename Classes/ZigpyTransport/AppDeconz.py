@@ -149,6 +149,10 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
     ) -> None:
+        
+        if sender is None or profile is None or cluster is None:
+            # drop the paquet 
+            return
 
         if sender.nwk == 0x0000:
             self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
