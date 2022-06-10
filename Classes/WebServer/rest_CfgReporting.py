@@ -97,7 +97,7 @@ def rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _respons
 def fake_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response):
     cluster_list = [{"ClusterId": "0702", "Attributes": [{"Attribute": "0000", "Infos": [{"DataType": "25", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0000000000000001"}]}]}, {"ClusterId": "0b04", "Attributes": [{"Attribute": "0505", "Infos": [{"DataType": "21", "MinInterval": "0001", "MaxInterval": "0005", "TimeOut": "0000", "Change": "0001"}]}, {"Attribute": "0508", "Infos": [{"DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001"}]}, {"Attribute": "050b", "Infos": [{"DataType": "29", "MinInterval": "0001", "MaxInterval": "0005", "TimeOut": "0000", "Change": "0001"}]}]}]
     _response["Data"] = json.dumps(  cluster_list )
-    return  _response
+    return _response
 
 
 def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _response):

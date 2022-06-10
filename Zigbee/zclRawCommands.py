@@ -228,7 +228,7 @@ def zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_
     payload += sqn + cmd + nbgroup  
 
     idx = 0
-    while  idx < int(nbgroup,16) * 4:
+    while idx < int(nbgroup,16) * 4:
         payload += decode_endian_data( group_list[ idx : idx + 4 ], "21")
         idx += 4
 

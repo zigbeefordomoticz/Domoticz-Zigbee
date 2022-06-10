@@ -37,7 +37,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         self.log.logging("zclDecoder", "Debug", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
         return None
  
-    if self.zigbee_communitation == "zigpy" and  not default_response_disable:
+    if self.zigbee_communitation == "zigpy" and not default_response_disable:
         # Let's answer
         self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
         zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf )
@@ -441,7 +441,7 @@ def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkI
     self.log.logging("zclDecoder", "Debug", "buildframe8062_ Group Count: %s" %group_count)
     group_list = ""
     idx = 0
-    while  idx < int(group_count,16) * 4:
+    while idx < int(group_count,16) * 4:
         self.log.logging("zclDecoder", "Debug", "buildframe8062_ GroupId: %s" %decode_endian_data( Data[ 4 + idx : (4 + idx) + 4 ], "21"))
         group_list += decode_endian_data( Data[ 4 + idx : (4 + idx) + 4 ], "21")
         idx += 4
