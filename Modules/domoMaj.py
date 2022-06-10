@@ -1445,7 +1445,11 @@ def getDimmerLevelOfColor(self, value):
 
 def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_max):
 
-    if "Param" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"]:
+    if ( 
+        "Param" in self.ListOfDevices[NwkId] 
+        and "disableTrackingEraticValue" in self.ListOfDevices[NwkId]["Param"] 
+        and self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"]
+    ):
         return
     
     _attribute = "Erratic_" + value_type
