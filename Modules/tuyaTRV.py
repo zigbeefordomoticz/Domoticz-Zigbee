@@ -108,7 +108,7 @@ def receive_setpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
 
     setpoint = int(data, 16)
     self.log.logging("Tuya", "Debug", "receive_setpoint - Nwkid: %s/%s Setpoint: %s for model taget: %s" % (NwkId, srcEp, setpoint, model_target))
-    if model_target in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0"] :
+    if model_target in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-_TZE200_dzuqwsyg"] :
         setpoint = int(data, 16)
     elif model_target in [ "TS0601-_TZE200_chyvmhay", ]:
         setpoint = int(data,16) / 2
