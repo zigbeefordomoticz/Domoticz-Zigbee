@@ -467,7 +467,7 @@ def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId,
 
 def buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     if Command == "05":  # Recall Scene
-        GroupID = decode_endian_data(Data[0:4], "09")
+        GroupID = decode_endian_data(Data[:4], "09")
         SceneID = Data[4:6]
         TransitionTime = 'ffff'
 

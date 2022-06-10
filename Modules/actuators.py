@@ -311,7 +311,7 @@ def handle_color_mode_9998( self, nwkid, EPout, Hue_List):
     self.log.logging("Command", "Debug", "handle_color_mode_9998 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
     zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
 
-    value = int(l * 254 // 100)
+    value = int(_l * 254 // 100)
     OnOff = "01"
     self.log.logging( "Command", "Debug", "handle_color_mode_9998 Set Level: %s instead of Level: %s" % (value, value), nwkid)
     actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)
