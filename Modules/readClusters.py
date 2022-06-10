@@ -33,6 +33,7 @@ from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
                           TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER,
                           TUYA_eTRV4_MANUFACTURER)
+from Modules.schneider_wiser import receiving_heatingpoint_attribute, receiving_heatingdemand_attribute
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
@@ -2483,6 +2484,9 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster - %s - %s/%s Pi Heating Demand: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData),
             MsgSrcAddr,
         )
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("EH-ZB-VACT", 'iTRV'):
+            receiving_heatingdemand_attribute( self, Devices, MsgSrcAddr, MsgSrcEp, value, MsgClusterId, MsgAttrID)
+            
         # Per standard the demand is expressed in % between 0x00 to 0x64
         if eurotronics:
             value = ( value * 100 ) // 255
@@ -2529,13 +2533,16 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "0012":  # Heat Setpoint (Zinte16)
         ValueTemp = round(int(value) / 100, 2)
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Heating Setpoint: %s ==> %s" % (value, ValueTemp), MsgSrcAddr)
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
+        
 
         if "Model" in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]["Model"] == "AC201A":
                 # We do not report this, as AC201 rely on 0xffad cluster
+                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
                 pass
+
             elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("AC211", "AC221", "CAC221"):
+                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
                 # We do report if AC211 and AC in Heat mode
                 if MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
                     if "001c" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
@@ -2543,37 +2550,11 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
 
             elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("EH-ZB-VACT", 'iTRV'):
-                # In case of Schneider Wiser Valve, we have to
-                self.log.logging(
-                    "Cluster",
-                    "Debug",
-                    "ReadCluster - 0201 - ValueTemp: %s" % int(((ValueTemp * 100) * 2) / 2),
-                    MsgSrcAddr,
-                )
-                if "Schneider" in self.ListOfDevices[MsgSrcAddr]:
-                    if "Target SetPoint" in self.ListOfDevices[MsgSrcAddr]["Schneider"]:
-                        if self.ListOfDevices[MsgSrcAddr]["Schneider"]["Target SetPoint"] == int(((ValueTemp * 100) * 2) / 2):
-                            # Existing Target equal Local Setpoint in Device
-                            self.ListOfDevices[MsgSrcAddr]["Schneider"]["Target SetPoint"] = None
-                            self.ListOfDevices[MsgSrcAddr]["Schneider"]["TimeStamp SetPoint"] = None
-                            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
-
-                        elif self.ListOfDevices[MsgSrcAddr]["Schneider"]["Target SetPoint"] is None:
-                            # Target is None
-                            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
-                    else:
-                        # No Target Setpoint, so we assumed Setpoint has been updated manualy.
-                        self.ListOfDevices[MsgSrcAddr]["Schneider"]["Target SetPoint"] = None
-                        self.ListOfDevices[MsgSrcAddr]["Schneider"]["TimeStamp SetPoint"] = None
-                        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
-                else:
-                    # No Schneider section, so we assumed Setpoint has been updated manualy.
-                    self.ListOfDevices[MsgSrcAddr]["Schneider"] = {}
-                    self.ListOfDevices[MsgSrcAddr]["Schneider"]["Target SetPoint"] = None
-                    self.ListOfDevices[MsgSrcAddr]["Schneider"]["TimeStamp SetPoint"] = None
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
+                # In case of Schneider Wiser Valve, 
+                receiving_heatingpoint_attribute( self, Devices, MsgSrcAddr, MsgSrcEp, ValueTemp, value, MsgClusterId, MsgAttrID)
 
             elif self.ListOfDevices[MsgSrcAddr]["Model"] != "SPZB0001":
+                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
                 # In case it is not a Eurotronic, let's Update heatPoint
                 # As Eurotronics will rely on 0x4003 attributes
                 self.log.logging(
@@ -2583,6 +2564,10 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                     MsgSrcAddr,
                 )
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
+            else:
+                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
+        else:
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
 
     elif MsgAttrID == "0014":  # Unoccupied Heating
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Unoccupied Heating:  %s" % value, MsgSrcAddr)
