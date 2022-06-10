@@ -540,6 +540,16 @@ def receive_fan(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, 
     mode = FAN_MODE_MAPPING[ int(data,16)]
     MajDomoDevice(self, Devices, NwkId, srcEp, "0202", mode, Attribute_="001c")
     
+def receive_running_state(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    RUNNING_STATES = {
+        0x00: "00",  # Idle
+        0x01: "01",  # Cooling
+        0x02: "02",  # Heating
+    }
+    self.log.logging(
+        "Tuya", "Debug", "receive_running_state - Nwkid: %s/%s : %s" % (NwkId, srcEp, int(data, 16))
+    )
+    store_tuya_attribute(self, NwkId, "RunningState", data)
     
 
 eTRV_MATRIX = {
@@ -583,15 +593,15 @@ eTRV_MATRIX = {
             0x01: receive_onoff,  # Ok - On / Off
             0x02: receive_manual_mode,
             0x03: receive_schedule_mode,
-            0x04: receive_preset,
+            0x04: receive_running_state,
             0x10: receive_setpoint,  # Ok
             0x18: receive_temperature,  # Ok
             0x1b: receive_calibration,
             0x1c: receive_fan,
-            0x24: receive_heating_state,
             0x28: receive_childlock,
             0x1B: receive_calibration,
             0x2B: receive_sensor_mode,
+            0x65: receive_moe_schedule,
         },
         "ToDevice": {
             "Switch": 0x01,  # Ok On / Off
@@ -1092,7 +1102,8 @@ def tuya_setpoint(self, nwkid, setpoint_value):
     tuya_set_calibration_if_needed(self, nwkid)
     self.log.logging("Tuya", "Debug", "tuya_setpoint - %s setpoint: %s" % (nwkid, setpoint_value))
 
-    if get_model_name(self, nwkid) == "TS0601-eTRV3":
+    model_name = get_model_name(self, nwkid)
+    if model_name == "TS0601-eTRV3":
         # Force Manual mode
         self.log.logging("Tuya", "Debug", "tuya_setpoint - %s Force to be in Manual mode" % (nwkid))
         tuya_trv_switch_mode(self, nwkid, 20)
@@ -1101,22 +1112,22 @@ def tuya_setpoint(self, nwkid, setpoint_value):
     dp = get_datapoint_command(self, nwkid, "SetPoint")
     self.log.logging("Tuya", "Debug", "tuya_setpoint - %s dp %s for SetPoint: %s" % (nwkid, dp, setpoint_value))
     if dp:
+        if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0",]:
+            tuya_trv_brt100_set_mode(self, nwkid, 0x01)   # Force to be in Manual
+
         action = "%02x02" % dp
         # In Domoticz Setpoint is in ° , In Modules/command.py we multiplied by 100 (as this is the Zigbee standard).
         # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
-
-        model_name = get_model_name(self, nwkid) 
         if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-thermostat-Coil"]:
-            tuya_trv_brt100_set_mode(self, nwkid, 0x01)   # Force to be in Manual
             # Setpoint is defined in ° and not centidegree
             setpoint_value = setpoint_value // 100
             
         elif model_name in [ "TS0601-_TZE200_chyvmhay", ]:
             setpoint_value = (setpoint_value // 100 ) * 2
-    
+            
         else:
             setpoint_value = setpoint_value // 10
-        
+
         data = "%08x" % setpoint_value
         self.log.logging("Tuya", "Debug", "tuya_setpoint - %s dp %s to Tuya Format SetPoint: %s for model %s with data %s" % (nwkid, dp, setpoint_value, model_name,data))    
         
