@@ -283,7 +283,7 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
     cw = int(Hue_List["cw"])  # 0 < cw < 255 Cold White
     ww = int(Hue_List["ww"])  # 0 < ww < 255 Warm White
     if cw != 0 and ww != 0:
-        TempKelvin = int(((255 - int(ww)) * (6500 - 1700) / 255) + 1700)
+        TempKelvin = int((255 - ww) * (6500 - 1700) / 255 + 1700)
         TempMired = 1000000 // TempKelvin
         self.log.logging(
             "Command", "Log", "handle_color_mode_4 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
@@ -291,21 +291,23 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
         zcl_move_to_colour_temperature( self, nwkid, EPout, Hex_Format(4, TempMired), transitionTemp)
 
     # Process Colour
-    h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
-    saturation = s * 100  # 0 > 100
-    hue = h * 360  # 0 > 360
-    hue = int(hue * 254 // 360)
+    _h, _s, _l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
+    saturation = _s * 100  # 0 > 100
     saturation = int(saturation * 254 // 100)
+    hue = _h * 360  # 0 > 360
+    hue = int(hue * 254 // 360)
+    
     self.log.logging("Command", "Log", "handle_color_mode_4 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
     zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
        
 def handle_color_mode_9998( self, nwkid, EPout, Hue_List):
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)    
-    h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
-    saturation = s * 100  # 0 > 100
-    hue = h * 360  # 0 > 360
-    hue = int(hue * 254 // 360)
+    _h, _s, _l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
+    saturation = _s * 100  # 0 > 100
     saturation = int(saturation * 254 // 100)
+    hue = _h * 360  # 0 > 360
+    hue = int(hue * 254 // 360)
+    
     self.log.logging("Command", "Debug", "handle_color_mode_9998 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
     zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
 
