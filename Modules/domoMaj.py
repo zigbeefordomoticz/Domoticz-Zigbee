@@ -686,8 +686,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             self.log.logging("Widget", "Debug", "------>  Baro: %s, WidgetType: %s" % (value, WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
-                from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-
                 adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(Devices[DeviceUnit].ID), 1)
             baroValue = round((value + adjvalue), 1)
             self.log.logging("Widget", "Debug", "------> Adj Value : %s from: %s to %s " % (adjvalue, value, baroValue), NWKID)
@@ -1447,6 +1445,9 @@ def getDimmerLevelOfColor(self, value):
 
 def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_max):
 
+    if "Param" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"]:
+        return
+    
     _attribute = "Erratic_" + value_type
     if expected_min < value < expected_max:
         # Value is in the threasholds, every thing fine
