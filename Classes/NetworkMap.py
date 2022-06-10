@@ -162,7 +162,7 @@ def _initNeighbours(self):
 def _initNeighboursTableEntry(self, nwkid):
 
     # Makes sure nwkid is known as a Router.
-    if nwkid in self.ListOfDevices and not is_a_router(self, nwkid):
+    if nwkid not in self.ListOfDevices or not is_a_router(self, nwkid):
         self.logging("Error", "Found %s in a Neighbour table tag as a router, but is not" % nwkid)
         return
 

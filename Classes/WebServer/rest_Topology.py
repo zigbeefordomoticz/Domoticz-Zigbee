@@ -423,8 +423,10 @@ def collect_associated_devices( self, node):
         
 def extract_routes( self, node):
     node_routes = []
-    if "RoutingTable" in self.ListOfDevices[ node ]:
-        for route in self.ListOfDevices[ node ][ "RoutingTable" ]["Devices"]:
+    if "RoutingTable" in self.ListOfDevices[ node ] and isinstance(self.ListOfDevices[node]["RoutingTable"], list ):
+        last_routing_table = self.ListOfDevices[node]["RoutingTable"][(len(self.ListOfDevices[node]["RoutingTable"] ) - 1)]["Devices"]
+        for route in last_routing_table:
+            Domoticz.Log("---> route: %s" %route)
             node_routes.extend(item for item in route if route[item]["Status"] == "Active (0)")
     return node_routes            
         
