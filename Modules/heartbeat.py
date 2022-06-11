@@ -21,7 +21,6 @@ from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.domoTools import timedOutDevice
-from Modules.mgmt_rtg import mgmt_rtg
 from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
                                     processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
@@ -44,6 +43,7 @@ from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
                            is_hex, is_time_to_perform_work, mainPoweredDevice,
                            night_shift_jobs, removeNwkInList)
+from Modules.zb_tables_management import mgmt_rtg
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 # Read Attribute trigger: Every 10"

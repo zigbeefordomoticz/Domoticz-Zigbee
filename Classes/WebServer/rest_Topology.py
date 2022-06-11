@@ -395,7 +395,7 @@ def collect_routing_table(self):
                 "_lnkqty": get_lqi_from_neighbours(self, father, child), 
                 "DeviceType": find_device_type(self, child)
                 }
-            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append( _relation ) 
             
@@ -408,7 +408,7 @@ def collect_routing_table(self):
                 "_lnkqty": get_lqi_from_neighbours(self, father, child), 
                 "DeviceType": find_device_type(self, child)
                 }
-            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
             if _relation not in _topo:
                 _topo.append( _relation )
@@ -417,17 +417,26 @@ def collect_routing_table(self):
        
 def collect_associated_devices( self, node):
     if "AssociatedDevices" in self.ListOfDevices[ node ]:
-        return list(self.ListOfDevices[ node ]["AssociatedDevices"]["Devices"])
+        last_associated_devices = self.ListOfDevices[node]["AssociatedDevices"][(len(self.ListOfDevices[node]["AssociatedDevices"] ) - 1)]["Devices"]
+        self.logging( "Log", "collect_associated_devices %s -> %s" %(node, str(last_associated_devices)))
+        return list(last_associated_devices)
     return []
         
         
 def extract_routes( self, node):
     node_routes = []
-    if "RoutingTable" in self.ListOfDevices[ node ] and isinstance(self.ListOfDevices[node]["RoutingTable"], list ):
-        last_routing_table = self.ListOfDevices[node]["RoutingTable"][(len(self.ListOfDevices[node]["RoutingTable"] ) - 1)]["Devices"]
-        for route in last_routing_table:
-            Domoticz.Log("---> route: %s" %route)
-            node_routes.extend(item for item in route if route[item]["Status"] == "Active (0)")
+    
+    if "RoutingTable" not in self.ListOfDevices[ node ]:
+        self.logging( "Log", "^^^no RoutingTable for %s" %node)
+        return node_routes
+    if not isinstance(self.ListOfDevices[node]["RoutingTable"], list ):
+        self.logging( "Log", "^^^RoutingTable for %s is not list but %s" %(node, type(node)))
+        return node_routes
+    
+    last_routing_table = self.ListOfDevices[node]["RoutingTable"][(len(self.ListOfDevices[node]["RoutingTable"] ) - 1)]["Devices"]
+    for route in last_routing_table:
+        Domoticz.Log("---> route: %s" %route)
+        node_routes.extend(item for item in route if route[item]["Status"] == "Active (0)")
     return node_routes            
         
 

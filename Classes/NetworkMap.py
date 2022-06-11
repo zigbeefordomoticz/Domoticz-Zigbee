@@ -29,8 +29,8 @@ import os.path
 import time
 from datetime import datetime
 
-from Zigbee.zdpCommands import zdp_nwk_lqi_request, zdp_NWK_address_request
-from Modules.mgmt_rtg import mgmt_rtg
+from Modules.zb_tables_management import mgmt_rtg
+from Zigbee.zdpCommands import zdp_NWK_address_request, zdp_nwk_lqi_request
 
 
 class NetworkMap:
@@ -68,6 +68,9 @@ class NetworkMap:
             del self.Neighbours
             self.Neighbours = {}
 
+        self.ListOfDevices["0000"] = {}
+        self.ListOfDevices["0000"]["TopologyStartTime"] = int(time.time())
+        
         _initNeighbours(self)
         # Start on Zigate Controler
 
@@ -148,6 +151,7 @@ class NetworkMap:
         # We have been through all list of devices and not action triggered
         if not waitResponse:
             self.logging("Debug", "continue_scan - scan completed, all Neighbour tables received.")
+            
             finish_scan(self)
             self._NetworkMapPhase = 0
 
@@ -171,7 +175,8 @@ def _initNeighboursTableEntry(self, nwkid):
 
     # New router, let's trigger Routing Table and Associated Devices
     mgmt_rtg(self, nwkid, "RoutingTable")
-    zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
+    if "IEEE" in self.ListOfDevices[ nwkid ]:
+        zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
 
 
 def is_a_router(self, nwkid):
@@ -226,12 +231,10 @@ def finish_scan(self):
         if len(self.ListOfDevices[nwkid]["Neighbours"]) > 3:
             del self.ListOfDevices[nwkid]["Neighbours"][0]
 
-        LOD_Neighbours = {}
-        LOD_Neighbours["Time"] = 0
-        LOD_Neighbours["Devices"] = []
-
-        # Set Time when the Neighbours have been calaculated
-        LOD_Neighbours["Time"] = datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+        LOD_Neighbours = {
+            "Devices": [], 
+            "Time": datetime.fromtimestamp( self.ListOfDevices["0000"]["TopologyStartTime"] ).strftime("%Y-%m-%d %H:%M:%S")
+            }
 
         if self.Neighbours[nwkid]["Status"] == "NotReachable":
             self.logging(
@@ -259,8 +262,7 @@ def finish_scan(self):
                         self.Neighbours[nwkid]["Neighbours"][child]["_permitjnt"],
                     ),
                 )
-                element = {}
-                element[child] = {}
+                element = {child: {}}
                 element[child]["_relationshp"] = self.Neighbours[nwkid]["Neighbours"][child]["_relationshp"]
                 element[child]["_devicetype"] = self.Neighbours[nwkid]["Neighbours"][child]["_devicetype"]
                 element[child]["_depth"] = int(self.Neighbours[nwkid]["Neighbours"][child]["_depth"], 16)
@@ -278,12 +280,12 @@ def finish_scan(self):
         self.ListOfDevices[nwkid]["Neighbours"].append(LOD_Neighbours)
 
     self.logging("Status", "--")
-
     prettyPrintNeighbours(self)
 
-    storeLQI = {}
-    storeLQI[int(time.time())] = dict(self.Neighbours)
-
+    storeLQI = {
+        int(self.ListOfDevices["0000"]["TopologyStartTime"]): dict(self.Neighbours)
+        }
+    
     _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkTopology-v3-" + "%02d" % self.HardwareID + ".json"
     if os.path.isdir(self.pluginconf.pluginConf["pluginReports"]):
 
@@ -313,7 +315,7 @@ def finish_scan(self):
             "LQI:Unable to get access to directory %s, please check PluginConf.txt"
             % (self.pluginconf.pluginConf["pluginReports"]),
         )
-
+    del self.ListOfDevices["0000"]["TopologyStartTime"]
 
 def prettyPrintNeighbours(self):
 

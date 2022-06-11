@@ -45,7 +45,7 @@ from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
                                      rejoin_legrand_reset)
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
-from Modules.mgmt_rtg import mgmt_rtg_rsp
+from Modules.zb_tables_management import mgmt_rtg_rsp, store_NwkAddr_Associated_Devices
 from Modules.pairingProcess import interview_state_8045, request_next_Ep
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.readClusters import ReadCluster
@@ -1938,19 +1938,6 @@ def Network_Address_response_request_next_index(self, nwkid, ieee, index, Actual
     self.log.logging("Input", "Debug", "          Network_Address_response_request_next_index - %s Index: %s" %( nwkid, new_index))
     zdp_NWK_address_request(self, nwkid, ieee, u8RequestType="01", u8StartIndex=new_index)
     
-def store_NwkAddr_Associated_Devices( self, nwkid, Index, device_associated_list):
-    self.log.logging("Input", "Debug", "          store_NwkAddr_Associated_Devices - %s %s" %( nwkid, device_associated_list))
-
-    if Index == 0:
-        self.ListOfDevices[ nwkid ]["AssociatedDevices"] = {}
-        self.ListOfDevices[ nwkid ]["AssociatedDevices"] = {'Devices': [], 'TimeStamp' : time.time() }
-    
-    idx = 0
-    while idx < len(device_associated_list):
-        device_id = device_associated_list[idx:idx + 4]
-        if device_id not in self.ListOfDevices[ nwkid ]["AssociatedDevices"]["Devices"]:
-            self.ListOfDevices[ nwkid ]["AssociatedDevices"]["Devices"].append( device_id )
-        idx += 4
 
       
 def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
