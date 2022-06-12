@@ -29,7 +29,8 @@ import os.path
 import time
 from datetime import datetime
 
-from Modules.zb_tables_management import mgmt_rtg
+from Modules.zb_tables_management import (mgmt_rtg, start_new_table_scan,
+                                          update_merge_new_device_to_last_entry)
 from Zigbee.zdpCommands import zdp_NWK_address_request, zdp_nwk_lqi_request
 
 
@@ -62,13 +63,10 @@ class NetworkMap:
         LQIresp_decoding(self, MsgData)
 
     def start_scan(self):
-
         if len(self.Neighbours) != 0:
             self.logging("Debug", "start_scan - initialize data")
             del self.Neighbours
             self.Neighbours = {}
-
-        self.ListOfDevices["0000"] = {}
         self.ListOfDevices["0000"]["TopologyStartTime"] = int(time.time())
         
         _initNeighbours(self)
@@ -159,17 +157,17 @@ class NetworkMap:
 def _initNeighbours(self):
     # Will popoulate the Neghours dict with all Main Powered Devices
     self.logging("Debug", "_initNeighbours")
-
     _initNeighboursTableEntry(self, "0000")
 
 
 def _initNeighboursTableEntry(self, nwkid):
-
+    # Start discovering a new Router
     # Makes sure nwkid is known as a Router.
     if nwkid not in self.ListOfDevices or not is_a_router(self, nwkid):
         self.logging("Error", "Found %s in a Neighbour table tag as a router, but is not" % nwkid)
         return
 
+    start_new_table_scan(self, nwkid, "Neighbours")
     self.logging("Debug", "_initNeighboursTableEntry - %s" % nwkid)
     self.Neighbours[nwkid] = {"Status": "ScanRequired", "TableMaxSize": 0, "TableCurSize": 0, "Neighbours": {}}
 
@@ -210,82 +208,59 @@ def finish_scan(self):
     self.logging("Status", "Network Topology report")
     self.logging("Status", "------------------------------------------------------------------------------------------")
     self.logging("Status", "")
-    self.logging(
-        "Status",
-        "%6s %6s %9s %11s %6s %4s %7s %7s"
-        % ("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle", "PmtJoin"),
-    )
+    self.logging( "Status", "%6s %6s %9s %11s %6s %4s %7s %7s" % ("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle", "PmtJoin"), )
 
     for nwkid in self.Neighbours:
+        self.logging("Debug", "Network Topology report -- %s" %nwkid)
         # We will keep 3 versions of Neighbours
         if nwkid not in self.ListOfDevices:
             self.logging("Error", "finish_scan - %s not found in list Of Devices." % nwkid)
+            self.logging("Debug", "Network Topology report -- %s not found" %nwkid)
             continue
 
-        if "Neighbours" not in self.ListOfDevices[nwkid]:
-            self.ListOfDevices[nwkid]["Neighbours"] = []
-        if not isinstance(self.ListOfDevices[nwkid]["Neighbours"], list):
-            del self.ListOfDevices[nwkid]["Neighbours"]
-            self.ListOfDevices[nwkid]["Neighbours"] = []
-
-        if len(self.ListOfDevices[nwkid]["Neighbours"]) > 3:
-            del self.ListOfDevices[nwkid]["Neighbours"][0]
-
-        LOD_Neighbours = {
-            "Devices": [], 
-            "Time": datetime.fromtimestamp( self.ListOfDevices["0000"]["TopologyStartTime"] ).strftime("%Y-%m-%d %H:%M:%S")
-            }
-
         if self.Neighbours[nwkid]["Status"] == "NotReachable":
+            self.logging( "Status", "%6s %6s %9s %11s %6s %4s %7s %7s NotReachable" % (nwkid, "-", "-", "-", "-", "-", "-", "-") )
+            self.logging("Debug", "Network Topology report -- %s not reachable" %nwkid)
+            continue
+
+        if self.Neighbours[nwkid]["Status"] == "TimedOut":
+            self.logging( "Status", "%6s %6s %9s %11s %6s %4s %7s %7s TimedOut" % (nwkid, "-", "-", "-", "-", "-", "-", "-") )
+            self.logging("Debug", "Network Topology report -- %s Timeout" %nwkid)
+            continue
+
+        element = {}
+        for child in self.Neighbours[nwkid]["Neighbours"]:
+            element[ child ] = {}
             self.logging(
-                "Status", "%6s %6s %9s %11s %6s %4s %7s %7s NotReachable" % (nwkid, "-", "-", "-", "-", "-", "-", "-")
+                "Status",
+                "%6s %6s %9s %11s %6d %4d %7s %7s"
+                % (
+                    nwkid,
+                    child,
+                    self.Neighbours[nwkid]["Neighbours"][child]["_relationshp"],
+                    self.Neighbours[nwkid]["Neighbours"][child]["_devicetype"],
+                    int(self.Neighbours[nwkid]["Neighbours"][child]["_depth"], 16),
+                    int(self.Neighbours[nwkid]["Neighbours"][child]["_lnkqty"], 16),
+                    self.Neighbours[nwkid]["Neighbours"][child]["_rxonwhenidl"],
+                    self.Neighbours[nwkid]["Neighbours"][child]["_permitjnt"],
+                ),
             )
-            LOD_Neighbours["Devices"].append("Not Reachable")
-        elif self.Neighbours[nwkid]["Status"] == "TimedOut":
-            self.logging(
-                "Status", "%6s %6s %9s %11s %6s %4s %7s %7s TimedOut" % (nwkid, "-", "-", "-", "-", "-", "-", "-")
-            )
-            LOD_Neighbours["Devices"].append("Timed Out")
-        else:
-            for child in self.Neighbours[nwkid]["Neighbours"]:
-                self.logging(
-                    "Status",
-                    "%6s %6s %9s %11s %6d %4d %7s %7s"
-                    % (
-                        nwkid,
-                        child,
-                        self.Neighbours[nwkid]["Neighbours"][child]["_relationshp"],
-                        self.Neighbours[nwkid]["Neighbours"][child]["_devicetype"],
-                        int(self.Neighbours[nwkid]["Neighbours"][child]["_depth"], 16),
-                        int(self.Neighbours[nwkid]["Neighbours"][child]["_lnkqty"], 16),
-                        self.Neighbours[nwkid]["Neighbours"][child]["_rxonwhenidl"],
-                        self.Neighbours[nwkid]["Neighbours"][child]["_permitjnt"],
-                    ),
-                )
-                element = {child: {}}
-                element[child]["_relationshp"] = self.Neighbours[nwkid]["Neighbours"][child]["_relationshp"]
-                element[child]["_devicetype"] = self.Neighbours[nwkid]["Neighbours"][child]["_devicetype"]
-                element[child]["_depth"] = int(self.Neighbours[nwkid]["Neighbours"][child]["_depth"], 16)
-                element[child]["_lnkqty"] = int(self.Neighbours[nwkid]["Neighbours"][child]["_lnkqty"], 16)
-                element[child]["_rxonwhenidl"] = self.Neighbours[nwkid]["Neighbours"][child]["_rxonwhenidl"]
-                element[child]["_IEEE"] = self.Neighbours[nwkid]["Neighbours"][child]["_ieee"]
-                element[child]["_permitjnt"] = self.Neighbours[nwkid]["Neighbours"][child]["_permitjnt"]
+            element[child]["_relationshp"] = self.Neighbours[nwkid]["Neighbours"][child]["_relationshp"]
+            element[child]["_devicetype"] = self.Neighbours[nwkid]["Neighbours"][child]["_devicetype"]
+            element[child]["_depth"] = int(self.Neighbours[nwkid]["Neighbours"][child]["_depth"], 16)
+            element[child]["_lnkqty"] = int(self.Neighbours[nwkid]["Neighbours"][child]["_lnkqty"], 16)
+            element[child]["_rxonwhenidl"] = self.Neighbours[nwkid]["Neighbours"][child]["_rxonwhenidl"]
+            element[child]["_IEEE"] = self.Neighbours[nwkid]["Neighbours"][child]["_ieee"]
+            element[child]["_permitjnt"] = self.Neighbours[nwkid]["Neighbours"][child]["_permitjnt"]
 
-                LOD_Neighbours["Devices"].append(element)
-
-                storeLQIforEndDevice(
-                    self, child, nwkid, int(self.Neighbours[nwkid]["Neighbours"][child]["_lnkqty"], 16)
-                )
-
-        self.ListOfDevices[nwkid]["Neighbours"].append(LOD_Neighbours)
+            storeLQIforEndDevice( self, child, nwkid, int(self.Neighbours[nwkid]["Neighbours"][child]["_lnkqty"], 16) )
+        update_merge_new_device_to_last_entry(self, nwkid, "Neighbours", element )
 
     self.logging("Status", "--")
     prettyPrintNeighbours(self)
 
-    storeLQI = {
-        int(self.ListOfDevices["0000"]["TopologyStartTime"]): dict(self.Neighbours)
-        }
-    
+    storeLQI = { int(self.ListOfDevices["0000"]["TopologyStartTime"]): dict(self.Neighbours) }
+
     _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkTopology-v3-" + "%02d" % self.HardwareID + ".json"
     if os.path.isdir(self.pluginconf.pluginConf["pluginReports"]):
 
@@ -298,9 +273,7 @@ def finish_scan(self):
         with open(_filename, "w") as fout:
             # we need to short the list by todayNumReports - todayNumReports - 1
             maxNumReports = self.pluginconf.pluginConf["numTopologyReports"]
-            start = 0
-            if nbentries >= maxNumReports:
-                start = (nbentries - maxNumReports) + 1
+            start = (nbentries - maxNumReports) + 1 if nbentries >= maxNumReports else 0
             self.logging("Debug", "Rpt max: %s , New Start: %s, Len:%s " % (maxNumReports, start, nbentries))
 
             if nbentries != 0:
@@ -308,7 +281,7 @@ def finish_scan(self):
                 fout.writelines(data[start:])
             fout.write("\n")
             json.dump(storeLQI, fout)
-        # self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
+            # self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
     else:
         self.logging(
             "Error",
