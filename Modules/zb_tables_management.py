@@ -100,7 +100,7 @@ def start_new_table_scan(self, nwkid, tablename):
         time_stamp = self.ListOfDevices["0000"]["TopologyStartTime"]
         
     self.log.logging("NetworkMap", "Log", "start_new_table_scan %s/%s/%s" %( nwkid, tablename, time_stamp))
-    _create_empty_entry(self,  nwkid, tablename, time_stamp)
+    _create_empty_entry(self, nwkid, tablename, time_stamp)
 
 def table_entry_cleanup( self, nwkid, tablename):
     max_report_per_table = 4
@@ -116,7 +116,7 @@ def table_entry_cleanup( self, nwkid, tablename):
                 del self.ListOfDevices[nwkid][tablename][0]
                 idx += 1
 
-def _create_empty_entry(self,  nwkid, tablename, time_stamp=None):
+def _create_empty_entry(self, nwkid, tablename, time_stamp=None):
     time_stamp = time_stamp or int(time.time())
     new_entry = {
         "Devices": [], 
@@ -155,12 +155,12 @@ def get_latest_table_entry(self, nwkid, tablename):
     
     if tablename not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid][tablename] = []
-        _create_empty_entry(self,  nwkid, tablename)
+        _create_empty_entry(self, nwkid, tablename)
         
     if not isinstance(self.ListOfDevices[nwkid][tablename], list):
         del self.ListOfDevices[nwkid][tablename]
         self.ListOfDevices[nwkid][tablename] = []
-        _create_empty_entry(self,  nwkid, tablename)
+        _create_empty_entry(self, nwkid, tablename)
         
     return self.ListOfDevices[nwkid][tablename][(len(self.ListOfDevices[nwkid][tablename] ) - 1)]
 
@@ -177,6 +177,9 @@ def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
         get_latest_table_entry(self, nwkid, tablename)["Devices"].append( record )
     else:
         self.log.logging("NetworkMap", "Error", "===> unkown ????")
+
+
+
     
 def mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, ):
 
@@ -248,7 +251,7 @@ def mgmt_routingtable_response( self, srcnwkid, MsgSourcePoint, MsgClusterID, ds
 
         routing_record = {
             target_nwkid: {
-                'Status': STATUS_OF_ROUTE[device_status]  if device_status in STATUS_OF_ROUTE  else "Unknown (%s)" % device_status
+                'Status': STATUS_OF_ROUTE[device_status] if device_status in STATUS_OF_ROUTE else "Unknown (%s)" % device_status
             }
         }
         
