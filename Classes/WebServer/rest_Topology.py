@@ -42,26 +42,27 @@ def rest_netTopologie(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
 
-    _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkTopology-v3-" + "%02d" % self.hardwareID + ".json"
-    self.logging("Debug", "Filename: %s" % _filename)
+    if not self.pluginconf.pluginConf["TopologyV2"]:
+        _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkTopology-v3-" + "%02d" % self.hardwareID + ".json"
+        self.logging("Debug", "Filename: %s" % _filename)
 
-    if not os.path.isfile(_filename):
-        _response["Data"] = json.dumps({}, sort_keys=True)
-        return _response
+        if not os.path.isfile(_filename):
+            _response["Data"] = json.dumps({}, sort_keys=True)
+            return _response
 
-    # Read the file, as we have anyway to do it
-    _topo = {}  # All Topo reports
-    _timestamps_lst = []  # Just the list of Timestamps
-    with open(_filename, "rt") as handle:
-        for line in handle:
-            if line[0] != "{" and line[-1] != "}":
-                continue
-            entry = json.loads(line)
-            for _ts in entry:
-                _timestamps_lst.append(int(_ts))
-                _topo[_ts] = []  # List of Father -> Child relation for one TimeStamp
-                reportLQI = entry[_ts]
-                _topo[_ts] = extract_report(self, reportLQI)
+        # Read the file, as we have anyway to do it
+        _topo = {}  # All Topo reports
+        _timestamps_lst = []  # Just the list of Timestamps
+        with open(_filename, "rt") as handle:
+            for line in handle:
+                if line[0] != "{" and line[-1] != "}":
+                    continue
+                entry = json.loads(line)
+                for _ts in entry:
+                    _timestamps_lst.append(int(_ts))
+                    _topo[_ts] = []  # List of Father -> Child relation for one TimeStamp
+                    reportLQI = entry[_ts]
+                    _topo[_ts] = extract_report(self, reportLQI)
 
     if verb == "DELETE":
         if len(parameters) == 0:
@@ -72,7 +73,7 @@ def rest_netTopologie(self, verb, data, parameters):
 
         elif len(parameters) == 1:
             timestamp = parameters[0]
-            if self.pluginconf.pluginConf["TopologyOnRoutingTable"] and len(self.ControllerData):
+            if self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
                 remove_entry_from_all_tables( self, timestamp )
                 action = {"Name": "Report %s removed" % timestamp}
                 _response["Data"] = json.dumps(action, sort_keys=True)
@@ -106,19 +107,18 @@ def rest_netTopologie(self, verb, data, parameters):
         return _response
 
     if verb == "GET":
-
         if len(parameters) == 0:
             # Send list of Time Stamps
             if len(self.ControllerData) == 0:
                 _timestamps_lst = [1643561599, 1643564628]
                 
-            elif self.pluginconf.pluginConf["TopologyOnRoutingTable"]:
+            elif self.pluginconf.pluginConf["TopologyV2"]:
                 _timestamps_lst = get_list_of_timestamps( self, "0000", "Neighbours")
 
             _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
         elif len(parameters) == 1:
-            if self.pluginconf.pluginConf["TopologyOnRoutingTable"] and len(self.ControllerData):
+            if self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
                 timestamp = parameters[0]
                 _response["Data"] = json.dumps(collect_routing_table(self,timestamp ), sort_keys=True)
 
@@ -405,7 +405,7 @@ def collect_routing_table(self, time_stamp=None):
                 "_lnkqty": get_lqi_from_neighbours(self, father, child), 
                 "DeviceType": find_device_type(self, child)
                 }
-            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append( _relation ) 
             

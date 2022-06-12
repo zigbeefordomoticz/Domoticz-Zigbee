@@ -1217,9 +1217,6 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
  
         set_display_firmware_version( self )
                
-        if self.pluginconf.pluginConf["RoutingTableRequestFeq"] and self.ZiGateModel != 2:
-            self.pluginconf.pluginConf["RoutingTableRequestFeq"] = 0
-
     if self.webserver:
         self.webserver.update_firmware(self.FirmwareVersion)
         self.ControllerLink.update_ZiGate_HW_Version(self.ZiGateModel)

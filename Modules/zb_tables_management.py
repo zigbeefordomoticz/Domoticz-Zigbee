@@ -127,11 +127,12 @@ def get_latest_table_entry(self, nwkid, tablename):
     return []
 
 def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
+    
     new_routing_record = get_latest_table_entry(self, nwkid, tablename)["Devices"]
     if isinstance( record, dict):
         for x in record:
             if x not in new_routing_record:
-                new_routing_record.append ( { x: record[ x ]} )
+                new_routing_record.append( { x: record[ x ]} )
         del get_latest_table_entry(self, nwkid, tablename)["Devices"]
         get_latest_table_entry(self, nwkid, tablename)["Devices"] = new_routing_record.copy()
         
@@ -147,7 +148,11 @@ def get_list_of_timestamps( self, nwkid, tablename):
     return timestamp
     
 def remove_entry_from_all_tables( self, time_stamp ):
-    
+
+    if "TopologyStartTime" in self.ListOfDevices["0000"]:
+        self.log.logging("NetworkMap", "Error", "remove_entry_from_all_tables cannot remove table while a scan is in progress")
+        return
+   
     for x in self.ListOfDevices:
         for table in ( "Neighbours", "AssociatedDevices", "RoutingTable"):
             if table in self.ListOfDevices[ x ]:
@@ -203,13 +208,10 @@ def mgmt_rtg(self, nwkid, table):
         and get_latest_table_entry(self, nwkid, table)["Status"] not in ( "", STATUS_CODE["00"])
     ):
         return
-
     
-    feq = self.pluginconf.pluginConf[table + "RequestFeq"]
-    if time.time() > get_latest_table_entry(self, nwkid, table)["TimeStamp"] + feq:
-        start_new_table_scan(self, nwkid, table)
-        func(self, nwkid, "00")
-        return
+    start_new_table_scan(self, nwkid, table)
+    func(self, nwkid, "00")
+    return
 
     
 def mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, ):
@@ -298,7 +300,7 @@ def mgmt_routingtable_response( self, srcnwkid, MsgSourcePoint, MsgClusterID, ds
                 
     if int(RoutingTableIndex, 16) + int(RoutingTableListCount, 16) < int(RoutingTableSize, 16):
         self.log.logging("NetworkMap", "Debug", "mgmt_routingtable_response requesting Routing Table for %s Idx %s" %(
-             srcnwkid, "%02x" % (int(RoutingTableIndex, 16) + int(RoutingTableListCount, 16))
+            srcnwkid, "%02x" % (int(RoutingTableIndex, 16) + int(RoutingTableListCount, 16))
         ))
         mgt_routing_req(self, srcnwkid, "%02x" % (int(RoutingTableIndex, 16) + int(RoutingTableListCount, 16)))
 

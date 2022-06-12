@@ -189,7 +189,7 @@ SETTINGS = {
     "WebInterface": {
         "Order": 4,
         "param": {
-            "TopologyOnRoutingTable": {
+            "TopologyV2": {
                 "type": "bool",
                 "default": 1,
                 "current": None,
@@ -1339,14 +1339,6 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
-            "AssociatedDevicesTable": {
-                "type": "int",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
             "forceZigpy_noasyncio": {
                 "type": "bool",
                 "default": 0,
@@ -1396,30 +1388,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "RoutingTableRequestFeq": {
-                "type": "int",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "BindingTableRequestFeq": {
-                "type": "int",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
-            "doManyToOneRoute": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
             "DropBadAnnoucement": {
                 "type": "bool",
                 "default": 1,
@@ -1433,18 +1401,10 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "useDomoticzDatabase": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
                 "hidden": True,
                 "Advanced": True,
             },
-            "XiaomiLeave": {
+            "useDomoticzDatabase": {
                 "type": "bool",
                 "default": 0,
                 "current": None,

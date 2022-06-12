@@ -173,9 +173,10 @@ def _initNeighboursTableEntry(self, nwkid):
     self.Neighbours[nwkid] = {"Status": "ScanRequired", "TableMaxSize": 0, "TableCurSize": 0, "Neighbours": {}}
 
     # New router, let's trigger Routing Table and Associated Devices
-    mgmt_rtg(self, nwkid, "RoutingTable")
-    if "IEEE" in self.ListOfDevices[ nwkid ]:
-        zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
+    if self.pluginconf.pluginConf["TopologyV2"]:
+        mgmt_rtg(self, nwkid, "RoutingTable")
+        if "IEEE" in self.ListOfDevices[ nwkid ]:
+            zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
 
 
 def is_a_router(self, nwkid):
@@ -262,6 +263,11 @@ def finish_scan(self):
 
     storeLQI = { int(self.ListOfDevices["0000"]["TopologyStartTime"]): dict(self.Neighbours) }
 
+    if not self.pluginconf.pluginConf["TopologyV2"]:
+        save_report_to_file(self, storeLQI)
+    del self.ListOfDevices["0000"]["TopologyStartTime"]
+    
+def save_report_to_file(self, storeLQI):
     _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkTopology-v3-" + "%02d" % self.HardwareID + ".json"
     if os.path.isdir(self.pluginconf.pluginConf["pluginReports"]):
 
@@ -282,14 +288,13 @@ def finish_scan(self):
                 fout.writelines(data[start:])
             fout.write("\n")
             json.dump(storeLQI, fout)
-            # self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
     else:
         self.logging(
             "Error",
             "LQI:Unable to get access to directory %s, please check PluginConf.txt"
             % (self.pluginconf.pluginConf["pluginReports"]),
         )
-    del self.ListOfDevices["0000"]["TopologyStartTime"]
+    
 
 def prettyPrintNeighbours(self):
 
@@ -384,8 +389,8 @@ def LQIresp_decoding(self, MsgData):
     if len(MsgData) < 10:
         self.logging("Error", "LQIresp_decoding - Incomplete message: %s (%s)" %(MsgData, len(MsgData)))
         return
-        
-    SQN = MsgData[0:2]
+
+    SQN = MsgData[:2]
     Status = MsgData[2:4]
     NeighbourTableEntries = int(MsgData[4:6], 16)
     NeighbourTableListCount = int(MsgData[6:8], 16)
@@ -396,18 +401,15 @@ def LQIresp_decoding(self, MsgData):
 
     if len(MsgData) == (10 + 42 * NeighbourTableListCount + 4):
         # Firmware 3.1a and aboce
-        NwkIdSource = MsgData[10 + 42 * NeighbourTableListCount : len(MsgData)]
+        NwkIdSource = MsgData[10 + 42 * NeighbourTableListCount:]
     self.logging("Debug", "LQIresp - MsgSrc: %s" % NwkIdSource)
 
     if NwkIdSource is None:
         return
 
     if Status != "00":
-        self.logging(
-            "Debug",
-            "LQI:LQIresp - Status: %s for %s Sqn:%s (raw data: %s)"
-            % (Status, MsgData[len(MsgData) - 4 : len(MsgData)], SQN, MsgData),
-        )
+        self.logging("Debug", ("LQI:LQIresp - Status: %s for %s Sqn:%s (raw data: %s)" % (Status, MsgData[len(MsgData) - 4 :], SQN, MsgData)))
+
         return
 
     if len(ListOfEntries) // 42 != NeighbourTableListCount:
@@ -438,27 +440,21 @@ def LQIresp_decoding(self, MsgData):
         self.Neighbours[NwkIdSource]["Status"] = "Completed"
         return
 
+    self.logging(
+        "Debug",
+        "mgtLQIresp - We have received %3s entries out of %3s" % (NeighbourTableListCount, NeighbourTableEntries),
+    )
     if (StartIndex + NeighbourTableListCount) == NeighbourTableEntries:
-        self.logging(
-            "Debug",
-            "mgtLQIresp - We have received %3s entries out of %3s" % (NeighbourTableListCount, NeighbourTableEntries),
-        )
         self.Neighbours[NwkIdSource]["TableCurSize"] = StartIndex + NeighbourTableListCount
         self.Neighbours[NwkIdSource]["Status"] = "Completed"
     else:
-        self.logging(
-            "Debug",
-            "mgtLQIresp - We have received %3s entries out of %3s" % (NeighbourTableListCount, NeighbourTableEntries),
-        )
         self.Neighbours[NwkIdSource]["Status"] = "ScanRequired"
         self.Neighbours[NwkIdSource]["TableCurSize"] = StartIndex + NeighbourTableListCount
 
     # Decoding the Table
     self.logging("Debug", "mgtLQIresp - ListOfEntries: %s" % len(ListOfEntries))
     n = 0
-    while n < ((NeighbourTableListCount * 42)):
-        if len(ListOfEntries[n:]) < 42:
-            break
+    while n < ((NeighbourTableListCount * 42)) and len(ListOfEntries[n:]) >= 42:
         self.logging("Debug2", "--- -- Entry[%s] %s" % (n // 42, ListOfEntries[n : n + 42]))
         _nwkid = ListOfEntries[n : n + 4]  # uint16
         _extPANID = ListOfEntries[n + 4 : n + 20]  # uint64
@@ -471,9 +467,9 @@ def LQIresp_decoding(self, MsgData):
         _relationshp = (_bitmap & 0b00110000) >> 4
         _rxonwhenidl = (_bitmap & 0b11000000) >> 6
 
-        n = n + 42
-        
-        if int(_ieee,16) in ( 0x00, 0xffffffffffffffff):
+        n += 42
+
+        if int(_ieee, 16) in {0x00, 0xFFFFFFFFFFFFFFFF}:
             self.logging(
                 "Debug",
                 "Network Topology ignoring invalid neighbor: %s (%s)" %( _ieee, ListOfEntries[n : n + 42])

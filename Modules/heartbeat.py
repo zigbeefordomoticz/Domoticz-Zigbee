@@ -669,28 +669,6 @@ def processKnownDevices(self, Devices, NWKID):
         else:
             rescheduleAction = True
 
-    #if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] 
-    #    and (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)):
-    #    if not self.busy and self.ControllerLink.loadTransmit() < 3 
-    #        mgmt_rtg(self, NWKID, "BindingTable")
-    #    else:
-    #        rescheduleAction = True
-
-
-    # Experimental
-    if (
-        _mainPowered 
-        and night_shift_jobs( self )
-        and "AssociatedDevicesTable" in self.pluginconf.pluginConf 
-        and self.pluginconf.pluginConf["AssociatedDevicesTable"]
-        and (intHB % ( self.pluginconf.pluginConf["AssociatedDevicesTable"] // HEARTBEAT) == 0)
-    ):
-        if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            lookup_ieee = self.ListOfDevices[ NWKID ]['IEEE']
-            zdp_NWK_address_request(self, "fffc", lookup_ieee, u8RequestType="01")
-        else:
-            rescheduleAction = True
-
     # Call Schneider Reenforcement if needed
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NWKID)
@@ -845,31 +823,6 @@ def processListOfDevices(self, Devices):
         # Trigger Configure Reporting to eligeable devices
         if self.configureReporting:
             self.configureReporting.processConfigureReporting()
-
-    # Network Topology management
-    # if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_TOPO_START):
-    #    self.log.logging( "Heartbeat", 'Debug', "processListOfDevices Time for Network Topology")
-
-    if ( 
-        night_shift_jobs( self )
-        and self.zigbee_communitation == "zigpy"
-        and "RoutingTableRequestFeq" in self.pluginconf.pluginConf
-        and self.pluginconf.pluginConf["RoutingTableRequestFeq"] 
-        and (self.HeartbeatCount % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)
-    ):
-        if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            mgmt_rtg(self, "0000", "RoutingTable")
-
-    
-    if (
-        night_shift_jobs( self )
-        and "AssociatedDevicesTable" in self.pluginconf.pluginConf 
-        and self.pluginconf.pluginConf["AssociatedDevicesTable"]
-        and (self.HeartbeatCount % ( self.pluginconf.pluginConf["AssociatedDevicesTable"] // HEARTBEAT) == 0)
-    ):
-        if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            lookup_ieee = self.ControllerIEEE
-            zdp_NWK_address_request(self, "0000", lookup_ieee, u8RequestType="01")
 
     
     # Network Topology
