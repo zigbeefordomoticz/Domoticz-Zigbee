@@ -121,11 +121,11 @@ class NetworkMap:
             )
         if max_process > 0:
             progress = int((current_process / max_process) * 100)
-        self.logging("Log", "Network Topology progress: %s %%" % progress)
+        self.logging("Status", "Network Topology progress: %s %%" % progress)
 
         for entry in list(self.Neighbours):
             if entry not in self.ListOfDevices:
-                self.logging("Log", "LQIreq - device %s not found removing from the device to be scaned" % entry)
+                self.logging("Debug", "LQIreq - device %s not found removing from the device to be scaned" % entry)
                 # Most likely this device as been removed, or change it Short Id
                 del self.Neighbours[entry]
                 continue
@@ -364,7 +364,7 @@ def LQIreq(self, nwkid="0000"):
         and "Health" in self.ListOfDevices[nwkid]
         and self.ListOfDevices[nwkid]["Health"] == "Not Reachable"
     ):
-        self.logging("Log", "LQIreq - skiping device %s which is Not Reachable" % nwkid)
+        self.logging("Debug", "LQIreq - skiping device %s which is Not Reachable" % nwkid)
         self.Neighbours[nwkid]["Status"] = "NotReachable"
         return
 
@@ -475,7 +475,7 @@ def LQIresp_decoding(self, MsgData):
         
         if int(_ieee,16) in ( 0x00, 0xffffffffffffffff):
             self.logging(
-                "Log",
+                "Debug",
                 "Network Topology ignoring invalid neighbor: %s (%s)" %( _ieee, ListOfEntries[n : n + 42])
             )
             continue

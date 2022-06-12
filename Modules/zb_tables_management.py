@@ -43,9 +43,127 @@ CLUSTER_TO_TABLE = {
     "8033": "BindingTable"
 }
 
-def mgmt_rtg(self, nwkid, table):
 
-    self.log.logging("NetworkMap", "Log", "=======> mgmt_rtg: %s %s" %(nwkid, table))
+def start_new_table_scan(self, nwkid, tablename):
+
+    if tablename not in self.ListOfDevices[nwkid]:
+        self.log.logging("NetworkMap", "Debug", "start_new_table_scan not found %s/%s" %(nwkid, tablename))
+        self.ListOfDevices[nwkid][tablename] = []
+    if not isinstance(self.ListOfDevices[nwkid][tablename], list):
+        self.log.logging("NetworkMap", "Debug", "start_new_table_scan not a list, cleanup %s/%s" %( nwkid, tablename))
+        del self.ListOfDevices[nwkid][tablename]
+        self.ListOfDevices[nwkid][tablename] = []
+    table_entry_cleanup( self, nwkid, tablename)
+        
+    time_stamp = None  
+    if "TopologyStartTime" in self.ListOfDevices["0000"]:
+        time_stamp = self.ListOfDevices["0000"]["TopologyStartTime"]
+        
+    self.log.logging("NetworkMap", "Debug", "start_new_table_scan %s/%s/%s" %( nwkid, tablename, time_stamp))
+    _create_empty_entry(self, nwkid, tablename, time_stamp)
+
+def table_entry_cleanup( self, nwkid, tablename):
+    max_report_per_table = 4
+    if "numTopologyReports" in self.pluginconf.pluginConf:
+        max_report_per_table = self.pluginconf.pluginConf["numTopologyReports"]
+
+    if len(self.ListOfDevices[nwkid][tablename]) > max_report_per_table:
+        how_many_to_remove = len(self.ListOfDevices[nwkid][tablename]) - max_report_per_table
+        if how_many_to_remove > 0:
+            idx = 0
+            while idx != how_many_to_remove:
+                self.log.logging("NetworkMap", "Debug", "start_new_table_scan remove older entry %s/%s" %(nwkid, tablename))
+                del self.ListOfDevices[nwkid][tablename][0]
+                idx += 1
+
+def _create_empty_entry(self, nwkid, tablename, time_stamp=None):
+    time_stamp = time_stamp or int(time.time())
+    new_entry = {
+        "Devices": [], 
+        "SQN": 0, 
+        "Status": "", 
+        "TimeStamp": time_stamp,
+        "Time": time_stamp
+    }
+    self.ListOfDevices[nwkid][tablename].append( new_entry )
+ 
+def get_table_entry(self, nwkid, tablename, time_stamp=None):
+    
+    if time_stamp is None:
+        return get_latest_table_entry(self, nwkid, tablename)
+
+    # Need to find timestamp in device Entry
+    if tablename not in self.ListOfDevices[nwkid]:
+        return []
+    if not isinstance(self.ListOfDevices[nwkid][tablename], list):
+        return []
+    for x in self.ListOfDevices[nwkid][tablename]:
+        if x["Time"] == int(time_stamp):
+            self.log.logging("NetworkMap", "Debug", "get_table_entry: found Time %s for %s/%s ==> %s" %( time_stamp, nwkid, tablename, str(x)))
+            return x.copy()
+        
+    self.log.logging("NetworkMap", "Debug", "get_table_entry: nothing found  Time %s for %s/%s" %( time_stamp, nwkid, tablename))
+    return []
+        
+def get_device_table_entry(self, nwkid, tablename, time_stamp=None):
+    
+    table_entry = get_table_entry(self, nwkid, tablename, time_stamp)
+    self.log.logging("NetworkMap", "Debug", "get_device_table_entry: %s/%s %s==> %s" %(nwkid, tablename, str(table_entry), time_stamp))
+    return table_entry["Devices"] if "Devices" in table_entry else []
+    
+def get_latest_table_entry(self, nwkid, tablename):
+    
+    if tablename not in self.ListOfDevices[nwkid]:
+        self.ListOfDevices[nwkid][tablename] = []
+        _create_empty_entry(self, nwkid, tablename)
+        
+    if not isinstance(self.ListOfDevices[nwkid][tablename], list):
+        del self.ListOfDevices[nwkid][tablename]
+        self.ListOfDevices[nwkid][tablename] = []
+        _create_empty_entry(self, nwkid, tablename)
+        
+    return self.ListOfDevices[nwkid][tablename][(len(self.ListOfDevices[nwkid][tablename] ) - 1)]
+
+def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
+    new_routing_record = get_latest_table_entry(self, nwkid, tablename)["Devices"]
+    if isinstance( record, dict):
+        for x in record:
+            if x not in new_routing_record:
+                new_routing_record.append ( { x: record[ x ]} )
+        del get_latest_table_entry(self, nwkid, tablename)["Devices"]
+        get_latest_table_entry(self, nwkid, tablename)["Devices"] = new_routing_record.copy()
+        
+    elif isinstance( record, str):
+        get_latest_table_entry(self, nwkid, tablename)["Devices"].append( record )
+    else:
+        self.log.logging("NetworkMap", "Error", "===> unkown ????")
+
+def get_list_of_timestamps( self, nwkid, tablename):
+    
+    timestamp = [int(x["Time" ]) for x in self.ListOfDevices[nwkid][tablename]]
+    self.log.logging("NetworkMap", "Debug", "get_list_of_timestamps return %s" %timestamp)
+    return timestamp
+    
+def remove_entry_from_all_tables( self, time_stamp ):
+    
+    for x in self.ListOfDevices:
+        for table in ( "Neighbours", "AssociatedDevices", "RoutingTable"):
+            if table in self.ListOfDevices[ x ]:
+                remove_table_entry(self, x, table, time_stamp)
+
+    
+def remove_table_entry(self, nwkid, tablename, time_stamp):
+    
+    for idx in range(len(self.ListOfDevices[nwkid][tablename])):
+        if (self.ListOfDevices[nwkid][tablename][ idx ])["Time"] == int(time_stamp):
+            self.log.logging("NetworkMap", "Debug", "remove_table_entry %s / %s" %( nwkid, tablename))
+            del self.ListOfDevices[nwkid][tablename][ idx ]
+            break
+    
+    
+def mgmt_rtg(self, nwkid, table):
+    
+    self.log.logging("NetworkMap", "Debug", "=======> mgmt_rtg: %s %s" %(nwkid, table))
     if nwkid not in self.ListOfDevices:
         return
     
@@ -84,106 +202,10 @@ def mgmt_rtg(self, nwkid, table):
         func(self, nwkid, "00")
         return
 
-def start_new_table_scan(self, nwkid, tablename):
-
-    if tablename not in self.ListOfDevices[nwkid]:
-        self.log.logging("NetworkMap", "Log", "start_new_table_scan not found %s/%s" %(nwkid, tablename))
-        self.ListOfDevices[nwkid][tablename] = []
-    if not isinstance(self.ListOfDevices[nwkid][tablename], list):
-        self.log.logging("NetworkMap", "Log", "start_new_table_scan not a list, cleanup %s/%s" %( nwkid, tablename))
-        del self.ListOfDevices[nwkid][tablename]
-        self.ListOfDevices[nwkid][tablename] = []
-    table_entry_cleanup( self, nwkid, tablename)
-        
-    time_stamp = None  
-    if "TopologyStartTime" in self.ListOfDevices["0000"]:
-        time_stamp = self.ListOfDevices["0000"]["TopologyStartTime"]
-        
-    self.log.logging("NetworkMap", "Log", "start_new_table_scan %s/%s/%s" %( nwkid, tablename, time_stamp))
-    _create_empty_entry(self, nwkid, tablename, time_stamp)
-
-def table_entry_cleanup( self, nwkid, tablename):
-    max_report_per_table = 4
-    if "numTopologyReports" in self.pluginconf.pluginConf:
-        max_report_per_table = self.pluginconf.pluginConf["numTopologyReports"]
-
-    if len(self.ListOfDevices[nwkid][tablename]) > max_report_per_table:
-        how_many_to_remove = len(self.ListOfDevices[nwkid][tablename]) - max_report_per_table
-        if how_many_to_remove > 0:
-            idx = 0
-            while idx != how_many_to_remove:
-                self.log.logging("NetworkMap", "Log", "start_new_table_scan remove older entry %s/%s" %(nwkid, tablename))
-                del self.ListOfDevices[nwkid][tablename][0]
-                idx += 1
-
-def _create_empty_entry(self, nwkid, tablename, time_stamp=None):
-    time_stamp = time_stamp or int(time.time())
-    new_entry = {
-        "Devices": [], 
-        "SQN": 0, 
-        "Status": "", 
-        "TimeStamp": time_stamp,
-        "Time": time_stamp
-    }
-    self.ListOfDevices[nwkid][tablename].append( new_entry )
- 
-def get_table_entry(self, nwkid, tablename, time_stamp=None):
-    
-    if time_stamp is None:
-        return get_latest_table_entry(self, nwkid, tablename)
-
-    # Need to find timestamp in device Entry
-    if tablename not in self.ListOfDevices[nwkid]:
-        return []
-    if not isinstance(self.ListOfDevices[nwkid][tablename], list):
-        return []
-    for x in self.ListOfDevices[nwkid][tablename]:
-        if x["Time"] == int(time_stamp):
-            self.log.logging("NetworkMap", "Log", "get_table_entry: found Time %s for %s/%s ==> %s" %( time_stamp, nwkid, tablename, str(x)))
-            return x.copy()
-        
-    self.log.logging("NetworkMap", "Log", "get_table_entry: nothing found  Time %s for %s/%s" %( time_stamp, nwkid, tablename))
-    return []
-        
-def get_device_table_entry(self, nwkid, tablename, time_stamp=None):
-    
-    table_entry = get_table_entry(self, nwkid, tablename, time_stamp)
-    self.log.logging("NetworkMap", "Log", "get_device_table_entry: %s/%s %s==> %s" %(nwkid, tablename, str(table_entry), time_stamp))
-    return table_entry["Devices"] if "Devices" in table_entry else []
-    
-def get_latest_table_entry(self, nwkid, tablename):
-    
-    if tablename not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid][tablename] = []
-        _create_empty_entry(self, nwkid, tablename)
-        
-    if not isinstance(self.ListOfDevices[nwkid][tablename], list):
-        del self.ListOfDevices[nwkid][tablename]
-        self.ListOfDevices[nwkid][tablename] = []
-        _create_empty_entry(self, nwkid, tablename)
-        
-    return self.ListOfDevices[nwkid][tablename][(len(self.ListOfDevices[nwkid][tablename] ) - 1)]
-
-def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
-    new_routing_record = get_latest_table_entry(self, nwkid, tablename)["Devices"]
-    if isinstance( record, dict):
-        for x in record:
-            if x not in new_routing_record:
-                new_routing_record.append ( { x: record[ x ]} )
-        del get_latest_table_entry(self, nwkid, tablename)["Devices"]
-        get_latest_table_entry(self, nwkid, tablename)["Devices"] = new_routing_record.copy()
-        
-    elif isinstance( record, str):
-        get_latest_table_entry(self, nwkid, tablename)["Devices"].append( record )
-    else:
-        self.log.logging("NetworkMap", "Error", "===> unkown ????")
-
-
-
     
 def mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, ):
 
-    self.log.logging("NetworkMap", "Log", "mgmt_rtg_rsp - NwkId: %s Ep: %s Cluster: %s Target: %s Ep: %s Payload: %s" %(
+    self.log.logging("NetworkMap", "Debug", "mgmt_rtg_rsp - NwkId: %s Ep: %s Cluster: %s Target: %s Ep: %s Payload: %s" %(
         srcnwkid,
         MsgSourcePoint,
         MsgClusterID,
@@ -193,7 +215,7 @@ def mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDes
     ))
 
     if len(MsgPayload) < 10:
-        self.log.logging("NetworkMap", "Log", "mgmt_rtg_rsp - Short message receive - NwkId: %s Ep: %s Cluster: %s Target: %s Ep: %s Payload: %s" %(
+        self.log.logging("NetworkMap", "Debug", "mgmt_rtg_rsp - Short message receive - NwkId: %s Ep: %s Cluster: %s Target: %s Ep: %s Payload: %s" %(
             srcnwkid,
             MsgSourcePoint,
             MsgClusterID,
@@ -260,10 +282,10 @@ def mgmt_routingtable_response( self, srcnwkid, MsgSourcePoint, MsgClusterID, ds
             routing_record[target_nwkid]["ManyToOne"] = many_to_one
             routing_record[target_nwkid]["RouteRecordRequired"] = route_record_required
             routing_record[target_nwkid]["NextHopNwkId"] = next_hop
-            self.log.logging("NetworkMap", "Log", "---- new entry: %s" %routing_record)
+            self.log.logging("NetworkMap", "Debug", "---- new entry: %s" %routing_record)
             update_merge_new_device_to_last_entry(self, srcnwkid, "RoutingTable", routing_record )
         else:
-            self.log.logging("NetworkMap", "Log", "---- drop this entry due to status %s -> %s %s " %( srcnwkid, target_nwkid, device_status))
+            self.log.logging("NetworkMap", "Debug", "---- drop this entry due to status %s -> %s %s " %( srcnwkid, target_nwkid, device_status))
                 
     if int(RoutingTableIndex, 16) + int(RoutingTableListCount, 16) < int(RoutingTableSize, 16):
         self.log.logging("NetworkMap", "Debug", "mgmt_routingtable_response requesting Routing Table for %s Idx %s" %(

@@ -11,7 +11,7 @@ from time import time
 
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage, setupHeadersResponse)
-from Modules.zb_tables_management import get_device_table_entry
+from Modules.zb_tables_management import get_device_table_entry, get_list_of_timestamps, remove_entry_from_all_tables
 
 
 def rest_req_topologie(self, verb, data, parameters):
@@ -22,12 +22,12 @@ def rest_req_topologie(self, verb, data, parameters):
         action = {"Name": "Req-Topology", "TimeStamp": int(time())}
         _response["Data"] = json.dumps(action, sort_keys=True)
 
-        self.logging("Log", "Request a Start of Network Topology scan")
+        self.logging("Status", "Request a Start of Network Topology scan")
         if self.networkmap:
             if not self.networkmap.NetworkMapPhase():
                 self.networkmap.start_scan()
             else:
-                self.logging("Log", "Cannot start Network Topology as one is in progress...")
+                self.logging("Error", "Cannot start Network Topology as one is in progress...")
 
     return _response
 
@@ -66,14 +66,19 @@ def rest_netTopologie(self, verb, data, parameters):
     if verb == "DELETE":
         if len(parameters) == 0:
             os.remove(_filename)
-            action = {}
-            action["Name"] = "File-Removed"
-            action["FileName"] = _filename
+            action = {"Name": "File-Removed", "FileName": _filename}
             _response["Data"] = json.dumps(action, sort_keys=True)
+
 
         elif len(parameters) == 1:
             timestamp = parameters[0]
-            if timestamp in _topo:
+            if self.pluginconf.pluginConf["TopologyOnRoutingTable"] and len(self.ControllerData):
+                remove_entry_from_all_tables( self, timestamp )
+                action = {"Name": "Report %s removed" % timestamp}
+                _response["Data"] = json.dumps(action, sort_keys=True)
+
+
+            elif timestamp in _topo:
                 self.logging("Debug", "Removing Report: %s from %s records" % (timestamp, len(_topo)))
                 with open(_filename, "r+") as handle:
                     d = handle.readlines()
@@ -84,36 +89,39 @@ def rest_netTopologie(self, verb, data, parameters):
                             continue
                         entry = json.loads(line)
                         entry_ts = entry.keys()
-                        if len(entry_ts) == 1:
-                            if timestamp in entry_ts:
-                                self.logging("Debug", "--------> Skiping %s" % timestamp)
-                                continue
-                        else:
+                        if len(entry_ts) != 1:
+                            continue
+                        if timestamp in entry_ts:
+                            self.logging("Debug", "--------> Skiping %s" % timestamp)
                             continue
                         handle.write(line)
                     handle.truncate()
 
-                action = {}
-                action["Name"] = "Report %s removed" % timestamp
+                action = {"Name": "Report %s removed" % timestamp}
                 _response["Data"] = json.dumps(action, sort_keys=True)
+                
             else:
                 Domoticz.Error("Removing Topo Report %s not found" % timestamp)
                 _response["Data"] = json.dumps([], sort_keys=True)
         return _response
 
     if verb == "GET":
-           
+
         if len(parameters) == 0:
             # Send list of Time Stamps
             if len(self.ControllerData) == 0:
                 _timestamps_lst = [1643561599, 1643564628]
+                
+            elif self.pluginconf.pluginConf["TopologyOnRoutingTable"]:
+                _timestamps_lst = get_list_of_timestamps( self, "0000", "Neighbours")
+
             _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
         elif len(parameters) == 1:
             if self.pluginconf.pluginConf["TopologyOnRoutingTable"] and len(self.ControllerData):
                 timestamp = parameters[0]
                 _response["Data"] = json.dumps(collect_routing_table(self,timestamp ), sort_keys=True)
-                
+
             elif len(self.ControllerData) == 0:
                 _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
             else:
