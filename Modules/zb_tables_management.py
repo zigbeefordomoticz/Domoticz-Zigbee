@@ -122,7 +122,7 @@ def get_latest_table_entry(self, nwkid, tablename):
         self.ListOfDevices[nwkid][tablename] = []
         _create_empty_entry(self, nwkid, tablename)
     
-    if  len(self.ListOfDevices[nwkid][tablename] ) > 0:
+    if len(self.ListOfDevices[nwkid][tablename]) > 0:
         return self.ListOfDevices[nwkid][tablename][(len(self.ListOfDevices[nwkid][tablename] ) - 1)]
     return []
 
