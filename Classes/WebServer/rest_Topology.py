@@ -11,6 +11,7 @@ from time import time
 
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage, setupHeadersResponse)
+from Modules.zb_tables_management import get_device_table_entry
 
 
 def rest_req_topologie(self, verb, data, parameters):
@@ -109,19 +110,19 @@ def rest_netTopologie(self, verb, data, parameters):
             _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
         elif len(parameters) == 1:
-            
-            if self.pluginconf.pluginConf["TopologyOnRoutingTable"]:
-                _response["Data"] = json.dumps(collect_routing_table(self), sort_keys=True)
+            if self.pluginconf.pluginConf["TopologyOnRoutingTable"] and len(self.ControllerData):
+                timestamp = parameters[0]
+                _response["Data"] = json.dumps(collect_routing_table(self,timestamp ), sort_keys=True)
+                
+            elif len(self.ControllerData) == 0:
+                _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
             else:
-                if len(self.ControllerData) == 0:
-                    _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
+                timestamp = parameters[0]
+                if timestamp in _topo:
+                    self.logging("Debug", "Topologie sent: %s" % _topo[timestamp])
+                    _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
                 else:
-                    timestamp = parameters[0]
-                    if timestamp in _topo:
-                        self.logging("Debug", "Topologie sent: %s" % _topo[timestamp])
-                        _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
-                    else:
-                        _response["Data"] = json.dumps([], sort_keys=True)
+                    _response["Data"] = json.dumps([], sort_keys=True)
 
     return _response
 
@@ -382,11 +383,12 @@ def find_device_type(self, node):
 
 
 
-def collect_routing_table(self):
+def collect_routing_table(self, time_stamp=None):
     
     _topo = []
+    self.logging( "Debug", "collect_routing_table - TimeStamp: %s" %time_stamp)
     for father in self.ListOfDevices:
-        for child in extract_routes(self, father):
+        for child in extract_routes(self, father, time_stamp):
             if child not in self.ListOfDevices:
                 continue
             _relation = {
@@ -395,11 +397,11 @@ def collect_routing_table(self):
                 "_lnkqty": get_lqi_from_neighbours(self, father, child), 
                 "DeviceType": find_device_type(self, child)
                 }
-            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append( _relation ) 
             
-        for child in collect_associated_devices( self, father):
+        for child in collect_associated_devices( self, father, time_stamp):
             if child not in self.ListOfDevices:
                 continue
             _relation = {
@@ -408,44 +410,33 @@ def collect_routing_table(self):
                 "_lnkqty": get_lqi_from_neighbours(self, father, child), 
                 "DeviceType": find_device_type(self, child)
                 }
-            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
             if _relation not in _topo:
                 _topo.append( _relation )
     return _topo
 
        
-def collect_associated_devices( self, node):
-    if "AssociatedDevices" in self.ListOfDevices[ node ]:
-        last_associated_devices = self.ListOfDevices[node]["AssociatedDevices"][(len(self.ListOfDevices[node]["AssociatedDevices"] ) - 1)]["Devices"]
-        self.logging( "Log", "collect_associated_devices %s -> %s" %(node, str(last_associated_devices)))
-        return list(last_associated_devices)
-    return []
+def collect_associated_devices( self, node, time_stamp=None):
+    last_associated_devices = get_device_table_entry(self, node, "AssociatedDevices", time_stamp)
+    self.logging( "Debug", "collect_associated_devices %s -> %s" %(node, str(last_associated_devices)))
+    return list(last_associated_devices)
         
         
-def extract_routes( self, node):
+def extract_routes( self, node, time_stamp=None):
     node_routes = []
     
-    if "RoutingTable" not in self.ListOfDevices[ node ]:
-        self.logging( "Log", "^^^no RoutingTable for %s" %node)
-        return node_routes
-    if not isinstance(self.ListOfDevices[node]["RoutingTable"], list ):
-        self.logging( "Log", "^^^RoutingTable for %s is not list but %s" %(node, type(node)))
-        return node_routes
-    
-    last_routing_table = self.ListOfDevices[node]["RoutingTable"][(len(self.ListOfDevices[node]["RoutingTable"] ) - 1)]["Devices"]
-    for route in last_routing_table:
-        Domoticz.Log("---> route: %s" %route)
+    for route in get_device_table_entry(self, node, "RoutingTable", time_stamp):
+        self.logging( "Debug","---> route: %s" %route)
         node_routes.extend(item for item in route if route[item]["Status"] == "Active (0)")
     return node_routes            
         
 
-def get_lqi_from_neighbours(self, father, child):
-    if "Neighbours" in self.ListOfDevices[ father ] and len(self.ListOfDevices[ father ]["Neighbours"]) > 0:
-        item = self.ListOfDevices[ father ]["Neighbours"][ len(self.ListOfDevices[ father ]["Neighbours"]) - 1]
-        for item2 in item["Devices"]:
-            for node in item2:
-                if node != child:
-                    continue
-                return item2[ node ]["_lnkqty"] 
+def get_lqi_from_neighbours(self, father, child, time_stamp=None):
+    # Take the LQI from the latest report
+    for item2 in get_device_table_entry(self, father, "Neighbours", time_stamp):
+        for node in item2:
+            if node != child:
+                continue
+            return item2[ node ]["_lnkqty"] 
     return 1

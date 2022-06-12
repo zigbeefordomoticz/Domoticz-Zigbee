@@ -191,11 +191,11 @@ SETTINGS = {
         "param": {
             "TopologyOnRoutingTable": {
                 "type": "bool",
-                "default": 0,
+                "default": 1,
                 "current": None,
                 "restart": 0,
                 "hidden": False,
-                "Advanced": False,
+                "Advanced": True,
             },
 
             "Sibling": {
@@ -203,8 +203,8 @@ SETTINGS = {
                 "default": 1,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
-                "Advanced": False,
+                "hidden": True,
+                "Advanced": True,
             },
             "Lang": {
                 "type": "str",
@@ -243,7 +243,7 @@ SETTINGS = {
                 "default": 1,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "enableChunk": {

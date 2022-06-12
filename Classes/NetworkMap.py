@@ -67,6 +67,7 @@ class NetworkMap:
             self.logging("Debug", "start_scan - initialize data")
             del self.Neighbours
             self.Neighbours = {}
+            
         self.ListOfDevices["0000"]["TopologyStartTime"] = int(time.time())
         
         _initNeighbours(self)
@@ -379,7 +380,7 @@ def LQIresp_decoding(self, MsgData):
     NwkIdSource = None
     if len(self.LQIreqInProgress) > 0:
         NwkIdSource = self.LQIreqInProgress.pop()
-        
+
     if len(MsgData) < 10:
         self.logging("Error", "LQIresp_decoding - Incomplete message: %s (%s)" %(MsgData, len(MsgData)))
         return
@@ -458,7 +459,7 @@ def LQIresp_decoding(self, MsgData):
     while n < ((NeighbourTableListCount * 42)):
         if len(ListOfEntries[n:]) < 42:
             break
-        self.logging("Debug", "--- -- Entry[%s] %s" % (n // 42, ListOfEntries[n : n + 42]))
+        self.logging("Debug2", "--- -- Entry[%s] %s" % (n // 42, ListOfEntries[n : n + 42]))
         _nwkid = ListOfEntries[n : n + 4]  # uint16
         _extPANID = ListOfEntries[n + 4 : n + 20]  # uint64
         _ieee = ListOfEntries[n + 20 : n + 36]     # uint64
@@ -481,14 +482,14 @@ def LQIresp_decoding(self, MsgData):
 
 
         self.logging(
-            "Debug",
+            "Debug2",
             "--- --bitmap         : {0:{fill}8b}".format(_bitmap, fill="0")
             + " - %0X for ( %s, %s)" % (_bitmap, NwkIdSource, _nwkid),
         )
-        self.logging("Debug", "--- ----> _devicetype: | | |- %02d" % _devicetype)
-        self.logging("Debug", "--- ----> _permitjnt:  | | -%02d" % _permitjnt)
-        self.logging("Debug", "--- ----> _relationshp:| -%02d" % _relationshp)
-        self.logging("Debug", "--- ----> _rxonwhenidl:-%02d" % _rxonwhenidl)
+        self.logging("Debug2", "--- ----> _devicetype: | | |- %02d" % _devicetype)
+        self.logging("Debug2", "--- ----> _permitjnt:  | | -%02d" % _permitjnt)
+        self.logging("Debug2", "--- ----> _relationshp:| -%02d" % _relationshp)
+        self.logging("Debug2", "--- ----> _rxonwhenidl:-%02d" % _rxonwhenidl)
 
         # s a 2-bit value representing the ZigBee device type of the neighbouring node
         DEVICE_TYPE = {
@@ -527,16 +528,16 @@ def LQIresp_decoding(self, MsgData):
         if _rxonwhenidl in RXONIDLE:
             _rxonwhenidl = RXONIDLE[ _rxonwhenidl ]
 
-        self.logging("Debug", "--- --mgtLQIresp - capture a new neighbour %s from %s" % (_nwkid, NwkIdSource))
-        self.logging("Debug", "--- -----> _nwkid: %s" % (_nwkid))
-        self.logging("Debug", "--- -----> _extPANID: %s" % _extPANID)
-        self.logging("Debug", "--- -----> _ieee: %s" % _ieee)
-        self.logging("Debug", "--- -----> _depth: %s" % _depth)
-        self.logging("Debug", "--- -----> _lnkqty: %s" % _lnkqty)
-        self.logging("Debug", "--- -----> _devicetype: %s" % _devicetype)
-        self.logging("Debug", "--- -----> _permitjnt: %s" % _permitjnt)
-        self.logging("Debug", "--- -----> _relationshp: %s" % _relationshp)
-        self.logging("Debug", "--- -----> _rxonwhenidl: %s" % _rxonwhenidl)
+        self.logging("Debug2", "--- --mgtLQIresp - capture a new neighbour %s from %s" % (_nwkid, NwkIdSource))
+        self.logging("Debug2", "--- -----> _nwkid: %s" % (_nwkid))
+        self.logging("Debug2", "--- -----> _extPANID: %s" % _extPANID)
+        self.logging("Debug2", "--- -----> _ieee: %s" % _ieee)
+        self.logging("Debug2", "--- -----> _depth: %s" % _depth)
+        self.logging("Debug2", "--- -----> _lnkqty: %s" % _lnkqty)
+        self.logging("Debug2", "--- -----> _devicetype: %s" % _devicetype)
+        self.logging("Debug2", "--- -----> _permitjnt: %s" % _permitjnt)
+        self.logging("Debug2", "--- -----> _relationshp: %s" % _relationshp)
+        self.logging("Debug2", "--- -----> _rxonwhenidl: %s" % _rxonwhenidl)
 
         if (
             _nwkid not in self.Neighbours
@@ -550,27 +551,27 @@ def LQIresp_decoding(self, MsgData):
             self.logging("Debug", "LQI:LQIresp - %s already in Neighbours Table for %s" % (_nwkid, NwkIdSource))
             # Let's check the infos
             self.logging(
-                "Debug",
+                "Debug2",
                 "      - _extPANID:    %s  versus %s"
                 % (_extPANID, self.Neighbours[NwkIdSource]["Neighbours"][_nwkid]["_extPANID"]),
             )
             self.logging(
-                "Debug",
+                "Debug2",
                 "      - _ieee:        %s  versus %s"
                 % (_ieee, self.Neighbours[NwkIdSource]["Neighbours"][_nwkid]["_ieee"]),
             )
             self.logging(
-                "Debug",
+                "Debug2",
                 "      - _depth:       %s  versus %s"
                 % (_depth, self.Neighbours[NwkIdSource]["Neighbours"][_nwkid]["_depth"]),
             )
             self.logging(
-                "Debug",
+                "Debug2",
                 "      - _lnkqty:      %s  versus %s"
                 % (_lnkqty, self.Neighbours[NwkIdSource]["Neighbours"][_nwkid]["_lnkqty"]),
             )
             self.logging(
-                "Debug",
+                "Debug2",
                 "      - _relationshp: %s  versus %s"
                 % (_relationshp, self.Neighbours[NwkIdSource]["Neighbours"][_nwkid]["_relationshp"]),
             )
