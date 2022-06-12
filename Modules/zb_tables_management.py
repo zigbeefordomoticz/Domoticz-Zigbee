@@ -142,6 +142,8 @@ def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
         self.log.logging("NetworkMap", "Error", "===> unkown ????")
 
 def get_list_of_timestamps( self, nwkid, tablename):
+    if not isinstance(self.ListOfDevices[nwkid][tablename], list):
+        return []
     
     timestamp = [int(x["Time" ]) for x in self.ListOfDevices[nwkid][tablename]]
     self.log.logging("NetworkMap", "Debug", "get_list_of_timestamps return %s" %timestamp)
