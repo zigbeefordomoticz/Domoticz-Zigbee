@@ -121,8 +121,10 @@ def get_latest_table_entry(self, nwkid, tablename):
         del self.ListOfDevices[nwkid][tablename]
         self.ListOfDevices[nwkid][tablename] = []
         _create_empty_entry(self, nwkid, tablename)
-        
-    return self.ListOfDevices[nwkid][tablename][(len(self.ListOfDevices[nwkid][tablename] ) - 1)]
+    
+    if  len(self.ListOfDevices[nwkid][tablename] ) > 0:
+        return self.ListOfDevices[nwkid][tablename][(len(self.ListOfDevices[nwkid][tablename] ) - 1)]
+    return []
 
 def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
     new_routing_record = get_latest_table_entry(self, nwkid, tablename)["Devices"]
@@ -185,10 +187,16 @@ def mgmt_rtg(self, nwkid, table):
         func(self, nwkid, "00")
         return
 
-    #if "TimeStamp" not in get_latest_table_entry(self, nwkid, table):
-    #    get_latest_table_entry(self, nwkid, table)["TimeStamp"] = time.time()
-    #    func(self, nwkid, "00")
-    #    return
+    if not get_latest_table_entry(self, nwkid, table):
+        # Not yet a Table.add()
+        start_new_table_scan(self, nwkid, table)
+        func(self, nwkid, "00")
+        return
+
+    if "TimeStamp" not in get_latest_table_entry(self, nwkid, table):
+        get_latest_table_entry(self, nwkid, table)["TimeStamp"] = time.time()
+        func(self, nwkid, "00")
+        return
 
     if (
         "Status" in get_latest_table_entry(self, nwkid, table)
@@ -196,6 +204,7 @@ def mgmt_rtg(self, nwkid, table):
     ):
         return
 
+    
     feq = self.pluginconf.pluginConf[table + "RequestFeq"]
     if time.time() > get_latest_table_entry(self, nwkid, table)["TimeStamp"] + feq:
         start_new_table_scan(self, nwkid, table)
