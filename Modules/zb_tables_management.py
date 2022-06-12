@@ -144,8 +144,8 @@ def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
 def get_list_of_timestamps( self, nwkid, tablename):
     if not isinstance(self.ListOfDevices[nwkid][tablename], list):
         return []
-    
-    timestamp = [int(x["Time" ]) for x in self.ListOfDevices[nwkid][tablename]]
+    timestamp = [int(x["Time"]) for x in self.ListOfDevices[nwkid][tablename] if isinstance(x["Time"], int)]
+
     self.log.logging("NetworkMap", "Debug", "get_list_of_timestamps return %s" %timestamp)
     return timestamp
     
