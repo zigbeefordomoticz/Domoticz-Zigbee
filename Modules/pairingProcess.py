@@ -22,10 +22,11 @@ from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice
 from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
 from Modules.livolo import livolo_bind
-from Modules.lumi import enableOppleSwitch, enable_click_mode_aqara, enable_operation_mode_aqara
-from Modules.manufacturer_code import (PREFIX_MAC_LEN,
-                                       PREFIX_MACADDR_WIZER_LEGACY, PREFIX_MACADDR_XIAOMI, PREFIX_MACADDR_OPPLE, )
-from Modules.mgmt_rtg import mgmt_rtg
+from Modules.lumi import (enable_click_mode_aqara, enable_operation_mode_aqara,
+                          enableOppleSwitch)
+from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
+                                       PREFIX_MACADDR_WIZER_LEGACY,
+                                       PREFIX_MACADDR_XIAOMI)
 from Modules.orvibo import OrviboRegistration
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
@@ -40,6 +41,7 @@ from Modules.tuya import tuya_cmd_ts004F, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
+from Modules.zb_tables_management import mgmt_rtg
 from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 
 

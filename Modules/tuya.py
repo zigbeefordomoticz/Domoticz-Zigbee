@@ -24,7 +24,7 @@ from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
 from Modules.tuyaSiren import tuya_siren_response, tuya_siren2_response
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
-from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_response
+from Modules.tuyaTRV import TUYA_eTRV_MODEL, get_model_name, tuya_eTRV_response
 from Modules.zigateConsts import ZIGATE_EP
 
 # Tuya TRV Commands
@@ -674,7 +674,7 @@ def tuya_switch_indicate_light(self, NwkId, light=0x01):
     if light not in (0x00, 0x01, 0x02):
         self.log.logging("Tuya", "Error", "tuya_switch_indicate_light - Unexpected light: %s" % light)
         return
-
+        
     EPout = "01"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
@@ -1289,5 +1289,58 @@ def tuya_external_switch_mode( self, NwkId, mode):
         self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - None existing mode %s" % mode, NwkId)
         return
     EPout = "01"
-    mode = "%02x" %TUYA_SWITCH_MODE [ mode ]
+    mode = "%02x" %TUYA_SWITCH_MODE [mode]
     write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_TS0004_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)
+
+def tuya_TS0004_back_light(self, nwkid, mode):
+    
+    if int(mode) in {0, 1}:
+        write_attribute(self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "5000", "30", "%02x" %int(mode), ackIsDisabled=False)
+    else:
+        return
+    
+def tuya_TS0004_indicate_light(self, nwkid, mode):
+    if int(mode) in {0, 1, 2}:
+        write_attribute(self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" %int(mode), ackIsDisabled=False)
+    else:
+        return
+
+def SmartRelayStatus_by_ep( self, nwkid, ep, mode):
+    
+    if int(mode) in {0, 1, 2}:
+        return
+    if ep not in self.ListOfDevices[nwkid]["Ep"]:
+        self.log.logging("Heartbeat", "Error", "No ep: %s" %ep, nwkid)
+        return
+    if "e001" not in self.ListOfDevices[nwkid]["Ep"][ ep ]:
+        self.log.logging("Heartbeat", "Log", "No Cluster: %s" %"e001", nwkid)
+        return
+    if "d010" not in self.ListOfDevices[nwkid]["Ep"][ ep ][ "e001" ]:
+        self.log.logging("Heartbeat", "Log", "No Attribute: %s" %"d010", nwkid)
+
+    write_attribute(self, nwkid, ZIGATE_EP, ep, "e001", "0000", "00", "d010", "30", "%02x" %int(mode), ackIsDisabled=False)
+
+    
+def SmartRelayStatus01(self, nwkid, mode):
+    SmartRelayStatus_by_ep( self, nwkid, "01", mode)
+    
+def SmartRelayStatus02(self, nwkid, mode):
+    SmartRelayStatus_by_ep( self, nwkid, "02", mode)
+
+def SmartRelayStatus03(self, nwkid, mode): 
+    SmartRelayStatus_by_ep( self, nwkid, "03", mode)
+
+def SmartRelayStatus04(self, nwkid, mode):
+    SmartRelayStatus_by_ep( self, nwkid, "04", mode)
+
+def _check_tuya_attribute(self, nwkid, ep, cluster, attribute ):
+    if ep not in self.ListOfDevices[nwkid]["Ep"]:
+        self.log.logging("Heartbeat", "Log", "No ep: %s" %ep, nwkid)
+        return False
+    if cluster not in self.ListOfDevices[nwkid]["Ep"][ ep ]:
+        self.log.logging("Heartbeat", "Log", "No Cluster: %s" %cluster, nwkid)
+        return False
+    if attribute not in self.ListOfDevices[nwkid]["Ep"][ ep ][ cluster ]:
+        self.log.logging("Heartbeat", "Log", "No Attribute: %s" %attribute, nwkid)
+        return False
+    return True
