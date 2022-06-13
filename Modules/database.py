@@ -10,6 +10,7 @@
 
 """
 
+
 import json
 import os.path
 import time
@@ -20,16 +21,20 @@ import Domoticz
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
 
-ZIGATE_ATTRIBUTES = {
-    "Version",
-    "ZDeviceName",
-    "Ep",
-    "IEEE",
-    "LogicalType",
-    "PowerSource",
-    "Neighbours",
-    "GroupMemberShip",
-}
+CIE_ATTRIBUTES = {
+    "Version", 
+    "ZDeviceName", 
+    "Ep", 
+    "IEEE", 
+    "LogicalType", 
+    "PowerSource", 
+    "GroupMemberShip", 
+    "Neighbours", 
+    "NeighbourTableSize", 
+    "RoutingTable", 
+    "AssociatedDevices"
+    }
+
 
 MANDATORY_ATTRIBUTES = (
     "App Version",
@@ -608,8 +613,7 @@ def CheckDeviceList(self, key, val):
         return
 
     if key == "0000":
-        self.ListOfDevices[key] = {}
-        self.ListOfDevices[key]["Status"] = ""
+        self.ListOfDevices[key] = {"Status": ""}
     else:
         Modules.tools.initDeviceInList(self, key)
 
@@ -626,7 +630,7 @@ def CheckDeviceList(self, key, val):
         self.log.logging(
             "Database", "Debug", "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" % DeviceListVal["IEEE"]
         )
-        IMPORT_ATTRIBUTES = list(set(ZIGATE_ATTRIBUTES))
+        IMPORT_ATTRIBUTES = list(set(CIE_ATTRIBUTES))
         self.log.logging("Database", "Debug", "--> Attributes loaded: %s" % IMPORT_ATTRIBUTES)
     else:
         self.log.logging(

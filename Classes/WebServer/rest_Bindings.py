@@ -6,9 +6,10 @@
 import json
 
 import Domoticz
-from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
 from Modules.bindings import bindGroup, unbindGroup, webBind, webUnBind
-from Modules.mgmt_rtg import mgt_binding_table_req
+from Modules.zb_tables_management import mgt_binding_table_req
 from Modules.zigateConsts import ZCL_CLUSTERS_ACT
 
 
