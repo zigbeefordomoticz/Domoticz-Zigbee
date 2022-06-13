@@ -1284,33 +1284,43 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
-    elif MsgAttrID == "8000" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("lumi.sensor_switch", "lumi.sensor_switch.aq2", ):  
+    elif MsgAttrID == "5000":
+        # Back light for Tuya Smart Relay CH4
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "readCluster - %s - %s/%s Back Light: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            MsgSrcAddr,
+        )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
+        
+    elif MsgAttrID == "8000" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("lumi.sensor_switch", "lumi.sensor_switch.aq2", ):
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
-
         self.log.logging(
             "Cluster",
             "Debug",
             "ReadCluster - ClusterId=0006 - reception General: On/Off: %s for Mija Button" % str(MsgClusterData),
             MsgSrcAddr,
         )       
-        
+
     elif MsgAttrID == "8000":
-        # On/Off for particular devices
-        self.log.logging(
-            "Cluster",
-            "Log",
-            "ReadCluster - ClusterId=0006 - NwkId: %s Ep: %s Attr: %s Value: %s (if something doesn't work anymore, please contact @pipiche" % (
-                MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData),
-            MsgSrcAddr,
-        )
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] not in ( "TS0004-_TZ3000_excgg5kb", ):
+            self.log.logging(
+                "Cluster",
+                "Log",
+                "ReadCluster - ClusterId=0006 - NwkId: %s Ep: %s Attr: %s Value: %s (if something doesn't work anymore, please contact @pipiche" % (
+                    MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData),
+                MsgSrcAddr,
+            )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
         
     elif MsgAttrID == "8001":
+        # Tuya SMart Relay CH4 Indicate Light
         self.log.logging(
             "Cluster",
-            "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            "Debug",
+            "readCluster - %s - %s/%s Indicate Light: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
@@ -1942,7 +1952,7 @@ def Cluster0019(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     self.log.logging(
         "Cluster",
-        "Log",
+        "Debug",
         "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
@@ -4501,7 +4511,7 @@ def Cluster0b05(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def Clustere000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     self.log.logging(
         "Cluster",
-        "Log",
+        "Debug",
         "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
@@ -4522,7 +4532,7 @@ def Clustere000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def Clustere001(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     self.log.logging(
         "Cluster",
-        "Log",
+        "Debug",
         "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )

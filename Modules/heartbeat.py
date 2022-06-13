@@ -21,7 +21,6 @@ from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
 from Modules.domoTools import timedOutDevice
-from Modules.mgmt_rtg import mgmt_rtg
 from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
                                     processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
@@ -44,6 +43,7 @@ from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
                            is_hex, is_time_to_perform_work, mainPoweredDevice,
                            night_shift_jobs, removeNwkInList)
+from Modules.zb_tables_management import mgmt_rtg
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 # Read Attribute trigger: Every 10"
@@ -669,28 +669,6 @@ def processKnownDevices(self, Devices, NWKID):
         else:
             rescheduleAction = True
 
-    #if ( self.pluginconf.pluginConf["BindingTableRequestFeq"] 
-    #    and (intHB % ( self.pluginconf.pluginConf["BindingTableRequestFeq"] // HEARTBEAT) == 0)):
-    #    if not self.busy and self.ControllerLink.loadTransmit() < 3 
-    #        mgmt_rtg(self, NWKID, "BindingTable")
-    #    else:
-    #        rescheduleAction = True
-
-
-    # Experimental
-    if (
-        _mainPowered 
-        and night_shift_jobs( self )
-        and "AssociatedDevicesTable" in self.pluginconf.pluginConf 
-        and self.pluginconf.pluginConf["AssociatedDevicesTable"]
-        and (intHB % ( self.pluginconf.pluginConf["AssociatedDevicesTable"] // HEARTBEAT) == 0)
-    ):
-        if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            lookup_ieee = self.ListOfDevices[ NWKID ]['IEEE']
-            zdp_NWK_address_request(self, "fffc", lookup_ieee, u8RequestType="01")
-        else:
-            rescheduleAction = True
-
     # Call Schneider Reenforcement if needed
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NWKID)
@@ -845,31 +823,6 @@ def processListOfDevices(self, Devices):
         # Trigger Configure Reporting to eligeable devices
         if self.configureReporting:
             self.configureReporting.processConfigureReporting()
-
-    # Network Topology management
-    # if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_TOPO_START):
-    #    self.log.logging( "Heartbeat", 'Debug', "processListOfDevices Time for Network Topology")
-
-    if ( 
-        night_shift_jobs( self )
-        and self.zigbee_communitation == "zigpy"
-        and "RoutingTableRequestFeq" in self.pluginconf.pluginConf
-        and self.pluginconf.pluginConf["RoutingTableRequestFeq"] 
-        and (self.HeartbeatCount % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)
-    ):
-        if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            mgmt_rtg(self, "0000", "RoutingTable")
-
-    
-    if (
-        night_shift_jobs( self )
-        and "AssociatedDevicesTable" in self.pluginconf.pluginConf 
-        and self.pluginconf.pluginConf["AssociatedDevicesTable"]
-        and (self.HeartbeatCount % ( self.pluginconf.pluginConf["AssociatedDevicesTable"] // HEARTBEAT) == 0)
-    ):
-        if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            lookup_ieee = self.ControllerIEEE
-            zdp_NWK_address_request(self, "0000", lookup_ieee, u8RequestType="01")
 
     
     # Network Topology
