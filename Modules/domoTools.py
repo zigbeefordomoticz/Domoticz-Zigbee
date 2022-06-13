@@ -786,6 +786,9 @@ def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", 
 
     elif cluster == "ff66":
         TypeFromCluster = "DEMAIN"
+        
+    elif cluster == "water":
+        TypeFromCluster = "WaterConsumption"
 
     return TypeFromCluster
 

@@ -318,10 +318,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Meter" and ( Attribute_ == "0000" or 
-                                            ( Attribute_ in ("0100", "0102") and Ep == "01") or
-                                            ( Attribute_ in ("0104", "0106") and Ep == "f2") or
-                                            ( Attribute_ in ("0108", "010a") and Ep == "f3")):
+            elif ( 
+                WidgetType == "Meter" 
+                and (
+                    Attribute_ == "0000" 
+                    or ( Attribute_ in ("0100", "0102") and Ep == "01") 
+                    or( Attribute_ in ("0104", "0106") and Ep == "f2") 
+                    or( Attribute_ in ("0108", "010a") and Ep == "f3")
+                    )
+                ):
                 
                 # We are in the case were we receive Summation , let's find the last instant power and update
                 check_set_meter_widget( Devices, DeviceUnit, 0)    
@@ -337,9 +342,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # Let's check if we have Summation in the datastructutre
                 summation = 0
                 if ( 
-                    "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and 
-                    "0000" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"] and 
-                    self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] not in  ({}, "", "0")
+                    "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] 
+                    and "0000" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"] 
+                    and self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] not in  ({}, "", "0")
                 ): 
                     # summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
                     summation = self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"]
@@ -394,6 +399,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 sValue = str(nValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
+        if WidgetType == "CounterWater" and  ClusterType == "WaterConsumption":
+            pass
+            
         if "ThermoMode" in ClusterType:  # Thermostat Mode
             self.log.logging("Widget", "Debug", "ThermoMode %s WidgetType: %s Value: %s (%s) Attribute_: %s" % ( 
                 NWKID, WidgetType, value, type(value), Attribute_), NWKID)
@@ -437,7 +445,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 elif value == 1:
                     UpdateDevice_v2(self, Devices, DeviceUnit, 1, "On", BatteryLevel, SignalLevel)
 
-            elif WidgetType == "HACTMODE" and Attribute_ == "e011":  #  Wiser specific Fil Pilote
+            elif WidgetType == "HACTMODE" and Attribute_ == "e011":   # Wiser specific Fil Pilote
                 # value is str
                 self.log.logging("Widget", "Debug", "------>  ThermoMode HACTMODE: %s" % (value), NWKID)
                 THERMOSTAT_MODE = {0: "10", 1: "20"}  # Conventional heater  # fip enabled heater
@@ -448,10 +456,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     nValue = _mode + 1
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "LegranCableMode" and clusterID == "fc01":  #  Legrand
+            elif WidgetType == "LegranCableMode" and clusterID == "fc01":   # Legrand
                 # value is str
                 self.log.logging("Widget", "Debug", "------>  Legrand Mode: %s" % (value), NWKID)
-                THERMOSTAT_MODE = {0x0100: "10", 0x0200: "20"}  # Conventional heater  # fip enabled heater
+                THERMOSTAT_MODE = {0x0100: "10", 0x0200: "20"}   # Conventional heater  # fip enabled heater
                 _mode = int(value, 16)
 
                 if _mode not in THERMOSTAT_MODE:
@@ -461,7 +469,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 nValue = int(sValue) // 10
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "FIP" and Attribute_ in ("0000", "e020"):  #  Wiser specific Fil Pilote
+            elif WidgetType == "FIP" and Attribute_ in ("0000", "e020"):   # Wiser specific Fil Pilote
                 # value is str
                 self.log.logging("Widget", "Debug", "------>  ThermoMode FIP: %s" % (value), NWKID)
                 FIL_PILOT_MODE = {
@@ -478,7 +486,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 nValue = _mode + 1
                 sValue = FIL_PILOT_MODE[_mode]
 
-                if Attribute_ == "e020":  #  Wiser specific Fil Pilote
+                if Attribute_ == "e020":    # Wiser specific Fil Pilote
                     if "0201" in self.ListOfDevices[NWKID]["Ep"][Ep]:
                         if "e011" in self.ListOfDevices[NWKID]["Ep"][Ep]["0201"]:
                             if self.ListOfDevices[NWKID]["Ep"][Ep]["0201"]["e011"] != {} and self.ListOfDevices[NWKID]["Ep"][Ep]["0201"]["e011"] != "":
@@ -543,7 +551,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType in ("ThermoMode", "ACMode",  ) and Attribute_ == "001c":
+            elif WidgetType in ("ThermoMode", "ACMode",) and Attribute_ == "001c":
                 # value seems to come as int or str. To be fixed
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode %s type: %s" % (value, type(value)), NWKID)
                 if value in THERMOSTAT_MODE_2_LEVEL:
@@ -558,7 +566,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
                         UpdateDevice_v2(self, Devices, DeviceUnit, 4, "40", BatteryLevel, SignalLevel)
                         
-            elif  WidgetType in ("CAC221ACMode",  ) and Attribute_ == "001c":
+            elif  WidgetType in ("CAC221ACMode",) and Attribute_ == "001c":
                 self.log.logging("Widget", "Debug", "------>  Thermostat CAC221ACMode %s type: %s" % (value, type(value)), NWKID)
                 if value in THERMOSTAT_MODE_2_LEVEL:
                     if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off

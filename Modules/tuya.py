@@ -18,10 +18,10 @@ import Domoticz
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
-
+from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
                            get_and_inc_ZCL_SQN, is_ack_tobe_disabled, updSQN)
-from Modules.tuyaSiren import tuya_siren_response, tuya_siren2_response
+from Modules.tuyaSiren import tuya_siren2_response, tuya_siren_response
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, get_model_name, tuya_eTRV_response
@@ -771,9 +771,12 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
 
             MajDomoDevice(self, Devices, NwkId, "01", "0006", data)
 
-    elif dp == 0x05:  #
-        store_tuya_attribute(self, NwkId, "Valve 0x05", data)
-
+    elif dp == 0x05:
+        # Water Consumed
+        consumption = int(data)
+        store_tuya_attribute(self, NwkId, "Consumption", consumption) 
+        MajDomoDevice(self, Devices, NwkId, srcEp, "water", consumption)
+        
     elif dp == 0x06 and datatype == 0x02:  # Valve State
         state = "%02d" % int(data)
         store_tuya_attribute(self, NwkId, "Valve state", state)
@@ -784,9 +787,17 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
         )
         MajDomoDevice(self, Devices, NwkId, srcEp, "0006", state)
 
+    elif dp == 0x07:
+        battery = int(data)
+        store_tuya_attribute(self, NwkId, "Battery", battery)  
+        Update_Battery_Device(self, Devices, NwkId, battery)    
+          
     elif dp == 0x0B:
         store_tuya_attribute(self, NwkId, "Valve 0x0b", data)
-
+    elif dp == 0x0c:
+        store_tuya_attribute(self, NwkId, "Valve 0x0c", data)
+    elif dp == 0x23:
+        store_tuya_attribute(self, NwkId, "Valve 0x23", data)        
     elif dp == 0x65:
         store_tuya_attribute(self, NwkId, "Valve 0x65", data)
     elif dp == 0x66:
@@ -801,6 +812,10 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
         store_tuya_attribute(self, NwkId, "Valve 0x6a", data)
     elif dp == 0x6B:
         store_tuya_attribute(self, NwkId, "Valve 0x6b", data)
+    else:
+        attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
+        self.log.logging( "Tuya", "Debug", "tuya_watertimer_response - %s/%s %s %s" % (NwkId, srcEp, attribute_name, data), )
+        store_tuya_attribute(self, NwkId, attribute_name, data)
 
 
 # Tuya TS0601 - Curtain
@@ -1289,7 +1304,7 @@ def tuya_external_switch_mode( self, NwkId, mode):
         self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - None existing mode %s" % mode, NwkId)
         return
     EPout = "01"
-    mode = "%02x" %TUYA_SWITCH_MODE [mode]
+    mode = "%02x" %TUYA_SWITCH_MODE[mode]
     write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_TS0004_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)
 
 def tuya_TS0004_back_light(self, nwkid, mode):

@@ -182,13 +182,13 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
 
 def _check_attribute_exist( self, nwkid, ep, cluster, attribute):
     if ep not in self.ListOfDevices[nwkid]["Ep"]:
-        self.log.logging("Heartbeat", "Log", "No ep: %s" %ep, nwkid)
+        self.log.logging("Heartbeat", "Debug", "No ep: %s" %ep, nwkid)
         return False
     if cluster not in self.ListOfDevices[nwkid]["Ep"][ ep ]:
-        self.log.logging("Heartbeat", "Log", "No Cluster: %s" %cluster, nwkid)
+        self.log.logging("Heartbeat", "Debug", "No Cluster: %s for %s/%s" %( cluster, nwkid, ep), nwkid)
         return False
     if attribute not in self.ListOfDevices[nwkid]["Ep"][ ep ][ cluster ]:
-        self.log.logging("Heartbeat", "Log", "No Attribute: %s" %attribute, nwkid)
+        self.log.logging("Heartbeat", "Debug", "No Attribute: %s for %s/%s %s" %(attribute, nwkid, ep, cluster), nwkid)
         return False
     return True
    

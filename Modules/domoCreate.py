@@ -767,6 +767,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Water" % (t), NWKID)
 
+            if t == "CounterWater":
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=113, Subtype_=0, Switchtype_=2 )
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Counter Water" % (t), NWKID)
+                
             if t == "Plug":
                 # prise pilote
                 createDomoticzWidget(
