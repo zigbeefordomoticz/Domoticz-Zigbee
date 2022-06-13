@@ -789,7 +789,9 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
     elif dp == 0x07:
         battery = int(data,16) * 2
         store_tuya_attribute(self, NwkId, "Battery", battery)  
-        Update_Battery_Device(self, Devices, NwkId, battery)    
+        Update_Battery_Device(self, Devices, NwkId, battery)
+        self.ListOfDevices[ NwkId ]["Battery"] = battery
+        
     elif dp == 0x0B:
         store_tuya_attribute(self, NwkId, "TimeLeft", data)
     elif dp == 0x0c:
