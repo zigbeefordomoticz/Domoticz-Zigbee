@@ -1293,6 +1293,8 @@ def instrument_timing(module, timing, cnt_timing, cumul_timing, aver_timing, max
 # Configuration Helpers
 def setConfigItem(Key=None, Attribute="", Value=None):
 
+    Domoticz.Log("Saving %s - %s into Domoticz sqlite Db" %( Key, Attribute))
+    
     Config = {}
     if not isinstance(Value, (str, int, float, bool, bytes, bytearray, list, dict)):
         Domoticz.Error("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
@@ -1318,6 +1320,9 @@ def setConfigItem(Key=None, Attribute="", Value=None):
 
 
 def getConfigItem(Key=None, Attribute="", Default=None):
+    
+    Domoticz.Log("Loading %s - %s into Domoticz sqlite Db" %( Key, Attribute))
+    
     if Default is None:
         Default = {}
     Value = Default
