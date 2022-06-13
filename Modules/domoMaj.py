@@ -399,8 +399,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 sValue = str(nValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if WidgetType == "CounterWater" and  ClusterType == "WaterConsumption":
-            pass
+        if WidgetType == "CounterWater" and  ClusterType == "WaterConsumption" and Attribute_=="0300":
+            UpdateDevice_v2(self, Devices, DeviceUnit, 2, value, BatteryLevel, SignalLevel)
             
         if "ThermoMode" in ClusterType:  # Thermostat Mode
             self.log.logging("Widget", "Debug", "ThermoMode %s WidgetType: %s Value: %s (%s) Attribute_: %s" % ( 

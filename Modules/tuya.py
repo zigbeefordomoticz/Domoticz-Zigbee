@@ -768,17 +768,16 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
                 % (_ModelName, NwkId, srcEp, dp, datatype, data),
                 NwkId,
             )
-
             MajDomoDevice(self, Devices, NwkId, "01", "0006", data)
 
     elif dp == 0x05:
         # Water Consumed
-        consumption = int(data)
+        consumption = int(data,16)
         store_tuya_attribute(self, NwkId, "Consumption", consumption) 
-        MajDomoDevice(self, Devices, NwkId, srcEp, "water", consumption)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "water", consumption, Attribute_="0300")
         
     elif dp == 0x06 and datatype == 0x02:  # Valve State
-        state = "%02d" % int(data)
+        state = "%02d" % int(data,16)
         store_tuya_attribute(self, NwkId, "Valve state", state)
         self.log.logging(
             "Tuya",
@@ -788,14 +787,15 @@ def tuya_watertimer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID,
         MajDomoDevice(self, Devices, NwkId, srcEp, "0006", state)
 
     elif dp == 0x07:
-        battery = int(data)
+        battery = int(data,16) * 2
         store_tuya_attribute(self, NwkId, "Battery", battery)  
         Update_Battery_Device(self, Devices, NwkId, battery)    
-          
     elif dp == 0x0B:
-        store_tuya_attribute(self, NwkId, "Valve 0x0b", data)
+        store_tuya_attribute(self, NwkId, "TimeLeft", data)
     elif dp == 0x0c:
-        store_tuya_attribute(self, NwkId, "Valve 0x0c", data)
+        store_tuya_attribute(self, NwkId, "Valve state2", data)
+    elif dp == 0x0f:
+        store_tuya_attribute(self, NwkId, "Last Valve Open Duration", data)
     elif dp == 0x23:
         store_tuya_attribute(self, NwkId, "Valve 0x23", data)        
     elif dp == 0x65:
