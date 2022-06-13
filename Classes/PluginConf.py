@@ -1398,6 +1398,14 @@ SETTINGS = {
             },
             "expJsonDatabase": {
                 "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
+            "storeDomoticzDatabase": {
+                "type": "bool",
                 "default": 0,
                 "current": None,
                 "restart": 0,
@@ -1899,7 +1907,7 @@ class PluginConf:
         with open(pluginConfFile, "wt") as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
-        if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"]:
+        if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]):
             setConfigItem(Key="PluginConf", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
 
 
