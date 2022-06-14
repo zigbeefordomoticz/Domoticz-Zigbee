@@ -70,7 +70,7 @@ class WebServer(object):
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import DumpHTTPResponseToLog, keepConnectionAlive
     from Classes.WebServer.rest_PluginUpgrade import rest_plugin_upgrade
-    from Classes.WebServer.rest_CfgReporting import rest_cfgrpt_ondemand
+    from Classes.WebServer.rest_CfgReporting import rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config
 
     hearbeats = 0
 
@@ -1372,7 +1372,7 @@ class WebServer(object):
                         _battEnv["Battery"]["<30%"][_deviceName]["Battery"] = self.ListOfDevices[x]["Battery"]
                         
                     if "BatteryUpdateTime" in self.ListOfDevices[x]:
-                        if (int(time()) - self.ListOfDevices[x]["BatteryUpdateTime"]) > 604800: # one week in seconds
+                        if (int(time()) - self.ListOfDevices[x]["BatteryUpdateTime"]) > 604800:   # one week in seconds
                             _battEnv["Update Time"]["> 1 week"][_deviceName] = {}
                             _battEnv["Update Time"]["> 1 week"][_deviceName]["BatteryUpdateTime"] = self.ListOfDevices[x]["BatteryUpdateTime"]
                         else:
