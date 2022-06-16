@@ -94,7 +94,7 @@ def getListOfEpForCluster(self, NwkId, SearchCluster):
     if NwkId not in self.ListOfDevices:
         return EpList
 
-    oldFashion = ( "ClusterType" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["ClusterType"] not in  ({}, "") )
+    oldFashion = ( "ClusterType" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["ClusterType"] not in ({}, "") )
     for Ep in list(self.ListOfDevices[NwkId]["Ep"].keys()):
         if SearchCluster not in self.ListOfDevices[NwkId]["Ep"][Ep]:
             continue
@@ -446,7 +446,7 @@ def get_and_inc_ZCL_SQN(self, key):
   
 def get_and_increment_generic_SQN(self, nwkid, sqn_type):
     if nwkid not in self.ListOfDevices: 
-        return  "%02x" %0x00
+        return "%02x" %0x00
     if sqn_type not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %0x00
         return self.ListOfDevices[nwkid][ sqn_type ]

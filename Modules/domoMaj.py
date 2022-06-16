@@ -339,7 +339,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 if ( 
                     "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and 
                     "0000" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"] and 
-                    self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] not in  ({}, "", "0")
+                    self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] not in ({}, "", "0")
                 ): 
                     # summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
                     summation = self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"]
@@ -558,7 +558,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
                         UpdateDevice_v2(self, Devices, DeviceUnit, 4, "40", BatteryLevel, SignalLevel)
                         
-            elif  WidgetType in ("CAC221ACMode",  ) and Attribute_ == "001c":
+            elif WidgetType in ("CAC221ACMode", ) and Attribute_ == "001c":
                 self.log.logging("Widget", "Debug", "------>  Thermostat CAC221ACMode %s type: %s" % (value, type(value)), NWKID)
                 if value in THERMOSTAT_MODE_2_LEVEL:
                     if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off

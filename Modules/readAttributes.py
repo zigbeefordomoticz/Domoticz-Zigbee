@@ -446,13 +446,13 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     self.log.logging("ReadAttributes", "Debug", "--> Build list Eps for Cluster Basic %s" %str(ListOfEp), nwkid=key)
 
     # Do we Have Manufacturer
-    if  ListOfEp and self.ListOfDevices[key]["Manufacturer"] in [ {}, ""]:
+    if ListOfEp and self.ListOfDevices[key]["Manufacturer"] in [ {}, ""]:
         self.log.logging("ReadAttributes", "Log", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
         if 0x0004 not in listAttributes:
             listAttributes.append(0x0004)
 
     # Do We have Model Name
-    if ( ListOfEp and  self.ListOfDevices[key]["Model"] in [ {}, ""] ):
+    if ( ListOfEp and self.ListOfDevices[key]["Model"] in [ {}, ""] ):
         self.log.logging("ReadAttributes", "Debug", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
         if 0x0005 not in listAttributes:
             listAttributes.append(0x0005)
