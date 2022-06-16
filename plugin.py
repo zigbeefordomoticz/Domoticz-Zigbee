@@ -1222,7 +1222,7 @@ def build_list_of_device_model(self):
             if manufcode not in self.pluginParameters["NetworkDevices"]:
                 self.pluginParameters["NetworkDevices"][ manufcode ] = {}
 
-        if manufcode and  "Manufacturer Name" in self.ListOfDevices[x]:
+        if manufcode and "Manufacturer Name" in self.ListOfDevices[x]:
             manufname = self.ListOfDevices[x]["Manufacturer Name"]
             if manufname in ( "", {} ):
                 manufname = "unknow"
