@@ -203,7 +203,7 @@ class IAS_Zone_Management:
             IAS_Zone_enrollment_response(self, NwkId, Ep, sqn, ZONE_ID)
             check_IAS_CIE_Address(self, NwkId, Ep)
             IAS_CIE_service_discovery( self, NwkId, Ep)
-            if  Ep not in self.ListOfDevices[NwkId]["Ep"] or self.ListOfDevices[NwkId]["Ep"][ Ep ] in ( "", {}):
+            if Ep not in self.ListOfDevices[NwkId]["Ep"] or self.ListOfDevices[NwkId]["Ep"][ Ep ] in ( "", {}):
                 # If we get the enrollment at the begin, it will then define the End Point, and we won't request it
                 zdp_simple_descriptor_request(self, NwkId, Ep)
                 

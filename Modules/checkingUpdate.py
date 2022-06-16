@@ -64,7 +64,7 @@ def checkPluginVersion(zigbee_communitation, branch, zigate_model):
             firmwareVersion[major_minor.split("=")[0]] = major_minor.split("=")[1].strip('"')
             #Domoticz.Log("checkPluginVersion - Available Firmware Version is, %s , %s" %(major_minor.split("=")[0], firmwareVersion[ major_minor.split("=")[0] ]))
 
-    if zigbee_communitation == "native" and  branch in pluginVersion and "firmMajor" in firmwareVersion and "firmMinor" in firmwareVersion:
+    if zigbee_communitation == "native" and branch in pluginVersion and "firmMajor" in firmwareVersion and "firmMinor" in firmwareVersion:
         return (pluginVersion[branch], firmwareVersion["firmMajor"], firmwareVersion["firmMinor"])
     if zigbee_communitation == "zigpy" and branch in pluginVersion:
         return (pluginVersion[branch], 0, 0)
