@@ -54,7 +54,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
-        await super().startup(auto_form=True)
+        try:
+            await self._startup( auto_form=True )
+        except Exception:
+            await self.shutdown()
+            raise
         if force_form:
             await super().form_network()
         
@@ -70,6 +74,29 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         znp_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin( znp_model, znp_manuf)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
+
+    async def _startup(self, *, auto_form: bool = False):
+        """
+        Starts a network, optionally forming one with random settings if necessary.
+        """
+        await self.connect()
+        try:
+            try:
+                await self.load_network_info(load_devices=False)
+            except zigpy.exceptions.NetworkNotFormed:
+                LOGGER.info("Network is not formed")
+                if not auto_form:
+                    raise
+                LOGGER.info("Forming a new network")
+                await self.form_network()
+            LOGGER.debug("Network info: %s", self.state.network_info)
+            LOGGER.debug("Node info: %s", self.state.node_info)
+            await self.start_network()
+        except Exception:
+            LOGGER.error("Couldn't start application")
+            await self.shutdown()
+            raise
+
 
     async def register_endpoints(self):
         await super().register_endpoints()  
@@ -93,7 +120,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         # will return None if not found
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
         self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device ieee:%s nwk:%s " % (ieee,nwk ))
-#        self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device current_list%s  " % (self.devices ))
 
         dev = None
         try:

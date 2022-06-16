@@ -157,7 +157,9 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
         self.app = App_zigate(config)
 
     elif radiomodule == "znp":
+        self.log.logging("TransportZigpy", "Debug", "3- %s" %radiomodule)
         self.app = App_znp(config)
+        self.log.logging("TransportZigpy", "Debug", "3- %s" %radiomodule)
 
     elif radiomodule == "deCONZ":
         try:
@@ -189,14 +191,21 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     else:
         new_network = False
 
-    await self.app.startup(
-        callBackHandleMessage=self.receiveData,
-        callBackGetDevice=self.ZigpyGetDevice,
-        auto_form=True,
-        force_form=new_network,
-        log=self.log,
-        permit_to_join_timer=self.permit_to_join_timer,
-    )
+    try:
+        await self.app.startup(
+            callBackHandleMessage=self.receiveData,
+            callBackGetDevice=self.ZigpyGetDevice,
+            auto_form=True,
+            force_form=new_network,
+            log=self.log,
+            permit_to_join_timer=self.permit_to_join_timer,
+        )
+    except Exception as e:
+        self.log.logging(
+            "TransportZigpy",
+            "Error",
+            "Error at startup %s" %e)
+        
 
 
     if new_network:

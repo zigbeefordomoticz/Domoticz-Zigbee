@@ -49,46 +49,69 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
     async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         logging.debug("startup in AppDeconz")
+        self.log = log
+        self.permit_to_join_timer = permit_to_join_timer
+        self.callBackFunction = callBackHandleMessage
+        self.callBackGetDevice = callBackGetDevice
+
+        await asyncio.sleep( 2 )
+
         try:
-            self.log = log
-            self.permit_to_join_timer = permit_to_join_timer
-            self.callBackFunction = callBackHandleMessage
-            self.callBackGetDevice = callBackGetDevice
+            await self._startup( auto_form=True )
+        except Exception:
+            await self.shutdown()
+            raise
+        if force_form:
+            await super().form_network()
 
-            await asyncio.sleep( 2 )
-            await super().startup(auto_form=True)
-  
-            if force_form:
-                logging.debug("startup form new network")
-                await super().form_network()
 
-            # Populate and get the list of active devices.
-            # This will allow the plugin if needed to update the IEEE -> NwkId
-            await self.load_network_info( load_devices=True )
-            network_info = self.state.network_info
+        # Populate and get the list of active devices.
+        # This will allow the plugin if needed to update the IEEE -> NwkId
+        await self.load_network_info( load_devices=True )
+        network_info = self.state.network_info
 
-            # deConz doesn't have such capabilities to provided list of paired devices.
-            #logging.debug("startup Network Info: %s" %str(network_info))
-            #self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
+        # deConz doesn't have such capabilities to provided list of paired devices.
+        #logging.debug("startup Network Info: %s" %str(network_info))
+        #self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
-            # Trigger Version payload to plugin
-            deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
-            deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
+        # Trigger Version payload to plugin
+        deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
+        deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
 
-            deconz_version = "%08x" %self.version
-            deconz_major = deconz_version[:4]
-            deconz_minor = deconz_version[4:8]
-            logging.debug("startup in AppDeconz - build 8010 %s %08x %s" %(
-                deconz_version, self.version, deconz_major + deconz_minor))
-            if deconz_model == "ConBee II":
-                self.callBackFunction(build_plugin_8010_frame_content("40", deconz_major, deconz_minor))
-            elif deconz_model == "RaspBee II":
-                self.callBackFunction(build_plugin_8010_frame_content("41", deconz_major, deconz_minor))
-            else:
-                self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
+        deconz_version = "%08x" %self.version
+        deconz_major = deconz_version[:4]
+        deconz_minor = deconz_version[4:8]
+        logging.debug("startup in AppDeconz - build 8010 %s %08x %s" %(
+            deconz_version, self.version, deconz_major + deconz_minor))
+        if deconz_model == "ConBee II":
+            self.callBackFunction(build_plugin_8010_frame_content("40", deconz_major, deconz_minor))
+        elif deconz_model == "RaspBee II":
+            self.callBackFunction(build_plugin_8010_frame_content("41", deconz_major, deconz_minor))
+        else:
+            self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
 
-        except Exception as e:
-            logging.error( "Error %s" %(traceback.format_exc() ))
+    async def _startup(self, *, auto_form: bool = False):
+        """
+        Starts a network, optionally forming one with random settings if necessary.
+        """
+        await self.connect()
+        try:
+            try:
+                await self.load_network_info(load_devices=False)
+            except zigpy.exceptions.NetworkNotFormed:
+                LOGGER.info("Network is not formed")
+                if not auto_form:
+                    raise
+                LOGGER.info("Forming a new network")
+                await self.form_network()
+            LOGGER.debug("Network info: %s", self.state.network_info)
+            LOGGER.debug("Node info: %s", self.state.node_info)
+            await self.start_network()
+        except Exception:
+            LOGGER.error("Couldn't start application")
+            await self.shutdown()
+            raise
+
           
     async def register_endpoints(self):
         await super().register_endpoints()  
