@@ -66,13 +66,22 @@ def deviceName(self, NWKID, DeviceType, IEEE_, EP_):
 
     return devName
 
+def how_many_slot_available( Devices ):
+    return sum(x not in Devices for x in range( 1, 255 ))
+
 
 def FreeUnit(self, Devices, nbunit_=1):
     """
     FreeUnit
     Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
     """
-    FreeUnit = ""
+    if how_many_slot_available( Devices ) <= 5:
+        self.log.logging("Widget", "Status", "It seems that you can create only 5 Domoticz widgets more !!!")
+    elif how_many_slot_available( Devices ) <= 15:
+        self.log.logging("Widget", "Status", "It seems that you can create only 15 Domoticz widgets more !!")
+    elif how_many_slot_available( Devices ) <= 30:
+        self.log.logging("Widget", "Status", "It seems that you can create only 30 Domoticz widgets more !")
+        
     for x in range(1, 255):
         if x not in Devices:
             if nbunit_ == 1:
@@ -373,17 +382,16 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t in ( "SwitchAlarm", ):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=0, Image=13)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch Alarm" % (t), NWKID)
-
                 
             if t in ("FanControl",):  # 6
                 Options = createSwitchSelector(self, 6, DeviceType=t, OffHidden=False, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options, Image=7)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl" % (t), NWKID)
 
-            if t in ("ACSwing", "TuyaSirenHumi", "TuyaSirenTemp"):  # 2
+            if t in ("ACSwing", "TuyaSirenHumi", "TuyaSirenTemp", "LegrandSleepWakeupSelector"):  # 2
                 Options = createSwitchSelector(self, 2, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACSwing" % (t), NWKID)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACSwing" % (t), NWKID)           
 
             # 3 Selectors, Style 0
             if t in ("Toggle", "ThermoMode_2"):

@@ -5,6 +5,7 @@
 #
 
 import binascii
+import time
 import logging
 from typing import Any, Optional
 
@@ -123,8 +124,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         try:
             dev = self.get_device(ieee)
+            time.sleep(1.0)
             LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
         except KeyError:
+            time.sleep(1.0)
             dev = self.add_device(ieee, nwk)
             LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
 
@@ -154,6 +157,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         message: bytes,
         dst_addressing: Addressing,
     ) -> None:
+        if sender is None or profile is None or cluster is None:
+            # drop the paquet 
+            return
+
         if sender.nwk == 0x0000:
             self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))

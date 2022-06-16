@@ -78,6 +78,10 @@ def RetreiveSignalLvlBattery(self, NwkID):
     if NwkID not in self.ListOfDevices:
         return ("", "")
 
+    return ( get_signal_level(self, NwkID), get_battery_level(self, NwkID))
+
+def get_signal_level(self, NwkID):
+    
     SignalLevel = ""
     if "LQI" in self.ListOfDevices[NwkID]:
         SignalLevel = self.ListOfDevices[NwkID]["LQI"]
@@ -100,7 +104,6 @@ def RetreiveSignalLvlBattery(self, NwkID):
 
     if isinstance(SignalLevel, int):
         # rssi = round((SignalLevel * 11) / 255)
-
         DomoticzRSSI = 0
         if SignalLevel >= SEUIL3:
             #  SEUIL3 < ZiGate LQI < 255 -> 11
@@ -116,34 +119,40 @@ def RetreiveSignalLvlBattery(self, NwkID):
             SignalLevel = SignalLevel - SEUIL1
             DomoticzRSSI = 1 + round((SignalLevel * 3) / gamme)
 
-    # Domoticz.Log("RetreiveSignalLvlBattery - convert ZiGate LQI: %s to Domoticz LQI: %s" %(SignalLevel, DomoticzRSSI ))
-    SignalLevel = DomoticzRSSI
+    return DomoticzRSSI
 
-    BatteryLevel = ""
-    if "Battery" in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]["Battery"] != {}:
+    
+def get_battery_level(self, NwkID):
+
+    if "Battery" in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]["Battery"] not in ( {}, ):
         self.log.logging(
             "Widget",
             "Debug",
-            "------>  NwkId: %s Battery: %s Type: %s"
+            "------>  From Battery NwkId: %s Battery: %s Type: %s"
             % (NwkID, self.ListOfDevices[NwkID]["Battery"], type(self.ListOfDevices[NwkID]["Battery"])),
             NwkID,
         )
         if isinstance(self.ListOfDevices[NwkID]["Battery"], (float)):
-            BatteryLevel = int(round((self.ListOfDevices[NwkID]["Battery"])))
+            return int(round((self.ListOfDevices[NwkID]["Battery"])))
         if isinstance(self.ListOfDevices[NwkID]["Battery"], (int)):
-            BatteryLevel = self.ListOfDevices[NwkID]["Battery"]
-    if (
-        BatteryLevel == ""
-        and "IASBattery" in self.ListOfDevices[NwkID]
+            return self.ListOfDevices[NwkID]["Battery"]
+    elif (
+        "IASBattery" in self.ListOfDevices[NwkID]
         and isinstance(self.ListOfDevices[NwkID]["IASBattery"], int)
     ):
-        BatteryLevel = self.ListOfDevices[NwkID]["IASBattery"]
+        self.log.logging(
+            "Widget",
+            "Debug",
+            "------>  From IASBattery NwkId: %s Battery: %s Type: %s"
+            % (NwkID, self.ListOfDevices[NwkID]["IASBattery"], type(self.ListOfDevices[NwkID]["IASBattery"])),
+            NwkID,
+        )
 
-    if BatteryLevel == "" or (not isinstance(BatteryLevel, (int, float))):
-        BatteryLevel = 255
+        return self.ListOfDevices[NwkID]["IASBattery"]
 
-    return (SignalLevel, BatteryLevel)
-
+    return 255
+    
+    
 
 def WidgetForDeviceId(self, NwkId, DeviceId):
 
@@ -204,7 +213,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
 
         if "Param" in self.ListOfDevices[NWKID]:
             if "resetMotiondelay" in self.ListOfDevices[NWKID]["Param"]:
-                TimedOutMotion = self.ListOfDevices[NWKID]["Param"]["resetMotiondelay"]
+                TimedOutMotion = int(self.ListOfDevices[NWKID]["Param"]["resetMotiondelay"])
             if "resetSwitchSelectorPushButton" in self.ListOfDevices[NWKID]["Param"]:
                 TimedOutSwitchButton = self.ListOfDevices[NWKID]["Param"]["resetSwitchSelectorPushButton"]
 

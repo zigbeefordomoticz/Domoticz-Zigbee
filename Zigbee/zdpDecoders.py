@@ -8,6 +8,24 @@
 import struct
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
+def is_duplicate_zdp_frame(self, Nwkid, ClusterId, Sqn):
+    
+    if self.zigbee_communitation != "zigpy":
+        return False
+    if Nwkid not in self.ListOfDevices:
+        return False
+    if Nwkid == "0000":
+        return False
+    if "ZDP-IN-SQN" not in self.ListOfDevices[ Nwkid ]:
+        self.ListOfDevices[ Nwkid ]["ZDP-IN-SQN"] = {}
+    if ClusterId not in self.ListOfDevices[ Nwkid ]["ZDP-IN-SQN"]:
+        self.ListOfDevices[ Nwkid ]["ZDP-IN-SQN"][ ClusterId ] = Sqn
+        return False
+    if Sqn == self.ListOfDevices[ Nwkid ]["ZDP-IN-SQN"][ ClusterId ]:
+        return True
+    self.ListOfDevices[ Nwkid ]["ZDP-IN-SQN"][ ClusterId ] = Sqn
+    return False
+
 
 def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame):
     # self.logging_8002( 'Debug', "zdp_decoders NwkId: %s Ep: %s Cluster: %s Payload: %s" %(SrcNwkId, SrcEndPoint, ClusterId , Payload))
@@ -29,7 +47,7 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         # Power_Desc_req
         self.log.logging("zdpDecoder", "Log", "Power_Desc_req NOT IMPLEMENTED YET")
         return frame
-    
+
     if ClusterId == "0036":
         self.log.logging("zdpDecoder", "Log", "Mgmt_Permit_Joining_req NOT IMPLEMENTED %s" %Payload)
         return None
@@ -85,12 +103,9 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         # Mgmt_Lqi_rsp
         return buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
 
-    if ClusterId == "8032":
-        # Mgmt_Rtg_rsp
-        return buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
-
-    if ClusterId == "8033":
+    if ClusterId in ( "8032", "8033"):
         # handle directly as raw in Modules/inputs/Decode8002
+        # Mgmt_Rtg_rsp and Mgmt_Bind_rsp
         return frame
 
     if ClusterId == "8034":
@@ -254,11 +269,10 @@ def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
     status = Payload[2:4]
     ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[4:20], 16)))[0]
     if status != "00":
-        
         buildPayload = sqn + status + ieee
     else:
         nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
-    
+
         self.log.logging("zdpDecoder", "Debug", "buildframe_nwk_address_response sqn: %s status: %s ieee: %s nwkid: %s" %( sqn, status, ieee, nwkid))
         NumAssocDev = Payload[24:26] if len(Payload) > 24 else ""
         StartIndex = Payload[26:28] if len(Payload) > 26 else ""
@@ -364,7 +378,7 @@ def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, P
             idx += 2
 
             # bitfield1 + bitfield2 joing in NXP stack
-            devicetype =     bitfield1 & 0x03
+            devicetype = bitfield1 & 0x03
             rxonwhenidle = ( bitfield1 & 0x0C) >> 2
             relationship = ( bitfield1 & 0x70) >> 4
             permitjoining = bitfield2 & 0x03
@@ -383,13 +397,6 @@ def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, P
         
         
     return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
-
-
-
-def buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_routing_response NOT IMPLEMENTED YET")
-    return frame
-
 
 def buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     self.log.logging("zdpDecoder", "Debug", "buildframe_leave_response")

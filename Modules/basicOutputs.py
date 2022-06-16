@@ -34,10 +34,10 @@ from Zigbee.zdpRawCommands import (zdp_management_binding_table_request,
 from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
                                        send_zigatecmd_zcl_noack)
-from Modules.tools import (build_fcf, getListOfEpForCluster,
-                           is_ack_tobe_disabled, is_hex, mainPoweredDevice,
-                           set_isqn_datastruct, set_request_datastruct,
-                           set_timestamp_datastruct, get_and_inc_ZDP_SQN)
+from Modules.tools import (build_fcf, get_and_inc_ZDP_SQN,
+                           getListOfEpForCluster, is_ack_tobe_disabled, is_hex,
+                           mainPoweredDevice, set_isqn_datastruct,
+                           set_request_datastruct, set_timestamp_datastruct)
 from Modules.zigateCommands import (zigate_blueled,
                                     zigate_firmware_default_response,
                                     zigate_get_nwk_state, zigate_get_time,
@@ -649,50 +649,35 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
     if key not in self.ListOfDevices:
         self.log.logging("BasicOutput", "Error", "set_PowerOn_OnOff for %s not found" % (key), key)
         return
+    
     model_name = ""
     if "Model" in self.ListOfDevices[key]:
         model_name = self.ListOfDevices[key]["Model"]
+        
     manuf_spec = "00"
     manuf_id = "0000"
 
     ListOfEp = getListOfEpForCluster(self, key, "0006")
     cluster_id = "0006"
     attribute = "4003"
+    data_type = "30"  #
 
-    if model_name in ( "TS0121", "TS0115", "TS011F-multiprise", "TS011F-2Gang-switches", "TS011F-plug" ):
+    if model_name in ( "TS0121", "TS0115", "TS011F-multiprise", "TS011F-2Gang-switches", "TS011F-plug" , "TS0004-_TZ3000_excgg5kb", ):
         attribute = "8002"
         if OnOffMode == 0xFF:
             OnOffMode = 0x02
 
-    data_type = "30"  #
-    ListOfEp = getListOfEpForCluster(self, key, "0006")
+    if model_name in ( "TS0004-_TZ3000_excgg5kb",):
+        ListOfEp = ( "01", )
+        
+    self.log.logging( "BasicOutput", "Debug", "set_PowerOn_OnOff for %s - OnOff: %s %s %s" % (key, OnOffMode, attribute, ListOfEp), key )
+    
     for EPout in ListOfEp:
-        data = "%02x" % OnOffMode
-        self.log.logging(
-            "BasicOutput", "Debug", "set_PowerOn_OnOff for %s/%s - OnOff: %s" % (key, EPout, OnOffMode), key
-        )
+        data = "%02x" % int(OnOffMode)
+        self.log.logging( "BasicOutput", "Debug", "set_PowerOn_OnOff for %s/%s - OnOff: %s" % (key, EPout, OnOffMode), key )
         if attribute in self.ListOfDevices[key]["Ep"][EPout]["0006"]:
             del self.ListOfDevices[key]["Ep"][EPout]["0006"][attribute]
-        return write_attribute(
-            self,
-            key,
-            ZIGATE_EP,
-            EPout,
-            cluster_id,
-            manuf_id,
-            manuf_spec,
-            attribute,
-            data_type,
-            data,
-            ackIsDisabled=True,
-        )
-
-
-def ieee_addr_request(self, lookup):
-    u8RequestType = "00"
-    u8StartIndex = "00"
-    zdp_IEEE_address_request(self, lookup, u8RequestType , u8StartIndex)
-    #sendZigateCmd(self, "0041", "02" + nwkid + u8RequestType + u8StartIndex)
+        return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True, )
 
 
 def unknown_device_nwkid(self, nwkid):
@@ -706,7 +691,7 @@ def unknown_device_nwkid(self, nwkid):
     # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
     if self.networkmap and not self.networkmap.NetworkMapPhase():
         self.networkmap.start_scan()
-    ieee_addr_request(self, nwkid)
+    zdp_IEEE_address_request(self, "fffd", nwkid, )
 
 
 def send_default_response(

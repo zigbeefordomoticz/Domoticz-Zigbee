@@ -32,9 +32,13 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
 from Modules.schneider_wiser import (iTRV_open_window_detection,
                                      wiser_home_lockout_thermostat)
 from Modules.tools import getEpForCluster
-from Modules.tuya import (get_tuya_attribute, tuya_backlight_command,
+from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
+                          SmartRelayStatus03, SmartRelayStatus04,
+                          get_tuya_attribute, tuya_backlight_command,
                           tuya_cmd_ts004F, tuya_energy_childLock,
+                          tuya_external_switch_mode, tuya_garage_run_time,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
+                          tuya_TS0004_back_light, tuya_TS0004_indicate_light,
                           tuya_window_cover_calibration,
                           tuya_window_cover_motor_reversal)
 from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
@@ -102,61 +106,58 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
     # 1 - stay On after a Off/On
     # 255 - stay to previous state after a Off/On ( or 2 for BlitzWolf)
 
-    self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s" % (nwkid, mode), nwkid)
-    if mode not in (0, 1, 2, 255):
+    model = ""
+    if "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"]:
+        model = self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"]
+        
+    self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s for model: %s " % (nwkid, mode, model), nwkid)
+    if int(mode) not in (0, 1, 2, 255):
         return
 
     if "Manufacturer" not in self.ListOfDevices[nwkid]:
         return
 
     if self.ListOfDevices[nwkid]["Manufacturer"] == "100b":  # Philips
-        if "0b" not in self.ListOfDevices[nwkid]["Ep"]:
+        if not _check_attribute_exist( self, nwkid, "0b", "0006", "4003"):
             return
-        if "0006" not in self.ListOfDevices[nwkid]["Ep"]["0b"]:
-            return
-        if "4003" not in self.ListOfDevices[nwkid]["Ep"]["0b"]["0006"]:
-            return
+
         if self.ListOfDevices[nwkid]["Ep"]["0b"]["0006"]["4003"] != str(mode):
             self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for Philips for %s mode: %s" % (nwkid, mode), nwkid)
             philips_set_poweron_after_offon_device(self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
-    elif "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in (
+    elif model in (
         "TS0121",
         "TS0115",
         "TS011F-multiprise",
         "TS011F-2Gang-switches",
-        "TS011F-plug"
+        "TS011F-plug",
+        "TS0004",
+        "TS0004-_TZ3000_excgg5kb",
     ):
         self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s TUYA Manufacturer" % (nwkid, mode), nwkid)
-        # Tuya ( 'TS0121' BlitzWolf )
-        if "01" not in self.ListOfDevices[nwkid]["Ep"]:
-            return
-        if "0006" not in self.ListOfDevices[nwkid]["Ep"]["01"]:
-            return
-        if "8002" not in self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]:
+        
+        if not _check_attribute_exist( self, nwkid, "01", "0006", "8002"):
             return
 
         if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["8002"] == "2" and str(mode) == "255":
             return
+
         if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["8002"] != str(mode):
             self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for Tuya for %s mode: %s" % (nwkid, mode), nwkid)
             set_poweron_afteroffon(self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
-
+            
     elif self.ListOfDevices[nwkid]["Manufacturer"] == "1277":  # Enki Leroy Merlin
-        if "01" not in self.ListOfDevices[nwkid]["Ep"]:
+        if not _check_attribute_exist( self, nwkid, "01", "0006", "4003"):
             return
-        if "0006" not in self.ListOfDevices[nwkid]["Ep"]["01"]:
-            return
-        if "4003" not in self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]:
-            return
+
         if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["4003"] != str(mode):
             self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for Enki for %s mode: %s" % (nwkid, mode), nwkid)
             enki_set_poweron_after_offon_device(self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
-    elif "Model" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in (
+    elif model in (
         "TS0601-switch",
         "TS0601-2Gangs-switch",
         "TS0601-Energy",
@@ -167,15 +168,31 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
     else:
         # Ikea, Legrand,
         for ep in self.ListOfDevices[nwkid]["Ep"]:
-            if "0006" not in self.ListOfDevices[nwkid]["Ep"][ep]:
+            if not _check_attribute_exist( self, nwkid, ep, "0006", "4003"):
                 continue
-            if "4003" in self.ListOfDevices[nwkid]["Ep"][ep]["0006"] and self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["4003"] == str(mode):
+
+            if self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["4003"] == str(mode):
                 continue
-            elif "8002" in self.ListOfDevices[nwkid]["Ep"][ep]["0006"] and self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["8002"] == str(mode):
+            elif not _check_attribute_exist( self, nwkid, ep, "0006", "8002") and self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["8002"] == str(mode):
                 continue
+            
             self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s" % (nwkid, mode), nwkid)
             set_poweron_afteroffon(self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
+
+def _check_attribute_exist( self, nwkid, ep, cluster, attribute):
+    if ep not in self.ListOfDevices[nwkid]["Ep"]:
+        self.log.logging("Heartbeat", "Log", "No ep: %s" %ep, nwkid)
+        return False
+    if cluster not in self.ListOfDevices[nwkid]["Ep"][ ep ]:
+        self.log.logging("Heartbeat", "Log", "No Cluster: %s" %cluster, nwkid)
+        return False
+    if attribute not in self.ListOfDevices[nwkid]["Ep"][ ep ][ cluster ]:
+        self.log.logging("Heartbeat", "Log", "No Attribute: %s" %attribute, nwkid)
+        return False
+    return True
+   
+
 
 def ias_wd_sirene_max_alarm_dureation( self, nwkid, duration):
     if self.iaszonemgt:
@@ -219,7 +236,15 @@ DEVICE_PARAMETERS = {
     "TuyaAlarmLevel": tuya_siren2_alarm_volume,
     "TuyaAlarmDuration": tuya_siren2_alarm_duration,
     "TuyaAlarmMelody": tuya_siren2_alarm_melody,
-    "SireneMaxAlarmDuration": ias_wd_sirene_max_alarm_dureation
+    "SireneMaxAlarmDuration": ias_wd_sirene_max_alarm_dureation,
+    "TuyaGarageOpenerRunTime": tuya_garage_run_time,
+    "TuyaSwitchMode": tuya_external_switch_mode,
+    "SmartSwitchBackLight": tuya_TS0004_back_light,
+    "SmartSwitchIndicateLight": tuya_TS0004_indicate_light,  
+    "SmartRelayStatus01": SmartRelayStatus01,
+    "SmartRelayStatus02": SmartRelayStatus02,
+    "SmartRelayStatus03": SmartRelayStatus03,
+    "SmartRelayStatus04": SmartRelayStatus04,  
 }
 
 def sanity_check_of_param(self, NwkId):

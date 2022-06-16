@@ -6,7 +6,7 @@
 
 import struct
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import get_and_inc_ZCL_SQN
+from Modules.tools import get_and_inc_ZCL_SQN, direction, build_fcf, is_ack_tobe_disabled
 from Zigbee.encoder_tools import decode_endian_data
 
 DEFAULT_ACK_MODE = False
@@ -103,16 +103,36 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
     raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
     return sqn
     
-def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_command, sqn):
-    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command}")
+def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
+    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}")
 
+    if "disableZCLDefaultResponse" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["disableZCLDefaultResponse"]:
+        return
+    
+    if response_to_command == "0b":
+        # Never return a default response to a default response
+        return
     cmd = "0b"
-    cluster_frame = 0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
-    fcf = "%02x" % cluster_frame
-    payload = fcf + sqn + cmd + response_to_command + "00"
+    if orig_fcf is None:
+        frame_control_field = "%02x" %0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
+    else:
+        # The frame control field SHALL be specified as follows. The frame type sub-field SHALL be set to indicate
+        # a global command (0b00). The manufacturer specific sub-field SHALL be set to 0 if this command is being
+        # sent in response to a command defined for any cluster in the ZCL or 1 if this command is being sent in
+        # response to a manufacturer specific command.
+        zcl_frame_type = "0"
+        zcl_manuf_specific = "1" if (manufcode and manufcode != "0000") else "0"
+        zcl_target_direction = "%02x" %( not direction( orig_fcf ))
+        zcl_disabled_default = "1"
+        frame_control_field = build_fcf(zcl_frame_type, zcl_manuf_specific, zcl_target_direction, zcl_disabled_default)
+    
+    payload = frame_control_field 
+    if manufcode and manufcode != "0000":
+        payload += manufcode[2:4] + manufcode[:2]
+    payload += sqn + cmd + response_to_command + command_status
     self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}")
 
-    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=False)
+    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=is_ack_tobe_disabled(self, nwkid))
     return sqn
     
     
@@ -165,7 +185,7 @@ def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, dir
 # Cluster 0004: Groups
 
 def zcl_raw_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_add_group_membership %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_add_group_membership %s %s %s %s" % (nwkid, epin, epout, GrpId))
     
     cmd = "00"
     cluster = "0004"
@@ -180,7 +200,7 @@ def zcl_raw_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=
     
 
 def zcl_raw_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_check_group_member_ship %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_check_group_member_ship %s %s %s %s" % (nwkid, epin, epout, GrpId))
     
     cmd = "01"
     cluster = "0004"
@@ -195,7 +215,7 @@ def zcl_raw_check_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabl
 
 
 def zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_list, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_look_for_group_member_ship %s %s %s %s %s" % (nwkid, epin, epout, nbgroup, group_list))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_look_for_group_member_ship %s %s %s %s %s" % (nwkid, epin, epout, nbgroup, group_list))
     
     cmd = "02"
     cluster = "0004"
@@ -208,7 +228,7 @@ def zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_
     payload += sqn + cmd + nbgroup  
 
     idx = 0
-    while  idx < int(nbgroup,16)*4:
+    while idx < int(nbgroup,16) * 4:
         payload += decode_endian_data( group_list[ idx : idx + 4 ], "21")
         idx += 4
 
@@ -217,7 +237,7 @@ def zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_
 
 
 def zcl_raw_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_remove_group_member_ship %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_remove_group_member_ship %s %s %s %s" % (nwkid, epin, epout, GrpId))
     
     cmd = "03"
     cluster = "0004"
@@ -232,7 +252,7 @@ def zcl_raw_remove_group_member_ship(self, nwkid, epin, epout, GrpId, ackIsDisab
 
 
 def zcl_raw_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_remove_group_member_ship %s %s %s" % (nwkid, epin, epout))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_remove_group_member_ship %s %s %s" % (nwkid, epin, epout))
     
     cmd = "05"
     cluster = "0004"
@@ -247,7 +267,7 @@ def zcl_raw_remove_all_groups(self, nwkid, epin, epout, ackIsDisabled=DEFAULT_AC
 
 
 def zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "zcl_raw_send_group_member_ship_identify %s %s %s %s" % (nwkid, epin, epout, GrpId))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_send_group_member_ship_identify %s %s %s %s" % (nwkid, epin, epout, GrpId))
 
     cmd = "06"
     cluster = "0004"
@@ -265,7 +285,7 @@ def zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, GrpId, ack
 # Cluster 0006: On/Off
 ######################
 def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect="", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "raw_zcl_zcl_onoff %s %s %s %s %s %s" % (nwkid, EPIn, EpOut, command, effect, groupaddrmode))
+    self.log.logging("zclCommand", "Debug", "raw_zcl_zcl_onoff %s %s %s %s %s %s" % (nwkid, EPIn, EpOut, command, effect, groupaddrmode))
 
     Cluster = "0006"
     ONOFF_COMMANDS = {
@@ -341,6 +361,7 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
     Cluster = "0102"
     WINDOW_COVERING_COMMANDS = {"Up": 0x00, "Down": 0x01, "Stop": 0x02, "GoToLiftValue": 0x04, "GoToLiftPercentage": 0x05, "GoToTiltValue": 0x07, "GoToTiltPercentage": 0x08}
     if command not in WINDOW_COVERING_COMMANDS:
+        self.log.logging("zclCommand", "Error", "zcl_raw_window_covering UNKNOW COMMAND drop it %s %s %s %s %s" % (nwkid, EPout, command, level, percentage))
         return
 
     # Cluster Frame:
@@ -355,11 +376,12 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + "%02x" % WINDOW_COVERING_COMMANDS[command]
-    if command in ("MovetoLevel", "MovetoLevelWithOnOff"):
+    if command in ( "GoToLiftValue", "GoToTiltValue"):
         payload += level
-    elif command == ("GoToLiftValue", "GoToTiltValue"):
+    elif command in ( "GoToLiftPercentage", "GoToTiltPercentage"):
         payload += percentage
 
+    self.log.logging("zclCommand", "Error", "zcl_raw_window_covering payload %s %s" % (nwkid, payload))
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
@@ -502,17 +524,26 @@ def zcl_raw_ias_wd_command_start_warning(self, EPin, EPout, nwkid, warning_mode=
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
+    if warning_mode == strobe_mode == 0x00:
+        warning_duration = 0x00
     # Warnindg mode , Strobe, Sirene Level
-    field1 = 0x00
-    field1 = field1 & 0xF0 | (warning_mode << 4)
-    field1 = field1 & 0xF7 | ((strobe_mode & 0x01) << 2)
-    field1 = field1 & 0xFC | (siren_level & 0x03)
+    #field1 = 0x00
+    #field1 = field1 & 0xF0 | (warning_mode << 4)           # bit 8-4 Warning Mode
+    #field1 = field1 & 0xF7 | ((strobe_mode & 0x01) << 2)   # bit 3-2 Strobe 
+    #field1 = field1 & 0xFC | (siren_level & 0x03)          # bit 1-0 Siren Level 
 
     payload = "%02x" % cluster_frame + sqn + cmd
-    payload += "%02x" % field1 + "%04x" % struct.unpack(">H", struct.pack("H", warning_duration))[0] + "%02x" % (strobe_duty) + "%02x" % (strobe_level)
+    payload += "%02x" % startwarning_payload(self, nwkid, warning_mode, strobe_mode, siren_level) + "%04x" % struct.unpack(">H", struct.pack("H", warning_duration))[0] + "%02x" % (strobe_duty) + "%02x" % (strobe_level)
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
+def startwarning_payload(self, nwkid, warning_mode, strobe_mode, siren_level):
+    
+    if "Model" not in self.ListOfDevices[nwkid] or self.ListOfDevices[nwkid]["Model"] not in ('SIRZB-110', 'SRAC-23B-ZBSR', 'AV201029A', 'AV201024A'):
+        return (warning_mode << 4) + (strobe_mode << 2) + siren_level
+    if strobe_mode and not warning_mode:
+        return (warning_mode << 4) + (strobe_mode << 2) + siren_level
+    return warning_mode + ( (strobe_mode) << 4) + (siren_level << 6)
 
 def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe, squawk_level, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_raw_ias_wd_command_squawk %s %s %s %s" % (nwkid, squawk_mode, strobe, squawk_level))
@@ -522,12 +553,19 @@ def zcl_raw_ias_wd_command_squawk(self, EPin, EPout, nwkid, squawk_mode, strobe,
     cluster_frame = 0b00010001
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
-    field1 = 0x0000
-    field1 = field1 & 0xF0 | (squawk_mode << 4)
-    field1 = field1 & 0xF7 | ((strobe & 0x01) << 3)
-    field1 = field1 & 0xFC | (squawk_level & 0x03)
+    #field1 = 0x0000
+    #field1 = field1 & 0xF0 | (squawk_mode << 4)       # bit 8-4  Squawk mode
+    #field1 = field1 & 0xF7 | ((strobe & 0x01) << 3)   # bit   3  Strobe 
+    #field1 = field1 & 0xFC | (squawk_level & 0x03)    # bit   1  Squawk level
+    field1 = squawk_payload(self, nwkid,squawk_mode,strobe, squawk_level )
     payload = "%02x" % cluster_frame + sqn + cmd + "%02x" % field1
 
     self.log.logging("zclCommand", "Debug", "zcl_raw_ias_wd_command_squawk %s payload: %s (field1 %s)" % (nwkid, payload, field1))
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
+
+def squawk_payload(self, nwkid,squawk_mode,strobe, squawk_level ):
+    
+    if "Model" not in self.ListOfDevices[nwkid] or self.ListOfDevices[nwkid]["Model"] not in ('SIRZB-110', 'SRAC-23B-ZBSR', 'AV201029A', 'AV201024A'):
+        return (squawk_mode << 4) + (strobe << 3) + squawk_level
+    return (squawk_mode) + (strobe << 4) + (squawk_level << 6)

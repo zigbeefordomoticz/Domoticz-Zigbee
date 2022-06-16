@@ -151,6 +151,8 @@ def getEpForCluster(self, nwkid, ClusterId, strict=False):
             continue
         if ClusterId in self.ListOfDevices[nwkid]["Ep"][x]:
             EPlist.append( str(x) )
+    if strict and not EPlist:
+        return None
     return EPlist
 
 
@@ -737,7 +739,7 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
         return inMacCapa
 
     # Convert battery annouced devices to main powered / Make sure that you do the reverse n NetworkMap
-    if self.ListOfDevices[nwkid]["Model"] in ("TI0001", "TS0011", "TS0013", "TS0601-switch", "TS0601-2Gangs-switch"):
+    if self.ListOfDevices[nwkid]["Model"] in ("TI0001", "TS0011", "TS0013", "TS0601-switch", "TS0601-2Gangs-switch", ):
         # Livol Switch, must be converted to Main Powered
         # Patch some status as Device Annouced doesn't provide much info
         self.ListOfDevices[nwkid]["LogicalType"] = "Router"
@@ -802,9 +804,10 @@ def mainPoweredDevice(self, nwkid):
         mainPower = False
 
     # These are device annouced as Battery, but are Main Powered ( some time without neutral)
-    if model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch"):
+    if model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch", "ZBMINI-L",):
         mainPower = True
-
+        self.ListOfDevices[nwkid]["LogicalType"] = "End Device"
+        self.ListOfDevices[nwkid]["DevideType"] = "RFD"
 
     if not mainPower and "PowerSource" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PowerSource"] != {}:
         mainPower = self.ListOfDevices[nwkid]["PowerSource"] == "Main"
@@ -971,9 +974,11 @@ def retreive_cmd_payload_from_8002(Payload):
     fcf = Payload[:2]
 
     GlobalCommand = is_golbalcommand(fcf)
+    zbee_zcl_ddr = disable_default_response(fcf)
+
     if GlobalCommand is None:
         Domoticz.Error("Strange payload: %s" % Payload)
-        return (None, None, None, None, None)
+        return (None, None, None, None, None, None)
 
     if is_manufspecific_8002_payload(fcf):
         ManufacturerCode = Payload[4:6] + Payload[2:4]
@@ -986,7 +991,7 @@ def retreive_cmd_payload_from_8002(Payload):
         Data = Payload[6:]
 
     # Domoticz.Log("retreive_cmd_payload_from_8002 ======> Payload: %s " %Data)
-    return (GlobalCommand, Sqn, ManufacturerCode, Command, Data)
+    return (zbee_zcl_ddr, GlobalCommand, Sqn, ManufacturerCode, Command, Data)
 
 def direction(fcf):
     # If direction = 1 Server to Client
@@ -995,6 +1000,9 @@ def direction(fcf):
     if not is_hex(fcf) or len(fcf) != 2:
         return None
     return (int(fcf, 16) & 0x08) >> 3
+
+def disable_default_response(fcf):
+    return (int(fcf,16) & 0x10) >> 4
 
 def is_direction_to_client(fcf):
     return direction(fcf) == 0x1
@@ -1007,10 +1015,11 @@ def is_golbalcommand(fcf):
         return None
     return (int(fcf, 16) & 0b00000011) == 0
 
-
+def frame_type(fcf):
+    return (int(fcf, 16) & 0b00000011)
+    
 def is_manufspecific_8002_payload(fcf):
     return ((int(fcf, 16) & 0b00000100) >> 2) == 1
-
 
 def build_fcf(frame_type, manuf_spec, direction, disabled_default):
     fcf = 0b00000000 | int(frame_type, 16)
@@ -1286,6 +1295,8 @@ def instrument_timing(module, timing, cnt_timing, cumul_timing, aver_timing, max
 # Configuration Helpers
 def setConfigItem(Key=None, Attribute="", Value=None):
 
+    Domoticz.Log("Saving %s - %s into Domoticz sqlite Db" %( Key, Attribute))
+    
     Config = {}
     if not isinstance(Value, (str, int, float, bool, bytes, bytearray, list, dict)):
         Domoticz.Error("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
@@ -1310,7 +1321,12 @@ def setConfigItem(Key=None, Attribute="", Value=None):
     return Config
 
 
-def getConfigItem(Key=None, Attribute="", Default={}):
+def getConfigItem(Key=None, Attribute="", Default=None):
+    
+    Domoticz.Log("Loading %s - %s into Domoticz sqlite Db" %( Key, Attribute))
+    
+    if Default is None:
+        Default = {}
     Value = Default
     try:
         Config = Domoticz.Configuration()
@@ -1436,3 +1452,32 @@ def get_deviceconf_parameter_value(self, model, attribute, return_default=None):
     if attribute not in self.DeviceConf[ model ]:
         return return_default
     return self.DeviceConf[ model ][ attribute ]
+
+
+def night_shift_jobs( self ):
+    # If NighShift not enable, then alwasy return True
+    # Otherwise return True only if between midnight and 6am
+
+    if not self.pluginconf.pluginConf["NightShift"]:
+        # Domoticz.Log("Always On" )
+        return True
+
+    current = datetime.datetime.now().time()
+
+    # Check against first part of the night
+    start = datetime.time(23, 0,0)
+    end = datetime.time(23,59,59)
+
+    if start <= current <= end:
+        #Domoticz.Log("Inside of Night Shift period %s %s %s" %( start, current, end))
+        return True
+
+    # Check against the second part of the night
+    start = datetime.time(0, 0,0)
+    end = datetime.time(6,0,0)
+    if start <= current <= end:
+        #Domoticz.Log("Inside of Night Shift period %s %s %s" %( start, current, end))
+        return True
+
+    #Domoticz.Log("Outside of Night Shift period %s %s %s" %( start, current, end))
+    return False

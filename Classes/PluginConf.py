@@ -79,6 +79,15 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": False,
             },
+            "NightShift": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+ 
+            }
         },
     },
     "GroupManagement": {
@@ -180,13 +189,22 @@ SETTINGS = {
     "WebInterface": {
         "Order": 4,
         "param": {
-            "Sibling": {
+            "TopologyV2": {
                 "type": "bool",
                 "default": 1,
                 "current": None,
                 "restart": 0,
                 "hidden": False,
-                "Advanced": False,
+                "Advanced": True,
+            },
+
+            "Sibling": {
+                "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
             },
             "Lang": {
                 "type": "str",
@@ -225,7 +243,7 @@ SETTINGS = {
                 "default": 1,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "enableChunk": {
@@ -1321,6 +1339,23 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "forceZigpy_noasyncio": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "disableZCLDefaultResponse": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+  
+            },
             "ControllerInHybridMode": {
                 "type": "bool",
                 "default": 0,
@@ -1353,30 +1388,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "RoutingTableRequestFeq": {
-                "type": "int",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
-            "BindingTableRequestFeq": {
-                "type": "int",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
-            "doManyToOneRoute": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
             "DropBadAnnoucement": {
                 "type": "bool",
                 "default": 1,
@@ -1386,6 +1397,14 @@ SETTINGS = {
                 "Advanced": True,
             },
             "expJsonDatabase": {
+                "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
+            "storeDomoticzDatabase": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
@@ -1398,15 +1417,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
-            "XiaomiLeave": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
+                "hidden": False,
                 "Advanced": True,
             },
             "rebindLivolo": {
@@ -1896,7 +1907,7 @@ class PluginConf:
         with open(pluginConfFile, "wt") as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
-        if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"]:
+        if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
             setConfigItem(Key="PluginConf", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
 
 

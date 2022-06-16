@@ -18,6 +18,7 @@ from Modules.tools import get_and_inc_ZDP_SQN
 
 
 def zdp_raw_NWK_address_request(self, router, ieee, u8RequestType, u8StartIndex):
+    # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
 
     Cluster = "0000"
     sqn = get_and_inc_ZDP_SQN(self, router)
@@ -45,7 +46,9 @@ def zdp_raw_NWK_address_request(self, router, ieee, u8RequestType, u8StartIndex)
     return sqn
 
 
-def zdp_raw_IEEE_address_request(self, nwkid, u8RequestType, u8StartIndex):
+def zdp_raw_IEEE_address_request(self, router, nwkid, u8RequestType, u8StartIndex):
+    # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
+    
     Cluster = "0001"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0] + u8RequestType + u8StartIndex
@@ -59,7 +62,7 @@ def zdp_raw_IEEE_address_request(self, nwkid, u8RequestType, u8StartIndex):
 
     raw_APS_request(
         self,
-        nwkid,
+        router,
         "00",
         Cluster,
         "0000",

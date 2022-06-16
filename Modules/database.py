@@ -10,6 +10,7 @@
 
 """
 
+
 import json
 import os.path
 import time
@@ -20,16 +21,20 @@ import Domoticz
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
 
-ZIGATE_ATTRIBUTES = {
-    "Version",
-    "ZDeviceName",
-    "Ep",
-    "IEEE",
-    "LogicalType",
-    "PowerSource",
-    "Neighbours",
-    "GroupMemberShip",
-}
+CIE_ATTRIBUTES = {
+    "Version", 
+    "ZDeviceName", 
+    "Ep", 
+    "IEEE", 
+    "LogicalType", 
+    "PowerSource", 
+    "GroupMemberShip", 
+    "Neighbours", 
+    "NeighbourTableSize", 
+    "RoutingTable", 
+    "AssociatedDevices"
+    }
+
 
 MANDATORY_ATTRIBUTES = (
     "App Version",
@@ -78,10 +83,12 @@ MANDATORY_ATTRIBUTES = (
 
 # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
 BUILD_ATTRIBUTES = (
+    "ParamConfigureReporting",
     "Log_UnknowDeviceFlag",
     "NeighbourTableSize",
     "BindingTable",
     "RoutingTable",
+    "AssociatedDevices",
     "Battery",
     "BatteryUpdateTime",
     "GroupMemberShip",
@@ -136,9 +143,9 @@ def _versionFile(source, nbversion):
             _fileversion_n = source + "-%02d" % version
             if not os.path.isfile(_fileversion_n):
                 continue
-            else:
-                _fileversion_n1 = source + "-%02d" % (version + 1)
-                _copyfile(_fileversion_n, _fileversion_n1)
+
+            _fileversion_n1 = source + "-%02d" % (version + 1)
+            _copyfile(_fileversion_n, _fileversion_n1)
 
         # Last one
         _copyfile(source, source + "-%02d" % 1, move=False)
@@ -240,18 +247,6 @@ def LoadDeviceList(self):
                 len(self.ListOfDevices),
             ),
         )
-        #try:
-        #    import sys
-#
-        #    sys.path.append("/usr/lib/python3.8/site-packages")
-        #    import deepdiff
-#
-        #    diff = deepdiff.DeepDiff(self.ListOfDevices, ListOfDevices_from_Domoticz)
-        #    self.log.logging("Database", "Log", json.dumps(json.loads(diff.to_json()), indent=4))
-#
-        #except:
-        #    # self.log.logging("Database", "Log", "Python Module deepdiff not found")
-        #    pass
 
     return res
 
@@ -349,7 +344,7 @@ def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
     return False
 
 
-def WriteDeviceList(self, count):
+def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
     if self.HBcount < count:
         self.HBcount = self.HBcount + 1
         return
@@ -366,8 +361,10 @@ def WriteDeviceList(self, count):
 
     _write_DeviceList_txt(self)
 
-    if Modules.tools.is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
-        # We need to patch None as 'None'
+    if (
+        Modules.tools.is_domoticz_db_available(self) 
+        and ( self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]) 
+    ):
         if _write_DeviceList_Domoticz(self) is None:
             # An error occured. Probably Dz.Configuration() is not available.
             _write_DeviceList_txt(self)
@@ -497,12 +494,7 @@ def checkDevices2LOD(self, Devices):
     for nwkid in self.ListOfDevices:
         self.ListOfDevices[nwkid]["ConsistencyCheck"] = ""
         if self.ListOfDevices[nwkid]["Status"] == "inDB":
-            for dev in Devices:
-                if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]:
-                    self.ListOfDevices[nwkid]["ConsistencyCheck"] = "ok"
-                    break
-            else:
-                self.ListOfDevices[nwkid]["ConsistencyCheck"] = "not in DZ"
+            self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
 
 
 def checkListOfDevice2Devices(self, Devices):
@@ -607,8 +599,7 @@ def CheckDeviceList(self, key, val):
         return
 
     if key == "0000":
-        self.ListOfDevices[key] = {}
-        self.ListOfDevices[key]["Status"] = ""
+        self.ListOfDevices[key] = {"Status": ""}
     else:
         Modules.tools.initDeviceInList(self, key)
 
@@ -625,7 +616,7 @@ def CheckDeviceList(self, key, val):
         self.log.logging(
             "Database", "Debug", "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" % DeviceListVal["IEEE"]
         )
-        IMPORT_ATTRIBUTES = list(set(ZIGATE_ATTRIBUTES))
+        IMPORT_ATTRIBUTES = list(set(CIE_ATTRIBUTES))
         self.log.logging("Database", "Debug", "--> Attributes loaded: %s" % IMPORT_ATTRIBUTES)
     else:
         self.log.logging(

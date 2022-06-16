@@ -70,6 +70,7 @@ class WebServer(object):
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import DumpHTTPResponseToLog, keepConnectionAlive
     from Classes.WebServer.rest_PluginUpgrade import rest_plugin_upgrade
+    from Classes.WebServer.rest_CfgReporting import rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config
 
     hearbeats = 0
 
@@ -118,6 +119,7 @@ class WebServer(object):
         self.pluginParameters = PluginParameters
         self.networkmap = None
         self.networkenergy = None
+        self.configureReporting = None
 
         self.permitTojoin = permitTojoin
 
@@ -150,6 +152,9 @@ class WebServer(object):
     def update_networkmap(self, networkmap):
         self.networkmap = networkmap
 
+    def update_configureReporting(self,configureReporting ):
+        self.configureReporting = configureReporting
+        
     def add_element_to_devices_in_pairing_mode( self, nwkid):
         if nwkid not in self.DevicesInPairingMode:
             self.DevicesInPairingMode.append( nwkid )
@@ -237,7 +242,9 @@ class WebServer(object):
                 coordinator_infos["Branch Version"] = self.ControllerData["Branch Version"]
                 coordinator_infos["Major Version"] = self.ControllerData["Major Version"] 
                 coordinator_infos["Minor Version"] = self.ControllerData["Minor Version"] 
-
+                if "Network key" in self.ControllerData:
+                    coordinator_infos[ "Network Key"] = self.ControllerData["Network key"] 
+                                      
                 if 0 <= int(self.ControllerData["Branch Version"]) < 20:   
                     coordinator_infos["Display Firmware Version"] = "Zig - %s" % self.ControllerData["Minor Version"] 
                 elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
@@ -369,7 +376,7 @@ class WebServer(object):
         if verb == "GET":
             from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
-            restartPluginViaDomoticzJsonApi(self)
+            restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=self.pluginParameters["Mode5"])
 
             info = {"Text": "Plugin restarted", "TimeStamp": int(time())}
             _response["Data"] = json.dumps(info, sort_keys=True)
@@ -795,7 +802,10 @@ class WebServer(object):
                         "Battery",
                     ):
                         if item in self.ListOfDevices[x]:
-                            if item == "MacCapa":
+                            if item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, ):
+                                if "IASBattery" in self.ListOfDevices[x]:
+                                    device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
+                            elif item == "MacCapa":
                                 device["MacCapa"] = []
                                 mac_capability = int(self.ListOfDevices[x][item], 16)
                                 AltPAN = mac_capability & 0x00000001
@@ -946,8 +956,11 @@ class WebServer(object):
                         "Stack Version",
                         "HW Version",
                     ):
+                        if attribut == "Battery" and attribut in self.ListOfDevices[item] and self.ListOfDevices[item]["Battery"] in ( {}, ):
+                            if "IASBattery" in self.ListOfDevices[item]:
+                                device[attribut] = str(self.ListOfDevices[item][ "IASBattery" ])
 
-                        if attribut in self.ListOfDevices[item]:
+                        elif attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
                                 device[attribut] = ""
 
@@ -1359,7 +1372,7 @@ class WebServer(object):
                         _battEnv["Battery"]["<30%"][_deviceName]["Battery"] = self.ListOfDevices[x]["Battery"]
                         
                     if "BatteryUpdateTime" in self.ListOfDevices[x]:
-                        if (int(time()) - self.ListOfDevices[x]["BatteryUpdateTime"]) > 604800: # one week in seconds
+                        if (int(time()) - self.ListOfDevices[x]["BatteryUpdateTime"]) > 604800:   # one week in seconds
                             _battEnv["Update Time"]["> 1 week"][_deviceName] = {}
                             _battEnv["Update Time"]["> 1 week"][_deviceName]["BatteryUpdateTime"] = self.ListOfDevices[x]["BatteryUpdateTime"]
                         else:

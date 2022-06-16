@@ -1729,7 +1729,8 @@ CLUSTERS_LIST = [
     "ff66",  # Private Cluster for ZLinky_TIC
 ]
 
-LEGRAND_REMOTES = ("Remote switch", "Double gangs remote switch", "Shutters central remote switch", "Remote motion sensor", "Remote toggle switch")
+LEGRAND_REMOTES = ("Remote switch", "Double gangs remote switch", "Shutters central remote switch", 
+                    "Remote motion sensor", "Remote toggle switch", "Remote switch Wake up Sleep")
 LEGRAND_REMOTE_SWITCHS = ("Remote switch", "Double gangs remote switch", "Remote toggle switch")
 LEGRAND_REMOTE_SHUTTER = ("Shutters central remote switch",)
 LEGRAND_REMOTE_MOTION = ("Remote motion sensor",)
