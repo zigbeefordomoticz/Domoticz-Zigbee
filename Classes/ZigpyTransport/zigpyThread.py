@@ -298,34 +298,7 @@ async def get_next_command(self):
 async def dispatch_command(self, data):
 
     if data["cmd"] == "PERMIT-TO-JOIN":
-        self.log.logging(
-            "TransportZigpy",
-            "Debug",
-            "PERMIT-TO-JOIN: %s duration: %s" % (data["datas"]["targetRouter"], data["datas"]["Duration"]),
-        )
-        duration = data["datas"]["Duration"]
-        target_router = data["datas"]["targetRouter"]
-        target_router = None if target_router == "FFFC" else t.EUI64(t.uint64_t(target_router).serialize())
-        duration == 0xFE if duration == 0xFF else duration
-        self.permit_to_join_timer["Timer"] = time.time()
-        self.permit_to_join_timer["Duration"] = duration 
-
-        if target_router is None:
-            self.log.logging("TransportZigpy", "Debug", "PERMIT-TO-JOIN: duration: %s for Radio: %s" % (duration, self._radiomodule))
-            if self._radiomodule == "deCONZ":
-                await self.app.permit_ncp( time_s=duration)
-            else:
-                await self.app.permit(time_s=duration)            
-        else:
-            self.log.logging(
-                "TransportZigpy", "Debug", "PERMIT-TO-JOIN: duration: %s target: %s" % (duration, target_router))
-            if self._radiomodule == "deCONZ":
-                await self.app.permit_ncp( time_s=duration)  
-            else:
-                await self.app.permit(time_s=duration, node=target_router)
-                
-
-
+        await _permit_to_joint(self, data)
     elif data["cmd"] == "SET-TX-POWER":
         await self.app.set_zigpy_tx_power(data["datas"]["Param1"])
     elif data["cmd"] == "SET-LED":
@@ -352,6 +325,25 @@ async def dispatch_command(self, data):
     elif data["cmd"] == "RAW-COMMAND":
         self.log.logging("TransportZigpy", "Debug", "RAW-COMMAND: %s" % properyly_display_data(data["datas"]))
         await process_raw_command(self, data["datas"], AckIsDisable=data["ACKIsDisable"], Sqn=data["Sqn"])
+
+async def _permit_to_joint(self, data):
+
+    self.log.logging( "TransportZigpy", "Log", "PERMIT-TO-JOIN: %s" % (data), )
+    duration = data["datas"]["Duration"]
+    target_router = data["datas"]["targetRouter"]
+    target_router = None if target_router == "FFFC" else t.EUI64(t.uint64_t(target_router).serialize())
+    duration == 0xFE if duration == 0xFF else duration
+    self.permit_to_join_timer["Timer"] = time.time()
+    self.permit_to_join_timer["Duration"] = duration
+
+    self.log.logging("TransportZigpy", "Log", "PERMIT-TO-JOIN: duration: %s for Radio: %s for node: %s" % (duration, self._radiomodule, target_router))
+
+    if self._radiomodule == "deCONZ":
+        return await self.app.permit_ncp( time_s=duration)
+
+    await self.app.permit(time_s=duration, node=target_router )
+    self.log.logging("TransportZigpy", "Log", "returning from the self.app.permit(time_s=%s, node=%s )" % (duration, target_router))
+
 
 
 async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
