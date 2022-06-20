@@ -27,11 +27,9 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
+
 import bellows.exception 
-from Classes.ZigpyTransport.AppBellows import App_bellows
-from Classes.ZigpyTransport.AppDeconz import App_deconz
-from Classes.ZigpyTransport.AppZigate import App_zigate
-from Classes.ZigpyTransport.AppZnp import App_znp
+
 from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
                                                    native_commands)
 from Classes.ZigpyTransport.plugin_encoders import (
@@ -123,22 +121,30 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
 
     if radiomodule == "ezsp":
+        from Classes.ZigpyTransport.AppBellows import App_bellows
         import bellows.config as conf
+        
         self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
         config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
 
     elif radiomodule =="zigate":
+        from Classes.ZigpyTransport.AppZigate import App_zigate
         import zigpy_zigate.config as conf
+        
         self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
         config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
 
     elif radiomodule =="znp":
+        from Classes.ZigpyTransport.AppZnp import App_znp
         import zigpy_znp.config as conf
+        
         self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
         config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
 
     elif radiomodule =="deCONZ":
+        from Classes.ZigpyTransport.AppDeconz import App_deconz
         import zigpy_deconz.config as conf
+        
         self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
         config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
         self.log.logging("TransportZigpy", "Debug", "Start Conf %s Done !" %radiomodule)
