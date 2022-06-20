@@ -50,6 +50,7 @@ TUYA_WATER_TIMER = ("_TZE200_htnnfasr", "_TZE200_akjefhj5", "_TZE200_81isopgh",)
 TUYA_ENERGY_MANUFACTURER = (
     "_TZE200_fsb6zw01",
     "_TZE200_byzdayie",
+    "_TZE200_ewxhg6o9"
 )
 TUYA_GARAGE_DOOR = ( "_TZE200_nklqjk62", )
 TUYA_SMARTAIR_MANUFACTURER = (
