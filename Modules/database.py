@@ -160,7 +160,9 @@ def LoadDeviceList(self):
 
     if Modules.tools.is_domoticz_db_available(self):
         ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
-        Domoticz.Log(
+        self.log.logging(
+            "Database",
+            "Debug",
             "Database from Dz is recent: %s Loading from Domoticz Db"
             % is_domoticz_recent(self, saving_time, self.pluginconf.pluginConf["pluginData"] + self.DeviceListName)
         )
@@ -259,18 +261,18 @@ def loadTxtDatabase(self, dbName):
     return res
 
 
-def loadJsonDatabase(self, dbName):
-    res = "Success"
-    with open(dbName, "rt") as handle:
-        _listOfDevices = {}
-        try:
-            _listOfDevices = json.load(handle)
-        except json.decoder.JSONDecodeError as e:
-            res = "Failed"
-            Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
-    for key in _listOfDevices:
-        CheckDeviceList(self, key, str(_listOfDevices[key]))
-    return res
+#def loadJsonDatabase(self, dbName):
+#    res = "Success"
+#    with open(dbName, "rt") as handle:
+#        _listOfDevices = {}
+#        try:
+#            _listOfDevices = json.load(handle)
+#        except json.decoder.JSONDecodeError as e:
+#            res = "Failed"
+#            Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
+#    for key in _listOfDevices:
+#        CheckDeviceList(self, key, str(_listOfDevices[key]))
+#    return res
 
 
 def _read_DeviceList_Domoticz(self):
@@ -283,7 +285,7 @@ def _read_DeviceList_Domoticz(self):
         self.log.logging(
             "Database",
             "Log",
-            "Plugin data loaded where saved on %s"
+            "Plugin data found on DZ with date %s"
             % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))),
         )
 
@@ -296,7 +298,7 @@ def _read_DeviceList_Domoticz(self):
         for x in list(ListOfDevices_from_Domoticz):
             for attribute in list(ListOfDevices_from_Domoticz[x]):
                 if attribute not in (MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
-                    self.log.logging("Database", "Log", "xxx Removing attribute: %s for %s" % (attribute, x))
+                    self.log.logging("Database", "Debug", "xxx Removing attribute: %s for %s" % (attribute, x))
                     del ListOfDevices_from_Domoticz[x][attribute]
 
     return (ListOfDevices_from_Domoticz, time_stamp)
