@@ -65,14 +65,14 @@ class ZigpyTransport(object):
         self.zigpy_thread = None
         self.forwarder_thread = None
 
-    def open_zigate_connection(self):
+    def open_cie_connection(self):
         start_zigpy_thread(self)
         start_forwarder_thread(self)
 
-    def re_connect_zigate(self):
+    def re_connect_cie(self):
         pass
 
-    def close_zigate_connection(self):
+    def close_cie_connection(self):
         pass
 
     def thread_transport_shutdown(self):

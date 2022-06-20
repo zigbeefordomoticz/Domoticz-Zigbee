@@ -618,7 +618,7 @@ class BasePlugin:
             Domoticz.Log("Start Zigpy Transport on zigate")
             
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
-            self.ControllerLink.open_zigate_connection()
+            self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpyZNP":
@@ -648,7 +648,7 @@ class BasePlugin:
             Domoticz.Log("Start Zigpy Transport on ZNP")
             
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
-            self.ControllerLink.open_zigate_connection()
+            self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpydeCONZ":
@@ -676,7 +676,7 @@ class BasePlugin:
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on deCONZ")            
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
-            self.ControllerLink.open_zigate_connection()
+            self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpyEZSP":
@@ -705,7 +705,7 @@ class BasePlugin:
             Domoticz.Log("Start Zigpy Transport on EZSP")
 
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
-            self.ControllerLink.open_zigate_connection()
+            self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
           
         else:
@@ -716,7 +716,7 @@ class BasePlugin:
 
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
-            self.ControllerLink.open_zigate_connection()
+            self.ControllerLink.open_cie_connection()
 
         # IAS Zone Management
         if self.iaszonemgt is None:
@@ -749,7 +749,7 @@ class BasePlugin:
             
         if self.pluginconf and self.ControllerLink:
             self.ControllerLink.thread_transport_shutdown()
-            self.ControllerLink.close_zigate_connection()
+            self.ControllerLink.close_cie_connection()
 
         if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop calling (4) WebServer off")
