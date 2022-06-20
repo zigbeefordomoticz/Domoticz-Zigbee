@@ -173,7 +173,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
 
             if self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["4003"] == str(mode):
                 continue
-            elif not _check_attribute_exist( self, nwkid, ep, "0006", "8002") and self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["8002"] == str(mode):
+            elif _check_attribute_exist( self, nwkid, ep, "0006", "8002") and self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["8002"] == str(mode):
                 continue
             
             self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s" % (nwkid, mode), nwkid)
