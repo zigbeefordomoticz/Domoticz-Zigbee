@@ -27,9 +27,6 @@ import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
-
-import bellows.exception 
-
 from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
                                                    native_commands)
 from Classes.ZigpyTransport.plugin_encoders import (
@@ -39,7 +36,8 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
 from Modules.macPrefix import casaiaPrefix_zigpy
-from zigpy.exceptions import DeliveryError, InvalidResponse, ControllerException
+from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
+                              InvalidResponse)
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
 
@@ -60,12 +58,10 @@ def start_zigpy_thread(self):
         self.zigpy_thread.start()
         self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - zigpy thread started")
 
-
 def stop_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "stop_zigpy_thread - Stopping zigpy thread")
     self.writer_queue.put("STOP")
     self.zigpy_running = False
-
 
 def zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "zigpy_thread - Starting zigpy thread")
@@ -86,7 +82,7 @@ def zigpy_thread(self):
     )
 
     task = radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
- 
+
     self.zigpy_loop.run_until_complete(task)
     self.zigpy_loop.run_until_complete(asyncio.sleep(1))
 
@@ -121,51 +117,45 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
 
     if radiomodule == "ezsp":
-        from Classes.ZigpyTransport.AppBellows import App_bellows
+        self.log.logging("TransportZigpy", "Debug", "Starting radio %s port: %s" %( radiomodule, serialPort))
         import bellows.config as conf
-        
-        self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
+        from Classes.ZigpyTransport.AppBellows import App_bellows
         config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
     elif radiomodule =="zigate":
-        from Classes.ZigpyTransport.AppZigate import App_zigate
+        self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
         import zigpy_zigate.config as conf
-        
-        self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
+        from Classes.ZigpyTransport.AppZigate import App_zigate
         config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
     elif radiomodule =="znp":
-        from Classes.ZigpyTransport.AppZnp import App_znp
+        self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
         import zigpy_znp.config as conf
-        
-        self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
+        from Classes.ZigpyTransport.AppZnp import App_znp
         config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
     elif radiomodule =="deCONZ":
-        from Classes.ZigpyTransport.AppDeconz import App_deconz
+        self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
         import zigpy_deconz.config as conf
-        
-        self.log.logging("TransportZigpy", "Debug", "Start Conf %s" %radiomodule)
+        from Classes.ZigpyTransport.AppDeconz import App_deconz
         config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
-        self.log.logging("TransportZigpy", "Debug", "Start Conf %s Done !" %radiomodule)
-    
-    self.log.logging("TransportZigpy", "Debug", "1- %s" %radiomodule) 
+        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
             t.EUI64(t.uint64_t(set_extendedPanId).serialize())
         )
-    self.log.logging("TransportZigpy", "Debug", "2- %s" %radiomodule) 
     if set_channel != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
 
-    self.log.logging("TransportZigpy", "Debug", "3- %s" %radiomodule) 
     if radiomodule == "zigate":
         self.app = App_zigate(config)
 
     elif radiomodule == "znp":
-        self.log.logging("TransportZigpy", "Debug", "3- %s" %radiomodule)
         self.app = App_znp(config)
-        self.log.logging("TransportZigpy", "Debug", "3- %s" %radiomodule)
 
     elif radiomodule == "deCONZ":
         try:
@@ -212,8 +202,6 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
             "Error",
             "Error at startup %s" %e)
         
-
-
     if new_network:
         # Assume that the new network has been created
         self.log.logging(
@@ -297,6 +285,14 @@ async def worker_loop(self):
             # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
             # status_code = int(e[34+len("Status."):].split(':')[1][:-1])
             log_exception(self, "DeliveryError", e, data["cmd"], data["datas"])
+
+        except APIException as e:
+            log_exception(self, "APIException", e, data["cmd"], data["datas"])
+            await asyncio.sleep( 1.0)
+
+        except ControllerException as e:
+            log_exception(self, "ControllerException", e, data["cmd"], data["datas"])
+            await asyncio.sleep( 1.0)
 
         except InvalidFrame as e:
             log_exception(self, "InvalidFrame", e, data["cmd"], data["datas"])
@@ -395,8 +391,6 @@ async def _permit_to_joint(self, data):
 
     await self.app.permit(time_s=duration, node=target_router )
     self.log.logging("TransportZigpy", "Log", "returning from the self.app.permit(time_s=%s, node=%s )" % (duration, target_router))
-
-
 
 async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     # sourcery skip: replace-interpolation-with-fstring
@@ -608,22 +602,6 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
             if self._currently_waiting_requests_list[_ieee]:
                 multi = 1.5
             await asyncio.sleep( multi * WAITING_TIME_BETWEEN_COMMANDS)
-
-    except bellows.exception.EzspError as e:
-        self.log.logging("TransportZigpy", "Debug", "process_raw_command - bellows.exception.EzspError : %s" % e, _nwkid)
-        await asyncio.sleep( 1.0)
-        return
-    
-    except bellows.exception.ControllerError as e:
-        self.log.logging("TransportZigpy", "Debug", "process_raw_command - bellows.exception.ControllerError : %s" % e, _nwkid)
-        await asyncio.sleep( 1.0)
-        return
-        
-    except ControllerException as e:
-        self.log.logging("TransportZigpy", "Debug", "process_raw_command - ControllerException : %s" % e, _nwkid)
-        await asyncio.sleep( 1.0)
-        return
-        
 
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
