@@ -114,19 +114,149 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
           
     async def register_endpoints(self):
-        await super().register_endpoints()  
+        await self._register_endpoints()  
 
-        #for controller_ep in [ 0x08, ]:
-        #    await self.add_endpoint(
-        #        zdo_types.SimpleDescriptor(
-        #            endpoint=controller_ep,
-        #            profile=zigpy.profiles.zha.PROFILE_ID,
-        #            device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-        #            device_version=0b0000,
-        #            input_clusters=[zigpy.zcl.clusters.general.Basic.cluster_id,],
-        #            output_clusters=[],
-        #        )
+
+    async def _register_endpoints(self):
+        """
+        Registers all necessary endpoints.
+        The exact order in which this method is called depends on the radio module.
+        """
+
+        LOGGER.info("Adding Endpoint 0x%x" %0x01)
+        await self.add_endpoint(
+            zdo_types.SimpleDescriptor(
+                endpoint=1,
+                profile=zigpy.profiles.zha.PROFILE_ID,
+                device_type=zigpy.profiles.zha.DeviceType.IAS_CONTROL,
+                device_version=0b0000,
+                input_clusters=[
+                    zigpy.zcl.clusters.general.Basic.cluster_id,
+                    zigpy.zcl.clusters.general.OnOff.cluster_id,
+                    zigpy.zcl.clusters.general.Time.cluster_id,
+                    zigpy.zcl.clusters.general.Ota.cluster_id,
+                    zigpy.zcl.clusters.security.IasAce.cluster_id,
+                ],
+                output_clusters=[
+                    zigpy.zcl.clusters.general.PowerConfiguration.cluster_id,
+                    zigpy.zcl.clusters.general.PollControl.cluster_id,
+                    zigpy.zcl.clusters.security.IasZone.cluster_id,
+                    zigpy.zcl.clusters.security.IasWd.cluster_id,
+                ],
+            )
+        )
+
+        LOGGER.info("Adding Endpoint 0x%x" %0x02)
+        await self.add_endpoint(
+            zdo_types.SimpleDescriptor(
+                endpoint=2,
+                profile=zigpy.profiles.zll.PROFILE_ID,
+                device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                device_version=0b0000,
+                input_clusters=[zigpy.zcl.clusters.general.Basic.cluster_id],
+                output_clusters=[],
+            )
+        )
+
+        # Livolo Switch 0x08
+        #LOGGER.info("Adding Endpoint 0x%x" %0x08)
+        #await self.add_endpoint(
+        #    zdo_types.SimpleDescriptor(
+        #        endpoint=0x08,
+        #        profile=zigpy.profiles.zha.PROFILE_ID,
+        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+        #        device_version=0b0000,
+        #        input_clusters=[
+        #            zigpy.zcl.clusters.general.Basic.cluster_id,
+        #            zigpy.zcl.clusters.general.OnOff.cluster_id,
+        #            ],
+        #        output_clusters=[
+        #            zigpy.zcl.clusters.security.IasZone.cluster_id,
+        #            ],
         #    )
+        #)
+
+        # Wiser Legacy 0x0b
+        #LOGGER.info("Adding Endpoint 0x%x" %0x0b)
+        #await self.add_endpoint(
+        #    zdo_types.SimpleDescriptor(
+        #        endpoint=0x0b,
+        #        profile=zigpy.profiles.zha.PROFILE_ID,
+        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+        #        device_version=0b0000,
+        #        input_clusters=[
+        #            zigpy.zcl.clusters.general.Basic.cluster_id,
+        #            ],
+        #        output_clusters=[
+        #            ],
+        #    )
+        #)
+
+        # Orvibo 0x0a
+        #LOGGER.info("Adding Endpoint 0x%x" %0x0a)
+        #await self.add_endpoint(
+        #    zdo_types.SimpleDescriptor(
+        #        endpoint=0x0a,
+        #        profile=zigpy.profiles.zha.PROFILE_ID,
+        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+        #        device_version=0b0000,
+        #        input_clusters=[
+        #            zigpy.zcl.clusters.general.Basic.cluster_id,
+        #            ],
+        #        output_clusters=[
+        #            ],
+        #    )
+        #)
+
+        # Terncy 0x6e
+        #LOGGER.info("Adding Endpoint 0x%x" %0x6e)
+        #await self.add_endpoint(
+        #    zdo_types.SimpleDescriptor(
+        #        endpoint=0x6e,
+        #        profile=zigpy.profiles.zha.PROFILE_ID,
+        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+        #        device_version=0b0000,
+        #        input_clusters=[
+        #            zigpy.zcl.clusters.general.Basic.cluster_id,
+        #            ],
+        #        output_clusters=[
+        #            ],
+        #    )
+        #)
+
+        # Konke 0x15
+        #LOGGER.info("Adding Endpoint 0x%x" %0x15)
+        #await self.add_endpoint(
+        #    zdo_types.SimpleDescriptor(
+        #        endpoint=0x15,
+        #        profile=zigpy.profiles.zha.PROFILE_ID,
+        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+        #        device_version=0b0000,
+        #        input_clusters=[
+        #            zigpy.zcl.clusters.general.Basic.cluster_id,
+        #            zigpy.zcl.clusters.general.OnOff.cluster_id,
+        #            ],
+        #        output_clusters=[
+        #            zigpy.zcl.clusters.security.IasZone.cluster_id,
+        #            ],
+        #    )
+        #)
+
+        # Wiser2 (new generation 0x03)
+        #LOGGER.info("Adding Endpoint 0x%x" %0x03)
+        #await self.add_endpoint(
+        #    zdo_types.SimpleDescriptor(
+        #        endpoint=0x03,
+        #        profile=zigpy.profiles.zha.PROFILE_ID,
+        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+        #        device_version=0b0000,
+        #        input_clusters=[
+        #            zigpy.zcl.clusters.general.Basic.cluster_id,
+        #            ],
+        #        output_clusters=[
+        #            ],
+        #    )
+        #)
         
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
