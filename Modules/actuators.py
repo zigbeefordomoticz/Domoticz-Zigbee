@@ -18,6 +18,7 @@ from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
                                 zcl_move_to_colour,
                                 zcl_move_to_colour_temperature,
                                 zcl_move_to_level_with_onoff,
+                                zcl_move_to_level_without_onoff,
                                 zcl_onoff_off_noeffect,
                                 zcl_onoff_off_witheffect, zcl_onoff_on,
                                 zcl_onoff_stop, zcl_toggle,
@@ -99,10 +100,10 @@ def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
         self.iaszonemgt.alarm_off(nwkid, EPout)
 
     elif DeviceType == "LivoloSWL":
-        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "01", "0001")
+        zcl_move_to_level_without_onoff(self, nwkid, EPout, "01", "0001")
 
     elif DeviceType == "LivoloSWR":
-        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "01", "0002")
+        zcl_move_to_level_without_onoff(self, nwkid, EPout, "01", "0002")
 
     elif DeviceType == "WindowCovering":
         zcl_window_covering_off(self, nwkid, EPout)
@@ -116,18 +117,17 @@ def actuator_on(self, nwkid, EPout, DeviceType):
 
     if DeviceType == "LivoloSWL":
         # Level = 108 / 0x6C for On
-        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "6C", "0001")
+        zcl_move_to_level_without_onoff(self, nwkid, EPout, "6C", "0001")
 
     elif DeviceType == "LivoloSWR":
-        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "6C", "0002")
-
+        zcl_move_to_level_without_onoff(self, nwkid, EPout, "6C", "0002")
 
     elif DeviceType == "WindowCovering":
         zcl_window_covering_on(self, nwkid, EPout)
     else:
         zcl_onoff_on(self, nwkid, EPout)
 
-def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010"):
+def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010", withOnOff=True):
 
     if DeviceType == "ThermoMode":
         actuator_setthermostat(self, nwkid, EPout, value)
@@ -149,7 +149,6 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010"):
         value = "%02x" % value
         zcl_window_covering_percentage(self, nwkid, EPout, value)
     else:
-        OnOff = "01"  # 00 = off, 01 = on
         if value == 100:
             value = 255
         elif value == 0:
@@ -160,7 +159,10 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010"):
                 value = 1
 
         value = Hex_Format(2, value)
-        zcl_move_to_level_with_onoff( self, nwkid, EPout, OnOff, value, transition)      
+        if withOnOff:
+            zcl_move_to_level_with_onoff( self, nwkid, EPout, "01", value, transition)   
+        else:
+            zcl_move_to_level_without_onoff( self, nwkid, EPout, value, transition)  
 
 def actuator_setthermostat(self, nwkid, ep, value):
 

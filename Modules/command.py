@@ -476,7 +476,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         else:
             # Remaining Slider widget
             if profalux:  # Profalux are define as LvlControl but should be managed as Blind Inverted
-                actuator_setlevel(self, NWKID, EPout, 0, "Light", "0000")
+                actuator_setlevel(self, NWKID, EPout, 0, "Light", "0000", withOnOff=False)
                 #sendZigateCmd(self, "0081", "02" + NWKID + ZIGATE_EP + EPout + "01" + "%02X" % 0 + "0000")
             else:
                 if (
@@ -639,7 +639,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         else:
             # Remaining Slider widget
             if profalux:
-                actuator_setlevel(self, NWKID, EPout, 255, "Light", "0000")
+                actuator_setlevel(self, NWKID, EPout, 255, "Light", "0000", withOnOff=False)
                 #sendZigateCmd(self, "0081", "02" + NWKID + ZIGATE_EP + EPout + "01" + "%02X" % 255 + "0000")
             else:
                 actuator_on(self, NWKID, EPout, "Light")
@@ -1188,19 +1188,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             tuya_curtain_lvl(self, NWKID, (Level))
 
         else:
-            # Remaining Slider widget
-            #OnOff = "01"  # 00 = off, 01 = on
-            #if Level == 100:
-            #    value = 255
-            #elif Level == 0:
-            #    value = 0
-            #else:
-            #    value = round((Level * 255) / 100)
-            #    if Level > 0 and value == 0:
-            #        value = 1
-
             if profalux:
-                actuator_setlevel(self, NWKID, EPout, Level, "Light", "0000")
+                actuator_setlevel(self, NWKID, EPout, Level, "Light", "0000", withOnOff=False)
                 #sendZigateCmd(self, "0081", "02" + NWKID + ZIGATE_EP + EPout + OnOff + value + "0000")
             else:
                 transitionMoveLevel = "0010"  # Compatibility. It was 0010 before
