@@ -95,7 +95,7 @@ class DomoticzDB_Hardware:
         # sourcery skip: replace-interpolation-with-fstring
         # To disable the ErasePDM, we have to restart the plugin
         # This is usally done after ErasePDM
-        restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, webUserName=webUserName, webPassword=webPassword)
+        restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=self.api_base_url)
 
     def get_loglevel_value(self):
         # sourcery skip: replace-interpolation-with-fstring
