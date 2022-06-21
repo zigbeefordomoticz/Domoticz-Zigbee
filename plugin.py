@@ -305,8 +305,6 @@ class BasePlugin:
             Domoticz.Error("Please cross-check the Domoticz Hardware settingi for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
             self.onStop()
          
-           
-            
         # Set plugin heartbeat to 1s
         Domoticz.Heartbeat(1)
 
