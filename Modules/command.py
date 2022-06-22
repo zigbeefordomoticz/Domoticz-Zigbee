@@ -1195,7 +1195,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 transitionMoveLevel = "0010"  # Compatibility. It was 0010 before
                 if "Param" in self.ListOfDevices[NWKID] and "moveToLevel" in self.ListOfDevices[NWKID]["Param"]:
                     transitionMoveLevel = "%04x" % int(self.ListOfDevices[NWKID]["Param"]["moveToLevel"])
-                actuator_setlevel(self, NWKID, EPout, Level, "Light", transitionMoveLevel)
+                actuator_setlevel(self, NWKID, EPout, Level, "Light", transitionMoveLevel, withOnOff=False )
                 #sendZigateCmd(self, "0081", "02" + NWKID + ZIGATE_EP + EPout + OnOff + value + transitionMoveLevel)
 
         if Devices[Unit].SwitchType in (13, 16):
