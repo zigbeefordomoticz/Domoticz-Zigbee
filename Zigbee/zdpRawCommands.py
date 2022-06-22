@@ -444,7 +444,7 @@ def zdp_raw_permit_joining_request(self, tgtnwkid, duration, significance):
             significance,
         ),
     )
-    if self.zigbee_communitation == "zigpy":
+    if self.zigbee_communication == "zigpy":
         if (
             tgtnwkid not in ('FFFC', 'fffc')
             and tgtnwkid in self.ListOfDevices

@@ -74,7 +74,7 @@ class OTAManagement(object):
         log,
         PluginHealth,
     ):
-        self.zigbee_communitation = zigbee_communitation
+        self.zigbee_communication = zigbee_communitation
         self.HB = 0
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.IEEE2NWK = IEEE2NWK  # Point to the List of IEEE to NWKID
