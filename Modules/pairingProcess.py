@@ -258,7 +258,7 @@ def request_next_Ep(self, Nwkid):
             continue
 
         # Skip Green Zigbee EndPoint
-        if iterEp == 'f2' and self.zigbee_communitation == 'zigpy':
+        if iterEp == 'f2' and self.zigbee_communication == 'zigpy':
             continue
 
         # Let's request only 1 Ep, in order wait for the response and then request the next one

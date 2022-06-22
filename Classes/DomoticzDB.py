@@ -105,9 +105,9 @@ class DomoticzDB_Hardware:
     def multiinstances_z4d_plugin_instance(self):
         # sourcery skip: replace-interpolation-with-fstring
         self.logging("Debug", "multiinstances_z4d_plugin_instance")
-        return sum("Zigate" in self.hardware[ x ]["Extra"] for x in self.hardware)
-
-
+        if sum("Zigate" in self.hardware[ x ]["Extra"] for x in self.hardware) > 1:
+            return True
+        return False
 
 class DomoticzDB_DeviceStatus:
     def __init__(self, api_base_url, pluginconf, hardwareID, log):

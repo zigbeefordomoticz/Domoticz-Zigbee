@@ -26,7 +26,7 @@ def decode8002_and_process(self, frame):
         self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZDP frame: %s" % frame)
         return frame
 
-    if self.zigbee_communitation == "zigpy" and SrcNwkId not in self.ListOfDevices:
+    if self.zigbee_communication == "zigpy" and SrcNwkId not in self.ListOfDevices:
         self.log.logging("Transport8002", "Log", "decode8002_and_process unknown NwkId: %s for ZCL frame %s" % (SrcNwkId,frame))
         return None
     
