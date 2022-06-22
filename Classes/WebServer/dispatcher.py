@@ -43,6 +43,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
             "function": self.rest_casa_device_ircode_update,
         },
         "cfgrpt-ondemand": {"Name": "cfgrpt-ondemand", "Verbs": {"GET"}, "function": self.rest_cfgrpt_ondemand},
+        "cfgrpt-ondemand-config": {"Name": "cfgrpt-ondemand-config", "Verbs": { "GET", "PUT", "DELETE" }, "function": self.rest_cfgrpt_ondemand_with_config},
         "change-channel": {"Name": "change-channel", "Verbs": {"PUT"}, "function": self.rest_change_channel},
         "clear-error-history": {
             "Name": "clear-error-history",
@@ -71,7 +72,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         },
         "permit-to-join": {"Name": "permit-to-join", "Verbs": {"GET", "PUT"}, "function": self.rest_PermitToJoin},
         "plugin-health": {"Name": "plugin-health", "Verbs": {"GET"}, "function": self.rest_plugin_health},
-        "plugin-upgrade":  {"Name": "plugin-upgrade", "Verbs": {"GET"}, "function": self.rest_plugin_upgrade},
+        "plugin-upgrade": {"Name": "plugin-upgrade", "Verbs": {"GET"}, "function": self.rest_plugin_upgrade},
         "plugin-restart": {"Name": "plugin-restart", "Verbs": {"GET"}, "function": self.rest_plugin_restart},
         "plugin-stat": {"Name": "plugin-stat", "Verbs": {"GET"}, "function": self.rest_plugin_stat},
         "plugin": {"Name": "plugin", "Verbs": {"GET"}, "function": self.rest_PluginEnv},
@@ -117,6 +118,11 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
 
     HTTPresponse = {}
 
+    if command not in REST_COMMANDS:
+        self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
+        if verb not in REST_COMMANDS[command]["Verbs"]:
+            self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
+            
     if command in REST_COMMANDS and verb in REST_COMMANDS[command]["Verbs"]:
         HTTPresponse = setupHeadersResponse()
         if self.pluginconf.pluginConf["enableKeepalive"]:

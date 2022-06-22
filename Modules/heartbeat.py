@@ -144,7 +144,7 @@ def check_delay_binding( self, NwkId, model ):
 
         return
 
-    if model not in self.DeviceConf or  "DelayBindingAtPairing" not in self.DeviceConf[ model ] or self.DeviceConf[ model ]["DelayBindingAtPairing"] != 1:
+    if model not in self.DeviceConf or "DelayBindingAtPairing" not in self.DeviceConf[ model ] or self.DeviceConf[ model ]["DelayBindingAtPairing"] != 1:
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s not applicable" % (
             NwkId), NwkId, )
         return
@@ -659,7 +659,7 @@ def processKnownDevices(self, Devices, NWKID):
     if ( 
         _mainPowered 
         and night_shift_jobs( self )
-        and self.zigbee_communitation == "zigpy"
+        and self.zigbee_communication == "zigpy"
         and "RoutingTableRequestFeq" in self.pluginconf.pluginConf
         and self.pluginconf.pluginConf["RoutingTableRequestFeq"] 
         and (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)

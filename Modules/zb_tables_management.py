@@ -142,13 +142,19 @@ def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
         self.log.logging("NetworkMap", "Error", "===> unkown ????")
 
 def get_list_of_timestamps( self, nwkid, tablename):
+    if tablename not in self.ListOfDevices[nwkid]:
+        return []
     if not isinstance(self.ListOfDevices[nwkid][tablename], list):
         return []
-    timestamp = [int(x["Time"]) for x in self.ListOfDevices[nwkid][tablename] if isinstance(x["Time"], int)]
+
+    timestamp = [int(x["Time"]) for x in self.ListOfDevices[nwkid][tablename] if isinstance(x["Time"], int) and not is_timestamp_current_topology_in_progress(self, x["Time"])]
 
     self.log.logging("NetworkMap", "Debug", "get_list_of_timestamps return %s" %timestamp)
     return timestamp
-    
+
+def is_timestamp_current_topology_in_progress( self, timestamp):
+    return "TopologyStartTime" in self.ListOfDevices["0000"] and self.ListOfDevices["0000"]["TopologyStartTime"] == timestamp
+      
 def remove_entry_from_all_tables( self, time_stamp ):
 
     if "TopologyStartTime" in self.ListOfDevices["0000"]:

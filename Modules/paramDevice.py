@@ -173,7 +173,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
 
             if self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["4003"] == str(mode):
                 continue
-            elif not _check_attribute_exist( self, nwkid, ep, "0006", "8002") and self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["8002"] == str(mode):
+            elif _check_attribute_exist( self, nwkid, ep, "0006", "8002") and self.ListOfDevices[nwkid]["Ep"][ep]["0006"]["8002"] == str(mode):
                 continue
             
             self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s" % (nwkid, mode), nwkid)
@@ -182,13 +182,13 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
 
 def _check_attribute_exist( self, nwkid, ep, cluster, attribute):
     if ep not in self.ListOfDevices[nwkid]["Ep"]:
-        self.log.logging("Heartbeat", "Log", "No ep: %s" %ep, nwkid)
+        self.log.logging("Heartbeat", "Debug", "No ep: %s" %ep, nwkid)
         return False
     if cluster not in self.ListOfDevices[nwkid]["Ep"][ ep ]:
-        self.log.logging("Heartbeat", "Log", "No Cluster: %s" %cluster, nwkid)
+        self.log.logging("Heartbeat", "Debug", "No Cluster: %s" %cluster, nwkid)
         return False
     if attribute not in self.ListOfDevices[nwkid]["Ep"][ ep ][ cluster ]:
-        self.log.logging("Heartbeat", "Log", "No Attribute: %s" %attribute, nwkid)
+        self.log.logging("Heartbeat", "Debug", "No Attribute: %s" %attribute, nwkid)
         return False
     return True
    

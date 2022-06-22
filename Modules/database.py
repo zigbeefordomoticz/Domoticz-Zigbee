@@ -83,6 +83,7 @@ MANDATORY_ATTRIBUTES = (
 
 # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
 BUILD_ATTRIBUTES = (
+    "ParamConfigureReporting",
     "Log_UnknowDeviceFlag",
     "NeighbourTableSize",
     "BindingTable",
@@ -142,9 +143,9 @@ def _versionFile(source, nbversion):
             _fileversion_n = source + "-%02d" % version
             if not os.path.isfile(_fileversion_n):
                 continue
-            else:
-                _fileversion_n1 = source + "-%02d" % (version + 1)
-                _copyfile(_fileversion_n, _fileversion_n1)
+
+            _fileversion_n1 = source + "-%02d" % (version + 1)
+            _copyfile(_fileversion_n, _fileversion_n1)
 
         # Last one
         _copyfile(source, source + "-%02d" % 1, move=False)
@@ -153,43 +154,39 @@ def _versionFile(source, nbversion):
 def LoadDeviceList(self):
     # Load DeviceList.txt into ListOfDevices
     #
-    # Let's check if we have a .json version. If so, we will be using it, otherwise
-    # we fall back to the old fashion .txt
-    jsonFormatDB = True
+    ListOfDevices_from_Domoticz = None
 
     # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
 
-    if Modules.tools.is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
+    if Modules.tools.is_domoticz_db_available(self):
         ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
-        Domoticz.Log(
+        self.log.logging(
+            "Database",
+            "Debug",
             "Database from Dz is recent: %s Loading from Domoticz Db"
             % is_domoticz_recent(self, saving_time, self.pluginconf.pluginConf["pluginData"] + self.DeviceListName)
         )
+        res = "Success"
 
-    if self.pluginconf.pluginConf["expJsonDatabase"]:
-        if os.path.isfile(self.pluginconf.pluginConf["pluginData"] + self.DeviceListName[:-3] + "json"):
-            # JSON Format
-            _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName[:-3] + "json"
-            jsonFormatDB = True
-            res = loadJsonDatabase(self, _DeviceListFileName)
-
-        elif os.path.isfile(self.pluginconf.pluginConf["pluginData"] + self.DeviceListName):
-            _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
-            jsonFormatDB = False
-            res = loadTxtDatabase(self, _DeviceListFileName)
-        else:
-            # Do not exist
-            self.ListOfDevices = {}
-            return True
+    if os.path.isfile(self.pluginconf.pluginConf["pluginData"] + self.DeviceListName):
+        _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
+        res = loadTxtDatabase(self, _DeviceListFileName)
     else:
-        if os.path.isfile(self.pluginconf.pluginConf["pluginData"] + self.DeviceListName):
-            _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
-            jsonFormatDB = False
-            res = loadTxtDatabase(self, _DeviceListFileName)
-        else:
-            # Do not exist
-            self.ListOfDevices = {}
-            return True
+        # Do not exist
+        self.ListOfDevices = {}
+        return True
+
+    self.log.logging("Database", "Status", "%s Entries loaded from %s" % (len(self.ListOfDevices), _DeviceListFileName))
+    if ListOfDevices_from_Domoticz:
+        self.log.logging(
+            "Database",
+            "Log",
+            "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas "
+            % (
+                len(ListOfDevices_from_Domoticz),
+                len(self.ListOfDevices),
+            ),
+        )
 
     self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : " + _DeviceListFileName)
     _versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
@@ -200,30 +197,19 @@ def LoadDeviceList(self):
     for addr in self.ListOfDevices:
         # Fixing mistake done in the code.
         fixing_consumption_lumi(self, addr)
-
         fixing_iSQN_None(self, addr)
 
         # Check if 566 fixs are needed
-        if self.pluginconf.pluginConf["Bug566"]:
-            if "Model" in self.ListOfDevices[addr]:
-                if self.ListOfDevices[addr]["Model"] == "TRADFRI control outlet":
-                    fixing_Issue566(self, addr)
+        if self.pluginconf.pluginConf["Bug566"] and "Model" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["Model"] == "TRADFRI control outlet":
+            fixing_Issue566(self, addr)
 
         if self.pluginconf.pluginConf["resetReadAttributes"]:
             self.log.logging("Database", "Log", "ReadAttributeReq - Reset ReadAttributes data %s" % addr)
             Modules.tools.reset_datastruct(self, "ReadAttributes", addr)
-            # self.ListOfDevices[addr]['ReadAttributes'] = {}
-            # self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
-            # for iterEp in self.ListOfDevices[addr]['Ep']:
-            #    self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
 
         if self.pluginconf.pluginConf["resetConfigureReporting"]:
             self.log.logging("Database", "Log", "Reset ConfigureReporting data %s" % addr)
             Modules.tools.reset_datastruct(self, "ConfigureReporting", addr)
-            # self.ListOfDevices[addr]['ConfigureReporting'] = {}
-            # self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
-            # for iterEp in self.ListOfDevices[addr]['Ep']:
-            #    self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
 
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
@@ -234,30 +220,6 @@ def LoadDeviceList(self):
         self.pluginconf.write_Settings()
 
     load_new_param_definition(self)
-    self.log.logging("Database", "Status", "%s Entries loaded from %s" % (len(self.ListOfDevices), _DeviceListFileName))
-
-    if Modules.tools.is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
-        self.log.logging(
-            "Database",
-            "Log",
-            "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas "
-            % (
-                len(ListOfDevices_from_Domoticz),
-                len(self.ListOfDevices),
-            ),
-        )
-        #try:
-        #    import sys
-#
-        #    sys.path.append("/usr/lib/python3.8/site-packages")
-        #    import deepdiff
-#
-        #    diff = deepdiff.DeepDiff(self.ListOfDevices, ListOfDevices_from_Domoticz)
-        #    self.log.logging("Database", "Log", json.dumps(json.loads(diff.to_json()), indent=4))
-#
-        #except:
-        #    # self.log.logging("Database", "Log", "Python Module deepdiff not found")
-        #    pass
 
     return res
 
@@ -299,18 +261,18 @@ def loadTxtDatabase(self, dbName):
     return res
 
 
-def loadJsonDatabase(self, dbName):
-    res = "Success"
-    with open(dbName, "rt") as handle:
-        _listOfDevices = {}
-        try:
-            _listOfDevices = json.load(handle)
-        except json.decoder.JSONDecodeError as e:
-            res = "Failed"
-            Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
-    for key in _listOfDevices:
-        CheckDeviceList(self, key, str(_listOfDevices[key]))
-    return res
+#def loadJsonDatabase(self, dbName):
+#    res = "Success"
+#    with open(dbName, "rt") as handle:
+#        _listOfDevices = {}
+#        try:
+#            _listOfDevices = json.load(handle)
+#        except json.decoder.JSONDecodeError as e:
+#            res = "Failed"
+#            Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
+#    for key in _listOfDevices:
+#        CheckDeviceList(self, key, str(_listOfDevices[key]))
+#    return res
 
 
 def _read_DeviceList_Domoticz(self):
@@ -323,7 +285,7 @@ def _read_DeviceList_Domoticz(self):
         self.log.logging(
             "Database",
             "Log",
-            "Plugin data loaded where saved on %s"
+            "Plugin data found on DZ with date %s"
             % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))),
         )
 
@@ -336,7 +298,7 @@ def _read_DeviceList_Domoticz(self):
         for x in list(ListOfDevices_from_Domoticz):
             for attribute in list(ListOfDevices_from_Domoticz[x]):
                 if attribute not in (MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
-                    self.log.logging("Database", "Log", "xxx Removing attribute: %s for %s" % (attribute, x))
+                    self.log.logging("Database", "Debug", "xxx Removing attribute: %s for %s" % (attribute, x))
                     del ListOfDevices_from_Domoticz[x][attribute]
 
     return (ListOfDevices_from_Domoticz, time_stamp)
@@ -355,7 +317,7 @@ def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
     return False
 
 
-def WriteDeviceList(self, count):
+def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
     if self.HBcount < count:
         self.HBcount = self.HBcount + 1
         return
@@ -372,8 +334,10 @@ def WriteDeviceList(self, count):
 
     _write_DeviceList_txt(self)
 
-    if Modules.tools.is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
-        # We need to patch None as 'None'
+    if (
+        Modules.tools.is_domoticz_db_available(self) 
+        and ( self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]) 
+    ):
         if _write_DeviceList_Domoticz(self) is None:
             # An error occured. Probably Dz.Configuration() is not available.
             _write_DeviceList_txt(self)
@@ -503,12 +467,7 @@ def checkDevices2LOD(self, Devices):
     for nwkid in self.ListOfDevices:
         self.ListOfDevices[nwkid]["ConsistencyCheck"] = ""
         if self.ListOfDevices[nwkid]["Status"] == "inDB":
-            for dev in Devices:
-                if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]:
-                    self.ListOfDevices[nwkid]["ConsistencyCheck"] = "ok"
-                    break
-            else:
-                self.ListOfDevices[nwkid]["ConsistencyCheck"] = "not in DZ"
+            self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
 
 
 def checkListOfDevice2Devices(self, Devices):

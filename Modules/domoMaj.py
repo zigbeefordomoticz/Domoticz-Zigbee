@@ -339,7 +339,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 if ( 
                     "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and 
                     "0000" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"] and 
-                    self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] not in  ({}, "", "0")
+                    self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] not in ({}, "", "0")
                 ): 
                     # summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
                     summation = self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"]
@@ -558,7 +558,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
                         UpdateDevice_v2(self, Devices, DeviceUnit, 4, "40", BatteryLevel, SignalLevel)
                         
-            elif  WidgetType in ("CAC221ACMode",  ) and Attribute_ == "001c":
+            elif WidgetType in ("CAC221ACMode", ) and Attribute_ == "001c":
                 self.log.logging("Widget", "Debug", "------>  Thermostat CAC221ACMode %s type: %s" % (value, type(value)), NWKID)
                 if value in THERMOSTAT_MODE_2_LEVEL:
                     if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
@@ -599,7 +599,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
         if ClusterType == "Temp" and WidgetType in ("Temp", "Temp+Hum", "Temp+Hum+Baro") and Attribute_ == "":  # temperature
-
             if check_erratic_value(self, NWKID, "Temp", value, -50, 100):
                 # We got an erratic value, no update to Domoticz
                 continue
@@ -1445,13 +1444,6 @@ def getDimmerLevelOfColor(self, value):
 
 def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_max):
 
-    if ( 
-        "Param" in self.ListOfDevices[NwkId] 
-        and "disableTrackingEraticValue" in self.ListOfDevices[NwkId]["Param"] 
-        and self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"]
-    ):
-        return
-    
     _attribute = "Erratic_" + value_type
     if expected_min < value < expected_max:
         # Value is in the threasholds, every thing fine
@@ -1459,6 +1451,15 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
             # Remove the attribute if we had a previous erratic value
             del self.ListOfDevices[NwkId][_attribute]
         return False
+
+    # The provided value is not in the expected range. We have an Eratic value.
+    if ( 
+        "Param" in self.ListOfDevices[NwkId] 
+        and "disableTrackingEraticValue" in self.ListOfDevices[NwkId]["Param"] 
+        and self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"]
+    ):
+        # We have an Eratic value, but we don't want to handle it, nor tell anybody !!!
+        return True
 
     if _attribute not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId][_attribute] = {}

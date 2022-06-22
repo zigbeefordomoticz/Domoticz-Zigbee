@@ -94,7 +94,7 @@ def getListOfEpForCluster(self, NwkId, SearchCluster):
     if NwkId not in self.ListOfDevices:
         return EpList
 
-    oldFashion = ( "ClusterType" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["ClusterType"] not in  ({}, "") )
+    oldFashion = ( "ClusterType" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["ClusterType"] not in ({}, "") )
     for Ep in list(self.ListOfDevices[NwkId]["Ep"].keys()):
         if SearchCluster not in self.ListOfDevices[NwkId]["Ep"][Ep]:
             continue
@@ -151,6 +151,8 @@ def getEpForCluster(self, nwkid, ClusterId, strict=False):
             continue
         if ClusterId in self.ListOfDevices[nwkid]["Ep"][x]:
             EPlist.append( str(x) )
+    if strict and not EPlist:
+        return None
     return EPlist
 
 
@@ -444,7 +446,7 @@ def get_and_inc_ZCL_SQN(self, key):
   
 def get_and_increment_generic_SQN(self, nwkid, sqn_type):
     if nwkid not in self.ListOfDevices: 
-        return  "%02x" %0x00
+        return "%02x" %0x00
     if sqn_type not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %0x00
         return self.ListOfDevices[nwkid][ sqn_type ]
@@ -1293,6 +1295,8 @@ def instrument_timing(module, timing, cnt_timing, cumul_timing, aver_timing, max
 # Configuration Helpers
 def setConfigItem(Key=None, Attribute="", Value=None):
 
+    Domoticz.Log("Saving %s - %s into Domoticz sqlite Db" %( Key, Attribute))
+    
     Config = {}
     if not isinstance(Value, (str, int, float, bool, bytes, bytearray, list, dict)):
         Domoticz.Error("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
@@ -1318,6 +1322,9 @@ def setConfigItem(Key=None, Attribute="", Value=None):
 
 
 def getConfigItem(Key=None, Attribute="", Default=None):
+    
+    Domoticz.Log("Loading %s - %s into Domoticz sqlite Db" %( Key, Attribute))
+    
     if Default is None:
         Default = {}
     Value = Default

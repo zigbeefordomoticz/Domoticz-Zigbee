@@ -1398,10 +1398,18 @@ SETTINGS = {
             },
             "expJsonDatabase": {
                 "type": "bool",
-                "default": 0,
+                "default": 1,
                 "current": None,
                 "restart": 0,
                 "hidden": True,
+                "Advanced": True,
+            },
+            "storeDomoticzDatabase": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
                 "Advanced": True,
             },
             "useDomoticzDatabase": {
@@ -1409,7 +1417,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": True,
+                "hidden": False,
                 "Advanced": True,
             },
             "rebindLivolo": {
@@ -1855,7 +1863,7 @@ class PluginConf:
         self.VersionNewFashion = VersionNewFashion
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
-        self.zigbee_communitation = zigbee_communication 
+        self.zigbee_communication = zigbee_communication 
 
         setup_folder_parameters(self, homedir)
 
@@ -1866,7 +1874,7 @@ class PluginConf:
         else:
             _load_oldfashon(self, homedir, hardwareid)
 
-        if self.zigbee_communitation == "zigpy":
+        if self.zigbee_communication == "zigpy":
             zigpy_setup(self)
             
         # Reset eraseZigatePDM to default
@@ -1899,7 +1907,7 @@ class PluginConf:
         with open(pluginConfFile, "wt") as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
-        if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"]:
+        if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
             setConfigItem(Key="PluginConf", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
 
 

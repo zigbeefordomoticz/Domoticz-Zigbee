@@ -258,7 +258,7 @@ def request_next_Ep(self, Nwkid):
             continue
 
         # Skip Green Zigbee EndPoint
-        if iterEp == 'f2' and self.zigbee_communitation == 'zigpy':
+        if iterEp == 'f2' and self.zigbee_communication == 'zigpy':
             continue
 
         # Let's request only 1 Ep, in order wait for the response and then request the next one
@@ -540,7 +540,7 @@ def binding_needed_clusters_with_zigate(self, NWKID):
 
 def delay_binding_and_reporting(self, Nwkid):
     
-    if "Model" not in self.ListOfDevices[Nwkid] or self.ListOfDevices[Nwkid]["Model"] in  ( "", {}):
+    if "Model" not in self.ListOfDevices[Nwkid] or self.ListOfDevices[Nwkid]["Model"] in ( "", {}):
         return False
     _model = self.ListOfDevices[Nwkid]["Model"]
     if _model in self.DeviceConf and "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
@@ -598,7 +598,7 @@ def get_list_of_clusters_for_device( self, Nwkid):
                 continue
             if iterReadAttrCluster not in target_list_of_cluster:
                 target_list_of_cluster.append( iterReadAttrCluster )
-    return  target_list_of_cluster   
+    return target_list_of_cluster   
 
 def send_identify_effect(self, NWKID):
     # Identify for ZLL compatible devices

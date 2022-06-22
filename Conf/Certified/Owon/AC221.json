@@ -34,7 +34,7 @@
 					"MinInterval": "000a",
 					"MaxInterval": "0258",
 					"TimeOut": "0000",
-					"Change": "0010"
+					"Change": "0001"
 				},
 				"0011": {
 					"DataType": "29",

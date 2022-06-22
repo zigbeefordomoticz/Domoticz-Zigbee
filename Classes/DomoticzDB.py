@@ -95,7 +95,7 @@ class DomoticzDB_Hardware:
         # sourcery skip: replace-interpolation-with-fstring
         # To disable the ErasePDM, we have to restart the plugin
         # This is usally done after ErasePDM
-        restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, webUserName=webUserName, webPassword=webPassword)
+        restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=self.api_base_url)
 
     def get_loglevel_value(self):
         # sourcery skip: replace-interpolation-with-fstring
@@ -105,9 +105,9 @@ class DomoticzDB_Hardware:
     def multiinstances_z4d_plugin_instance(self):
         # sourcery skip: replace-interpolation-with-fstring
         self.logging("Debug", "multiinstances_z4d_plugin_instance")
-        return sum("Zigate" in self.hardware[ x ]["Extra"] for x in self.hardware)
-
-
+        if sum("Zigate" in self.hardware[ x ]["Extra"] for x in self.hardware) > 1:
+            return True
+        return False
 
 class DomoticzDB_DeviceStatus:
     def __init__(self, api_base_url, pluginconf, hardwareID, log):

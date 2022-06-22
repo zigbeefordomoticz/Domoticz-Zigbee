@@ -41,7 +41,7 @@ class ZigateTransport(object):
         wifiAddress=None,
         wifiPort=None,
     ):
-        self.zigbee_communitation = "native"
+        self.zigbee_communication = "native"
         
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin

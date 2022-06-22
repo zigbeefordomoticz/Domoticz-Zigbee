@@ -1114,7 +1114,7 @@ def define_heating_demand_for_iTRV(self, NwkId):
     self.log.logging("Schneider", "Debug", f'define_heating_demand_for_iTRV: Local_temp: {local_temp} , Target: {int(schneider_find_attribute(self, NwkId, "01", "0201", "0012"))} gap: {gap_temp}')
 
 
-    if ( schneider_find_attribute_and_set( self, NwkId, "01", "0201", "0008", 0 ) == 0 and  gap_temp < 0):
+    if ( schneider_find_attribute_and_set( self, NwkId, "01", "0201", "0008", 0 ) == 0 and gap_temp < 0):
         if gap_temp < -500:
             self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"] = 100
         elif gap_temp < -250:
@@ -1124,7 +1124,7 @@ def define_heating_demand_for_iTRV(self, NwkId):
         else:
             self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"] = 25
 
-    elif ( schneider_find_attribute_and_set( self, NwkId, "01", "0201", "0008", 0 ) != 0 and  gap_temp > 0):
+    elif ( schneider_find_attribute_and_set( self, NwkId, "01", "0201", "0008", 0 ) != 0 and gap_temp > 0):
         self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"] = 0
     self.log.logging("Schneider", "Debug", f'define_heating_demand_for_iTRV: Local_temp: {local_temp} , Target: {int(schneider_find_attribute(self, NwkId, "01", "0201", "0012"))} gap: {gap_temp} Heating Demand: {self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"]}')
 
@@ -1388,7 +1388,7 @@ def wiserhome_ZCLVersion_response(self, Devices, srcNWKID, srcEp, Sqn):
 
 def wiser_read_attribute_request(self, NwkId, Ep, Sqn, ClusterId, Attribute):
 
-    if self.zigbee_communitation == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x031C:
+    if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x031C:
         # We shouldn't reach here, as the firmware itself will reject and respond.
         wiser_unsupported_attribute(self, NwkId, Ep, Sqn, ClusterId, Attribute)
     else:
@@ -1552,7 +1552,7 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID, attr, defaultVa
     """
     self.log.logging("Schneider", "Debug", f"schneider_find_attribute_or_set NWKID:{NWKID}, EP:{EP}, ClusterID:{ClusterID}, attr:{attr} ,defaultValue:{defaultValue}, newValue:{newValue}", NWKID)
 
-    if "Model" in self.ListOfDevices[NWKID] and  self.ListOfDevices[NWKID]["Model"] in ( "iTRV",):
+    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "iTRV",):
         EP = '01'   # Indeed iTRV request on Ep 0x02, but we store all on Ep 0x01
 
     found = newValue
