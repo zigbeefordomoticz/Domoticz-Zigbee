@@ -10,7 +10,7 @@ from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 def is_duplicate_zdp_frame(self, Nwkid, ClusterId, Sqn):
     
-    if self.zigbee_communitation != "zigpy":
+    if self.zigbee_communication != "zigpy":
         return False
     if Nwkid not in self.ListOfDevices:
         return False

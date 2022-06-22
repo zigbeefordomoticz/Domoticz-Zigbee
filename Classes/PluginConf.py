@@ -1863,7 +1863,7 @@ class PluginConf:
         self.VersionNewFashion = VersionNewFashion
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
-        self.zigbee_communitation = zigbee_communication 
+        self.zigbee_communication = zigbee_communication 
 
         setup_folder_parameters(self, homedir)
 
@@ -1874,7 +1874,7 @@ class PluginConf:
         else:
             _load_oldfashon(self, homedir, hardwareid)
 
-        if self.zigbee_communitation == "zigpy":
+        if self.zigbee_communication == "zigpy":
             zigpy_setup(self)
             
         # Reset eraseZigatePDM to default
