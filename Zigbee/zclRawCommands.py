@@ -336,7 +336,7 @@ def zcl_raw_level_move_to_level(self, nwkid, EPIn, EPout, command, level="00", m
     #       | ---- Disable default response: True
     #    |||- ---- Reserved : 0x000
     #
-    cluster_frame = 0b00010001
+    cluster_frame = 0b00010001 
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + "%02x" % LEVEL_COMMANDS[command]

@@ -344,11 +344,24 @@ def zcl_group_level_move_to_level(self, nwkid, epin, EPout, OnOff, level, transi
     return send_zigatecmd_raw(self, "0081", data)
 
 
+def zcl_move_to_level_without_onoff(self, nwkid, EPout, level, transition="0000", ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_move_to_level_without_onoff %s %s %s %s %s" % (nwkid, EPout, "00", level, transition))
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        return zcl_raw_level_move_to_level(self, nwkid, ZIGATE_EP, EPout, "MovetoLevel", level=level, transition=transition, ackIsDisabled=ackIsDisabled )
+    data = ZIGATE_EP + EPout + "00" + level + transition
+    if ackIsDisabled:
+        return send_zigatecmd_zcl_noack(self, nwkid, "0081", data)
+    return send_zigatecmd_zcl_ack(self, nwkid, "0081", data)
+
+
 def zcl_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transition="0000", ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_move_to_level_with_onoff %s %s %s %s %s" % (nwkid, EPout, OnOff, level, transition))
+    if not OnOff:
+        return zcl_move_to_level_without_onoff(self, nwkid, EPout, level, transition="0000", ackIsDisabled=DEFAULT_ACK_MODE)
+    
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zcl_raw_level_move_to_level(self, nwkid, ZIGATE_EP, EPout, "MovetoLevelWithOnOff", level=level, transition=transition, ackIsDisabled=ackIsDisabled )
-    data = ZIGATE_EP + EPout + OnOff + level + transition
+    data = ZIGATE_EP + EPout + "01" + level + transition
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0081", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "0081", data)
