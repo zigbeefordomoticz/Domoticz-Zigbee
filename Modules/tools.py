@@ -848,7 +848,7 @@ def try_to_reconnect_via_neighbours(self, old_nwkid):
     # Let see if we don't have a wrong NwkId
 
     if "IEEE" not in self.ListOfDevices[ old_nwkid ]:
-        return
+        return None
     ieee = self.ListOfDevices[ old_nwkid ]["IEEE"]
 
     for key in list(self.ListOfDevices.keys()):
@@ -866,7 +866,7 @@ def try_to_reconnect_via_neighbours(self, old_nwkid):
                     new_nwkid = x
                     Domoticz.Log("try_to_reconnect_via_neighbours found %s as replacement of %s" % (new_nwkid, old_nwkid))
                     reconnectNWkDevice(self, new_nwkid, ieee, old_nwkid)
-                    return
+                    return new_nwkid
 
 def lookupForIEEE(self, nwkid, reconnect=False):
     # """
