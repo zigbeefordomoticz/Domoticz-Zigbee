@@ -11,23 +11,69 @@
 """
 
 
-import Domoticz
-import socket
-
-from base64 import b64decode
-import time
-from datetime import datetime
-from Classes.LoggingManagement import LoggingManagement
-import urllib
+import base64
+import binascii
 import json
+import socket
+import time
+import urllib
+
+import Domoticz
+
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
+from Classes.LoggingManagement import LoggingManagement
 
 CACHE_TIMEOUT = (15 * 60) + 15  # num seconds
 
-DOMOTICZ_SETTINGS_API = "/json.htm?type=settings"
-DOMOTICZ_HARDWARE_API = "/json.htm?type=hardware"
-DOMOTICZ_DEVICEST_API = "/json.htm?type=devices&rid="
+DOMOTICZ_SETTINGS_API = "type=settings"
+DOMOTICZ_HARDWARE_API = "type=hardware"
+DOMOTICZ_DEVICEST_API = "type=devices&rid="
 
+def isBase64( sb ):    
+    try:
+        return base64.b64encode(base64.b64decode(sb)).decode() == sb
+    except TypeError:
+        return False
+    except binascii.Error:
+        return False
+    
+def extract_username_password( url_base_api ):
+    
+    items = url_base_api.split('@')
+    if len(items) != 2:
+        return None, None, None
+    host_port = items[1]
+    item1 = items[0].replace('http://','')
+    username, password = item1.split(':')
+    if isBase64( username ) and isBase64( password):
+        return username, password, host_port
+    return (base64.b64encode( username.encode('ascii'))).decode('utf-8'), (base64.b64encode( password.encode('ascii'))).decode('utf-8'), host_port
+
+def open_and_read( self, url ):
+    
+    retry = 3
+    while retry:
+        try:
+            with urllib.request.urlopen(url) as response:
+                return response.read()
+        except urllib.error.HTTPError as e:
+            if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
+                reason = f'{e.code} {str(e.reason)}'
+            elif isinstance(e.reason, socket.timeout):
+                reason = f'HTTPError socket.timeout {e.reason} - {e}'
+            else:
+                raise
+        except urllib.error.URLError as e:
+            if isinstance(e.reason, socket.timeout):
+                reason = f'URLError socket.timeout {e.reason} - {e}'
+            else:
+                raise
+        except socket.timeout as e:
+            reason = f'socket.timeout {e}'
+        netloc = urllib.parse.urlsplit(url).netloc  # e.g. nominatim.openstreetmap.org
+        self.logging("Error", f'*** {netloc} {reason}; will retry')
+        time.sleep(1)
+        retry -= 1
 
 class DomoticzDB_Preferences:
     # sourcery skip: replace-interpolation-with-fstring
@@ -42,7 +88,19 @@ class DomoticzDB_Preferences:
 
     def load_preferences(self):
         # sourcery skip: replace-interpolation-with-fstring
-        url = self.api_base_url + DOMOTICZ_HARDWARE_API
+        username, password, host_port = extract_username_password( self.api_base_url )
+        if username and password and host_port:
+            url = 'http://' + host_port + '/json.htm?' + 'username=%s&password=%s&' %(username, password)
+        else:
+            url = self.api_base_url + '/json.htm?'
+        
+        url += DOMOTICZ_HARDWARE_API
+        
+        self.logging("Log", "url: %s" %url)
+        self.logging("Log",'Username: %s' %username)
+        self.logging("Log",'Password: %s' %password)
+        self.logging("Log",'Host+port: %s' %host_port)
+        
         response = urllib.request.urlopen( url )
         self.preferences = json.loads( response.read() )
         
@@ -80,8 +138,19 @@ class DomoticzDB_Hardware:
 
     def load_hardware(self):  
         # sourcery skip: replace-interpolation-with-fstring
-        url = self.api_base_url + DOMOTICZ_HARDWARE_API
-        
+        username, password, host_port = extract_username_password( self.api_base_url )
+        if username and password and host_port:
+            url = 'http://' + host_port + '/json.htm?' + 'username=%s&password=%s&' %(username, password)
+        else:
+            url = self.api_base_url + '/json.htm?'
+
+        url += DOMOTICZ_HARDWARE_API
+
+        self.logging("Log", "url: %s" %url)
+        self.logging("Log",'Username: %s' %username)
+        self.logging("Log",'Password: %s' %password)
+        self.logging("Log",'Host+port: %s' %host_port)
+
         response = urllib.request.urlopen( url )
         result = json.loads( response.read() )
         for x in result['result']:
@@ -123,8 +192,19 @@ class DomoticzDB_DeviceStatus:
     def get_device_status(self, ID):
         # "http://%s:%s@127.0.0.1:%s" 
         # sourcery skip: replace-interpolation-with-fstring
-        url = self.api_base_url + DOMOTICZ_DEVICEST_API + "%s" %ID
-        
+        username, password, host_port = extract_username_password( self.api_base_url )
+        if username and password and host_port:
+            url = 'http://' + host_port + '/json.htm?' + 'username=%s&password=%s&' %(username, password)
+        else:
+            url = self.api_base_url + '/json.htm?'
+
+        url += DOMOTICZ_DEVICEST_API + "%s" %ID
+
+        self.logging("Log", "url: %s" %url)
+        self.logging("Log",'Username: %s' %username)
+        self.logging("Log",'Password: %s' %password)
+        self.logging("Log",'Host+port: %s' %host_port)
+
         response = urllib.request.urlopen( url )
         result = json.loads( response.read() )
         self.logging("Debug", "Result: %s" %result)
@@ -134,8 +214,8 @@ class DomoticzDB_DeviceStatus:
         # sourcery skip: replace-interpolation-with-fstring
         result = self.get_device_status( ID)
         AdjValue = 0
-        for x in result[ 'result' ]:
-            AdjValue = x [ attribute ]    
+        for x in result['result']:
+            AdjValue = x[attribute]    
         self.logging("Debug", "return extract_AddValue %s %s %s" % (ID, attribute, AdjValue)  )  
         return AdjValue
        
@@ -156,30 +236,3 @@ class DomoticzDB_DeviceStatus:
         Retreive the AddjValue of Device.ID
         """
         return self.extract_AddValue( ID, 'AddjValue')
-    
-    
-def open_and_read( self, url ):
-    
-    retry = 3
-    while retry:
-        try:
-            with urllib.request.urlopen(url) as response:
-                return response.read()
-        except urllib.error.HTTPError as e:
-            if e.code in [429, 504]: # 429=too many requests, 504=gateway timeout
-                reason = f'{e.code} {str(e.reason)}'
-            elif isinstance(e.reason, socket.timeout):
-                reason = f'HTTPError socket.timeout {e.reason} - {e}'
-            else:
-                raise
-        except urllib.error.URLError as e:
-            if isinstance(e.reason, socket.timeout):
-                reason = f'URLError socket.timeout {e.reason} - {e}'
-            else:
-                raise
-        except socket.timeout as e:
-            reason = f'socket.timeout {e}'
-        netloc = urllib.parse.urlsplit(url).netloc # e.g. nominatim.openstreetmap.org
-        self.logging("Error", f'*** {netloc} {reason}; will retry')
-        time.sleep(1)
-        retry -= 1

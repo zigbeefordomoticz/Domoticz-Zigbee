@@ -78,8 +78,9 @@
 import pathlib
 import sys
 
-import Domoticz
 from pkg_resources import DistributionNotFound
+
+import Domoticz
 
 try:
     from Domoticz import Devices, Images, Parameters, Settings
@@ -126,7 +127,7 @@ from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (get_device_nickname, how_many_devices,
-                           removeDeviceInList)
+                           lookupForIEEE, removeDeviceInList)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -135,7 +136,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_remove_device,
                                     zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
-from Zigbee.zdpCommands import zdp_get_permit_joint_status
+from Zigbee.zdpCommands import zdp_get_permit_joint_status, zdp_IEEE_address_request
 
 #from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 #from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -916,21 +917,34 @@ class BasePlugin:
 
     def zigpy_get_device(self, ieee=None, nwkid=None):
         # allow to inter-connect zigpy world and plugin
+        #lookupForIEEE(self, nwkid, reconnect=False)
+
         sieee = ieee
         snwkid = nwkid
         model = manuf = None
-        if nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
+
+        if nwkid and nwkid not in self.ListOfDevices:
+            # This will allow to reconnect in case the device changed its NwkId
+            if lookupForIEEE(self, nwkid, reconnect=True) is None:
+                # We didn't find it via the Network Neigbour, let's try to broadcast a request
+                zdp_IEEE_address_request(self, "fffd", nwkid, u8RequestType="00", u8StartIndex="00")
+
+        if nwkid and nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
             ieee = self.ListOfDevices[ nwkid ]['IEEE']
-        elif ieee in self.IEEE2NWK:
+        elif ieee and ieee in self.IEEE2NWK:
             nwkid = self.IEEE2NWK[ ieee ]
         else:
             self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(snwkid) ))
             return None
+
         if nwkid in self.ListOfDevices and "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( "", {} ):
             model = self.ListOfDevices[ nwkid ]["Model"]
+
         if nwkid in self.ListOfDevices and "Manufacturer" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Manufacturer"] not in ( "", {} ):
             manuf = self.ListOfDevices[ nwkid ]["Manufacturer"]
+
         self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
+
         return int(nwkid,16) ,int(ieee,16)
     
     def onCommand(self, Unit, Command, Level, Color):
