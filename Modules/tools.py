@@ -842,10 +842,34 @@ def loggingMessages(self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
         % (msgtype, zdevname, sAddr, ieee, int(LQI, 16), SQN)
     )
 
+def try_to_reconnect_via_neighbours(self, old_nwkid):
+    
+    # We receive a message from a known NwkId but got a NACK. 
+    # Let see if we don't have a wrong NwkId
+
+    if "IEEE" not in self.ListOfDevices[ old_nwkid ]:
+        return 
+    ieee = self.ListOfDevices[ old_nwkid ]["IEEE"]
+    
+    for key in list(self.ListOfDevices.keys()):
+        if "Neighbours" not in self.ListOfDevices[key]:
+            continue
+        if len(self.ListOfDevices[key]["Neighbours"]) == 0:
+            continue
+        # We are interested only on the last one
+        lastScan = self.ListOfDevices[key]["Neighbours"][-1]
+        for item in lastScan["Devices"]:
+            for x in item:
+                if "_IEEE" not in item[x]:
+                    continue
+                if item[x]["_IEEE"] == ieee:
+                    new_nwkid = x
+                    reconnectNWkDevice(self, new_nwkid, ieee, old_nwkid) 
 
 def lookupForIEEE(self, nwkid, reconnect=False):
     # """
     # Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
+    # This is used when receiving a message from an unknown device !
     # """
 
     # Domoticz.Log("lookupForIEEE - looking for %s in Neighbourgs table" %nwkid)

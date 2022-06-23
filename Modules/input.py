@@ -59,7 +59,7 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            is_fake_ep, loggingMessages, lookupForIEEE,
                            mainPoweredDevice, retreive_cmd_payload_from_8002,
                            set_request_phase_datastruct, set_status_datastruct,
-                           timeStamped, updLQI, updSQN)
+                           timeStamped, updLQI, updSQN, try_to_reconnect_via_neighbours)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
                                   LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
                                   ZIGATE_EP, ZIGBEE_COMMAND_IDENTIFIER)
@@ -1287,10 +1287,8 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
         return
 
-    if lookupForIEEE(self, MsgSrcAddr, reconnect=True) is None:
-        # We didn't find it via the Network Neigbour, let's try to broadcast a request
-        zdp_IEEE_address_request(self, "fffd", MsgSrcAddr, u8RequestType="00", u8StartIndex="00")
-
+    try_to_reconnect_via_neighbours(self, MsgSrcAddr)
+    
     if MsgSrcAddr not in self.ListOfDevices:
         return
     if not _powered:
