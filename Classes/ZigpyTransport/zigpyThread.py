@@ -81,7 +81,7 @@ def zigpy_thread(self):
         "zigpy_thread -extendedPANID %s %d" % (self.pluginconf.pluginConf["extendedPANID"], extendedPANID),
     )
 
-    task = radio_start(self, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
+    task = radio_start(self, self.pluginconf, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
 
     self.zigpy_loop.run_until_complete(task)
     self.zigpy_loop.run_until_complete(asyncio.sleep(1))
@@ -112,7 +112,7 @@ def get_or_create_eventloop():
     asyncio.set_event_loop( loop )
     return loop   
     
-async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
+async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
 
@@ -189,6 +189,7 @@ async def radio_start(self, radiomodule, serialPort, auto_form=False, set_channe
 
     try:
         await self.app.startup(
+            pluginconf,
             callBackHandleMessage=self.receiveData,
             callBackGetDevice=self.ZigpyGetDevice,
             auto_form=True,

@@ -497,6 +497,8 @@ class WebServer(object):
 
             setting_lst = []
             for _theme in sorted(SETTINGS.keys()):
+                if self.zigbee_communication != "zigpy" and _theme == "Zigpy":
+                    continue
                 if _theme in ("Reserved", "PluginTransport"):
                     continue
                 if sendDebug and _theme != "VerboseLogging":

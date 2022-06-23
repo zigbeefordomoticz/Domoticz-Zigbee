@@ -47,9 +47,10 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         logging.debug("startup in AppDeconz")
         self.log = log
+        self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
@@ -159,104 +160,110 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         )
 
         # Livolo Switch 0x08
-        #LOGGER.info("Adding Endpoint 0x%x" %0x08)
-        #await self.add_endpoint(
-        #    zdo_types.SimpleDescriptor(
-        #        endpoint=0x08,
-        #        profile=zigpy.profiles.zha.PROFILE_ID,
-        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-        #        device_version=0b0000,
-        #        input_clusters=[
-        #            zigpy.zcl.clusters.general.Basic.cluster_id,
-        #            zigpy.zcl.clusters.general.OnOff.cluster_id,
-        #            ],
-        #        output_clusters=[
-        #            zigpy.zcl.clusters.security.IasZone.cluster_id,
-        #            ],
-        #    )
-        #)
+        if "Livolo" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Livolo"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x08)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x08,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        zigpy.zcl.clusters.general.OnOff.cluster_id,
+                        ],
+                    output_clusters=[
+                        zigpy.zcl.clusters.security.IasZone.cluster_id,
+                        ],
+                )
+            )
 
         # Wiser Legacy 0x0b
-        #LOGGER.info("Adding Endpoint 0x%x" %0x0b)
-        #await self.add_endpoint(
-        #    zdo_types.SimpleDescriptor(
-        #        endpoint=0x0b,
-        #        profile=zigpy.profiles.zha.PROFILE_ID,
-        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-        #        device_version=0b0000,
-        #        input_clusters=[
-        #            zigpy.zcl.clusters.general.Basic.cluster_id,
-        #            ],
-        #        output_clusters=[
-        #            ],
-        #    )
-        #)
+        if "Wiser" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Wiser"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x0b)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x0b,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        ],
+                    output_clusters=[
+                        ],
+                )
+            )
 
         # Orvibo 0x0a
-        #LOGGER.info("Adding Endpoint 0x%x" %0x0a)
-        #await self.add_endpoint(
-        #    zdo_types.SimpleDescriptor(
-        #        endpoint=0x0a,
-        #        profile=zigpy.profiles.zha.PROFILE_ID,
-        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-        #        device_version=0b0000,
-        #        input_clusters=[
-        #            zigpy.zcl.clusters.general.Basic.cluster_id,
-        #            ],
-        #        output_clusters=[
-        #            ],
-        #    )
-        #)
+        if "Orvibo" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Orvibo"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x0a)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x0a,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        ],
+                    output_clusters=[
+                        ],
+                )
+            )
 
         # Terncy 0x6e
-        #LOGGER.info("Adding Endpoint 0x%x" %0x6e)
-        #await self.add_endpoint(
-        #    zdo_types.SimpleDescriptor(
-        #        endpoint=0x6e,
-        #        profile=zigpy.profiles.zha.PROFILE_ID,
-        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-        #        device_version=0b0000,
-        #        input_clusters=[
-        #            zigpy.zcl.clusters.general.Basic.cluster_id,
-        #            ],
-        #        output_clusters=[
-        #            ],
-        #    )
-        #)
+        if "Terncy" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Terncy"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x6e)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x6e,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        ],
+                    output_clusters=[
+                        ],
+                )
+            )
 
         # Konke 0x15
-        #LOGGER.info("Adding Endpoint 0x%x" %0x15)
-        #await self.add_endpoint(
-        #    zdo_types.SimpleDescriptor(
-        #        endpoint=0x15,
-        #        profile=zigpy.profiles.zha.PROFILE_ID,
-        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-        #        device_version=0b0000,
-        #        input_clusters=[
-        #            zigpy.zcl.clusters.general.Basic.cluster_id,
-        #            zigpy.zcl.clusters.general.OnOff.cluster_id,
-        #            ],
-        #        output_clusters=[
-        #            zigpy.zcl.clusters.security.IasZone.cluster_id,
-        #            ],
-        #    )
-        #)
+        if "Konke" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Konke"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x15)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x15,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        zigpy.zcl.clusters.general.OnOff.cluster_id,
+                        ],
+                    output_clusters=[
+                        zigpy.zcl.clusters.security.IasZone.cluster_id,
+                        ],
+                )
+            )
 
         # Wiser2 (new generation 0x03)
-        #LOGGER.info("Adding Endpoint 0x%x" %0x03)
-        #await self.add_endpoint(
-        #    zdo_types.SimpleDescriptor(
-        #        endpoint=0x03,
-        #        profile=zigpy.profiles.zha.PROFILE_ID,
-        #        device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-        #        device_version=0b0000,
-        #        input_clusters=[
-        #            zigpy.zcl.clusters.general.Basic.cluster_id,
-        #            ],
-        #        output_clusters=[
-        #            ],
-        #    )
-        #)
+        if "Wiser2" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Wiser2"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x03)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x03,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        ],
+                    output_clusters=[
+                        ],
+                )
+            )
         
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
