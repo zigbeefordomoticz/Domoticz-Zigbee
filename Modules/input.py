@@ -1287,13 +1287,13 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
         return
 
-    try_to_reconnect_via_neighbours(self, MsgSrcAddr)
-    
     if MsgSrcAddr not in self.ListOfDevices:
         return
     if not _powered:
         return
 
+    try_to_reconnect_via_neighbours(self, MsgSrcAddr)
+    
     # Handle only NACK for main powered devices
     timedOutDevice(self, Devices, NwkId=MsgSrcAddr)
     set_health_state(self, MsgSrcAddr, MsgData[8:12], MsgStatus)
