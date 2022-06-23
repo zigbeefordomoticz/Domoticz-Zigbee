@@ -167,12 +167,12 @@ SETTINGS = {
     "Zigpy": {
         "Order": 3,
         "param": {    
-            "Konke":  {"type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True},
-            "Livolo": {"type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True},
-            "Orvibo": {"type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True},
-            "Terncy": {"type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True},
-            "Wiser":  {"type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True},
-            "Wiser2": {"type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True},
+            "Konke":  {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "Livolo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "Orvibo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "Terncy": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "Wiser":  {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "Wiser2": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
         }
     },
     "Provisioning": {
