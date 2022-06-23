@@ -96,7 +96,7 @@ class WebServer(object):
         httpPort,
         log,
     ):
-        self.zigbee_communitation = zigbee_communitation
+        self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
         self.httpClientConn = None
         self.httpServerConns = {}
@@ -198,7 +198,7 @@ class WebServer(object):
             self.logging("Status", "Erase ZiGate PDM")
             Domoticz.Error("Erase ZiGate PDM non implémenté pour l'instant")
             if self.pluginconf.pluginConf["eraseZigatePDM"]:
-                if self.pluginParameters["Mode2"] != "None" and self.zigbee_communitation == "native":
+                if self.pluginParameters["Mode2"] != "None" and self.zigbee_communication == "native":
                     sendZigateCmd(self, "0012", "")
                 self.pluginconf.pluginConf["eraseZigatePDM"] = 0
 
@@ -216,7 +216,7 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            if self.pluginParameters["Mode2"] != "None" and self.zigbee_communitation == "native":
+            if self.pluginParameters["Mode2"] != "None" and self.zigbee_communication == "native":
                 self.ControllerData["startZigateNeeded"] = True
                 # start_Zigate( self )
                 sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
@@ -612,7 +612,7 @@ class WebServer(object):
                                         self.pluginconf.pluginConf["debugMatchId"] += self.IEEE2NWK[key] + ","
                                 self.pluginconf.pluginConf["debugMatchId"] = self.pluginconf.pluginConf["debugMatchId"][:-1]  # Remove the last ,
                                 
-                        elif param == "TXpower_set" and self.zigbee_communitation == "zigpy":
+                        elif param == "TXpower_set" and self.zigbee_communication == "zigpy":
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]["current"]:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
                                 set_TxPower(self, self.pluginconf.pluginConf[param])
@@ -770,7 +770,7 @@ class WebServer(object):
                 # for a remove in case device didn't send the leave
                 if "IEEE" in self.ControllerData and ieee:
                     # uParrentAddress + uChildAddress (uint64)
-                    if self.zigbee_communitation == "native":
+                    if self.zigbee_communication == "native":
                         sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
 
                 action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}

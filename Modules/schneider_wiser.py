@@ -1388,7 +1388,7 @@ def wiserhome_ZCLVersion_response(self, Devices, srcNWKID, srcEp, Sqn):
 
 def wiser_read_attribute_request(self, NwkId, Ep, Sqn, ClusterId, Attribute):
 
-    if self.zigbee_communitation == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x031C:
+    if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x031C:
         # We shouldn't reach here, as the firmware itself will reject and respond.
         wiser_unsupported_attribute(self, NwkId, Ep, Sqn, ClusterId, Attribute)
     else:

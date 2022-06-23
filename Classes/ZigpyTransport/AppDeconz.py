@@ -41,7 +41,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
-    async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
+    async def new(self, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         logging.debug("new")
 
     async def _load_db(self) -> None:

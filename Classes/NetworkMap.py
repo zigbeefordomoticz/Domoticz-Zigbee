@@ -36,7 +36,7 @@ from Zigbee.zdpCommands import zdp_NWK_address_request, zdp_nwk_lqi_request
 
 class NetworkMap:
     def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log):
-        self.zigbee_communitation = zigbee_communitation
+        self.zigbee_communication = zigbee_communitation
         self.pluginconf = PluginConf
         self.ControllerLink = ZigateComm
         self.ListOfDevices = ListOfDevices

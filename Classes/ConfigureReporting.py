@@ -50,7 +50,7 @@ class ConfigureReporting:
         ZigateIEEE,
     ):
 
-        self.zigbee_communitation = zigbee_communitation
+        self.zigbee_communication = zigbee_communitation
         self.pluginconf = PluginConf
         self.DeviceConf = DeviceConf
         self.ControllerLink = ZigateComm

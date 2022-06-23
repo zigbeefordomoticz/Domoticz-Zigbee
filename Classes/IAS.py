@@ -92,7 +92,7 @@ class IAS_Zone_Management:
             self.ControllerIEEE = ZigateIEEE
         self.pluginconf = pluginconf
         self.log = log
-        self.zigbee_communitation = zigbee_communitation
+        self.zigbee_communication = zigbee_communitation
         self.FirmwareVersion = FirmwareVersion
 
     def logging(self, logType, message):
