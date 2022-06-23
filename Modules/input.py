@@ -67,7 +67,7 @@ from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import (FIRMWARE_BRANCH,
                                         set_display_firmware_version)
-
+from Zigbee.zdpCommands import zdp_IEEE_address_request
 
 def ZigateRead(self, Devices, Data):
 
@@ -1287,9 +1287,12 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
         return
 
+    if lookupForIEEE(self, MsgSrcAddr, reconnect=True) is None:
+        # We didn't find it via the Network Neigbour, let's try to broadcast a request
+        zdp_IEEE_address_request(self, "fffd", MsgSrcAddr, u8RequestType="00", u8StartIndex="00")
+
     if MsgSrcAddr not in self.ListOfDevices:
         return
-
     if not _powered:
         return
 
@@ -1314,12 +1317,7 @@ def set_health_state(self, MsgSrcAddr, ClusterId, Status):
                 "Input",
                 "Log",
                 "Receive NACK from %s (%s) clusterId: %s Status: %s"
-                % (
-                    self.ListOfDevices[MsgSrcAddr]["ZDeviceName"],
-                    MsgSrcAddr,
-                    MsgClusterId,
-                    Status,
-                ),
+                % ( self.ListOfDevices[MsgSrcAddr]["ZDeviceName"], MsgSrcAddr, MsgClusterId, Status, ),
                 MsgSrcAddr,
             )
         else:
@@ -1947,52 +1945,38 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         MsgShortAddress = MsgData[20:24]
         MsgNumAssocDevices = MsgData[24:26]
         MsgStartIndex = MsgData[26:28]
-        MsgDeviceList = MsgData[28 : len(MsgData)]
+        MsgDeviceList = MsgData[28:]
+        lookupForIEEE(self, MsgShortAddress, reconnect=True)
 
     if MsgDataStatus != "00":
-        self.log.logging(
-            "Input",
-            "Debug",
+        self.log.logging( "Input", "Debug",
             "Decode8041 - Reception of IEEE Address response for %s with status %s" %(MsgIEEE, MsgDataStatus))
-
         return
 
-    self.log.logging(
-        "Input",
-        "Debug",
-        "Decode8041 - IEEE Address response, Sequence number: "
-        + MsgSequenceNumber
-        + " Status: "
-        + DisplayStatusCode(MsgDataStatus)
-        + " IEEE: "
-        + MsgIEEE
-        + " Short Address: "
-        + MsgShortAddress
-        + " number of associated devices: "
-        + MsgNumAssocDevices
-        + " Start Index: "
-        + MsgStartIndex
-        + " Device List: "
-        + MsgDeviceList,
+    self.log.logging( "Input", "Debug",
+        "Decode8041 - IEEE Address response, Sequence number: " + MsgSequenceNumber
+        + " Status: " + DisplayStatusCode(MsgDataStatus)
+        + " IEEE: " + MsgIEEE
+        + " Short Address: " + MsgShortAddress
+        + " number of associated devices: " + MsgNumAssocDevices
+        + " Start Index: " + MsgStartIndex
+        + " Device List: " + MsgDeviceList,
     )
 
     if MsgShortAddress in self.ListOfDevices:
-        self.log.logging(
-            "Input", "Debug", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress)
-        )
+        self.log.logging( "Input", "Debug", 
+            "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress) )
         return
 
     # We might check if we didn't have a change in the IEEE <-> NwkId
     if MsgIEEE in self.IEEE2NWK:
         # Looks like the device was known with a different NwkId
         # hoping that we can reconnect to an existing Device
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),
-        )
+        self.log.logging( "Input", "Log",
+            "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),)
         if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
-            self.log.logging("Input", "Log", "Decode 8041 - Not able to reconnect (unknown device)")
+            self.log.logging("Input", "Log", 
+                "Decode 8041 - Not able to reconnect (unknown device)")
             return
 
     timeStamped(self, MsgShortAddress, 0x8041)
