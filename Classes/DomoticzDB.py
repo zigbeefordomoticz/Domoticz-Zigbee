@@ -96,10 +96,10 @@ class DomoticzDB_Preferences:
         
         url += DOMOTICZ_HARDWARE_API
         
-        self.logging("Log", "url: %s" %url)
-        self.logging("Log",'Username: %s' %username)
-        self.logging("Log",'Password: %s' %password)
-        self.logging("Log",'Host+port: %s' %host_port)
+        self.logging("Debug", "url: %s" %url)
+        self.logging("Debug",'Username: %s' %username)
+        self.logging("Debug",'Password: %s' %password)
+        self.logging("Debug",'Host+port: %s' %host_port)
         
         response = urllib.request.urlopen( url )
         self.preferences = json.loads( response.read() )
@@ -146,10 +146,10 @@ class DomoticzDB_Hardware:
 
         url += DOMOTICZ_HARDWARE_API
 
-        self.logging("Log", "url: %s" %url)
-        self.logging("Log",'Username: %s' %username)
-        self.logging("Log",'Password: %s' %password)
-        self.logging("Log",'Host+port: %s' %host_port)
+        self.logging("Debug", "url: %s" %url)
+        self.logging("Debug",'Username: %s' %username)
+        self.logging("Debug",'Password: %s' %password)
+        self.logging("Debug",'Host+port: %s' %host_port)
 
         response = urllib.request.urlopen( url )
         result = json.loads( response.read() )
@@ -200,10 +200,10 @@ class DomoticzDB_DeviceStatus:
 
         url += DOMOTICZ_DEVICEST_API + "%s" %ID
 
-        self.logging("Log", "url: %s" %url)
-        self.logging("Log",'Username: %s' %username)
-        self.logging("Log",'Password: %s' %password)
-        self.logging("Log",'Host+port: %s' %host_port)
+        self.logging("Debug", "url: %s" %url)
+        self.logging("Debug",'Username: %s' %username)
+        self.logging("Debug",'Password: %s' %password)
+        self.logging("Debug",'Host+port: %s' %host_port)
 
         response = urllib.request.urlopen( url )
         result = json.loads( response.read() )
