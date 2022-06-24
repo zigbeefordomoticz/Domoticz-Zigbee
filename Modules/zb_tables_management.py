@@ -172,10 +172,14 @@ def remove_table_entry(self, nwkid, tablename, time_stamp):
     self.log.logging("NetworkMap", "Log", "remove_table_entry %s %s %s" %(nwkid, tablename, time_stamp))
     self.log.logging("NetworkMap", "Log", "remove_table_entry %s" %str(self.ListOfDevices[nwkid][tablename]) )
     
-    for idx in range(len(self.ListOfDevices[nwkid][tablename])):
+    table_size = len(self.ListOfDevices[nwkid][tablename])
+    if table_size == 0:
+        return
+    
+    for idx in range(table_size):
         self.log.logging("NetworkMap", "Log", "remove_table_entry idx: %s" %idx)
-        if ( 
-            (self.ListOfDevices[nwkid][tablename][ idx ])["Time"] == int(time_stamp)
+        if ( "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
+            and self.ListOfDevices[nwkid][tablename][ idx ]["Time"] == int(time_stamp)
         ):
             self.log.logging("NetworkMap", "Debug", "remove_table_entry %s / %s" %( nwkid, tablename))
             del self.ListOfDevices[nwkid][tablename][ idx ]
