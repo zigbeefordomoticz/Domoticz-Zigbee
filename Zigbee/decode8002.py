@@ -5,9 +5,12 @@
 #
 
 
+from Modules.tools import lookupForIEEE
 from Modules.zigateConsts import ADDRESS_MODE
+
 from Zigbee.zclDecoders import zcl_decoders
 from Zigbee.zdpDecoders import zdp_decoders
+
 
 def decode8002_and_process(self, frame):
 
@@ -27,6 +30,9 @@ def decode8002_and_process(self, frame):
         return frame
 
     if self.zigbee_communication == "zigpy" and SrcNwkId not in self.ListOfDevices:
+        if lookupForIEEE(self, SrcNwkId, reconnect=True):
+            return frame
+            
         self.log.logging("Transport8002", "Log", "decode8002_and_process unknown NwkId: %s for ZCL frame %s" % (SrcNwkId,frame))
         return None
     

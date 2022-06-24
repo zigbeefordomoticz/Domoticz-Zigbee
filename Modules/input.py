@@ -59,7 +59,7 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            is_fake_ep, loggingMessages, lookupForIEEE,
                            mainPoweredDevice, retreive_cmd_payload_from_8002,
                            set_request_phase_datastruct, set_status_datastruct,
-                           timeStamped, updLQI, updSQN)
+                           timeStamped, updLQI, updSQN, try_to_reconnect_via_neighbours)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
                                   LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
                                   ZIGATE_EP, ZIGBEE_COMMAND_IDENTIFIER)
@@ -1287,21 +1287,25 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
         return
 
-    if lookupForIEEE(self, MsgSrcAddr, reconnect=True) is None:
-        # We didn't find it via the Network Neigbour, let's try to broadcast a request
-        zdp_IEEE_address_request(self, "fffd", MsgSrcAddr, u8RequestType="00", u8StartIndex="00")
-
     if MsgSrcAddr not in self.ListOfDevices:
         return
     if not _powered:
         return
 
+    if try_to_reconnect_via_neighbours(self, MsgSrcAddr) is not None:
+        # Looks like we have reconnect and found a new NwkId
+        # Let's return and not set to faulty
+        return
+    
     # Handle only NACK for main powered devices
     timedOutDevice(self, Devices, NwkId=MsgSrcAddr)
     set_health_state(self, MsgSrcAddr, MsgData[8:12], MsgStatus)
 
 
 def set_health_state(self, MsgSrcAddr, ClusterId, Status):
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+
     if "Health" not in self.ListOfDevices[MsgSrcAddr]:
         return
     if self.ListOfDevices[MsgSrcAddr]["Health"] != "Not Reachable":
