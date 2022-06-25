@@ -860,8 +860,9 @@ def try_to_reconnect_via_neighbours(self, old_nwkid):
                     continue
                 if item[x]["_IEEE"] == ieee:
                     new_nwkid = x
-                    reconnectNWkDevice(self, new_nwkid, ieee, old_nwkid)
-                    Domoticz.Log("try_to_reconnect_via_neighbours found %s as replacement of %s" % (new_nwkid, old_nwkid))
+                    if new_nwkid != old_nwkid:
+                        reconnectNWkDevice(self, new_nwkid, ieee, old_nwkid)
+                        Domoticz.Log("try_to_reconnect_via_neighbours found %s as replacement of %s" % (new_nwkid, old_nwkid))
                     return new_nwkid
 
 def lookupForIEEE(self, nwkid, reconnect=False):
