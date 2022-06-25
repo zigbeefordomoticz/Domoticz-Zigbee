@@ -855,6 +855,8 @@ def try_to_reconnect_via_neighbours(self, old_nwkid):
         # We are interested only on the last one
         lastScan = self.ListOfDevices[key]["Neighbours"][-1]
         for item in lastScan["Devices"]:
+            if not isinstance(item, dict):
+                continue
             for x in item:
                 if "_IEEE" not in item[x]:
                     continue
