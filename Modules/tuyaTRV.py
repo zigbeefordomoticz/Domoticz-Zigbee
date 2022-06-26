@@ -31,7 +31,7 @@ TUYA_eTRV_MODEL = (
     "TS0601-_TZE200_b6wax7g0",      # BRT-100  MOES by Tuya
     "TS0601-_TZE200_chyvmhay",      # Lidl Valve
     "TS0601-thermostat",
-    "TS0601-_TZE200_dzuqwsyg",      # Tuya Thermostat with Cooling & Fan control
+    "TS0601-_TZE200_dzuqwsyg",      # Tuya Thermostat with Cooling & Fan control (mapped to "TS0601-thermostat-Coil")
     "uhszj9s",
     "GbxAXL2",
     "88teujp",
@@ -108,7 +108,7 @@ def receive_setpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
 
     setpoint = int(data, 16)
     self.log.logging("Tuya", "Debug", "receive_setpoint - Nwkid: %s/%s Setpoint: %s for model taget: %s" % (NwkId, srcEp, setpoint, model_target))
-    if model_target in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-_TZE200_dzuqwsyg"] :
+    if model_target in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-_TZE200_dzuqwsyg", "TS0601-thermostat-Coil"] :
         setpoint = int(data, 16)
     elif model_target in [ "TS0601-_TZE200_chyvmhay", ]:
         setpoint = int(data,16) / 2
@@ -145,7 +145,7 @@ def receive_onoff(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
             checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "On")
             MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 1, Attribute_="6501")  # ThermoOnOff to On
 
-    elif model_target in ["TS0601-_TZE200_dzuqwsyg",]:
+    elif model_target in ["TS0601-_TZE200_dzuqwsyg","TS0601-thermostat-Coil", ]:
         if data == "00":
             MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="6501")  # ThermoOnOff to Off
             MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="001c")  # ThermoMode_6 to Off
@@ -185,7 +185,7 @@ def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
     )
     store_tuya_attribute(self, NwkId, "ChangeMode", data)
 
-    if model_target in ["TS0601-_TZE200_dzuqwsyg", ]:
+    if model_target in ["TS0601-_TZE200_dzuqwsyg","TS0601-thermostat-Coil" ]:
         if data == "00":
             self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Program" % (NwkId, srcEp))
             
@@ -243,7 +243,7 @@ def receive_manual_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, ds
     )
     store_tuya_attribute(self, NwkId, "ManualMode", data)
     
-    if model_target in ("TS0601-_TZE200_dzuqwsyg",):
+    if model_target in ("TS0601-_TZE200_dzuqwsyg", "TS0601-thermostat-Coil"):
         self.log.logging("Tuya", "Debug", "receive_manual_mode - Nwkid: %s/%s Thermostat Mode " % (NwkId, srcEp))
         MajDomoDevice(self, Devices, NwkId, srcEp, "0201", int(data,16) + 1, Attribute_="001c")
         return
