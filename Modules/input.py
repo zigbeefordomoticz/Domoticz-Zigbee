@@ -1292,10 +1292,10 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     if not _powered:
         return
 
-    if try_to_reconnect_via_neighbours(self, MsgSrcAddr) is not None:
-        # Looks like we have reconnect and found a new NwkId
-        # Let's return and not set to faulty
-        return
+    #if try_to_reconnect_via_neighbours(self, MsgSrcAddr) is not None:
+    #    # Looks like we have reconnect and found a new NwkId
+    #    # Let's return and not set to faulty
+    #    return
     
     # Handle only NACK for main powered devices
     timedOutDevice(self, Devices, NwkId=MsgSrcAddr)

@@ -406,7 +406,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." % (t), NWKID)
 
             # 4 Selector , OffHidden, Style 0 (command)
-            if t in ("DSwitch", "blindIKEA", "ThermoMode_5"):
+            if t in ("DSwitch", "blindIKEA", "ThermoMode_5", "ThermoMode_6"):
                 Options = createSwitchSelector(self, 4, DeviceType=t, OffHidden=True, SelectorStyle=0)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DSwitch..." % (t), NWKID)

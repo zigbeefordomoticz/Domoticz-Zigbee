@@ -436,7 +436,7 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName == "TS0601-_TZE200_nklqjk62":
         tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
         
-    elif _ModelName in ("TS0601-thermostat"):
+    elif _ModelName in ("TS0601-thermostat", "TS0601-_TZE200_dzuqwsyg", ):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName in (TUYA_eTRV_MODEL):
