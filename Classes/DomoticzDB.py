@@ -37,14 +37,20 @@ def isBase64( sb ):
     except binascii.Error:
         return False
     
-def extract_username_password( url_base_api ):
+def extract_username_password( self, url_base_api ):
     
     items = url_base_api.split('@')
     if len(items) != 2:
         return None, None, None
+    self.logging("Debug", f'Extract username/password {url_base_api} ==> {items} ')
     host_port = items[1]
     item1 = items[0].replace('http://','')
-    username, password = item1.split(':')
+    usernamepassword = item1.split(':')
+    if len(usernamepassword) != 2:
+        self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ==> {item1} ==> {usernamepassword}')
+        return None, None, None
+        
+    username, password = usernamepassword
     if isBase64( username ) and isBase64( password):
         return username, password, host_port
     return (base64.b64encode( username.encode('ascii'))).decode('utf-8'), (base64.b64encode( password.encode('ascii'))).decode('utf-8'), host_port
@@ -88,7 +94,7 @@ class DomoticzDB_Preferences:
 
     def load_preferences(self):
         # sourcery skip: replace-interpolation-with-fstring
-        username, password, host_port = extract_username_password( self.api_base_url )
+        username, password, host_port = extract_username_password( self, self.api_base_url )
         if username and password and host_port:
             url = 'http://' + host_port + '/json.htm?' + 'username=%s&password=%s&' %(username, password)
         else:
@@ -138,7 +144,7 @@ class DomoticzDB_Hardware:
 
     def load_hardware(self):  
         # sourcery skip: replace-interpolation-with-fstring
-        username, password, host_port = extract_username_password( self.api_base_url )
+        username, password, host_port = extract_username_password( self, self.api_base_url )
         if username and password and host_port:
             url = 'http://' + host_port + '/json.htm?' + 'username=%s&password=%s&' %(username, password)
         else:
@@ -192,7 +198,7 @@ class DomoticzDB_DeviceStatus:
     def get_device_status(self, ID):
         # "http://%s:%s@127.0.0.1:%s" 
         # sourcery skip: replace-interpolation-with-fstring
-        username, password, host_port = extract_username_password( self.api_base_url )
+        username, password, host_port = extract_username_password( self, self.api_base_url )
         if username and password and host_port:
             url = 'http://' + host_port + '/json.htm?' + 'username=%s&password=%s&' %(username, password)
         else:
