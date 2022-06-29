@@ -164,10 +164,20 @@ SETTINGS = {
             }
         },
     },
+    "Zigpy": {
+        "Order": 3,
+        "param": {    
+            "Konke": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "Livolo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "Orvibo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "Terncy": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "Wiser": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "Wiser2": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+        }
+    },
     "Provisioning": {
         "Order": 3,
-        "param": {
-            "Livolo": {"type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False},
+        "param": {    
             "enableSchneiderWiser": {
                 "type": "bool",
                 "default": 0,
@@ -2046,7 +2056,6 @@ def _param_checking(self):
 
 
 def zigpy_setup(self):
-
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
             if param == "TXpower_set":
@@ -2058,9 +2067,9 @@ def zigpy_setup(self):
                     "hidden": False,
                     "Advanced": True,
                 }
-                
-        
-        
+    if self.pluginConf["enableSchneiderWiser"]:
+        self.pluginConf["Wiser"] =1
+                                
 def setup_folder_parameters(self, homedir):
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:

@@ -51,25 +51,28 @@ class ZigpyTransport(object):
         self._concurrent_requests_semaphores_list = {}
         self._currently_waiting_requests_list = {}  
         self._currently_not_reachable = []
-
+        
+        self.log.logging("Transport", "Log", "ZigpyTransport __init__")
+        
         # Initialise SQN Management
         sqn_init_stack(self)
 
         self.app: zigpy.application.ControllerApplication | None = None
+        
         self.writer_queue = Queue()
         self.forwarder_queue = Queue()
         self.zigpy_loop = None
-        self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
-        self.forwarder_thread = Thread(name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,))
+        self.zigpy_thread = None
+        self.forwarder_thread = None
 
-    def open_zigate_connection(self):
+    def open_cie_connection(self):
         start_zigpy_thread(self)
         start_forwarder_thread(self)
 
-    def re_connect_zigate(self):
+    def re_connect_cie(self):
         pass
 
-    def close_zigate_connection(self):
+    def close_cie_connection(self):
         pass
 
     def thread_transport_shutdown(self):

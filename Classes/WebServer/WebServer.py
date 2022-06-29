@@ -497,6 +497,11 @@ class WebServer(object):
 
             setting_lst = []
             for _theme in sorted(SETTINGS.keys()):
+                if  (
+                    _theme == "Zigpy" 
+                    and ( self.zigbee_communication != "zigpy" or (self.zigbee_communication == "zigpy" and self.ControllerLink._radiomodule != "deCONZ"))
+                ):
+                    continue
                 if _theme in ("Reserved", "PluginTransport"):
                     continue
                 if sendDebug and _theme != "VerboseLogging":
