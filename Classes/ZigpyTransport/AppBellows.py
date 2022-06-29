@@ -85,8 +85,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin(brd_manuf, brd_name, version)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
 
-
-
     async def _startup(self, *, auto_form: bool = False):
         """
         Starts a network, optionally forming one with random settings if necessary.
@@ -108,7 +106,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             LOGGER.error("Couldn't start application")
             await self.shutdown()
             raise
-
 
     # Only needed if the device require simple node descriptor from the coordinator
     async def register_endpoint(self, endpoint=1):
