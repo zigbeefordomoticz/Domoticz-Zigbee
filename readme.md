@@ -90,6 +90,12 @@ A big thanks to [Elelabs](https://elelabs.com/) sponsorship and whom have help u
 
 As for TI coordinator, we rely on [zigpy-bellows](https://github.com/zigpy/bellows) for the Silicon Labs compatibility . A list of compatible hardware is available [here](https://github.com/zigpy/bellows#hardware-requirement)
 
+### dresden elektronik ConBee and RaspBee Zigbee Coordinators
+
+Thanks goes to [dresden elektronik](https://github.com/dresden-elektronik/) / [Phoscon](https://phoscon.de/) for sponsorship and help in adding initial suppport with their ConBee and RaspBee (deCONZ firmware based) Zigbee Coordinators.
+
+ConBee and RaspBee support is only in the beta6 branch for now as still experimental, however deconz support can otherwise be considered ready with only the minor limitations that Zigbee channel change is not yet possible, and there is currently no support for Wiser/Livolo devices (but a dresden elektronik / Phoscon developer is working on a new deCONZ firmware update for ConBee and RaspBee that should sort out Wiser/Livolo support).
+
 ## LIMITATIONS
 
 * Please do consider that the current plugin is limited to create a maximum of 255 "Widgets" (Domoticz devices).  This will still give you the possibility to integrate a large number of Zigbee devices , but not an unlimited number.
