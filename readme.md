@@ -96,6 +96,8 @@ Thanks goes to [dresden elektronik](https://github.com/dresden-elektronik/) / [P
 
 ConBee and RaspBee support is only in the beta6 branch for now as still experimental, however deconz support can otherwise be considered ready with only the minor limitations that Zigbee channel change is not yet possible, and there is currently no support for Wiser/Livolo devices (but a dresden elektronik / Phoscon developer is working on a new deCONZ firmware update for ConBee and RaspBee that should sort out Wiser/Livolo support).
 
+deCONZ firmware based adapters depends on [zigpy-deconz](https://github.com/zigpy/zigpy-deconz) for ConBee/RaspBee compatibility. 
+
 ## LIMITATIONS
 
 * Please do consider that the current plugin is limited to create a maximum of 255 "Widgets" (Domoticz devices).  This will still give you the possibility to integrate a large number of Zigbee devices , but not an unlimited number.
