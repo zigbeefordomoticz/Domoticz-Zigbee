@@ -91,6 +91,11 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             self.callBackFunction(build_plugin_8010_frame_content("40", deconz_major, deconz_minor))
         elif deconz_model == "RaspBee II":
             self.callBackFunction(build_plugin_8010_frame_content("41", deconz_major, deconz_minor))
+        elif deconz_model == "RaspBee":
+            self.callBackFunction(build_plugin_8010_frame_content("42", deconz_major, deconz_minor))
+        elif deconz_model == "ConBee":
+            self.callBackFunction(build_plugin_8010_frame_content("43", deconz_major, deconz_minor))
+            
         else:
             logging.info("Unknow Zigbee CIE from %s %s" %( deconz_manuf, deconz_model))
             self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
