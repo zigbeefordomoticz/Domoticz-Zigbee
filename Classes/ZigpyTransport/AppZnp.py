@@ -62,7 +62,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             raise
         if force_form:
             await super().form_network()
-        
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
