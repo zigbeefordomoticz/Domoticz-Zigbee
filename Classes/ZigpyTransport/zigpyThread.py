@@ -132,10 +132,14 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 
     elif radiomodule =="znp":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
-        import zigpy_znp.config as conf
-        from Classes.ZigpyTransport.AppZnp import App_znp
-        config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
-        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        try:
+            import zigpy_znp.config as conf
+            from Classes.ZigpyTransport.AppZnp import App_znp
+            config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+            self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        except Exception as e:
+            self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
+            
 
     elif radiomodule =="deCONZ":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
@@ -151,29 +155,23 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
     if set_channel != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
 
-    if radiomodule == "zigate":
-        self.app = App_zigate(config)
-
-    elif radiomodule == "znp":
-        self.app = App_znp(config)
-
-    elif radiomodule == "deCONZ":
-        try:
-            self.app = App_deconz(config)
-        except Exception as e:
-            self.log.logging("TransportZigpy", "Error", "Error while launching App_deconz %s" %e) 
-
-    elif radiomodule == "ezsp":
-        self.app = App_bellows(conf.CONFIG_SCHEMA(config))
+    # Starting the Radio module
+    try:
         
-    else:
-        self.log.logging(
-            "TransportZigpy",
-            "Error",
-            "Wrong radiomode: %s"
-            % (radiomodule),
-        )
-        return
+        if radiomodule == "zigate":
+            self.app = App_zigate(config)
+        elif radiomodule == "znp":
+                self.app = App_znp(config)
+        elif radiomodule == "deCONZ":
+                self.app = App_deconz(config)
+        elif radiomodule == "ezsp":
+                self.app = App_bellows(conf.CONFIG_SCHEMA(config))  
+        else:
+            self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
+            return
+    except Exception as e:
+            self.log.logging("TransportZigpy", "Error", "Error while starting radio %s on port: %s - Error: %s" %(
+            radiomodule, serialPort, e))
 
     self.log.logging("TransportZigpy", "Debug", "4- %s" %radiomodule) 
     if self.pluginParameters["Mode3"] == "True":
@@ -389,7 +387,8 @@ async def _permit_to_joint(self, data):
 
     if self._radiomodule == "deCONZ":
         return await self.app.permit_ncp( time_s=duration)
-
+    
+    self.log.logging("TransportZigpy", "Log", "Calling self.app.permit(time_s=%s, node=%s )" % (duration, target_router))
     await self.app.permit(time_s=duration, node=target_router )
     self.log.logging("TransportZigpy", "Log", "returning from the self.app.permit(time_s=%s, node=%s )" % (duration, target_router))
 
