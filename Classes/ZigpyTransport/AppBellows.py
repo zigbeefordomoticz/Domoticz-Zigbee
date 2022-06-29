@@ -48,27 +48,30 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
+        self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         #self.bellows_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
-        if force_form:
-            auto_form = False
-        await super().startup(auto_form=auto_form)
+        try:
+            await self._startup( auto_form=True )
+        except Exception:
+            await self.shutdown()
+            raise
         if force_form:
             await self._ezsp.leaveNetwork()
             await super().form_network()
 
+
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         await self.load_network_info( load_devices=False ) # load_devices shows nothing for now
-        network_info = self.state.network_information
-        self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
+        self.callBackFunction(build_plugin_8015_frame_content( self, self.state.network_info))
         
         # Trigger Version payload to plugin
         try:
@@ -81,6 +84,28 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin(brd_manuf, brd_name, version)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
+
+    async def _startup(self, *, auto_form: bool = False):
+        """
+        Starts a network, optionally forming one with random settings if necessary.
+        """
+        await self.connect()
+        try:
+            try:
+                await self.load_network_info(load_devices=False)
+            except zigpy.exceptions.NetworkNotFormed:
+                LOGGER.info("Network is not formed")
+                if not auto_form:
+                    raise
+                LOGGER.info("Forming a new network")
+                await self.form_network()
+            LOGGER.debug("Network info: %s", self.state.network_info)
+            LOGGER.debug("Node info: %s", self.state.node_info)
+            await self.start_network()
+        except Exception:
+            LOGGER.error("Couldn't start application")
+            await self.shutdown()
+            raise
 
     # Only needed if the device require simple node descriptor from the coordinator
     async def register_endpoint(self, endpoint=1):
@@ -244,10 +269,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
     async def set_led(self, mode):
         self.log.logging("TransportZigpy", "Debug", "set_led not available on EZSP")
-#        if mode == 1:
-#            await self._set_led_mode(led=0xFF, mode=bellows.commands.util.LEDMode.ON)
-#        else:
-#            await self._set_led_mode(led=0xFF, mode=bellows.commands.util.LEDMode.OFF)
 
     async def set_certification(self, mode):
         self.log.logging("TransportZigpy", "Debug", "set_certification not implemented yet")
@@ -265,151 +286,18 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         pass
 
     async def set_extended_pan_id(self,extended_pan_ip):
-        self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
-        self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
+        self.config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
+        await self._ezsp.leaveNetwork()
+        await super().form_network()
 
-    async def set_channel(self,channel):
-        self.confif[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = channel
-        self.startup(self.callBackHandleMessage,self.callBackGetDevice,auto_form=True,force_form=True,log=self.log)
-
+    async def set_channel(self,channel): # BE CAREFUL - NEW network formed 
+        self.config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = channel
+        await self._ezsp.leaveNetwork()
+        await super().form_network()
+            
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
 
-
-    # MUST BE REMOVED WHEN INTEGRATED IN BELLOWS
-    async def load_network_info(self, *, load_devices=False) -> None:
-        ezsp = self._ezsp
-
-        # (status,) = await ezsp.networkInit()
-        # assert status == t.EmberStatus.SUCCESS
-
-        status, node_type, nwk_params = await ezsp.getNetworkParameters()
-        assert status == t.EmberStatus.SUCCESS
-
-        node_info = self.state.node_information
-        (node_info.nwk,) = await ezsp.getNodeId()
-        (node_info.ieee,) = await ezsp.getEui64()
-        node_info.logical_type = node_type.zdo_logical_type
-
-        network_info = self.state.network_information
-        network_info.extended_pan_id = nwk_params.extendedPanId
-        network_info.pan_id = nwk_params.panId
-        network_info.nwk_update_id = nwk_params.nwkUpdateId
-        network_info.nwk_manager_id = nwk_params.nwkManagerId
-        network_info.channel = nwk_params.radioChannel
-        network_info.channel_mask = nwk_params.channels
-
-        (status, security_level) = await ezsp.getConfigurationValue(
-            ezsp.types.EzspConfigId.CONFIG_SECURITY_LEVEL
-        )
-        assert status == t.EmberStatus.SUCCESS
-        network_info.security_level = security_level
-
-        # Network key
-        (status, key) = await ezsp.getKey(ezsp.types.EmberKeyType.CURRENT_NETWORK_KEY)
-        assert status == t.EmberStatus.SUCCESS
-        network_info.network_key = ezsp_key_to_zigpy_key(key, ezsp)
-
-        # Security state
-        (status, state) = await ezsp.getCurrentSecurityState()
-        assert status == t.EmberStatus.SUCCESS
-
-        # TCLK
-        (status, key) = await ezsp.getKey(ezsp.types.EmberKeyType.TRUST_CENTER_LINK_KEY)
-        assert status == t.EmberStatus.SUCCESS
-        network_info.tc_link_key = ezsp_key_to_zigpy_key(key, ezsp)
-
-        if (
-            state.bitmask
-            & ezsp.types.EmberCurrentSecurityBitmask.TRUST_CENTER_USES_HASHED_LINK_KEY
-        ):
-            network_info.stack_specific = {
-                "ezsp": {"hashed_tclk": network_info.tc_link_key.key.serialize().hex()}
-            }
-            network_info.tc_link_key.key = KeyData(b"ZigBeeAlliance09")
-
-        if not load_devices:
-            return
-
-        network_info.key_table = []
-
-        for idx in range(0, 192):
-            (status, key) = await ezsp.getKeyTableEntry(idx)
-
-            if status == t.EmberStatus.INDEX_OUT_OF_RANGE:
-                break
-            elif status == t.EmberStatus.TABLE_ENTRY_ERASED:
-                continue
-
-            assert status == t.EmberStatus.SUCCESS
-
-            network_info.key_table.append(
-                bellows.zigbee.util.ezsp_key_to_zigpy_key(key, ezsp)
-            )
-
-        network_info.children = []
-        network_info.nwk_addresses = {}
-
-        for idx in range(0, 255 + 1):
-            (status, nwk, eui64, node_type) = await ezsp.getChildData(idx)
-
-            if status == t.EmberStatus.NOT_JOINED:
-                continue
-
-            network_info.children.append(eui64)
-            network_info.nwk_addresses[eui64] = nwk
-
-        for idx in range(0, 255 + 1):
-            (nwk,) = await ezsp.getAddressTableRemoteNodeId(idx)
-            (eui64,) = await ezsp.getAddressTableRemoteEui64(idx)
-
-            # Ignore invalid NWK entries
-            if nwk in EmberDistinguishedNodeId.__members__.values():
-                continue
-
-            network_info.nwk_addresses[eui64] = nwk
-            
-def ezsp_key_to_zigpy_key(key, ezsp):
-    zigpy_key = zigpy.state.Key()
-    zigpy_key.key = key.key
-
-    if key.bitmask & ezsp.types.EmberKeyStructBitmask.KEY_HAS_SEQUENCE_NUMBER:
-        zigpy_key.seq = key.sequenceNumber
-
-    if key.bitmask & ezsp.types.EmberKeyStructBitmask.KEY_HAS_OUTGOING_FRAME_COUNTER:
-        zigpy_key.tx_counter = key.outgoingFrameCounter
-
-    if key.bitmask & ezsp.types.EmberKeyStructBitmask.KEY_HAS_INCOMING_FRAME_COUNTER:
-        zigpy_key.rx_counter = key.incomingFrameCounter
-
-    if key.bitmask & ezsp.types.EmberKeyStructBitmask.KEY_HAS_PARTNER_EUI64:
-        zigpy_key.partner_ieee = key.partnerEUI64
-
-    return zigpy_key
-
-
-def zigpy_key_to_ezsp_key(zigpy_key, ezsp):
-    key = ezsp.types.EmberKeyStruct()
-    key.key = zigpy_key.key
-    key.bitmask = ezsp.types.EmberKeyStructBitmask(0)
-
-    if zigpy_key.seq is not None:
-        key.seq = zigpy_key.seq
-        key.bitmask |= ezsp.types.EmberKeyStructBitmask.KEY_HAS_SEQUENCE_NUMBER
-
-    if zigpy_key.tx_counter is not None:
-        key.outgoingFrameCounter = zigpy_key.tx_counter
-        key.bitmask |= ezsp.types.EmberKeyStructBitmask.KEY_HAS_OUTGOING_FRAME_COUNTER
-
-    if zigpy_key.rx_counter is not None:
-        key.outgoingFrameCounter = zigpy_key.rx_counter
-        key.bitmask |= ezsp.types.EmberKeyStructBitmask.KEY_HAS_INCOMING_FRAME_COUNTER
-
-    if zigpy_key.partner_ieee is not None:
-        key.partnerEUI64 = zigpy_key.partner_ieee
-        key.bitmask |= ezsp.types.EmberKeyStructBitmask.KEY_HAS_PARTNER_EUI64
-
-    return key
 
 def extract_versioning_for_plugin( brd_manuf, brd_name, version):
     FirmwareBranch = "99" # Not found in the Table.
@@ -427,25 +315,3 @@ def extract_versioning_for_plugin( brd_manuf, brd_name, version):
     FirmwareVersion = "%04d" %int(FirmwareVersion.replace('.',''))
         
     return FirmwareBranch, FirmwareMajorVersion, FirmwareVersion
-   
-
-from bellows.types import basic
-
-
-class EmberDistinguishedNodeId(basic.enum16):
-    """A distinguished network ID that will never be assigned to any node"""
-
-    # This value is used when getting the remote node ID from the address or binding
-    # tables. It indicates that the address or binding table entry is currently in use
-    # and network address discovery is underway.
-    DISCOVERY_ACTIVE = 0xFFFC
-
-    # This value is used when getting the remote node ID from the address or binding
-    # tables. It indicates that the address or binding table entry is currently in use
-    # but the node ID corresponding to the EUI64 in the table is currently unknown.
-    UNKNOWN = 0xFFFD
-
-    # This value is used when setting or getting the remote node ID in the address table
-    # or getting the remote node ID from the binding table. It indicates that the
-    # address or binding table entry is not in use.
-    TABLE_ENTRY_UNUSED = 0xFFFF

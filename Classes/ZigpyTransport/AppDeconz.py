@@ -3,7 +3,8 @@
 #
 # Author: badz & pipiche38
 #
-
+import traceback
+import asyncio
 import binascii
 import datetime
 import logging
@@ -32,6 +33,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 from zigpy_deconz.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
+from serial import SerialException
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,29 +47,35 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None ):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         logging.debug("startup in AppDeconz")
         self.log = log
+        self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
 
-        logging.debug("startup in AppDeconz - super()")
-        await super().startup(auto_form=auto_form)
+        await asyncio.sleep( 2 )
+
+        try:
+            await self._startup( auto_form=True )
+        except Exception:
+            await self.shutdown()
+            raise
         if force_form:
-            logging.debug("startup in AppDeconz - form new network")
             await super().form_network()
+
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
-        #await self.load_network_info( load_devices=True )
-        #network_info = self.state.network_information
+        await self.load_network_info( load_devices=True )
+        network_info = self.state.network_info
 
-        #logging.debug("startup %s" %network_info) 
+        # deConz doesn't have such capabilities to provided list of paired devices.
+        #logging.debug("startup Network Info: %s" %str(network_info))
         #self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
         # Trigger Version payload to plugin
-
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
 
@@ -82,8 +90,181 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             self.callBackFunction(build_plugin_8010_frame_content("41", deconz_major, deconz_minor))
         else:
             self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
-            
 
+    async def _startup(self, *, auto_form: bool = False):
+        """
+        Starts a network, optionally forming one with random settings if necessary.
+        """
+        await self.connect()
+        try:
+            try:
+                await self.load_network_info(load_devices=False)
+            except zigpy.exceptions.NetworkNotFormed:
+                LOGGER.info("Network is not formed")
+                if not auto_form:
+                    raise
+                LOGGER.info("Forming a new network")
+                await self.form_network()
+            LOGGER.debug("Network info: %s", self.state.network_info)
+            LOGGER.debug("Node info: %s", self.state.node_info)
+            await self.start_network()
+        except Exception:
+            LOGGER.error("Couldn't start application")
+            await self.shutdown()
+            raise
+
+          
+    async def register_endpoints(self):
+        await self._register_endpoints()  
+
+
+    async def _register_endpoints(self):
+        """
+        Registers all necessary endpoints.
+        The exact order in which this method is called depends on the radio module.
+        """
+
+        LOGGER.info("Adding Endpoint 0x%x" %0x01)
+        await self.add_endpoint(
+            zdo_types.SimpleDescriptor(
+                endpoint=1,
+                profile=zigpy.profiles.zha.PROFILE_ID,
+                device_type=zigpy.profiles.zha.DeviceType.IAS_CONTROL,
+                device_version=0b0000,
+                input_clusters=[
+                    zigpy.zcl.clusters.general.Basic.cluster_id,
+                    zigpy.zcl.clusters.general.OnOff.cluster_id,
+                    zigpy.zcl.clusters.general.Time.cluster_id,
+                    zigpy.zcl.clusters.general.Ota.cluster_id,
+                    zigpy.zcl.clusters.security.IasAce.cluster_id,
+                ],
+                output_clusters=[
+                    zigpy.zcl.clusters.general.PowerConfiguration.cluster_id,
+                    zigpy.zcl.clusters.general.PollControl.cluster_id,
+                    zigpy.zcl.clusters.security.IasZone.cluster_id,
+                    zigpy.zcl.clusters.security.IasWd.cluster_id,
+                ],
+            )
+        )
+
+        LOGGER.info("Adding Endpoint 0x%x" %0x02)
+        await self.add_endpoint(
+            zdo_types.SimpleDescriptor(
+                endpoint=2,
+                profile=zigpy.profiles.zll.PROFILE_ID,
+                device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                device_version=0b0000,
+                input_clusters=[zigpy.zcl.clusters.general.Basic.cluster_id],
+                output_clusters=[],
+            )
+        )
+
+        # Livolo Switch 0x08
+        if "Livolo" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Livolo"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x08)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x08,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        zigpy.zcl.clusters.general.OnOff.cluster_id,
+                        ],
+                    output_clusters=[
+                        zigpy.zcl.clusters.security.IasZone.cluster_id,
+                        ],
+                )
+            )
+
+        # Wiser Legacy 0x0b
+        if "Wiser" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Wiser"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x0b)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x0b,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        ],
+                    output_clusters=[
+                        ],
+                )
+            )
+
+        # Orvibo 0x0a
+        if "Orvibo" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Orvibo"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x0a)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x0a,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        ],
+                    output_clusters=[
+                        ],
+                )
+            )
+
+        # Terncy 0x6e
+        if "Terncy" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Terncy"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x6e)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x6e,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        ],
+                    output_clusters=[
+                        ],
+                )
+            )
+
+        # Konke 0x15
+        if "Konke" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Konke"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x15)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x15,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        zigpy.zcl.clusters.general.OnOff.cluster_id,
+                        ],
+                    output_clusters=[
+                        zigpy.zcl.clusters.security.IasZone.cluster_id,
+                        ],
+                )
+            )
+
+        # Wiser2 (new generation 0x03)
+        if "Wiser2" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Wiser2"]:
+            LOGGER.info("Adding Endpoint 0x%x" %0x03)
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=0x03,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=[
+                        zigpy.zcl.clusters.general.Basic.cluster_id,
+                        ],
+                    output_clusters=[
+                        ],
+                )
+            )
+        
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)

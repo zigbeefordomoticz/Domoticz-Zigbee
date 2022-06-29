@@ -67,7 +67,6 @@ from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import (FIRMWARE_BRANCH,
                                         set_display_firmware_version)
-from Zigbee.zdpCommands import zdp_IEEE_address_request
 
 def ZigateRead(self, Devices, Data):
 
@@ -1292,10 +1291,10 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     if not _powered:
         return
 
-    if try_to_reconnect_via_neighbours(self, MsgSrcAddr) is not None:
-        # Looks like we have reconnect and found a new NwkId
-        # Let's return and not set to faulty
-        return
+    #if try_to_reconnect_via_neighbours(self, MsgSrcAddr) is not None:
+    #    # Looks like we have reconnect and found a new NwkId
+    #    # Let's return and not set to faulty
+    #    return
     
     # Handle only NACK for main powered devices
     timedOutDevice(self, Devices, NwkId=MsgSrcAddr)
@@ -3120,35 +3119,19 @@ def read_report_attributes(
             Source=MsgType,
         )
         return
+    # Device not found, let's try to find it, or trigger a scan
+    handle_unknow_device( self, MsgSrcAddr)
 
+def handle_unknow_device( self, Nwkid):
     # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
     # Will request in the next hearbeat to for a IEEE request
-    ieee = lookupForIEEE(self, MsgSrcAddr, True)
+    ieee = lookupForIEEE(self, Nwkid, True)
     if ieee:
-        self.log.logging("Input", "Debug", "Found IEEE for short address: %s is %s" % (MsgSrcAddr, ieee))
-        if MsgSrcAddr in self.UnknownDevices:
-            self.UnknownDevices.remove(MsgSrcAddr)
-    else:
-        # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
-        unknown_device_nwkid(self, MsgSrcAddr)
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8102 - Receiving a message from unknown device: [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
-            % (
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                MsgAttrID,
-                MsgAttStatus,
-                MsgAttType,
-                MsgAttSize,
-                MsgClusterData,
-            ),
-            MsgSrcAddr,
-        )
-
-
+        self.log.logging("Input", "Debug", "Found IEEE for short address: %s is %s" % (Nwkid, ieee))
+        if Nwkid in self.UnknownDevices:
+            self.UnknownDevices.remove(Nwkid)
+   
+    
 def isZDeviceName(self, MsgSrcAddr):
 
     return "ZDeviceName" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["ZDeviceName"] not in [

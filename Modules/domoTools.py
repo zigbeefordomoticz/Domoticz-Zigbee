@@ -229,20 +229,19 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             resetMotion(self, Devices, NWKID, WidgetType, unit, SignalLevel, BatteryLvl, now, LUpdate, TimedOutMotion)
 
         elif TimedOutSwitchButton and WidgetType in SWITCH_LVL_MATRIX:
-            if "ForceUpdate" in SWITCH_LVL_MATRIX[WidgetType]:
-                if SWITCH_LVL_MATRIX[WidgetType]["ForceUpdate"]:
-                    resetSwitchSelectorPushButton(
-                        self,
-                        Devices,
-                        NWKID,
-                        WidgetType,
-                        unit,
-                        SignalLevel,
-                        BatteryLvl,
-                        now,
-                        LUpdate,
-                        TimedOutSwitchButton,
-                    )
+            if "ForceUpdate" in SWITCH_LVL_MATRIX[WidgetType] and SWITCH_LVL_MATRIX[WidgetType]["ForceUpdate"]:
+                resetSwitchSelectorPushButton(
+                    self,
+                    Devices,
+                    NWKID,
+                    WidgetType,
+                    unit,
+                    SignalLevel,
+                    BatteryLvl,
+                    now,
+                    LUpdate,
+                    TimedOutSwitchButton,
+                )
 
 
 def resetMotion(self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut):

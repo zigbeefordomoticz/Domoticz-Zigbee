@@ -23,6 +23,7 @@
                 <option label="ZiGate+" value="V2"/>
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
                 <option label="Silicon Labs EZSP (via zigpy)" value="ZigpyEZSP"/>
+                <option label="ConBee/RasBee (via zigpy)" value="ZigpydeCONZ"/>
             </options>
         </param>
         <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">
@@ -305,8 +306,6 @@ class BasePlugin:
             Domoticz.Error("Please cross-check the Domoticz Hardware settingi for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
             self.onStop()
          
-           
-            
         # Set plugin heartbeat to 1s
         Domoticz.Heartbeat(1)
 
@@ -622,7 +621,7 @@ class BasePlugin:
             Domoticz.Log("Start Zigpy Transport on zigate")
             
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
-            self.ControllerLink.open_zigate_connection()
+            self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpyZNP":
@@ -652,7 +651,7 @@ class BasePlugin:
             Domoticz.Log("Start Zigpy Transport on ZNP")
             
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
-            self.ControllerLink.open_zigate_connection()
+            self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpydeCONZ":
@@ -680,7 +679,7 @@ class BasePlugin:
             self.pluginParameters["Zigpy"] = True
             Domoticz.Log("Start Zigpy Transport on deCONZ")            
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
-            self.ControllerLink.open_zigate_connection()
+            self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
         elif self.transport == "ZigpyEZSP":
@@ -709,7 +708,7 @@ class BasePlugin:
             Domoticz.Log("Start Zigpy Transport on EZSP")
 
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
-            self.ControllerLink.open_zigate_connection()
+            self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
           
         else:
@@ -720,7 +719,7 @@ class BasePlugin:
 
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
-            self.ControllerLink.open_zigate_connection()
+            self.ControllerLink.open_cie_connection()
 
         # IAS Zone Management
         if self.iaszonemgt is None:
@@ -753,7 +752,7 @@ class BasePlugin:
             
         if self.pluginconf and self.ControllerLink:
             self.ControllerLink.thread_transport_shutdown()
-            self.ControllerLink.close_zigate_connection()
+            self.ControllerLink.close_cie_connection()
 
         if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop calling (4) WebServer off")
@@ -1694,11 +1693,11 @@ def check_python_modules_version( self ):
     MODULES_VERSION = {
         "dns": "2.2.0rc1",
         "serial": "3.5",
-        "zigpy": "0.47.0.dev0",
-        "zigpy_znp": "0.7.0",
-        "zigpy_deconz": "0.15.0.dev0",
-        "zigpy_zigate": "0.8.0",
-        "zigpy_ezsp": "0.31.0.dev0",
+        "zigpy": "0.47.1",
+        "zigpy_znp": "0.8.0",
+        "zigpy_deconz": "0.18.0",
+        "zigpy_zigate": "0.8.1.zigbeefordomoticz",
+        "zigpy_ezsp": "0.31.0",
         }
 
     flag = True

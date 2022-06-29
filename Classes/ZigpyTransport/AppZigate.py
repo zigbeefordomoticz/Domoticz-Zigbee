@@ -44,12 +44,20 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None ):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None ):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
+        self.pluginconf = pluginconf
         self.log = log
-        await super().startup(auto_form=auto_form,force_form=force_form)
-        #await super().startup(auto_form=auto_form,)
+        
+        try:
+            await self._startup( auto_form=True )
+        except Exception:
+            await self.shutdown()
+            raise
+        if force_form:
+            await super().form_network()
+
 
         version_str = await self._api.version_str()
         version_intmajor, version_intminor = await self._api.version_int()
@@ -61,6 +69,29 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         FirmwareVersion = "%04x" % version_intminor
         
         self.callBackFunction(build_plugin_8010_frame_content(Model, FirmwareMajorVersion, FirmwareVersion))
+
+    async def _startup(self, *, auto_form: bool = False):
+        """
+        Starts a network, optionally forming one with random settings if necessary.
+        """
+        await self.connect()
+        try:
+            try:
+                await self.load_network_info(load_devices=False)
+            except zigpy.exceptions.NetworkNotFormed:
+                LOGGER.info("Network is not formed")
+                if not auto_form:
+                    raise
+                LOGGER.info("Forming a new network")
+                await self.form_network()
+            LOGGER.debug("Network info: %s", self.state.network_info)
+            LOGGER.debug("Node info: %s", self.state.node_info)
+            await self.start_network()
+        except Exception:
+            LOGGER.error("Couldn't start application")
+            await self.shutdown()
+            raise
+
 
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
