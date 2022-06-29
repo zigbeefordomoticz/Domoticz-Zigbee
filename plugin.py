@@ -1693,7 +1693,7 @@ def check_python_modules_version( self ):
     MODULES_VERSION = {
         "dns": "2.2.0rc1",
         "serial": "3.5",
-        "zigpy": "0.47.1",
+        "zigpy": "0.47.2",
         "zigpy_znp": "0.8.0",
         "zigpy_deconz": "0.18.0",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
