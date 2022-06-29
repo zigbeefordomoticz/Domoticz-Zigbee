@@ -26,9 +26,6 @@ import zigpy.types as t
 import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
-import zigpy.zdo.types as zdo_types
-from Classes.ZigpyTransport.nativeCommands import (NATIVE_COMMANDS_MAPPING,
-                                                   native_commands)
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_0302_frame_content, build_plugin_8009_frame_content,
     build_plugin_8011_frame_content,
@@ -332,7 +329,6 @@ async def worker_loop(self):
         for x in self._concurrent_requests_semaphores_list:
             self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)
 
-
 async def get_next_command(self):
     try:
         entry = self.writer_queue.get(False)
@@ -340,7 +336,6 @@ async def get_next_command(self):
         await asyncio.sleep(0.100)
         return None
     return entry
-
 
 async def dispatch_command(self, data):
 
@@ -499,7 +494,6 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
     self.statistics._sent += 1
 
-
 def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
     # Looks like Zigate return an int, while ZNP returns a status.type
     if nwkid == "0000":
@@ -516,7 +510,6 @@ def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
 
     # Send Ack/Nack to Plugin
     self.forwarder_queue.put(build_plugin_8011_frame_content(self, nwkid, result, lqi))
-
 
 def properyly_display_data(Datas):
 
@@ -536,7 +529,6 @@ def properyly_display_data(Datas):
         log += "'%s' : %s," % (x, value)
     log += "}"
     return log
-
 
 def log_exception(self, exception, error, cmd, data):
 
@@ -624,7 +616,6 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
         % (sequence, _nwkid, result, msg),
         _nwkid,
     )
-
 
 @contextlib.asynccontextmanager
 async def _limit_concurrency(self, destination, sequence):
