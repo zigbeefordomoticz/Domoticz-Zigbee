@@ -125,7 +125,7 @@ def _copyfile(source, dest, move=True):
             shutil.move(source, dest)
         else:
             shutil.copy(source, dest)
-    except:
+    except Exception:
         with open(source, "r") as src, open(dest, "wt") as dst:
             for line in src:
                 dst.write(line)
@@ -437,10 +437,12 @@ def importDeviceConfV2(self):
                     try:
                         model_definition = json.load(handle)
                     except ValueError as e:
-                        Domoticz.Error("--> JSON ConfFile: %s load failed with error: %s" % (str(filename), str(e)))
+                        Domoticz.Error("--> JSON ConfFile: %s load failed with error: %s" % (filename, str(e)))
+
                         continue
                     except Exception as e:
-                        Domoticz.Error("--> JSON ConfFile: %s load general error: %s" % (str(filename), str(e)))
+                        Domoticz.Error("--> JSON ConfFile: %s load general error: %s" % (filename, str(e)))
+
                         continue
 
                 try:
@@ -457,7 +459,7 @@ def importDeviceConfV2(self):
                             "Debug",
                             "--> Config for %s/%s not loaded as already defined" % (str(brand), str(device_model_name)),
                         )
-                except:
+                except Exception:
                     Domoticz.Error("--> Unexpected error when loading a configuration file")
 
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
