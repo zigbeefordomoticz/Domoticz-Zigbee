@@ -191,7 +191,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
                 return found
             # We are in situation where we found the device in ListOfDevices but not in IEEE2NWK.
             # this is not expected
-            Domoticz.Error( "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s"
+            self.log.logging("Database", "Error", "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s"
                 % (found, lookupNwkId, lookupIEEE, ieee_from_nwkid))
             return found
 
@@ -208,7 +208,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             # in ListOfDevices !!
             # Let's cleanup
             del self.IEEE2NWK[lookupIEEE]
-            Domoticz.Error(
+            self.log.logging("Database", "Error",
                 "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)"
                 % (exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
@@ -222,7 +222,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             del self.IEEE2NWK[ lookupIEEE ]
             # Delete the all Data Structure
             del self.ListOfDevices[ exitsingNwkId ]
-            Domoticz.Error(
+            self.log.logging("Database", "Error", 
                 "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)"
                 % (exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
@@ -237,7 +237,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             del self.IEEE2NWK[lookupIEEE]
             # Delete the all Data Structure
             del self.ListOfDevices[exitsingNwkId]
-            Domoticz.Status(
+            self.log.logging("Database", "Status",
                 "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !"
                 % (lookupIEEE, exitsingNwkId, lookupNwkId))
             return False
@@ -319,9 +319,9 @@ def removeNwkInList(self, NWKID):
 
     if safe:
         del self.ListOfDevices[NWKID]
-        Domoticz.Status("self.ListOfDevices[%s] removed! substitued by self.ListOfDevices[%s]" % (NWKID, safe))
+        self.log.logging("Database", "Status", "self.ListOfDevices[%s] removed! substitued by self.ListOfDevices[%s]" % (NWKID, safe))
     else:
-        Domoticz.Error("self.ListOfDevices[%s] removed! but no substitution !!!" % (NWKID))
+        self.log.logging("Database", "Error", "self.ListOfDevices[%s] removed! but no substitution !!!" % (NWKID))
 
     return safe
 
