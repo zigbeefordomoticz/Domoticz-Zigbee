@@ -691,7 +691,6 @@ def unknown_device_nwkid(self, nwkid):
     # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
     if self.networkmap and not self.networkmap.NetworkMapPhase():
         self.networkmap.start_scan()
-    #zdp_IEEE_address_request(self, "fffd", nwkid, )
 
 
 def send_default_response(
