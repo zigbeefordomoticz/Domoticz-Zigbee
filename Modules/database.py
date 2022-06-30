@@ -158,7 +158,7 @@ def LoadDeviceList(self):
 
     # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
 
-    if Modules.tools.is_domoticz_db_available(self):
+    if self.pluginconf.pluginConf["useDomoticzDatabase"] and Modules.tools.is_domoticz_db_available(self):
         ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
         self.log.logging(
             "Database",
@@ -244,7 +244,7 @@ def loadTxtDatabase(self, dbName):
             except (SyntaxError, NameError, TypeError, ZeroDivisionError):
                 Domoticz.Error("LoadDeviceList failed on %s" % val)
                 continue
-            self.log.logging("Database", "Debug2", "LoadDeviceList - " + str(key) + " => dlVal " + str(dlVal), key)
+            self.log.logging("Database", "Debug", "LoadDeviceList - " + str(key) + " => dlVal " + str(dlVal), key)
             if not dlVal.get("Version"):
                 if key == "0000":  # Bug fixed in later version
                     continue
@@ -296,6 +296,8 @@ def _read_DeviceList_Domoticz(self):
         ListOfDevices_from_Domoticz = {}
     else:
         for x in list(ListOfDevices_from_Domoticz):
+            self.log.logging("Database", "Debug", "--- Loading %s" % (x))
+            
             for attribute in list(ListOfDevices_from_Domoticz[x]):
                 if attribute not in (MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
                     self.log.logging("Database", "Debug", "xxx Removing attribute: %s for %s" % (attribute, x))
