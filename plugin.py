@@ -924,10 +924,7 @@ class BasePlugin:
         model = manuf = None
 
         if nwkid and nwkid not in self.ListOfDevices:
-            # This will allow to reconnect in case the device changed its NwkId
-            if lookupForIEEE(self, nwkid, reconnect=True) is None:
-                # We didn't find it via the Network Neigbour, let's try to broadcast a request
-                zdp_IEEE_address_request(self, "fffd", nwkid, u8RequestType="00", u8StartIndex="00")
+            lookupForIEEE(self, nwkid, reconnect=True)
 
         if nwkid and nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
             ieee = self.ListOfDevices[ nwkid ]['IEEE']
