@@ -28,7 +28,11 @@ from Zigbee.zdpRawCommands import (zdp_raw_active_endpoint_request,
 def zdp_NWK_address_request(self, router_nwkid, lookup_ieee, u8RequestType="00", u8StartIndex="00"):
     # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
     # zdp_raw_NWK_address_request(self, router, ieee, u8RequestType, u8StartIndex)
-    
+    # The IEEE_addr_req is generated from a Local Device wishing to inquire as to the 64-bit IEEE address
+    # of the Remote Device based on their known 16-bit address. 
+    # The destination addressing on this command shall be unicast. 
+    # or broadcast to all devices for which macRxOnWhenIdle = TRUE.
+
     self.log.logging("zdpCommand", "Debug", "zdp_NWK_address_request %s %s %s" % (lookup_ieee, u8RequestType, u8StartIndex))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zdp_raw_NWK_address_request(self, router_nwkid, lookup_ieee, u8RequestType, u8StartIndex)
@@ -38,8 +42,10 @@ def zdp_NWK_address_request(self, router_nwkid, lookup_ieee, u8RequestType="00",
 def zdp_IEEE_address_request(self, router_nwkid, lookup_nwkid, u8RequestType="00", u8StartIndex="00"):
     # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
     # zdp_raw_IEEE_address_request(self, router, nwkid, u8RequestType, u8StartIndex):
-    # always send to node of interest rather than a cache
-    
+    # The Node_Desc_req command is generated from a local device wishing to inquire as to the node descriptor of a remote device. 
+    # This command shall be unicast either to the remote device itself or 
+    # to an alternative device that contains the discovery information of the remote device.
+
     self.log.logging("zdpCommand", "Debug", "zdp_IEEE_address_request %s %s %s" % (lookup_nwkid, u8RequestType, u8StartIndex))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return zdp_raw_IEEE_address_request(self, router_nwkid, lookup_nwkid, u8RequestType, u8StartIndex)
