@@ -45,7 +45,7 @@
         <param field="Port" label="Port" width="150px" required="true" default="9999">
             <description><br/>Set the Radio Coordinator Port (9999 by default)</description>
         </param>
-        <param field="Mode5" label="API base url <br/>(http://username:password@127.0.0.1:port)" width="250px" default="http://127.0.0.1:/8080" required="true" >
+        <param field="Mode5" label="API base url <br/>(http://username:password@127.0.0.1:port)" width="250px" default="http://127.0.0.1:8080" required="true" >
             <description>
                 <br/><h3>Domoticz Json/API base ( http://127.0.0.1:8080 should be the default)</h3>In case Domoticz listen to an other port change 8080 by what ever is the port, 
                 and if you have setup an authentication please add the username:password</description>
@@ -924,10 +924,7 @@ class BasePlugin:
         model = manuf = None
 
         if nwkid and nwkid not in self.ListOfDevices:
-            # This will allow to reconnect in case the device changed its NwkId
-            if lookupForIEEE(self, nwkid, reconnect=True) is None:
-                # We didn't find it via the Network Neigbour, let's try to broadcast a request
-                zdp_IEEE_address_request(self, "fffd", nwkid, u8RequestType="00", u8StartIndex="00")
+            lookupForIEEE(self, nwkid, reconnect=True)
 
         if nwkid and nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
             ieee = self.ListOfDevices[ nwkid ]['IEEE']
@@ -1693,7 +1690,7 @@ def check_python_modules_version( self ):
     MODULES_VERSION = {
         "dns": "2.2.0rc1",
         "serial": "3.5",
-        "zigpy": "0.47.1",
+        "zigpy": "0.47.2",
         "zigpy_znp": "0.8.0",
         "zigpy_deconz": "0.18.0",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",

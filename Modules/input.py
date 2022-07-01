@@ -69,7 +69,7 @@ from Modules.zigbeeVersionTable import (FIRMWARE_BRANCH,
                                         set_display_firmware_version)
 
 def ZigateRead(self, Devices, Data):
-
+    
     DECODERS = {
         "004d": Decode004D,
         "0040": Decode0040,
@@ -147,8 +147,8 @@ def ZigateRead(self, Devices, Data):
     if Data is None:
         return
 
-    FrameStart = Data[0:2]
-    FrameStop = Data[len(Data) - 2 : len(Data)]
+    FrameStart = Data[:2]
+    FrameStop = Data[len(Data) - 2 :]
     if FrameStart != "01" and FrameStop != "03":
         Domoticz.Error(
             "ZigateRead received a non-zigate frame Data: "
@@ -196,7 +196,7 @@ def ZigateRead(self, Devices, Data):
 
 def extract_messge_infos( Data):
     FrameStart = Data[:2]
-    FrameStop = Data[len(Data) - 2 : len(Data)]
+    FrameStop = Data[len(Data) - 2 :]
     if FrameStart != "01" and FrameStop != "03":
         Domoticz.Error("ZigateRead received a non-zigate frame Data: " + str(Data) + " FS/FS = " + str(FrameStart) + "/" + str(FrameStop))
         return None, None, None
@@ -476,7 +476,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
 
     self.log.logging("Input", "Debug", "Decode0110 - message: %s" % MsgData)
-    MsgSqn = MsgData[0:2]
+    MsgSqn = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
     MsgDstEp = MsgData[8:10]
@@ -524,7 +524,7 @@ def Decode0400(self, Devices, MsgData, MsgLQI):  # Enrollment Request Response
         return
 
     # Enrolment Request Response
-    sqn = MsgData[0:2]
+    sqn = MsgData[:2]
     SrcAddress = MsgData[2:6]
     SrcEndPoint = MsgData[6:8]
     EnrollResponseCode = MsgData[10:12]
@@ -548,7 +548,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
         self.log.logging("Input", "Log", "Decode8000 - uncomplete message: %s" % MsgData)
         return
 
-    Status = MsgData[0:2]
+    Status = MsgData[:2]
     sqn_app = MsgData[2:4]
     dsqn_app = int(sqn_app, 16)
     PacketType = MsgData[4:8]
@@ -623,7 +623,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
     if PacketType in ("0060", "0061", "0062", "0063", "0064", "0065") and self.groupmgt:
         self.groupmgt.statusGroupRequest(MsgData)
 
-    if MsgData[0:2] != "00":
+    if MsgData[:2] != "00":
         self.log.logging(
             "Input",
             "Error",
@@ -631,7 +631,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
         )
         # Hack to reboot Zigate
-        if MsgData[0:2] not in ("01", "02", "03", "04", "05"):
+        if MsgData[:2] not in ("01", "02", "03", "04", "05"):
             self.internalError += 1
             # if self.internalError > 4:
             #    self.internalError = 0
@@ -646,7 +646,7 @@ def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
 
     LOG_FILE = "ZiGate"
 
-    MsgLogLvl = MsgData[0:2]
+    MsgLogLvl = MsgData[:2]
     log_message = binascii.unhexlify(MsgData[2:]).decode("utf-8")
     logfilename = (
         self.pluginconf.pluginConf["pluginLogs"] + "/" + LOG_FILE + "_" + "%02d" % self.HardwareID + "_" + ".log"
@@ -668,7 +668,7 @@ def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
     
 
 def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
-    # MsgLogLvl = MsgData[0:2]
+    # MsgLogLvl = MsgData[:2]
     MsgProfilID = MsgData[2:6]
     MsgClusterID = MsgData[6:10]
     MsgSourcePoint = MsgData[10:12]
@@ -690,12 +690,12 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
         ]:
             # Short Address
             MsgDestinationAddress = MsgData[22:26]  # uint16_t
-            MsgPayload = MsgData[26 : len(MsgData)]
+            MsgPayload = MsgData[26 :]
 
         elif int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["ieee"]:  # uint32_t
             # IEEE
             MsgDestinationAddress = MsgData[22:38]  # uint32_t
-            MsgPayload = MsgData[38 : len(MsgData)]
+            MsgPayload = MsgData[38 :]
 
         else:
             self.log.logging(
@@ -714,12 +714,12 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
             ADDRESS_MODE["group"],
         ]:
             MsgDestinationAddress = MsgData[34:38]  # uint16_t
-            MsgPayload = MsgData[38 : len(MsgData)]
+            MsgPayload = MsgData[38 :]
 
         elif int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["ieee"]:
             # IEEE
             MsgDestinationAddress = MsgData[34:40]  # uint32_t
-            MsgPayload = MsgData[40 : len(MsgData)]
+            MsgPayload = MsgData[40 :]
         else:
             self.log.logging(
                 "Input",
@@ -859,7 +859,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 
     updLQI(self, srcnwkid, MsgLQI)
 
-    if MsgClusterID == "0005" and MsgPayload[0:2] == "05":
+    if MsgClusterID == "0005" and MsgPayload[:2] == "05":
         # Scene Control
         # 057c11630701010d00
         cmd = MsgPayload[8:10]
@@ -917,9 +917,9 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 def Decode8003(self, Devices, MsgData, MsgLQI):  # Device cluster list
     # MsgLen = len(MsgData)
 
-    MsgSourceEP = MsgData[0:2]
+    MsgSourceEP = MsgData[:2]
     MsgProfileID = MsgData[2:6]
-    MsgClusterID = MsgData[6 : len(MsgData)]
+    MsgClusterID = MsgData[6 :]
 
     clusterLst = [MsgClusterID[idx : idx + 4] for idx in range(0, len(MsgClusterID), 4)]
     self.ControllerData["Cluster List"] = clusterLst
@@ -938,10 +938,10 @@ def Decode8003(self, Devices, MsgData, MsgLQI):  # Device cluster list
 def Decode8004(self, Devices, MsgData, MsgLQI):  # Device attribut list
     # MsgLen = len(MsgData)
 
-    MsgSourceEP = MsgData[0:2]
+    MsgSourceEP = MsgData[:2]
     MsgProfileID = MsgData[2:6]
     MsgClusterID = MsgData[6:10]
-    MsgAttributList = MsgData[10 : len(MsgData)]
+    MsgAttributList = MsgData[10 :]
 
     attributeLst = [MsgAttributList[idx : idx + 4] for idx in range(0, len(MsgAttributList), 4)]
 
@@ -963,10 +963,10 @@ def Decode8004(self, Devices, MsgData, MsgLQI):  # Device attribut list
 def Decode8005(self, Devices, MsgData, MsgLQI):  # Command list
     # MsgLen = len(MsgData)
 
-    MsgSourceEP = MsgData[0:2]
+    MsgSourceEP = MsgData[:2]
     MsgProfileID = MsgData[2:6]
     MsgClusterID = MsgData[6:10]
-    MsgCommandList = MsgData[10 : len(MsgData)]
+    MsgCommandList = MsgData[10 :]
 
     commandLst = [MsgCommandList[idx : idx + 4] for idx in range(0, len(MsgCommandList), 4)]
 
@@ -989,7 +989,7 @@ def Decode8006(self, Devices, MsgData, MsgLQI):  # Non “Factory new” Restart
 
     self.log.logging("Input", "Debug", "Decode8006 - MsgData: %s" % (MsgData))
 
-    Status = MsgData[0:2]
+    Status = MsgData[:2]
     if Status == "00":
         Status = "STARTUP"
     elif Status == "01" or Status != "02" and Status == "06":
@@ -1006,7 +1006,7 @@ def Decode8007(self, Devices, MsgData, MsgLQI):  # “Factory new” Restart
 
     self.log.logging("Input", "Debug", "Decode8007 - MsgData: %s" % (MsgData))
 
-    Status = MsgData[0:2]
+    Status = MsgData[:2]
     if Status == "00":
         Status = "STARTUP"
     elif Status == "01" or Status != "02" and Status == "06":
@@ -1027,7 +1027,7 @@ def Decode8008(self, Devices, MsgData, MsgLQI):  # ZiGate Heartbeat ( ZiGate V2 
 
 def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm v3.0d)
     # MsgLen = len(MsgData)
-    addr = MsgData[0:4]
+    addr = MsgData[:4]
     extaddr = MsgData[4:20]
     PanID = MsgData[20:24]
     extPanID = MsgData[24:40]
@@ -1062,7 +1062,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     self.ControllerNWKID = addr
 
     if self.ControllerNWKID != "0000":
-        Domoticz.Error("Zigate not correctly initialized")
+        self.log.logging("Input", "Error", "Zigate not correctly initialized")
         return
 
     # At that stage IEEE is set to 0x0000 which is correct for the Coordinator
@@ -1078,7 +1078,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         and not self.startZigateNeeded
         and str(int(Channel, 16)) != self.pluginconf.pluginConf["channel"]
     ):
-        Domoticz.Status(
+        self.log.logging("Input", "Status",
             "Updating Channel in Plugin Configuration from: %s to: %s"
             % (self.pluginconf.pluginConf["channel"], int(Channel, 16))
         )
@@ -1242,7 +1242,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     self.log.logging("Input", "Debug2", "Decode8011 - APS ACK: %s" % MsgData)
 
     MsgLen = len(MsgData)
-    MsgStatus = MsgData[0:2]
+    MsgStatus = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSEQ = MsgData[12:14] if MsgLen > 12 else None
     i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ControllerLink, MsgSEQ)
@@ -1420,7 +1420,7 @@ def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
 
 def Decode8017(self, Devices, MsgData, MsgLQI):  # Get Time
 
-    ZigateTime = MsgData[0:8]
+    ZigateTime = MsgData[:8]
 
     EPOCTime = datetime(2000, 1, 1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
@@ -1497,7 +1497,7 @@ def Decode8015(self, Devices, MsgData, MsgLQI):  # Get device list ( following r
 def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
 
     MsgLen = len(MsgData)
-    MsgDataStatus = MsgData[0:2]
+    MsgDataStatus = MsgData[:2]
 
     Domoticz.Log("Decode8024: Status: %s" % MsgDataStatus)
 
@@ -1595,7 +1595,7 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
 def Decode8028(self, Devices, MsgData, MsgLQI):  # Authenticate response
     # MsgLen = len(MsgData)
 
-    MsgGatewayIEEE = MsgData[0:16]
+    MsgGatewayIEEE = MsgData[:16]
     MsgEncryptKey = MsgData[16:32]
     MsgMic = MsgData[32:40]
     MsgNodeIEEE = MsgData[40:56]
@@ -1629,7 +1629,7 @@ def Decode8028(self, Devices, MsgData, MsgLQI):  # Authenticate response
 def Decode802B(self, Devices, MsgData, MsgLQI):  # User Descriptor Notify
     # MsgLen = len(MsgData)
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgNetworkAddressInterest = MsgData[4:8]
 
@@ -1648,11 +1648,11 @@ def Decode802B(self, Devices, MsgData, MsgLQI):  # User Descriptor Notify
 def Decode802C(self, Devices, MsgData, MsgLQI):  # User Descriptor Response
     # MsgLen = len(MsgData)
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgNetworkAddressInterest = MsgData[4:8]
     MsgLenght = MsgData[8:10]
-    MsgMData = MsgData[10 : len(MsgData)]
+    MsgMData = MsgData[10 :]
 
     self.log.logging(
         "Input",
@@ -1675,7 +1675,7 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
     MsgLen = len(MsgData)
     self.log.logging("Input", "Debug", "Decode8030 - Msgdata: %s, MsgLen: %s" % (MsgData, MsgLen))
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
 
     if MsgLen < 10:
@@ -1799,7 +1799,7 @@ def Decode8031(self, Devices, MsgData, MsgLQI):  # Unbind response
     MsgLen = len(MsgData)
     self.log.logging("Input", "Debug", "Decode8031 - Msgdata: %s" % (MsgData))
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
 
     if MsgLen < 10:
@@ -1839,14 +1839,14 @@ def Decode8031(self, Devices, MsgData, MsgLQI):  # Unbind response
 
 def Decode8034(self, Devices, MsgData, MsgLQI):  # Complex Descriptor response
     # MsgLen = len(MsgData)
-    # MsgSequenceNumber = MsgData[0:2]
+    # MsgSequenceNumber = MsgData[:2]
 
     MsgDataStatus = MsgData[2:4]
     MsgNetworkAddressInterest = MsgData[4:8]
     # MsgLenght = MsgData[8:10]
     MsgXMLTag = MsgData[10:12]
     MsgCountField = MsgData[12:14]
-    MsgFieldValues = MsgData[14 : len(MsgData)]
+    MsgFieldValues = MsgData[14 :]
 
     self.log.logging(
         "Input",
@@ -2080,7 +2080,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
     )  # 1 if this node is a full function device (FFD).
 
     bit_fieldL = int(bit_field[2:4], 16)
-    bit_fieldH = int(bit_field[0:2], 16)
+    bit_fieldH = int(bit_field[:2], 16)
     
     self.log.logging(
         "Input", "Debug", "Decode8042 - bit_fieldL  = %s bit_fieldH = %s" %(bit_fieldL,bit_fieldH)) 
@@ -2114,7 +2114,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
 def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor response
     # MsgLen = len(MsgData)
 
-    MsgDataSQN = MsgData[0:2]
+    MsgDataSQN = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgDataShAddr = MsgData[4:8]
     MsgDataLenght = MsgData[8:10]
@@ -2123,7 +2123,7 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
         "Debug",
         "Decode8043 - Received SQN: %s Addr: %s Len: %s Status: %s Data: %s" % (MsgDataSQN, MsgDataShAddr, MsgDataLenght, MsgDataStatus, MsgData),
     )
-    
+
     if MsgDataShAddr not in self.ListOfDevices:
         self.log.logging(
             "Input",
@@ -2360,7 +2360,7 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
 
 def Decode8044(self, Devices, MsgData, MsgLQI):  # Power Descriptior response
     # MsgLen = len(MsgData)
-    SQNum = MsgData[0:2]
+    SQNum = MsgData[:2]
     Status = MsgData[2:4]
     bit_fields = MsgData[4:8]
 
@@ -2392,12 +2392,12 @@ def Decode8044(self, Devices, MsgData, MsgLQI):  # Power Descriptior response
 def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint response
     # MsgLen = len(MsgData)
 
-    MsgDataSQN = MsgData[0:2]
+    MsgDataSQN = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgDataShAddr = MsgData[4:8]
     MsgDataEpCount = MsgData[8:10]
 
-    MsgDataEPlist = MsgData[10 : len(MsgData)]
+    MsgDataEPlist = MsgData[10 :]
 
     self.log.logging(
         "Pairing",
@@ -2442,11 +2442,7 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
         if not self.ListOfDevices[MsgDataShAddr].get("Epv2"):
             self.ListOfDevices[MsgDataShAddr]["Epv2"] = {}
         if not self.ListOfDevices[MsgDataShAddr]["Epv2"].get(tmpEp):
-            self.ListOfDevices[MsgDataShAddr]["Epv2"][tmpEp] = {}
-            self.ListOfDevices[MsgDataShAddr]["Epv2"][tmpEp]["ClusterIn"] = {}
-            self.ListOfDevices[MsgDataShAddr]["Epv2"][tmpEp]["ClusterOut"] = {}
-            self.ListOfDevices[MsgDataShAddr]["Epv2"][tmpEp]["ProfileID"] = {}
-            self.ListOfDevices[MsgDataShAddr]["Epv2"][tmpEp]["ZDeviceID"] = {}
+            self.ListOfDevices[MsgDataShAddr]["Epv2"][tmpEp] = {"ClusterIn": {}, "ClusterOut": {}, "ProfileID": {}, "ZDeviceID": {}}
 
         self.log.logging(
             "Input",
@@ -2478,11 +2474,11 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
 def Decode8046(self, Devices, MsgData, MsgLQI):  # Match Descriptor response
     # MsgLen = len(MsgData)
 
-    MsgDataSQN = MsgData[0:2]
+    MsgDataSQN = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgDataShAddr = MsgData[4:8]
     MsgDataLenList = MsgData[8:10]
-    MsgDataMatchList = MsgData[10 : len(MsgData)]
+    MsgDataMatchList = MsgData[10 :]
 
     updSQN(self, MsgDataShAddr, MsgDataSQN)
     updLQI(self, MsgDataShAddr, MsgLQI)
@@ -2504,7 +2500,7 @@ def Decode8046(self, Devices, MsgData, MsgLQI):  # Match Descriptor response
 
 def Decode8047(self, Devices, MsgData, MsgLQI):  # Management Leave response
     # MsgLen = len(MsgData)
-    # MsgSequenceNumber = MsgData[0:2]
+    # MsgSequenceNumber = MsgData[:2]
 
     MsgDataStatus = MsgData[2:4]
 
@@ -2528,7 +2524,7 @@ def device_leave_annoucement(self, Devices, MsgExtAddress):
 def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
     # MsgLen = len(MsgData)
 
-    MsgExtAddress = MsgData[0:16]
+    MsgExtAddress = MsgData[:16]
     MsgDataStatus = MsgData[16:18]
 
     loggingMessages(self, "8048", None, MsgExtAddress, int(MsgLQI, 16), None)
@@ -2549,8 +2545,10 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
     if self.ListOfDevices[sAddr]["Status"] == "Removed":
         if sAddr in self.ListOfDevices:
             del self.ListOfDevices[sAddr]
+            self.log.logging("Input", "Status", "Removing Device entry %s from plugin Db" %( sAddr))
         if MsgExtAddress in self.IEEE2NWK:
             del self.IEEE2NWK[MsgExtAddress]
+            self.log.logging("Input", "Status", "Removing Device entry %s from plugin IEEE2NWK" %( MsgExtAddress))
     
     elif self.ListOfDevices[sAddr]["Status"] == "inDB":
         self.ListOfDevices[sAddr]["Status"] = "Left"
@@ -2577,7 +2575,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
         # Will set to Leave in order to protect Domoticz Widget, Just need to make sure that we can reconnect at a point of time
         self.ListOfDevices[sAddr]["Status"] = "Leave"
         self.ListOfDevices[sAddr]["Heartbeat"] = 0
-        Domoticz.Error(
+        self.log.logging("Input", "Error",
             "Receiving a leave from %s/%s while device is %s status"
             % (sAddr, MsgExtAddress, self.ListOfDevices[sAddr]["Status"])
         )
@@ -2604,7 +2602,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
 def Decode8049(self, Devices, MsgData, MsgLQI):  # E_SL_MSG_PERMIT_JOINING_RESPONSE
 
     self.log.logging("Input", "Debug", "Decode8049 - MsgData: %s" % MsgData)
-    # SQN = MsgData[0:2]
+    # SQN = MsgData[:2]
     Status = MsgData[2:4]
 
     if Status == "00":
@@ -2620,7 +2618,7 @@ def Decode804A(self, Devices, MsgData, MsgLQI):  # Management Network Update res
 def Decode804B(self, Devices, MsgData, MsgLQI):  # System Server Discovery response
     # MsgLen = len(MsgData)
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgServerMask = MsgData[4:8]
 
@@ -2669,7 +2667,7 @@ def Decode8063(self, Devices, MsgData, MsgLQI):
 def Decode80A0(self, Devices, MsgData, MsgLQI):  # View Scene response
     # MsgLen = len(MsgData)
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgEP = MsgData[2:4]
     MsgClusterID = MsgData[4:8]
     MsgDataStatus = MsgData[8:10]
@@ -2702,7 +2700,7 @@ def Decode80A0(self, Devices, MsgData, MsgLQI):  # View Scene response
 def Decode80A1(self, Devices, MsgData, MsgLQI):  # Add Scene response
     # MsgLen = len(MsgData)
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgEP = MsgData[2:4]
     MsgClusterID = MsgData[4:8]
     MsgDataStatus = MsgData[8:10]
@@ -2730,7 +2728,7 @@ def Decode80A1(self, Devices, MsgData, MsgLQI):  # Add Scene response
 def Decode80A2(self, Devices, MsgData, MsgLQI):  # Remove Scene response
     # MsgLen = len(MsgData)
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgEP = MsgData[2:4]
     MsgClusterID = MsgData[4:8]
     MsgDataStatus = MsgData[8:10]
@@ -2758,7 +2756,7 @@ def Decode80A2(self, Devices, MsgData, MsgLQI):  # Remove Scene response
 def Decode80A3(self, Devices, MsgData, MsgLQI):  # Remove All Scene response
     # MsgLen = len(MsgData)
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgEP = MsgData[2:4]
     MsgClusterID = MsgData[4:8]
     MsgDataStatus = MsgData[8:10]
@@ -2783,7 +2781,7 @@ def Decode80A3(self, Devices, MsgData, MsgLQI):  # Remove All Scene response
 def Decode80A4(self, Devices, MsgData, MsgLQI):  # Store Scene response
     # MsgLen = len(MsgData)
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgEP = MsgData[2:4]
     MsgClusterID = MsgData[4:8]
     MsgDataStatus = MsgData[8:10]
@@ -2809,9 +2807,9 @@ def Decode80A4(self, Devices, MsgData, MsgLQI):  # Store Scene response
 
 
 def Decode80A6(self, Devices, MsgData, MsgLQI):  # Scene Membership response
-    MsgSrcAddr = MsgData[len(MsgData) - 4 : len(MsgData)]
+    MsgSrcAddr = MsgData[len(MsgData) - 4 :]
 
-    # MsgSequenceNumber = MsgData[0:2]
+    # MsgSequenceNumber = MsgData[:2]
     MsgEP = MsgData[2:4]
     MsgClusterID = MsgData[4:8]
     MsgDataStatus = MsgData[8:10]
@@ -2865,7 +2863,7 @@ def Decode80A6(self, Devices, MsgData, MsgLQI):  # Scene Membership response
 def Decode8100(self, Devices, MsgData, MsgLQI):
     # Read Attribute Response (in case there are several Attribute call several time read_report_attributes)
 
-    MsgSQN = MsgData[0:2]
+    MsgSQN = MsgData[:2]
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
 
     MsgSrcAddr = MsgData[2:6]
@@ -2887,7 +2885,7 @@ def Decode8100(self, Devices, MsgData, MsgLQI):
 
 
 def Decode8101(self, Devices, MsgData, MsgLQI):  # Default Response
-    MsgDataSQN = MsgData[0:2]
+    MsgDataSQN = MsgData[:2]
     MsgDataEp = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
     MsgDataCommand = MsgData[8:10]
@@ -2909,7 +2907,7 @@ def Decode8101(self, Devices, MsgData, MsgLQI):  # Default Response
 
 def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
 
-    MsgSQN = MsgData[0:2]
+    MsgSQN = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
@@ -2917,7 +2915,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
     MsgAttStatus = MsgData[16:18]
     MsgAttType = MsgData[18:20]
     MsgAttSize = MsgData[20:24]
-    MsgClusterData = MsgData[24 : len(MsgData)]
+    MsgClusterData = MsgData[24 :]
 
     self.log.logging(
         "Input",
@@ -2944,7 +2942,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
         _size = MsgAttSize
         # _data = MsgClusterData
 
-        _newsize = "00" + _size[0:2]
+        _newsize = "00" + _size[:2]
         _newdata = MsgAttSize[2:4] + MsgClusterData
 
         self.log.logging("Input", "Log", " MsgAttStatus: %s -> %s" % (MsgAttStatus, _status), MsgSrcAddr)
@@ -3197,7 +3195,7 @@ def Decode8110(self, Devices, MsgData, MsgLQI):
 
     MsgSrcAddr = MsgData[2:6]
     # Coming from Data Indication
-    MsgSQN = MsgData[0:2]
+    MsgSQN = MsgData[:2]
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
     if len(MsgData) != 24:
@@ -3340,7 +3338,7 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
         Domoticz.Error("Decode8120 - uncomplet message %s " % MsgData)
         return
 
-    MsgSQN = MsgData[0:2]
+    MsgSQN = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("Decode8120 - receiving Configure reporting response from unknow  %s" % MsgSrcAddr)
@@ -3404,7 +3402,7 @@ def Decode8139(self, Devices, MsgData, MsgLQI):
     #   ZNC_BUF_U16_UPD  ( &au8LinkTxBuffer [u16Length],  psEvent->pZPSevent->uEvent.sApsDataIndEvent.uSrcAddress.u16Addr,    u16Length );
     #   ZNC_BUF_U8_UPD   ( &au8LinkTxBuffer [u16Length],  psEvent->pZPSevent->uEvent.sApsDataIndEvent.u8SrcEndpoint,          u16Length );
     #   ZNC_BUF_U16_UPD  ( &au8LinkTxBuffer [u16Length],  psEvent->psClusterInstance->psClusterDefinition->u16ClusterEnum,    u16Length );
-    bDiscoveryComplete = MsgData[0:2]
+    bDiscoveryComplete = MsgData[:2]
     eAttributeDataType = MsgData[2:4]
     u16AttributeEnum = MsgData[4:8]
     uSrcAddress = MsgData[8:12]
@@ -3419,7 +3417,7 @@ def Decode8139(self, Devices, MsgData, MsgLQI):
 
 
 def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
-    MsgComplete = MsgData[0:2]
+    MsgComplete = MsgData[:2]
     MsgAttType = MsgData[2:4]
     MsgAttID = MsgData[4:8]
 
@@ -3443,8 +3441,7 @@ def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
             return
 
         if "Attributes List" not in self.ListOfDevices[MsgSrcAddr]:
-            self.ListOfDevices[MsgSrcAddr]["Attributes List"] = {}
-            self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"] = {}
+            self.ListOfDevices[MsgSrcAddr]["Attributes List"] = {"Ep": {}}
         if "Ep" not in self.ListOfDevices[MsgSrcAddr]["Attributes List"]:
             self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"] = {}
         if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"]:
@@ -3472,7 +3469,7 @@ def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
 
 
 def Decode8141(self, Devices, MsgData, MsgLQI):  # Attribute Discovery Extended response
-    MsgComplete = MsgData[0:2]
+    MsgComplete = MsgData[:2]
     MsgAttType = MsgData[2:4]
     MsgAttID = MsgData[4:8]
     MsgAttFlag = MsgData[8:10]
@@ -3501,8 +3498,7 @@ def Decode8141(self, Devices, MsgData, MsgLQI):  # Attribute Discovery Extended 
             return
 
         if "Attributes List" not in self.ListOfDevices[MsgSrcAddr]:
-            self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"] = {}
-            self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"] = {}
+            self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"] = {"Ep": {}}
         if "Ep" not in self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]:
             self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"] = {}
         if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Attributes List Extended"]["Ep"]:
@@ -3559,7 +3555,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         "Debug",
         "Decode8401 - Reception Zone status change notification: " + MsgData,
     )
-    MsgSQN = MsgData[0:2]  # sequence number: uint8_t
+    MsgSQN = MsgData[:2]  # sequence number: uint8_t
     MsgEp = MsgData[2:4]  # endpoint: uint8_t
     MsgClusterId = MsgData[4:8]  # cluster id: uint16_t
     MsgSrcAddrMode = MsgData[8:10]  # src address mode: uint8_t
@@ -3833,7 +3829,7 @@ def Decode8701(self, Devices, MsgData, MsgLQI):  # Reception Router Disovery Con
         return
 
     # This is the reverse of what is documented. Suspecting that we got a BigEndian uint16 instead of 2 uint8
-    NwkStatus = MsgData[0:2]
+    NwkStatus = MsgData[:2]
     Status = MsgData[2:4]
     MsgSrcAddr = ""
     MsgSrcIEEE = ""
@@ -4154,7 +4150,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     unknown_ = MsgData[8:10]
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
-    MsgPayload = MsgData[16 : len(MsgData)] if len(MsgData) > 16 else None
+    MsgPayload = MsgData[16 :] if len(MsgData) > 16 else None
     updLQI(self, MsgSrcAddr, MsgLQI)
     self.log.logging( "Input", 'Debug', "Decode8095 - MsgData: %s" % MsgData, MsgSrcAddr)
 
@@ -4373,9 +4369,9 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
 
 def Decode80A5(self, Devices, MsgData, MsgLQI):
     MsgSrcAddr = MsgData[10:14]
-    MsgPayload = MsgData[16 : len(MsgData)]
+    MsgPayload = MsgData[16 :]
     #Recall Scene
-    GroupID = MsgPayload[0:4]
+    GroupID = MsgPayload[:4]
     SceneID = MsgPayload[4:6]
     TransitionTime = 0    
     if len(MsgPayload) == 10 and MsgPayload[6:10] != 'ffff':
@@ -4492,7 +4488,7 @@ def Decode8806(self, Devices, MsgData, MsgLQI):
 
     self.log.logging("Input", "Debug", "Decode8806 - MsgData: %s" % MsgData)
 
-    TxPower = MsgData[0:2]
+    TxPower = MsgData[:2]
     self.ControllerData["Tx-Power"] = TxPower
 
     if int(TxPower, 16) in ATTENUATION_dBm["JN516x"]:
@@ -4515,7 +4511,7 @@ def Decode8807(self, Devices, MsgData, MsgLQI):
 
     Domoticz.Debug("Decode8807 - MsgData: %s" % MsgData)
 
-    TxPower = MsgData[0:2]
+    TxPower = MsgData[:2]
     self.ControllerData["Tx-Power"] = TxPower
     if int(TxPower, 16) in ATTENUATION_dBm["JN516x"]:
         self.ControllerData["Tx-Attenuation"] = ATTENUATION_dBm["JN516x"][int(TxPower, 16)]
@@ -4540,7 +4536,7 @@ def Decode7000(self, Devices, MsgData, MsgLQI):
     #  ZNC_BUF_U8_UPD  ( &au8LinkTxBuffer [u16Length],  sZCL_HeaderParams.u8CommandIdentifier,     u16Length );
     #  ZNC_BUF_U8_UPD  ( &au8LinkTxBuffer [u16Length],  sZCL_HeaderParams.u8TransactionSequenceNumber,     u16Length );
 
-    uSrcAddress = MsgData[0:4]
+    uSrcAddress = MsgData[:4]
     u8SrcEndpoint = MsgData[4:6]
     u16ClusterId = MsgData[6:10]
     bDirection = MsgData[10:12]

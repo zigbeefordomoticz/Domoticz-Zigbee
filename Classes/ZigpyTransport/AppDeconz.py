@@ -78,18 +78,28 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         # Trigger Version payload to plugin
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
-
+        logging.debug("startup in AppDeconz - Model: %s Manuf: %s" %(
+            deconz_model, deconz_manuf))
+        
         deconz_version = "%08x" %self.version
         deconz_major = deconz_version[:4]
         deconz_minor = deconz_version[4:8]
         logging.debug("startup in AppDeconz - build 8010 %s %08x %s" %(
             deconz_version, self.version, deconz_major + deconz_minor))
+        
         if deconz_model == "ConBee II":
             self.callBackFunction(build_plugin_8010_frame_content("40", deconz_major, deconz_minor))
         elif deconz_model == "RaspBee II":
             self.callBackFunction(build_plugin_8010_frame_content("41", deconz_major, deconz_minor))
+        elif deconz_model == "RaspBee":
+            self.callBackFunction(build_plugin_8010_frame_content("42", deconz_major, deconz_minor))
+        elif deconz_model == "ConBee":
+            self.callBackFunction(build_plugin_8010_frame_content("43", deconz_major, deconz_minor))
+            
         else:
+            logging.info("Unknow Zigbee CIE from %s %s" %( deconz_manuf, deconz_model))
             self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
+
 
     async def _startup(self, *, auto_form: bool = False):
         """

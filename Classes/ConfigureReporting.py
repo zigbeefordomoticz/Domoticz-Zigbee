@@ -24,8 +24,7 @@ from Modules.zigateConsts import (MAX_LOAD_ZIGATE, ZIGATE_EP,
                                   CFG_RPT_ATTRIBUTESbyCLUSTERS)
 from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
                                 zcl_read_report_config_request)
-from Zigbee.zdpCommands import (zdp_IEEE_address_request,
-                                zdp_NWK_address_request)
+from Zigbee.zdpCommands import ( zdp_NWK_address_request)
 
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
                                              sqn_get_internal_sqn_from_app_sqn)

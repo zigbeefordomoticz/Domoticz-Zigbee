@@ -19,16 +19,13 @@ from Modules.database import WriteDeviceList
 
 
 def is_hex(s):
-
     hex_digits = set("0123456789abcdefABCDEF")
     return all(char in hex_digits for char in s)
-
 
 def returnlen(taille, value):
     while len(value) < taille:
         value = "0" + value
     return str(value)
-
 
 def Hex_Format(taille, value):
     value = hex(int(value))[2:]
@@ -37,7 +34,6 @@ def Hex_Format(taille, value):
     while len(value) < taille:
         value = "0" + value
     return str(value)
-
 
 def voltage2batteryP(voltage, volt_max, volt_min):
 
@@ -52,15 +48,12 @@ def voltage2batteryP(voltage, volt_max, volt_min):
 
     return round(ValueBattery)
 
-
 def IEEEExist(self, IEEE):
     # check in ListOfDevices for an existing IEEE
     return IEEE != "" and IEEE in self.IEEE2NWK
 
-
 def NwkIdExist(self, Nwkid):
     return Nwkid in self.ListOfDevices
-
 
 def getSaddrfromIEEE(self, IEEE):
     # Return Short Address if IEEE found.
@@ -191,7 +184,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
                 return found
             # We are in situation where we found the device in ListOfDevices but not in IEEE2NWK.
             # this is not expected
-            Domoticz.Error( "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s"
+            self.log.logging("Input", "Error", "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s"
                 % (found, lookupNwkId, lookupIEEE, ieee_from_nwkid))
             return found
 
@@ -208,7 +201,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             # in ListOfDevices !!
             # Let's cleanup
             del self.IEEE2NWK[lookupIEEE]
-            Domoticz.Error(
+            self.log.logging("Input", "Error",
                 "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)"
                 % (exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
@@ -222,7 +215,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             del self.IEEE2NWK[ lookupIEEE ]
             # Delete the all Data Structure
             del self.ListOfDevices[ exitsingNwkId ]
-            Domoticz.Error(
+            self.log.logging("Input", "Error", 
                 "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)"
                 % (exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
@@ -237,7 +230,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             del self.IEEE2NWK[lookupIEEE]
             # Delete the all Data Structure
             del self.ListOfDevices[exitsingNwkId]
-            Domoticz.Status(
+            self.log.logging("Input", "Status",
                 "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !"
                 % (lookupIEEE, exitsingNwkId, lookupNwkId))
             return False
@@ -275,7 +268,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
 
     # MostLikely exitsingKey(the old NetworkID) is not needed any more
     if removeNwkInList(self, old_NwkId) is None:
-        Domoticz.Error(
+        self.log.logging("Input", "Error", 
             "reconnectNWkDevice - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s"
             % (new_NwkId, old_NwkId, IEEE)
         )
@@ -288,7 +281,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     if self.ListOfDevices[new_NwkId]["Status"] in ("Left", "Leave"):
         self.ListOfDevices[new_NwkId]["Status"] = "inDB"
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
-        Domoticz.Log(
+        self.log.logging("Input", "Error", 
             "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s"
             % (self.ListOfDevices[new_NwkId]["Status"], new_NwkId)
         )
@@ -302,7 +295,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
 
     WriteDeviceList(self, 0)
-    Domoticz.Status("NetworkID: %s is replacing %s for object: %s" % (new_NwkId, old_NwkId, IEEE))
+    self.log.logging("Input", "Status", "NetworkID: %s is replacing %s for object: %s" % (new_NwkId, old_NwkId, IEEE))
     return
 
 
@@ -319,9 +312,9 @@ def removeNwkInList(self, NWKID):
 
     if safe:
         del self.ListOfDevices[NWKID]
-        Domoticz.Status("self.ListOfDevices[%s] removed! substitued by self.ListOfDevices[%s]" % (NWKID, safe))
+        self.log.logging("Input", "Status", "self.ListOfDevices[%s] removed! substitued by self.ListOfDevices[%s]" % (NWKID, safe))
     else:
-        Domoticz.Error("self.ListOfDevices[%s] removed! but no substitution !!!" % (NWKID))
+        self.log.logging("Input", "Error", "self.ListOfDevices[%s] removed! but no substitution !!!" % (NWKID))
 
     return safe
 
