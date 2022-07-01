@@ -280,9 +280,11 @@ class ConfigureReporting:
                 return  # Will do at the next round
             if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ nwkid ]:
                 self.read_reporting_configuration_request(nwkid)
+                return
                 
             if "TimeStamp" not in self.ListOfDevices[ nwkid ][STORE_READ_CONFIGURE_REPORTING]:
                 self.read_reporting_configuration_request(nwkid)
+                return
                 
             if self.ListOfDevices[ nwkid ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period > time.time():
                 self.read_reporting_configuration_request(nwkid)
