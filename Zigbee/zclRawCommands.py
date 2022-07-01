@@ -179,6 +179,27 @@ def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, dir
     raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
 
+def zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_raw_read_report_config_request %s %s %s %s %s %s %s" % (
+        nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list))
+
+    cmd = "08"  # 
+    cluster_frame = 0b00010000
+    if manuf_specific == "01":
+        cluster_frame += 0b00000100
+
+    fcf = "%02x" % cluster_frame
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = fcf
+    if manuf_specific == "01":
+        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_code, 16)))[0]
+    payload += sqn + cmd
+    
+    for attribute in attribute_list:
+        payload += "00" + "%04x" % struct.unpack(">H", struct.pack("H", attribute))[0]
+
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+    return sqn
 
 # Discover Attributes
 

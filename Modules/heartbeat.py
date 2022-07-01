@@ -554,7 +554,7 @@ def processKnownDevices(self, Devices, NWKID):
     # We should authporized them for Polling After Action, in order to get confirmation.
     if not _mainPowered and not enabledEndDevicePolling:
         return
-
+    
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
 
@@ -823,6 +823,7 @@ def processListOfDevices(self, Devices):
         # Trigger Configure Reporting to eligeable devices
         if self.configureReporting:
             self.configureReporting.processConfigureReporting()
+            self.configureReporting.check_configure_reporting( 21 * 3600 )
 
     
     # Network Topology

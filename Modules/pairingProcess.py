@@ -426,6 +426,9 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
     self.ListOfDevices[NWKID]["PairingInProgress"] = False
 
     mgmt_rtg(self, NWKID, "BindingTable")
+    
+    if self.configureReporting:
+        self.configureReporting.read_reporting_configuration_request( NWKID )
 
 
 def zigbee_provision_device(self, Devices, NWKID, RIA, status):

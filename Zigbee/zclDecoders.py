@@ -5,11 +5,19 @@
 #
 
 
+from os import stat
 import struct
-from Modules.tools import retreive_cmd_payload_from_8002, is_direction_to_client, is_direction_to_server
-from Zigbee.encoder_tools import encapsulate_plugin_frame, decode_endian_data
-from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE, ZIGATE_EP
+from telnetlib import STATUS
+
+from Modules.tools import (is_direction_to_client,
+                           is_direction_to_server,
+                           retreive_cmd_payload_from_8002)
+from Modules.zigateConsts import ( SIZE_DATA_TYPE, ZIGATE_EP,
+                                  composite_value, discrete_value)
+
+from Zigbee.encoder_tools import decode_endian_data, encapsulate_plugin_frame
 from Zigbee.zclRawCommands import zcl_raw_default_response
+
 
 def is_duplicate_zcl_frame(self, Nwkid, ClusterId, Sqn):
     
@@ -133,6 +141,9 @@ def buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPo
 
     if Command == "07":  # Configure Reporting Response
         return buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+    
+    if Command == '09':  # Read Configure Reporting Response
+        return buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
     if Command == "0a":  # Report attributes
         return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
@@ -364,7 +375,55 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
 
     return encapsulate_plugin_frame("8120", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
+def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+    self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - %s %s %s Data: %s" % (
+        SrcNwkId, SrcEndPoint, ClusterId, Data))
+  
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId  
+    
+    idx = 0
+    while idx < len(Data):
+        status = Data[idx:idx+2]
+        buildPayload += status
+        idx += 2
+        direction = Data[idx:idx+2]
+        buildPayload += direction
+        idx += 2
+        attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+        buildPayload += attribute
+        idx += 4
 
+        DataType = MinInterval = MaxInterval = Change = None
+        if status == "00":
+            DataType = Data[idx:idx+2]
+            buildPayload += DataType
+            idx += 2
+            MinInterval =  "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+            buildPayload += MinInterval
+            idx += 4
+            MaxInterval =  "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+            buildPayload += MaxInterval
+            idx += 4
+            
+            if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
+                pass
+        
+            elif DataType in SIZE_DATA_TYPE:
+                size = SIZE_DATA_TYPE[DataType] * 2
+                Change = decode_endian_data(Data[idx : idx + size], DataType)
+                buildPayload += Change
+                idx += size
+                
+            if direction == "01":
+                timeout = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+                buildPayload += timeout
+                idx += 1
+                                      
+            self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - NwkId: %s Ep: %s Cluster: %s Attribute: %s Status: %s DataType: %s Min: %s Max: %s Change: %s" % (
+                SrcNwkId, SrcEndPoint, ClusterId, attribute, status, DataType, MinInterval, MaxInterval, Change))
+
+    return encapsulate_plugin_frame("8122", buildPayload, frame[len(frame) - 4 : len(frame) - 2])    
+    
 # Cluster Specific commands
 
 # Cluster 0x0003 - Identify

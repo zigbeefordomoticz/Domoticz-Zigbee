@@ -10,6 +10,11 @@
 
 """
 
+STORE_READ_CONFIGURE_REPORTING = "ReadConfigureReporting"
+STORE_CONFIGURE_REPORTING = "ConfigureReporting"
+STORE_CUSTOM_CONFIGURE_REPORTING = "ParamConfigureReporting"
+
+from distutils.util import change_root
 import time
 
 import Domoticz
@@ -20,11 +25,12 @@ from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
                            is_time_to_perform_work, mainPoweredDevice,
                            reset_attr_datastruct, set_isqn_datastruct,
                            set_status_datastruct, set_timestamp_datastruct)
-from Modules.zigateConsts import (MAX_LOAD_ZIGATE, ZIGATE_EP,
-                                  CFG_RPT_ATTRIBUTESbyCLUSTERS)
+from Modules.zigateConsts import (MAX_LOAD_ZIGATE, SIZE_DATA_TYPE, ZIGATE_EP,
+                                  CFG_RPT_ATTRIBUTESbyCLUSTERS, analog_value,
+                                  composite_value, discrete_value)
 from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
                                 zcl_read_report_config_request)
-from Zigbee.zdpCommands import ( zdp_NWK_address_request)
+from Zigbee.zdpCommands import zdp_NWK_address_request
 
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
                                              sqn_get_internal_sqn_from_app_sqn)
@@ -208,7 +214,6 @@ class ConfigureReporting:
         for x in attribute_reporting_configuration:
             set_isqn_datastruct(self, "ConfigureReporting", key, Ep, cluster, x["Attribute"], i_sqn)
 
-    # Receiving messages
     def read_configure_reporting_response(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
         if self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16) and MsgAttributeId:
             set_status_datastruct(
@@ -266,27 +271,92 @@ class ConfigureReporting:
                     MsgSrcAddr,
                 )
 
-    def read_report_configure_response(self, MsgData, MsgLQI):  # Read Configure Report response
-        MsgSQN = MsgData[:2]
-        MsgNwkId = MsgData[2:6]
-        MsgEp = MsgData[6:8]
-        MsgClusterId = MsgData[8:12]
-        MsgStatus = MsgData[12:14]
+    def check_configure_reporting(self, checking_period):
+        for nwkid in list(self.ListOfDevices.keys()):
+            if not mainPoweredDevice(self, nwkid):
+                continue  # Not Main Powered!
 
-        if MsgStatus != "00":
+            if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+                return  # Will do at the next round
+            if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ nwkid ]:
+                self.read_reporting_configuration_request(nwkid)
+                
+            if "TimeStamp" not in self.ListOfDevices[ nwkid ][STORE_READ_CONFIGURE_REPORTING]:
+                self.read_reporting_configuration_request(nwkid)
+                
+            if self.ListOfDevices[ nwkid ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period > time.time():
+                self.read_reporting_configuration_request(nwkid)
 
+    def read_reporting_configuration_request(self, Nwkid ):
+        if Nwkid == "0000":
+            return
+        if Nwkid not in self.ListOfDevices:
+            self.logging("Debug", f"processConfigureReporting - Unknown key: {Nwkid}", nwkid=Nwkid)
+            return
+        if "Status" not in self.ListOfDevices[Nwkid]:
+            self.logging("Debug", "processConfigureReporting - no 'Status' flag for device %s !!!" % Nwkid, nwkid=Nwkid)
+            return
+        if self.ListOfDevices[Nwkid]["Status"] != "inDB":
+            return
+        if  "Health" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Health"] == "Not Reachable":
             return
 
-        MsgAttributeDataType = MsgData[14:16]
-        MsgAttribute = MsgData[16:20]
-        MsgMaximumReportingInterval = MsgData[20:24]
-        MsgMinimumReportingInterval = MsgData[24:28]
+        for epout in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"]:
+            if is_fake_ep(self, Nwkid, epout):
+                continue
 
+            for cluster_id in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"][ epout ]:
+                attribute_lst = [int(attribute, 16) for attribute in self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]["Ep"][epout][cluster_id]["Attributes"]]
+
+                zcl_read_report_config_request( self, Nwkid, ZIGATE_EP, epout, cluster_id, "00", "0000", attribute_lst, is_ack_tobe_disabled(self, Nwkid),)
+
+    def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
+        zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
+
+    def read_report_configure_response(self, MsgData, MsgLQI):  # Read Configure Report response
         self.logging(
             "Log",
-            f"Read Configure Reporting response - NwkId: {MsgNwkId} Ep: {MsgEp} Cluster: {MsgClusterId} Attribute: {MsgAttribute} DataType: {MsgAttributeDataType} Max: {MsgMaximumReportingInterval} Min: {MsgMinimumReportingInterval}",
-            MsgNwkId,
+            f"Read Configure Reporting response - {MsgData}",
         )
+
+        NwkId = MsgData[2:6]
+        Ep = MsgData[6:8]
+        ClusterId = MsgData[8:12]
+
+        idx = 12
+        while idx < len(MsgData):
+            status = MsgData[idx:idx+2]
+            idx += 2
+            direction = MsgData[idx:idx+2]
+            idx += 2
+            attribute = MsgData[idx:idx+4]
+            idx += 4
+            DataType = MinInterval = MaxInterval = Change = timeout = None
+            if status == "00":
+                DataType = MsgData[idx:idx+2]
+                idx += 2
+                MinInterval = MsgData[idx:idx+4]
+                idx += 4
+                MaxInterval = MsgData[idx:idx+4]
+                idx += 4
+                if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
+                    pass
+           
+                elif DataType in SIZE_DATA_TYPE:
+                    size = SIZE_DATA_TYPE[DataType] * 2
+                    Change = MsgData[idx : idx + size]
+                    idx += size                            
+
+                if direction == "01":
+                    timeout = MsgData[idx : idx + 4]
+                    idx += 4
+                      
+            store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout )
+            self.logging(
+                "Log",
+                f"Read Configure Reporting response - NwkId: {NwkId} Ep: {Ep} Cluster: {ClusterId} Attribute: {attribute} DataType: {DataType} Min: {MinInterval} Max: {MaxInterval} Change: {Change}",
+                NwkId,
+            )
 
     def retreive_configuration_reporting_definition(self, NwkId):
     
@@ -501,28 +571,6 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, cluster_configur
         )
 
 
-def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
-
-    nb_attribute = "%02x" % len(attribute_list)
-    str_attribute_list = "".join("%04x" % x for x in attribute_list)
-    direction = "00"
-    # datas = nwkid + ZIGATE_EP + epout + cluster_id + direction + nb_attribute + manuf_specific + manuf_code + str_attribute_list
-
-    zcl_read_report_config_request(
-        self,
-        nwkid,
-        ZIGATE_EP,
-        epout,
-        cluster_id,
-        direction,
-        manuf_specific,
-        manuf_code,
-        nb_attribute,
-        str_attribute_list,
-        is_ack_tobe_disabled(self, nwkid),
-    )
-
-
 def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
     if batchMode and self.pluginconf.pluginConf["allowReBindingClusters"]:
         lookup_ieee = self.ListOfDevices[nwkid]["IEEE"]
@@ -650,70 +698,30 @@ def manufacturer_specific_attribute(self, key, cluster, attr, cfg_attribute):
         return "100b"
 
 
-def discrete_value(data_type):
-    return data_type in (
-        0x08,
-        0x09,
-        0x0A,
-        0x0B,
-        0x0C,
-        0x0D,
-        0x0E,
-        0x0F,
-        0x10,
-        0x18,
-        0x19,
-        0x1A,
-        0x1B,
-        0x1C,
-        0x1D,
-        0x1E,
-        0x1F,
-        0x30,
-        0x31,
-        0xE8,
-        0xE9,
-        0xEA,
-        0xF0,
-        0xF1,
-    )
-
-
-def analog_value(data_type):
-    return data_type in (
-        0x20,
-        0x21,
-        0x22,
-        0x23,
-        0x24,
-        0x25,
-        0x26,
-        0x27,
-        0x28,
-        0x29,
-        0x2A,
-        0x2B,
-        0x2C,
-        0x2D,
-        0x2E,
-        0x2F,
-        0x38,
-        0x39,
-        0x3A,
-        0xE0,
-        0xE1,
-        0xE2,
-    )
-
-
-def composite_value(data_type):
-    return data_type in (
-        0x41,
-        0x42,
-        0x43,
-        0x44,
-        0x48,
-        0x4C,
-        0x50,
-        0x51,
-    )
+def store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout ):
+    
+    if "ReadConfigureReporting" not in self.ListOfDevices[ NwkId ]:
+        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"] = { "Ep": {} }
+    if "Ep" not in self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]:
+        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"] = { "Ep": {} }
+    self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["TimeStamp"] = time.time()   
+    if Ep not in self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"]:
+        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ] = {}
+    if ClusterId not in self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ]:
+        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ][ ClusterId ] = {}
+    if status == "00":
+        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ][ ClusterId ][ attribute ] = {
+            "TimeStamp": time.time(),
+            "Status": status,
+            "DataType": DataType,
+            "MinInterval": MinInterval,
+            "MaxInterval": MaxInterval,
+        }
+        if Change:
+            self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ][ ClusterId ][ attribute ][ "Change" ] = Change
+        if timeout:
+            self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ][ ClusterId ][ attribute ][ "TimeOut" ] = timeout  
+    else:
+        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ][ ClusterId ][ attribute ] = { 
+            "TimeStamp": time.time(),
+            'Status': status }

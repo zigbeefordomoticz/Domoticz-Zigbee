@@ -22,6 +22,7 @@ from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                    zcl_raw_add_group_membership,
                                    zcl_raw_check_group_member_ship,
                                    zcl_raw_configure_reporting_requestv2,
+                                   zcl_raw_default_response,
                                    zcl_raw_ias_initiate_normal_operation_mode,
                                    zcl_raw_ias_initiate_test_mode,
                                    zcl_raw_ias_wd_command_squawk,
@@ -30,12 +31,12 @@ from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                    zcl_raw_level_move_to_level,
                                    zcl_raw_look_for_group_member_ship,
                                    zcl_raw_move_color,
+                                   zcl_raw_read_report_config_request,
                                    zcl_raw_remove_all_groups,
                                    zcl_raw_remove_group_member_ship,
                                    zcl_raw_send_group_member_ship_identify,
                                    zcl_raw_window_covering,
-                                   zcl_raw_write_attributeNoResponse,
-                                   zcl_raw_default_response)
+                                   zcl_raw_write_attributeNoResponse)
 
 DEFAULT_ACK_MODE = False
 
@@ -126,8 +127,22 @@ def zcl_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, directi
     return send_zigatecmd_zcl_ack(self, nwkid, "0120", data)
 
 
-def zcl_read_report_config_request(self, nwkid, epin, epout, cluster, direction, manuf_specific, manuf_code, nb_attribute, attribute_list, ackIsDisabled=DEFAULT_ACK_MODE):
-    data = epin + epout + cluster + direction + nb_attribute + manuf_specific + manuf_code + attribute_list
+def zcl_read_report_config_request(self, nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging(
+        "zclCommand",
+        "Debug",
+        "zcl_read_report_config_request %s %s %s %s %s %s %s"
+        % (
+            nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list))
+
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        return zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list, ackIsDisabled)
+
+    nb_attribute = "%02x" % len(attribute_list)
+    str_attribute_list = "".join("%04x" % x for x in attribute_list)
+    direction = "00"
+
+    data = epin + epout + cluster + direction + nb_attribute + manuf_specific + manuf_code + str_attribute_list
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0122", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "0122", data)
