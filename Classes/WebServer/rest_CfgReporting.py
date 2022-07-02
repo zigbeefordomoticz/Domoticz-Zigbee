@@ -8,7 +8,7 @@ import time
 
 import Domoticz
 from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
-from Modules.tools import getEpForCluster
+from Modules.zigateConsts import SIZE_DATA_TYPE
 
 
 def rest_cfgrpt_ondemand(self, verb, data, parameters):
@@ -171,17 +171,19 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
             if "Attribute" not in attribute:
                 continue
             cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ] = {}
+            # All data are sent by the Frontend in hex. We need to make sure they are store in the proper format
             for info in attribute["Infos"]:
                 if "MinInterval" in info:
-                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["MinInterval"] = info["MinInterval"]
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["MinInterval"] = "%04x" %int(info["MinInterval"],16)
                 if "MaxInterval" in info:
-                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["MaxInterval"] = info["MaxInterval"]
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["MaxInterval"] = "%04x" % int(info["MaxInterval"],16)
                 if "TimeOut" in info:
-                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["TimeOut"] = info["TimeOut"]
-                if "Change" in info:
-                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["Change"] = info["Change"]
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["TimeOut"] = "%04x" %int(info["TimeOut"],16)
                 if "DataType" in info:
-                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["DataType"] = info["DataType"]
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["DataType"] = "%02x" % int(info["DataType"],16)
+                    if "Change" in info:
+                        cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["Change"] = datatype_formating( self, info["Change"], info["DataType"] )
+                        
     self.ListOfDevices[ nwkid ][ "ParamConfigureReporting" ] = cluster_config_reporting
     action = {"Name": "Configure reporting record updated", "TimeStamp": int(time.time())}
 
@@ -224,3 +226,31 @@ def get_cfg_rpt_record(self, NwkId):
         and "ConfigureReporting" in self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]
     ):
         return self.DeviceConf[ self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting" ]
+
+def datatype_formating( self, value, type):
+    
+    if type not in SIZE_DATA_TYPE:
+        self.logging("Error", f"datatype_formating  unknown Data type {type} for value {value}")
+        return value
+
+    if SIZE_DATA_TYPE[ type ] == 1:
+        return "%02x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 2:
+        return "%04x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 3:
+        return "%06x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 4:
+        return "%08x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 5:
+        return "%010x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 6:
+        return "%012x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 7:
+        return "%014x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 8:
+        return "%016x" %int( value, 16)
+
+    self.logging("Error", f"datatype_formating  unknown Data type {type} for value {value}")
+    return value
+
+        
