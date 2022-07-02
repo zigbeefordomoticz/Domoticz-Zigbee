@@ -45,13 +45,14 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
         self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
+        self.callBackUpdDevice = callBackUpdDevice
         self.callBackGetDevice = callBackGetDevice
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
@@ -97,7 +98,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
-
     async def register_endpoints(self):
         await super().register_endpoints()  
 
@@ -114,6 +114,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 )
             )
 
+    def device_initialized(self, device):
+            self.log.logging("TransportZigpy", "Log","device_initialized (0x%04x %s)" %(device.nwk, device.ieee))
+            super().device_initialized(device)
+            
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
@@ -124,6 +128,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         dev = None
         try:
             dev = super().get_device(ieee, nwk)
+            # We have found in Zigpy db.
+            # We might have to check that the plugin and zigpy Dbs are in sync
+            # Let's check if the tupple (dev.ieee, dev.nwk ) are aligned with plugin Db
             
         except KeyError:
             if self.callBackGetDevice:
@@ -149,9 +156,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         """
         Called when a device joins or announces itself on the network.
         """
-
         ieee = t.EUI64(ieee)
-
         try:
             dev = self.get_device(ieee)
             logging.debug("handle_join waiting 1s for zigbee initialisation")
@@ -166,7 +171,15 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         if dev.nwk != nwk:
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
-            
+
+    def _update_nkdids_if_needed( self, ieee, new_nwkid ):
+        _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+        _nwk = new_nwkid.serialize()[::-1].hex()
+        self.log.logging("TransportZigpy", "Log", "%s(%s) %s(%s) %s(%s)" %( 
+            _ieee, type(_ieee), _nwk, type(_nwk)))
+        self.callBackUpdDevice(_ieee, _nwk)
+        
+                  
     def handle_leave(self, nwk, ieee):
         self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
 

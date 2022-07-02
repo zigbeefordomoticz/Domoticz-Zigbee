@@ -860,6 +860,18 @@ def try_to_reconnect_via_neighbours(self, old_nwkid):
                         Domoticz.Log("try_to_reconnect_via_neighbours found %s as replacement of %s" % (new_nwkid, old_nwkid))
                     return new_nwkid
 
+def chk_and_update_IEEE_NWKID(self, nwkid, ieee):
+    if ieee in self.IEEE2NWK and nwkid in self.ListOfDevices:
+        return
+    if nwkid in self.ListOfDevices:
+        return
+    if ieee not in self.IEEE2NWK:
+        return
+
+    old_nwkid = self.IEEE2NWK[ ieee ]
+    self.log.logging("Input", "Log", "chk_and_update_IEEE_NWKID - update %s %s -> %s" %(ieee, old_nwkid, nwkid))
+    reconnectNWkDevice(self, nwkid, ieee, old_nwkid)
+        
 def lookupForIEEE(self, nwkid, reconnect=False):
     # """
     # Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
