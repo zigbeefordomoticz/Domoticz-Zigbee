@@ -1,0 +1,4 @@
+
+STORE_READ_CONFIGURE_REPORTING = "ReadConfigureReporting"
+STORE_CONFIGURE_REPORTING = "ConfigureReporting"
+STORE_CUSTOM_CONFIGURE_REPORTING = "ParamConfigureReporting"
