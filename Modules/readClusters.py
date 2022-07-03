@@ -50,25 +50,25 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
     self.log.logging( "Cluster", 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
 
     if int(AttType, 16) == 0x10:  # Boolean
-        return Attribute[0:2]
+        return Attribute[:2]
 
     if int(AttType, 16) == 0x18:  # 8Bit bitmap
-        return int(Attribute[0:8], 16)
+        return int(Attribute[:8], 16)
 
     if int(AttType, 16) == 0x19:  # 16BitBitMap
-        return str(int(Attribute[0:4], 16))
+        return str(int(Attribute[:4], 16))
 
     if int(AttType, 16) == 0x20:  # Uint8 / unsigned char
-        return int(Attribute[0:2], 16)
+        return int(Attribute[:2], 16)
 
     if int(AttType, 16) == 0x21:  # 16BitUint
-        return str(struct.unpack("H", struct.pack("H", int(Attribute[0:4], 16)))[0])
+        return str(struct.unpack("H", struct.pack("H", int(Attribute[:4], 16)))[0])
 
     if int(AttType, 16) == 0x22:  # ZigBee_24BitUint
         return str(struct.unpack("I", struct.pack("I", int("0" + Attribute, 16)))[0])
 
     if int(AttType, 16) == 0x23:  # 32BitUint
-        return str(struct.unpack("I", struct.pack("I", int(Attribute[0:8], 16)))[0])
+        return str(struct.unpack("I", struct.pack("I", int(Attribute[:8], 16)))[0])
 
     if int(AttType, 16) == 0x25:  # ZigBee_48BitUint
         return str(struct.unpack("Q", struct.pack("Q", int(Attribute, 16)))[0])
@@ -77,13 +77,13 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         return int(Attribute, 16)
 
     if int(AttType, 16) == 0x29:  # 16Bitint   -> tested on Measurement clusters
-        return str(struct.unpack("h", struct.pack("H", int(Attribute[0:4], 16)))[0])
+        return str(struct.unpack("h", struct.pack("H", int(Attribute[:4], 16)))[0])
 
     if int(AttType, 16) == 0x2A:  # ZigBee_24BitInt
         return str(struct.unpack("i", struct.pack("I", int("0" + Attribute, 16)))[0])
 
     if int(AttType, 16) == 0x2B:  # 32Bitint
-        return str(struct.unpack("i", struct.pack("I", int(Attribute[0:8], 16)))[0])
+        return str(struct.unpack("i", struct.pack("I", int(Attribute[:8], 16)))[0])
 
     if int(AttType, 16) == 0x2D:  # ZigBee_48Bitint
         return str(struct.unpack("q", struct.pack("Q", int(Attribute, 16)))[0])
@@ -92,7 +92,7 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         return int(Attribute[0:2], 16)
 
     if int(AttType, 16) == 0x31:  # 16BitEnum
-        return str(struct.unpack("h", struct.pack("H", int(Attribute[0:4], 16)))[0])
+        return str(struct.unpack("h", struct.pack("H", int(Attribute[:4], 16)))[0])
 
     if int(AttType, 16) == 0x39:  # Xiaomi Float
         return str(struct.unpack("f", struct.pack("I", int(Attribute, 16)))[0])
@@ -386,7 +386,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name == "_TZ3000_pmz6mjyu":
                 # MOES MS-104BZ-1
                 modelName = "TS011F-2Gang-switches"
-            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak", "_TZ3000_typdpbpg", "_TZ3000_ksw8qtmt", ):
+            elif manufacturer_name in ("_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak", "_TZ3000_typdpbpg", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l"):
                 modelName = "TS011F-plug"
 
         elif modelName == "TS0201":
