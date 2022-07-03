@@ -10,6 +10,7 @@
 
 """
 
+from ast import Return
 import time
 from distutils.util import change_root
 
@@ -119,7 +120,9 @@ class ConfigureReporting:
             chgFlag = cluster_configuration[attr]["Change"]
 
             if analog_value(int(attrType, 16)):
-                # Analog values: For attributes with 'analog' data type (see 2.6.2), the "rptChg" has the same data type as the attribute. The sign (if any) of the reportable change field is ignored.
+                # Analog values: For attributes with 'analog' data type (see 2.6.2), 
+                # the "rptChg" has the same data type as the attribute. 
+                # The sign (if any) of the reportable change field is ignored.
                 attribute_reporting_record = {
                     "Attribute": attr,
                     "DataType": attrType,
@@ -129,7 +132,8 @@ class ConfigureReporting:
                     "timeOut": timeOut,
                 }
             elif discrete_value(int(attrType, 16)):
-                # Discrete value: For attributes of 'discrete' data type (see 2.6.2), "rptChg" field is omitted.
+                # Discrete value: For attributes of 'discrete' data type (see 2.6.2),
+                # "rptChg" field is omitted.
                 attribute_reporting_record = {
                     "Attribute": attr,
                     "DataType": attrType,
@@ -284,20 +288,18 @@ class ConfigureReporting:
         )
 
     def check_configure_reporting(self, checking_period):
+        # This is call on a regular basic, and will trigger a Read Configuration reporting if needed.
         for nwkid in list(self.ListOfDevices.keys()):
             if not mainPoweredDevice(self, nwkid):
-                continue  # Not Main Powered!
-
+                continue  # Not Main Powered
             if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
                 return  # Will do at the next round
             if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ nwkid ]:
                 self.read_reporting_configuration_request(nwkid)
                 return
-                
             if "TimeStamp" not in self.ListOfDevices[ nwkid ][STORE_READ_CONFIGURE_REPORTING]:
                 self.read_reporting_configuration_request(nwkid)
                 return
-                
             if self.ListOfDevices[ nwkid ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period > time.time():
                 self.read_reporting_configuration_request(nwkid)
 
@@ -376,8 +378,8 @@ class ConfigureReporting:
 
     def retreive_configuration_reporting_definition(self, NwkId):
     
-        if "ParamConfigureReporting" in self.ListOfDevices[NwkId]:
-            return self.ListOfDevices[NwkId][ "ParamConfigureReporting" ]
+        if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
+            return self.ListOfDevices[NwkId][ STORE_CUSTOM_CONFIGURE_REPORTING ]
 
         if (
             "Model" in self.ListOfDevices[NwkId]
@@ -389,7 +391,57 @@ class ConfigureReporting:
         
         return CFG_RPT_ATTRIBUTESbyCLUSTERS
 
+    def check_and_redo_configure_reporting_if_needed( self, Nwkid):
+        self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} ", nwkid=Nwkid)
+        
+        if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:
+            # we should redo the configure reporting as we don't have the Configuration Reporting
+            self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_READ_CONFIGURE_REPORTING} ", nwkid=Nwkid)
+            configure_reporting_for_one_device( self, Nwkid, False)
+            return
 
+        if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:  
+            self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_CONFIGURE_REPORTING} ", nwkid=Nwkid)
+            configure_reporting_for_one_device( self, Nwkid, False)    
+            return
+
+        configuration_reporting = self.retreive_configuration_reporting_definition( Nwkid)
+
+        for _ep in self.ListOfDevices[ Nwkid ]["Ep"]:
+            self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep}", nwkid=Nwkid)
+            
+            for _cluster in self.ListOfDevices[ Nwkid ]["Ep"][ _ep ]:
+                if _cluster not in configuration_reporting:
+                        continue
+
+                self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster}", nwkid=Nwkid)
+                cluster_configuration = configuration_reporting[ _cluster ]["Attributes"]
+                for attribut in cluster_configuration:
+                    self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut}", nwkid=Nwkid)
+                    
+                    attribute_current_configuration = retreive_read_configure_reporting_record(self, Nwkid, Ep=_ep, ClusterId=_cluster, AttributeId=attribut)
+                    if attribute_current_configuration is None:
+                        self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} return None !", nwkid=Nwkid)
+                        continue
+
+                    if "Change" in attribute_current_configuration and attribute_current_configuration[ "Change" ] !=cluster_configuration[ attribut ]["Change"]:
+                        # To be Updated
+                        self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
+                        configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
+                        break
+                    if "MinInterval" in attribute_current_configuration and attribute_current_configuration[ "MinInterval" ] != cluster_configuration[ attribut ]["MinInterval"]:
+                        # To be Updated
+                        self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
+                        configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
+                        break
+                    if "MaxInterval" in attribute_current_configuration and attribute_current_configuration[ "MaxInterval" ] != cluster_configuration[ attribut ]["MaxInterval"]:
+                        # To be Updated
+                        self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
+                        configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
+                        break
+                        
+
+            
 ####
 
 def configure_reporting_for_one_device(self, key, batchMode):
@@ -729,3 +781,65 @@ def store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, a
         self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][ attribute ] = { 
             "TimeStamp": time.time(),
             'Status': status }
+
+
+def retreive_read_configure_reporting_record(self, NwkId, Ep=None, ClusterId=None, AttributeId=None):
+    
+    if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ NwkId ]:
+        return None
+
+    if Ep is None and ClusterId is None:
+        # We want the all structure
+        return self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"]
+        
+    if ( 
+        Ep is None 
+        and "Ep" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING] 
+        and Ep in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"]
+        and ClusterId in  self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
+    ):
+        # We want only the Ep
+        return self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]
+        
+    if (
+        AttributeId is None 
+        and "Ep" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING] 
+        and Ep in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"]
+        and ClusterId in  self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
+    ):
+        # We want a specific Cluster is a Specific Ep
+        return self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]
+
+    if ( 
+        "Ep" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING] 
+        and Ep in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"]
+        and ClusterId in  self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
+        and AttributeId in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]
+    ):
+        if ( "Status" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ] 
+            and self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]["Status"] != "00"
+        ):
+            self.logging("Debug", f"retreive_read_configure_reporting_record {NwkId}/{Ep} Cluster {ClusterId} Status is None !!", nwkid=NwkId)
+            return None
+        
+        return_data = {
+            "DataType": self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId][ "DataType" ],
+            "MinInterval": self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId][ "MinInterval" ],
+            "MaxInterval": self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId][ "MaxInterval" ],
+        }
+        if "Change" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId]:
+            return_data[ "Change" ] = self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId][ "Change" ]
+                
+        if "TimeOut" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId]:
+            return_data[ "TimeOut" ] = self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId][ "TimeOut" ]
+        return return_data
+                
+            
+
+
+    
+    # Ep is None and ClusterId is set , do not make sense
+    return None
+        
+
+        

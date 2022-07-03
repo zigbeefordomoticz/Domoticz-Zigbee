@@ -26,7 +26,7 @@ def rest_cfgrpt_ondemand(self, verb, data, parameters):
         return _response
 
     if self.ControllerData:
-        self.configureReporting.cfg_reporting_on_demand( parameters[0] )
+        self.configureReporting.check_and_redo_configure_reporting_if_needed( parameters[0] )
         
     self.logging("Debug", f"rest_cfgrpt_ondemand requested on {parameters[0]}")
 
