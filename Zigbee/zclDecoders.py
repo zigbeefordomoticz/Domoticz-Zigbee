@@ -5,15 +5,13 @@
 #
 
 
-from os import stat
 import struct
-from telnetlib import STATUS
+from os import stat
 
-from Modules.tools import (is_direction_to_client,
-                           is_direction_to_server,
+from Modules.tools import (is_direction_to_client, is_direction_to_server,
                            retreive_cmd_payload_from_8002)
-from Modules.zigateConsts import ( SIZE_DATA_TYPE, ZIGATE_EP,
-                                  composite_value, discrete_value)
+from Modules.zigateConsts import (SIZE_DATA_TYPE, ZIGATE_EP, composite_value,
+                                  discrete_value)
 
 from Zigbee.encoder_tools import decode_endian_data, encapsulate_plugin_frame
 from Zigbee.zclRawCommands import zcl_raw_default_response

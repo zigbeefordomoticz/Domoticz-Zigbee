@@ -292,7 +292,7 @@ class ConfigureReporting:
         if self.ListOfDevices[Nwkid]["Status"] != "inDB":
             self.logging("Error", "processConfigureReporting - 'Status' flag for device %s is %s" % (Nwkid,self.ListOfDevices[Nwkid]["Status"]), nwkid=Nwkid)
             return
-        if  "Health" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Health"] == "Not Reachable":
+        if "Health" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Health"] == "Not Reachable":
             self.logging("Error", "processConfigureReporting - %s is Not Reachable !!" % (Nwkid), nwkid=Nwkid)
             return
 
@@ -302,7 +302,6 @@ class ConfigureReporting:
 
             for cluster_id in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"][ epout ]:
                 attribute_lst = [int(attribute, 16) for attribute in self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]["Ep"][epout][cluster_id]["Attributes"]]
-
                 zcl_read_report_config_request( self, Nwkid, ZIGATE_EP, epout, cluster_id, "00", "0000", attribute_lst, is_ack_tobe_disabled(self, Nwkid),)
 
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
