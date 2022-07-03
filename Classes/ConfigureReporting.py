@@ -787,7 +787,7 @@ def retreive_read_configure_reporting_record(self, NwkId, Ep=None, ClusterId=Non
     if ( 
         "Ep" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING] 
         and Ep in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"]
-        and ClusterId in  self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
+        and ClusterId in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
         and AttributeId in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]
     ):
         if ( "Status" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ] 

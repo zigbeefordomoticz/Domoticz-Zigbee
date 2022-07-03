@@ -398,10 +398,10 @@ def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, Src
             DataType = Data[idx:idx+2]
             buildPayload += DataType
             idx += 2
-            MinInterval =  "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+            MinInterval = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
             buildPayload += MinInterval
             idx += 4
-            MaxInterval =  "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+            MaxInterval = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
             buildPayload += MaxInterval
             idx += 4
             
