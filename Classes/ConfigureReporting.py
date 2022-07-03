@@ -256,7 +256,7 @@ class ConfigureReporting:
                     f"Configure Reporting response - ClusterID: {MsgClusterId}/{matchAttributeId}, MsgSrcAddr: {MsgSrcAddr}, MsgSrcEp:{MsgSrcEp} , Status: {MsgStatus}",
                     MsgSrcAddr,
                 )
-        self.read_report_configure_request(  MsgSrcAddr ,  MsgSrcEp, MsgClusterId,  list(get_list_isqn_int_attr_datastruct(self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId)) )
+        self.read_report_configure_request( MsgSrcAddr , MsgSrcEp, MsgClusterId, list(get_list_isqn_int_attr_datastruct(self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId)) )
 
     def check_configure_reporting(self, checking_period):
         # This is call on a regular basic, and will trigger a Read Configuration reporting if needed.
@@ -770,7 +770,7 @@ def retreive_read_configure_reporting_record(self, NwkId, Ep=None, ClusterId=Non
         Ep is None 
         and "Ep" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING] 
         and Ep in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"]
-        and ClusterId in  self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
+        and ClusterId in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
     ):
         # We want only the Ep
         return self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]
@@ -779,7 +779,7 @@ def retreive_read_configure_reporting_record(self, NwkId, Ep=None, ClusterId=Non
         AttributeId is None 
         and "Ep" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING] 
         and Ep in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"]
-        and ClusterId in  self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
+        and ClusterId in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
     ):
         # We want a specific Cluster is a Specific Ep
         return self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]
@@ -807,13 +807,6 @@ def retreive_read_configure_reporting_record(self, NwkId, Ep=None, ClusterId=Non
         if "TimeOut" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId]:
             return_data[ "TimeOut" ] = self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId][ "TimeOut" ]
         return return_data
-                
-            
 
-
-    
     # Ep is None and ClusterId is set , do not make sense
     return None
-        
-
-        

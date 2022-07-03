@@ -77,8 +77,8 @@ def rest_cfgrpt_ondemand_with_config_delete(self, verb, data, parameters , _resp
         self.logging("Error", f"rest_cfgrpt_ondemand_with_config_delete unknown devices NwkId: {deviceId} !!! ")
         return _response
     
-    if "ParamConfigureReporting" in self.ListOfDevices[ deviceId ]:
-        del self.ListOfDevices[ deviceId ][ "ParamConfigureReporting" ]
+    if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[ deviceId ]:
+        del self.ListOfDevices[ deviceId ][ STORE_CUSTOM_CONFIGURE_REPORTING ]
 
     action = {"Name": "Configure reporting record removed", "TimeStamp": int(time.time())}
     _response["Data"] = json.dumps(action, sort_keys=True)
@@ -155,7 +155,7 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
         self.logging("Error", f"rest_cfgrpt_ondemand_with_config unknown devices NwkId: {nwkid} !!! ")
         return _response
 
-    if "ParamConfigureReporting" in self.ListOfDevices[ nwkid ]:
+    if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[ nwkid ]:
         self.logging("Debug", f"rest_cfgrpt_ondemand_with_config will override Config Reporting for {nwkid} !!! ")
 
     # Sanity check on the cluster list
@@ -218,8 +218,8 @@ def convert_to_json( data ):
                
 def get_cfg_rpt_record(self, NwkId):
 
-    if "ParamConfigureReporting" in self.ListOfDevices[NwkId]:
-        return self.ListOfDevices[NwkId][ "ParamConfigureReporting" ]
+    if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
+        return self.ListOfDevices[NwkId][ STORE_CUSTOM_CONFIGURE_REPORTING ]
 
     if (
         "Model" in self.ListOfDevices[NwkId]
