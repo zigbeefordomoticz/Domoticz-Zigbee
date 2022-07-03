@@ -16,7 +16,7 @@ import time
 import Domoticz
 
 from Modules.database import WriteDeviceList
-from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 
 
 def is_hex(s):

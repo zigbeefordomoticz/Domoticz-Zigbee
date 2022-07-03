@@ -9,7 +9,7 @@ import time
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Modules.pluginConsts import STORE_CUSTOM_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import STORE_CUSTOM_CONFIGURE_REPORTING
 from Modules.zigateConsts import SIZE_DATA_TYPE
 
 

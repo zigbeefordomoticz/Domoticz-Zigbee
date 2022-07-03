@@ -8,7 +8,7 @@ from time import time
 
 from Zigbee.zdpCommands import zdp_binding_device, zdp_unbinding_device
 
-from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.tools import is_fake_ep
 from Modules.zigateConsts import CLUSTERS_LIST
 

@@ -21,7 +21,7 @@ from Zigbee.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
 from Modules.basicOutputs import read_attribute, write_attribute
 from Modules.bindings import WebBindStatus, webBind
 from Modules.domoMaj import MajDomoDevice
-from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import ReadAttributeRequest_0001
 from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,

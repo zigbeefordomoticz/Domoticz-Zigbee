@@ -13,7 +13,7 @@
 
 from Zigbee.zclCommands import zcl_configure_reporting_requestv2
 
-from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import get_and_inc_ZCL_SQN
 from Modules.zigateConsts import ZIGATE_EP

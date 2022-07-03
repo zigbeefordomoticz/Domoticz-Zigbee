@@ -22,7 +22,7 @@ from Modules.livolo import livolo_bind
 from Modules.manufacturer_code import PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO
 from Modules.pairingProcess import (interview_state_004d,
                                     zigbee_provision_device)
-from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped)
 from Modules.tuyaSiren import tuya_sirene_registration
@@ -48,14 +48,10 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
     # Decoding what we receive
 
-    RejoinFlag = None
-    if len(MsgData) > 22:  # Firmware 3.1b
-        RejoinFlag = MsgData[22:24]
-
-    NwkId = MsgData[0:4]
+    RejoinFlag = MsgData[22:24] if len(MsgData) > 22 else None
+    NwkId = MsgData[:4]
     Ieee = MsgData[4:20]
     MacCapa = MsgData[20:22]
-
 
     newDeviceForPlugin = not IEEEExist(self, Ieee)
 
@@ -183,21 +179,18 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         lastSeenUpdate(self, Devices, NwkId=NwkId)
 
         legrand_refresh_battery_remote(self, NwkId)
-
         # CasaIA ( AC221, CAC221 )
         restart_plugin_reset_ModuleIRCode(self, NwkId)
 
         if mainPoweredDevice(self, NwkId):
+            check_configuration_reporting_device( self, NwkId)
             read_attributes_if_needed( self, NwkId)
 
         if reseted_device:
             self.log.logging("Input", "Debug", "--> Device reset, redoing provisioning", NwkId)
             # IAS Enrollment if required
             self.iaszonemgt.IAS_device_enrollment(NwkId)
-
             zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
-
-
         return
 
     # Annouced is in the ListOfDevices[NwkId]
@@ -214,14 +207,14 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             lastSeenUpdate(self, Devices, NwkId=NwkId)
 
             legrand_refresh_battery_remote(self, NwkId)
-
+            if mainPoweredDevice(self, NwkId):
+                check_configuration_reporting_device( self, NwkId)
             restart_plugin_reset_ModuleIRCode(self, NwkId)
             read_attributes_if_needed( self, NwkId)
-            
+
             if reseted_device:
                 # IAS Enrollment if required
                 self.iaszonemgt.IAS_device_enrollment(NwkId)
-
                 zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
 
             if self.ListOfDevices[NwkId]["Model"] in ("TS0601-sirene"):
@@ -230,23 +223,19 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
                 tuya_eTRV_registration(self, NwkId, False)
             del self.ListOfDevices[NwkId]["Announced"]
             return
-    else:
+        
+    elif RejoinFlag:
         # Most likely we receive a Device Annoucement which has not relation with the JoinFlag we have .
-        if RejoinFlag:
-            self.log.logging(
-                "Input",
-                "Error",
-                "Decode004D - Unexpected %s %s %s" % (NwkId, Ieee, RejoinFlag),
-                NwkId,
-            )
+        self.log.logging(
+            "Input",
+            "Error",
+            "Decode004D - Unexpected %s %s %s" % (NwkId, Ieee, RejoinFlag),
+            NwkId,
+        )
 
     for ep in list(self.ListOfDevices[NwkId]["Ep"].keys()):
         if "0004" in self.ListOfDevices[NwkId]["Ep"][ep] and self.groupmgt:
-            self.groupmgt.ScanDevicesForGroupMemberShip(
-                [
-                    NwkId,
-                ]
-            )
+            self.groupmgt.ScanDevicesForGroupMemberShip( [ NwkId, ] )
             break
 
     # This should be the first one, let's take the information and drop it
@@ -415,3 +404,13 @@ def read_attributes_if_needed( self, NwkId):
     # Will be forcing Read Attribute (if forcePollingAfterAction is enabled -default-)
     self.log.logging( "Input", "Debug", "read_attributes_if_needed %s" %NwkId)
     self.ListOfDevices[NwkId]["Heartbeat"] = "0"
+
+
+def check_configuration_reporting_device( self, NwkId):
+    if ( 
+        "Param" in self.ListOfDevices[NwkId]  
+        and "readConfigurationReportingAfterOffOn" in self.ListOfDevices[NwkId]["Param"]
+        and self.ListOfDevices[NwkId]["Param"]["readConfigurationReportingAfterOffOn"] 
+    ):
+        self.log.logging( "Input", "Debug", "Trigger a Check Configuration Reporting for Device", )
+        self.configureReporting.check_configuration_reporting_for_device( NwkId , force=True)

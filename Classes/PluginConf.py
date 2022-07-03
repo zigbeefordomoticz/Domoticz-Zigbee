@@ -334,9 +334,9 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "reenforceConfigureReporting": {
-                "type": "bool",
-                "default": 0,
+            "checkConfigurationReporting": {
+                "type": "int",
+                "default": 39600,
                 "current": None,
                 "restart": 0,
                 "hidden": False,

@@ -24,7 +24,7 @@ from Modules.domoTools import timedOutDevice
 from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
                                     processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
-from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
                                     ReadAttributeRequest_0001,
@@ -674,6 +674,19 @@ def processKnownDevices(self, Devices, NWKID):
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NWKID)
 
+    if ( 
+        self.configureReporting
+        and _mainPowered 
+        and night_shift_jobs( self )
+        and "checkConfigurationReporting" in self.pluginconf.pluginConf
+        and self.pluginconf.pluginConf["checkConfigurationReporting"] 
+        and (intHB % ( self.pluginconf.pluginConf["checkConfigurationReporting"] // HEARTBEAT) == 0)
+    ):
+        # Trigger Configure Reporting to eligeable devices
+        self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=(21 * 3600) )
+        self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
+
+
     # Do Attribute Disocvery if needed
     if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
         rescheduleAction = rescheduleAction or attributeDiscovery(self, NWKID)
@@ -819,13 +832,6 @@ def processListOfDevices(self, Devices):
             "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" % (self.busy, self.CommiSSionning),
         )
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
-
-    if night_shift_jobs( self ) and (self.HeartbeatCount > QUIET_AFTER_START) and ((self.HeartbeatCount % CONFIGURERPRT_FEQ)) == 0:
-        # Trigger Configure Reporting to eligeable devices
-        if self.configureReporting:
-            self.configureReporting.processConfigureReporting()
-            self.configureReporting.check_configure_reporting( 21 * 3600 )
-
     
     # Network Topology
     if self.networkmap:

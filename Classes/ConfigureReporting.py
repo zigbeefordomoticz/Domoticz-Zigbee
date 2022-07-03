@@ -16,7 +16,7 @@ from distutils.util import change_root
 
 import Domoticz
 from Modules.bindings import bindDevice, unbindDevice
-from Modules.pluginConsts import (STORE_CONFIGURE_REPORTING,
+from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                   STORE_CUSTOM_CONFIGURE_REPORTING,
                                   STORE_READ_CONFIGURE_REPORTING)
 from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
@@ -219,16 +219,10 @@ class ConfigureReporting:
             set_isqn_datastruct(self, STORE_CONFIGURE_REPORTING, key, Ep, cluster, x["Attribute"], i_sqn)
 
     def read_configure_reporting_response(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
+        # This is the response receive after a Configuration Reporting request
+        
         if self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16) and MsgAttributeId:
-            set_status_datastruct(
-                self,
-                STORE_CONFIGURE_REPORTING,
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                MsgAttributeId,
-                MsgStatus,
-            )
+            set_status_datastruct( self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus, )
             if MsgStatus != "00":
                 self.logging(
                     "Debug",
@@ -250,59 +244,42 @@ class ConfigureReporting:
         self.logging("Debug", "------- - i_sqn: %0s e_sqn: %s" % (i_sqn, MsgSQN))
 
         for matchAttributeId in list(get_list_isqn_attr_datastruct(self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId)):
-            if (
-                get_isqn_datastruct(
-                    self,
-                    STORE_CONFIGURE_REPORTING,
-                    MsgSrcAddr,
-                    MsgSrcEp,
-                    MsgClusterId,
-                    matchAttributeId,
-                )
-                != i_sqn
-            ):
+            if ( get_isqn_datastruct( self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, ) != i_sqn ):
                 continue
 
             self.logging("Debug", f"------- - Sqn matches for Attribute: {matchAttributeId}")
 
-            set_status_datastruct(
-                self,
-                STORE_CONFIGURE_REPORTING,
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                matchAttributeId,
-                MsgStatus,
-            )
+            set_status_datastruct( self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, MsgStatus, )
             if MsgStatus != "00":
                 self.logging(
                     "Debug",
                     f"Configure Reporting response - ClusterID: {MsgClusterId}/{matchAttributeId}, MsgSrcAddr: {MsgSrcAddr}, MsgSrcEp:{MsgSrcEp} , Status: {MsgStatus}",
                     MsgSrcAddr,
                 )
-        self.read_report_configure_request( 
-            MsgSrcAddr , 
-            MsgSrcEp,
-            MsgClusterId, 
-            list(get_list_isqn_int_attr_datastruct(self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId))
-        )
+        self.read_report_configure_request(  MsgSrcAddr ,  MsgSrcEp, MsgClusterId,  list(get_list_isqn_int_attr_datastruct(self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId)) )
 
     def check_configure_reporting(self, checking_period):
         # This is call on a regular basic, and will trigger a Read Configuration reporting if needed.
         for nwkid in list(self.ListOfDevices.keys()):
-            if not mainPoweredDevice(self, nwkid):
-                continue  # Not Main Powered
-            if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
-                return  # Will do at the next round
-            if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ nwkid ]:
-                self.read_reporting_configuration_request(nwkid)
-                return
-            if "TimeStamp" not in self.ListOfDevices[ nwkid ][STORE_READ_CONFIGURE_REPORTING]:
-                self.read_reporting_configuration_request(nwkid)
-                return
-            if self.ListOfDevices[ nwkid ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period > time.time():
-                self.read_reporting_configuration_request(nwkid)
-
+            self.check_configuration_reporting_for_device( nwkid, checking_period=checking_period)
+                
+    def check_configuration_reporting_for_device( self, NwkId, checking_period=None, force=False):
+        if force:
+            self.read_reporting_configuration_request(NwkId)
+            return
+        if not mainPoweredDevice(self, NwkId):
+            return  # Not Main Powered
+        if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+            return  # Will do at the next round
+        if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ NwkId ]:
+            self.read_reporting_configuration_request(NwkId)
+            return
+        if "TimeStamp" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]:
+            self.read_reporting_configuration_request(NwkId)
+            return
+        if self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period > time.time():
+            self.read_reporting_configuration_request(NwkId)
+        
     def read_reporting_configuration_request(self, Nwkid ):
         if Nwkid == "0000":
             return
@@ -332,10 +309,7 @@ class ConfigureReporting:
         zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
 
     def read_report_configure_response(self, MsgData, MsgLQI):  # Read Configure Report response
-        self.logging(
-            "Log",
-            f"Read Configure Reporting response - {MsgData}",
-        )
+        self.logging( "Debug", f"Read Configure Reporting response - {MsgData}", )
 
         NwkId = MsgData[2:6]
         Ep = MsgData[6:8]
@@ -371,7 +345,7 @@ class ConfigureReporting:
                       
             store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout )
             self.logging(
-                "Log",
+                "Debug",
                 f"Read Configure Reporting response - NwkId: {NwkId} Ep: {Ep} Cluster: {ClusterId} Attribute: {attribute} DataType: {DataType} Min: {MinInterval} Max: {MaxInterval} Change: {Change}",
                 NwkId,
             )
@@ -392,51 +366,51 @@ class ConfigureReporting:
         return CFG_RPT_ATTRIBUTESbyCLUSTERS
 
     def check_and_redo_configure_reporting_if_needed( self, Nwkid):
-        self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} ", nwkid=Nwkid)
+        self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} ", nwkid=Nwkid)
         
-        if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:
+        if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] in ( '', {}):
             # we should redo the configure reporting as we don't have the Configuration Reporting
-            self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_READ_CONFIGURE_REPORTING} ", nwkid=Nwkid)
+            self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_READ_CONFIGURE_REPORTING} ", nwkid=Nwkid)
             configure_reporting_for_one_device( self, Nwkid, False)
             return
 
-        if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:  
-            self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_CONFIGURE_REPORTING} ", nwkid=Nwkid)
+        if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING] in ( '', {}):  
+            self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_CONFIGURE_REPORTING} ", nwkid=Nwkid)
             configure_reporting_for_one_device( self, Nwkid, False)    
             return
 
         configuration_reporting = self.retreive_configuration_reporting_definition( Nwkid)
 
         for _ep in self.ListOfDevices[ Nwkid ]["Ep"]:
-            self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep}", nwkid=Nwkid)
+            self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep}", nwkid=Nwkid)
             
             for _cluster in self.ListOfDevices[ Nwkid ]["Ep"][ _ep ]:
                 if _cluster not in configuration_reporting:
                         continue
 
-                self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster}", nwkid=Nwkid)
+                self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster}", nwkid=Nwkid)
                 cluster_configuration = configuration_reporting[ _cluster ]["Attributes"]
                 for attribut in cluster_configuration:
-                    self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut}", nwkid=Nwkid)
+                    self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut}", nwkid=Nwkid)
                     
                     attribute_current_configuration = retreive_read_configure_reporting_record(self, Nwkid, Ep=_ep, ClusterId=_cluster, AttributeId=attribut)
                     if attribute_current_configuration is None:
-                        self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} return None !", nwkid=Nwkid)
+                        self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} return None !", nwkid=Nwkid)
                         continue
 
                     if "Change" in attribute_current_configuration and attribute_current_configuration[ "Change" ] !=cluster_configuration[ attribut ]["Change"]:
                         # To be Updated
-                        self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
+                        self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
                         configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
                         break
                     if "MinInterval" in attribute_current_configuration and attribute_current_configuration[ "MinInterval" ] != cluster_configuration[ attribut ]["MinInterval"]:
                         # To be Updated
-                        self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
+                        self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
                         configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
                         break
                     if "MaxInterval" in attribute_current_configuration and attribute_current_configuration[ "MaxInterval" ] != cluster_configuration[ attribut ]["MaxInterval"]:
                         # To be Updated
-                        self.logging("Log", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
+                        self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
                         configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
                         break
                         
