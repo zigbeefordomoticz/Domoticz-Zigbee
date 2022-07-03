@@ -24,6 +24,7 @@ from Modules.domoTools import timedOutDevice
 from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
                                     processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
+from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
                                     ReadAttributeRequest_0001,
@@ -176,8 +177,8 @@ def check_delay_binding( self, NwkId, model ):
         if "Bind" in self.ListOfDevices[ NwkId ]:
             del self.ListOfDevices[ NwkId ]["Bind"]
             self.ListOfDevices[ NwkId ]["Bind"] = {}
-        if "ConfigureReporting" in self.ListOfDevices[ NwkId ]:
-            del self.ListOfDevices[ NwkId ]["ConfigureReporting"]
+        if STORE_CONFIGURE_REPORTING in self.ListOfDevices[ NwkId ]:
+            del self.ListOfDevices[ NwkId ][STORE_CONFIGURE_REPORTING]
             self.ListOfDevices[ NwkId ]["Bind"] = {} 
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s request Configure Reporting (and so bindings)" % (
             NwkId), NwkId, )

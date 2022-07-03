@@ -20,6 +20,7 @@ import Domoticz
 
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
+from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -93,7 +94,7 @@ BUILD_ATTRIBUTES = (
     "BatteryUpdateTime",
     "GroupMemberShip",
     "Neighbours",
-    "ConfigureReporting",
+    STORE_CONFIGURE_REPORTING,
     "ReadAttributes",
     "WriteAttributes",
     "LQI",
@@ -209,7 +210,7 @@ def LoadDeviceList(self):
 
         if self.pluginconf.pluginConf["resetConfigureReporting"]:
             self.log.logging("Database", "Log", "Reset ConfigureReporting data %s" % addr)
-            Modules.tools.reset_datastruct(self, "ConfigureReporting", addr)
+            Modules.tools.reset_datastruct(self, STORE_CONFIGURE_REPORTING, addr)
 
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
@@ -708,7 +709,7 @@ def fixing_Issue566(self, key):
 def fixing_iSQN_None(self, key):
 
     for DeviceAttribute in (
-        "ConfigureReporting",
+        STORE_CONFIGURE_REPORTING,
         "ReadAttributes",
         "WriteAttributes",
     ):

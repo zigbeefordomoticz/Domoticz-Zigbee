@@ -7,7 +7,9 @@ import json
 import time
 
 import Domoticz
-from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Modules.pluginConsts import STORE_CUSTOM_CONFIGURE_REPORTING
 from Modules.zigateConsts import SIZE_DATA_TYPE
 
 
@@ -184,7 +186,7 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
                     if "Change" in info:
                         cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["Change"] = datatype_formating( self, info["Change"], info["DataType"] )
                         
-    self.ListOfDevices[ nwkid ][ "ParamConfigureReporting" ] = cluster_config_reporting
+    self.ListOfDevices[ nwkid ][ STORE_CUSTOM_CONFIGURE_REPORTING ] = cluster_config_reporting
     action = {"Name": "Configure reporting record updated", "TimeStamp": int(time.time())}
 
     _response["Data"] = json.dumps(action, sort_keys=True)

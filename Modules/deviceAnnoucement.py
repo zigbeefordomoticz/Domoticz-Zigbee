@@ -22,6 +22,7 @@ from Modules.livolo import livolo_bind
 from Modules.manufacturer_code import PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO
 from Modules.pairingProcess import (interview_state_004d,
                                     zigbee_provision_device)
+from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped)
 from Modules.tuyaSiren import tuya_sirene_registration
@@ -136,8 +137,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         reseted_device = True
         if "Bind" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["Bind"]
-        if "ConfigureReporting" in self.ListOfDevices[NwkId]:
-            del self.ListOfDevices[NwkId]["ConfigureReporting"]
+        if STORE_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
+            del self.ListOfDevices[NwkId][STORE_CONFIGURE_REPORTING]
         if "ReadAttributes" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["ReadAttributes"]
         if "Neighbours" in self.ListOfDevices[NwkId]:

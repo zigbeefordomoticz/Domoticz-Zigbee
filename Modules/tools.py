@@ -16,6 +16,7 @@ import time
 import Domoticz
 
 from Modules.database import WriteDeviceList
+from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
 
 
 def is_hex(s):
@@ -290,8 +291,8 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     if self.pluginconf.pluginConf["enableReadAttributes"]:
         if "ReadAttributes" in self.ListOfDevices[new_NwkId]:
             del self.ListOfDevices[new_NwkId]["ReadAttributes"]
-        if "ConfigureReporting" in self.ListOfDevices[new_NwkId]:
-            del self.ListOfDevices[new_NwkId]["ConfigureReporting"]
+        if STORE_CONFIGURE_REPORTING in self.ListOfDevices[new_NwkId]:
+            del self.ListOfDevices[new_NwkId][STORE_CONFIGURE_REPORTING]
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
 
     WriteDeviceList(self, 0)
@@ -1099,8 +1100,14 @@ def get_list_isqn_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterI
         return []
     if check_datastruct(self, DeviceAttribute, key, endpoint, clusterId) is None:
         return []
-    return [x for x in list(self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["iSQN"].keys())]
+    return list(list(self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["iSQN"].keys()))
 
+def get_list_isqn_int_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
+    if key not in self.ListOfDevices:
+        return []
+    if check_datastruct(self, DeviceAttribute, key, endpoint, clusterId) is None:
+        return []
+    return [int(x, 16) for x in self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["iSQN"].keys()]
 
 def set_request_datastruct(
     self,

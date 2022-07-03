@@ -21,15 +21,14 @@ from Zigbee.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
 from Modules.basicOutputs import read_attribute, write_attribute
 from Modules.bindings import WebBindStatus, webBind
 from Modules.domoMaj import MajDomoDevice
+from Modules.pluginConsts import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import ReadAttributeRequest_0001
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import (get_and_inc_ZCL_SQN, getAttributeValue,
-                           is_ack_tobe_disabled,
-                           retreive_cmd_payload_from_8002,
-                           checkAndStoreAttributeValue)
+from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
+                           getAttributeValue, is_ack_tobe_disabled,
+                           retreive_cmd_payload_from_8002)
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
-
 
 WISER_LEGACY_MODEL_NAME_PREFIX = "EH-ZB"
 WISER_LEGACY_BASE_EP = "0b"
@@ -1704,16 +1703,16 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
         if _modelName not in self.DeviceConf:
             return
 
-        if "ConfigureReporting" not in self.DeviceConf[_modelName]:
+        if STORE_CONFIGURE_REPORTING not in self.DeviceConf[_modelName]:
             return
 
-        if ClusterId not in self.DeviceConf[_modelName]["ConfigureReporting"]:
+        if ClusterId not in self.DeviceConf[_modelName][STORE_CONFIGURE_REPORTING]:
             return
 
-        if "Attributes" not in self.DeviceConf[_modelName]["ConfigureReporting"][ClusterId]:
+        if "Attributes" not in self.DeviceConf[_modelName][STORE_CONFIGURE_REPORTING][ClusterId]:
             return
 
-        AttributesConfig = self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting"][ClusterId][
+        AttributesConfig = self.DeviceConf[self.ListOfDevices[NwkId]["Model"]][STORE_CONFIGURE_REPORTING][ClusterId][
             "Attributes"
         ]
 

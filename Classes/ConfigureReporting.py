@@ -10,16 +10,16 @@
 
 """
 
-STORE_READ_CONFIGURE_REPORTING = "ReadConfigureReporting"
-STORE_CONFIGURE_REPORTING = "ConfigureReporting"
-STORE_CUSTOM_CONFIGURE_REPORTING = "ParamConfigureReporting"
-
-from distutils.util import change_root
 import time
+from distutils.util import change_root
 
 import Domoticz
 from Modules.bindings import bindDevice, unbindDevice
+from Modules.pluginConsts import (STORE_CONFIGURE_REPORTING,
+                                  STORE_CUSTOM_CONFIGURE_REPORTING,
+                                  STORE_READ_CONFIGURE_REPORTING)
 from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
+                           get_list_isqn_int_attr_datastruct,
                            getClusterListforEP, is_ack_tobe_disabled,
                            is_attr_unvalid_datastruct, is_bind_ep, is_fake_ep,
                            is_time_to_perform_work, mainPoweredDevice,
@@ -94,8 +94,8 @@ class ConfigureReporting:
 
     def cfg_reporting_on_demand(self, nwkid):
         # Remove Cfg Rpt tracking attributes
-        if "ConfigureReporting" in self.ListOfDevices[nwkid]:
-            del self.ListOfDevices[nwkid]["ConfigureReporting"]
+        if STORE_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
+            del self.ListOfDevices[nwkid][STORE_CONFIGURE_REPORTING]
         configure_reporting_for_one_device(self, nwkid, False)
 
     def prepare_and_send_configure_reporting(
@@ -212,13 +212,13 @@ class ConfigureReporting:
             is_ack_tobe_disabled(self, key),
         )
         for x in attribute_reporting_configuration:
-            set_isqn_datastruct(self, "ConfigureReporting", key, Ep, cluster, x["Attribute"], i_sqn)
+            set_isqn_datastruct(self, STORE_CONFIGURE_REPORTING, key, Ep, cluster, x["Attribute"], i_sqn)
 
     def read_configure_reporting_response(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
         if self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16) and MsgAttributeId:
             set_status_datastruct(
                 self,
-                "ConfigureReporting",
+                STORE_CONFIGURE_REPORTING,
                 MsgSrcAddr,
                 MsgSrcEp,
                 MsgClusterId,
@@ -231,6 +231,12 @@ class ConfigureReporting:
                     f"Configure Reporting response - ClusterID: {MsgClusterId}/{MsgAttributeId}, MsgSrcAddr: {MsgSrcAddr}, MsgSrcEp:{MsgSrcEp} , Status: {MsgStatus}",
                     MsgSrcAddr,
                 )
+                
+            if self.configureReporting:
+                self.logging(
+                    "Debug",
+                    "Read Configuration Reporting on device %s" % (MsgSrcAddr))
+                self.read_reporting_configuration_request( MsgSrcAddr )
 
             return
 
@@ -239,11 +245,11 @@ class ConfigureReporting:
         i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
         self.logging("Debug", "------- - i_sqn: %0s e_sqn: %s" % (i_sqn, MsgSQN))
 
-        for matchAttributeId in list(get_list_isqn_attr_datastruct(self, "ConfigureReporting", MsgSrcAddr, MsgSrcEp, MsgClusterId)):
+        for matchAttributeId in list(get_list_isqn_attr_datastruct(self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId)):
             if (
                 get_isqn_datastruct(
                     self,
-                    "ConfigureReporting",
+                    STORE_CONFIGURE_REPORTING,
                     MsgSrcAddr,
                     MsgSrcEp,
                     MsgClusterId,
@@ -257,7 +263,7 @@ class ConfigureReporting:
 
             set_status_datastruct(
                 self,
-                "ConfigureReporting",
+                STORE_CONFIGURE_REPORTING,
                 MsgSrcAddr,
                 MsgSrcEp,
                 MsgClusterId,
@@ -270,6 +276,12 @@ class ConfigureReporting:
                     f"Configure Reporting response - ClusterID: {MsgClusterId}/{matchAttributeId}, MsgSrcAddr: {MsgSrcAddr}, MsgSrcEp:{MsgSrcEp} , Status: {MsgStatus}",
                     MsgSrcAddr,
                 )
+        self.read_report_configure_request( 
+            MsgSrcAddr , 
+            MsgSrcEp,
+            MsgClusterId, 
+            list(get_list_isqn_int_attr_datastruct(self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId))
+        )
 
     def check_configure_reporting(self, checking_period):
         for nwkid in list(self.ListOfDevices.keys()):
@@ -293,14 +305,16 @@ class ConfigureReporting:
         if Nwkid == "0000":
             return
         if Nwkid not in self.ListOfDevices:
-            self.logging("Debug", f"processConfigureReporting - Unknown key: {Nwkid}", nwkid=Nwkid)
+            self.logging("Error", f"processConfigureReporting - Unknown key: {Nwkid}", nwkid=Nwkid)
             return
         if "Status" not in self.ListOfDevices[Nwkid]:
-            self.logging("Debug", "processConfigureReporting - no 'Status' flag for device %s !!!" % Nwkid, nwkid=Nwkid)
+            self.logging("Error", "processConfigureReporting - no 'Status' flag for device %s !!!" % Nwkid, nwkid=Nwkid)
             return
         if self.ListOfDevices[Nwkid]["Status"] != "inDB":
+            self.logging("Error", "processConfigureReporting - 'Status' flag for device %s is %s" % (Nwkid,self.ListOfDevices[Nwkid]["Status"]), nwkid=Nwkid)
             return
         if  "Health" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Health"] == "Not Reachable":
+            self.logging("Error", "processConfigureReporting - %s is Not Reachable !!" % (Nwkid), nwkid=Nwkid)
             return
 
         for epout in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"]:
@@ -369,9 +383,9 @@ class ConfigureReporting:
             "Model" in self.ListOfDevices[NwkId]
             and self.ListOfDevices[NwkId]["Model"] != {}
             and self.ListOfDevices[NwkId]["Model"] in self.DeviceConf
-            and "ConfigureReporting" in self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]
+            and STORE_CONFIGURE_REPORTING in self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]
         ):
-            return self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting"]
+            return self.DeviceConf[self.ListOfDevices[NwkId]["Model"]][STORE_CONFIGURE_REPORTING]
         
         return CFG_RPT_ATTRIBUTESbyCLUSTERS
 
@@ -383,15 +397,12 @@ def configure_reporting_for_one_device(self, key, batchMode):
     # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
     if key == "0000":
         return
-
     if key not in self.ListOfDevices:
         self.logging("Debug", f"processConfigureReporting - Unknown key: {key}", nwkid=key)
         return
-
     if "Status" not in self.ListOfDevices[key]:
         self.logging("Debug", "processConfigureReporting - no 'Status' flag for device %s !!!" % key, nwkid=key)
         return
-
     if self.ListOfDevices[key]["Status"] != "inDB":
         return
 
@@ -437,19 +448,10 @@ def configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_config
         # (1) 'ConfigureReporting' do not exist
         # (2) 'ConfigureReporting' is empty
         # (3) if reenforceConfigureReporting is enabled and it is time to do the work
-        if batchMode and "ConfigureReporting" in self.ListOfDevices[key] and len(self.ListOfDevices[key]["ConfigureReporting"]) != 0:
+        if batchMode and STORE_CONFIGURE_REPORTING in self.ListOfDevices[key] and len(self.ListOfDevices[key][STORE_CONFIGURE_REPORTING]) != 0:
             if self.pluginconf.pluginConf["reenforceConfigureReporting"]:
-                if not is_time_to_perform_work(
-                    self,
-                    "ConfigureReporting",
-                    key,
-                    Ep,
-                    cluster,
-                    now,
-                    (CONFIGURE_REPORT_PERFORM_TIME * 3600),
-                ):
+                if not is_time_to_perform_work( self, STORE_CONFIGURE_REPORTING, key, Ep, cluster, now, (CONFIGURE_REPORT_PERFORM_TIME * 3600), ):
                     self.logging("Debug", f"----> configure_reporting_for_one_endpoint Not time to perform  {key}/{Ep} - {cluster}", nwkid=key)
-
                     continue
             else:
                 self.logging(
@@ -477,7 +479,7 @@ def configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_config
             self.logging("Debug", f"----> configure_reporting_for_one_endpoint - for device: {key} on Cluster: {cluster} no Attributes key on {cfgrpt_configuration[ cluster ]}", nwkid=key)
             continue
         
-        set_timestamp_datastruct(self, "ConfigureReporting", key, Ep, cluster, time.time())
+        set_timestamp_datastruct(self, STORE_CONFIGURE_REPORTING, key, Ep, cluster, time.time())
         configure_reporting_for_one_cluster(self, key, Ep, cluster, cfgrpt_configuration[cluster]["Attributes"])
 
 
@@ -642,14 +644,14 @@ def is_valid_attribute(self, nwkid, Ep, cluster, attr):
 def is_tobe_skip(self, nwkid, Ep, Cluster, attr):
     
     if self.FirmwareVersion and int(self.FirmwareVersion, 16) <= int("31c", 16):
-        if is_attr_unvalid_datastruct(self, "ConfigureReporting", nwkid, Ep, Cluster, "0000"):
+        if is_attr_unvalid_datastruct(self, STORE_CONFIGURE_REPORTING, nwkid, Ep, Cluster, "0000"):
             return True
-        reset_attr_datastruct(self, "ConfigureReporting", nwkid, Ep, Cluster, "0000")
+        reset_attr_datastruct(self, STORE_CONFIGURE_REPORTING, nwkid, Ep, Cluster, "0000")
 
     if self.FirmwareVersion and int(self.FirmwareVersion, 16) > int("31c", 16):
-        if is_attr_unvalid_datastruct(self, "ConfigureReporting", nwkid, Ep, Cluster, attr):
+        if is_attr_unvalid_datastruct(self, STORE_CONFIGURE_REPORTING, nwkid, Ep, Cluster, attr):
             return True
-        reset_attr_datastruct(self, "ConfigureReporting", nwkid, Ep, Cluster, attr)
+        reset_attr_datastruct(self, STORE_CONFIGURE_REPORTING, nwkid, Ep, Cluster, attr)
     return False
 
 
@@ -702,17 +704,17 @@ def manufacturer_specific_attribute(self, key, cluster, attr, cfg_attribute):
 
 def store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout ):
     
-    if "ReadConfigureReporting" not in self.ListOfDevices[ NwkId ]:
-        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"] = { "Ep": {} }
-    if "Ep" not in self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]:
-        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"] = { "Ep": {} }
-    self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["TimeStamp"] = time.time()   
-    if Ep not in self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"]:
-        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ] = {}
-    if ClusterId not in self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ]:
-        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ][ ClusterId ] = {}
+    if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ NwkId ]:
+        self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING] = { "Ep": {} }
+    if "Ep" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]:
+        self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING] = { "Ep": {} }
+    self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] = time.time()   
+    if Ep not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"]:
+        self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ] = {}
+    if ClusterId not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]:
+        self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ] = {}
     if status == "00":
-        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ][ ClusterId ][ attribute ] = {
+        self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][ attribute ] = {
             "TimeStamp": time.time(),
             "Status": status,
             "DataType": DataType,
@@ -720,10 +722,10 @@ def store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, a
             "MaxInterval": MaxInterval,
         }
         if Change:
-            self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ][ ClusterId ][ attribute ][ "Change" ] = Change
+            self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][ attribute ][ "Change" ] = Change
         if timeout:
-            self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ][ ClusterId ][ attribute ][ "TimeOut" ] = timeout  
+            self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][ attribute ][ "TimeOut" ] = timeout  
     else:
-        self.ListOfDevices[ NwkId ]["ReadConfigureReporting"]["Ep"][ Ep ][ ClusterId ][ attribute ] = { 
+        self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][ attribute ] = { 
             "TimeStamp": time.time(),
             'Status': status }
