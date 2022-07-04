@@ -313,13 +313,14 @@ class ConfigureReporting:
             }
 
         if (
-            time.time() < (self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["TimeStamps"] + 300)
+            time.time() < (self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["TimeStamp"] + 300)
             or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["Retry"] > 3
         ):
             # Too early, already a request in progress
             return False
 
         self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["Retry"] += 1
+        self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["TimeStamp"] = time.time()
 
         for epout in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"]:
             if is_fake_ep(self, Nwkid, epout):
