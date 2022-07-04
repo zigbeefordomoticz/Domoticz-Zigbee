@@ -300,7 +300,12 @@ class ConfigureReporting:
             self.logging("Error", "processConfigureReporting - %s is Not Reachable !!" % (Nwkid), nwkid=Nwkid)
             return False
         if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:
-            self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING] = { 
+            self.logging("Error", "processConfigureReporting - %s inot attributes %s !!" % (Nwkid, STORE_CONFIGURE_REPORTING), nwkid=Nwkid)
+            return False
+
+            
+        if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:       
+            self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] = { 
                 "Ep": {},
                 "Request" : {
                     "Status": "Requested",
@@ -309,8 +314,8 @@ class ConfigureReporting:
                 }}
             return self.check_and_redo_configure_reporting_if_needed( Nwkid)
 
-        if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]:
-            self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING] = { 
+        if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]:
+            self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] = { 
                 "Ep": {},
                 "Request" : {
                     "Status": "Requested",
@@ -319,16 +324,16 @@ class ConfigureReporting:
                 }}
             return self.check_and_redo_configure_reporting_if_needed( Nwkid)
 
-        if "Request" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]: 
-            self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"] = {
+        if "Request" not in self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]: 
+            self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"] = {
                 "Status": "Requested",
                 "Retry": 0,
                 "TimeStamp": time.time()
             }
 
         if (
-            time.time() < (self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["TimeStamp"] + 300)
-            or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["Retry"] > 3
+            time.time() < (self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["TimeStamp"] + 300)
+            or self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["Retry"] > 3
         ):
             # Too early, already a request in progress
             return False
@@ -343,8 +348,8 @@ class ConfigureReporting:
                 wip_flag = True
                 
         if wip_flag:
-            self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["Retry"] += 1
-            self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["TimeStamp"] = time.time()
+            self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["Retry"] += 1
+            self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["TimeStamp"] = time.time()
 
         return wip_flag
 
