@@ -43,7 +43,7 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
 from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
                            is_hex, is_time_to_perform_work, mainPoweredDevice,
-                           night_shift_jobs, removeNwkInList)
+                           night_shift_jobs, removeNwkInList, get_device_nickname)
 from Modules.zb_tables_management import mgmt_rtg
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
@@ -673,7 +673,11 @@ def processKnownDevices(self, Devices, NWKID):
     ):
         # Trigger Configure Reporting to eligeable devices
         if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            if self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
+            self.log.logging( "Heartbeat", "Log", "Time to check Configuration reporting for %s/%s with period %s" %( 
+                NWKID, get_device_nickname( self, NwkId=NWKID),  self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
+            ret_value =self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] )
+            self.log.logging( "Heartbeat", "Log", "---- to be done %s" %ret_value)
+            if ret_value:
                 self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
                 mgmt_rtg(self, NWKID, "BindingTable")
         else:
