@@ -230,11 +230,10 @@ class ConfigureReporting:
                     MsgSrcAddr,
                 )
                 
-            if self.configureReporting:
-                self.logging(
-                    "Debug",
-                    "Read Configuration Reporting on device %s" % (MsgSrcAddr))
-                self.read_reporting_configuration_request( MsgSrcAddr )
+            self.logging(
+                "Debug",
+                "Read Configuration Reporting on device %s" % (MsgSrcAddr))
+            self.read_reporting_configuration_request( MsgSrcAddr )
 
             return
 
