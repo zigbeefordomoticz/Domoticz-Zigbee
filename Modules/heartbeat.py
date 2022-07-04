@@ -670,13 +670,12 @@ def processKnownDevices(self, Devices, NWKID):
         and night_shift_jobs( self )
         and "checkConfigurationReporting" in self.pluginconf.pluginConf
         and self.pluginconf.pluginConf["checkConfigurationReporting"] 
-        and (intHB % ( self.pluginconf.pluginConf["checkConfigurationReporting"] // HEARTBEAT) == 0)
     ):
         # Trigger Configure Reporting to eligeable devices
         if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=(21 * 3600) )
-            self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
-            mgmt_rtg(self, NWKID, "BindingTable")
+            if self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
+                self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
+                mgmt_rtg(self, NWKID, "BindingTable")
         else:
             rescheduleAction = True
 

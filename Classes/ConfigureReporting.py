@@ -10,15 +10,15 @@
 
 """
 
-from ast import Return
 import time
+from ast import Return
 from distutils.util import change_root
 
 import Domoticz
 from Modules.bindings import bindDevice, unbindDevice
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
-                                  STORE_CUSTOM_CONFIGURE_REPORTING,
-                                  STORE_READ_CONFIGURE_REPORTING)
+                                        STORE_CUSTOM_CONFIGURE_REPORTING,
+                                        STORE_READ_CONFIGURE_REPORTING)
 from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
                            get_list_isqn_int_attr_datastruct,
                            getClusterListforEP, is_ack_tobe_disabled,
@@ -261,24 +261,26 @@ class ConfigureReporting:
     def check_configure_reporting(self, checking_period):
         # This is call on a regular basic, and will trigger a Read Configuration reporting if needed.
         for nwkid in list(self.ListOfDevices.keys()):
-            self.check_configuration_reporting_for_device( nwkid, checking_period=checking_period)
+            return self.check_configuration_reporting_for_device( nwkid, checking_period=checking_period)
                 
     def check_configuration_reporting_for_device( self, NwkId, checking_period=None, force=False):
         if force:
             self.read_reporting_configuration_request(NwkId)
-            return
+            return True
         if not mainPoweredDevice(self, NwkId):
-            return  # Not Main Powered
+            return False    # Not Main Powered
         if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
-            return  # Will do at the next round
+            return False    # Will do at the next round
         if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ NwkId ]:
             self.read_reporting_configuration_request(NwkId)
-            return
+            return True
         if "TimeStamp" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]:
             self.read_reporting_configuration_request(NwkId)
-            return
+            return True
         if self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period > time.time():
             self.read_reporting_configuration_request(NwkId)
+            return True
+        return  False
         
     def read_reporting_configuration_request(self, Nwkid ):
         if Nwkid == "0000":
@@ -316,19 +318,19 @@ class ConfigureReporting:
 
         idx = 12
         while idx < len(MsgData):
-            status = MsgData[idx:idx+2]
+            status = MsgData[idx:idx + 2]
             idx += 2
-            direction = MsgData[idx:idx+2]
+            direction = MsgData[idx:idx + 2]
             idx += 2
-            attribute = MsgData[idx:idx+4]
+            attribute = MsgData[idx:idx + 4]
             idx += 4
             DataType = MinInterval = MaxInterval = Change = timeout = None
             if status == "00":
-                DataType = MsgData[idx:idx+2]
+                DataType = MsgData[idx:idx + 2]
                 idx += 2
-                MinInterval = MsgData[idx:idx+4]
+                MinInterval = MsgData[idx:idx + 4]
                 idx += 4
-                MaxInterval = MsgData[idx:idx+4]
+                MaxInterval = MsgData[idx:idx + 4]
                 idx += 4
                 if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
                     pass
@@ -401,7 +403,8 @@ class ConfigureReporting:
                             x in attribute_current_configuration
                             and int(attribute_current_configuration[ x ],16) != int(cluster_configuration[ attribut ][ x],16)
                         ):
-                            self.logging("Debug", 
+                            self.logging(
+                                "Debug", 
                                 f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update due to field {x}", nwkid=Nwkid)
                             configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                             break
@@ -787,7 +790,8 @@ def retreive_read_configure_reporting_record(self, NwkId, Ep=None, ClusterId=Non
         and ClusterId in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
         and AttributeId in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]
     ):
-        if ( "Status" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ] 
+        if ( 
+            "Status" in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ] 
             and self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]["Status"] != "00"
         ):
             self.logging("Debug", f"retreive_read_configure_reporting_record {NwkId}/{Ep} Cluster {ClusterId} Status is None !!", nwkid=NwkId)
