@@ -400,7 +400,7 @@ class ConfigureReporting:
             )
 
         if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ NwkId ]: 
-            del self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["request"]
+            del self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Request"]
 
         
     def retreive_configuration_reporting_definition(self, NwkId):
