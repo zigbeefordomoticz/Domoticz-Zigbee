@@ -391,27 +391,21 @@ class ConfigureReporting:
                 cluster_configuration = configuration_reporting[ _cluster ]["Attributes"]
                 for attribut in cluster_configuration:
                     self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut}", nwkid=Nwkid)
-                    
                     attribute_current_configuration = retreive_read_configure_reporting_record(self, Nwkid, Ep=_ep, ClusterId=_cluster, AttributeId=attribut)
                     if attribute_current_configuration is None:
                         self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} return None !", nwkid=Nwkid)
                         continue
+                    
+                    for x in ( "Change", "MinInterval", "MaxInterval"):
+                        if (
+                            x in attribute_current_configuration
+                            and int(attribute_current_configuration[ x ],16) != int(cluster_configuration[ attribut ][ x],16)
+                        ):
+                            self.logging("Debug", 
+                                f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update due to field {x}", nwkid=Nwkid)
+                            configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
+                            break
 
-                    if "Change" in attribute_current_configuration and attribute_current_configuration[ "Change" ] !=cluster_configuration[ attribut ]["Change"]:
-                        # To be Updated
-                        self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
-                        configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
-                        break
-                    if "MinInterval" in attribute_current_configuration and attribute_current_configuration[ "MinInterval" ] != cluster_configuration[ attribut ]["MinInterval"]:
-                        # To be Updated
-                        self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
-                        configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
-                        break
-                    if "MaxInterval" in attribute_current_configuration and attribute_current_configuration[ "MaxInterval" ] != cluster_configuration[ attribut ]["MaxInterval"]:
-                        # To be Updated
-                        self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update", nwkid=Nwkid)
-                        configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
-                        break
                         
 
             
