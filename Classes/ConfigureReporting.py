@@ -288,19 +288,19 @@ class ConfigureReporting:
         if Nwkid == "0000":
             return False
         if Nwkid not in self.ListOfDevices:
-            self.logging("Error", f"processConfigureReporting - Unknown key: {Nwkid}", nwkid=Nwkid)
+            self.logging("Debug", f"processConfigureReporting - Unknown key: {Nwkid}", nwkid=Nwkid)
             return False
         if "Status" not in self.ListOfDevices[Nwkid]:
-            self.logging("Error", "processConfigureReporting - no 'Status' flag for device %s !!!" % Nwkid, nwkid=Nwkid)
+            self.logging("Debug", "processConfigureReporting - no 'Status' flag for device %s !!!" % Nwkid, nwkid=Nwkid)
             return False
         if self.ListOfDevices[Nwkid]["Status"] != "inDB":
-            self.logging("Error", "processConfigureReporting - 'Status' flag for device %s is %s" % (Nwkid,self.ListOfDevices[Nwkid]["Status"]), nwkid=Nwkid)
+            self.logging("Debug", "processConfigureReporting - 'Status' flag for device %s is %s" % (Nwkid,self.ListOfDevices[Nwkid]["Status"]), nwkid=Nwkid)
             return False
         if "Health" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Health"] == "Not Reachable":
-            self.logging("Error", "processConfigureReporting - %s is Not Reachable !!" % (Nwkid), nwkid=Nwkid)
+            self.logging("Debug", "processConfigureReporting - %s is Not Reachable !!" % (Nwkid), nwkid=Nwkid)
             return False
         if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:
-            self.logging("Error", "processConfigureReporting - %s inot attributes %s !!" % (Nwkid, STORE_CONFIGURE_REPORTING), nwkid=Nwkid)
+            self.logging("Debug", "processConfigureReporting - %s has %s record!!" % (Nwkid, STORE_CONFIGURE_REPORTING), nwkid=Nwkid)
             return False
 
             
