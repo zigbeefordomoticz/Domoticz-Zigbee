@@ -337,11 +337,12 @@ class ConfigureReporting:
         ):
             # Too early, already a request in progress
             return False
-
+        
+        wip_flag = False
         for epout in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"]:
             if is_fake_ep(self, Nwkid, epout):
                 continue
-            wip_flag = False
+            
             for cluster_id in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"][ epout ]:
                 attribute_lst = [int(attribute, 16) for attribute in self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]["Ep"][epout][cluster_id]["Attributes"]]
                 zcl_read_report_config_request( self, Nwkid, ZIGATE_EP, epout, cluster_id, "00", "0000", attribute_lst, is_ack_tobe_disabled(self, Nwkid),)
