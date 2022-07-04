@@ -444,6 +444,7 @@ class ConfigureReporting:
                     attribute_current_configuration = retreive_read_configure_reporting_record(self, Nwkid, Ep=_ep, ClusterId=_cluster, AttributeId=attribut)
                     if attribute_current_configuration is None:
                         self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} return None !", nwkid=Nwkid)
+                        configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                         continue
                     
                     for x in ( "Change", "MinInterval", "MaxInterval"):
