@@ -300,7 +300,7 @@ class ConfigureReporting:
             self.logging("Debug", "processConfigureReporting - %s is Not Reachable !!" % (Nwkid), nwkid=Nwkid)
             return False
         if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:
-            self.logging("Debug", "processConfigureReporting - %s has %s record!!" % (Nwkid, STORE_CONFIGURE_REPORTING), nwkid=Nwkid)
+            self.logging("Debug", "processConfigureReporting - %s has no %s record!!" % (Nwkid, STORE_CONFIGURE_REPORTING), nwkid=Nwkid)
             return False
 
             
@@ -399,6 +399,10 @@ class ConfigureReporting:
                 NwkId,
             )
 
+        if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ NwkId ]: 
+            del self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["request"]
+
+        
     def retreive_configuration_reporting_definition(self, NwkId):
     
         if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
