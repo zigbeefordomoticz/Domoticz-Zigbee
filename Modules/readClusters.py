@@ -4263,7 +4263,20 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
+        
+        elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS011F-plug":
+            value /= 1000
+            if "Manufacturer" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "_TZ3000_amdymr7l":
+                value /= 2
+                
+                # Fake Active Power
+                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "050b", MsgAttrID, value * 220)
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "050b", str(value * 220), Attribute_=MsgAttrID)
 
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
+            
+                
         elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "ZLinky_TIC":
             value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
             # from random import randrange
