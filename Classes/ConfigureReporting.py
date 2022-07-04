@@ -382,7 +382,7 @@ class ConfigureReporting:
                 idx += 4
                 if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
                     pass
-           
+
                 elif DataType in SIZE_DATA_TYPE:
                     size = SIZE_DATA_TYPE[DataType] * 2
                     Change = MsgData[idx : idx + size]
@@ -391,7 +391,7 @@ class ConfigureReporting:
                 if direction == "01":
                     timeout = MsgData[idx : idx + 4]
                     idx += 4
-                      
+
             store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout )
             self.logging(
                 "Debug",
@@ -399,7 +399,7 @@ class ConfigureReporting:
                 NwkId,
             )
 
-        if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ NwkId ]: 
+        if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[NwkId] and "Request" in self.ListOfDevices[NwkId][STORE_READ_CONFIGURE_REPORTING]:
             del self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Request"]
 
         

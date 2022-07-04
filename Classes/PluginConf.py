@@ -336,7 +336,7 @@ SETTINGS = {
             },
             "checkConfigurationReporting": {
                 "type": "int",
-                "default": 39600,
+                "default": 75600,
                 "current": None,
                 "restart": 0,
                 "hidden": False,
