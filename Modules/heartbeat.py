@@ -538,13 +538,8 @@ def processKnownDevices(self, Devices, NWKID):
         self.log.logging("Heartbeat", "Log", "processKnownDevices -  %s recover from Non Reachable" % NWKID, NWKID)
         del self.ListOfDevices[NWKID]["pingDeviceRetry"]
 
-    model = ""
-    if "Model" in self.ListOfDevices[NWKID]:
-        model = self.ListOfDevices[NWKID]["Model"]
-
-    enabledEndDevicePolling = False
-    if model in self.DeviceConf and "PollingEnabled" in self.DeviceConf[model] and self.DeviceConf[model]["PollingEnabled"]:
-        enabledEndDevicePolling = True
+    model = self.ListOfDevices[NWKID]["Model"] if "Model" in self.ListOfDevices[NWKID] else ""
+    enabledEndDevicePolling = bool(model in self.DeviceConf and "PollingEnabled" in self.DeviceConf[model] and self.DeviceConf[model]["PollingEnabled"])
 
     if "CheckParam" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["CheckParam"] and intHB > (60 // HEARTBEAT):
         sanity_check_of_param(self, NWKID)
@@ -555,7 +550,7 @@ def processKnownDevices(self, Devices, NWKID):
     # We should authporized them for Polling After Action, in order to get confirmation.
     if not _mainPowered and not enabledEndDevicePolling:
         return
-    
+
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
 
@@ -573,12 +568,7 @@ def processKnownDevices(self, Devices, NWKID):
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = rescheduleAction or pollingManufSpecificDevices(self, NWKID, intHB)
 
-    _doReadAttribute = False
-    if (
-        self.pluginconf.pluginConf["enableReadAttributes"]
-        or self.pluginconf.pluginConf["resetReadAttributes"]
-    ) and (intHB % READATTRIBUTE_FEQ) == 0:
-        _doReadAttribute = True
+    _doReadAttribute = bool((self.pluginconf.pluginConf["enableReadAttributes"] or self.pluginconf.pluginConf["resetReadAttributes"]) and (intHB % READATTRIBUTE_FEQ) == 0)
 
     if ( 
         self.ControllerLink.loadTransmit() > 5
@@ -683,9 +673,12 @@ def processKnownDevices(self, Devices, NWKID):
         and (intHB % ( self.pluginconf.pluginConf["checkConfigurationReporting"] // HEARTBEAT) == 0)
     ):
         # Trigger Configure Reporting to eligeable devices
-        self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=(21 * 3600) )
-        self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
-
+        if not self.busy and self.ControllerLink.loadTransmit() < 3:
+            self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=(21 * 3600) )
+            self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
+            mgmt_rtg(self, NWKID, "BindingTable")
+        else:
+            rescheduleAction = True
 
     # Do Attribute Disocvery if needed
     if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):

@@ -370,12 +370,12 @@ class ConfigureReporting:
         if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] in ( '', {}):
             # we should redo the configure reporting as we don't have the Configuration Reporting
             self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_READ_CONFIGURE_REPORTING} ", nwkid=Nwkid)
-            configure_reporting_for_one_device( self, Nwkid, False)
+            configure_reporting_for_one_device( self, Nwkid, batchMode=True)
             return
 
         if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING] in ( '', {}):  
             self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_CONFIGURE_REPORTING} ", nwkid=Nwkid)
-            configure_reporting_for_one_device( self, Nwkid, False)    
+            configure_reporting_for_one_device( self, Nwkid, batchMode=True)    
             return
 
         configuration_reporting = self.retreive_configuration_reporting_definition( Nwkid)
@@ -403,7 +403,7 @@ class ConfigureReporting:
                         ):
                             self.logging("Debug", 
                                 f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update due to field {x}", nwkid=Nwkid)
-                            configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, cluster_configuration)
+                            configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                             break
 
                         
@@ -492,23 +492,25 @@ def configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_config
 
         # If NWKID is not None, it means that we are asking a ConfigureReporting for a specific device
         # Which happens on the case of New pairing, or a re-join
-        do_rebind_if_needed(self, key, Ep, batchMode, cluster)
+        
 
         if "Attributes" not in cfgrpt_configuration[ cluster ]:
             self.logging("Debug", f"----> configure_reporting_for_one_endpoint - for device: {key} on Cluster: {cluster} no Attributes key on {cfgrpt_configuration[ cluster ]}", nwkid=key)
             continue
         
         set_timestamp_datastruct(self, STORE_CONFIGURE_REPORTING, key, Ep, cluster, time.time())
-        configure_reporting_for_one_cluster(self, key, Ep, cluster, cfgrpt_configuration[cluster]["Attributes"])
+        configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, cfgrpt_configuration[cluster]["Attributes"])
 
 
-def configure_reporting_for_one_cluster(self, key, Ep, cluster, cluster_configuration):
+def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, cluster_configuration):
     self.logging("Debug", f"---- configure_reporting_for_one_cluster - key: {key} ep: {Ep} cluster: {cluster} Cfg: {cluster_configuration}", nwkid=key)
 
     manufacturer = "0000"
     manufacturer_spec = "00"
     direction = "00"
 
+    do_rebind_if_needed(self, key, Ep, batchMode, cluster)
+    
     ListOfAttributesToConfigure = []
     for attr in cluster_configuration:
         # Check if the Attribute is listed in the Attributes List (provided by the Device
@@ -595,6 +597,8 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, cluster_configur
 
 
 def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
+    
+    # To be done ony in batchMode, as otherwise it has already been done (pairing time)
     if batchMode and self.pluginconf.pluginConf["allowReBindingClusters"]:
         lookup_ieee = self.ListOfDevices[nwkid]["IEEE"]
         zdp_NWK_address_request(self, "fffc", lookup_ieee, )
