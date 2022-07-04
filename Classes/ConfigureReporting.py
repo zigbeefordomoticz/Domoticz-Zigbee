@@ -469,16 +469,16 @@ def configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_config
         # Configure Reporting must be done because:
         # (1) 'ConfigureReporting' do not exist
         # (2) 'ConfigureReporting' is empty
-        # (3) if reenforceConfigureReporting is enabled and it is time to do the work
+        # (3) if checkConfigurationReporting is enabled and it is time to do the work
         if batchMode and STORE_CONFIGURE_REPORTING in self.ListOfDevices[key] and len(self.ListOfDevices[key][STORE_CONFIGURE_REPORTING]) != 0:
-            if self.pluginconf.pluginConf["reenforceConfigureReporting"]:
+            if self.pluginconf.pluginConf["checkConfigurationReporting"]:
                 if not is_time_to_perform_work( self, STORE_CONFIGURE_REPORTING, key, Ep, cluster, now, (CONFIGURE_REPORT_PERFORM_TIME * 3600), ):
                     self.logging("Debug", f"----> configure_reporting_for_one_endpoint Not time to perform  {key}/{Ep} - {cluster}", nwkid=key)
                     continue
             else:
                 self.logging(
                     "Debug",
-                    "----> configure_reporting_for_one_endpoint ['reenforceConfigureReporting']: %s then skip" % self.pluginconf.pluginConf["reenforceConfigureReporting"],
+                    "----> configure_reporting_for_one_endpoint ['checkConfigurationReporting']: %s then skip" % self.pluginconf.pluginConf["checkConfigurationReporting"],
                 )
                 continue
 
