@@ -398,12 +398,12 @@ class ConfigureReporting:
 
             store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout )
             self.logging(
-                "Log",
+                "Debug",
                 f"Read Configure Reporting response - NwkId: {NwkId} Ep: {Ep} Cluster: {ClusterId} Attribute: {attribute} DataType: {DataType} Min: {MinInterval} Max: {MaxInterval} Change: {Change}",
                 NwkId,
             )
         if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[NwkId] and "Request" in self.ListOfDevices[NwkId][STORE_READ_CONFIGURE_REPORTING]:
-            self.logging( "Log", f"       Remove self.ListOfDevices[ {NwkId} ][{STORE_READ_CONFIGURE_REPORTING}]['Request']", NwkId, )
+            self.logging( "Debug", f"       Remove self.ListOfDevices[ {NwkId} ][{STORE_READ_CONFIGURE_REPORTING}]['Request']", NwkId, )
             del self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Request"]
 
         
