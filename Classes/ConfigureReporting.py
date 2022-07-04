@@ -277,7 +277,7 @@ class ConfigureReporting:
         if "TimeStamp" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]:
             self.read_reporting_configuration_request(NwkId)
             return True
-        if self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period > time.time():
+        if (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period) > time.time():
             self.read_reporting_configuration_request(NwkId)
             return True
         return  False
