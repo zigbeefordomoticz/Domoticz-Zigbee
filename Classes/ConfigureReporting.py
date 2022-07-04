@@ -297,8 +297,12 @@ class ConfigureReporting:
         if "Health" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Health"] == "Not Reachable":
             self.logging("Error", "processConfigureReporting - %s is Not Reachable !!" % (Nwkid), nwkid=Nwkid)
             return
+        if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:
+            self.check_and_redo_configure_reporting_if_needed( Nwkid)
+            return
         if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]:
             self.check_and_redo_configure_reporting_if_needed( Nwkid)
+            return
             
         for epout in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"]:
             if is_fake_ep(self, Nwkid, epout):
