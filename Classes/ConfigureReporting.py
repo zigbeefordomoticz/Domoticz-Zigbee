@@ -399,9 +399,8 @@ class ConfigureReporting:
                 NwkId,
             )
         if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[NwkId] and "Request" in self.ListOfDevices[NwkId][STORE_READ_CONFIGURE_REPORTING]:
-            self.logging(
-                "Log",
-                f"       Remove self.ListOfDevices[ {NwkId} ][{STORE_READ_CONFIGURE_REPORTING}]["Request"]",
+            self.logging( "Log",
+                f"       Remove self.ListOfDevices[ {NwkId} ][{STORE_READ_CONFIGURE_REPORTING}]['Request']",
                 NwkId,
             )
 
