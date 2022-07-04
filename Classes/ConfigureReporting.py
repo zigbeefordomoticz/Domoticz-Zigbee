@@ -305,23 +305,21 @@ class ConfigureReporting:
         if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]:
             return self.check_and_redo_configure_reporting_if_needed( Nwkid)
 
-        if (
-            "Request" in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]
-            and ( 
-                time.time() < (self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["request"]["TimeStamps"] + 300)
-                or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["request"]["Retry"] > 3 )
-        ):
-            # Too early, already a request in progress
-            return False
-            
         if "Request" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]: 
             self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"] = {
                 "Status": "Requested",
                 "Retry": 0,
                 "TimeStamp": time.time()
             }
-            
-        self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["request"]["Retry"] += 1
+
+        if (
+            time.time() < (self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["TimeStamps"] + 300)
+            or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["Retry"] > 3
+        ):
+            # Too early, already a request in progress
+            return False
+
+        self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["Retry"] += 1
 
         for epout in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"]:
             if is_fake_ep(self, Nwkid, epout):
