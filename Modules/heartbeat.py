@@ -44,7 +44,7 @@ from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
                            is_hex, is_time_to_perform_work, mainPoweredDevice,
                            night_shift_jobs, removeNwkInList, get_device_nickname)
-from Modules.zb_tables_management import mgmt_rtg
+from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 # Read Attribute trigger: Every 10"
@@ -158,14 +158,14 @@ def check_delay_binding( self, NwkId, model ):
         # Cannot do more
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s BindingTable do not exist" % (
             NwkId), NwkId, )
-        mgmt_rtg(self, NwkId, "BindingTable")
+        mgtm_binding(self, NwkId, "BindingTable")
         return
     
     if "Devices" in self.ListOfDevices[ NwkId ]["BindingTable"] and len(self.ListOfDevices[ NwkId ]["BindingTable"]["Devices"]) == 0:
         # Too early come later
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s BindingTable empty" % (
             NwkId), NwkId, )
-        mgmt_rtg(self, NwkId, "BindingTable")
+        mgtm_binding(self, NwkId, "BindingTable")
         return
     
     # We reached that step, because we have DelayindingAtPairing enabled and the BindTable is not empty.
@@ -670,11 +670,14 @@ def processKnownDevices(self, Devices, NWKID):
     ):
         # Trigger Configure Reporting to eligeable devices
         if not self.busy and self.ControllerLink.loadTransmit() < 3:
+            self.log.logging( "Heartbeat", "Log", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
+                    NWKID, get_device_nickname( self, NwkId=NWKID),  self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
+
             if self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
-                self.log.logging( "Heartbeat", "Log", "Configuration reporting for %s/%s with period %s triggered !" %( 
+                self.log.logging( "Heartbeat", "Log", "Configuration reporting for %s/%s with period %s seconds triggered !" %( 
                     NWKID, get_device_nickname( self, NwkId=NWKID),  self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
                 self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
-                mgmt_rtg(self, NWKID, "BindingTable")
+                mgtm_binding(self, NWKID, "BindingTable")
         else:
             rescheduleAction = True
 

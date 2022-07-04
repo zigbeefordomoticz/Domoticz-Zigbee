@@ -265,13 +265,15 @@ class ConfigureReporting:
     def check_configuration_reporting_for_device( self, NwkId, checking_period=None, force=False):
         if force:
             return self.read_reporting_configuration_request(NwkId)
-        
+
         if not mainPoweredDevice(self, NwkId):
+            self.logging("Debug", "     Not a main powered device")
             return False    # Not Main Powered
-        
+
         if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+            self.logging("Debug", "     System busy")
             return False    # Will do at the next round
-        
+
         if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ NwkId ]:
             return self.read_reporting_configuration_request(NwkId)
 
@@ -280,7 +282,9 @@ class ConfigureReporting:
 
         if time.time() > (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period):
             return self.read_reporting_configuration_request(NwkId)
-
+        
+        self.logging("Debug", "     nocriteria matches %s %s" %(
+            time.time(), (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period)))
         return  False
         
     def read_reporting_configuration_request(self, Nwkid ):
@@ -327,7 +331,7 @@ class ConfigureReporting:
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"] = {
                 "Status": "Requested",
                 "Retry": 0,
-                "TimeStamp": time.time()
+                "TimeStamp": 0
             }
 
         if (
@@ -335,6 +339,7 @@ class ConfigureReporting:
             or self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["Retry"] > 3
         ):
             # Too early, already a request in progress
+            self.logging("Debug", "     Too early ....", nwkid=Nwkid)
             return False
         
         wip_flag = False
