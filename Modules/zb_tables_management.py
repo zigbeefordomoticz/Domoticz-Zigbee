@@ -153,7 +153,7 @@ def get_list_of_timestamps( self, nwkid, tablename):
 
         for x in self.ListOfDevices[nwkid][tablename]:
             #if isinstance(x["Time"], int) and not is_timestamp_current_topology_in_progress(self, x["Time"]):
-            if int(x["Time"]) not in timestamp and not is_timestamp_current_topology_in_progress(self, x["Time"]):
+            if isinstance(x["Time"], int) and int(x["Time"]) not in timestamp and not is_timestamp_current_topology_in_progress(self, x["Time"]):
                 timestamp.append( int(x["Time"]))
 
     self.log.logging("NetworkMap", "Debug", "get_list_of_timestamps_Table return --> %s -> %s" %(tablename, timestamp))
