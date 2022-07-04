@@ -154,20 +154,6 @@ def check_delay_binding( self, NwkId, model ):
         return
     
     # We have a good candidate
-    ##########if "BindingTable" not in self.ListOfDevices[ NwkId ]:
-    ##########    # Cannot do more
-    ##########    self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s BindingTable do not exist" % (
-    ##########        NwkId), NwkId, )
-    ##########    mgtm_binding(self, NwkId, "BindingTable")
-    ##########    return
-    ##########
-    ##########if "Devices" in self.ListOfDevices[ NwkId ]["BindingTable"] and len(self.ListOfDevices[ NwkId ]["BindingTable"]["Devices"]) == 0:
-    ##########    # Too early come later
-    ##########    self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s BindingTable empty" % (
-    ##########        NwkId), NwkId, )
-    ##########    mgtm_binding(self, NwkId, "BindingTable")
-    ##########    return
-    
     # We reached that step, because we have DelayindingAtPairing enabled and the BindTable is not empty.
     # Let's bind
     if self.configureReporting:
