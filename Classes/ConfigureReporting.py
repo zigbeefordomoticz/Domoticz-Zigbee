@@ -285,7 +285,7 @@ class ConfigureReporting:
         
         self.logging("Debug", "     nocriteria matches %s %s" %(
             time.time(), (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period)))
-        return  False
+        return False
         
     def read_reporting_configuration_request(self, Nwkid ):
         if Nwkid == "0000":
@@ -403,11 +403,7 @@ class ConfigureReporting:
                 NwkId,
             )
         if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[NwkId] and "Request" in self.ListOfDevices[NwkId][STORE_READ_CONFIGURE_REPORTING]:
-            self.logging( "Log",
-                f"       Remove self.ListOfDevices[ {NwkId} ][{STORE_READ_CONFIGURE_REPORTING}]['Request']",
-                NwkId,
-            )
-
+            self.logging( "Log", f"       Remove self.ListOfDevices[ {NwkId} ][{STORE_READ_CONFIGURE_REPORTING}]['Request']", NwkId, )
             del self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Request"]
 
         
@@ -847,8 +843,8 @@ def retreive_read_configure_reporting_record(self, NwkId, Ep=None, ClusterId=Non
     if ( 
         "Ep" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING] 
         or Ep not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"]
-        or  ClusterId not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
-        or  AttributeId not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]
+        or ClusterId not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ]
+        or AttributeId not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]
     ):
         return None
 
@@ -861,8 +857,8 @@ def retreive_read_configure_reporting_record(self, NwkId, Ep=None, ClusterId=Non
         
     if (
         "DataType" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId]
-        or  "MinInterval" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId]
-        or  "MaxInterval" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId]
+        or "MinInterval" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId]
+        or "MaxInterval" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ][AttributeId]
     ):
         self.logging("Debug", f"retreive_read_configure_reporting_record {NwkId}/{Ep} Cluster {ClusterId} No DataType, Min and Max !!", nwkid=NwkId)
         return None
