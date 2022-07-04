@@ -136,13 +136,11 @@ def check_delay_binding( self, NwkId, model ):
     if "DelayBindingAtPairing" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"] == "Completed":
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s DelayBindingAtPairing: %s" % (
             NwkId, self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"]), NwkId, )
-
         return
     
     if model in ( "", {}):
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s model: %s" % (
             NwkId, model), NwkId, )
-
         return
 
     if model not in self.DeviceConf or "DelayBindingAtPairing" not in self.DeviceConf[ model ] or self.DeviceConf[ model ]["DelayBindingAtPairing"] != 1:
@@ -153,7 +151,6 @@ def check_delay_binding( self, NwkId, model ):
     if "ClusterToBind" not in self.DeviceConf[ model ] or len(self.DeviceConf[ model ]["ClusterToBind"]) == 0:
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s Empty ClusterToBind" % (
             NwkId), NwkId, )
-
         return
     
     # We have a good candidate
@@ -673,11 +670,9 @@ def processKnownDevices(self, Devices, NWKID):
     ):
         # Trigger Configure Reporting to eligeable devices
         if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            self.log.logging( "Heartbeat", "Log", "Time to check Configuration reporting for %s/%s with period %s" %( 
-                NWKID, get_device_nickname( self, NwkId=NWKID),  self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
-            ret_value =self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] )
-            self.log.logging( "Heartbeat", "Log", "---- to be done %s" %ret_value)
-            if ret_value:
+            if self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
+                self.log.logging( "Heartbeat", "Log", "Configuration reporting for %s/%s with period %s triggered !" %( 
+                    NWKID, get_device_nickname( self, NwkId=NWKID),  self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
                 self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
                 mgmt_rtg(self, NWKID, "BindingTable")
         else:

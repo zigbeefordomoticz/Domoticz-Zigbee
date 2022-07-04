@@ -300,9 +300,23 @@ class ConfigureReporting:
             self.logging("Error", "processConfigureReporting - %s is Not Reachable !!" % (Nwkid), nwkid=Nwkid)
             return False
         if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:
+            self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING] = { 
+                "Ep": {},
+                "Request" : {
+                    "Status": "Requested",
+                    "Retry": 0,
+                    "TimeStamp": time.time()
+                }}
             return self.check_and_redo_configure_reporting_if_needed( Nwkid)
 
         if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]:
+            self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING] = { 
+                "Ep": {},
+                "Request" : {
+                    "Status": "Requested",
+                    "Retry": 0,
+                    "TimeStamp": time.time()
+                }}
             return self.check_and_redo_configure_reporting_if_needed( Nwkid)
 
         if "Request" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]: 
@@ -319,9 +333,6 @@ class ConfigureReporting:
             # Too early, already a request in progress
             return False
 
-        self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["Retry"] += 1
-        self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["TimeStamp"] = time.time()
-
         for epout in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"]:
             if is_fake_ep(self, Nwkid, epout):
                 continue
@@ -330,6 +341,11 @@ class ConfigureReporting:
                 attribute_lst = [int(attribute, 16) for attribute in self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]["Ep"][epout][cluster_id]["Attributes"]]
                 zcl_read_report_config_request( self, Nwkid, ZIGATE_EP, epout, cluster_id, "00", "0000", attribute_lst, is_ack_tobe_disabled(self, Nwkid),)
                 wip_flag = True
+                
+        if wip_flag:
+            self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["Retry"] += 1
+            self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"]["TimeStamp"] = time.time()
+
         return wip_flag
 
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
