@@ -265,52 +265,73 @@ class ConfigureReporting:
                 
     def check_configuration_reporting_for_device( self, NwkId, checking_period=None, force=False):
         if force:
-            self.read_reporting_configuration_request(NwkId)
-            return True
+            return self.read_reporting_configuration_request(NwkId)
+        
         if not mainPoweredDevice(self, NwkId):
             return False    # Not Main Powered
+        
         if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
             return False    # Will do at the next round
+        
         if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ NwkId ]:
-            self.read_reporting_configuration_request(NwkId)
-            return True
+            return self.read_reporting_configuration_request(NwkId)
+
         if "TimeStamp" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]:
-            self.read_reporting_configuration_request(NwkId)
-            return True
+            return self.read_reporting_configuration_request(NwkId)
+
         if (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period) > time.time():
-            self.read_reporting_configuration_request(NwkId)
-            return True
+            return self.read_reporting_configuration_request(NwkId)
+
         return  False
         
     def read_reporting_configuration_request(self, Nwkid ):
         if Nwkid == "0000":
-            return
+            return False
         if Nwkid not in self.ListOfDevices:
             self.logging("Error", f"processConfigureReporting - Unknown key: {Nwkid}", nwkid=Nwkid)
-            return
+            return False
         if "Status" not in self.ListOfDevices[Nwkid]:
             self.logging("Error", "processConfigureReporting - no 'Status' flag for device %s !!!" % Nwkid, nwkid=Nwkid)
-            return
+            return False
         if self.ListOfDevices[Nwkid]["Status"] != "inDB":
             self.logging("Error", "processConfigureReporting - 'Status' flag for device %s is %s" % (Nwkid,self.ListOfDevices[Nwkid]["Status"]), nwkid=Nwkid)
-            return
+            return False
         if "Health" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Health"] == "Not Reachable":
             self.logging("Error", "processConfigureReporting - %s is Not Reachable !!" % (Nwkid), nwkid=Nwkid)
-            return
+            return False
         if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:
-            self.check_and_redo_configure_reporting_if_needed( Nwkid)
-            return
+            return self.check_and_redo_configure_reporting_if_needed( Nwkid)
+
         if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]:
-            self.check_and_redo_configure_reporting_if_needed( Nwkid)
-            return
+            return self.check_and_redo_configure_reporting_if_needed( Nwkid)
+
+        if (
+            "Request" in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]
+            and ( 
+                time.time() < (self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["request"]["TimeStamps"] + 300)
+                or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["request"]["Retry"] > 3 )
+        ):
+            # Too early, already a request in progress
+            return False
             
+        if "Request" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]: 
+            self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Request"] = {
+                "Status": "Requested",
+                "Retry": 0,
+                "TimeStamp": time.time()
+            }
+            
+        self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["request"]["Retry"] += 1
+
         for epout in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"]:
             if is_fake_ep(self, Nwkid, epout):
                 continue
-
+            wip_flag = False
             for cluster_id in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"][ epout ]:
                 attribute_lst = [int(attribute, 16) for attribute in self.ListOfDevices[Nwkid][STORE_CONFIGURE_REPORTING]["Ep"][epout][cluster_id]["Attributes"]]
                 zcl_read_report_config_request( self, Nwkid, ZIGATE_EP, epout, cluster_id, "00", "0000", attribute_lst, is_ack_tobe_disabled(self, Nwkid),)
+                wip_flag = True
+        return wip_flag
 
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
         zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
@@ -379,21 +400,21 @@ class ConfigureReporting:
             # we should redo the configure reporting as we don't have the Configuration Reporting
             self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_READ_CONFIGURE_REPORTING} ", nwkid=Nwkid)
             configure_reporting_for_one_device( self, Nwkid, batchMode=True)
-            return
+            return True
 
         if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING] in ( '', {}):  
             self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_CONFIGURE_REPORTING} ", nwkid=Nwkid)
             configure_reporting_for_one_device( self, Nwkid, batchMode=True)    
-            return
+            return True
 
         configuration_reporting = self.retreive_configuration_reporting_definition( Nwkid)
-
+        wip_flap = False
         for _ep in self.ListOfDevices[ Nwkid ]["Ep"]:
             self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep}", nwkid=Nwkid)
             
             for _cluster in self.ListOfDevices[ Nwkid ]["Ep"][ _ep ]:
                 if _cluster not in configuration_reporting:
-                        continue
+                    continue
 
                 self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster}", nwkid=Nwkid)
                 cluster_configuration = configuration_reporting[ _cluster ]["Attributes"]
@@ -413,11 +434,10 @@ class ConfigureReporting:
                                 "Debug", 
                                 f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update due to field {x}", nwkid=Nwkid)
                             configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
+                            wip_flap = True
                             break
-
-                        
-
-            
+        return wip_flap
+           
 ####
 
 def configure_reporting_for_one_device(self, key, batchMode):
