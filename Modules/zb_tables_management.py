@@ -11,6 +11,7 @@
 """
 
 
+from sqlite3 import Timestamp
 import struct
 import time
 from datetime import datetime
@@ -85,6 +86,10 @@ def _create_empty_entry(self, nwkid, tablename, time_stamp=None):
         "TimeStamp": time_stamp,
         "Time": time_stamp
     }
+    for x in self.ListOfDevices[nwkid][tablename]:
+        if "TimeStamp" in x and x["TimeStamp"] == Timestamp:
+            return
+
     self.ListOfDevices[nwkid][tablename].append( new_entry )
  
 def get_table_entry(self, nwkid, tablename, time_stamp=None):
@@ -144,25 +149,29 @@ def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
 def get_list_of_timestamps( self, nwkid, tablename):
     # We force to retreive ALL timestamps from all Devices with Neigbourgs so cleanip is possible
     timestamp = []
-    for nwkid in self.ListOfDevices:
-        if tablename not in self.ListOfDevices[nwkid]:
-            continue
+    for tablename in ("RoutingTable", "AssociatedDevices", "Neighbours" ):
+        for nwkid in self.ListOfDevices:
+            if tablename not in self.ListOfDevices[nwkid]:
+                continue
 
-        if not isinstance(self.ListOfDevices[nwkid][tablename], list):
-            continue
+            if not isinstance(self.ListOfDevices[nwkid][tablename], list):
+                continue
 
-        for x in self.ListOfDevices[nwkid][tablename]:
-            #if isinstance(x["Time"], int) and not is_timestamp_current_topology_in_progress(self, x["Time"]):
-            if isinstance(x["Time"], int) and int(x["Time"]) not in timestamp and not is_timestamp_current_topology_in_progress(self, x["Time"]):
-                timestamp.append( int(x["Time"]))
+            for x in self.ListOfDevices[nwkid][tablename]:
+                #if isinstance(x["Time"], int) and not is_timestamp_current_topology_in_progress(self, x["Time"]):
+                if isinstance(x["Time"], int) and int(x["Time"]) not in timestamp and not is_timestamp_current_topology_in_progress(self, x["Time"]):
+                    timestamp.append( int(x["Time"]))
 
     self.log.logging("NetworkMap", "Debug", "get_list_of_timestamps_Table return --> %s -> %s" %(tablename, timestamp))
     return timestamp
 
 
-def is_timestamp_current_topology_in_progress( self, timestamp):
-    return "TopologyStartTime" in self.ListOfDevices["0000"] and self.ListOfDevices["0000"]["TopologyStartTime"] == timestamp
-      
+def is_timestamp_current_topology_in_progress( self, timestamp=None):
+    if timestamp:
+        return "TopologyStartTime" in self.ListOfDevices["0000"] and self.ListOfDevices["0000"]["TopologyStartTime"] == timestamp
+    if "TopologyStartTime" in self.ListOfDevices["0000"]:
+        return self.ListOfDevices["0000"]["TopologyStartTime"]
+    
 def remove_entry_from_all_tables( self, time_stamp ):
 
     if "TopologyStartTime" in self.ListOfDevices["0000"]:
@@ -179,19 +188,47 @@ def remove_table_entry(self, nwkid, tablename, time_stamp):
     
     self.log.logging("NetworkMap", "Debug", "remove_table_entry %s %s %s" %(nwkid, tablename, time_stamp))
     self.log.logging("NetworkMap", "Debug", "remove_table_entry %s" %str(self.ListOfDevices[nwkid][tablename]) )
-    
+
     if not isinstance(self.ListOfDevices[nwkid][tablename], list):
         return
+    one_more_time = True
+    while one_more_time:
+        one_more_time = False
+        for idx in range(len(self.ListOfDevices[nwkid][tablename])):
+            self.log.logging("NetworkMap", "Debug", "remove_table_entry idx: %s" %idx)
+            if ( "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
+                and self.ListOfDevices[nwkid][tablename][ idx ]["Time"] == int(time_stamp)
+            ):
+                self.log.logging("NetworkMap", "Debug", "remove_table_entry %s / %s" %( nwkid, tablename))
+                del self.ListOfDevices[nwkid][tablename][ idx ]
+                one_more_time = True
+                break
 
-    for idx in range(len(self.ListOfDevices[nwkid][tablename])):
-        self.log.logging("NetworkMap", "Debug", "remove_table_entry idx: %s" %idx)
-        if ( "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
-            and self.ListOfDevices[nwkid][tablename][ idx ]["Time"] == int(time_stamp)
-        ):
-            self.log.logging("NetworkMap", "Debug", "remove_table_entry %s / %s" %( nwkid, tablename))
-            del self.ListOfDevices[nwkid][tablename][ idx ]
-            break
-    
+ 
+def cleanup_table_entries( self):
+
+    for tablename in ("RoutingTable", "AssociatedDevices", "Neighbours" ):
+        self.log.logging("NetworkMap", "Debug", "purge processing %s " %( tablename))
+        for nwkid in self.ListOfDevices:
+            one_more_time = True
+            while one_more_time:
+                one_more_time = False
+
+                self.log.logging("NetworkMap", "Debug", "purge processing %s %s" %( tablename, nwkid ))
+                if tablename not in self.ListOfDevices[nwkid]:
+                    continue
+                for idx in range(len(self.ListOfDevices[nwkid][tablename])):
+                    self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s" %( tablename, nwkid, idx ))
+                    if (
+                        "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
+                        and isinstance(self.ListOfDevices[nwkid][tablename][ idx ]["Time"], int)
+                        and not is_timestamp_current_topology_in_progress(self, self.ListOfDevices[nwkid][tablename][ idx ]["Time"])
+                        and len(self.ListOfDevices[nwkid][tablename][ idx ]["Devices"]) == 0
+                    ):
+                        del self.ListOfDevices[nwkid][tablename][ idx ]
+                        one_more_time = True
+                        break
+  
 # Routing Table    
 def mgmt_rtg(self, nwkid, table):
     
@@ -332,6 +369,8 @@ def mgmt_routingtable_response( self, srcnwkid, MsgSourcePoint, MsgClusterID, ds
 def store_NwkAddr_Associated_Devices( self, nwkid, Index, device_associated_list):
     self.log.logging("NetworkMap", "Debug", "          store_NwkAddr_Associated_Devices - %s %s" %( nwkid, device_associated_list))
 
+    timestamp = is_timestamp_current_topology_in_progress( self)
+    
     if Index == 0:
         start_new_table_scan(self, nwkid, "AssociatedDevices")
         
