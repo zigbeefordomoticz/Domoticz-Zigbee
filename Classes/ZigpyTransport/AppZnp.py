@@ -131,6 +131,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             # We have found in Zigpy db.
             # We might have to check that the plugin and zigpy Dbs are in sync
             # Let's check if the tupple (dev.ieee, dev.nwk ) are aligned with plugin Db
+            self._update_nkdids_if_needed( dev.ieee, dev.nwk )
             
         except KeyError:
             if self.callBackGetDevice:
@@ -175,8 +176,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     def _update_nkdids_if_needed( self, ieee, new_nwkid ):
         _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
         _nwk = new_nwkid.serialize()[::-1].hex()
-        self.log.logging("TransportZigpy", "Log", "%s(%s) %s(%s) %s(%s)" %( 
-            _ieee, type(_ieee), _nwk, type(_nwk)))
         self.callBackUpdDevice(_ieee, _nwk)
         
                   

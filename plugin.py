@@ -917,7 +917,6 @@ class BasePlugin:
         # Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 
     def zigpy_chk_upd_device(self, ieee, nwkid ):
-        self.log.logging("TransportZigpy", "Log", "zigpy_upd_device( %s, %s -> %s)" %( ieee, nwkid))
         chk_and_update_IEEE_NWKID(self, nwkid, ieee)
         
     def zigpy_get_device(self, ieee=None, nwkid=None):
