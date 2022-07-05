@@ -4274,8 +4274,8 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 value /= 2
                 
                 # Fake Active Power
-                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0b04", "050b", value * 220)
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0b04", str(value * 220))
+                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "050b", value * 220)
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value * 220))
 
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
