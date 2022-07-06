@@ -211,20 +211,22 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         if sender.nwk is not None:
             addr_mode = 0x02
             addr = sender.nwk.serialize()[::-1].hex()
-            self.log.logging(
-                "TransportZigpy",
-                "Debug",
-                "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
-                    str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
+            if profile and cluster:
+                self.log.logging(
+                    "TransportZigpy",
+                    "Debug",
+                    "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                        str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
 
         elif sender.ieee is not None:
             addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
             addr_mode = 0x03
-            self.log.logging(
-                "TransportZigpy",
-                "Debug",
-                "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
-                    str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
+            if profile and cluster:
+                self.log.logging(
+                    "TransportZigpy",
+                    "Debug",
+                    "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                        str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
 
 
         if sender.lqi is None:
@@ -233,12 +235,13 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         if src_ep == dst_ep == 0x00:
             profile = 0x0000
 
-        self.log.logging(
-            "TransportZigpy",
-            "Debug",
-            "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
-                str(addr), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi),
-        )
+        if profile and cluster:
+            self.log.logging(
+                "TransportZigpy",
+                "Debug",
+                "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                    str(addr), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi),
+            )
 
         if addr:
             plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
