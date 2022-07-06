@@ -883,7 +883,7 @@ def cleanup_table_entries( self):
                 for idx in range(len(self.ListOfDevices[nwkid][tablename])):
                     self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s" %( tablename, nwkid, idx ))
                     if (
-                        idx in  self.ListOfDevices[nwkid][tablename]
+                        idx in self.ListOfDevices[nwkid][tablename]
                         and "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
                         and isinstance(self.ListOfDevices[nwkid][tablename][ idx ]["Time"], int)
                         and len(self.ListOfDevices[nwkid][tablename][ idx ]["Devices"]) == 0
@@ -892,9 +892,9 @@ def cleanup_table_entries( self):
                         one_more_time = True
                         break
                     if (
-                        idx in  self.ListOfDevices[nwkid][tablename]
+                        idx in self.ListOfDevices[nwkid][tablename]
                         and "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
-                        and isinstance(self.ListOfDevices[nwkid][tablename][ idx ]["Time"], str)
+                        and not isinstance(self.ListOfDevices[nwkid][tablename][ idx ]["Time"], int)
                     ):
                         del self.ListOfDevices[nwkid][tablename][ idx ]
                         one_more_time = True
