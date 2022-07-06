@@ -42,7 +42,7 @@ def extract_username_password( self, url_base_api ):
     items = url_base_api.split('@')
     if len(items) != 2:
         return None, None, None
-    self.logging("Debug", f'Extract username/password {url_base_api} ==> {items} ')
+    self.logging("Log", f'Extract username/password {url_base_api} ==> {items} ')
     host_port = items[1]
     item1 = items[0].replace('http://','')
     usernamepassword = item1.split(':')
@@ -51,8 +51,9 @@ def extract_username_password( self, url_base_api ):
         return None, None, None
         
     username, password = usernamepassword
-    if isBase64( username ) and isBase64( password):
-        return base64.b64decode(username).decode('utf-8'), base64.b64decode(password).decode('utf-8'), host_port
+    #if isBase64( username ) and isBase64( password):
+    #    return (base64.b64decode(username)).decode('ISO-8859-1'), (base64.b64decode(password)).decode('ISO-8859-1'), host_port
+        
     return username, password, host_port
 
 def open_and_read( self, url ):
