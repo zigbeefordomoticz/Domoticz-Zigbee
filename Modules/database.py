@@ -891,3 +891,11 @@ def cleanup_table_entries( self):
                         del self.ListOfDevices[nwkid][tablename][ idx ]
                         one_more_time = True
                         break
+                    if (
+                        idx in  self.ListOfDevices[nwkid][tablename]
+                        and "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
+                        and isinstance(self.ListOfDevices[nwkid][tablename][ idx ]["Time"], str)
+                    ):
+                        del self.ListOfDevices[nwkid][tablename][ idx ]
+                        one_more_time = True
+                        break
