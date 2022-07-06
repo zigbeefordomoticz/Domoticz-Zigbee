@@ -869,33 +869,46 @@ def load_new_param_definition(self):
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["EnableReleaseButton"]
 
 def cleanup_table_entries( self):
-    
+
     for tablename in ("RoutingTable", "AssociatedDevices", "Neighbours" ):
         self.log.logging("NetworkMap", "Debug", "purge processing %s " %( tablename))
         for nwkid in self.ListOfDevices:
             one_more_time = True
             while one_more_time:
                 one_more_time = False
-
                 self.log.logging("NetworkMap", "Debug", "purge processing %s %s" %( tablename, nwkid ))
                 if tablename not in self.ListOfDevices[nwkid]:
                     continue
-                for idx in range(len(self.ListOfDevices[nwkid][tablename])):
-                    self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s" %( tablename, nwkid, idx ))
+                if not isinstance(self.ListOfDevices[nwkid][tablename], list):
+                    del self.ListOfDevices[nwkid][tablename]
+                    continue
+                idx = 0
+                while idx < len(self.ListOfDevices[nwkid][tablename]):
+                    self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s \n %s" %( 
+                        tablename, nwkid, idx , str(self.ListOfDevices[nwkid][tablename][ idx ])))
                     if (
-                        idx in self.ListOfDevices[nwkid][tablename]
-                        and "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
-                        and isinstance(self.ListOfDevices[nwkid][tablename][ idx ]["Time"], int)
-                        and len(self.ListOfDevices[nwkid][tablename][ idx ]["Devices"]) == 0
+                        "Time" not in self.ListOfDevices[nwkid][tablename][ idx ] 
+                        or "TimeStamp" not in self.ListOfDevices[nwkid][tablename][ idx ]
                     ):
+                        self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s done" %( tablename, nwkid, idx ))
                         del self.ListOfDevices[nwkid][tablename][ idx ]
                         one_more_time = True
                         break
                     if (
-                        idx in self.ListOfDevices[nwkid][tablename]
-                        and "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
+                        isinstance(self.ListOfDevices[nwkid][tablename][idx]["Time"], int) 
+                        and len(self.ListOfDevices[nwkid][tablename][idx]["Devices"]) == 0
+                    ):
+                        self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s done" %( tablename, nwkid, idx ))
+                        del self.ListOfDevices[nwkid][tablename][ idx ]
+                        one_more_time = True
+                        break
+                    if (
+                        "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
                         and not isinstance(self.ListOfDevices[nwkid][tablename][ idx ]["Time"], int)
                     ):
+                        self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s done" %( tablename, nwkid, idx ))
                         del self.ListOfDevices[nwkid][tablename][ idx ]
                         one_more_time = True
                         break
+                    idx += 1
+
