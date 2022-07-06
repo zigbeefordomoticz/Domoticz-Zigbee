@@ -1351,8 +1351,8 @@ SETTINGS = {
         "param": {
             "PluginLogMode": {
                 "type": "list",
-                "list": { "": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},
-                "default": "",
+                "list": { "system defaut": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},
+                "default": 0,
                 "current": None,
                 "restart": 1,
                 "hidden": False,
