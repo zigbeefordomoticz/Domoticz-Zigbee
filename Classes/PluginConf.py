@@ -1349,12 +1349,21 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "PluginLogMode": {
+                "type": "list",
+                "list": { "": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},
+                "default": "",
+                "current": None,
+                "restart": 1,
+                "hidden": False,
+                "Advanced": True,
+            },
             "forceZigpy_noasyncio": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "disableZCLDefaultResponse": {
@@ -1362,7 +1371,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
   
             },

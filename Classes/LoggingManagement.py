@@ -11,13 +11,15 @@
 
 """
 
-import Domoticz
 import json
+import logging
+import os
 import threading
 import time
-from queue import Queue, PriorityQueue
-import logging
-from logging.handlers import TimedRotatingFileHandler, RotatingFileHandler
+from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
+from queue import PriorityQueue, Queue
+
+import Domoticz
 
 LOG_ERROR_HISTORY = "PluginZigbee_log_error_history.json"
 LOG_FILE = "/PluginZigbee_"
@@ -177,6 +179,10 @@ class LoggingManagement:
                 format="%(asctime)s %(levelname)-8s:%(message)s",
                 handlers=[RotatingFileHandler(logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
             )
+        if "PluginLogFileMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["PluginLogMode"] in ( 0o6400, 0o640, 0o644 ):
+                os.chmod(logfilename, self.pluginconf.pluginConf["PluginLogMode"])
+
+
 
     def open_log_history(self):
         jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + LOG_ERROR_HISTORY
