@@ -199,6 +199,8 @@ def LoadDeviceList(self):
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize(_DeviceListFileName)
 
+    cleanup_table_entries( self)
+    
     for addr in self.ListOfDevices:
         # Fixing mistake done in the code.
         fixing_consumption_lumi(self, addr)
@@ -865,3 +867,26 @@ def load_new_param_definition(self):
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["InvertShutter"]
             elif param == "netatmoReleaseButton":
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["EnableReleaseButton"]
+
+def cleanup_table_entries( self):
+    
+    for tablename in ("RoutingTable", "AssociatedDevices", "Neighbours" ):
+        self.log.logging("NetworkMap", "Debug", "purge processing %s " %( tablename))
+        for nwkid in self.ListOfDevices:
+            one_more_time = True
+            while one_more_time:
+                one_more_time = False
+
+                self.log.logging("NetworkMap", "Debug", "purge processing %s %s" %( tablename, nwkid ))
+                if tablename not in self.ListOfDevices[nwkid]:
+                    continue
+                for idx in range(len(self.ListOfDevices[nwkid][tablename])):
+                    self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s" %( tablename, nwkid, idx ))
+                    if (
+                        "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
+                        and isinstance(self.ListOfDevices[nwkid][tablename][ idx ]["Time"], int)
+                        and len(self.ListOfDevices[nwkid][tablename][ idx ]["Devices"]) == 0
+                    ):
+                        del self.ListOfDevices[nwkid][tablename][ idx ]
+                        one_more_time = True
+                        break

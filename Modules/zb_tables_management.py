@@ -78,6 +78,7 @@ def table_entry_cleanup( self, nwkid, tablename):
                 idx += 1
 
 def _create_empty_entry(self, nwkid, tablename, time_stamp=None):
+
     time_stamp = time_stamp or int(time.time())
     new_entry = {
         "Devices": [], 
@@ -86,9 +87,10 @@ def _create_empty_entry(self, nwkid, tablename, time_stamp=None):
         "TimeStamp": time_stamp,
         "Time": time_stamp
     }
-    for x in self.ListOfDevices[nwkid][tablename]:
-        if "TimeStamp" in x and x["TimeStamp"] == Timestamp:
-            return
+    if time_stamp:
+        for x in self.ListOfDevices[nwkid][tablename]:
+            if "TimeStamp" in x and x["TimeStamp"] == time_stamp:
+                return
 
     self.ListOfDevices[nwkid][tablename].append( new_entry )
  
@@ -205,29 +207,6 @@ def remove_table_entry(self, nwkid, tablename, time_stamp):
                 break
 
  
-def cleanup_table_entries( self):
-
-    for tablename in ("RoutingTable", "AssociatedDevices", "Neighbours" ):
-        self.log.logging("NetworkMap", "Debug", "purge processing %s " %( tablename))
-        for nwkid in self.ListOfDevices:
-            one_more_time = True
-            while one_more_time:
-                one_more_time = False
-
-                self.log.logging("NetworkMap", "Debug", "purge processing %s %s" %( tablename, nwkid ))
-                if tablename not in self.ListOfDevices[nwkid]:
-                    continue
-                for idx in range(len(self.ListOfDevices[nwkid][tablename])):
-                    self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s" %( tablename, nwkid, idx ))
-                    if (
-                        "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
-                        and isinstance(self.ListOfDevices[nwkid][tablename][ idx ]["Time"], int)
-                        and not is_timestamp_current_topology_in_progress(self, self.ListOfDevices[nwkid][tablename][ idx ]["Time"])
-                        and len(self.ListOfDevices[nwkid][tablename][ idx ]["Devices"]) == 0
-                    ):
-                        del self.ListOfDevices[nwkid][tablename][ idx ]
-                        one_more_time = True
-                        break
   
 # Routing Table    
 def mgmt_rtg(self, nwkid, table):

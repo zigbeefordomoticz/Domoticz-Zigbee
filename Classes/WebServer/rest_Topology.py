@@ -11,7 +11,7 @@ from time import time
 
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage, setupHeadersResponse)
-from Modules.zb_tables_management import get_device_table_entry, get_list_of_timestamps, remove_entry_from_all_tables, cleanup_table_entries
+from Modules.zb_tables_management import get_device_table_entry, get_list_of_timestamps, remove_entry_from_all_tables
 
 
 def rest_req_topologie(self, verb, data, parameters):
@@ -120,7 +120,6 @@ def rest_netTopologie(self, verb, data, parameters):
         elif len(parameters) == 1:
             if self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
                 timestamp = parameters[0]
-                cleanup_table_entries( self)
                 _response["Data"] = json.dumps(collect_routing_table(self,timestamp ), sort_keys=True)
 
             elif len(self.ControllerData) == 0:
