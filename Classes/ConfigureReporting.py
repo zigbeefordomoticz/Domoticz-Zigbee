@@ -460,9 +460,9 @@ class ConfigureReporting:
                             x in attribute_current_configuration
                             and int(attribute_current_configuration[ x ],16) != int(cluster_configuration[ attribut ][ x],16)
                         ):
-                            self.logging(
-                                "Debug", 
-                                f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} request update due to field {x}", nwkid=Nwkid)
+                            if not wip_flap:
+                                self.logging( "Status", f"We have detected a miss configuration reports for device {Nwkid} on ep {_ep} and cluster {_cluster}" ,nwkid=Nwkid)
+                            self.logging( "Status", f" - {attribut} request to force a Confiure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
                             configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                             wip_flap = True
                             break
