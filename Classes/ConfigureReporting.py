@@ -341,9 +341,14 @@ class ConfigureReporting:
             # Too early, already a request in progress
             self.logging("Debug", "     Too early ....", nwkid=Nwkid)
             return False
-        
+        if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]:
+            self.logging( "Error", f"Read Configure Reporting response - Please report as something is strange", )
+            self.logging( "Error", f"Read Configure Reporting response -{self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]}", )  
+            return False
+            
         wip_flag = False
         for epout in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"]:
+            
             if is_fake_ep(self, Nwkid, epout):
                 continue
             
@@ -361,62 +366,12 @@ class ConfigureReporting:
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
         zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
 
-    def read_report_configure_response(self, MsgData, MsgLQI):  # Read Configure Report response
-        self.logging( "Debug", f"Read Configure Reporting response - {MsgData}", )
-
-        NwkId = MsgData[2:6]
-        Ep = MsgData[6:8]
-        ClusterId = MsgData[8:12]
-        self.logging( "Debug", f" - NwkId: {NwkId} Ep: {Ep} ClusterId: {ClusterId} ", )
-        idx = 12
-        while idx < len(MsgData):
-            status = MsgData[idx:idx + 2]
-            idx += 2
-            direction = MsgData[idx:idx + 2]
-            idx += 2
-            attribute = MsgData[idx:idx + 4]
-            idx += 4
-            self.logging( "Debug", f" - status: {status} direction: {direction} attribute: {attribute} restofdata: {MsgData[idx:]}", )
-            DataType = MinInterval = MaxInterval = Change = timeout = None
-            if status != "00" and self.zigbee_communication == "native":   # native == zigate
-                # Looks like Zigate send some padding data when Status different that 0x00 and there is 
-                # only one attribut send a time. #1226
-                break
-            elif status == "00":
-                DataType = MsgData[idx:idx + 2]
-                idx += 2
-                self.logging( "Debug", f" - DataType: {DataType}  restofdata: {MsgData[idx:]}", )
-                MinInterval = MsgData[idx:idx + 4]
-                idx += 4
-                self.logging( "Debug", f" - MinInterval: {MinInterval}  restofdata: {MsgData[idx:]}", )
-                MaxInterval = MsgData[idx:idx + 4]
-                idx += 4
-                self.logging( "Debug", f" - MaxInterval: {MaxInterval}  restofdata: {MsgData[idx:]}", )
-                if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
-                    pass
-
-                elif DataType in SIZE_DATA_TYPE:
-                    size = SIZE_DATA_TYPE[DataType] * 2
-                    Change = MsgData[idx : idx + size]
-                    idx += size             
-                    self.logging( "Debug", f" - Change: {Change}  restofdata: {MsgData[idx:]}", )               
-
-                if direction == "01":
-                    timeout = MsgData[idx : idx + 4]
-                    idx += 4
-                    self.logging( "Debug", f" - timeout: {timeout}  restofdata: {MsgData[idx:]}", )  
-
-            store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout )
-            self.logging(
-                "Debug",
-                f"Read Configure Reporting response - Status: {status} NwkId: {NwkId} Ep: {Ep} Cluster: {ClusterId} Attribute: {attribute} DataType: {DataType} Min: {MinInterval} Max: {MaxInterval} Change: {Change}",
-                NwkId,
-            )
-        if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[NwkId] and "Request" in self.ListOfDevices[NwkId][STORE_READ_CONFIGURE_REPORTING]:
-            self.logging( "Debug", f"       Remove self.ListOfDevices[ {NwkId} ][{STORE_READ_CONFIGURE_REPORTING}]['Request']", NwkId, )
-            del self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Request"]
-
+    def read_report_configure_response(self, MsgData, MsgLQI):
         
+        if self.zigbee_communication == "zigpy":
+            return read_report_configure_response_zigpy(self, MsgData, MsgLQI)
+        return read_report_configure_response_zigate(self, MsgData, MsgLQI)
+    
     def retreive_configuration_reporting_definition(self, NwkId):
     
         if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
@@ -686,6 +641,120 @@ def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
         else:
             self.logging("Error", f"configureReporting - inconsitency on {nwkid} no IEEE found : {str(self.ListOfDevices[nwkid])} ")
 
+def read_report_configure_response_zigpy(self, MsgData, MsgLQI):  # Read Configure Report response
+    self.logging( "Debug", f"Read Configure Reporting response - {MsgData}", )
+    
+    NwkId = MsgData[2:6]
+    Ep = MsgData[6:8]
+    ClusterId = MsgData[8:12]
+    self.logging( "Debug", f" - NwkId: {NwkId} Ep: {Ep} ClusterId: {ClusterId} ", )
+    idx = 12
+    while idx < len(MsgData):
+        status = MsgData[idx:idx + 2]
+        idx += 2
+        direction = MsgData[idx:idx + 2]
+        idx += 2
+        attribute = MsgData[idx:idx + 4]
+        idx += 4
+        self.logging( "Debug", f" - status: {status} direction: {direction} attribute: {attribute} restofdata: {MsgData[idx:]}", )
+        DataType = MinInterval = MaxInterval = Change = timeout = None
+        if status != "00" and self.zigbee_communication == "native":   # native == zigate
+            # Looks like Zigate send some padding data when Status different that 0x00 and there is 
+            # only one attribut send a time. #1226
+            break
+        elif status == "00":
+            DataType = MsgData[idx:idx + 2]
+            idx += 2
+            self.logging( "Debug", f" - DataType: {DataType}  restofdata: {MsgData[idx:]}", )
+            MinInterval = MsgData[idx:idx + 4]
+            idx += 4
+            self.logging( "Debug", f" - MinInterval: {MinInterval}  restofdata: {MsgData[idx:]}", )
+            
+            MaxInterval = MsgData[idx:idx + 4]
+            idx += 4
+            self.logging( "Debug", f" - MaxInterval: {MaxInterval}  restofdata: {MsgData[idx:]}", )
+            
+            if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
+                pass
+
+            elif DataType in SIZE_DATA_TYPE:
+                size = SIZE_DATA_TYPE[DataType] * 2
+                Change = MsgData[idx : idx + size]
+                idx += size             
+                self.logging( "Debug", f" - Change: {Change}  restofdata: {MsgData[idx:]}", )               
+
+            if direction == "01":
+                timeout = MsgData[idx : idx + 4]
+                idx += 4
+                self.logging( "Debug", f" - timeout: {timeout}  restofdata: {MsgData[idx:]}", )  
+
+        store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout )
+        self.logging(
+            "Debug",
+            f"Read Configure Reporting response - Status: {status} NwkId: {NwkId} Ep: {Ep} Cluster: {ClusterId} Attribute: {attribute} DataType: {DataType} Min: {MinInterval} Max: {MaxInterval} Change: {Change}",
+            NwkId,
+        )
+    if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[NwkId] and "Request" in self.ListOfDevices[NwkId][STORE_READ_CONFIGURE_REPORTING]:
+        self.logging( "Debug", f"       Remove self.ListOfDevices[ {NwkId} ][{STORE_READ_CONFIGURE_REPORTING}]['Request']", NwkId, )
+        del self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Request"]
+
+
+def read_report_configure_response_zigate(self, MsgData, MsgLQI):  # Read Configure Report response
+    self.logging( "Debug", f"Read Configure Reporting response - {MsgData}", )
+    
+    # 03 1ed5 01 0006 
+    # 00 10 0000 012c 0001
+    NwkId = MsgData[2:6]
+    Ep = MsgData[6:8]
+    ClusterId = MsgData[8:12]
+    self.logging( "Debug", f" - NwkId: {NwkId} Ep: {Ep} ClusterId: {ClusterId} ", )
+    idx = 12
+    while idx < len(MsgData):
+        direction = "00"
+        status = MsgData[idx:idx + 2]
+        idx += 2
+        DataType = MsgData[idx:idx + 2]
+        idx += 2
+        attribute = MsgData[idx:idx + 4]
+        idx += 4
+        self.logging( "Debug", f" - status: {status} direction: {direction} attribute: {attribute} DataType: {DataType} restofdata: {MsgData[idx:]}", )
+        MinInterval = MaxInterval = Change = timeout = None
+        if status != "00":   # native == zigate
+            # Looks like Zigate send some padding data when Status different that 0x00 and there is 
+            # only one attribut send a time. #1226
+            break
+
+        MaxInterval = MsgData[idx:idx + 4]
+        idx += 4
+        self.logging( "Debug", f" - MaxInterval: {MaxInterval}  restofdata: {MsgData[idx:]}", )
+            
+        MinInterval = MsgData[idx:idx + 4]
+        idx += 4
+        self.logging( "Debug", f" - MinInterval: {MinInterval}  restofdata: {MsgData[idx:]}", )
+        
+        if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
+            pass
+
+        elif DataType in SIZE_DATA_TYPE:
+            size = SIZE_DATA_TYPE[DataType] * 2
+            Change = MsgData[idx : idx + size]
+            idx += size             
+            self.logging( "Debug", f" - Change: {Change}  restofdata: {MsgData[idx:]}", )               
+
+        if direction == "01":
+            timeout = MsgData[idx : idx + 4]
+            idx += 4
+            self.logging( "Debug", f" - timeout: {timeout}  restofdata: {MsgData[idx:]}", )  
+
+        store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout )
+        self.logging(
+            "Debug",
+            f"Read Configure Reporting response - Status: {status} NwkId: {NwkId} Ep: {Ep} Cluster: {ClusterId} Attribute: {attribute} DataType: {DataType} Min: {MinInterval} Max: {MaxInterval} Change: {Change}",
+            NwkId,
+        )
+    if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[NwkId] and "Request" in self.ListOfDevices[NwkId][STORE_READ_CONFIGURE_REPORTING]:
+        self.logging( "Debug", f"       Remove self.ListOfDevices[ {NwkId} ][{STORE_READ_CONFIGURE_REPORTING}]['Request']", NwkId, )
+        del self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Request"]
 
 def do_we_have_to_do_the_work(self, NwkId, Ep, cluster):
 
