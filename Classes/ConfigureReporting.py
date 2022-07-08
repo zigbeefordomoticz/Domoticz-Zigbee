@@ -701,16 +701,17 @@ def read_report_configure_response_zigpy(self, MsgData, MsgLQI):  # Read Configu
 
 def read_report_configure_response_zigate(self, MsgData, MsgLQI):  # Read Configure Report response
     self.logging( "Debug", f"Read Configure Reporting response - {MsgData}", )
-    
     # 03 1ed5 01 0006 
     # 00 10 0000 012c 0001
+
+    # 04 4ac5 01 0702 00 2a 0400 012c 0005
     NwkId = MsgData[2:6]
     Ep = MsgData[6:8]
     ClusterId = MsgData[8:12]
     self.logging( "Debug", f" - NwkId: {NwkId} Ep: {Ep} ClusterId: {ClusterId} ", )
     idx = 12
+    direction = "00"
     while idx < len(MsgData):
-        direction = "00"
         status = MsgData[idx:idx + 2]
         idx += 2
         DataType = MsgData[idx:idx + 2]
