@@ -367,7 +367,7 @@ class ConfigureReporting:
         NwkId = MsgData[2:6]
         Ep = MsgData[6:8]
         ClusterId = MsgData[8:12]
-
+        self.logging( "Debug", f" - NwkId: {NwkId} Ep: {Ep} ClusterId: {ClusterId} ", )
         idx = 12
         while idx < len(MsgData):
             status = MsgData[idx:idx + 2]
@@ -376,30 +376,40 @@ class ConfigureReporting:
             idx += 2
             attribute = MsgData[idx:idx + 4]
             idx += 4
+            self.logging( "Debug", f" - status: {status} direction: {direction} attribute: {attribute} restofdata: {MsgData[idx:]}", )
             DataType = MinInterval = MaxInterval = Change = timeout = None
-            if status == "00":
+            if status != "00" and self.zigbee_communication == "native":   # native == zigate
+                # Looks like Zigate send some padding data when Status different that 0x00 and there is 
+                # only one attribut send a time. #1226
+                break
+            elif status == "00":
                 DataType = MsgData[idx:idx + 2]
                 idx += 2
+                self.logging( "Debug", f" - DataType: {DataType}  restofdata: {MsgData[idx:]}", )
                 MinInterval = MsgData[idx:idx + 4]
                 idx += 4
+                self.logging( "Debug", f" - MinInterval: {MinInterval}  restofdata: {MsgData[idx:]}", )
                 MaxInterval = MsgData[idx:idx + 4]
                 idx += 4
+                self.logging( "Debug", f" - MaxInterval: {MaxInterval}  restofdata: {MsgData[idx:]}", )
                 if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
                     pass
 
                 elif DataType in SIZE_DATA_TYPE:
                     size = SIZE_DATA_TYPE[DataType] * 2
                     Change = MsgData[idx : idx + size]
-                    idx += size                            
+                    idx += size             
+                    self.logging( "Debug", f" - Change: {Change}  restofdata: {MsgData[idx:]}", )               
 
                 if direction == "01":
                     timeout = MsgData[idx : idx + 4]
                     idx += 4
+                    self.logging( "Debug", f" - timeout: {timeout}  restofdata: {MsgData[idx:]}", )  
 
             store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout )
             self.logging(
                 "Debug",
-                f"Read Configure Reporting response - NwkId: {NwkId} Ep: {Ep} Cluster: {ClusterId} Attribute: {attribute} DataType: {DataType} Min: {MinInterval} Max: {MaxInterval} Change: {Change}",
+                f"Read Configure Reporting response - Status: {status} NwkId: {NwkId} Ep: {Ep} Cluster: {ClusterId} Attribute: {attribute} DataType: {DataType} Min: {MinInterval} Max: {MaxInterval} Change: {Change}",
                 NwkId,
             )
         if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[NwkId] and "Request" in self.ListOfDevices[NwkId][STORE_READ_CONFIGURE_REPORTING]:
@@ -462,7 +472,7 @@ class ConfigureReporting:
                         ):
                             if not wip_flap:
                                 self.logging( "Status", f"We have detected a miss configuration reports for device {Nwkid} on ep {_ep} and cluster {_cluster}" ,nwkid=Nwkid)
-                            self.logging( "Status", f" - {attribut} request to force a Confiure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
+                            self.logging( "Status", f" - Attribut {attribut} request to force a Configure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
                             configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                             wip_flap = True
                             break
