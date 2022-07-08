@@ -92,7 +92,7 @@ def rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _respons
     cfg_rpt_record = get_cfg_rpt_record( self, deviceId )
 
     self.logging("Debug", f"rest_cfgrpt_ondemand_with_config_get  {cfg_rpt_record}")
-    _response["Data"] = convert_to_json( cfg_rpt_record )
+    _response["Data"] = convert_to_json( self, cfg_rpt_record )
     
     return _response
 
@@ -198,13 +198,15 @@ def fake_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
 
-def convert_to_json( data ):
+def convert_to_json( self, data ):
     # {"0006": {"Attributes": {"0000": {"DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "01"}}}, 
     #  "0702": {"Attributes": {"0000": {"DataType": "25", "MinInterval": "FFFF", "MaxInterval": "0000", "TimeOut": "0000", "Change": "000000000000000a"}}}, 
     #  "0b04": {"Attributes": {"0505": {"DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"},
     #                          "0508": {"DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"}, 
     #                          "050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"}}}}
+    self.logging("Debug", f"convert_to_json Data {data}")
     cluster_list = []
+
     for cluster in data:
         cluster_info = {"ClusterId": cluster, "Attributes": []}
         for attribute in data[ cluster ]["Attributes"]:
@@ -232,7 +234,7 @@ def get_cfg_rpt_record(self, NwkId):
 def datatype_formating( self, value, type):
     
     if type not in SIZE_DATA_TYPE:
-        self.logging("Error", f"datatype_formating  unknown Data type {type} for value {value}")
+            
         return value
 
     if SIZE_DATA_TYPE[ type ] == 1:
