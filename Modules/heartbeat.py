@@ -648,7 +648,8 @@ def processKnownDevices(self, Devices, NWKID):
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NWKID)
 
     if ( 
-        self.configureReporting
+        self.zigbee_communication == "zigpy"
+        and self.configureReporting
         and _mainPowered 
         and night_shift_jobs( self )
         and "checkConfigurationReporting" in self.pluginconf.pluginConf
