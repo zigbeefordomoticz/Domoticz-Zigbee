@@ -135,17 +135,18 @@ def zcl_read_report_config_request(self, nwkid, epin, epout, cluster, manuf_spec
         % (
             nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list))
 
-    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        return zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list, ackIsDisabled)
-
-    nb_attribute = "%02x" % len(attribute_list)
-    str_attribute_list = "".join("%04x" % x for x in attribute_list)
-    direction = "00"
-
-    data = epin + epout + cluster + direction + nb_attribute + manuf_specific + manuf_code + str_attribute_list
-    if ackIsDisabled:
-        return send_zigatecmd_zcl_noack(self, nwkid, "0122", data)
-    return send_zigatecmd_zcl_ack(self, nwkid, "0122", data)
+    # Due to #1227 force to use the RAW mode
+    # if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+    #     return zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list, ackIsDisabled)
+    # 
+    # nb_attribute = "%02x" % len(attribute_list)
+    # str_attribute_list = "".join("%04x" % x for x in attribute_list)
+    # direction = "00"
+    # data = epin + epout + cluster + direction + nb_attribute + manuf_specific + manuf_code + str_attribute_list
+    # if ackIsDisabled:
+    #     return send_zigatecmd_zcl_noack(self, nwkid, "0122", data)
+    # return send_zigatecmd_zcl_ack(self, nwkid, "0122", data)
+    return zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list, ackIsDisabled)
 
 
 def zcl_attribute_discovery_request(self, nwkid, EpIn, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000"):
