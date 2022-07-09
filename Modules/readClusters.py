@@ -4219,16 +4219,11 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     if MsgAttrID in "050b":  # Active Power
         
-        if -32768 <= int(MsgClusterData[0:4], 16) <= 32767:
-            value = int(decodeAttribute(self, MsgAttType, MsgClusterData[0:4]))
+        if -32768 <= int(MsgClusterData[:4], 16) <= 32767:
+            value = int(decodeAttribute(self, MsgAttType, MsgClusterData[:4]))
             self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
-            if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in (
-                "outletv4",
-                "lumi.plug.maeu01",
-            ):
+            if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "outletv4", "lumi.plug.maeu01", ):
                 value /= 10
-            elif "Manufacturer" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "_TZ3000_amdymr7l" and value == 0:
-                return
 
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
@@ -4270,17 +4265,13 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         
         elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS011F-plug":
             value /= 1000
-            if "Manufacturer" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "_TZ3000_amdymr7l":
-                value /= 2
-                
-                # Fake Active Power
-                checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0b04", "050b", value * 220)
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0b04", str(value * 220))
+            #if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] == "_TZ3000_amdymr7l":
+            #    value /= 2
 
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
             
-                
+   
         elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "ZLinky_TIC":
             value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
             # from random import randrange
