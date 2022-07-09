@@ -21,10 +21,6 @@ For __Windows users__, please check the [Plugin V6 running on Windows](https://z
 * You need Python 3.7 at least
 * Zigpy layers will requires additional python3 modules to be install:
 
-  Go to the plugin Home directory ( domoticz/plugins/Domoticz-Zigate or Domoticz-Zigbee)
-
-  `sudo pip3 install -r requirements.txt`
-
 ## Plugin first installation or first time on release 6.xxx (stable6)
 
 1. Make sure the pre-requisites steps (here above) have been executed
@@ -37,13 +33,15 @@ For __Windows users__, please check the [Plugin V6 running on Windows](https://z
 
 4. Go in the Zigbee for Domoticz folder ( Domoticz-Zigbee ).
   Usally you should be under domoticz/plugins/Domoticz-Zigbee
+  
+5. run: `sudo pip3 install -r requirements.txt`
 
-5. run: `git config --add submodule.recurse true`
+6. run: `git config --add submodule.recurse true`
 
-6. run: `git submodule update --init --recursive`
+7. run: `git submodule update --init --recursive`
   Finally, make the plugin.py file executable `chmod +x Domoticz-Zigbee/plugin.py`
 
-7. Restart Domoticz.
+8. Restart Domoticz.
 
 ## Plugin first time on release 6 (stable6 or beta6)
 
@@ -58,8 +56,10 @@ This is the case where you have move from the stable5 branch to stable6/beta6.
 
 4. run: `git submodule update --init --recursive`
   Finally, make the plugin.py file executable `chmod +x Domoticz-Zigbee/plugin.py`
+  
+5. run: `sudo pip3 install -r requirements.txt`
 
-5. Restart Domoticz. (you need a FULL restart of Domotciz)
+6. Restart Domoticz. (you need a FULL restart of Domotciz)
 
 [More information available here](https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Version-6.html)
 
@@ -70,7 +70,9 @@ This is the case where you have move from the stable5 branch to stable6/beta6.
   
 2. run: `git pull --recurse-submodules`
 
-3. Restart Domoticz or plugin.
+3. run: `sudo pip3 install -r requirements.txt`
+
+4. Restart Domoticz or plugin.
 
 ## Tested Hardware Zigbee adapters/dongles/sticks/keys
 
