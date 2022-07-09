@@ -41,7 +41,7 @@ TUYA_MANUF_CODE = "1002"
 
 #   "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
 
-TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f", "_TZ3000_ksw8qtmt", )
+TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l" )
 TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4", "_TZ3000_tk3s5tyg")
 
 
@@ -316,7 +316,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         self.log.logging("Tuya", "Debug2", "tuyaReadRawAPS - MsgPayload %s too short" % (MsgPayload), NwkId)
         return
 
-    fcf = MsgPayload[0:2]  # uint8
+    fcf = MsgPayload[:2]  # uint8
     sqn = MsgPayload[2:4]  # uint8
     updSQN(self, NwkId, sqn)
 
@@ -523,7 +523,7 @@ def tuya_send_default_response(self, Nwkid, srcEp, sqn, cmd, orig_fcf):
 
     payload = fcf + sqn + "0b"
     if manuf_spec == "01":
-        payload += TUYA_MANUF_CODE[2:4] + TUYA_MANUF_CODE[0:2]
+        payload += TUYA_MANUF_CODE[2:4] + TUYA_MANUF_CODE[:2]
     payload += cmd + "00"
     raw_APS_request(
         self,
