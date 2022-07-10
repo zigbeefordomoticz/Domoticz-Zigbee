@@ -23,7 +23,7 @@ For __Windows users__, please check the [Plugin V6 running on Windows](https://z
 
   Go to the plugin Home directory ( domoticz/plugins/Domoticz-Zigate or Domoticz-Zigbee)
 
-  `sudo pip3 install -r requirements.tx`
+  `sudo pip3 install -r requirements.txt`
 
 ## Plugin first installation or first time on release 6.xxx (stable6)
 
