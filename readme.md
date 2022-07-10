@@ -23,11 +23,11 @@ For __Windows users__, please check the [Plugin V6 running on Windows](https://z
 
   Go to the plugin Home directory ( domoticz/plugins/Domoticz-Zigate or Domoticz-Zigbee)
 
-  `sudo pip3 install -r requirements.tx`
+  `sudo pip3 install -r requirements.txt`
 
 ## Plugin first installation or first time on release 6.xxx (stable6)
 
-1. Make sure the pre-requisites steps (here above) have been executed
+1. Make sure the pre-requisities steps (here above) have been executed
 
 2. Go in your Domoticz directory using a command line and open the plugins directory.
   Usually you should be under domoticz/plugins
