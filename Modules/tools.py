@@ -312,10 +312,6 @@ def removeNwkInList(self, NWKID):
 
     if safe:
         del self.ListOfDevices[NWKID]
-        self.log.logging("Input", "Status", "self.ListOfDevices[%s] removed! substitued by self.ListOfDevices[%s]" % (NWKID, safe))
-    else:
-        self.log.logging("Input", "Error", "self.ListOfDevices[%s] removed! but no substitution !!!" % (NWKID))
-
     return safe
 
 
