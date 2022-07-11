@@ -591,9 +591,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                 await asyncio.sleep( 6 )
 
             # Slow down the through put when too many commands. Try to not overload the coordinators
-            multi = 1
-            if self._currently_waiting_requests_list[_ieee]:
-                multi = 1.5
+            multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
             await asyncio.sleep( multi * WAITING_TIME_BETWEEN_COMMANDS)
 
     except DeliveryError as e:
