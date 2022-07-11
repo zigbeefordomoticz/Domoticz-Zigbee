@@ -294,7 +294,7 @@ class BasePlugin:
         elif Parameters["Mode1"] in ( "ZigpyZiGate", "ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP"):
             self.transport = Parameters["Mode1"]
             self.zigbee_communication = "zigpy"
-            
+
         else:
             Domoticz.Error(
                 "Please cross-check the plugin starting parameters Mode1: %s Mode2: %s and make sure you have restarted Domoticz after updating the plugin"
@@ -591,7 +591,6 @@ class BasePlugin:
             self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
-
 
         elif self.transport == "ZigpyZiGate":
             # Zigpy related modules
