@@ -117,31 +117,27 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
-        self.log.logging("TransportZigpy", "Debug", "Appbellows - get_device ieee:%s nwk:%s " % (ieee,nwk ))
-#        self.log.logging("TransportZigpy", "Debug", "Appbellows - get_device current_list%s  " % (self.devices ))
-
         dev = None
         try:
             dev = super().get_device(ieee, nwk)
+            # We have found in Zigpy db.
+            # We might have to check that the plugin and zigpy Dbs are in sync
+            # Let's check if the tupple (dev.ieee, dev.nwk ) are aligned with plugin Db
             self._update_nkdids_if_needed( dev.ieee, dev.nwk )
-            
+
         except KeyError:
             if self.callBackGetDevice:
                 if nwk is not None:
                     nwk = nwk.serialize()[::-1].hex()
                 if ieee is not None:
                     ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
-                self.log.logging("TransportZigpy", "Debug", "Appbellows - get_device calling callBackGetDevice %s (%s) %s (%s)" % (ieee,type(ieee),nwk, type(nwk)))
                 zfd_dev = self.callBackGetDevice(ieee, nwk)
                 if zfd_dev is not None:
                     (nwk, ieee) = zfd_dev
                     dev = self.add_device(t.EmberEUI64(t.uint64_t(ieee).serialize()),nwk)
-
         if dev is not None:
             # logging.debug("found device dev: %s" % (str(dev)))
-            self.log.logging("TransportZigpy", "Debug", "Appbellows - get_device found device: %s" % dev)
             return dev
-        
         logging.debug("get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
         raise KeyError
 
@@ -149,9 +145,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         """
         Called when a device joins or announces itself on the network.
         """
-
         ieee = t.EmberEUI64(ieee)
-
         try:
             dev = self.get_device(ieee)
             time.sleep(1.0)
@@ -162,9 +156,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
 
         if dev.nwk != nwk:
-            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
             self._update_nkdids_if_needed( ieee, dev.nwk )
+            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
+            
             
     def _update_nkdids_if_needed( self, ieee, new_nwkid ):
         _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]

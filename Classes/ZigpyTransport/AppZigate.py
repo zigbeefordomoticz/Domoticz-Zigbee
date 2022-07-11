@@ -93,6 +93,9 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
+    # Only needed if the device require simple node descriptor from the coordinator
+    async def register_endpoint(self, endpoint=1):
+        await super().add_endpoint(endpoint)
 
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
@@ -130,9 +133,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         """
         Called when a device joins or announces itself on the network.
         """
-
         ieee = t.EUI64(ieee)
-
         try:
             dev = self.get_device(ieee)
             LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
@@ -141,9 +142,9 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
 
         if dev.nwk != nwk:
-            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
             self._update_nkdids_if_needed( ieee, dev.nwk )
+            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
 
     def _update_nkdids_if_needed( self, ieee, new_nwkid ):
         _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
