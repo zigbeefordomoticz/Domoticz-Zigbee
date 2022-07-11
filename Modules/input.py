@@ -317,7 +317,8 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
         status = "00"
         controllerManufacturerCode = self.ListOfDevices[ "0000" ]["Manufacturer"]
         controllerManufacturerCode = '0007'
-        self.log.logging("Input", "Log", "Decode0042 - Overwrite Manuf Code: %s" % controllerManufacturerCode)
+        self.log.logging("Input", "Log", "Decode0042 - %s/%s requested manuf code -responding with Manufacturer: %s" % (
+            srcNwkId, srcEp, controllerManufacturerCode))
         
         manuf_code16 = "%04x" % struct.unpack("H", struct.pack(">H", int(controllerManufacturerCode, 16)))[0]
         max_in_size16 = "%04x" % struct.unpack("H", struct.pack(">H", int(self.ListOfDevices[ "0000" ]["Max Rx"], 16)))[0] 

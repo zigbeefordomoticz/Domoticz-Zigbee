@@ -88,64 +88,31 @@ class LoggingManagement:
     def zigpy_login(self):
         if ( "debugTransportZigpyZNP" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugTransportZigpyZNP"] ):
             # Debug ZNP
-            requests_logger = logging.getLogger("zigpy")
-            requests_logger.setLevel(logging.DEBUG)
-            requests_logger = logging.getLogger("zigpy_znp")
-            requests_logger.setLevel(logging.DEBUG)
-            requests_logger = logging.getLogger("AppZnp")
-            requests_logger.setLevel(logging.DEBUG)
+            zigpy_loging_mode("debug")
+            zigpy_logging_znp("debug")
 
         elif ( "debugTransportZigpyEZSP" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugTransportZigpyEZSP"] ):
             # Debug Bellows/Ezsp
-            requests_logger = logging.getLogger("zigpy")
-            requests_logger.setLevel(logging.DEBUG)
-            requests_logger = logging.getLogger("bellows")
-            requests_logger.setLevel(logging.DEBUG)
-            requests_logger = logging.getLogger("AppEzsp")
-            requests_logger.setLevel(logging.DEBUG)
+            zigpy_loging_mode("debug")
+            zigpy_logging_ezsp("debug")
 
         elif ( "debugTransportZigpyZigate" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugTransportZigpyZigate"] ):
             # Debug Zigate
-            requests_logger = logging.getLogger("zigpy")
-            requests_logger.setLevel(logging.DEBUG)
-            requests_logger = logging.getLogger("zigpy_zigate")
-            requests_logger.setLevel(logging.DEBUG)
-            requests_logger = logging.getLogger("AppZigate")
-            requests_logger.setLevel(logging.DEBUG)
+            zigpy_loging_mode("debug")
+            zigpy_logging_zigate("debug")
             
         elif ( "debugTransportZigpydeCONZ" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugTransportZigpydeCONZ"] ):
             # Debug deConz
-            requests_logger = logging.getLogger("zigpy")
-            requests_logger.setLevel(logging.DEBUG)
-            requests_logger = logging.getLogger("zigpy_deconz")
-            requests_logger.setLevel(logging.DEBUG)
-            requests_logger = logging.getLogger("AppDeconz")
-            requests_logger.setLevel(logging.DEBUG)
+            zigpy_loging_mode("debug")
+            zigpy_logging_deconz("debug")
 
         else:
             # Set to Warning Level
-            requests_logger = logging.getLogger("zigpy")
-            requests_logger.setLevel(logging.WARNING)
-            
-            requests_logger = logging.getLogger("zigpy_znp")
-            requests_logger.setLevel(logging.WARNING)
-            requests_logger = logging.getLogger("AppZnp")
-            requests_logger.setLevel(logging.WARNING)
-            
-            requests_logger = logging.getLogger("zigpy_zigate")
-            requests_logger.setLevel(logging.WARNING)
-            requests_logger = logging.getLogger("AppZigate")
-            requests_logger.setLevel(logging.WARNING)
-
-            requests_logger = logging.getLogger("zigpy_deconz")
-            requests_logger.setLevel(logging.WARNING)
-            requests_logger = logging.getLogger("AppDeconz")
-            requests_logger.setLevel(logging.WARNING)
-            
-            requests_logger = logging.getLogger("bellows")
-            requests_logger.setLevel(logging.WARNING)
-            requests_logger = logging.getLogger("AppEzsp")
-            requests_logger.setLevel(logging.WARNING)
+            zigpy_loging_mode("warning")
+            zigpy_logging_zigate("warning")
+            zigpy_logging_deconz("warning")
+            zigpy_logging_ezsp("warning")
+            zigpy_logging_znp("warning")
 
     def openLogFile(self):
         self.open_logging_mode()
@@ -496,3 +463,86 @@ def logging_thread(self):
         else:
             Domoticz.Error("logging_thread unexpected tupple %s" % (str(logging_tupple)))
     Domoticz.Log("logging_thread - ended")
+
+
+
+def zigpy_loging_mode(mode):
+    if mode == "debug":
+        requests_logger = logging.getLogger("zigpy")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("zigpy.zdo")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("zigpy.zcl")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("zigpy.profiles")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("zigpy.quirks")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("zigpy.ota")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("zigpy.appdb_schemas")
+        requests_logger.setLevel(logging.DEBUG)
+    else:
+        requests_logger = logging.getLogger("zigpy")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("zigpy.zdo")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("zigpy.zcl")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("zigpy.profiles")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("zigpy.quirks")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("zigpy.ota")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("zigpy.appdb_schemas")
+        requests_logger.setLevel(logging.WARNING)
+        
+def zigpy_logging_znp(mode):
+    if mode == "debug":
+        requests_logger = logging.getLogger("zigpy_znp")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("AppZnp")
+        requests_logger.setLevel(logging.DEBUG)
+    else:
+        requests_logger = logging.getLogger("zigpy_znp")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("AppZnp")
+        requests_logger.setLevel(logging.WARNING)
+
+def zigpy_logging_ezsp(mode):   
+    if mode == "debug":    
+        requests_logger = logging.getLogger("bellows")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("AppEzsp")
+        requests_logger.setLevel(logging.DEBUG)
+    else:
+        requests_logger = logging.getLogger("bellows")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("AppEzsp")
+        requests_logger.setLevel(logging.WARNING)
+
+def zigpy_logging_zigate(mode):
+    if mode == "debug":        
+        requests_logger = logging.getLogger("zigpy_zigate")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("AppZigate")
+        requests_logger.setLevel(logging.DEBUG)
+    else:
+        requests_logger = logging.getLogger("zigpy_zigate")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("AppZigate")
+        requests_logger.setLevel(logging.WARNING)
+        
+        
+def zigpy_logging_deconz(mode):
+    if mode == "debug":        
+        requests_logger = logging.getLogger("zigpy_deconz")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("AppDeconz")
+        requests_logger.setLevel(logging.DEBUG)
+    else:
+        requests_logger = logging.getLogger("zigpy_deconz")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("AppDeconz")
+        requests_logger.setLevel(logging.WARNING)
