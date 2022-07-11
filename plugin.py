@@ -920,13 +920,13 @@ class BasePlugin:
         
     def zigpy_get_device(self, ieee=None, nwkid=None):
         # allow to inter-connect zigpy world and plugin
-        self.log.logging("TransportZigpy", "Log", "zigpy_get_device( %s, %s)" %( ieee, nwkid))
+        self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s)" %( ieee, nwkid))
 
         sieee = ieee
         snwkid = nwkid
-        model = manuf = None
-
-        if nwkid and nwkid not in self.ListOfDevices:
+        
+        if nwkid and nwkid not in self.ListOfDevices and ieee and ieee in self.IEEE2NWK:
+            # Most likely we have a new Nwkid, let see if we can reconnect
             lookupForIEEE(self, nwkid, reconnect=True)
 
         if nwkid and nwkid in self.ListOfDevices and 'IEEE' in self.ListOfDevices[ nwkid ]:
@@ -934,17 +934,16 @@ class BasePlugin:
         elif ieee and ieee in self.IEEE2NWK:
             nwkid = self.IEEE2NWK[ ieee ]
         else:
-            self.log.logging("TransportZigpy", "Log", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(snwkid) ))
+            self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(snwkid) ))
             return None
 
-        if nwkid in self.ListOfDevices and "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( "", {} ):
-            model = self.ListOfDevices[ nwkid ]["Model"]
+        # model = manuf = None
+        #if nwkid in self.ListOfDevices and "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( "", {} ):
+        #    model = self.ListOfDevices[ nwkid ]["Model"]
+        #if nwkid in self.ListOfDevices and "Manufacturer" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Manufacturer"] not in ( "", {} ):
+        #    manuf = self.ListOfDevices[ nwkid ]["Manufacturer"]
 
-        if nwkid in self.ListOfDevices and "Manufacturer" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Manufacturer"] not in ( "", {} ):
-            manuf = self.ListOfDevices[ nwkid ]["Manufacturer"]
-
-        self.log.logging("TransportZigpy", "Log", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
-
+        self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
         return int(nwkid,16) ,int(ieee,16)
     
     def onCommand(self, Unit, Command, Level, Color):
