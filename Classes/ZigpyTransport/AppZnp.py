@@ -172,6 +172,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         if dev.nwk != nwk:
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
+            self._update_nkdids_if_needed( ieee, dev.nwk )
 
     def _update_nkdids_if_needed( self, ieee, new_nwkid ):
         _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]

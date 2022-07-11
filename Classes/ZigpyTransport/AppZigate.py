@@ -104,6 +104,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         dev = None
         try:
             dev = super().get_device(ieee, nwk)
+            self._update_nkdids_if_needed( dev.ieee, dev.nwk )
             
         except KeyError:
             if self.callBackGetDevice:
@@ -142,6 +143,13 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         if dev.nwk != nwk:
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
+            self._update_nkdids_if_needed( ieee, dev.nwk )
+
+    def _update_nkdids_if_needed( self, ieee, new_nwkid ):
+        _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+        _nwk = new_nwkid.serialize()[::-1].hex()
+        self.callBackUpdDevice(_ieee, _nwk)
+
 
     def handle_leave(self, nwk, ieee):
         self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
