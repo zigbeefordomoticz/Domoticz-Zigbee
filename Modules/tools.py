@@ -220,7 +220,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
                 % (exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
-        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOW"):
+        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOW", ):
             # We are in the discovery/provisioning process,
             # and the device got a new Short Id
             # we need to restart from the begiging and remove all existing datastructutre.
