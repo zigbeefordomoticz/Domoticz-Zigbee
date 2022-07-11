@@ -54,7 +54,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
-        self.callBackGetDevice = callBackGetDevice
+        self.callBackUpdDevice = callBackUpdDevice
 
         await asyncio.sleep( 2 )
 

@@ -35,8 +35,6 @@ from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
 LOGGER = logging.getLogger(__name__)
 
 
-
-
 class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         logging.debug("new")
@@ -47,7 +45,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None ):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
-        self.callBackGetDevice = callBackGetDevice
+        self.callBackUpdDevice = callBackUpdDevice
         self.pluginconf = pluginconf
         self.log = log
         

@@ -56,7 +56,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
-        self.callBackGetDevice = callBackGetDevice
+        self.callBackUpdDevice = callBackUpdDevice
         #self.bellows_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         try:
