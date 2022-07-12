@@ -9,14 +9,15 @@ import urllib.parse
 
 import Domoticz
 
-CURL_COMMAND = "/usr/bin/curl"
-
+LINUX_CURL_COMMAND = "/usr/bin/curl"
+WINDOWS_CURL_COMMAND = "c:\Windows\System32\curl.exe"
 
 def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_api="http://127.0.0.1:8080"):
     # sourcery skip: replace-interpolation-with-fstring
 
-    if not os.path.isfile(CURL_COMMAND):
-        Domoticz.Log("Unable to restart the plugin, %s not available" % CURL_COMMAND)
+    curl_command = WINDOWS_CURL_COMMAND if os.name == 'nt' else LINUX_CURL_COMMAND
+    if not os.path.isfile(curl_command):
+        Domoticz.Log("Unable to restart the plugin, %s not available" % curl_command)
         return
 
     erasePDM = "True" if erasePDM else "False"
@@ -28,7 +29,7 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_a
     #    url = "http://127.0.0.1:%s" % self.pluginconf.pluginConf["port"]
 
     url = url_base_api + "/json.htm?"
-    
+
     url_infos = {
         "type": "command",
         "param": "updatehardware",
@@ -54,8 +55,8 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_a
 
     Domoticz.Log("URL INFOS %s" %url_infos)
     url += urllib.parse.urlencode(url_infos, quote_via=urllib.parse.quote )
-    
+
     Domoticz.Status("Plugin Restart command : %s" % url)
 
-    _cmd = CURL_COMMAND + " '%s' &" % url
+    _cmd = curl_command + " '%s' &" % url
     os.system(_cmd)  # nosec
