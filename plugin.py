@@ -517,9 +517,7 @@ class BasePlugin:
 
         elif self.transport in ("PI", "V2-PI"):
             from Classes.ZigateTransport.Transport import ZigateTransport
-                
             check_python_modules_version( self )
-
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
             switchPiZigate_mode(self, "run")
             self.zigbee_communication = "native"
@@ -539,10 +537,7 @@ class BasePlugin:
 
         elif self.transport in ("Wifi", "V2-Wifi"):
             from Classes.ZigateTransport.Transport import ZigateTransport
-                
-            self.pythonModuleVersion["dns"] = (dns.__version__)
             check_python_modules_version( self )
-            
             self.pluginconf.pluginConf["ControllerInRawMode"] = False
             self.zigbee_communication = "native"
             self.pluginParameters["Zigpy"] = False
@@ -570,23 +565,17 @@ class BasePlugin:
 
         elif self.transport == "ZigpyZiGate":
             # Zigpy related modules
-                
             import zigpy
             import zigpy_zigate
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
-            
-            
             self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
             self.pythonModuleVersion["zigpy_zigate"] = (zigpy_zigate.__version__)
             check_python_modules_version( self )
-            
-           
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
-            Domoticz.Log("Start Zigpy Transport on zigate")
-            
+            self.log.logging("Plugin", "Status", "Start Zigpy Transport on zigate")
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
@@ -597,15 +586,12 @@ class BasePlugin:
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
-            
-             
             self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
             self.pythonModuleVersion["zigpy_znp"] = (zigpy_znp.__version__)
             check_python_modules_version( self )
-            
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
-            Domoticz.Log("Start Zigpy Transport on ZNP")
+            self.log.logging("Plugin", "Status", "Start Zigpy Transport on ZNP")
             
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
@@ -617,14 +603,11 @@ class BasePlugin:
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
-            
-             
             self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
             self.pythonModuleVersion["zigpy_deconz"] = (zigpy_deconz.__version__)
             check_python_modules_version( self )
-            
             self.pluginParameters["Zigpy"] = True
-            Domoticz.Log("Start Zigpy Transport on deCONZ")            
+            self.log.logging("Plugin", "Status","Start Zigpy Transport on deCONZ")            
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
@@ -635,15 +618,12 @@ class BasePlugin:
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
-            
             self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
             self.pythonModuleVersion["zigpy_ezsp"] = (bellows.__version__)
             check_python_modules_version( self )
-            
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
-            Domoticz.Log("Start Zigpy Transport on EZSP")
-
+            self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
             self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
