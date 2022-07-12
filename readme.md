@@ -18,16 +18,16 @@ For __Windows users__, please check the [Plugin V6 running on Windows](https://z
 ## Pre requisities
 
 * Domoticz 2021.1 or above
-* You need Python 3.7 at least
+* You need Python 3.8 at least
 * Zigpy layers will requires additional python3 modules to be install:
 
   Go to the plugin Home directory ( domoticz/plugins/Domoticz-Zigate or Domoticz-Zigbee)
 
-  `sudo pip3 install -r requirements.tx`
+  `sudo pip3 install -r requirements.txt`
 
 ## Plugin first installation or first time on release 6.xxx (stable6)
 
-1. Make sure the pre-requisites steps (here above) have been executed
+1. Make sure the pre-requisities steps (here above) have been executed
 
 2. Go in your Domoticz directory using a command line and open the plugins directory.
   Usually you should be under domoticz/plugins
@@ -96,7 +96,7 @@ Thanks goes to [dresden elektronik](https://github.com/dresden-elektronik/) / [P
 
 ConBee and RaspBee support is only in the beta6 branch for now as still experimental, however deconz support can otherwise be considered ready with only the minor limitations that Zigbee channel change is not yet possible, and there is currently no support for Wiser/Livolo devices (but a dresden elektronik / Phoscon developer is working on a new deCONZ firmware update for ConBee and RaspBee that should sort out Wiser/Livolo support).
 
-deCONZ firmware based adapters depends on [zigpy-deconz](https://github.com/zigpy/zigpy-deconz) for ConBee/RaspBee compatibility. 
+deCONZ firmware based adapters depends on [zigpy-deconz](https://github.com/zigpy/zigpy-deconz) for ConBee/RaspBee compatibility.
 
 ## LIMITATIONS
 

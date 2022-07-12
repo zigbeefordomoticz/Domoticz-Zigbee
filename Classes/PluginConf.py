@@ -819,6 +819,15 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "debugDeviceAnnoucement": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
+
             "debugBasicOutput": {
                 "type": "bool",
                 "default": 0,

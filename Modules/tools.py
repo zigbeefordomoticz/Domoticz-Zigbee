@@ -221,7 +221,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
                 % (exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
-        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOW"):
+        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOW", ):
             # We are in the discovery/provisioning process,
             # and the device got a new Short Id
             # we need to restart from the begiging and remove all existing datastructutre.
@@ -282,7 +282,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     if self.ListOfDevices[new_NwkId]["Status"] in ("Left", "Leave"):
         self.ListOfDevices[new_NwkId]["Status"] = "inDB"
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
-        self.log.logging("Input", "Error", 
+        self.log.logging("Input", "Status", 
             "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s"
             % (self.ListOfDevices[new_NwkId]["Status"], new_NwkId)
         )
@@ -313,10 +313,6 @@ def removeNwkInList(self, NWKID):
 
     if safe:
         del self.ListOfDevices[NWKID]
-        self.log.logging("Input", "Status", "self.ListOfDevices[%s] removed! substitued by self.ListOfDevices[%s]" % (NWKID, safe))
-    else:
-        self.log.logging("Input", "Error", "self.ListOfDevices[%s] removed! but no substitution !!!" % (NWKID))
-
     return safe
 
 
@@ -861,6 +857,18 @@ def try_to_reconnect_via_neighbours(self, old_nwkid):
                         Domoticz.Log("try_to_reconnect_via_neighbours found %s as replacement of %s" % (new_nwkid, old_nwkid))
                     return new_nwkid
 
+def chk_and_update_IEEE_NWKID(self, nwkid, ieee):
+    if ieee in self.IEEE2NWK and nwkid in self.ListOfDevices:
+        return
+    if nwkid in self.ListOfDevices:
+        return
+    if ieee not in self.IEEE2NWK:
+        return
+
+    old_nwkid = self.IEEE2NWK[ ieee ]
+    self.log.logging("Input", "Log", "chk_and_update_IEEE_NWKID - update %s %s -> %s" %(ieee, old_nwkid, nwkid))
+    reconnectNWkDevice(self, nwkid, ieee, old_nwkid)
+        
 def lookupForIEEE(self, nwkid, reconnect=False):
     # """
     # Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
