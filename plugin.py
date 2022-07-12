@@ -499,7 +499,7 @@ class BasePlugin:
                 import dns
                 import serial
             except:
-                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+                Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/master/en-eng/missing-modules.md")
                 self.onStop()
                 return
             
