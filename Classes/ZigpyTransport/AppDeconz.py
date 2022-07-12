@@ -47,13 +47,14 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         logging.debug("startup in AppDeconz")
         self.log = log
         self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
+        self.callBackUpdDevice = callBackUpdDevice
 
         await asyncio.sleep( 2 )
 
@@ -285,6 +286,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         dev = None
         try:
             dev = super().get_device(ieee, nwk)
+            self._update_nkdids_if_needed( dev.ieee, dev.nwk )
             
         except KeyError:
             if self.callBackGetDevice:
@@ -310,9 +312,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         """
         Called when a device joins or announces itself on the network.
         """
-
         ieee = t.EUI64(ieee)
-
         try:
             dev = self.get_device(ieee)
             LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
@@ -321,8 +321,15 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
 
         if dev.nwk != nwk:
-            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
+            self._update_nkdids_if_needed( ieee, dev.nwk )
+            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
+            
+    def _update_nkdids_if_needed( self, ieee, new_nwkid ):
+        _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+        _nwk = new_nwkid.serialize()[::-1].hex()
+        self.callBackUpdDevice(_ieee, _nwk)
+
 
     def handle_leave(self, nwk, ieee):
         self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))

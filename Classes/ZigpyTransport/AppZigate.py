@@ -35,8 +35,6 @@ from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
 LOGGER = logging.getLogger(__name__)
 
 
-
-
 class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         logging.debug("new")
@@ -44,9 +42,10 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None ):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None ):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
+        self.callBackUpdDevice = callBackUpdDevice
         self.pluginconf = pluginconf
         self.log = log
         
@@ -92,6 +91,9 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
+    # Only needed if the device require simple node descriptor from the coordinator
+    async def register_endpoint(self, endpoint=1):
+        await super().add_endpoint(endpoint)
 
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
@@ -103,6 +105,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         dev = None
         try:
             dev = super().get_device(ieee, nwk)
+            self._update_nkdids_if_needed( dev.ieee, dev.nwk )
             
         except KeyError:
             if self.callBackGetDevice:
@@ -128,9 +131,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         """
         Called when a device joins or announces itself on the network.
         """
-
         ieee = t.EUI64(ieee)
-
         try:
             dev = self.get_device(ieee)
             LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
@@ -139,8 +140,15 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
 
         if dev.nwk != nwk:
-            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
+            self._update_nkdids_if_needed( ieee, dev.nwk )
+            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
+
+    def _update_nkdids_if_needed( self, ieee, new_nwkid ):
+        _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+        _nwk = new_nwkid.serialize()[::-1].hex()
+        self.callBackUpdDevice(_ieee, _nwk)
+
 
     def handle_leave(self, nwk, ieee):
         self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
