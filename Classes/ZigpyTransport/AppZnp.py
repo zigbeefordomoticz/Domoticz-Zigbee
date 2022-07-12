@@ -53,6 +53,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackUpdDevice = callBackUpdDevice
+        self.callBackGetDevice = callBackGetDevice
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         try:
