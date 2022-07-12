@@ -45,6 +45,9 @@ def build_plugin_8002_frame_content(
         "build_plugin_8002_frame_content %s %s %s %s %s %s %s %s %s %s" % (address, profile, cluster, src_ep, dst_ep, message, lqi, receiver, src_addrmode, dst_addrmode),
     )
 
+    if profile is None:
+        return None
+
     payload = binascii.hexlify(message).decode("utf-8")
     ProfilID = "%04x" % profile
     ClusterID = "%04x" % cluster

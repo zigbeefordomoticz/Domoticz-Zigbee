@@ -45,14 +45,14 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         logging.debug("_load_db")
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
         self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
-        self.callBackGetDevice = callBackGetDevice
+        self.callBackUpdDevice = callBackUpdDevice
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         try:
@@ -97,7 +97,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
-
     async def register_endpoints(self):
         await super().register_endpoints()  
 
@@ -114,32 +113,36 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 )
             )
 
+    def device_initialized(self, device):
+            self.log.logging("TransportZigpy", "Log","device_initialized (0x%04x %s)" %(device.nwk, device.ieee))
+            super().device_initialized(device)
+            
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
-        self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device ieee:%s nwk:%s " % (ieee,nwk ))
-
         dev = None
         try:
             dev = super().get_device(ieee, nwk)
+            # We have found in Zigpy db.
+            # We might have to check that the plugin and zigpy Dbs are in sync
+            # Let's check if the tupple (dev.ieee, dev.nwk ) are aligned with plugin Db
+            self._update_nkdids_if_needed( dev.ieee, dev.nwk )
             
         except KeyError:
+            # Not found in zigpy Db, let see if we can get it into the Plugin Db
             if self.callBackGetDevice:
                 if nwk is not None:
                     nwk = nwk.serialize()[::-1].hex()
                 if ieee is not None:
                     ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
-                self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device calling callBackGetDevice %s (%s) %s (%s)" % (ieee,type(ieee),nwk, type(nwk)))
                 zfd_dev = self.callBackGetDevice(ieee, nwk)
                 if zfd_dev is not None:
                     (nwk, ieee) = zfd_dev
                     dev = self.add_device(t.EUI64(t.uint64_t(ieee).serialize()),nwk)
 
         if dev is not None:
-            # logging.debug("found device dev: %s" % (str(dev)))
-            self.log.logging("TransportZigpy", "Debug", "AppZnp - get_device found device: %s" % dev)
             return dev
         
         logging.debug("get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
@@ -149,24 +152,28 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         """
         Called when a device joins or announces itself on the network.
         """
-
         ieee = t.EUI64(ieee)
-
         try:
             dev = self.get_device(ieee)
-            logging.debug("handle_join waiting 1s for zigbee initialisation")
             time.sleep(1.0)
             LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
         except KeyError:
-            logging.debug("handle_join waiting 1s for zigbee initialisation")
             time.sleep(1.0)
             dev = self.add_device(ieee, nwk)
             LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
 
         if dev.nwk != nwk:
-            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             dev.nwk = nwk
+            self._update_nkdids_if_needed( ieee, dev.nwk )
+            LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
             
+
+    def _update_nkdids_if_needed( self, ieee, new_nwkid ):
+        _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+        _nwk = new_nwkid.serialize()[::-1].hex()
+        self.callBackUpdDevice(_ieee, _nwk)
+        
+                  
     def handle_leave(self, nwk, ieee):
         self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
 
