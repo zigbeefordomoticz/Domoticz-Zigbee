@@ -306,7 +306,7 @@ class ConfigureReporting:
             self.logging("Debug", "processConfigureReporting - %s has no %s record!!" % (Nwkid, STORE_CONFIGURE_REPORTING), nwkid=Nwkid)
             return False
 
-            
+
         if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:       
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] = { 
                 "Ep": {},
@@ -342,7 +342,7 @@ class ConfigureReporting:
             self.logging("Debug", "     Too early ....", nwkid=Nwkid)
             return False
         if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]:
-            self.logging( "Error", f"Read Configure Reporting response - Please report as something is strange", )
+            self.logging( "Error", "Read Configure Reporting response - Please report as something is strange", )
             self.logging( "Error", f"Read Configure Reporting response -{self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]}", )  
             return False
             
@@ -417,6 +417,13 @@ class ConfigureReporting:
                     attribute_current_configuration = retreive_read_configure_reporting_record(self, Nwkid, Ep=_ep, ClusterId=_cluster, AttributeId=attribut)
                     if attribute_current_configuration is None:
                         self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} return None !", nwkid=Nwkid)
+                        configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
+                        continue
+                    
+                    if attribute_current_configuration["Status"] == "8b":
+                        # There is no Report in place.
+                        self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} return 8b (Not Found) !", nwkid=Nwkid)
+                        
                         configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                         continue
                     
@@ -933,6 +940,9 @@ def retreive_read_configure_reporting_record(self, NwkId, Ep=None, ClusterId=Non
         and self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]["Status"] != "00"
     ):
         self.logging("Debug", f"retreive_read_configure_reporting_record {NwkId}/{Ep} Cluster {ClusterId} Status is None !!", nwkid=NwkId)
+        if self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]["Status"] == "8b":
+            # No report yet in place.
+            return { "Status": "8b" }
         return None
         
     if (
