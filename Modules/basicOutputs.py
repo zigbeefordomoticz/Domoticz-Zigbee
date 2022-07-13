@@ -20,7 +20,8 @@ from Zigbee.zclCommands import (zcl_attribute_discovery_request,
                                 zcl_get_list_attribute_extended_infos,
                                 zcl_identify_send, zcl_read_attribute,
                                 zcl_write_attribute,
-                                zcl_write_attributeNoResponse)
+                                zcl_write_attributeNoResponse,
+                                zcl_identify_trigger_effect)
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_IEEE_address_request,
                                 zdp_management_leave_request,
@@ -598,9 +599,8 @@ def identifyEffect(self, nwkid, ep, effect="Blink"):
     if effect not in effect_command:
         effect = "Blink"
 
-    # datas = "02" + "%s"%(nwkid) + ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
-    datas = ZIGATE_EP + ep + "%02x" % (effect_command[effect]) + "%02x" % 0
-    return send_zigatecmd_zcl_noack(self, nwkid, "00E0", datas)
+    return zcl_identify_trigger_effect(self, nwkid, ep, "%02x" %effect_command[effect], "%02x" % 0)
+
 
 
 def set_PIROccupiedToUnoccupiedDelay(self, key, delay, ListOfEp=None):
