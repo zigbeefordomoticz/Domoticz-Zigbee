@@ -526,7 +526,7 @@ def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list
 def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
     if batchMode and self.pluginconf.pluginConf["allowReBindingClusters"]:
         lookup_ieee = self.ListOfDevices[nwkid]["IEEE"]
-        zdp_NWK_address_request(self, "fffc", lookup_ieee, )
+        zdp_NWK_address_request(self, "FFFD", lookup_ieee, )
         # Correctif 22 Novembre. Delete only for the specific cluster and not the all Set
         if (
             "Bind" in self.ListOfDevices[nwkid]
