@@ -30,6 +30,13 @@ def zdp_raw_NWK_address_request(self, router, ieee, u8RequestType, u8StartIndex)
         "zdp_raw_NWK_address_request  - [%s] %s Queue Length: %s"
         % (sqn, router, self.ControllerLink.loadTransmit()),
     )
+    else:
+        self.log.logging(
+            "zdpCommand",
+            "Debug",
+            "zdp_raw_NWK_address_request  - [%s] %s Queue Length: %s"
+            % (sqn, router, self.ControllerLink.loadTransmit()),
+        )
 
     raw_APS_request(
         self,
@@ -59,6 +66,13 @@ def zdp_raw_IEEE_address_request(self, router, nwkid, u8RequestType, u8StartInde
         "zdp_raw_IEEE_address_request  - [%s] %s Queue Length: %s"
         % (sqn, nwkid, self.ControllerLink.loadTransmit()),
     )
+    else:
+        self.log.logging(
+            "zdpCommand",
+            "Debug",
+            "zdp_raw_IEEE_address_request  - [%s] %s Queue Length: %s"
+            % (sqn, nwkid, self.ControllerLink.loadTransmit()),
+        )
 
     raw_APS_request(
         self,
