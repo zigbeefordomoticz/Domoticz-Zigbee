@@ -823,19 +823,19 @@ class BasePlugin:
                         self.log.logging(
                             "Plugin",
                             "Status",
-                            "onDeviceRemoved - removing Device %s -> %s in Zigate" % (Devices[Unit].Name, IEEE),
+                            "onDeviceRemoved - removing Device %s -> %s from coordinator" % (Devices[Unit].Name, IEEE),
                         )
                     else:
                         self.log.logging(
                             "Plugin",
                             "Error",
-                            "onDeviceRemoved - too early, Zigate and plugin initialisation not completed",
+                            "onDeviceRemoved - too early, coordinator and plugin initialisation not completed",
                         )
                 else:
                     self.log.logging(
                         "Plugin",
                         "Status",
-                        "onDeviceRemoved - device entry %s from Zigate not removed. You need to enable 'allowRemoveZigateDevice' parameter. Do consider that it works only for main powered devices."
+                        "onDeviceRemoved - device entry %s from coordinator not removed. You need to enable 'allowRemoveZigateDevice' parameter. Do consider that it works only for main powered devices."
                         % Devices[Unit].DeviceID,
                     )
 
@@ -1302,7 +1302,7 @@ def zigateInit_Phase1(self):
 
     if self.zigbee_communication == "native" and Parameters["Mode3"] == "True" and not self.ErasePDMDone and not self.ErasePDMinProgress:  # Erase PDM
         zigate_erase_eeprom(self)
-        self.log.logging("Plugin", "Status", "Erase Zigate PDM")
+        self.log.logging("Plugin", "Status", "Erase coordinator PDM")
         #sendZigateCmd(self, "0012", "")
         self.PDMready = False
         self.startZigateNeeded = 1
@@ -1338,7 +1338,7 @@ def zigateInit_Phase2(self):
             self.log.logging(
                 "Plugin",
                 "Error",
-                "We are having difficulties to start Zigate. Basically we are not receiving what we expect from CIE",
+                "We are having difficulties to start coordinator. Basically we are not receiving what we expect from CIE",
             )
             self.log.logging("Plugin", "Error", "Plugin is not started ...")
         return
@@ -1401,7 +1401,7 @@ def zigateInit_Phase3(self):
         self.log.logging(
             "Plugin",
             "Status",
-            "Zigate set to Certification : %s/%s -> %s" % (
+            "coordinator set to Certification : %s/%s -> %s" % (
                 self.pluginconf.pluginConf["CertificationCode"], 
                 self.pluginconf.pluginConf["Certification"], 
                 CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],))
