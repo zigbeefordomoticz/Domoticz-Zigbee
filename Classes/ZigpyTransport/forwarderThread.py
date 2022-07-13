@@ -32,6 +32,8 @@ def forwarder_thread(self):
             message = self.forwarder_queue.get()
             if message == "STOP":
                 break
+            if message is None:
+                continue
             if len(message) == 0:
                 continue
             self.statistics._received += 1

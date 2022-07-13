@@ -17,7 +17,7 @@ import Domoticz
 try:
     import dns.resolver
 except:
-    Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
+    Domoticz.Error("Missing serial or dns modules. https://zigbeefordomoticz.github.io/wiki/en-eng/missing-modules.html")
 
 PLUGIN_TXT_RECORD = "zigate_plugin.pipiche.net"
 ZIGATEV1_FIRMWARE_TXT_RECORD = "zigatev1.pipiche.net"
