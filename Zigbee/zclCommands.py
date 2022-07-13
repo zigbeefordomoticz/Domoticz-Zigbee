@@ -128,6 +128,9 @@ def zcl_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, directi
 
 def zcl_read_report_config_request(self, nwkid, epin, epout, cluster, direction, manuf_specific, manuf_code, nb_attribute, attribute_list, ackIsDisabled=DEFAULT_ACK_MODE):
     data = epin + epout + cluster + direction + nb_attribute + manuf_specific + manuf_code + attribute_list
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        self.log.logging("zclCommand", "Error", "zcl_read_report_config_request not implemented for RAW mode")
+        return
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0122", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "0122", data)
@@ -135,12 +138,19 @@ def zcl_read_report_config_request(self, nwkid, epin, epout, cluster, direction,
 
 def zcl_attribute_discovery_request(self, nwkid, EpIn, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000"):
     self.log.logging("zdpCommand", "Debug", "zcl_attribute_discovery_request %s %s %s %s %s %s %s" % (nwkid, EpIn, EpOut, cluster, start_attribute, manuf_specific, manuf_code))
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        self.log.logging("zclCommand", "Error", "zcl_attribute_discovery_request not implemented for RAW mode")
+        return
 
     return send_zigatecmd_raw(self, nwkid, "0140", EpIn + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01")
 
 
 def zcl_get_list_attribute_extended_infos(self, nwkid, EpIn, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000"):
     self.log.logging("zdpCommand", "Debug", "zcl_get_list_attribute_extended_infos %s %s %s %s %s %s %s" % (nwkid, EpIn, EpOut, cluster, start_attribute, manuf_specific, manuf_code))
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        self.log.logging("zclCommand", "Error", "zcl_get_list_attribute_extended_infos not implemented for RAW mode")
+        return
+
     return send_zigatecmd_raw(self, nwkid, "0141", EpIn + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01")
 
 
@@ -148,6 +158,10 @@ def zcl_get_list_attribute_extended_infos(self, nwkid, EpIn, EpOut, cluster, sta
 ##############
 def zcl_identify_send(self, nwkid, EPout, duration, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_identify_send %s %s %s" % (nwkid, EPout, duration))
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        self.log.logging("zclCommand", "Error", "zcl_identify_send not implemented for RAW mode")
+        return
+
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0070", ZIGATE_EP + EPout + duration)
     return send_zigatecmd_zcl_ack(self, nwkid, "0070", ZIGATE_EP + EPout + duration)
@@ -155,6 +169,10 @@ def zcl_identify_send(self, nwkid, EPout, duration, ackIsDisabled=DEFAULT_ACK_MO
 
 def zcl_identify_trigger_effect(self, nwkid, EPout, effectId, effectGradient, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_identify_trigger_effect %s %s %s %s" % (nwkid, EPout, effectId, effectGradient))
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        self.log.logging("zclCommand", "Error", "zcl_identify_trigger_effect not implemented for RAW mode")
+        return
+
     if ackIsDisabled:
         return send_zigatecmd_zcl_ack(self, nwkid, "00E0", nwkid + ZIGATE_EP + EPout + effectId + effectGradient)
     return send_zigatecmd_zcl_noack(self, nwkid, "00E0", nwkid + ZIGATE_EP + EPout + effectId + effectGradient)
@@ -162,6 +180,10 @@ def zcl_identify_trigger_effect(self, nwkid, EPout, effectId, effectGradient, ac
 
 def zcl_group_identify_trigger_effect(self, nwkid, epin, epout, effectId, effectGradient):
     self.log.logging("zclCommand", "Debug", "zcl_group_identify_trigger_effect %s %s %s %s" % (nwkid, epout, effectId, effectGradient))
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        self.log.logging("zclCommand", "Error", "zcl_group_identify_trigger_effect not implemented for RAW mode")
+        return
+
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + epout + effectId + effectGradient
     return send_zigatecmd_raw(self, "00E0", data)
 
