@@ -305,7 +305,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             self.log.logging("TransportZigpy", "Debug", "App - get_device found device: %s" % dev)
             return dev
         
-        logging.debug("get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
+        logging.debug("AppDeconz get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
         raise KeyError
 
     def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:

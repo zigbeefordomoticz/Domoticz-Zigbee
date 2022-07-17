@@ -146,7 +146,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         if dev is not None:
             return dev
         
-        logging.debug("get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
+        logging.debug("AppZnp get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
         raise KeyError
 
     def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:

@@ -1885,31 +1885,35 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
         MsgStartIndex = int( MsgData[26:28], 16)
         MsgDeviceList = MsgData[28:]
 
-    self.log.logging( "Input", "Debug", "Network Address response, [%s] Status: %s Ieee: %s NwkId: %s" %(
+    self.log.logging( "Input", "Log", "Network Address response, [%s] Status: %s Ieee: %s NwkId: %s" %(
         MsgSequenceNumber, DisplayStatusCode(MsgDataStatus), MsgIEEE, MsgShortAddress))
 
     if extendedResponse:
         self.log.logging( "Input", "Debug", "                        , Nb Associated Devices: %s Idx: %s Device List: %s" %(
             MsgNumAssocDevices, MsgStartIndex, MsgDeviceList))
 
-    if extendedResponse and ( MsgStartIndex + len(MsgDeviceList) // 4) != MsgNumAssocDevices :
-        self.log.logging(
-            "Input", 
-            "Debug", 
-            "Decode 8040 - Receive an IEEE: %s with a NwkId: %s but would need to continue to get all associated devices" % (MsgIEEE, MsgShortAddress)
-        )
-        Network_Address_response_request_next_index(self, MsgShortAddress, MsgIEEE, MsgStartIndex, len(MsgDeviceList) // 4)
+        if ( MsgStartIndex + len(MsgDeviceList) // 4) != MsgNumAssocDevices:
+            self.log.logging(
+                "Input", 
+                "Debug", 
+                "Decode 8040 - Receive an IEEE: %s with a NwkId: %s but would need to continue to get all associated devices" % (MsgIEEE, MsgShortAddress)
+            )
+            Network_Address_response_request_next_index(self, MsgShortAddress, MsgIEEE, MsgStartIndex, len(MsgDeviceList) // 4)
 
-    if MsgShortAddress in self.ListOfDevices:
+    if (
+        MsgShortAddress in self.ListOfDevices 
+        and 'IEEE' in self.ListOfDevices[MsgShortAddress]
+        and self.ListOfDevices[MsgShortAddress]['IEEE'] == MsgIEEE
+    ):
         self.log.logging(
             "Input", "Debug", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress)
         )
         if extendedResponse:
             store_NwkAddr_Associated_Devices( self, MsgShortAddress, MsgStartIndex, MsgDeviceList)
+            
         timeStamped(self, MsgShortAddress, 0x8041)
         loggingMessages(self, "8040", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
         lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
-
         return
 
     # We might check if we didn't have a change in the IEEE <-> NwkId
@@ -1925,12 +1929,18 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
             self.log.logging("Input", "Debug", "Decode 8040 - Not able to reconnect (unknown device)")
             return
 
-    if extendedResponse:
-        store_NwkAddr_Associated_Devices( self, MsgShortAddress, MsgStartIndex, MsgDeviceList)
+        if extendedResponse:
+            store_NwkAddr_Associated_Devices( self, MsgShortAddress, MsgStartIndex, MsgDeviceList)
 
-    timeStamped(self, MsgShortAddress, 0x8041)
-    loggingMessages(self, "8040", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
-    lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
+        timeStamped(self, MsgShortAddress, 0x8041)
+        loggingMessages(self, "8040", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
+        lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
+
+    # We reach here because the MsgIEE is not in self.IEEE2NWK  !!!!   
+    self.log.logging( "Input", "Error",
+            "Decode 8040 - Receive an IEEE: %s with a NwkId: %s, seems not known by the plugin" % (MsgIEEE, MsgShortAddress),)
+
+
 
 def Network_Address_response_request_next_index(self, nwkid, ieee, index, ActualDevicesListed):
     new_index = "%02x" %( index + ActualDevicesListed )
@@ -1945,17 +1955,16 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgIEEE = MsgData[4:20]
-    if MsgDataStatus == "00":
-        MsgShortAddress = MsgData[20:24]
-        MsgNumAssocDevices = MsgData[24:26]
-        MsgStartIndex = MsgData[26:28]
-        MsgDeviceList = MsgData[28:]
-        lookupForIEEE(self, MsgShortAddress, reconnect=True)
-
+    
     if MsgDataStatus != "00":
         self.log.logging( "Input", "Debug",
             "Decode8041 - Reception of IEEE Address response for %s with status %s" %(MsgIEEE, MsgDataStatus))
         return
+
+    MsgShortAddress = MsgData[20:24]
+    MsgNumAssocDevices = MsgData[24:26]
+    MsgStartIndex = MsgData[26:28]
+    MsgDeviceList = MsgData[28:]
 
     self.log.logging( "Input", "Debug",
         "Decode8041 - IEEE Address response, Sequence number: " + MsgSequenceNumber
@@ -1967,9 +1976,15 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         + " Device List: " + MsgDeviceList,
     )
 
-    if MsgShortAddress in self.ListOfDevices:
-        self.log.logging( "Input", "Debug", 
-            "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress) )
+    if (
+        MsgShortAddress in self.ListOfDevices 
+        and 'IEEE' in self.ListOfDevices[MsgShortAddress] 
+        and self.ListOfDevices[MsgShortAddress]['IEEE'] == MsgShortAddress
+    ):
+        self.log.logging( "Input", "Debug",  "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress) )
+        timeStamped(self, MsgShortAddress, 0x8041)
+        loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
+        lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
         return
 
     # We might check if we didn't have a change in the IEEE <-> NwkId
@@ -1979,13 +1994,19 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         self.log.logging( "Input", "Log",
             "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),)
         if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
-            self.log.logging("Input", "Log", 
-                "Decode 8041 - Not able to reconnect (unknown device)")
+            self.log.logging("Input", "Error",  "Decode 8041 - Not able to reconnect (unknown device) %s %s" %(MsgIEEE, MsgShortAddress),)
             return
 
-    timeStamped(self, MsgShortAddress, 0x8041)
-    loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
-    lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
+        timeStamped(self, MsgShortAddress, 0x8041)
+        loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
+        lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
+        return
+    
+    # We reach here because the MsgIEE is not in self.IEEE2NWK  !!!!   
+    self.log.logging( "Input", "Error",
+            "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, seems not known by the plugin" % (MsgIEEE, MsgShortAddress),)
+ 
+    
 
 
 def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
