@@ -117,7 +117,12 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         self.log.logging("TransportZigpy", "Debug", "Starting radio %s port: %s" %( radiomodule, serialPort))
         import bellows.config as conf
         from Classes.ZigpyTransport.AppBellows import App_bellows
-        config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+        config = {
+            conf.CONF_DEVICE: { "path": serialPort,  "baudrate": 115200}, 
+            conf.CONF_NWK: {},
+            "handle_unknown_devices": True,
+            "source_routing": True
+            }
         self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
     elif radiomodule =="zigate":
