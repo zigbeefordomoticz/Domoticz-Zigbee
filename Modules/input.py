@@ -1961,7 +1961,7 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         return
 
     MsgShortAddress = MsgData[20:24]
-    extendedResponse = FALSE
+    extendedResponse = False
     if len(MsgData) > 24:
         extendedResponse = True
         MsgNumAssocDevices = MsgData[24:26]
