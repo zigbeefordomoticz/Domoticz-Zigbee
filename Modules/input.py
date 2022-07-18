@@ -11,7 +11,6 @@
 """
 
 import binascii
-from pickle import FALSE
 import struct
 import time
 from datetime import datetime
