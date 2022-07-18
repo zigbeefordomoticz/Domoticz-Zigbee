@@ -190,7 +190,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         restart_plugin_reset_ModuleIRCode(self, NwkId)
 
         if mainPoweredDevice(self, NwkId):
-            check_configuration_reporting_device( self, NwkId)
+            enforce_configure_reporting( self, NwkId)
             read_attributes_if_needed( self, NwkId)
 
         if reseted_device:
@@ -215,7 +215,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
             legrand_refresh_battery_remote(self, NwkId)
             if mainPoweredDevice(self, NwkId):
-                check_configuration_reporting_device( self, NwkId)
+                enforce_configure_reporting( self, NwkId)
             restart_plugin_reset_ModuleIRCode(self, NwkId)
             read_attributes_if_needed( self, NwkId)
 
@@ -413,11 +413,14 @@ def read_attributes_if_needed( self, NwkId):
     self.ListOfDevices[NwkId]["Heartbeat"] = "0"
 
 
-def check_configuration_reporting_device( self, NwkId):
-    if ( 
-        "Param" in self.ListOfDevices[NwkId]  
-        and "readConfigurationReportingAfterOffOn" in self.ListOfDevices[NwkId]["Param"]
-        and self.ListOfDevices[NwkId]["Param"]["readConfigurationReportingAfterOffOn"] 
+def enforce_configure_reporting( self, NwkId):
+    
+    if (
+        "Param" not in self.ListOfDevices[NwkId]
+        or "enforceConfigurationReportingAfterOffOn" not in  self.ListOfDevices[NwkId]["Param"]
+        or not self.ListOfDevices[NwkId]["Param"]["enforceConfigurationReportingAfterOffOn"]
     ):
-        self.log.logging( "Input", "Debug", "Trigger a Check Configuration Reporting for Device", )
-        self.configureReporting.check_configuration_reporting_for_device( NwkId , force=True)
+        return
+    
+    self.log.logging( "Input", "Debug", "Trigger a Configuration Reporting for Device %s" %NwkId, )
+    self.configureReporting.processConfigureReporting(self, NwkId=NwkId)

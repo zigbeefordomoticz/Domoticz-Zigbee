@@ -63,6 +63,6 @@
 		]
 	},
 	"Param": {
-		"readConfigurationReportingAfterOffOn": 1
+		"enforceConfigurationReportingAfterOffOn": 1
 	}
 }
