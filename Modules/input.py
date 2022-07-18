@@ -1950,21 +1950,21 @@ def Network_Address_response_request_next_index(self, nwkid, ieee, index, Actual
 
       
 def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
-    # MsgLen = len(MsgData)
-
     MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgIEEE = MsgData[4:20]
-    
+
     if MsgDataStatus != "00":
         self.log.logging( "Input", "Debug",
             "Decode8041 - Reception of IEEE Address response for %s with status %s" %(MsgIEEE, MsgDataStatus))
         return
 
     MsgShortAddress = MsgData[20:24]
-    MsgNumAssocDevices = MsgData[24:26]
-    MsgStartIndex = MsgData[26:28]
-    MsgDeviceList = MsgData[28:]
+
+    if len(MsgData) > 24:
+        MsgNumAssocDevices = MsgData[24:26]
+        MsgStartIndex = MsgData[26:28]
+        MsgDeviceList = MsgData[28:]
 
     self.log.logging( "Input", "Debug",
         "Decode8041 - IEEE Address response, Sequence number: " + MsgSequenceNumber
@@ -1976,6 +1976,14 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         + " Device List: " + MsgDeviceList,
     )
 
+    if MsgShortAddress == "0000" and self.ControllerIEEE and MsgIEEE != self.ControllerIEEE:
+        self.log.logging( "Input", "Error",  "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
+        return
+
+    elif self.ControllerIEEE and MsgIEEE == self.ControllerIEEE and MsgShortAddress != "0000":
+        self.log.logging( "Input", "Error",  "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
+        return
+        
     if (
         MsgShortAddress in self.ListOfDevices 
         and 'IEEE' in self.ListOfDevices[MsgShortAddress] 
@@ -1996,7 +2004,7 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         #if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
         #    self.log.logging("Input", "Error",  "Decode 8041 - Not able to reconnect (unknown device) %s %s" %(MsgIEEE, MsgShortAddress),)
         #    return
-#
+
         timeStamped(self, MsgShortAddress, 0x8041)
         loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
         lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
