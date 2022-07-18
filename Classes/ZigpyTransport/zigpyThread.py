@@ -141,7 +141,6 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
-            
 
     elif radiomodule =="deCONZ":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))

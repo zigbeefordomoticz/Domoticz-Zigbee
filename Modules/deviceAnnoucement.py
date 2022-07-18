@@ -417,7 +417,7 @@ def enforce_configure_reporting( self, NwkId):
     
     if (
         "Param" not in self.ListOfDevices[NwkId]
-        or "enforceConfigurationReportingAfterOffOn" not in  self.ListOfDevices[NwkId]["Param"]
+        or "enforceConfigurationReportingAfterOffOn" not in self.ListOfDevices[NwkId]["Param"]
         or not self.ListOfDevices[NwkId]["Param"]["enforceConfigurationReportingAfterOffOn"]
     ):
         return

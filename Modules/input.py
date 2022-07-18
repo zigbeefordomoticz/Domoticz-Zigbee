@@ -1949,7 +1949,6 @@ def Network_Address_response_request_next_index(self, nwkid, ieee, index, Actual
     zdp_NWK_address_request(self, nwkid, ieee, u8RequestType="01", u8StartIndex=new_index)
     
 
-      
 def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
@@ -1980,11 +1979,11 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         )
 
     if MsgShortAddress == "0000" and self.ControllerIEEE and MsgIEEE != self.ControllerIEEE:
-        self.log.logging( "Input", "Error",  "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
+        self.log.logging( "Input", "Error", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
         return
 
     elif self.ControllerIEEE and MsgIEEE == self.ControllerIEEE and MsgShortAddress != "0000":
-        self.log.logging( "Input", "Error",  "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
+        self.log.logging( "Input", "Log", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
         return
         
     if (
@@ -2005,7 +2004,7 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         self.log.logging( "Input", "Debug",
             "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),)
         if self.pluginconf.pluginConf["reconnectonIEEEaddr"] and not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
-            self.log.logging("Input", "Error",  "Decode 8041 - Not able to reconnect (unknown device) %s %s" %(MsgIEEE, MsgShortAddress),)
+            self.log.logging("Input", "Log", "Decode 8041 - Not able to reconnect (unknown device) %s %s" %(MsgIEEE, MsgShortAddress),)
             return
 
         timeStamped(self, MsgShortAddress, 0x8041)
@@ -2043,7 +2042,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
             "Debug",
             "Decode8042 - Reception of Node Descriptor for %s with status %s" %(addr, status))
         return
-            
+
     self.log.logging(
         "Input",
         "Debug",
