@@ -56,7 +56,7 @@ def start_new_table_scan(self, nwkid, tablename):
     table_entry_cleanup( self, nwkid, tablename)
         
     time_stamp = None  
-    if "TopologyStartTime" in self.ListOfDevices["0000"]:
+    if "0000" in self.ListOfDevices and "TopologyStartTime" in self.ListOfDevices["0000"]:
         time_stamp = self.ListOfDevices["0000"]["TopologyStartTime"]
         
     self.log.logging("NetworkMap", "Debug", "start_new_table_scan %s/%s/%s" %( nwkid, tablename, time_stamp))
