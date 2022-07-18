@@ -1990,7 +1990,7 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         and 'IEEE' in self.ListOfDevices[MsgShortAddress] 
         and self.ListOfDevices[MsgShortAddress]['IEEE'] == MsgShortAddress
     ):
-        self.log.logging( "Input", "Debug",  "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress) )
+        self.log.logging( "Input", "Debug", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress) )
         timeStamped(self, MsgShortAddress, 0x8041)
         loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
         lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
