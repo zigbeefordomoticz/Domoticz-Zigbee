@@ -1926,9 +1926,9 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
             "Log",
             "Decode 8040 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),
         )
-        #if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
-        #    self.log.logging("Input", "Debug", "Decode 8040 - Not able to reconnect (unknown device)")
-        #    return
+        if self.pluginconf.pluginConf["reconnectonNWKaddr"] and not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
+            self.log.logging("Input", "Debug", "Decode 8040 - Not able to reconnect (unknown device)")
+            return
 
         if extendedResponse:
             store_NwkAddr_Associated_Devices( self, MsgShortAddress, MsgStartIndex, MsgDeviceList)
@@ -2002,11 +2002,11 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     if MsgIEEE in self.IEEE2NWK:
         # Looks like the device was known with a different NwkId
         # hoping that we can reconnect to an existing Device
-        self.log.logging( "Input", "Log",
+        self.log.logging( "Input", "Debug",
             "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),)
-        #if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
-        #    self.log.logging("Input", "Error",  "Decode 8041 - Not able to reconnect (unknown device) %s %s" %(MsgIEEE, MsgShortAddress),)
-        #    return
+        if self.pluginconf.pluginConf["reconnectonIEEEaddr"] and not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
+            self.log.logging("Input", "Error",  "Decode 8041 - Not able to reconnect (unknown device) %s %s" %(MsgIEEE, MsgShortAddress),)
+            return
 
         timeStamped(self, MsgShortAddress, 0x8041)
         loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
