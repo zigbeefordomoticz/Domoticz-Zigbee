@@ -1366,6 +1366,7 @@ SETTINGS = {
                 "restart": 1,
                 "hidden": False,
                 "Advanced": True,
+            },
             "reconnectonIEEEaddr": {
                 "type": "bool",
                 "default": 0,
@@ -1373,7 +1374,6 @@ SETTINGS = {
                 "restart": 0,
                 "hidden": False,
                 "Advanced": True,
-                
             },
             "reconnectonNWKaddr": {
                 "type": "bool",
