@@ -11,6 +11,7 @@
 """
 
 import binascii
+from pickle import FALSE
 import struct
 import time
 from datetime import datetime
@@ -1960,21 +1961,23 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         return
 
     MsgShortAddress = MsgData[20:24]
-
+    extendedResponse = FALSE
     if len(MsgData) > 24:
+        extendedResponse = True
         MsgNumAssocDevices = MsgData[24:26]
         MsgStartIndex = MsgData[26:28]
         MsgDeviceList = MsgData[28:]
 
-    self.log.logging( "Input", "Debug",
-        "Decode8041 - IEEE Address response, Sequence number: " + MsgSequenceNumber
-        + " Status: " + DisplayStatusCode(MsgDataStatus)
-        + " IEEE: " + MsgIEEE
-        + " Short Address: " + MsgShortAddress
-        + " number of associated devices: " + MsgNumAssocDevices
-        + " Start Index: " + MsgStartIndex
-        + " Device List: " + MsgDeviceList,
-    )
+    if extendedResponse:
+        self.log.logging( "Input", "Debug",
+            "Decode8041 - IEEE Address response, Sequence number: " + MsgSequenceNumber
+            + " Status: " + DisplayStatusCode(MsgDataStatus)
+            + " IEEE: " + MsgIEEE
+            + " Short Address: " + MsgShortAddress
+            + " number of associated devices: " + MsgNumAssocDevices
+            + " Start Index: " + MsgStartIndex
+            + " Device List: " + MsgDeviceList,
+        )
 
     if MsgShortAddress == "0000" and self.ControllerIEEE and MsgIEEE != self.ControllerIEEE:
         self.log.logging( "Input", "Error",  "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
