@@ -832,6 +832,9 @@ def try_to_reconnect_via_neighbours(self, old_nwkid):
     # We receive a message from a known NwkId but got a NACK. 
     # Let see if we don't have a wrong NwkId
 
+    if old_nwkid == "0000":
+        return None
+    
     if "IEEE" not in self.ListOfDevices[ old_nwkid ]:
         return None
     ieee = self.ListOfDevices[ old_nwkid ]["IEEE"]
@@ -860,6 +863,10 @@ def chk_and_update_IEEE_NWKID(self, nwkid, ieee):
     if ieee in self.IEEE2NWK and nwkid in self.ListOfDevices:
         return
     if nwkid in self.ListOfDevices:
+        return
+    if self.ControllerIEEE and self.ControllerIEEE == ieee:
+        return
+    if nwkid == "0000":
         return
     if ieee not in self.IEEE2NWK:
         return
