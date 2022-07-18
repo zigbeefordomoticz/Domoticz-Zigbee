@@ -420,13 +420,6 @@ class ConfigureReporting:
                         configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                         continue
                     
-                    if attribute_current_configuration["Status"] == "8b":
-                        # There is no Report in place.
-                        self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster} {attribut} return 8b (Not Found) !", nwkid=Nwkid)
-                        
-                        configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
-                        continue
-                    
                     for x in ( "Change", "MinInterval", "MaxInterval"):
                         if (
                             x in attribute_current_configuration
@@ -940,9 +933,6 @@ def retreive_read_configure_reporting_record(self, NwkId, Ep=None, ClusterId=Non
         and self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]["Status"] != "00"
     ):
         self.logging("Debug", f"retreive_read_configure_reporting_record {NwkId}/{Ep} Cluster {ClusterId} Status is None !!", nwkid=NwkId)
-        if self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["Ep"][ Ep ][ ClusterId ]["Status"] == "8b":
-            # No report yet in place.
-            return { "Status": "8b" }
         return None
         
     if (
