@@ -1366,6 +1366,22 @@ SETTINGS = {
                 "restart": 1,
                 "hidden": False,
                 "Advanced": True,
+            "reconnectonIEEEaddr": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+                
+            },
+            "reconnectonNWKaddr": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
             },
             "forceZigpy_noasyncio": {
                 "type": "bool",
@@ -1382,7 +1398,6 @@ SETTINGS = {
                 "restart": 0,
                 "hidden": True,
                 "Advanced": True,
-  
             },
             "ControllerInHybridMode": {
                 "type": "bool",

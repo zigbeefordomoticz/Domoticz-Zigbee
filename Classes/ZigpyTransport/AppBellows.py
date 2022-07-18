@@ -71,7 +71,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
-        await self.load_network_info( load_devices=False ) # load_devices shows nothing for now
+        await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
         self.callBackFunction(build_plugin_8015_frame_content( self, self.state.network_info))
         
         # Trigger Version payload to plugin
@@ -138,7 +138,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         if dev is not None:
             # logging.debug("found device dev: %s" % (str(dev)))
             return dev
-        logging.debug("get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
+        
+        logging.debug("AppBellows get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
         raise KeyError
 
     def handle_join(self, nwk: t.EmberNodeId, ieee: t.EmberEUI64, parent_nwk: t.EmberNodeId) -> None:
@@ -293,7 +294,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await self._ezsp.leaveNetwork()
         await super().form_network()
 
-    async def set_channel(self,channel): # BE CAREFUL - NEW network formed 
+    async def set_channel(self,channel):   # BE CAREFUL - NEW network formed 
         self.config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = channel
         await self._ezsp.leaveNetwork()
         await super().form_network()
@@ -303,7 +304,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
 
 def extract_versioning_for_plugin( brd_manuf, brd_name, version):
-    FirmwareBranch = "99" # Not found in the Table.
+    FirmwareBranch = "99"   # Not found in the Table.
     if brd_manuf == 'Elelabs':
         if 'ELU01' in brd_name:
             FirmwareBranch = "31"
