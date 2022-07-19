@@ -62,7 +62,5 @@
 			"0000"
 		]
 	},
-	"Param": {
-		"enforceConfigurationReportingAfterOffOn": 1
-	}
+	"Param": {}
 }
