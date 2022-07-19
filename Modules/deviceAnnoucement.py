@@ -412,15 +412,7 @@ def read_attributes_if_needed( self, NwkId):
     self.log.logging( "DeviceAnnoucement", "Debug", "read_attributes_if_needed %s" %NwkId)
     self.ListOfDevices[NwkId]["Heartbeat"] = "0"
 
-
 def enforce_configure_reporting( self, NwkId):
-    
-    if (
-        "Param" not in self.ListOfDevices[NwkId]
-        or "enforceConfigurationReportingAfterOffOn" not in self.ListOfDevices[NwkId]["Param"]
-        or not self.ListOfDevices[NwkId]["Param"]["enforceConfigurationReportingAfterOffOn"]
-    ):
-        return
-    
-    self.log.logging( "Input", "Debug", "Trigger a Configuration Reporting for Device %s" %NwkId, )
-    self.configureReporting.processConfigureReporting(self, NwkId=NwkId)
+    self.log.logging("DeviceAnnoucement", "Log", "Forcing a check of configure reporting after Device Annoucement on Main Powered device %s" %NwkId)
+    self.configureReporting.check_configuration_reporting_for_device( NwkId, force=True)
+

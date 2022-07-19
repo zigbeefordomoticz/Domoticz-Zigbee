@@ -263,8 +263,10 @@ class ConfigureReporting:
             return self.check_configuration_reporting_for_device( nwkid, checking_period=checking_period)
                 
     def check_configuration_reporting_for_device( self, NwkId, checking_period=None, force=False):
+        self.logging("Debug", f"check_configuration_reporting_for_device - {NwkId} Period: {checking_period} force: {force}", nwkid=NwkId)
+        
         if force:
-            return self.read_reporting_configuration_request(NwkId)
+            return self.read_reporting_configuration_request(NwkId, force=force)
 
         if not mainPoweredDevice(self, NwkId):
             self.logging("Debug", "     Not a main powered device")
@@ -275,19 +277,22 @@ class ConfigureReporting:
             return False    # Will do at the next round
 
         if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ NwkId ]:
+            self.logging("Debug", "     STORE_READ_CONFIGURE_REPORTING not available")
             return self.read_reporting_configuration_request(NwkId)
 
         if "TimeStamp" not in self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]:
+            self.logging("Debug", "     TimeStamp not available")
             return self.read_reporting_configuration_request(NwkId)
 
         if time.time() > (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period):
+            self.logging("Debug", "     Requesting a read_reporting_configuration_request due to TimeStamp")
             return self.read_reporting_configuration_request(NwkId)
         
-        self.logging("Debug", "     nocriteria matches %s %s" %(
-            time.time(), (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period)))
+        #self.logging("Debug", "     nocriteria matches %s %s" %(
+        #    time.time(), (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period)))
         return False
         
-    def read_reporting_configuration_request(self, Nwkid ):
+    def read_reporting_configuration_request(self, Nwkid, force=False ):
         if Nwkid == "0000":
             return False
         if Nwkid not in self.ListOfDevices:
@@ -305,27 +310,22 @@ class ConfigureReporting:
         if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:
             self.logging("Debug", "processConfigureReporting - %s has no %s record!!" % (Nwkid, STORE_CONFIGURE_REPORTING), nwkid=Nwkid)
             return False
+        if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]:
+            self.logging( "Error", "Read Configure Reporting response - Please report as something is strange", )
+            self.logging( "Error", f"Read Configure Reporting response -{self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]}", )  
+            return False
 
-
-        if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]:       
+        if (
+            STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ]
+            or "Ep" not in self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]
+        ):       
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] = { 
                 "Ep": {},
                 "Request" : {
                     "Status": "Requested",
                     "Retry": 0,
-                    "TimeStamp": time.time()
+                    "TimeStamp": 0
                 }}
-            return self.check_and_redo_configure_reporting_if_needed( Nwkid)
-
-        if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]:
-            self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] = { 
-                "Ep": {},
-                "Request" : {
-                    "Status": "Requested",
-                    "Retry": 0,
-                    "TimeStamp": time.time()
-                }}
-            return self.check_and_redo_configure_reporting_if_needed( Nwkid)
 
         if "Request" not in self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]: 
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"] = {
@@ -334,18 +334,17 @@ class ConfigureReporting:
                 "TimeStamp": 0
             }
 
-        if (
-            time.time() < (self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["TimeStamp"] + 300)
-            or self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["Retry"] > 3
+        if ( 
+            not force 
+            and (
+                time.time() < (self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["TimeStamp"] + 300)
+                or self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["Retry"] > 3
+            )
         ):
             # Too early, already a request in progress
             self.logging("Debug", "     Too early ....", nwkid=Nwkid)
             return False
-        if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]:
-            self.logging( "Error", "Read Configure Reporting response - Please report as something is strange", )
-            self.logging( "Error", f"Read Configure Reporting response -{self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]}", )  
-            return False
-            
+        
         wip_flag = False
         for epout in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]["Ep"]:
             
@@ -389,16 +388,17 @@ class ConfigureReporting:
 
     def check_and_redo_configure_reporting_if_needed( self, Nwkid):
         self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} ", nwkid=Nwkid)
-        
-        if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] in ( '', {}):
-            # we should redo the configure reporting as we don't have the Configuration Reporting
-            self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_READ_CONFIGURE_REPORTING} ", nwkid=Nwkid)
-            configure_reporting_for_one_device( self, Nwkid, batchMode=True)
-            return True
 
-        if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING] in ( '', {}):  
+        if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING] in ( '', {}): 
+            # we should redo the configure reporting as we don't have the Configuration Reporting 
             self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_CONFIGURE_REPORTING} ", nwkid=Nwkid)
             configure_reporting_for_one_device( self, Nwkid, batchMode=True)    
+            return True
+        
+        if STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] in ( '', {}):
+            # we should do a read as it looks missing
+            self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_READ_CONFIGURE_REPORTING} ", nwkid=Nwkid)
+            self.read_reporting_configuration_request( Nwkid )
             return True
 
         configuration_reporting = self.retreive_configuration_reporting_definition( Nwkid)

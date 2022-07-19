@@ -656,11 +656,12 @@ def processKnownDevices(self, Devices, NWKID):
     ):
         # Trigger Configure Reporting to eligeable devices
         if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            self.log.logging( "Heartbeat", "Debug", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
+            self.log.logging( "Heartbeat", "Log", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
                 NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
 
-            if self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
-                self.log.logging( "Heartbeat", "Debug", "Configuration reporting for %s/%s with period %s seconds triggered !" %( 
+            if not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
+                # We have everything to do a check and do
+                self.log.logging( "Heartbeat", "Log", "Configuration reporting for %s/%s with period %s seconds triggered !" %( 
                     NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
                 self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
                 mgtm_binding(self, NWKID, "BindingTable")
