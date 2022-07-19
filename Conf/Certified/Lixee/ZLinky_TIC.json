@@ -137,28 +137,28 @@
 				},
 				"0005": {
 					"DataType": "21",
-					"MinInterval": "0000",
+					"MinInterval": "0001",
 					"MaxInterval": "fffe",
 					"TimeOut": "0000",
 					"Change": "0001"
 				},
 				"0006": {
 					"DataType": "21",
-					"MinInterval": "0000",
+					"MinInterval": "0001",
 					"MaxInterval": "fffe",
 					"TimeOut": "0000",
 					"Change": "0001"
 				},
 				"0007": {
 					"DataType": "21",
-					"MinInterval": "0000",
+					"MinInterval": "0001",
 					"MaxInterval": "fffe",
 					"TimeOut": "0000",
 					"Change": "0001"
 				},
 				"0008": {
 					"DataType": "21",
-					"MinInterval": "0000",
+					"MinInterval": "0001",
 					"MaxInterval": "fffe",
 					"TimeOut": "0000",
 					"Change": "0001"
