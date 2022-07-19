@@ -92,6 +92,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 await self.form_network()
             LOGGER.debug("Network info: %s", self.state.network_info)
             LOGGER.debug("Node info: %s", self.state.node_info)
+            LOGGER.info("ZNP Configuration %s", self.config)
             await self.start_network()
         except Exception:
             LOGGER.error("Couldn't start application")
