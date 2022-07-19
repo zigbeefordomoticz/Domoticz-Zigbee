@@ -291,8 +291,8 @@ class ConfigureReporting:
             self.logging("Debug", "     Requesting a read_reporting_configuration_request due to TimeStamp")
             return self.read_reporting_configuration_request(NwkId)
         
-        self.logging("Log", "     nocriteria matches %s %s" %(
-            time.time(), (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period)))
+        #self.logging("Log", "     nocriteria matches %s %s" %(
+        #    time.time(), (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period)))
         return False
         
     def read_reporting_configuration_request(self, Nwkid, force=False ):
