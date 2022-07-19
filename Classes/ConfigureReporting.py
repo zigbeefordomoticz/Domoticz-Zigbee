@@ -311,8 +311,7 @@ class ConfigureReporting:
             self.logging("Debug", "processConfigureReporting - %s has no %s record!!" % (Nwkid, STORE_CONFIGURE_REPORTING), nwkid=Nwkid)
             return False
         if "Ep" not in self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]:
-            self.logging( "Error", "Read Configure Reporting response - Please report as something is strange", )
-            self.logging( "Error", f"Read Configure Reporting response -{self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING]}", )  
+            # Most likely the record has been removed. So let do nothing here
             return False
 
         if (
@@ -405,6 +404,9 @@ class ConfigureReporting:
         wip_flap = False
         for _ep in self.ListOfDevices[ Nwkid ]["Ep"]:
             self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep}", nwkid=Nwkid)
+            
+            if is_fake_ep(self, Nwkid, _ep):
+                continue
             
             for _cluster in self.ListOfDevices[ Nwkid ]["Ep"][ _ep ]:
                 if _cluster not in configuration_reporting:
@@ -803,12 +805,12 @@ def is_valid_attribute(self, nwkid, Ep, cluster, attr):
 
 def is_tobe_skip(self, nwkid, Ep, Cluster, attr):
     
-    if self.FirmwareVersion and int(self.FirmwareVersion, 16) <= int("31c", 16):
+    if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) <= int("31c", 16):
         if is_attr_unvalid_datastruct(self, STORE_CONFIGURE_REPORTING, nwkid, Ep, Cluster, "0000"):
             return True
         reset_attr_datastruct(self, STORE_CONFIGURE_REPORTING, nwkid, Ep, Cluster, "0000")
 
-    if self.FirmwareVersion and int(self.FirmwareVersion, 16) > int("31c", 16):
+    if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) > int("31c", 16):
         if is_attr_unvalid_datastruct(self, STORE_CONFIGURE_REPORTING, nwkid, Ep, Cluster, attr):
             return True
         reset_attr_datastruct(self, STORE_CONFIGURE_REPORTING, nwkid, Ep, Cluster, attr)
