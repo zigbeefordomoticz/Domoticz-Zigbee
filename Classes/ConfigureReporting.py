@@ -458,7 +458,9 @@ def configure_reporting_for_one_device(self, key, batchMode):
     cfgrpt_configuration = self.retreive_configuration_reporting_definition( key)
 
     self.logging("Debug", f"configure_reporting_for_one_device - processing {key} with {cfgrpt_configuration}", nwkid=key)
-
+    lookup_ieee = self.ListOfDevices[key]["IEEE"]
+    zdp_NWK_address_request(self, "FFFD", lookup_ieee, )
+    
     for Ep in self.ListOfDevices[key]["Ep"]:
         configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_configuration)
 
@@ -624,8 +626,6 @@ def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
     
     # To be done ony in batchMode, as otherwise it has already been done (pairing time)
     if batchMode and self.pluginconf.pluginConf["allowReBindingClusters"]:
-        lookup_ieee = self.ListOfDevices[nwkid]["IEEE"]
-        zdp_NWK_address_request(self, "FFFD", lookup_ieee, )
         # Correctif 22 Novembre. Delete only for the specific cluster and not the all Set
         if (
             "Bind" in self.ListOfDevices[nwkid]
