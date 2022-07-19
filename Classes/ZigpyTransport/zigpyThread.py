@@ -32,7 +32,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8043_frame_list_node_descriptor,
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
-from Modules.macPrefix import casaiaPrefix_zigpy
+from Modules.macPrefix import DELAY_FOR_VERY_KEY
 from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
                               InvalidResponse)
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
@@ -115,39 +115,66 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 
     if radiomodule == "ezsp":
         self.log.logging("TransportZigpy", "Debug", "Starting radio %s port: %s" %( radiomodule, serialPort))
-        import bellows.config as conf
-        from Classes.ZigpyTransport.AppBellows import App_bellows
-        config = {
-            conf.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
-            conf.CONF_NWK: {},
-            "handle_unknown_devices": True,
-            "source_routing": True
-            }
-        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        try:
+            import bellows.config as conf
+            from Classes.ZigpyTransport.AppBellows import App_bellows
+            config = {
+                conf.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
+                conf.CONF_NWK: {},
+                "max_concurrent_requests": 2,
+                "topology_scan_enabled": False,
+                "handle_unknown_devices": True,
+                "source_routing": True
+                }
+            self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        except Exception as e:
+            self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
+            self.log.logging("%s" %traceback.format_exc())
 
     elif radiomodule =="zigate":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
-        import zigpy_zigate.config as conf
-        from Classes.ZigpyTransport.AppZigate import App_zigate
-        config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
-        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        try:
+            import zigpy_zigate.config as conf
+            from Classes.ZigpyTransport.AppZigate import App_zigate
+            config = {
+                conf.CONF_DEVICE: {"path": serialPort,}, 
+                conf.CONF_NWK: {},
+                "topology_scan_enabled": False,
+                }
+            self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        except Exception as e:
+            self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
+            self.log.logging("%s" %traceback.format_exc())
 
     elif radiomodule =="znp":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
         try:
             import zigpy_znp.config as conf
             from Classes.ZigpyTransport.AppZnp import App_znp
-            config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+            config = {
+                conf.CONF_DEVICE: {"path": serialPort,}, 
+                conf.CONF_NWK: {},
+                "topology_scan_enabled": False,
+                }
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
+            self.log.logging("%s" %traceback.format_exc())
 
     elif radiomodule =="deCONZ":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
-        import zigpy_deconz.config as conf
-        from Classes.ZigpyTransport.AppDeconz import App_deconz
-        config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
-        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        try:
+            import zigpy_deconz.config as conf
+            from Classes.ZigpyTransport.AppDeconz import App_deconz
+            config = {
+                conf.CONF_DEVICE: {"path": serialPort}, 
+                conf.CONF_NWK: {},
+                "topology_scan_enabled": False,
+                }
+            self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        except Exception as e:
+            self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
+            self.log.logging("%s" %traceback.format_exc())
 
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
@@ -254,11 +281,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 async def worker_loop(self):
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
-    while self.zigpy_running:
-        # self.log.logging("TransportZigpy",  'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
-        if self.writer_queue is None:
-            break
-
+    while self.zigpy_running and self.writer_queue is not None:
         entry = await get_next_command(self)
         if entry is None:
             continue
@@ -329,7 +352,7 @@ async def worker_loop(self):
                 )
 
     self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s" %len(self._concurrent_requests_semaphores_list))
-    
+
     if self._concurrent_requests_semaphores_list:
         for x in self._concurrent_requests_semaphores_list:
             self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)
@@ -589,7 +612,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
 
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
             self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
-            if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in (casaiaPrefix_zigpy,):
+            if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in DELAY_FOR_VERY_KEY:
                 # Most likely for the CasaIA devices which seems to have issue
                 self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 6 secondes for CASA.IA Confirm Key")
                 await asyncio.sleep( 6 )
