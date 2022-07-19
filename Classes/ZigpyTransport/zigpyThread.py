@@ -32,7 +32,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8043_frame_list_node_descriptor,
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
-from Modules.macPrefix import casaiaPrefix_zigpy
+from Modules.macPrefix import DELAY_FOR_VERY_KEY
 from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
                               InvalidResponse)
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
@@ -590,7 +590,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
 
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
             self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
-            if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in (casaiaPrefix_zigpy,):
+            if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in DELAY_FOR_VERY_KEY:
                 # Most likely for the CasaIA devices which seems to have issue
                 self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 6 secondes for CASA.IA Confirm Key")
                 await asyncio.sleep( 6 )
