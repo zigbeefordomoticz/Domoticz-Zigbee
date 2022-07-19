@@ -458,8 +458,6 @@ def configure_reporting_for_one_device(self, key, batchMode):
     cfgrpt_configuration = self.retreive_configuration_reporting_definition( key)
 
     self.logging("Debug", f"configure_reporting_for_one_device - processing {key} with {cfgrpt_configuration}", nwkid=key)
-    lookup_ieee = self.ListOfDevices[key]["IEEE"]
-    zdp_NWK_address_request(self, "FFFD", lookup_ieee, )
     
     for Ep in self.ListOfDevices[key]["Ep"]:
         configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_configuration)

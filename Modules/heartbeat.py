@@ -656,21 +656,22 @@ def processKnownDevices(self, Devices, NWKID):
     ):
         # Trigger Configure Reporting to eligeable devices
         if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            self.log.logging( "Heartbeat", "Log", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
+            self.log.logging( "Heartbeat", "Debug", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
                 NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
 
             if not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
                 # We have everything to do a check and do
-                self.log.logging( "Heartbeat", "Log", "Configuration reporting for %s/%s with period %s seconds triggered !" %( 
+                self.log.logging( "Heartbeat", "Debug", "Configuration reporting for %s/%s with period %s seconds triggered !" %( 
                     NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
                 self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
-                mgtm_binding(self, NWKID, "BindingTable")
+
         else:
             rescheduleAction = True
 
     # Do Attribute Disocvery if needed
     if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
         rescheduleAction = rescheduleAction or attributeDiscovery(self, NWKID)
+        mgtm_binding(self, NWKID, "BindingTable")
 
     # If corresponding Attributes not present, let's do a Request Node Description
     if night_shift_jobs( self ) and not enabledEndDevicePolling and ((intHB % 1800) == 0):
