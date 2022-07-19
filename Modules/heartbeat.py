@@ -663,7 +663,7 @@ def processKnownDevices(self, Devices, NWKID):
                 # Something has been performed.
                 # We so need to check and do if required
                 self.ListOfDevices[NWKID]["PerformCheckandRedoConfigureReporting"] = time.time() + 30
-            if "PerformCheckandRedoConfigureReporting" and time.time() >= self.ListOfDevices[NWKID]["PerformCheckandRedoConfigureReporting"]:
+            if "PerformCheckandRedoConfigureReporting" in self.ListOfDevices[NWKID] and time.time() >= self.ListOfDevices[NWKID]["PerformCheckandRedoConfigureReporting"]:
                 del self.ListOfDevices[NWKID]["PerformCheckandRedoConfigureReporting"]
                 # We have everything to do a check and do
                 self.log.logging( "Heartbeat", "Debug", "Configuration reporting for %s/%s with period %s seconds triggered !" %( 
