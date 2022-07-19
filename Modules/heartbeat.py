@@ -659,12 +659,16 @@ def processKnownDevices(self, Devices, NWKID):
             self.log.logging( "Heartbeat", "Debug", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
                 NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
 
-            if not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
+            if self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
+                # Something has been performed.
+                # We so need to check and do if required
+                self.ListOfDevices[NWKID]["PerformCheckandRedoConfigureReporting"] = time.time() + 30
+            if "PerformCheckandRedoConfigureReporting" and time.time() >= self.ListOfDevices[NWKID]["PerformCheckandRedoConfigureReporting"]:
+                del self.ListOfDevices[NWKID]["PerformCheckandRedoConfigureReporting"]
                 # We have everything to do a check and do
                 self.log.logging( "Heartbeat", "Debug", "Configuration reporting for %s/%s with period %s seconds triggered !" %( 
                     NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
                 self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
-
         else:
             rescheduleAction = True
 

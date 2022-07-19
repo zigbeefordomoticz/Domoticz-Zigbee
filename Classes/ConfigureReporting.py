@@ -263,6 +263,9 @@ class ConfigureReporting:
             return self.check_configuration_reporting_for_device( nwkid, checking_period=checking_period)
                 
     def check_configuration_reporting_for_device( self, NwkId, checking_period=None, force=False):
+        # If return True an action has been performed
+        # If return False no action performed
+        
         self.logging("Debug", f"check_configuration_reporting_for_device - {NwkId} Period: {checking_period} force: {force}", nwkid=NwkId)
         
         if force:
@@ -288,8 +291,8 @@ class ConfigureReporting:
             self.logging("Debug", "     Requesting a read_reporting_configuration_request due to TimeStamp")
             return self.read_reporting_configuration_request(NwkId)
         
-        #self.logging("Debug", "     nocriteria matches %s %s" %(
-        #    time.time(), (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period)))
+        self.logging("Log", "     nocriteria matches %s %s" %(
+            time.time(), (self.ListOfDevices[ NwkId ][STORE_READ_CONFIGURE_REPORTING]["TimeStamp"] + checking_period)))
         return False
         
     def read_reporting_configuration_request(self, Nwkid, force=False ):
