@@ -133,8 +133,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     reseted_device = False
     self.log.logging("DeviceAnnoucement", "Debug", "device_annoucementv2 - Nwkid: %s Status: %s" %(NwkId,self.ListOfDevices[NwkId]["Status"] ), NwkId)
     if (
-        ( "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed", "erasePDM", "provREQ", "Left") ) 
-        or ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Left") )
+        ( "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed", "erasePDM", "provREQ", "Leave") ) 
+        or ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Leave") )
     ):
         self.log.logging("DeviceAnnoucement", "Debug", "--> Device reset, removing key Attributes", NwkId)
         reseted_device = True
@@ -203,7 +203,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     # Annouced is in the ListOfDevices[NwkId]
     if "TimeStamp" in self.ListOfDevices[NwkId]["Announced"] and (now < (self.ListOfDevices[NwkId]["Announced"]["TimeStamp"] + DELAY_BETWEEN_2_DEVICEANNOUCEMENT )):
         # If the TimeStamp is > DELAY_BETWEEN_2_DEVICEANNOUCEMENT, the Data are invalid and we will do process this.
-        if "Rejoin" in self.ListOfDevices[NwkId]["Announced"] and self.ListOfDevices[NwkId]["Announced"]["Rejoin"] in ("01", "02") and self.ListOfDevices[NwkId]["Status"] != "Left":
+        if "Rejoin" in self.ListOfDevices[NwkId]["Announced"] and self.ListOfDevices[NwkId]["Announced"]["Rejoin"] in ("01", "02") and self.ListOfDevices[NwkId]["Status"] != "Leave":
             self.log.logging(
                 "DeviceAnnoucement",
                 "Debug",
@@ -278,7 +278,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
 
     # If this is a rejoin after a leave, let's update the Status
 
-    if self.ListOfDevices[NwkId]["Status"] == "Left":
+    if self.ListOfDevices[NwkId]["Status"] == "Leave":
         self.log.logging("DeviceAnnoucement", "Debug", "Decode004D -  %s Status from Left to inDB" % (NwkId), NwkId)
         self.ListOfDevices[NwkId]["Status"] = "inDB"
 

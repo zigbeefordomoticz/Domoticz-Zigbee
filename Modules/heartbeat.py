@@ -742,7 +742,7 @@ def processListOfDevices(self, Devices):
             # Nothing to do
             pass
 
-        elif status == "Left":
+        elif status == "Leave":
             timedOutDevice(self, Devices, NwkId=NWKID)
             # Device has sentt a 0x8048 message annoucing its departure (Leave)
             # Most likely we should receive a 0x004d, where the device come back with a new short address

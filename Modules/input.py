@@ -2582,7 +2582,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
             self.log.logging("Input", "Status", "Removing Device entry %s from plugin IEEE2NWK" %( MsgExtAddress))
     
     elif self.ListOfDevices[sAddr]["Status"] == "inDB":
-        self.ListOfDevices[sAddr]["Status"] = "Left"
+        self.ListOfDevices[sAddr]["Status"] = "Leave"
         self.ListOfDevices[sAddr]["Heartbeat"] = 0
         # Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
         # leaveMgtReJoin( self, sAddr, MsgExtAddress )
@@ -2597,7 +2597,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
             "Removing this not completly provisionned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress),
         )
 
-    elif self.ListOfDevices[sAddr]["Status"] == "Left":
+    elif self.ListOfDevices[sAddr]["Status"] == "Leave":
         # This is bugy, as I should then remove the device in Domoticz
         # self.log.logging( "Input", 'Log',"--> Removing: %s" %str(self.ListOfDevices[sAddr]))
         # del self.ListOfDevices[sAddr]
