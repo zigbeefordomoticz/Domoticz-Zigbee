@@ -1525,3 +1525,10 @@ def night_shift_jobs( self ):
 
     #Domoticz.Log("Outside of Night Shift period %s %s %s" %( start, current, end))
     return False
+
+
+def print_stack( self ):
+    
+    import inspect
+    for x in inspect.stack():
+        self.logging("Debug","[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
