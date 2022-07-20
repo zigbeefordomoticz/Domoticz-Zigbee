@@ -408,7 +408,8 @@ class ConfigureReporting:
             configure_reporting_for_one_device( self, Nwkid, batchMode=True)    
             return True
 
-        if ( STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] 
+        if ( 
+            STORE_READ_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] 
             or self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] in ( '', {})
             or "Request" in self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING] 
         ):
