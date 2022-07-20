@@ -18,11 +18,11 @@ def decode_endian_data(data, datatype, len_stream=None):
 
     if data_type_id in {0x08, 0x10, 0x18, 0x20, 0x28, 0x30}:
         # 1 byte - 8b
-        return data[:2]
+        return data[:2] if len(data) == 2 else data
 
     if data_type_id in {0x09, 0x19, 0x21, 0x29, 0x31, 0x38}:
         # 2 bytes - 16b
-        return "%04x" % struct.unpack(">H", struct.pack("H", int(data[:4], 16)))[0]
+        return "%04x" % struct.unpack(">H", struct.pack("H", int(data[:4], 16)))[0] if len(data) == 4 else data
 
     if data_type_id in {0x0A, 0x1A, 0x22, 0x2A}:
         # 3 bytes - 24b

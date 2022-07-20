@@ -10,13 +10,9 @@
 
 """
 
-from operator import truediv
+
 import time
-from ast import Return
 
-from distutils.util import change_root
-
-import Domoticz
 from Modules.bindings import bindDevice, unbindDevice
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
@@ -33,7 +29,6 @@ from Modules.zigateConsts import (MAX_LOAD_ZIGATE, SIZE_DATA_TYPE, ZIGATE_EP,
                                   composite_value, discrete_value)
 from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
                                 zcl_read_report_config_request)
-from Zigbee.zdpCommands import zdp_NWK_address_request
 
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
                                              sqn_get_internal_sqn_from_app_sqn)

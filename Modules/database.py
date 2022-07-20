@@ -21,8 +21,8 @@ import Domoticz
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
-                                  STORE_CUSTOM_CONFIGURE_REPORTING,
-                                  STORE_READ_CONFIGURE_REPORTING)
+                                        STORE_CUSTOM_CONFIGURE_REPORTING,
+                                        STORE_READ_CONFIGURE_REPORTING)
 
 CIE_ATTRIBUTES = {
     "Version", 

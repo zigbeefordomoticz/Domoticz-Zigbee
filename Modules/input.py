@@ -20,13 +20,11 @@ from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                              sqn_get_internal_sqn_from_app_sqn,
                                              sqn_get_internal_sqn_from_aps_sqn)
 from Zigbee.decode8002 import decode8002_and_process
-from Zigbee.zclCommands import zcl_IAS_default_response
-from Zigbee.zclRawCommands import zcl_raw_default_response
 from Zigbee.zdpCommands import zdp_NWK_address_request
 
 from Modules.basicInputs import read_attribute_response
 from Modules.basicOutputs import (getListofAttribute, send_default_response,
-                                  setTimeServer, unknown_device_nwkid)
+                                  setTimeServer)
 from Modules.callback import callbackDeviceAwake
 from Modules.deviceAnnoucement import device_annoucementv2
 from Modules.domoMaj import MajDomoDevice
@@ -45,7 +43,6 @@ from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
                                      rejoin_legrand_reset)
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
-from Modules.zb_tables_management import mgmt_rtg_rsp, store_NwkAddr_Associated_Devices
 from Modules.pairingProcess import interview_state_8045, request_next_Ep
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.readClusters import ReadCluster
@@ -56,10 +53,12 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            checkAndStoreAttributeValue, decodeMacCapa,
                            extract_info_from_8085, get_isqn_datastruct,
                            get_list_isqn_attr_datastruct, getSaddrfromIEEE,
-                           is_fake_ep, loggingMessages, lookupForIEEE,
-                           mainPoweredDevice, retreive_cmd_payload_from_8002,
+                           loggingMessages, lookupForIEEE, mainPoweredDevice,
+                           retreive_cmd_payload_from_8002,
                            set_request_phase_datastruct, set_status_datastruct,
-                           timeStamped, updLQI, updSQN, try_to_reconnect_via_neighbours)
+                           timeStamped, updLQI, updSQN)
+from Modules.zb_tables_management import (mgmt_rtg_rsp,
+                                          store_NwkAddr_Associated_Devices)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
                                   LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
                                   ZIGATE_EP, ZIGBEE_COMMAND_IDENTIFIER)
@@ -67,6 +66,7 @@ from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import (FIRMWARE_BRANCH,
                                         set_display_firmware_version)
+
 
 def ZigateRead(self, Devices, Data):
     
