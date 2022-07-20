@@ -733,7 +733,7 @@ def processListOfDevices(self, Devices):
             continue
 
         status = self.ListOfDevices[NWKID]["Status"]
-        if self.ListOfDevices[NWKID]["RIA"] not in  ( "", {}):
+        if self.ListOfDevices[NWKID]["RIA"] not in ( "", {}):
             RIA = int(self.ListOfDevices[NWKID]["RIA"])
         else:
             RIA = 0
