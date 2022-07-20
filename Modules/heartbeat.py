@@ -685,7 +685,7 @@ def processKnownDevices(self, Devices, NWKID):
     return
 
 def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
-    self.log.logging( "ConfigureReporting", "Log", "check_configuration_reporting for %s %s %s %s" %( 
+    self.log.logging( "ConfigureReporting", "Debug", "check_configuration_reporting for %s %s %s %s" %( 
         NWKID, _mainPowered, intHB, self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
 
     if ( 
@@ -705,7 +705,7 @@ def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
         if ( self.busy and self.ControllerLink.loadTransmit() > 3 ):
             return True
         
-        self.log.logging( "ConfigureReporting", "Log", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
+        self.log.logging( "ConfigureReporting", "Debug", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
             NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
         
         if not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
