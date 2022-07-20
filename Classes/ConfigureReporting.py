@@ -478,26 +478,26 @@ def is_valid_cluster_attribute( self, Nwkid, _ep, _cluster, attribut):
     
     if Nwkid not in self.ListOfDevices:
         return False
-    if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices["Nwkid"]:
+    if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[Nwkid]:
         return True
-    if "Ep" not in self.ListOfDevices["Nwkid"][STORE_READ_CONFIGURE_REPORTING]:
+    if "Ep" not in self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]:
         return True
-    if _ep not in self.ListOfDevices["Nwkid"][STORE_READ_CONFIGURE_REPORTING]["Ep"]:
+    if _ep not in self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]["Ep"]:
         return True
-    if _cluster not in self.ListOfDevices["Nwkid"][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep]:
+    if _cluster not in self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep]:
         return True
-    if attribut not in self.ListOfDevices["Nwkid"][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep][_cluster]:
+    if attribut not in self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep][_cluster]:
         return True
-    if "Status" not in self.ListOfDevices["Nwkid"][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep][_cluster][attribut]:
+    if "Status" not in self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep][_cluster][attribut]:
         return True
     
-    if self.ListOfDevices["Nwkid"][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep][_cluster][attribut]["Status"] == '8b':
+    if self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep][_cluster][attribut]["Status"] == '8b':
         # No configuration report setup
         return True
     
-    elif self.ListOfDevices["Nwkid"][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep][_cluster][attribut]["Status"] != '00': 
+    elif self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep][_cluster][attribut]["Status"] != '00': 
         self.logging( "Log", "is_valid_cluster_attribute - %s/%s Unvalid Cluster/attribut %s/%s %s" %(
-            Nwkid, _ep, _cluster, attribut, self.ListOfDevices["Nwkid"][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep][_cluster][attribut]["Status"]))
+            Nwkid, _ep, _cluster, attribut, self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]["Ep"][_ep][_cluster][attribut]["Status"]))
         return False
     
     return True
