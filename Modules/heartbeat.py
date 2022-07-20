@@ -655,20 +655,17 @@ def processKnownDevices(self, Devices, NWKID):
         and self.pluginconf.pluginConf["checkConfigurationReporting"] 
     ):
         # Trigger Configure Reporting to eligeable devices
-        if not self.busy and self.ControllerLink.loadTransmit() < 3:
+        if (
+            (self.HeartbeatCount > QUIET_AFTER_START) 
+            and not self.busy and self.ControllerLink.loadTransmit() < 3 
+            and "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] == "inDB"
+        ):
             self.log.logging( "Heartbeat", "Debug", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
                 NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
-
-            if self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
-                # Something has been performed.
-                # We so need to check and do if required
-                self.ListOfDevices[NWKID]["PerformCheckandRedoConfigureReporting"] = time.time() + 30
-            if "PerformCheckandRedoConfigureReporting" in self.ListOfDevices[NWKID] and time.time() >= self.ListOfDevices[NWKID]["PerformCheckandRedoConfigureReporting"]:
-                del self.ListOfDevices[NWKID]["PerformCheckandRedoConfigureReporting"]
-                # We have everything to do a check and do
-                self.log.logging( "Heartbeat", "Debug", "Configuration reporting for %s/%s with period %s seconds triggered !" %( 
-                    NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
-                self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)
+            
+            if not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
+                # Nothing trigger, let's check if the configure reporting are correct
+                self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)    
         else:
             rescheduleAction = True
 
@@ -725,7 +722,7 @@ def processListOfDevices(self, Devices):
             continue
 
         status = self.ListOfDevices[NWKID]["Status"]
-        if self.ListOfDevices[NWKID]["RIA"] != "" and self.ListOfDevices[NWKID]["RIA"] != {}:
+        if self.ListOfDevices[NWKID]["RIA"] not in  ( "", {}):
             RIA = int(self.ListOfDevices[NWKID]["RIA"])
         else:
             RIA = 0
@@ -818,7 +815,7 @@ def processListOfDevices(self, Devices):
             "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" % (self.busy, self.CommiSSionning),
         )
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
-    
+
     # Network Topology
     if self.networkmap:
         phase = self.networkmap.NetworkMapPhase()
