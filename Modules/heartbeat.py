@@ -646,28 +646,8 @@ def processKnownDevices(self, Devices, NWKID):
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NWKID)
 
-    if ( 
-        self.zigbee_communication == "zigpy"
-        and self.configureReporting
-        and _mainPowered 
-        and night_shift_jobs( self )
-        and "checkConfigurationReporting" in self.pluginconf.pluginConf
-        and self.pluginconf.pluginConf["checkConfigurationReporting"] 
-    ):
-        # Trigger Configure Reporting to eligeable devices
-        if (
-            (self.HeartbeatCount > QUIET_AFTER_START) 
-            and not self.busy and self.ControllerLink.loadTransmit() < 3 
-            and "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] == "inDB"
-        ):
-            self.log.logging( "Heartbeat", "Debug", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
-                NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
-            
-            if not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
-                # Nothing trigger, let's check if the configure reporting are correct
-                self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)    
-        else:
-            rescheduleAction = True
+    if self.pluginconf.pluginConf["checkConfigurationReporting"]:
+        rescheduleAction = rescheduleAction or check_configuration_reporting(self, NWKID, _mainPowered, intHB)
 
     # Do Attribute Disocvery if needed
     if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
@@ -704,6 +684,37 @@ def processKnownDevices(self, Devices, NWKID):
 
     return
 
+def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
+    self.log.logging( "ConfigureReporting", "Log", "check_configuration_reporting for %s %s %s %s" %( 
+        NWKID, _mainPowered, intHB, self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
+
+    if ( 
+        self.zigbee_communication == "zigpy"
+        and self.configureReporting
+        and _mainPowered 
+        and night_shift_jobs( self )
+        and "checkConfigurationReporting" in self.pluginconf.pluginConf
+        and self.pluginconf.pluginConf["checkConfigurationReporting"] 
+        and self.HeartbeatCount > QUIET_AFTER_START 
+        and (intHB % (60 // HEARTBEAT)) == 0
+    ):
+        if "Status" not in self.ListOfDevices[NWKID] or self.ListOfDevices[NWKID]["Status"] != "inDB":
+            return False
+
+        # Trigger Configure Reporting to eligeable devices
+        if ( self.busy and self.ControllerLink.loadTransmit() > 3 ):
+            return True
+        
+        self.log.logging( "ConfigureReporting", "Log", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
+            NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
+        
+        if not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
+            # Nothing trigger, let's check if the configure reporting are correct
+            self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)    
+            
+    return False
+    
+    
 
 def processListOfDevices(self, Devices):
     # Let's check if we do not have a command in TimeOut
@@ -737,11 +748,6 @@ def processListOfDevices(self, Devices):
         # Known Devices
         if status == "inDB":
             processKnownDevices(self, Devices, NWKID)
-
-        elif status == "Leave":
-            # We should then just reconnect the element
-            # Nothing to do
-            pass
 
         elif status == "Leave":
             timedOutDevice(self, Devices, NwkId=NWKID)
@@ -836,9 +842,8 @@ def processListOfDevices(self, Devices):
 
     # if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_ENRG_START):
     #    # Network Energy Level
-    if self.networkenergy:
-        if self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
-            self.networkenergy.do_scan()
+    if self.networkenergy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
+        self.networkenergy.do_scan()
 
     self.log.logging(
         "Heartbeat",
