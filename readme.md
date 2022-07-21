@@ -11,7 +11,7 @@
 
 Zigbee for Domoticz a plugin for [Domoticz home automation software](https://www.domoticz.com/) to connect Zigbee devices through Zigbee coordinator (Zigbee controllers), like [ZiGate](https://zigate.fr), as well as Texas Instruments CC253x/CC13x2/CC26x2 Zigbee adapters/dongles/sticks/keys like [zzh](https://electrolama.com/projects/zig-a-zig-ah/), as well as Silicon Labs Zigbee adapters/dongles/sticks/keys like [elelabs](https://elelabs.com/)
 
-This plugin is an evolution of the mature Zigate plugin for Domoticz, which will continue to manage and handle Zigate in native mode, while Texas Instruments's will be handle through unified communication libraries from the [zigpy](https://github.com/zigpy/zigpy) project.
+This plugin is an evolution of the mature Zigate plugin for Domoticz, which will continue to manage and handle Zigate in native mode, while Texas Instruments's will be handle through unified communication libraries from the [zigpy](https://github.com/zigpy/zigpy) project. Please acknowledge that we are not developping nor maintaining zigpy project, and we rely on the zigpy community for zigpy related issues. If you want to get more insight here are the list of [open issue on zigpy related modules](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1235)
 
 For __Windows users__, please check the [Plugin V6 running on Windows](https://zigbeefordomoticz.github.io/wiki/en-eng/Plugin_Version6_on_Windows.html) V6 running on Windows
 
