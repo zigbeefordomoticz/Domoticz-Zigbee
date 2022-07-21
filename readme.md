@@ -75,6 +75,7 @@ This is the case where you have move from the stable5 branch to stable6/beta6.
 ## Tested Hardware Zigbee adapters/dongles/sticks/keys
 
 The plugin was originally developed for the [Zigate](https://zigate.fr) Coordinators in close relationship with [Zigate](https://zigate.fr) manufactuer.
+In case you are looking to use non-ZiGate coordinators, please see here the [list of open issues](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1235) against the Zigpy libraries and its radio modules
 
 ### Texas Instrument Zigbee Coordinators
 

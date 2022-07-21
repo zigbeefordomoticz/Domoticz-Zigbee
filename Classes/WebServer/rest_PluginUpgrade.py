@@ -24,7 +24,11 @@ def rest_plugin_upgrade(self, verb, data, parameters):
                                 capture_output=True,
                                 shell=True)
         result = {"result": str(process.stdout), "ReturnCode": process.returncode }
-    _response["Data"] = json.dumps(result, sort_keys=True)
-    self.logging("Log", "Plugin Upgrade results: %s" %(result))
+    _response["Data"] = json.dumps(result)
+    lines = {}
+    lines = result["result"].split("\n")
+    for line in lines:
+        self.logging("Log", "%s" %(line))
+    self.logging("Log", "Plugin Upgrade return code: %s" %(result["ReturnCode"]))
 
     return _response

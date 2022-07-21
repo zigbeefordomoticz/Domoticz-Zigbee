@@ -35,7 +35,8 @@ from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                    zcl_raw_send_group_member_ship_identify,
                                    zcl_raw_window_covering,
                                    zcl_raw_write_attributeNoResponse,
-                                   zcl_raw_default_response)
+                                   zcl_raw_default_response,
+                                   zcl_raw_identify)
 
 DEFAULT_ACK_MODE = False
 
@@ -159,7 +160,7 @@ def zcl_get_list_attribute_extended_infos(self, nwkid, EpIn, EpOut, cluster, sta
 def zcl_identify_send(self, nwkid, EPout, duration, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_identify_send %s %s %s" % (nwkid, EPout, duration))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        self.log.logging("zclCommand", "Error", "zcl_identify_send not implemented for RAW mode")
+        zcl_raw_identify(self, nwkid, ZIGATE_EP, EPout, 'Identify', identify_time=duration, ackIsDisabled=ackIsDisabled)
         return
 
     if ackIsDisabled:
@@ -170,7 +171,7 @@ def zcl_identify_send(self, nwkid, EPout, duration, ackIsDisabled=DEFAULT_ACK_MO
 def zcl_identify_trigger_effect(self, nwkid, EPout, effectId, effectGradient, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_identify_trigger_effect %s %s %s %s" % (nwkid, EPout, effectId, effectGradient))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        self.log.logging("zclCommand", "Error", "zcl_identify_trigger_effect not implemented for RAW mode")
+        zcl_raw_identify(self, nwkid, ZIGATE_EP, EPout, 'TriggerEffect', identify_effect=effectId, identify_variant=effectGradient, ackIsDisabled=ackIsDisabled)
         return
 
     if ackIsDisabled:
@@ -178,10 +179,10 @@ def zcl_identify_trigger_effect(self, nwkid, EPout, effectId, effectGradient, ac
     return send_zigatecmd_zcl_noack(self, nwkid, "00E0", nwkid + ZIGATE_EP + EPout + effectId + effectGradient)
 
 
-def zcl_group_identify_trigger_effect(self, nwkid, epin, epout, effectId, effectGradient):
+def zcl_group_identify_trigger_effect(self, nwkid, epin, epout, effectId, effectGradient, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_group_identify_trigger_effect %s %s %s %s" % (nwkid, epout, effectId, effectGradient))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        self.log.logging("zclCommand", "Error", "zcl_group_identify_trigger_effect not implemented for RAW mode")
+        zcl_raw_identify(self, nwkid, epin, epout, 'TriggerEffect', identify_effect=effectId, identify_variant=effectGradient, groupaddrmode=True, ackIsDisabled=ackIsDisabled)
         return
 
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + epout + effectId + effectGradient

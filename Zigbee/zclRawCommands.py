@@ -182,6 +182,47 @@ def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, dir
 
 # Discover Attributes
 
+# Cluster 0004: Identify
+
+def zcl_raw_identify(self, nwkid, epin, epout, command, identify_time=None, identify_effect=None, identify_variant=None, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+
+    self.log.logging("zclCommand", "Debug", "zcl_raw_identify %s %s %s %s %s %s %s %s %s" % (nwkid, epin, epout, command, identify_time, identify_effect, identify_variant, groupaddrmode, ackIsDisabled))
+    IDENTIFY_COMMAND = {
+        "Identify": 0x00,
+        "IdentifyQuery": 0x01,
+        "TriggerEffect": 0x40
+    }
+    
+    Cluster = "0003"
+    
+    if command not in IDENTIFY_COMMAND:
+        return
+    if command == 'Identify' and identify_time is None:
+        return
+    if command == 'TriggerEffect' and identify_effect is None and identify_variant is None:
+        return
+    
+    # Cluster Frame:
+    # 0b xxxx xxxx
+    #           |- Frame Type: Cluster Specific (0x01)
+    #          |-- Manufacturer Specific False
+    #         |--- Command Direction: Client to Server (0)
+    #       | ---- Disable default response: True
+    #    |||- ---- Reserved : 0x000
+    #
+    cluster_frame = 0b00010001
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = "%02x" % cluster_frame + sqn + "%02x" % IDENTIFY_COMMAND[command] 
+    
+    if command == 'Identify' and identify_time:
+        payload += identify_time
+    elif command == 'TriggerEffect' and identify_effect and identify_variant:
+        payload += identify_effect + identify_variant
+
+    raw_APS_request(self, nwkid, epout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
+    return sqn
+    
+    
 # Cluster 0004: Groups
 
 def zcl_raw_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):

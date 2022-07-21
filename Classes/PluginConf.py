@@ -1358,6 +1358,24 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "reconnectonIEEEaddr": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+                
+            },
+            "reconnectonNWKaddr": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+
+            },
             "forceZigpy_noasyncio": {
                 "type": "bool",
                 "default": 0,

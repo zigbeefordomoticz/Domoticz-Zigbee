@@ -238,16 +238,17 @@ class LoggingManagement:
             self.zigpy_login()
 
         if self.logging_thread and self.logging_queue:
-            logging_tupple = [
+            logging_tuple = [
                 str(time.time()),
                 str(threading.current_thread().name),
+                str(threading.current_thread().native_id),
                 str(module),
                 str(logType),
                 str(message),
                 str(nwkid),
                 str(context),
             ]
-            self.logging_queue.put(logging_tupple)
+            self.logging_queue.put(logging_tuple)
         else:
             Domoticz.Log("%s" % message)
 
@@ -417,27 +418,28 @@ def logging_thread(self):
     while self.running:
         # We loop until self.running is set to False,
         # which indicate plugin shutdown
-        logging_tupple = self.logging_queue.get()
-        if len(logging_tupple) == 2:
-            timing, command = logging_tupple
+        logging_tuple = self.logging_queue.get()
+        if len(logging_tuple) == 2:
+            timing, command = logging_tuple
             if command == "QUIT":
                 Domoticz.Log("logging_thread Exit requested")
                 break
-        elif len(logging_tupple) == 7:
+        elif len(logging_tuple) == 8:
             (
                 timing,
                 thread_name,
+                thread_id,
                 module,
                 logType,
                 message,
                 nwkid,
                 context,
-            ) = logging_tupple
+            ) = logging_tuple
             try:
                 context = eval(context)
             except Exception as e:
                 Domoticz.Error("Something went wrong and catch: context: %s" % str(context))
-                Domoticz.Error("      logging_thread unexpected tupple %s" % (str(logging_tupple)))
+                Domoticz.Error("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
                 Domoticz.Error("      Error %s" % (str(e)))
                 return
             if logType == "Error":
@@ -450,7 +452,7 @@ def logging_thread(self):
                 if threadFilter:
                     if thread_name not in threadFilter:
                         continue
-
+                thread_name=thread_name + " " + thread_id
                 pluginConfModule = "debug" + str(module)
                 if pluginConfModule in self.pluginconf.pluginConf:
                     if self.pluginconf.pluginConf[pluginConfModule]:
@@ -459,9 +461,10 @@ def logging_thread(self):
                     Domoticz.Error("%s debug module unknown %s" % (pluginConfModule, module))
                     _loggingDebug(self, thread_name, message)
             else:
+                thread_name=thread_name + " " + thread_id
                 loggingDirector(self, thread_name, logType, message)
         else:
-            Domoticz.Error("logging_thread unexpected tupple %s" % (str(logging_tupple)))
+            Domoticz.Error("logging_thread unexpected tuple %s" % (str(logging_tuple)))
     Domoticz.Log("logging_thread - ended")
 
 
