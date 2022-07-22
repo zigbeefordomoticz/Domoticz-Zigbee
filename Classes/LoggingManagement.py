@@ -237,11 +237,17 @@ class LoggingManagement:
             self.zigpy_log_zigate = False
             self.zigpy_login()
 
+        try:
+            thread_id = threading.current_thread().native_id
+            # native_id exists since python 3.8.
+        except AttributeError:
+            thread_id = 0
+
         if self.logging_thread and self.logging_queue:
             logging_tuple = [
                 str(time.time()),
                 str(threading.current_thread().name),
-                str(threading.current_thread().native_id),
+                str(thread_id),
                 str(module),
                 str(logType),
                 str(message),
