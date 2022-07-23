@@ -357,7 +357,22 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
             super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
+        if cluster == 0x8036:
+            # This has been handle via on_zdo_mgmt_permitjoin_rsp()
+            self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+                str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
+            self.callBackFunction( build_plugin_8014_frame_content(self, str(sender), binascii.hexlify(message).decode("utf-8") ) )
+            super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
+            return
 
+        if cluster == 0x8034:
+            # This has been handle via on_zdo_mgmt_leave_rsp()
+            self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+                str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
+            self.callBackFunction( build_plugin_8047_frame_content(self, str(sender), binascii.hexlify(message).decode("utf-8")) )
+            return
+        
+        addr = None
         if sender.nwk is not None:
             addr_mode = 0x02
             addr = sender.nwk.serialize()[::-1].hex()
