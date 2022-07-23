@@ -523,12 +523,20 @@ def zigpy_logging_ezsp(mode):
     if mode == "debug":    
         requests_logger = logging.getLogger("bellows")
         requests_logger.setLevel(logging.DEBUG)
-        requests_logger = logging.getLogger("AppEzsp")
+        requests_logger = logging.getLogger("bellows.zigbee")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("bellows.uart")
+        requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("AppBellows")
         requests_logger.setLevel(logging.DEBUG)
     else:
         requests_logger = logging.getLogger("bellows")
         requests_logger.setLevel(logging.WARNING)
-        requests_logger = logging.getLogger("AppEzsp")
+        requests_logger = logging.getLogger("bellows.zigbee")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("bellows.uart")
+        requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("AppBellows")
         requests_logger.setLevel(logging.WARNING)
 
 def zigpy_logging_zigate(mode):
