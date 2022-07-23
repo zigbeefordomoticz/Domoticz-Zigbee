@@ -205,6 +205,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
                 str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
             self.callBackFunction( build_plugin_8014_frame_content(self, str(sender), binascii.hexlify(message).decode("utf-8") ) )
+            super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
             return
         
         if cluster == 0x8034:
