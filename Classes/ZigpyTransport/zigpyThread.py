@@ -120,6 +120,10 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         config = {
             conf.CONF_DEVICE: { "path": serialPort,  "baudrate": 115200}, 
             conf.CONF_NWK: {},
+            conf.CONF_EZSP_CONFIG: {
+                "CONFIG_SOURCE_ROUTE_TABLE_SIZE": 0x64
+            },
+            "topology_scan_enabled": False,
             "handle_unknown_devices": True,
             "source_routing": True
             }
