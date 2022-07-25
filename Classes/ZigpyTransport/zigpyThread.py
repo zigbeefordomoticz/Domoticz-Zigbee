@@ -153,6 +153,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             config = {
                 conf.CONF_DEVICE: {"path": serialPort,}, 
                 conf.CONF_NWK: {},
+                conf.CONF_ZNP_CONFIG: {},
                 "topology_scan_enabled": False,
                 }
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
@@ -176,8 +177,11 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             self.log.logging("%s" %traceback.format_exc())
 
     if "TXpower_set" in self.pluginconf.pluginConf:
-        config["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
-
+        if radiomodule == "znp":
+            config[conf.CONF_ZNP_CONFIG] ["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
+        else:
+            config["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
+            
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
             t.EUI64(t.uint64_t(set_extendedPanId).serialize())
