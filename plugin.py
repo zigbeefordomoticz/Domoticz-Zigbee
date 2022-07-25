@@ -1061,16 +1061,16 @@ class BasePlugin:
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
 
-        # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
+        # Write the ListOfDevice every 5 minutes or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
-            WriteDeviceList(self, (90 * 5))
+            WriteDeviceList(self, ( (5 * 60) // HEARTBEAT) )
             
         else:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
 
-        if self.internalHB % (24 * 3600 // HEARTBEAT) == 0:
+        if self.internalHB % (23 * 3600 // HEARTBEAT) == 0:
             # Update the NetworkDevices attributes if needed , once by day
             build_list_of_device_model(self)
 

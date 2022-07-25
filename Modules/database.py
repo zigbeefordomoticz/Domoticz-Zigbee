@@ -338,6 +338,7 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
         self.HBcount = self.HBcount + 1
         return
 
+    self.log.logging("Database", "Debug", "WriteDeviceList %s %s" %(self.HBcount, count))
     if self.pluginconf.pluginConf["pluginData"] is None or self.DeviceListName is None:
         Domoticz.Error(
             "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s"
