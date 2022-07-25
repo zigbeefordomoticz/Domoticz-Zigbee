@@ -629,19 +629,6 @@ def processKnownDevices(self, Devices, NWKID):
 
                 func(self, NWKID)
 
-    if ( 
-        _mainPowered 
-        and night_shift_jobs( self )
-        and self.zigbee_communication == "zigpy"
-        and "RoutingTableRequestFeq" in self.pluginconf.pluginConf
-        and self.pluginconf.pluginConf["RoutingTableRequestFeq"] 
-        and (intHB % ( self.pluginconf.pluginConf["RoutingTableRequestFeq"] // HEARTBEAT) == 0)
-    ):
-        if not self.busy and self.ControllerLink.loadTransmit() < 3:
-            mgmt_rtg(self, NWKID, "RoutingTable")
-        else:
-            rescheduleAction = True
-
     # Call Schneider Reenforcement if needed
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NWKID)
@@ -712,6 +699,24 @@ def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
             # Nothing trigger, let's check if the configure reporting are correct
             self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)    
             
+    elif (
+        self.zigbee_communication != "zigpy"
+        and self.configureReporting
+        and _mainPowered 
+        and night_shift_jobs( self )
+        and self.HeartbeatCount > QUIET_AFTER_START 
+        and ((self.HeartbeatCount % CONFIGURERPRT_FEQ)) == 0
+    ):
+        # Trigger Configure Reporting to eligeable devices
+        if ( self.busy and self.ControllerLink.loadTransmit() > 3 ):
+            return True
+        
+        self.log.logging( "ConfigureReporting", "Debug", "Trying Configuration reporting for %s/%s !" %( 
+            NWKID, get_device_nickname( self, NwkId=NWKID)), NWKID)
+
+
+        self.configureReporting.processConfigureReporting( NWKID, batch=True )
+        
     return False
     
     

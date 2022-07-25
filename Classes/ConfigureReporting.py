@@ -75,11 +75,12 @@ class ConfigureReporting:
 
     # Commands
     
-    def processConfigureReporting(self, NwkId=None):
+    def processConfigureReporting(self, NwkId=None, batch=False):
 
         if NwkId:
-            configure_reporting_for_one_device( self, NwkId, False, )
+            configure_reporting_for_one_device( self, NwkId, batch, )
             return
+        
         for key in list(self.ListOfDevices.keys()):
             if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
                 self.logging(
@@ -563,13 +564,15 @@ def configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_config
             batchMode 
             and STORE_CONFIGURE_REPORTING in self.ListOfDevices[key] 
             and len(self.ListOfDevices[key][STORE_CONFIGURE_REPORTING]) != 0
-            and Ep in self.ListOfDevices[key]["ConfigureReporting"] 
-            and cluster in self.ListOfDevices[key]["ConfigureReporting"][Ep]
+            and Ep in self.ListOfDevices[key][STORE_CONFIGURE_REPORTING]["Ep"]
+            and cluster in self.ListOfDevices[key][STORE_CONFIGURE_REPORTING]["Ep"][Ep]
         ):
             if self.pluginconf.pluginConf["checkConfigurationReporting"]:
                 if not is_time_to_perform_work( self, STORE_CONFIGURE_REPORTING, key, Ep, cluster, now, (CONFIGURE_REPORT_PERFORM_TIME * 3600), ):
                     self.logging("Debug", f"----> configure_reporting_for_one_endpoint Not time to perform  {key}/{Ep} - {cluster}", nwkid=key)
                     continue
+                self.logging("Debug", f"----> configure_reporting_for_one_endpoint it is time to work  {key}/{Ep} - {cluster}", nwkid=key) 
+            
             else:
                 self.logging(
                     "Debug",
@@ -577,6 +580,8 @@ def configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_config
                     nwkid=key
                 )
                 continue
+            
+        self.logging("Debug", f"----> configure_reporting_for_one_endpoint it is time to work .....  {key}/{Ep} - {cluster}", nwkid=key) 
 
         if batchMode and (self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE):
             self.logging(
@@ -584,7 +589,6 @@ def configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_config
                 f"----> configure_reporting_for_one_endpoint - {key} skip configureReporting for now ... system too busy ({self.busy}/{self.ControllerLink.loadTransmit()}) for {key}",
                 nwkid=key,
             )
-
             return  # Will do at the next round
 
         self.logging("Debug", f"----> configure_reporting_for_one_endpoint - requested for device: {key} on Cluster: {cluster}", nwkid=key)
@@ -834,6 +838,7 @@ def do_we_have_to_do_the_work(self, NwkId, Ep, cluster):
 
     if cluster in ("Type", "ColorMode", "ClusterType"):
         return False
+    
     if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] != {}:
         if self.ListOfDevices[NwkId]["Model"] == "lumi.light.aqcn02" and cluster in (
             "0402",

@@ -1101,11 +1101,10 @@ def check_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
 def is_time_to_perform_work(self, DeviceAttribute, key, endpoint, clusterId, now, timeoutperiod):
     # Based on a timeout period return True or False.
     if key not in self.ListOfDevices:
-        Domoticz.Log("Unknown Key: %s" % key)
         return False
     if check_datastruct(self, DeviceAttribute, key, endpoint, clusterId) is None:
-        Domoticz.Log("check_datastruct responded to None Key: %s !!" % key)
         return False
+        key, endpoint, clusterId, now, self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["TimeStamp"], timeoutperiod))
     return now >= (self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["TimeStamp"] + timeoutperiod)
 
 
