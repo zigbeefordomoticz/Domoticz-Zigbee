@@ -24,6 +24,7 @@ from Modules.domoTools import timedOutDevice
 from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
                                     processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
                                     ReadAttributeRequest_0001,
@@ -42,8 +43,8 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
 from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
                            is_hex, is_time_to_perform_work, mainPoweredDevice,
-                           night_shift_jobs, removeNwkInList)
-from Modules.zb_tables_management import mgmt_rtg
+                           night_shift_jobs, removeNwkInList, get_device_nickname)
+from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 # Read Attribute trigger: Every 10"
@@ -135,13 +136,11 @@ def check_delay_binding( self, NwkId, model ):
     if "DelayBindingAtPairing" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"] == "Completed":
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s DelayBindingAtPairing: %s" % (
             NwkId, self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"]), NwkId, )
-
         return
     
     if model in ( "", {}):
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s model: %s" % (
             NwkId, model), NwkId, )
-
         return
 
     if model not in self.DeviceConf or "DelayBindingAtPairing" not in self.DeviceConf[ model ] or self.DeviceConf[ model ]["DelayBindingAtPairing"] != 1:
@@ -152,32 +151,17 @@ def check_delay_binding( self, NwkId, model ):
     if "ClusterToBind" not in self.DeviceConf[ model ] or len(self.DeviceConf[ model ]["ClusterToBind"]) == 0:
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s Empty ClusterToBind" % (
             NwkId), NwkId, )
-
         return
     
     # We have a good candidate
-    if "BindingTable" not in self.ListOfDevices[ NwkId ]:
-        # Cannot do more
-        self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s BindingTable do not exist" % (
-            NwkId), NwkId, )
-        mgmt_rtg(self, NwkId, "BindingTable")
-        return
-    
-    if "Devices" in self.ListOfDevices[ NwkId ]["BindingTable"] and len(self.ListOfDevices[ NwkId ]["BindingTable"]["Devices"]) == 0:
-        # Too early come later
-        self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s BindingTable empty" % (
-            NwkId), NwkId, )
-        mgmt_rtg(self, NwkId, "BindingTable")
-        return
-    
     # We reached that step, because we have DelayindingAtPairing enabled and the BindTable is not empty.
     # Let's bind
     if self.configureReporting:
         if "Bind" in self.ListOfDevices[ NwkId ]:
             del self.ListOfDevices[ NwkId ]["Bind"]
             self.ListOfDevices[ NwkId ]["Bind"] = {}
-        if "ConfigureReporting" in self.ListOfDevices[ NwkId ]:
-            del self.ListOfDevices[ NwkId ]["ConfigureReporting"]
+        if STORE_CONFIGURE_REPORTING in self.ListOfDevices[ NwkId ]:
+            del self.ListOfDevices[ NwkId ][STORE_CONFIGURE_REPORTING]
             self.ListOfDevices[ NwkId ]["Bind"] = {} 
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s request Configure Reporting (and so bindings)" % (
             NwkId), NwkId, )
@@ -536,13 +520,8 @@ def processKnownDevices(self, Devices, NWKID):
         self.log.logging("Heartbeat", "Log", "processKnownDevices -  %s recover from Non Reachable" % NWKID, NWKID)
         del self.ListOfDevices[NWKID]["pingDeviceRetry"]
 
-    model = ""
-    if "Model" in self.ListOfDevices[NWKID]:
-        model = self.ListOfDevices[NWKID]["Model"]
-
-    enabledEndDevicePolling = False
-    if model in self.DeviceConf and "PollingEnabled" in self.DeviceConf[model] and self.DeviceConf[model]["PollingEnabled"]:
-        enabledEndDevicePolling = True
+    model = self.ListOfDevices[NWKID]["Model"] if "Model" in self.ListOfDevices[NWKID] else ""
+    enabledEndDevicePolling = bool(model in self.DeviceConf and "PollingEnabled" in self.DeviceConf[model] and self.DeviceConf[model]["PollingEnabled"])
 
     if "CheckParam" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["CheckParam"] and intHB > (60 // HEARTBEAT):
         sanity_check_of_param(self, NWKID)
@@ -571,12 +550,7 @@ def processKnownDevices(self, Devices, NWKID):
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = rescheduleAction or pollingManufSpecificDevices(self, NWKID, intHB)
 
-    _doReadAttribute = False
-    if (
-        self.pluginconf.pluginConf["enableReadAttributes"]
-        or self.pluginconf.pluginConf["resetReadAttributes"]
-    ) and (intHB % READATTRIBUTE_FEQ) == 0:
-        _doReadAttribute = True
+    _doReadAttribute = bool((self.pluginconf.pluginConf["enableReadAttributes"] or self.pluginconf.pluginConf["resetReadAttributes"]) and (intHB % READATTRIBUTE_FEQ) == 0)
 
     if ( 
         self.ControllerLink.loadTransmit() > 5
@@ -672,9 +646,13 @@ def processKnownDevices(self, Devices, NWKID):
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NWKID)
 
+    if self.pluginconf.pluginConf["checkConfigurationReporting"]:
+        rescheduleAction = rescheduleAction or check_configuration_reporting(self, NWKID, _mainPowered, intHB)
+
     # Do Attribute Disocvery if needed
     if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
         rescheduleAction = rescheduleAction or attributeDiscovery(self, NWKID)
+        mgtm_binding(self, NWKID, "BindingTable")
 
     # If corresponding Attributes not present, let's do a Request Node Description
     if night_shift_jobs( self ) and not enabledEndDevicePolling and ((intHB % 1800) == 0):
@@ -706,6 +684,37 @@ def processKnownDevices(self, Devices, NWKID):
 
     return
 
+def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
+    self.log.logging( "ConfigureReporting", "Debug", "check_configuration_reporting for %s %s %s %s" %( 
+        NWKID, _mainPowered, intHB, self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
+
+    if ( 
+        self.zigbee_communication == "zigpy"
+        and self.configureReporting
+        and _mainPowered 
+        and night_shift_jobs( self )
+        and "checkConfigurationReporting" in self.pluginconf.pluginConf
+        and self.pluginconf.pluginConf["checkConfigurationReporting"] 
+        and self.HeartbeatCount > QUIET_AFTER_START 
+        and (intHB % (60 // HEARTBEAT)) == 0
+    ):
+        if "Status" not in self.ListOfDevices[NWKID] or self.ListOfDevices[NWKID]["Status"] != "inDB":
+            return False
+
+        # Trigger Configure Reporting to eligeable devices
+        if ( self.busy and self.ControllerLink.loadTransmit() > 3 ):
+            return True
+        
+        self.log.logging( "ConfigureReporting", "Debug", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
+            NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
+        
+        if not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
+            # Nothing trigger, let's check if the configure reporting are correct
+            self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)    
+            
+    return False
+    
+    
 
 def processListOfDevices(self, Devices):
     # Let's check if we do not have a command in TimeOut
@@ -724,7 +733,7 @@ def processListOfDevices(self, Devices):
             continue
 
         status = self.ListOfDevices[NWKID]["Status"]
-        if self.ListOfDevices[NWKID]["RIA"] != "" and self.ListOfDevices[NWKID]["RIA"] != {}:
+        if self.ListOfDevices[NWKID]["RIA"] not in ( "", {}):
             RIA = int(self.ListOfDevices[NWKID]["RIA"])
         else:
             RIA = 0
@@ -741,11 +750,6 @@ def processListOfDevices(self, Devices):
             processKnownDevices(self, Devices, NWKID)
 
         elif status == "Leave":
-            # We should then just reconnect the element
-            # Nothing to do
-            pass
-
-        elif status == "Left":
             timedOutDevice(self, Devices, NwkId=NWKID)
             # Device has sentt a 0x8048 message annoucing its departure (Leave)
             # Most likely we should receive a 0x004d, where the device come back with a new short address
@@ -818,12 +822,6 @@ def processListOfDevices(self, Devices):
         )
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
-    if night_shift_jobs( self ) and (self.HeartbeatCount > QUIET_AFTER_START) and ((self.HeartbeatCount % CONFIGURERPRT_FEQ)) == 0:
-        # Trigger Configure Reporting to eligeable devices
-        if self.configureReporting:
-            self.configureReporting.processConfigureReporting()
-
-    
     # Network Topology
     if self.networkmap:
         phase = self.networkmap.NetworkMapPhase()
@@ -844,9 +842,8 @@ def processListOfDevices(self, Devices):
 
     # if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_ENRG_START):
     #    # Network Energy Level
-    if self.networkenergy:
-        if self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
-            self.networkenergy.do_scan()
+    if self.networkenergy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
+        self.networkenergy.do_scan()
 
     self.log.logging(
         "Heartbeat",

@@ -118,6 +118,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
                 await self.form_network()
             LOGGER.debug("Network info: %s", self.state.network_info)
             LOGGER.debug("Node info: %s", self.state.node_info)
+            LOGGER.info("Deconz Configuration: %s", self.config)
             await self.start_network()
         except Exception:
             LOGGER.error("Couldn't start application")

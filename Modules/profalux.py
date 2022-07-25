@@ -13,6 +13,7 @@
 
 from Zigbee.zclCommands import zcl_configure_reporting_requestv2
 
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import get_and_inc_ZCL_SQN
 from Modules.zigateConsts import ZIGATE_EP
@@ -95,16 +96,16 @@ def profalux_fake_deviceModel(self, nwkid):
 def checkAndTriggerConfigReporting(self, NwkId):
 
     self.log.logging("Profalux", "Debug", "-- -- checkAndTriggerConfigReporting for %s" % NwkId)
-    if "ConfigureReporting" not in self.ListOfDevices[NwkId]:
+    if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[NwkId]:
         configureReportingForprofalux(self, NwkId)
         return
-    if "01" not in self.ListOfDevices[NwkId]["ConfigureReporting"]["Ep"]:
+    if "01" not in self.ListOfDevices[NwkId][STORE_CONFIGURE_REPORTING]["Ep"]:
         configureReportingForprofalux(self, NwkId)
         return
-    if "fc21" not in self.ListOfDevices[NwkId]["ConfigureReporting"]["Ep"]["01"]:
+    if "fc21" not in self.ListOfDevices[NwkId][STORE_CONFIGURE_REPORTING]["Ep"]["01"]:
         configureReportingForprofalux(self, NwkId)
         return
-    if self.ListOfDevices[NwkId]["ConfigureReporting"]["Ep"]["01"]["fc21"] == {}:
+    if self.ListOfDevices[NwkId][STORE_CONFIGURE_REPORTING]["Ep"]["01"]["fc21"] == {}:
         configureReportingForprofalux(self, NwkId)
         return
 

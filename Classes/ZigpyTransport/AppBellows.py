@@ -80,7 +80,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             logging.debug("EZSP Radio manufacturer: %s", brd_manuf)
             logging.debug("EZSP Radio board name: %s", brd_name)
             logging.debug("EmberZNet version: %s" %version)
-            logging.info("EZSP Configuration %s" %self.config)
+            logging.info("EZSP Configuration %s", self.config)
         except EzspError as exc:
             logging.error("EZSP Radio does not support getMfgToken command: %s" %str(exc))
 
@@ -103,6 +103,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
                 await self.form_network()
             LOGGER.debug("Network info: %s", self.state.network_info)
             LOGGER.debug("Node info: %s", self.state.node_info)
+            LOGGER.info("EZSP Configuration: %s", self.config)
             await self.start_network()
         except Exception:
             LOGGER.error("Couldn't start application")

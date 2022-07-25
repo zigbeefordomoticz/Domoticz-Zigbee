@@ -92,6 +92,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                 await self.form_network()
             LOGGER.debug("Network info: %s", self.state.network_info)
             LOGGER.debug("Node info: %s", self.state.node_info)
+            LOGGER.info("ZNP Configuration: %s", self.config)
             await self.start_network()
         except Exception:
             LOGGER.error("Couldn't start application")
@@ -177,7 +178,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                   
     def handle_leave(self, nwk, ieee):
         self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
-
         plugin_frame = build_plugin_8048_frame_content(self, ieee)
         self.callBackFunction(plugin_frame)
         super().handle_leave(nwk, ieee)
@@ -236,7 +236,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                     "Debug",
                     "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
                         str(sender), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8"), sender.lqi)),
-
 
         if sender.lqi is None:
             sender.lqi = 0x00

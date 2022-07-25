@@ -334,9 +334,9 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "reenforceConfigureReporting": {
-                "type": "bool",
-                "default": 0,
+            "checkConfigurationReporting": {
+                "type": "int",
+                "default": 75600,
                 "current": None,
                 "restart": 0,
                 "hidden": False,
@@ -1358,6 +1358,15 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "PluginLogMode": {
+                "type": "list",
+                "list": { "system defaut": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},
+                "default": 0,
+                "current": None,
+                "restart": 1,
+                "hidden": False,
+                "Advanced": True,
+            },
             "reconnectonIEEEaddr": {
                 "type": "bool",
                 "default": 0,
@@ -1365,7 +1374,6 @@ SETTINGS = {
                 "restart": 0,
                 "hidden": False,
                 "Advanced": True,
-                
             },
             "reconnectonNWKaddr": {
                 "type": "bool",
@@ -1374,14 +1382,13 @@ SETTINGS = {
                 "restart": 0,
                 "hidden": False,
                 "Advanced": True,
-
             },
             "forceZigpy_noasyncio": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "disableZCLDefaultResponse": {
@@ -1389,16 +1396,15 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
-  
             },
             "ControllerInHybridMode": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": True,
+                "hidden": False,
                 "Advanced": True,
             },
             "ControllerInRawMode": {
@@ -1406,7 +1412,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": True,
+                "hidden": False,
                 "Advanced": True,
             },
             "nPDUaPDUThreshold": {

@@ -20,6 +20,9 @@ import Domoticz
 
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
+from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
+                                        STORE_CUSTOM_CONFIGURE_REPORTING,
+                                        STORE_READ_CONFIGURE_REPORTING)
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -93,7 +96,9 @@ BUILD_ATTRIBUTES = (
     "BatteryUpdateTime",
     "GroupMemberShip",
     "Neighbours",
-    "ConfigureReporting",
+    STORE_CONFIGURE_REPORTING,
+    STORE_READ_CONFIGURE_REPORTING,
+    STORE_CUSTOM_CONFIGURE_REPORTING,
     "ReadAttributes",
     "WriteAttributes",
     "LQI",
@@ -194,6 +199,8 @@ def LoadDeviceList(self):
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize(_DeviceListFileName)
 
+    cleanup_table_entries( self)
+    
     for addr in self.ListOfDevices:
         # Fixing mistake done in the code.
         fixing_consumption_lumi(self, addr)
@@ -209,7 +216,14 @@ def LoadDeviceList(self):
 
         if self.pluginconf.pluginConf["resetConfigureReporting"]:
             self.log.logging("Database", "Log", "Reset ConfigureReporting data %s" % addr)
-            Modules.tools.reset_datastruct(self, "ConfigureReporting", addr)
+            Modules.tools.reset_datastruct(self, STORE_CONFIGURE_REPORTING, addr)
+            Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
+            
+    if ( 
+        STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ addr ] 
+        and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
+    ):
+        Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
 
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
@@ -324,6 +338,7 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
         self.HBcount = self.HBcount + 1
         return
 
+    self.log.logging("Database", "Debug", "WriteDeviceList %s %s" %(self.HBcount, count))
     if self.pluginconf.pluginConf["pluginData"] is None or self.DeviceListName is None:
         Domoticz.Error(
             "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s"
@@ -708,7 +723,7 @@ def fixing_Issue566(self, key):
 def fixing_iSQN_None(self, key):
 
     for DeviceAttribute in (
-        "ConfigureReporting",
+        STORE_CONFIGURE_REPORTING,
         "ReadAttributes",
         "WriteAttributes",
     ):
@@ -859,3 +874,48 @@ def load_new_param_definition(self):
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["InvertShutter"]
             elif param == "netatmoReleaseButton":
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["EnableReleaseButton"]
+
+def cleanup_table_entries( self):
+
+    for tablename in ("RoutingTable", "AssociatedDevices", "Neighbours" ):
+        self.log.logging("NetworkMap", "Debug", "purge processing %s " %( tablename))
+        for nwkid in self.ListOfDevices:
+            one_more_time = True
+            while one_more_time:
+                one_more_time = False
+                self.log.logging("NetworkMap", "Debug", "purge processing %s %s" %( tablename, nwkid ))
+                if tablename not in self.ListOfDevices[nwkid]:
+                    continue
+                if not isinstance(self.ListOfDevices[nwkid][tablename], list):
+                    del self.ListOfDevices[nwkid][tablename]
+                    continue
+                idx = 0
+                while idx < len(self.ListOfDevices[nwkid][tablename]):
+                    self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s \n %s" %( 
+                        tablename, nwkid, idx , str(self.ListOfDevices[nwkid][tablename][ idx ])))
+                    if (
+                        "Time" not in self.ListOfDevices[nwkid][tablename][ idx ] 
+                        or "TimeStamp" not in self.ListOfDevices[nwkid][tablename][ idx ]
+                    ):
+                        self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s done" %( tablename, nwkid, idx ))
+                        del self.ListOfDevices[nwkid][tablename][ idx ]
+                        one_more_time = True
+                        break
+                    if (
+                        isinstance(self.ListOfDevices[nwkid][tablename][idx]["Time"], int) 
+                        and len(self.ListOfDevices[nwkid][tablename][idx]["Devices"]) == 0
+                    ):
+                        self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s done" %( tablename, nwkid, idx ))
+                        del self.ListOfDevices[nwkid][tablename][ idx ]
+                        one_more_time = True
+                        break
+                    if (
+                        "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
+                        and not isinstance(self.ListOfDevices[nwkid][tablename][ idx ]["Time"], int)
+                    ):
+                        self.log.logging("NetworkMap", "Debug", "purge processing %s %s %s done" %( tablename, nwkid, idx ))
+                        del self.ListOfDevices[nwkid][tablename][ idx ]
+                        one_more_time = True
+                        break
+                    idx += 1
+
