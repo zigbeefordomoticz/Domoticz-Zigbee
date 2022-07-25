@@ -91,7 +91,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
             LOGGER.error("Couldn't start application")
             await self.shutdown()
             raise
-
+        
     # Only needed if the device require simple node descriptor from the coordinator
     async def register_endpoint(self, endpoint=1):
         await super().add_endpoint(endpoint)
