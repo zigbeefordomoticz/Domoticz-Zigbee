@@ -115,21 +115,19 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 
     if radiomodule == "ezsp":
         self.log.logging("TransportZigpy", "Debug", "Starting radio %s port: %s" %( radiomodule, serialPort))
-        try:
-            import bellows.config as conf
-            from Classes.ZigpyTransport.AppBellows import App_bellows
-            config = {
-                conf.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
-                conf.CONF_NWK: {},
-                "max_concurrent_requests": 2,
-                "topology_scan_enabled": False,
-                "handle_unknown_devices": True,
-                "source_routing": True
-                }
-            self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
-        except Exception as e:
-            self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
-            self.log.logging("%s" %traceback.format_exc())
+        import bellows.config as conf
+        from Classes.ZigpyTransport.AppBellows import App_bellows
+        config = {
+            conf.CONF_DEVICE: { "path": serialPort,  "baudrate": 115200}, 
+            conf.CONF_NWK: {},
+            conf.CONF_EZSP_CONFIG: {
+                "CONFIG_SOURCE_ROUTE_TABLE_SIZE": 0x64
+            },
+            "topology_scan_enabled": False,
+            "handle_unknown_devices": True,
+            "source_routing": True
+            }
+        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
     elif radiomodule =="zigate":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
