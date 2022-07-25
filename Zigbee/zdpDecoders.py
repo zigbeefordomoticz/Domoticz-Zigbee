@@ -299,7 +299,7 @@ def buildframe_ieee_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Pay
 
         self.log.logging(
             "zdpDecoder", 
-            "Error", 
+            "Debug", 
             "buildframe_ieee_address_response Drop as unconsistent message SrcNwkId: %s Payload: %s  frame: %s len: %s" %( 
                 SrcNwkId, Payload, frame, len(Payload)))
         return None

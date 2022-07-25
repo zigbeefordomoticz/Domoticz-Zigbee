@@ -316,7 +316,7 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
     else:
         status = "00"
         controllerManufacturerCode = self.ListOfDevices[ "0000" ]["Manufacturer"]
-        controllerManufacturerCode = '0007'
+        controllerManufacturerCode = '0000'
         self.log.logging("Input", "Log", "Decode0042 - %s/%s requested manuf code -responding with Manufacturer: %s" % (
             srcNwkId, srcEp, controllerManufacturerCode))
         
