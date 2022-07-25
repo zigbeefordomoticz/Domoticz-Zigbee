@@ -1104,7 +1104,6 @@ def is_time_to_perform_work(self, DeviceAttribute, key, endpoint, clusterId, now
         return False
     if check_datastruct(self, DeviceAttribute, key, endpoint, clusterId) is None:
         return False
-        key, endpoint, clusterId, now, self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["TimeStamp"], timeoutperiod))
     return now >= (self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["TimeStamp"] + timeoutperiod)
 
 
