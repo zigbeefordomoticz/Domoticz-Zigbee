@@ -14,6 +14,7 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
                                UpdateDevice_v2)
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
+from Zigbee.zdpCommands import zdp_IEEE_address_request
 
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
@@ -35,8 +36,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         self.log.logging(
             "Widget",
             "Log",
-            "MajDomoDevice NwkId: %s status: %s not inDB" % (NWKID, self.ListOfDevices[NWKID]["Status"]),
+            "MajDomoDevice NwkId: %s status: %s not inDB request IEEE for possible reconnection" % (NWKID, self.ListOfDevices[NWKID]["Status"]),
             NWKID,
+            zdp_IEEE_address_request(self, NWKID, NWKID, u8RequestType="00", u8StartIndex="00")
         )
         return
 
