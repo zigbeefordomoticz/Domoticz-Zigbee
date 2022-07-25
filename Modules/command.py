@@ -263,11 +263,11 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             #sendZigateCmd(self, "0083", "02" + NWKID + ZIGATE_EP + EPout + "02")
 
         # Let's force a refresh of Attribute in the next Heartbeat
-        self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+        request_read_device_status(self, NWKID)
 
     if Command == "Off":  # Manage the Off command.
         # Let's force a refresh of Attribute in the next Heartbeat
-        self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+        request_read_device_status(self, NWKID)
 
         self.log.logging(
             "Command",
@@ -325,7 +325,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "LivoloSWR":
@@ -333,14 +333,14 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "DoorLock":
             # Widget Doorlock seems to work in the oposit
             cluster0101_unlock_door(self, NWKID)
             UpdateDevice_v2(self, Devices, Unit, 0, "Closed", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType in ("ThermoMode", "ACMode", "ThermoMode_3", "CAC221ACMode"):
@@ -365,7 +365,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             )
 
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == ("ThermoMode_2", ):
@@ -399,7 +399,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             schneider_EHZBRTS_thermoMode(self, NWKID, 0)
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType in ("ACMode_2", "FanControl"):
@@ -516,11 +516,11 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
         # Let's force a refresh of Attribute in the next Heartbeat
-        self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+        request_read_device_status(self, NWKID)
 
     if Command == "On":  # Manage the On command.
         # Let's force a refresh of Attribute in the next Heartbeat
-        self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+        request_read_device_status(self, NWKID)
         self.log.logging(
             "Command",
             "Debug",
@@ -579,14 +579,14 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             livolo_OnOff(self, NWKID, EPout, "Left", "On")
             UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "LivoloSWR":
             livolo_OnOff(self, NWKID, EPout, "Right", "On")
             UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "DoorLock":
@@ -654,7 +654,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
         # Let's force a refresh of Attribute in the next Heartbeat
-        self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+        request_read_device_status(self, NWKID)
 
     if Command == "Set Level":
         # Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
@@ -684,7 +684,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "TempSetCurrent":
@@ -704,7 +704,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "ThermoModeEHZBRTS":
@@ -715,7 +715,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             )
 
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "HACTMODE":
@@ -750,7 +750,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 Domoticz.Error("Unknown mode %s for HACTMODE for device %s" % (Level, NWKID))
 
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "LegranCableMode":
@@ -765,7 +765,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(
                 self, Devices, Unit, int(Level), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
             )
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "ContractPower":
@@ -811,7 +811,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                     )
 
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "FIP":
@@ -877,7 +877,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                     )
 
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType in ("ThermoMode_3", ): 
@@ -902,7 +902,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                     self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
                 )
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
 
@@ -927,7 +927,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                     self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
                 )
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "ACMode":
@@ -955,7 +955,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                     self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
                 )
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
 
         if DeviceType == "CAC221ACMode":
@@ -974,7 +974,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 thermostat_Mode(self, NWKID, CAC221ACLevel_TO_MODE[Level])
                 UpdateDevice_v2( self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
             # Let's force a refresh of Attribute in the next Heartbeat
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
             return
             
             
@@ -1072,7 +1072,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
             if Level in FAN_MODE:
                 change_fan_mode(self, NWKID, EPout, FAN_MODE[Level])
-            self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+            request_read_device_status(self, NWKID)
 
         if DeviceType == "ACSwing":
             if Level == 10:
@@ -1254,7 +1254,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 1, str(Level), BatteryLevel, SignalLevel)
 
         # Let's force a refresh of Attribute in the next Heartbeat
-        self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+        request_read_device_status(self, NWKID)
 
     if Command == "Set Color":
 
@@ -1272,6 +1272,12 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             NWKID,
         )
         actuator_setcolor(self, NWKID, EPout, Level, Color)
-        self.ListOfDevices[NWKID]["Heartbeat"] = "0"
+        request_read_device_status(self, NWKID)
 
         UpdateDevice_v2(self, Devices, Unit, 1, str(Level), BatteryLevel, SignalLevel, str(Color))
+
+
+def request_read_device_status(self, Nwkid):
+    # Purpose is to reset the Heartbeat in order to trigger a readattribute
+    
+    self.ListOfDevices[Nwkid]["Heartbeat"] = "-1"
