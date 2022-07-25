@@ -127,6 +127,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             "handle_unknown_devices": True,
             "source_routing": True
             }
+            
         self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
     elif radiomodule =="zigate":
@@ -173,6 +174,9 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
             self.log.logging("%s" %traceback.format_exc())
+
+    if "TXpower_set" in self.pluginconf.pluginConf:
+        config["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
 
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
