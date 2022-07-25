@@ -16,6 +16,7 @@ import time
 import Domoticz
 
 from Modules.database import WriteDeviceList
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 
 
 def is_hex(s):
@@ -285,7 +286,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
         self.groupmgt.update_due_to_nwk_id_change(old_NwkId, new_NwkId)
         
     self.ListOfDevices[new_NwkId]["PreviousStatus"] = self.ListOfDevices[new_NwkId]["Status"]
-    if self.ListOfDevices[new_NwkId]["Status"] in ("Left", "Leave"):
+    if self.ListOfDevices[new_NwkId]["Status"] in ( "Leave", ):
         self.ListOfDevices[new_NwkId]["Status"] = "inDB"
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
         self.log.logging("Input", "Status", 
@@ -297,8 +298,8 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     if self.pluginconf.pluginConf["enableReadAttributes"]:
         if "ReadAttributes" in self.ListOfDevices[new_NwkId]:
             del self.ListOfDevices[new_NwkId]["ReadAttributes"]
-        if "ConfigureReporting" in self.ListOfDevices[new_NwkId]:
-            del self.ListOfDevices[new_NwkId]["ConfigureReporting"]
+        if STORE_CONFIGURE_REPORTING in self.ListOfDevices[new_NwkId]:
+            del self.ListOfDevices[new_NwkId][STORE_CONFIGURE_REPORTING]
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
 
     WriteDeviceList(self, 0)
@@ -1100,10 +1101,8 @@ def check_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
 def is_time_to_perform_work(self, DeviceAttribute, key, endpoint, clusterId, now, timeoutperiod):
     # Based on a timeout period return True or False.
     if key not in self.ListOfDevices:
-        Domoticz.Log("Unknown Key: %s" % key)
         return False
     if check_datastruct(self, DeviceAttribute, key, endpoint, clusterId) is None:
-        Domoticz.Log("check_datastruct responded to None Key: %s !!" % key)
         return False
     return now >= (self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["TimeStamp"] + timeoutperiod)
 
@@ -1121,8 +1120,14 @@ def get_list_isqn_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterI
         return []
     if check_datastruct(self, DeviceAttribute, key, endpoint, clusterId) is None:
         return []
-    return [x for x in list(self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["iSQN"].keys())]
+    return list(list(self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["iSQN"].keys()))
 
+def get_list_isqn_int_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
+    if key not in self.ListOfDevices:
+        return []
+    if check_datastruct(self, DeviceAttribute, key, endpoint, clusterId) is None:
+        return []
+    return [int(x, 16) for x in self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["iSQN"].keys()]
 
 def set_request_datastruct(
     self,
@@ -1518,3 +1523,10 @@ def night_shift_jobs( self ):
 
     #Domoticz.Log("Outside of Night Shift period %s %s %s" %( start, current, end))
     return False
+
+
+def print_stack( self ):
+    
+    import inspect
+    for x in inspect.stack():
+        self.logging("Debug","[{:40}| {}:{}".format(x.function, x.filename, x.lineno))

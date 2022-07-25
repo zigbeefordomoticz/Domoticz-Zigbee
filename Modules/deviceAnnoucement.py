@@ -22,6 +22,7 @@ from Modules.livolo import livolo_bind
 from Modules.manufacturer_code import PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO
 from Modules.pairingProcess import (interview_state_004d,
                                     zigbee_provision_device)
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped)
 from Modules.tuyaSiren import tuya_sirene_registration
@@ -47,10 +48,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
     # Decoding what we receive
 
-    RejoinFlag = None
-    if len(MsgData) > 22:  # Firmware 3.1b
-        RejoinFlag = MsgData[22:24]
-
+    RejoinFlag = MsgData[22:24] if len(MsgData) > 22 else None
     NwkId = MsgData[:4]
     Ieee = MsgData[4:20]
     MacCapa = MsgData[20:22]
@@ -135,15 +133,15 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     reseted_device = False
     self.log.logging("DeviceAnnoucement", "Debug", "device_annoucementv2 - Nwkid: %s Status: %s" %(NwkId,self.ListOfDevices[NwkId]["Status"] ), NwkId)
     if (
-        ( "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed", "erasePDM", "provREQ", "Left") ) 
-        or ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Left") )
+        ( "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed", "erasePDM", "provREQ", "Leave") ) 
+        or ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Leave") )
     ):
         self.log.logging("DeviceAnnoucement", "Debug", "--> Device reset, removing key Attributes", NwkId)
         reseted_device = True
         if "Bind" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["Bind"]
-        if "ConfigureReporting" in self.ListOfDevices[NwkId]:
-            del self.ListOfDevices[NwkId]["ConfigureReporting"]
+        if STORE_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
+            del self.ListOfDevices[NwkId][STORE_CONFIGURE_REPORTING]
         if "ReadAttributes" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["ReadAttributes"]
         if "Neighbours" in self.ListOfDevices[NwkId]:
@@ -188,27 +186,24 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         lastSeenUpdate(self, Devices, NwkId=NwkId)
 
         legrand_refresh_battery_remote(self, NwkId)
-
         # CasaIA ( AC221, CAC221 )
         restart_plugin_reset_ModuleIRCode(self, NwkId)
 
         if mainPoweredDevice(self, NwkId):
+            enforce_configure_reporting( self, NwkId)
             read_attributes_if_needed( self, NwkId)
 
         if reseted_device:
             self.log.logging("DeviceAnnoucement", "Debug", "--> Device reset, redoing provisioning", NwkId)
             # IAS Enrollment if required
             self.iaszonemgt.IAS_device_enrollment(NwkId)
-
             zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
-
-
         return
 
     # Annouced is in the ListOfDevices[NwkId]
     if "TimeStamp" in self.ListOfDevices[NwkId]["Announced"] and (now < (self.ListOfDevices[NwkId]["Announced"]["TimeStamp"] + DELAY_BETWEEN_2_DEVICEANNOUCEMENT )):
         # If the TimeStamp is > DELAY_BETWEEN_2_DEVICEANNOUCEMENT, the Data are invalid and we will do process this.
-        if "Rejoin" in self.ListOfDevices[NwkId]["Announced"] and self.ListOfDevices[NwkId]["Announced"]["Rejoin"] in ("01", "02") and self.ListOfDevices[NwkId]["Status"] != "Left":
+        if "Rejoin" in self.ListOfDevices[NwkId]["Announced"] and self.ListOfDevices[NwkId]["Announced"]["Rejoin"] in ("01", "02") and self.ListOfDevices[NwkId]["Status"] != "Leave":
             self.log.logging(
                 "DeviceAnnoucement",
                 "Debug",
@@ -219,14 +214,14 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             lastSeenUpdate(self, Devices, NwkId=NwkId)
 
             legrand_refresh_battery_remote(self, NwkId)
-
+            if mainPoweredDevice(self, NwkId):
+                enforce_configure_reporting( self, NwkId)
             restart_plugin_reset_ModuleIRCode(self, NwkId)
             read_attributes_if_needed( self, NwkId)
 
             if reseted_device:
                 # IAS Enrollment if required
                 self.iaszonemgt.IAS_device_enrollment(NwkId)
-
                 zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
 
             if self.ListOfDevices[NwkId]["Model"] in ("TS0601-sirene"):
@@ -235,23 +230,19 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
                 tuya_eTRV_registration(self, NwkId, False)
             del self.ListOfDevices[NwkId]["Announced"]
             return
-    else:
+        
+    elif RejoinFlag:
         # Most likely we receive a Device Annoucement which has not relation with the JoinFlag we have .
-        if RejoinFlag:
-            self.log.logging(
-                "DeviceAnnoucement",
-                "Error",
-                "Decode004D - Unexpected %s %s %s" % (NwkId, Ieee, RejoinFlag),
-                NwkId,
-            )
+        self.log.logging(
+            "Input",
+            "Error",
+            "Decode004D - Unexpected %s %s %s" % (NwkId, Ieee, RejoinFlag),
+            NwkId,
+        )
 
     for ep in list(self.ListOfDevices[NwkId]["Ep"].keys()):
         if "0004" in self.ListOfDevices[NwkId]["Ep"][ep] and self.groupmgt:
-            self.groupmgt.ScanDevicesForGroupMemberShip(
-                [
-                    NwkId,
-                ]
-            )
+            self.groupmgt.ScanDevicesForGroupMemberShip( [ NwkId, ] )
             break
 
     # This should be the first one, let's take the information and drop it
@@ -287,7 +278,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
 
     # If this is a rejoin after a leave, let's update the Status
 
-    if self.ListOfDevices[NwkId]["Status"] == "Left":
+    if self.ListOfDevices[NwkId]["Status"] == "Leave":
         self.log.logging("DeviceAnnoucement", "Debug", "Decode004D -  %s Status from Left to inDB" % (NwkId), NwkId)
         self.ListOfDevices[NwkId]["Status"] = "inDB"
 
@@ -420,3 +411,8 @@ def read_attributes_if_needed( self, NwkId):
     # Will be forcing Read Attribute (if forcePollingAfterAction is enabled -default-)
     self.log.logging( "DeviceAnnoucement", "Debug", "read_attributes_if_needed %s" %NwkId)
     self.ListOfDevices[NwkId]["Heartbeat"] = "0"
+
+def enforce_configure_reporting( self, NwkId):
+    self.log.logging("DeviceAnnoucement", "Log", "Forcing a check of configure reporting after Device Annoucement on Main Powered device %s" %NwkId)
+    self.configureReporting.check_configuration_reporting_for_device( NwkId, force=True)
+

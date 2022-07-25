@@ -127,32 +127,56 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             "handle_unknown_devices": True,
             "source_routing": True
             }
+            
         self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
     elif radiomodule =="zigate":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
-        import zigpy_zigate.config as conf
-        from Classes.ZigpyTransport.AppZigate import App_zigate
-        config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
-        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        try:
+            import zigpy_zigate.config as conf
+            from Classes.ZigpyTransport.AppZigate import App_zigate
+            config = {
+                conf.CONF_DEVICE: {"path": serialPort,}, 
+                conf.CONF_NWK: {},
+                "topology_scan_enabled": False,
+                }
+            self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        except Exception as e:
+            self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
+            self.log.logging("%s" %traceback.format_exc())
 
     elif radiomodule =="znp":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
         try:
             import zigpy_znp.config as conf
             from Classes.ZigpyTransport.AppZnp import App_znp
-            config = {conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, conf.CONF_NWK: {}}
+            config = {
+                conf.CONF_DEVICE: {"path": serialPort,}, 
+                conf.CONF_NWK: {},
+                "topology_scan_enabled": False,
+                }
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
-            
+            self.log.logging("%s" %traceback.format_exc())
 
     elif radiomodule =="deCONZ":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
-        import zigpy_deconz.config as conf
-        from Classes.ZigpyTransport.AppDeconz import App_deconz
-        config = {conf.CONF_DEVICE: {"path": serialPort}, conf.CONF_NWK: {}}
-        self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        try:
+            import zigpy_deconz.config as conf
+            from Classes.ZigpyTransport.AppDeconz import App_deconz
+            config = {
+                conf.CONF_DEVICE: {"path": serialPort}, 
+                conf.CONF_NWK: {},
+                "topology_scan_enabled": False,
+                }
+            self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+        except Exception as e:
+            self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
+            self.log.logging("%s" %traceback.format_exc())
+
+    if "TXpower_set" in self.pluginconf.pluginConf:
+        config["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
 
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
@@ -259,11 +283,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 async def worker_loop(self):
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
-    while self.zigpy_running:
-        # self.log.logging("TransportZigpy",  'Debug', "Waiting for next command Qsize: %s" %self.writer_queue.qsize())
-        if self.writer_queue is None:
-            break
-
+    while self.zigpy_running and self.writer_queue is not None:
         entry = await get_next_command(self)
         if entry is None:
             continue
@@ -334,7 +354,7 @@ async def worker_loop(self):
                 )
 
     self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s" %len(self._concurrent_requests_semaphores_list))
-    
+
     if self._concurrent_requests_semaphores_list:
         for x in self._concurrent_requests_semaphores_list:
             self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)

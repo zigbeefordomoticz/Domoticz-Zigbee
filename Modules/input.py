@@ -11,7 +11,6 @@
 """
 
 import binascii
-from pickle import FALSE
 import struct
 import time
 from datetime import datetime
@@ -21,13 +20,11 @@ from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                              sqn_get_internal_sqn_from_app_sqn,
                                              sqn_get_internal_sqn_from_aps_sqn)
 from Zigbee.decode8002 import decode8002_and_process
-from Zigbee.zclCommands import zcl_IAS_default_response
-from Zigbee.zclRawCommands import zcl_raw_default_response
 from Zigbee.zdpCommands import zdp_NWK_address_request
 
 from Modules.basicInputs import read_attribute_response
 from Modules.basicOutputs import (getListofAttribute, send_default_response,
-                                  setTimeServer, unknown_device_nwkid)
+                                  setTimeServer)
 from Modules.callback import callbackDeviceAwake
 from Modules.deviceAnnoucement import device_annoucementv2
 from Modules.domoMaj import MajDomoDevice
@@ -46,7 +43,6 @@ from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
                                      rejoin_legrand_reset)
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
-from Modules.zb_tables_management import mgmt_rtg_rsp, store_NwkAddr_Associated_Devices
 from Modules.pairingProcess import interview_state_8045, request_next_Ep
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.readClusters import ReadCluster
@@ -57,10 +53,12 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            checkAndStoreAttributeValue, decodeMacCapa,
                            extract_info_from_8085, get_isqn_datastruct,
                            get_list_isqn_attr_datastruct, getSaddrfromIEEE,
-                           is_fake_ep, loggingMessages, lookupForIEEE,
-                           mainPoweredDevice, retreive_cmd_payload_from_8002,
+                           loggingMessages, lookupForIEEE, mainPoweredDevice,
+                           retreive_cmd_payload_from_8002,
                            set_request_phase_datastruct, set_status_datastruct,
-                           timeStamped, updLQI, updSQN, try_to_reconnect_via_neighbours)
+                           timeStamped, updLQI, updSQN)
+from Modules.zb_tables_management import (mgmt_rtg_rsp,
+                                          store_NwkAddr_Associated_Devices)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
                                   LEGRAND_REMOTE_SWITCHS, ZCL_CLUSTERS_LIST,
                                   ZIGATE_EP, ZIGBEE_COMMAND_IDENTIFIER)
@@ -68,6 +66,7 @@ from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import (FIRMWARE_BRANCH,
                                         set_display_firmware_version)
+
 
 def ZigateRead(self, Devices, Data):
     
@@ -1949,7 +1948,6 @@ def Network_Address_response_request_next_index(self, nwkid, ieee, index, Actual
     zdp_NWK_address_request(self, nwkid, ieee, u8RequestType="01", u8StartIndex=new_index)
     
 
-      
 def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
@@ -1980,11 +1978,11 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         )
 
     if MsgShortAddress == "0000" and self.ControllerIEEE and MsgIEEE != self.ControllerIEEE:
-        self.log.logging( "Input", "Error",  "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
+        self.log.logging( "Input", "Error", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
         return
 
     elif self.ControllerIEEE and MsgIEEE == self.ControllerIEEE and MsgShortAddress != "0000":
-        self.log.logging( "Input", "Error",  "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
+        self.log.logging( "Input", "Log", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
         return
         
     if (
@@ -1992,7 +1990,7 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         and 'IEEE' in self.ListOfDevices[MsgShortAddress] 
         and self.ListOfDevices[MsgShortAddress]['IEEE'] == MsgShortAddress
     ):
-        self.log.logging( "Input", "Debug",  "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress) )
+        self.log.logging( "Input", "Debug", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s" % (MsgIEEE, MsgShortAddress) )
         timeStamped(self, MsgShortAddress, 0x8041)
         loggingMessages(self, "8041", MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
         lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
@@ -2005,7 +2003,7 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         self.log.logging( "Input", "Debug",
             "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),)
         if self.pluginconf.pluginConf["reconnectonIEEEaddr"] and not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
-            self.log.logging("Input", "Error",  "Decode 8041 - Not able to reconnect (unknown device) %s %s" %(MsgIEEE, MsgShortAddress),)
+            self.log.logging("Input", "Log", "Decode 8041 - Not able to reconnect (unknown device) %s %s" %(MsgIEEE, MsgShortAddress),)
             return
 
         timeStamped(self, MsgShortAddress, 0x8041)
@@ -2043,7 +2041,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
             "Debug",
             "Decode8042 - Reception of Node Descriptor for %s with status %s" %(addr, status))
         return
-            
+
     self.log.logging(
         "Input",
         "Debug",
@@ -2584,7 +2582,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
             self.log.logging("Input", "Status", "Removing Device entry %s from plugin IEEE2NWK" %( MsgExtAddress))
     
     elif self.ListOfDevices[sAddr]["Status"] == "inDB":
-        self.ListOfDevices[sAddr]["Status"] = "Left"
+        self.ListOfDevices[sAddr]["Status"] = "Leave"
         self.ListOfDevices[sAddr]["Heartbeat"] = 0
         # Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
         # leaveMgtReJoin( self, sAddr, MsgExtAddress )
@@ -2599,7 +2597,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
             "Removing this not completly provisionned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress),
         )
 
-    elif self.ListOfDevices[sAddr]["Status"] == "Left":
+    elif self.ListOfDevices[sAddr]["Status"] == "Leave":
         # This is bugy, as I should then remove the device in Domoticz
         # self.log.logging( "Input", 'Log',"--> Removing: %s" %str(self.ListOfDevices[sAddr]))
         # del self.ListOfDevices[sAddr]

@@ -80,7 +80,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             logging.debug("EZSP Radio manufacturer: %s", brd_manuf)
             logging.debug("EZSP Radio board name: %s", brd_name)
             logging.debug("EmberZNet version: %s" %version)
-            logging.info("EZSP Configuration %s" %self.config)
+            logging.info("EZSP Configuration %s", self.config)
         except EzspError as exc:
             logging.error("EZSP Radio does not support getMfgToken command: %s" %str(exc))
 
@@ -105,14 +105,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
                 
             LOGGER.debug("Network info: %s", self.state.network_info)
             LOGGER.debug("Node info: %s", self.state.node_info)
-            #self.start_network()
-            try:
-                await self.start_network()
-            except Exception as e:
-                LOGGER.error("=================Couldn't start network %s" %e)
-                
-        except Exception as e :
-            LOGGER.error("Couldn't start application %s" %e)
+            LOGGER.info("EZSP Configuration: %s", self.config)
+            await self.start_network()
+        except Exception:
+            LOGGER.error("Couldn't start application")
             await self.shutdown()
             raise
 
@@ -274,10 +270,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # 0x02: Enable the alternate transmitter output.
         # 0x03: Both 0x01 & 0x02
         if power > 0:
-            await self.setConfigurationValue(t.EzspConfigId.CONFIG_TX_POWER_MODE,1)    
+            await self._ezsp.setConfigurationValue(t.EzspConfigId.CONFIG_TX_POWER_MODE,1)    
             self.log.logging("TransportZigpy", "Debug", "set_tx_power: boost power mode")
         else:
-            await self.setConfigurationValue(t.EzspConfigId.CONFIG_TX_POWER_MODE,0)
+            await self._ezsp.setConfigurationValue(t.EzspConfigId.CONFIG_TX_POWER_MODE,0)
             self.log.logging("TransportZigpy", "Debug", "set_tx_power: normal mode")
 
     async def set_led(self, mode):

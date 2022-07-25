@@ -7,8 +7,10 @@ import json
 import time
 
 import Domoticz
-from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
-from Modules.tools import getEpForCluster
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Modules.pluginDbAttributes import STORE_CUSTOM_CONFIGURE_REPORTING
+from Modules.zigateConsts import SIZE_DATA_TYPE
 
 
 def rest_cfgrpt_ondemand(self, verb, data, parameters):
@@ -24,7 +26,7 @@ def rest_cfgrpt_ondemand(self, verb, data, parameters):
         return _response
 
     if self.ControllerData:
-        self.configureReporting.cfg_reporting_on_demand( parameters[0] )
+        self.configureReporting.check_and_redo_configure_reporting_if_needed( parameters[0] )
         
     self.logging("Debug", f"rest_cfgrpt_ondemand requested on {parameters[0]}")
 
@@ -75,8 +77,8 @@ def rest_cfgrpt_ondemand_with_config_delete(self, verb, data, parameters , _resp
         self.logging("Error", f"rest_cfgrpt_ondemand_with_config_delete unknown devices NwkId: {deviceId} !!! ")
         return _response
     
-    if "ParamConfigureReporting" in self.ListOfDevices[ deviceId ]:
-        del self.ListOfDevices[ deviceId ][ "ParamConfigureReporting" ]
+    if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[ deviceId ]:
+        del self.ListOfDevices[ deviceId ][ STORE_CUSTOM_CONFIGURE_REPORTING ]
 
     action = {"Name": "Configure reporting record removed", "TimeStamp": int(time.time())}
     _response["Data"] = json.dumps(action, sort_keys=True)
@@ -90,7 +92,7 @@ def rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _respons
     cfg_rpt_record = get_cfg_rpt_record( self, deviceId )
 
     self.logging("Debug", f"rest_cfgrpt_ondemand_with_config_get  {cfg_rpt_record}")
-    _response["Data"] = convert_to_json( cfg_rpt_record )
+    _response["Data"] = convert_to_json( self, cfg_rpt_record )
     
     return _response
 
@@ -153,7 +155,7 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
         self.logging("Error", f"rest_cfgrpt_ondemand_with_config unknown devices NwkId: {nwkid} !!! ")
         return _response
 
-    if "ParamConfigureReporting" in self.ListOfDevices[ nwkid ]:
+    if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[ nwkid ]:
         self.logging("Debug", f"rest_cfgrpt_ondemand_with_config will override Config Reporting for {nwkid} !!! ")
 
     # Sanity check on the cluster list
@@ -171,18 +173,20 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
             if "Attribute" not in attribute:
                 continue
             cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ] = {}
+            # All data are sent by the Frontend in hex. We need to make sure they are store in the proper format
             for info in attribute["Infos"]:
                 if "MinInterval" in info:
-                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["MinInterval"] = info["MinInterval"]
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["MinInterval"] = "%04x" %int(info["MinInterval"],16)
                 if "MaxInterval" in info:
-                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["MaxInterval"] = info["MaxInterval"]
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["MaxInterval"] = "%04x" % int(info["MaxInterval"],16)
                 if "TimeOut" in info:
-                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["TimeOut"] = info["TimeOut"]
-                if "Change" in info:
-                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["Change"] = info["Change"]
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["TimeOut"] = "%04x" %int(info["TimeOut"],16)
                 if "DataType" in info:
-                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["DataType"] = info["DataType"]
-    self.ListOfDevices[ nwkid ][ "ParamConfigureReporting" ] = cluster_config_reporting
+                    cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["DataType"] = "%02x" % int(info["DataType"],16)
+                    if "Change" in info:
+                        cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["Change"] = datatype_formating( self, info["Change"], info["DataType"] )
+                        
+    self.ListOfDevices[ nwkid ][ STORE_CUSTOM_CONFIGURE_REPORTING ] = cluster_config_reporting
     action = {"Name": "Configure reporting record updated", "TimeStamp": int(time.time())}
 
     _response["Data"] = json.dumps(action, sort_keys=True)
@@ -194,13 +198,15 @@ def fake_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
 
-def convert_to_json( data ):
+def convert_to_json( self, data ):
     # {"0006": {"Attributes": {"0000": {"DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "01"}}}, 
     #  "0702": {"Attributes": {"0000": {"DataType": "25", "MinInterval": "FFFF", "MaxInterval": "0000", "TimeOut": "0000", "Change": "000000000000000a"}}}, 
     #  "0b04": {"Attributes": {"0505": {"DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"},
     #                          "0508": {"DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"}, 
     #                          "050b": {"DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"}}}}
+    self.logging("Debug", f"convert_to_json Data {data}")
     cluster_list = []
+
     for cluster in data:
         cluster_info = {"ClusterId": cluster, "Attributes": []}
         for attribute in data[ cluster ]["Attributes"]:
@@ -214,8 +220,8 @@ def convert_to_json( data ):
                
 def get_cfg_rpt_record(self, NwkId):
 
-    if "ParamConfigureReporting" in self.ListOfDevices[NwkId]:
-        return self.ListOfDevices[NwkId][ "ParamConfigureReporting" ]
+    if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
+        return self.ListOfDevices[NwkId][ STORE_CUSTOM_CONFIGURE_REPORTING ]
 
     if (
         "Model" in self.ListOfDevices[NwkId]
@@ -224,3 +230,31 @@ def get_cfg_rpt_record(self, NwkId):
         and "ConfigureReporting" in self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]
     ):
         return self.DeviceConf[ self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting" ]
+
+def datatype_formating( self, value, type):
+    
+    if type not in SIZE_DATA_TYPE:
+            
+        return value
+
+    if SIZE_DATA_TYPE[ type ] == 1:
+        return "%02x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 2:
+        return "%04x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 3:
+        return "%06x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 4:
+        return "%08x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 5:
+        return "%010x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 6:
+        return "%012x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 7:
+        return "%014x" %int( value, 16)
+    if SIZE_DATA_TYPE[ type ] == 8:
+        return "%016x" %int( value, 16)
+
+    self.logging("Error", f"datatype_formating  unknown Data type {type} for value {value}")
+    return value
+
+        

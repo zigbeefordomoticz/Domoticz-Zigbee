@@ -28,6 +28,7 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_WIZER_LEGACY,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.orvibo import OrviboRegistration
+
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
@@ -426,7 +427,6 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
     self.ListOfDevices[NWKID]["PairingInProgress"] = False
 
     mgmt_rtg(self, NWKID, "BindingTable")
-
 
 def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
