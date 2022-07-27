@@ -688,7 +688,7 @@ def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
         and _mainPowered 
         and night_shift_jobs( self )
         and self.HeartbeatCount > QUIET_AFTER_START 
-        and (intHB % (60 // HEARTBEAT)) == 0
+        and (self.HeartbeatCount % (60 // HEARTBEAT)) == 0
     ):
         if "Status" not in self.ListOfDevices[NWKID] or self.ListOfDevices[NWKID]["Status"] != "inDB":
             return False
