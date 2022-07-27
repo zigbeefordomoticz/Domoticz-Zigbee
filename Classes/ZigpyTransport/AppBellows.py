@@ -71,7 +71,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
-        await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
+        ## await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
         self.callBackFunction(build_plugin_8015_frame_content( self, self.state.network_info))
         
         # Trigger Version payload to plugin
@@ -101,6 +101,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
                     raise
                 LOGGER.info("Forming a new network")
                 await self.form_network()
+                await self.load_network_info(load_devices=False)
+                
             LOGGER.debug("Network info: %s", self.state.network_info)
             LOGGER.debug("Node info: %s", self.state.node_info)
             LOGGER.info("EZSP Configuration: %s", self.config)

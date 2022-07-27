@@ -6,8 +6,8 @@
 
 import binascii
 import logging
-from typing import Any, Optional
 import time
+from typing import Any, Optional
 
 import zigpy.appdb
 import zigpy.config
