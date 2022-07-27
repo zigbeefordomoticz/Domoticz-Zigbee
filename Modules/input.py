@@ -56,7 +56,8 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            loggingMessages, lookupForIEEE, mainPoweredDevice,
                            retreive_cmd_payload_from_8002,
                            set_request_phase_datastruct, set_status_datastruct,
-                           timeStamped, updLQI, updSQN, zigpy_plugin_sanity_check)
+                           timeStamped, updLQI, updSQN,
+                           zigpy_plugin_sanity_check)
 from Modules.zb_tables_management import (mgmt_rtg_rsp,
                                           store_NwkAddr_Associated_Devices)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
