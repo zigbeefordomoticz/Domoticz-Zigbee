@@ -15,6 +15,7 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Zigbee.zdpCommands import zdp_IEEE_address_request
+from Modules.tools import zigpy_plugin_sanity_check
 
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
@@ -26,6 +27,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
     # Sanity Checks
     if NWKID not in self.ListOfDevices:
         self.log.logging("Widget", "Error", "MajDomoDevice - %s not known" % NWKID, NWKID)
+        zigpy_plugin_sanity_check(self, NWKID)
         return
 
     if Ep not in self.ListOfDevices[NWKID]["Ep"]:
@@ -38,8 +40,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             "Log",
             "MajDomoDevice NwkId: %s status: %s not inDB request IEEE for possible reconnection" % (NWKID, self.ListOfDevices[NWKID]["Status"]),
             NWKID,
-            zdp_IEEE_address_request(self, NWKID, NWKID, u8RequestType="00", u8StartIndex="00")
         )
+        if not zigpy_plugin_sanity_check(self, NWKID):
+            zdp_IEEE_address_request(self, NWKID, NWKID, u8RequestType="00", u8StartIndex="00")
         return
 
     if "IEEE" not in self.ListOfDevices[NWKID]:

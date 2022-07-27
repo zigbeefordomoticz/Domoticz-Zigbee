@@ -71,7 +71,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
-        ## await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
+        # await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
         self.callBackFunction(build_plugin_8015_frame_content( self, self.state.network_info))
         
         # Trigger Version payload to plugin
@@ -116,6 +116,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def register_endpoint(self, endpoint=1):
         await super().add_endpoint(endpoint)
 
+
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
@@ -123,6 +124,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
         dev = None
         try:
+            logging.debug("AppBellows get_device( %s ,%s) (%s) (%s)" %( ieee, nwk, type(ieee), type(nwk)))
+
             dev = super().get_device(ieee, nwk)
             # We have found in Zigpy db.
             # We might have to check that the plugin and zigpy Dbs are in sync
@@ -142,7 +145,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         if dev is not None:
             # logging.debug("found device dev: %s" % (str(dev)))
             return dev
-        
+
         logging.debug("AppBellows get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
         raise KeyError
 
@@ -170,6 +173,20 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
         _nwk = new_nwkid.serialize()[::-1].hex()
         self.callBackUpdDevice(_ieee, _nwk)
+
+    def get_device_ieee(self, nwk):
+        # Call from the plugin to retreive the ieee
+        # we assumed nwk as an hex string
+        try:
+            dev = super().get_device( nwk=int(nwk,16))
+            logging.debug("AppBellows get_device  nwk: %s returned %s" %( nwk, dev))
+        except KeyError:
+            logging.debug("AppBellows get_device raise KeyError nwk: %s !!" %( nwk))
+            return None  
+        if dev.ieee:
+            return "%016x" % t.uint64_t.deserialize(dev.ieee.serialize())[0]
+        return None         
+
             
     def handle_leave(self, nwk, ieee):
         self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))

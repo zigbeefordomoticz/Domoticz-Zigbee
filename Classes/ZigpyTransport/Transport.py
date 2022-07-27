@@ -105,6 +105,9 @@ class ZigpyTransport(object):
         self.log.logging("Transport", "Debug", "===> receiveData for Forwarded - Message %s" % (message))
         self.forwarder_queue.put(message)
 
+    def get_device_ieee( self, nwkid):
+        return self.app.get_device_ieee( nwkid )
+
     # TO be cleaned . This is to make the plugin working
     def update_ZiGate_HW_Version(self, version):
         return

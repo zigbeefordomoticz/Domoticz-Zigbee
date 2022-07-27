@@ -150,6 +150,19 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         _nwk = new_nwkid.serialize()[::-1].hex()
         self.callBackUpdDevice(_ieee, _nwk)
 
+    def get_device_ieee(self, nwk):
+        # Call from the plugin to retreive the ieee
+        # we assumed nwk as an hex string
+        try:
+            dev = super().get_device( nwk=int(nwk,16))
+            logging.debug("AppZigate get_device  nwk: %s returned %s" %( nwk, dev))
+        except KeyError:
+            logging.debug("AppZigate get_device raise KeyError nwk: %s !!" %( nwk))
+            return None  
+        if dev.ieee:
+            return "%016x" % t.uint64_t.deserialize(dev.ieee.serialize())[0]
+        return None         
+
 
     def handle_leave(self, nwk, ieee):
         self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))

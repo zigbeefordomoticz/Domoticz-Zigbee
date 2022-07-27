@@ -257,17 +257,16 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     # We got a new Network ID for an existing IEEE. So just re-connect.
     # - mapping the information to the new new_NwkId
     if old_NwkId not in self.ListOfDevices:
-        return
+        return False
     if old_NwkId == new_NwkId:
+        return True
+
+    if new_NwkId == "0000" or old_NwkId == "0000":
         self.log.logging("Input", "Error", 
             "reconnectNWkDevice - cannot play with NwkId of Controller %s %s %s"
             % (new_NwkId, old_NwkId, IEEE)
         )
-
-        return
-
-    if new_NwkId == "0000" or old_NwkId == "0000":
-        return
+        return False
     self.ListOfDevices[new_NwkId] = dict(self.ListOfDevices[old_NwkId])
     self.IEEE2NWK[IEEE] = new_NwkId
 
@@ -304,7 +303,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
 
     WriteDeviceList(self, 0)
     self.log.logging("Input", "Status", "NetworkID: %s is replacing %s for object: %s" % (new_NwkId, old_NwkId, IEEE))
-    return
+    return True
 
 
 def removeNwkInList(self, NWKID):
@@ -933,23 +932,22 @@ def lookupForIEEE(self, nwkid, reconnect=False):
     return None
 
 def zigpy_plugin_sanity_check(self, nwkid):
+    if self.zigbee_communication and self.zigbee_communication != "zigpy":
+        return False
     ieee = self.ControllerLink.get_device_ieee( nwkid )
     if ieee is None:
-        return
-    if nwkid not in self.ListOfDevices:
-        return
+        return False
     if ieee not in self.IEEE2NWK:
-        return
+        return False
     if self.IEEE2NWK[ ieee ] == nwkid:
         if "Status" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Status"] in ( 'Leave', ):
             # the device is alive and ieee/nwkid is correct
+            self.log.logging("Input", "Status", 
+                "zigpy_plugin_sanity_check - Update Status from %s to 'inDB' for NetworkID : %s"
+                % (self.ListOfDevices[nwkid]["Status"], nwkid), nwkid)
             self.ListOfDevices[ nwkid ]["Status"] = 'inDB'
             self.ListOfDevices[nwkid]["Heartbeat"] = "0"
-            self.log.logging("Input", "Status", 
-            "zigpy_plugin_sanity_check - Update Status from %s to 'inDB' for NetworkID : %s"
-            % (self.ListOfDevices[nwkid]["Status"], nwkid), nwkid)
-
-        return
+        return True
     # we have a disconnect as IEEE is not pointing to the right nwkid
     reconnectNWkDevice(self, nwkid, ieee, self.IEEE2NWK[ ieee ])
 

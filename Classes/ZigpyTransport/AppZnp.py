@@ -118,7 +118,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     def device_initialized(self, device):
             self.log.logging("TransportZigpy", "Log","device_initialized (0x%04x %s)" %(device.nwk, device.ieee))
             super().device_initialized(device)
-            
+     
+        
     def get_device(self, ieee=None, nwk=None):
         # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
@@ -175,6 +176,19 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         _nwk = new_nwkid.serialize()[::-1].hex()
         self.callBackUpdDevice(_ieee, _nwk)
         
+    def get_device_ieee(self, nwk):
+        # Call from the plugin to retreive the ieee
+        # we assumed nwk as an hex string
+        try:
+            dev = super().get_device( nwk=int(nwk,16))
+            logging.debug("AppZnp get_device  nwk: %s returned %s" %( nwk, dev))
+        except KeyError:
+            logging.debug("AppZnp get_device raise KeyError nwk: %s !!" %( nwk))
+            return None  
+        if dev.ieee:
+            return "%016x" % t.uint64_t.deserialize(dev.ieee.serialize())[0]
+        return None         
+
                   
     def handle_leave(self, nwk, ieee):
         self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))

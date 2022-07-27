@@ -73,8 +73,8 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         network_info = self.state.network_info
 
         # deConz doesn't have such capabilities to provided list of paired devices.
-        #logging.debug("startup Network Info: %s" %str(network_info))
-        #self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
+        # logging.debug("startup Network Info: %s" %str(network_info))
+        # self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
         # Trigger Version payload to plugin
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
@@ -330,6 +330,19 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
         _nwk = new_nwkid.serialize()[::-1].hex()
         self.callBackUpdDevice(_ieee, _nwk)
+
+    def get_device_ieee(self, nwk):
+        # Call from the plugin to retreive the ieee
+        # we assumed nwk as an hex string
+        try:
+            dev = super().get_device( nwk=int(nwk,16))
+            logging.debug("AppDeconz get_device  nwk: %s returned %s" %( nwk, dev))
+        except KeyError:
+            logging.debug("AppDeconz get_device raise KeyError nwk: %s !!" %( nwk))
+            return None  
+        if dev.ieee:
+            return "%016x" % t.uint64_t.deserialize(dev.ieee.serialize())[0]
+        return None         
 
 
     def handle_leave(self, nwk, ieee):

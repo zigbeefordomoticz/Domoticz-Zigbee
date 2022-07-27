@@ -56,7 +56,7 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            loggingMessages, lookupForIEEE, mainPoweredDevice,
                            retreive_cmd_payload_from_8002,
                            set_request_phase_datastruct, set_status_datastruct,
-                           timeStamped, updLQI, updSQN)
+                           timeStamped, updLQI, updSQN, zigpy_plugin_sanity_check)
 from Modules.zb_tables_management import (mgmt_rtg_rsp,
                                           store_NwkAddr_Associated_Devices)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
@@ -346,6 +346,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
     
     if MsgSrcAddr not in self.ListOfDevices:
+        zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
 
     # Livolo case, where livolo provide Switch status update via a Malformed read Attribute request
@@ -1249,6 +1250,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ControllerLink, MsgSEQ)
 
     if MsgSrcAddr not in self.ListOfDevices:
+        zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
 
     updLQI(self, MsgSrcAddr, MsgLQI)
@@ -1271,9 +1273,6 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
                 MsgSrcAddr,
             )
 
-    if MsgSrcAddr not in self.ListOfDevices:
-        return
-
     if MsgStatus == "00":
         timeStamped(self, MsgSrcAddr, 0x8011)
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
@@ -1287,8 +1286,6 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
         return
 
-    if MsgSrcAddr not in self.ListOfDevices:
-        return
     if not _powered:
         return
 
@@ -1303,8 +1300,6 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
 
 def set_health_state(self, MsgSrcAddr, ClusterId, Status):
-    if MsgSrcAddr not in self.ListOfDevices:
-        return
 
     if "Health" not in self.ListOfDevices[MsgSrcAddr]:
         return
@@ -3373,6 +3368,7 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
     MsgSrcAddr = MsgData[2:6]
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("Decode8120 - receiving Configure reporting response from unknow  %s" % MsgSrcAddr)
+        zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
 
     timeStamped(self, MsgSrcAddr, 0x8120)
@@ -3469,6 +3465,7 @@ def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
         )
 
         if MsgSrcAddr not in self.ListOfDevices:
+            zigpy_plugin_sanity_check(self, MsgSrcAddr)
             return
 
         if "Attributes List" not in self.ListOfDevices[MsgSrcAddr]:
@@ -3526,6 +3523,7 @@ def Decode8141(self, Devices, MsgData, MsgLQI):  # Attribute Discovery Extended 
         )
 
         if MsgSrcAddr not in self.ListOfDevices:
+            zigpy_plugin_sanity_check(self, MsgSrcAddr)
             return
 
         if "Attributes List" not in self.ListOfDevices[MsgSrcAddr]:
@@ -3627,22 +3625,15 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
 
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("Decode8401 - unknown IAS device %s from plugin" % MsgSrcAddr)
+        zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
+    
     if "Health" in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
 
     timeStamped(self, MsgSrcAddr, 0x8401)
     updSQN(self, MsgSrcAddr, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
-
-    if MsgSrcAddr not in self.ListOfDevices:
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8401 - receive a message for an unknown device %s: %s" % (MsgSrcAddr, MsgData),
-            MsgSrcAddr,
-        )
-        return
 
     Model = ""
     if "Model" in self.ListOfDevices[MsgSrcAddr]:
@@ -3666,9 +3657,6 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     )
     if Model == "PST03A-v2.2.5":
         Decode8401_PST03Av225(self, Devices, MsgSrcAddr, MsgEp, Model, MsgZoneStatus)
-        return
-
-    if MsgSrcAddr not in self.ListOfDevices:
         return
 
     alarm1 = int(MsgZoneStatus, 16) & 1
@@ -3926,9 +3914,11 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     )
 
     if MsgSrcAddr not in self.ListOfDevices:
+        zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
 
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
+        zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
 
     if check_duplicate_sqn(self, MsgSrcAddr, MsgEP, MsgClusterId, MsgSQN):
@@ -4194,9 +4184,11 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     )
 
     if MsgSrcAddr not in self.ListOfDevices:
+        zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
 
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
+        zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
 
     if check_duplicate_sqn(self, MsgSrcAddr, MsgEP, MsgClusterId, MsgSQN):
@@ -4450,8 +4442,10 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
         MsgSrcAddr,
     )
     if MsgSrcAddr not in self.ListOfDevices:
+        zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
+        zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
 
     updLQI(self, MsgSrcAddr, MsgLQI)
