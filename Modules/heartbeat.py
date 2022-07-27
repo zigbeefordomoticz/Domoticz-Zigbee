@@ -480,7 +480,6 @@ def submitPing(self, NwkId):
     self.ListOfDevices[NwkId]["Stamp"]["LastPing"] = int(time.time())
     ping_device_with_read_attribute(self, NwkId)
 
-
 def processKnownDevices(self, Devices, NWKID):
     # Begin
     # Normalize Hearbeat value if needed
@@ -673,16 +672,21 @@ def processKnownDevices(self, Devices, NWKID):
     return
 
 def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
-    self.log.logging( "ConfigureReporting", "Debug", "check_configuration_reporting for %s %s %s %s" %( 
-        NWKID, _mainPowered, intHB, self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
+
+    if (
+        "checkConfigurationReporting" not in self.pluginconf.pluginConf
+        or self.pluginconf.pluginConf["checkConfigurationReporting"] == 0
+    ):
+        return
+
+    self.log.logging( "ConfigureReporting", "Debug", "check_configuration_reporting for %s %s %s %s %s %s" %( 
+        NWKID, _mainPowered, self.HeartbeatCount, intHB, self.pluginconf.pluginConf["checkConfigurationReporting"], self.zigbee_communication), NWKID)
 
     if ( 
         self.zigbee_communication == "zigpy"
         and self.configureReporting
         and _mainPowered 
         and night_shift_jobs( self )
-        and "checkConfigurationReporting" in self.pluginconf.pluginConf
-        and self.pluginconf.pluginConf["checkConfigurationReporting"] 
         and self.HeartbeatCount > QUIET_AFTER_START 
         and (intHB % (60 // HEARTBEAT)) == 0
     ):
@@ -692,18 +696,17 @@ def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
         # Trigger Configure Reporting to eligeable devices
         if ( self.busy and self.ControllerLink.loadTransmit() > 3 ):
             return True
-        
+
         self.log.logging( "ConfigureReporting", "Debug", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
             NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
-        
+
         if (
             deviceconf_device(self, NWKID)
             and not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] )
         ):
             # Nothing trigger, let's check if the configure reporting are correct
-            if deviceconf_device(self, NWKID):
-                self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)    
-            
+            self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)    
+   
     elif (
         self.zigbee_communication != "zigpy"
         and self.configureReporting
@@ -712,7 +715,6 @@ def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
         and self.HeartbeatCount > QUIET_AFTER_START 
         and ((self.HeartbeatCount % CONFIGURERPRT_FEQ)) == 0
         and deviceconf_device(self, NWKID)
-
     ):
         # Trigger Configure Reporting to eligeable devices
         if ( self.busy and self.ControllerLink.loadTransmit() > 3 ):
@@ -720,12 +722,8 @@ def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
         
         self.log.logging( "ConfigureReporting", "Debug", "Trying Configuration reporting for %s/%s !" %( 
             NWKID, get_device_nickname( self, NwkId=NWKID)), NWKID)
-
-
-        self.configureReporting.processConfigureReporting( NWKID, batch=True )
-        
+        self.configureReporting.processConfigureReporting( NWKID, batch=True ) 
     return False
-    
     
 
 def processListOfDevices(self, Devices):
