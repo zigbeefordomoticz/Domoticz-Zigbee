@@ -517,7 +517,7 @@ def is_bind_ep( self, nwkid, ep):
 def deviceconf_device(self, nwkid):
     
     if (
-        "Model" in self.ListOfDevices
+        "Model" in self.ListOfDevices[nwkid ]
         and self.ListOfDevices[nwkid]["Model"] in self.DeviceConf
     ):
         return self.DeviceConf[ self.ListOfDevices[nwkid]["Model"] ]
@@ -932,6 +932,26 @@ def lookupForIEEE(self, nwkid, reconnect=False):
             return ieee
     return None
 
+def zigpy_plugin_sanity_check(self, nwkid):
+    ieee = self.ControllerLink.get_device_ieee( nwkid )
+    if ieee is None:
+        return
+    if nwkid not in self.ListOfDevices:
+        return
+    if ieee not in self.IEEE2NWK:
+        return
+    if self.IEEE2NWK[ ieee ] == nwkid:
+        if "Status" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Status"] in ( 'Leave', ):
+            # the device is alive and ieee/nwkid is correct
+            self.ListOfDevices[ nwkid ]["Status"] = 'inDB'
+            self.ListOfDevices[nwkid]["Heartbeat"] = "0"
+            self.log.logging("Input", "Status", 
+            "zigpy_plugin_sanity_check - Update Status from %s to 'inDB' for NetworkID : %s"
+            % (self.ListOfDevices[nwkid]["Status"], nwkid), nwkid)
+
+        return
+    # we have a disconnect as IEEE is not pointing to the right nwkid
+    reconnectNWkDevice(self, nwkid, ieee, self.IEEE2NWK[ ieee ])
 
 def lookupForParentDevice(self, nwkid=None, ieee=None):
 
