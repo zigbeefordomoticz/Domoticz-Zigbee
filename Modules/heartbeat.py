@@ -41,9 +41,10 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ping_device_with_read_attribute,
                                     ping_tuya_device)
 from Modules.schneider_wiser import schneiderRenforceent
-from Modules.tools import (ReArrangeMacCapaBasedOnModel, getListOfEpForCluster,
-                           is_hex, is_time_to_perform_work, mainPoweredDevice,
-                           night_shift_jobs, removeNwkInList, get_device_nickname)
+from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
+                           get_device_nickname, getListOfEpForCluster, is_hex,
+                           is_time_to_perform_work, mainPoweredDevice,
+                           night_shift_jobs, removeNwkInList)
 from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
@@ -695,9 +696,13 @@ def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
         self.log.logging( "ConfigureReporting", "Debug", "Trying Configuration reporting for %s/%s with period %s seconds triggered !" %( 
             NWKID, get_device_nickname( self, NwkId=NWKID), self.pluginconf.pluginConf["checkConfigurationReporting"]), NWKID)
         
-        if not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] ):
+        if (
+            deviceconf_device(self, NWKID)
+            and not self.configureReporting.check_configuration_reporting_for_device( NWKID, checking_period=self.pluginconf.pluginConf["checkConfigurationReporting"] )
+        ):
             # Nothing trigger, let's check if the configure reporting are correct
-            self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)    
+            if deviceconf_device(self, NWKID):
+                self.configureReporting.check_and_redo_configure_reporting_if_needed( NWKID)    
             
     elif (
         self.zigbee_communication != "zigpy"
@@ -706,6 +711,8 @@ def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
         and night_shift_jobs( self )
         and self.HeartbeatCount > QUIET_AFTER_START 
         and ((self.HeartbeatCount % CONFIGURERPRT_FEQ)) == 0
+        and deviceconf_device(self, NWKID)
+
     ):
         # Trigger Configure Reporting to eligeable devices
         if ( self.busy and self.ControllerLink.loadTransmit() > 3 ):

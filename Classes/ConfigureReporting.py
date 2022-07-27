@@ -17,7 +17,8 @@ from Modules.bindings import bindDevice, unbindDevice
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
-from Modules.tools import (get_isqn_datastruct, get_list_isqn_attr_datastruct,
+from Modules.tools import (deviceconf_device, get_isqn_datastruct,
+                           get_list_isqn_attr_datastruct,
                            get_list_isqn_int_attr_datastruct,
                            getClusterListforEP, is_ack_tobe_disabled,
                            is_attr_unvalid_datastruct, is_bind_ep, is_fake_ep,
@@ -250,7 +251,8 @@ class ConfigureReporting:
     def check_configure_reporting(self, checking_period):
         # This is call on a regular basic, and will trigger a Read Configuration reporting if needed.
         for nwkid in list(self.ListOfDevices.keys()):
-            return self.check_configuration_reporting_for_device( nwkid, checking_period=checking_period)
+            if deviceconf_device(self, nwkid):
+                return self.check_configuration_reporting_for_device( nwkid, checking_period=checking_period)
                 
     def check_configuration_reporting_for_device( self, NwkId, checking_period=None, force=False):
         # If return True an action has been performed
@@ -261,6 +263,10 @@ class ConfigureReporting:
         if force:
             return self.read_reporting_configuration_request(NwkId, force=force)
 
+        if not deviceconf_device(self, NwkId):
+            self.logging("Debug", "     Not a plugin certified device", nwkid=NwkId)
+            return False
+        
         if not mainPoweredDevice(self, NwkId):
             self.logging("Debug", "     Not a main powered device", nwkid=NwkId)
             return False    # Not Main Powered
@@ -398,6 +404,9 @@ class ConfigureReporting:
     def check_and_redo_configure_reporting_if_needed( self, Nwkid):
         self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} ", nwkid=Nwkid)
 
+        if not deviceconf_device(self, Nwkid):
+            return False
+        
         if STORE_CONFIGURE_REPORTING not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ][STORE_CONFIGURE_REPORTING] in ( '', {}): 
             # we should redo the configure reporting as we don't have the Configuration Reporting 
             self.logging("Debug", f"check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} not found {STORE_CONFIGURE_REPORTING} ", nwkid=Nwkid)

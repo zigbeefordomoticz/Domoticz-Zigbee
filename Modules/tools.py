@@ -514,7 +514,16 @@ def is_bind_ep( self, nwkid, ep):
         or ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["bindEp"]
     )
     
-
+def deviceconf_device(self, nwkid):
+    
+    if (
+        "Model" in self.ListOfDevices
+        and self.ListOfDevices[nwkid]["Model"] in self.DeviceConf
+    ):
+        return self.DeviceConf[ self.ListOfDevices[nwkid]["Model"] ]
+    else:
+        return {}
+    
 def getTypebyCluster(self, Cluster):
     clustersType = {
         "0405": "Humi",
