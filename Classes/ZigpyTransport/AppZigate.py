@@ -37,10 +37,10 @@ LOGGER = logging.getLogger(__name__)
 
 class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
-        logging.debug("new")
+        LOGGER.debug("new")
 
     async def _load_db(self) -> None:
-        logging.debug("_load_db")
+        LOGGER.debug("_load_db")
 
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None ):
         self.callBackFunction = callBackHandleMessage
@@ -97,7 +97,7 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         await super().add_endpoint(endpoint)
 
     def get_device(self, ieee=None, nwk=None):
-        # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
+        # LOGGER.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
@@ -121,11 +121,11 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
                     dev = self.add_device(t.EUI64(t.uint64_t(ieee).serialize()),nwk)
 
         if dev is not None:
-            # logging.debug("found device dev: %s" % (str(dev)))
+            # LOGGER.debug("found device dev: %s" % (str(dev)))
             self.log.logging("TransportZigpy", "Debug", "App - get_device found device: %s" % dev)
             return dev
         
-        logging.debug("AppZigate get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
+        LOGGER.debug("AppZigate get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
         raise KeyError
 
     def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
@@ -155,9 +155,9 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
         # we assumed nwk as an hex string
         try:
             dev = super().get_device( nwk=int(nwk,16))
-            logging.debug("AppZigate get_device  nwk: %s returned %s" %( nwk, dev))
+            LOGGER.debug("AppZigate get_device  nwk: %s returned %s" %( nwk, dev))
         except KeyError:
-            logging.debug("AppZigate get_device raise KeyError nwk: %s !!" %( nwk))
+            LOGGER.debug("AppZigate get_device raise KeyError nwk: %s !!" %( nwk))
             return None  
         if dev.ieee:
             return "%016x" % t.uint64_t.deserialize(dev.ieee.serialize())[0]

@@ -42,13 +42,13 @@ LOGGER = logging.getLogger(__name__)
 
 class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def new(self, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
-        logging.debug("new")
+        LOGGER.debug("new")
 
     async def _load_db(self) -> None:
-        logging.debug("_load_db")
+        LOGGER.debug("_load_db")
 
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
-        logging.debug("startup in AppDeconz")
+        LOGGER.debug("startup in AppDeconz")
         self.log = log
         self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
@@ -73,19 +73,19 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         network_info = self.state.network_info
 
         # deConz doesn't have such capabilities to provided list of paired devices.
-        # logging.debug("startup Network Info: %s" %str(network_info))
+        # LOGGER.debug("startup Network Info: %s" %str(network_info))
         # self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
         # Trigger Version payload to plugin
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
-        logging.debug("startup in AppDeconz - Model: %s Manuf: %s" %(
+        LOGGER.debug("startup in AppDeconz - Model: %s Manuf: %s" %(
             deconz_model, deconz_manuf))
         
         deconz_version = "%08x" %self.version
         deconz_major = deconz_version[:4]
         deconz_minor = deconz_version[4:8]
-        logging.debug("startup in AppDeconz - build 8010 %s %08x %s" %(
+        LOGGER.debug("startup in AppDeconz - build 8010 %s %08x %s" %(
             deconz_version, self.version, deconz_major + deconz_minor))
         
         if deconz_model == "ConBee II":
@@ -98,7 +98,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             self.callBackFunction(build_plugin_8010_frame_content("43", deconz_major, deconz_minor))
             
         else:
-            logging.info("Unknow Zigbee CIE from %s %s" %( deconz_manuf, deconz_model))
+            LOGGER.info("Unknow Zigbee CIE from %s %s" %( deconz_manuf, deconz_model))
             self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
 
 
@@ -278,7 +278,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             )
         
     def get_device(self, ieee=None, nwk=None):
-        # logging.debug("get_device nwk %s ieee %s" % (nwk, ieee))
+        # LOGGER.debug("get_device nwk %s ieee %s" % (nwk, ieee))
         # self.callBackGetDevice is set to zigpy_get_device(self, nwkid = None, ieee=None)
         # will return None if not found
         # will return (nwkid, ieee) if found ( nwkid and ieee are numbers)
@@ -302,11 +302,11 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
                     dev = self.add_device(t.EUI64(t.uint64_t(ieee).serialize()),nwk)
 
         if dev is not None:
-            # logging.debug("found device dev: %s" % (str(dev)))
+            # LOGGER.debug("found device dev: %s" % (str(dev)))
             self.log.logging("TransportZigpy", "Debug", "App - get_device found device: %s" % dev)
             return dev
         
-        logging.debug("AppDeconz get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
+        LOGGER.debug("AppDeconz get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
         raise KeyError
 
     def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
@@ -336,9 +336,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         # we assumed nwk as an hex string
         try:
             dev = super().get_device( nwk=int(nwk,16))
-            logging.debug("AppDeconz get_device  nwk: %s returned %s" %( nwk, dev))
+            LOGGER.debug("AppDeconz get_device  nwk: %s returned %s" %( nwk, dev))
         except KeyError:
-            logging.debug("AppDeconz get_device raise KeyError nwk: %s !!" %( nwk))
+            LOGGER.debug("AppDeconz get_device raise KeyError nwk: %s !!" %( nwk))
             return None  
         if dev.ieee:
             return "%016x" % t.uint64_t.deserialize(dev.ieee.serialize())[0]
