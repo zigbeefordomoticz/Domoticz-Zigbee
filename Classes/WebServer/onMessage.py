@@ -69,8 +69,12 @@ def onMessage(self, Connection, Data):
             self.sendResponse(Connection, {"Status": headerCode})
         return
 
+    elif len(parsed_query) >= 1 and parsed_query[0] == 'static':
+        # let's remove it from the URL in order to serve the file
+        url = Data["URL"].replace( "/static", "")
+        
     # Finaly we simply has to serve a File.
-    webFilename = self.homedirectory + "www" + Data["URL"]
+    webFilename = self.homedirectory + "www" + url
     self.logging("Debug", "webFilename: %s" % webFilename)
     if not os.path.isfile(webFilename):
         webFilename = self.homedirectory + "www" + "/index.html"
@@ -100,67 +104,84 @@ def onMessage(self, Connection, Data):
         _response["Headers"]["Referer"] = Data["Headers"]["Referer"]
 
     # Can we use Cache if exists
-    if self.pluginconf.pluginConf["enableCache"]:
-        if "If-Modified-Since" in Data["Headers"]:
-            lastVersionInCache = Data["Headers"]["If-Modified-Since"]
-            self.logging("Debug", "InCache: %s versus Current: %s" % (lastVersionInCache, _lastmodified))
-            if lastVersionInCache == _lastmodified:
-                # No need to send it back
-                self.logging(
-                    "Debug",
-                    "User Caching - file: %s InCache: %s versus Current: %s"
-                    % (webFilename, lastVersionInCache, _lastmodified),
-                )
-                _response["Status"] = "304 Not Modified"
-                self.sendResponse(Connection, _response)
-                return _response
-
+    _response = get_from_cache_if_available( self, Connection, webFilename, Data, _lastmodified, _response)
+    if _response:
+        return _response
+    
     if "Ranges" in Data["Headers"]:
-        self.logging("Debug", "Ranges processing")
-        RangeProcess = Data["Headers"]["Range"]
-        fileStartPosition = int(RangeProcess[RangeProcess.find("=") + 1 : RangeProcess.find("-")])
-        messageFileSize = os.path.getsize(webFilename)
-        messageFile = open(webFilename, mode="rb")
-        messageFile.seek(fileStartPosition)
-        fileContent = messageFile.read(MAX_KB_TO_SEND)
-        self.logging(
-            "Debug",
-            Connection.Address
-            + ":"
-            + Connection.Port
-            + " Sent 'GET' request file '"
-            + Data["URL"]
-            + "' from position "
-            + str(fileStartPosition)
-            + ", "
-            + str(len(fileContent))
-            + " bytes will be returned",
-        )
-        _response["Status"] = "200 OK"
-        if len(fileContent) == MAX_KB_TO_SEND:
-            _response["Status"] = "206 Partial Content"
-            _response["Headers"]["Content-Range"] = (
-                "bytes " + str(fileStartPosition) + "-" + str(messageFile.tell()) + "/" + str(messageFileSize)
-            )
-        DumpHTTPResponseToLog(_response)
-        Connection.Send(_response)
-        if not self.pluginconf.pluginConf["enableKeepalive"]:
-            Connection.Disconnect()
+        get__range_and_send(self,Connection, webFilename, Data, _response )
     else:
-        _response["Headers"]["Last-Modified"] = _lastmodified
-        with open(webFilename, mode="rb") as webFile:
-            _response["Data"] = webFile.read()
+        send_file(self, Connection, webFilename, Data, _response)
 
-        _contentType, _contentEncoding = mimetypes.guess_type(Data["URL"])
+def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
+    _response["Headers"]["Last-Modified"] = _lastmodified
+    with open(webFilename, mode="rb") as webFile:
+        _response["Data"] = webFile.read()
 
-        if _contentType:
-            _response["Headers"]["Content-Type"] = _contentType + "; charset=utf-8"
-        if _contentEncoding:
-            _response["Headers"]["Content-Encoding"] = _contentEncoding
+    _contentType, _contentEncoding = mimetypes.guess_type(Data["URL"])
 
-        _response["Status"] = "200 OK"
+    if _contentType:
+        _response["Headers"]["Content-Type"] = _contentType + "; charset=utf-8"
+    if _contentEncoding:
+        _response["Headers"]["Content-Encoding"] = _contentEncoding
 
-        if "Accept-Encoding" in Data["Headers"]:
-            self.sendResponse(Connection, _response, AcceptEncoding=Data["Headers"]["Accept-Encoding"])
-        else:
-            self.sendResponse(Connection, _response)
+    _response["Status"] = "200 OK"
+
+    if "Accept-Encoding" in Data["Headers"]:
+        self.sendResponse(Connection, _response, AcceptEncoding=Data["Headers"]["Accept-Encoding"])
+    else:
+        self.sendResponse(Connection, _response)
+    
+def get__range_and_send(self,Connection, webFilename, Data, _response ):
+    self.logging("Debug", "Ranges processing")
+    RangeProcess = Data["Headers"]["Range"]
+    fileStartPosition = int(RangeProcess[RangeProcess.find("=") + 1 : RangeProcess.find("-")])
+    messageFileSize = os.path.getsize(webFilename)
+    messageFile = open(webFilename, mode="rb")
+    messageFile.seek(fileStartPosition)
+    fileContent = messageFile.read(MAX_KB_TO_SEND)
+    self.logging(
+        "Debug",
+        Connection.Address
+        + ":"
+        + Connection.Port
+        + " Sent 'GET' request file '"
+        + Data["URL"]
+        + "' from position "
+        + str(fileStartPosition)
+        + ", "
+        + str(len(fileContent))
+        + " bytes will be returned",
+    )
+    _response["Status"] = "200 OK"
+    if len(fileContent) == MAX_KB_TO_SEND:
+        _response["Status"] = "206 Partial Content"
+        _response["Headers"]["Content-Range"] = (
+            "bytes " + str(fileStartPosition) + "-" + str(messageFile.tell()) + "/" + str(messageFileSize)
+        )
+    DumpHTTPResponseToLog(_response)
+    Connection.Send(_response)
+    if not self.pluginconf.pluginConf["enableKeepalive"]:
+        Connection.Disconnect()
+
+def get_from_cache_if_available( self, Connection, webFilename, Data, _lastmodified, _response):
+    if not self.pluginconf.pluginConf["enableCache"]:
+        return None
+    
+    if "If-Modified-Since" not in Data["Headers"]:
+        return None
+    
+    lastVersionInCache = Data["Headers"]["If-Modified-Since"]
+    self.logging("Debug", "InCache: %s versus Current: %s" % (lastVersionInCache, _lastmodified))
+    if lastVersionInCache != _lastmodified:
+        return None
+    
+    # No need to send it back
+    self.logging(
+        "Debug",
+        "User Caching - file: %s InCache: %s versus Current: %s"
+        % (webFilename, lastVersionInCache, _lastmodified),
+    )
+    _response["Status"] = "304 Not Modified"
+    self.sendResponse(Connection, _response)
+    return _response
