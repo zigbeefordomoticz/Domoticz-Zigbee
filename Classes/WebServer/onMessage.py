@@ -42,6 +42,8 @@ def onMessage(self, Connection, Data):
     else:
         parsed_query = Data["URL"].split("/")
 
+    self.logging("Debug", "parsed_query: %s" % (str(parsed_query)))
+
     # Any Cookie ?
     cookie = None
     if "Cookie" in Data["Headers"]:
@@ -53,8 +55,12 @@ def onMessage(self, Connection, Data):
     if headerCode != "200 OK":
         self.sendResponse(Connection, {"Status": headerCode})
         return
+    if len(parsed_query) >= 1 and parsed_query[0] == 'static':
+        # let's remove it from the URL in order to serve the file
+        url = Data["URL"].replace( "/static", "")
+        self.logging( "Debug", "let's remove /static from the URL. New url: %s" %url)
 
-    if len(parsed_query) >= 3:
+    elif len(parsed_query) >= 3:
         self.logging(
             "Debug",
             "Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s"
@@ -69,10 +75,6 @@ def onMessage(self, Connection, Data):
             self.sendResponse(Connection, {"Status": headerCode})
         return
 
-    elif len(parsed_query) >= 1 and parsed_query[0] == 'static':
-        # let's remove it from the URL in order to serve the file
-        url = Data["URL"].replace( "/static", "")
-        
     # Finaly we simply has to serve a File.
     webFilename = self.homedirectory + "www" + url
     self.logging("Debug", "webFilename: %s" % webFilename)
