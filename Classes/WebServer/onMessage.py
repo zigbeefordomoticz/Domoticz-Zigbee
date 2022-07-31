@@ -55,6 +55,7 @@ def onMessage(self, Connection, Data):
     if headerCode != "200 OK":
         self.sendResponse(Connection, {"Status": headerCode})
         return
+    
     if len(parsed_query) >= 1 and parsed_query[0] == 'static':
         # let's remove it from the URL in order to serve the file
         url = Data["URL"].replace( "/static", "")
