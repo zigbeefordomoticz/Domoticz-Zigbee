@@ -63,7 +63,7 @@ def onMessage(self, Connection, Data):
             "Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s"
             % (parsed_query[1], Data["Verb"], parsed_query[2], parsed_query[3:]),
         )
-        if parsed_query[0] in ("rest-zigate", "rest-z4d") and parsed_query[1] == "1":
+        if parsed_query[0] == "rest-z4d" or parsed_query[0] == "rest-zigate" and parsed_query[1] == "1":
             # API Version 1
             self.do_rest(Connection, Data["Verb"], Data["Data"], parsed_query[1], parsed_query[2], parsed_query[3:])
         else:
