@@ -56,12 +56,8 @@ def onMessage(self, Connection, Data):
         self.sendResponse(Connection, {"Status": headerCode})
         return
     
-    if len(parsed_query) >= 1 and parsed_query[0] == 'static':
-        # let's remove it from the URL in order to serve the file
-        url = Data["URL"].replace( "/static", "")
-        self.logging( "Debug", "let's remove /static from the URL. New url: %s" %url)
-
-    elif len(parsed_query) >= 3:
+    url = Data["URL"]
+    if len(parsed_query) >= 3:
         self.logging(
             "Debug",
             "Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s"
@@ -80,8 +76,8 @@ def onMessage(self, Connection, Data):
     webFilename = self.homedirectory + "www" + url
     self.logging("Debug", "webFilename: %s" % webFilename)
     if not os.path.isfile(webFilename):
-        webFilename = self.homedirectory + "www" + "/index.html"
-        self.logging("Debug", "Redirecting to /index.html")
+        webFilename = self.homedirectory + "www" + "/z4d/index.html"
+        self.logging("Debug", "Redirecting to /z4d/index.html")
 
     # We are ready to send the response
     _response = setupHeadersResponse(cookie)
@@ -98,6 +94,7 @@ def onMessage(self, Connection, Data):
         _response["Headers"]["Cache-Control"] = "private"
 
     self.logging("Debug", "Opening: %s" % webFilename)
+
     currentVersionOnServer = os.path.getmtime(webFilename)
     _lastmodified = strftime("%a, %d %m %y %H:%M:%S GMT", gmtime(currentVersionOnServer))
 
@@ -107,16 +104,17 @@ def onMessage(self, Connection, Data):
         _response["Headers"]["Referer"] = Data["Headers"]["Referer"]
 
     # Can we use Cache if exists
-    _response = get_from_cache_if_available( self, Connection, webFilename, Data, _lastmodified, _response)
-    if _response:
-        return _response
+    if get_from_cache_if_available( self, Connection, webFilename, Data, _lastmodified, _response):
+        return
     
     if "Ranges" in Data["Headers"]:
         get__range_and_send(self,Connection, webFilename, Data, _response )
     else:
-        send_file(self, Connection, webFilename, Data, _response)
+        send_file( self, Connection, webFilename, Data, _lastmodified, _response)
 
 def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
+    self.logging( "Debug", "send_file %s %s" %(webFilename, _response))
+
     _response["Headers"]["Last-Modified"] = _lastmodified
     with open(webFilename, mode="rb") as webFile:
         _response["Data"] = webFile.read()
@@ -131,8 +129,10 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
     _response["Status"] = "200 OK"
 
     if "Accept-Encoding" in Data["Headers"]:
+        self.logging( "Debug", "send_file  sendResponse %s %s" %(webFilename, _response))
         self.sendResponse(Connection, _response, AcceptEncoding=Data["Headers"]["Accept-Encoding"])
     else:
+        self.logging( "Debug", "send_file  sendResponse %s %s" %(webFilename, _response))
         self.sendResponse(Connection, _response)
     
 def get__range_and_send(self,Connection, webFilename, Data, _response ):
@@ -169,15 +169,15 @@ def get__range_and_send(self,Connection, webFilename, Data, _response ):
 
 def get_from_cache_if_available( self, Connection, webFilename, Data, _lastmodified, _response):
     if not self.pluginconf.pluginConf["enableCache"]:
-        return None
+        return False
     
     if "If-Modified-Since" not in Data["Headers"]:
-        return None
+        return False
     
     lastVersionInCache = Data["Headers"]["If-Modified-Since"]
     self.logging("Debug", "InCache: %s versus Current: %s" % (lastVersionInCache, _lastmodified))
     if lastVersionInCache != _lastmodified:
-        return None
+        return False
     
     # No need to send it back
     self.logging(
@@ -187,4 +187,4 @@ def get_from_cache_if_available( self, Connection, webFilename, Data, _lastmodif
     )
     _response["Status"] = "304 Not Modified"
     self.sendResponse(Connection, _response)
-    return _response
+    return True
