@@ -120,6 +120,29 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
         _response["Data"] = webFile.read()
 
     _contentType, _contentEncoding = mimetypes.guess_type(Data["URL"])
+    self.logging( "Debug", "--- _contentType %s" %_contentType)
+    self.logging( "Debug", "--- _contentEncoding %s" %_contentEncoding)
+    
+    if _contentType is None:
+        filename, file_extension = os.path.splitext(webFilename)
+        EXTENSION_MIME_TYPE = {
+            '.js': 'text/jscript',
+            '.html': 'text/html',
+            '.txt': 'text',
+            '.woff': 'font/woff',
+            '.woff2': 'font/woff',
+            '.json': 'application/json',
+            '.ttf': 'font/ttf',
+            '.svg': 'image/svg+xml',
+            '.eot': 'font/woff',
+            '.css': 'text/css'
+
+        }
+        if file_extension in EXTENSION_MIME_TYPE:
+            _contentType = EXTENSION_MIME_TYPE[ file_extension ]
+
+    self.logging( "Debug", "--- _contentType %s" %_contentType)
+    self.logging( "Debug", "--- _contentEncoding %s" %_contentEncoding)
 
     if _contentType:
         _response["Headers"]["Content-Type"] = _contentType + "; charset=utf-8"
