@@ -5092,5 +5092,5 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def store_ZLinky_infos( self, nwkid, command_tic, value):
 
     if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
-        self.ListOfDevices[ MsgSrcAddr ][nwkid ] = {}
+        self.ListOfDevices[ nwkid ][ 'ZLinky' ] = {}
     self.ListOfDevices[ nwkid ][ 'ZLinky' ][ command_tic ] = value
