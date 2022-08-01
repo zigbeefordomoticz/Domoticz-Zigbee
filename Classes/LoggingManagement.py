@@ -517,12 +517,12 @@ def zigpy_logging_znp(mode):
     if mode == "debug":
         requests_logger = logging.getLogger("zigpy_znp")
         requests_logger.setLevel(logging.DEBUG)
-        requests_logger = logging.getLogger("AppZnp")
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppZnp")
         requests_logger.setLevel(logging.DEBUG)
     else:
         requests_logger = logging.getLogger("zigpy_znp")
         requests_logger.setLevel(logging.WARNING)
-        requests_logger = logging.getLogger("AppZnp")
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppZnp")
         requests_logger.setLevel(logging.WARNING)
 
 def zigpy_logging_ezsp(mode):   
@@ -533,7 +533,7 @@ def zigpy_logging_ezsp(mode):
         requests_logger.setLevel(logging.DEBUG)
         requests_logger = logging.getLogger("bellows.uart")
         requests_logger.setLevel(logging.DEBUG)
-        requests_logger = logging.getLogger("AppBellows")
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppBellows")
         requests_logger.setLevel(logging.DEBUG)
     else:
         requests_logger = logging.getLogger("bellows")
@@ -542,19 +542,19 @@ def zigpy_logging_ezsp(mode):
         requests_logger.setLevel(logging.WARNING)
         requests_logger = logging.getLogger("bellows.uart")
         requests_logger.setLevel(logging.WARNING)
-        requests_logger = logging.getLogger("AppBellows")
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppBellows")
         requests_logger.setLevel(logging.WARNING)
 
 def zigpy_logging_zigate(mode):
     if mode == "debug":        
         requests_logger = logging.getLogger("zigpy_zigate")
         requests_logger.setLevel(logging.DEBUG)
-        requests_logger = logging.getLogger("AppZigate")
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppZigate")
         requests_logger.setLevel(logging.DEBUG)
     else:
         requests_logger = logging.getLogger("zigpy_zigate")
         requests_logger.setLevel(logging.WARNING)
-        requests_logger = logging.getLogger("AppZigate")
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppZigate")
         requests_logger.setLevel(logging.WARNING)
         
         
@@ -562,10 +562,10 @@ def zigpy_logging_deconz(mode):
     if mode == "debug":        
         requests_logger = logging.getLogger("zigpy_deconz")
         requests_logger.setLevel(logging.DEBUG)
-        requests_logger = logging.getLogger("AppDeconz")
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppDeconz")
         requests_logger.setLevel(logging.DEBUG)
     else:
         requests_logger = logging.getLogger("zigpy_deconz")
         requests_logger.setLevel(logging.WARNING)
-        requests_logger = logging.getLogger("AppDeconz")
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppDeconz")
         requests_logger.setLevel(logging.WARNING)
