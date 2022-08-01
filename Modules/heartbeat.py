@@ -37,6 +37,7 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0405,
                                     ReadAttributeRequest_0702_PC321,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
+                                    ReadAttributeRequest_0b01_ZLinky_TIC,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
                                     ping_tuya_device)
@@ -175,7 +176,8 @@ def check_delay_binding( self, NwkId, model ):
 def pollingManufSpecificDevices(self, NwkId, HB):
 
     FUNC_MANUF = {
-        "ZLinkyPolling": ReadAttributeRequest_0702_ZLinky_TIC,
+        "ZLinkyPolling0b01": ReadAttributeRequest_0b01_ZLinky_TIC,
+        "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,
         "PollingCusterff66": ReadAttributeRequest_ff66,
         "OnOffPollingFreq": ManufSpecOnOffPolling,
         "PowerPollingFreq": ReadAttributeRequest_0b04_050b_0505_0508,
