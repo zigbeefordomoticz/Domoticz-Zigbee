@@ -4982,9 +4982,11 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     if MsgAttrID == "0000":
         # Option tarifaire
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
+        store_ZLinky_infos( self, MsgSrcAddr, 'OPTARIF', decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0001":
         tarif = None
+        store_ZLinky_infos( self, MsgSrcAddr, 'DEMAIN', decodeAttribute(self, MsgAttType, MsgClusterData))
         if "ff66" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0000" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["ff66"]:
             if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["ff66"]["0000"] not in ("", {}):
                 tarif = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["ff66"]["0000"]
@@ -5005,14 +5007,17 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "0002":
         # HHPHC
+        store_ZLinky_infos( self, MsgSrcAddr, 'HHPHC', decodeAttribute(self, MsgAttType, MsgClusterData))
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0003":
         # PPOT
+        store_ZLinky_infos( self, MsgSrcAddr, 'PPOT', decodeAttribute(self, MsgAttType, MsgClusterData))
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
 
     elif MsgAttrID == "0004":
         tarif = None
+        store_ZLinky_infos( self, MsgSrcAddr, 'PEJP', decodeAttribute(self, MsgAttType, MsgClusterData))
         if "ff66" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0000" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["ff66"]:
             if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["ff66"]["0000"] not in ("", {}):
                 tarif = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["ff66"]["0000"]
@@ -5046,15 +5051,19 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if MsgAttrID == "0005":
             _tmpep = "01"
             _tmpattr = "0508"
+            store_ZLinky_infos( self, MsgSrcAddr, 'ADPS', decodeAttribute(self, MsgAttType, MsgClusterData))
         elif MsgAttrID == "0006":
             _tmpep = "01"
             _tmpattr = "0508"
+            store_ZLinky_infos( self, MsgSrcAddr, 'ADIR1', decodeAttribute(self, MsgAttType, MsgClusterData))
         elif MsgAttrID == "0007":
             _tmpep = "f2"
             _tmpattr = "0908"
+            store_ZLinky_infos( self, MsgSrcAddr, 'ADIR2', decodeAttribute(self, MsgAttType, MsgClusterData))
         elif MsgAttrID == "0008":
             _tmpep = "f3"
             _tmpattr = "0a08"
+            store_ZLinky_infos( self, MsgSrcAddr, 'ADIR3', decodeAttribute(self, MsgAttType, MsgClusterData))
 
         if value == 0:
             MajDomoDevice(self, Devices, MsgSrcAddr, _tmpep, "0009", "00|Normal", Attribute_="0005")
@@ -5070,6 +5079,7 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID in ( "0207", ):
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+        store_ZLinky_infos( self, MsgSrcAddr, 'SINSTI', decodeAttribute(self, MsgAttType, MsgClusterData))
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
         self.log.logging(
             "Cluster",
