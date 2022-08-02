@@ -57,7 +57,7 @@ def onMessage(self, Connection, Data):
         return
     
     url = Data["URL"]
-    if len(parsed_query) >= 3:
+    if len(parsed_query) >= 3 and parsed_query[0] == "rest-z4d" or parsed_query[0] == "rest-zigate":
         self.logging(
             "Debug",
             "Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s"
