@@ -76,8 +76,8 @@ def onMessage(self, Connection, Data):
     webFilename = self.homedirectory + "www" + url
     self.logging("Debug", "webFilename: %s" % webFilename)
     if not os.path.isfile(webFilename):
-        webFilename = self.homedirectory + "www" + "/zigate/index.html"
-        self.logging("Debug", "Redirecting to /zigate/index.html")
+        webFilename = self.homedirectory + "www" + "/z4d/index.html"
+        self.logging("Debug", "Redirecting to /z4d/index.html")
 
     # We are ready to send the response
     _response = setupHeadersResponse(cookie)
