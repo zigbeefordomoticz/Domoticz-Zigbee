@@ -1748,8 +1748,8 @@ def install_Z4D_to_domoticz_custom_ui():
     line2 = '</iframe>\n'
     line3 = '\n'
     line4 = '<script>\n'
-    #line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = "http://" + location.hostname + ":%s/z4d/";\n' %Parameters['Mode4']
-    line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = location.protocol + "/z4d/";\n' 
+    line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = "http://" + location.hostname + ":%s/z4d/";\n' %Parameters['Mode4']
+    #line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = location.protocol + "/z4d/";\n' 
     line6 = '</script>\n'
 
     custom_file = Parameters['StartupFolder'] + 'www/templates/' + f"{Parameters['Name']}" + '.html'
