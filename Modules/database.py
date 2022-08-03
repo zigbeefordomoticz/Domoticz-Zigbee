@@ -219,11 +219,11 @@ def LoadDeviceList(self):
             Modules.tools.reset_datastruct(self, STORE_CONFIGURE_REPORTING, addr)
             Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
             
-    if ( 
-        STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ addr ] 
-        and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
-    ):
-        Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
+        if ( 
+            STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ addr ] 
+            and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
+        ):
+            Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
 
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
