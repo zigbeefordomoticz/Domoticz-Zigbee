@@ -31,11 +31,9 @@ def setupHeadersResponse(cookie=None):
     _response = {}
     _response["Headers"] = {}
     _response["Headers"]["Server"] = "Domoticz"
-    _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
+    _response["Headers"]["User-Agent"] = "Plugin-Zigbee4Domoticz/v1"
 
-    _response["Headers"][
-        "Access-Control-Allow-Headers"
-    ] = "Cache-Control, Pragma, Origin, Authorization,   Content-Type, X-Requested-With"
+    _response["Headers"]["Access-Control-Allow-Headers"] = "Cache-Control, Pragma, Origin, Authorization,   Content-Type, X-Requested-With"
     _response["Headers"]["Access-Control-Allow-Methods"] = "GET, POST, DELETE"
     _response["Headers"]["Access-Control-Allow-Origin"] = "*"
 
