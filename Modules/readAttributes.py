@@ -1374,19 +1374,19 @@ def ReadAttributeReq_ZLinky(self, nwkid):
     attribute_request_list = []
     attribute_request_list.append( 0x0300 )  # Linky Mode
     attribute_request_list.append( 0x0000 )  # Opt Tarif
-    ReadAttributeReq(self, key, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
 
     cluster = "0702"
     attribute_request_list = []
     attribute_request_list.append( 0x0308 )  # Serial Number
     attribute_request_list.append( 0x0000 )  # Index Base
     attribute_request_list.append( 0x0020 )  # Tarif en cours
-    ReadAttributeReq(self, key, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
 
     cluster = "0b01"
     attribute_request_list = []
     attribute_request_list.append( 0x000d )  # Intensité sousscrite
-    ReadAttributeReq(self, key, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
 
     cluster = "0b04"
     attribute_request_list = []
@@ -1396,7 +1396,7 @@ def ReadAttributeReq_ZLinky(self, nwkid):
     attribute_request_list.append( 0x0a0a )  # Intensité Maximal Phase 3
     attribute_request_list.append( 0x050d )  # Intensité Maximal Tri attentite
     attribute_request_list.append( 0x050f )  # Intensité Maximal Tri atteinte
-    ReadAttributeReq(self, key, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
 
 
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
