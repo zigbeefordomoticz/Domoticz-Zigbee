@@ -1365,12 +1365,39 @@ def ReadAttributeRequest_0702_0000(self, key):
         self.log.logging("ReadAttributes", "Debug", "Request Summation on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
         ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+def ReadAttributeReq_ZLinky(self, nwkid):
 
-def ReadAttributeRequest_0b01_ZLinky_TIC(self, key):
     EPout = "01"
-    self.log.logging("ReadAttributes", "Log", "Request ZLinky infos on 0x0b01 cluster: " + key + " EPout = " + EPout, nwkid=key)
-    ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0b01", [ 0x000d], ackIsDisabled=False)
-    
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
+
+    cluster = "ff66"
+    attribute_request_list = []
+    attribute_request_list.append( 0x0300 )  # Linky Mode
+    attribute_request_list.append( 0x0000 )  # Opt Tarif
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
+
+    cluster = "0702"
+    attribute_request_list = []
+    attribute_request_list.append( 0x0308 )  # Serial Number
+    attribute_request_list.append( 0x0000 )  # Index Base
+    attribute_request_list.append( 0x0020 )  # Tarif en cours
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
+
+    cluster = "0b01"
+    attribute_request_list = []
+    attribute_request_list.append( 0x000d )  # Intensité sousscrite
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
+
+    cluster = "0b04"
+    attribute_request_list = []
+    attribute_request_list.append( 0x050a )  # Intensité Maximal
+    attribute_request_list.append( 0x050a )  # Intensité Maximal
+    attribute_request_list.append( 0x090a )  # Intensité Maximal Phase 2
+    attribute_request_list.append( 0x0a0a )  # Intensité Maximal Phase 3
+    attribute_request_list.append( 0x050d )  # Intensité Maximal Tri attentite
+    attribute_request_list.append( 0x050f )  # Intensité Maximal Tri atteinte
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
+
 
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
     # The list of Attributes could be based on the Contract
@@ -1407,8 +1434,6 @@ def ReadAttributeRequest_0702_PC321(self, key):
                         0x4100, 0x4101, 0x4102, 0x4103 ]
     self.log.logging("ReadAttributes", "Debug", "Request PC321 Attributes on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, manufacturer_spec="01",manufacturer="113c", ackIsDisabled=is_ack_tobe_disabled(self, key))
-
-   
     
 
 def ReadAttributeRequest_0b01(self, key):
