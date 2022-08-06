@@ -39,6 +39,8 @@ from zigpy.zcl import clusters
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
+import zigpy.backups
+
 LOGGER = logging.getLogger(__name__)
 
 class App_bellows(bellows.zigbee.application.ControllerApplication):
@@ -57,6 +59,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
+        self.backups: zigpy.backups.BackupManager = zigpy.backups.BackupManager(self)
+
         #self.bellows_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         try:
@@ -112,6 +116,12 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
+        LOGGER.info("Backup at startup: %s" % await self.backups.create_backup())
+
+        if self.config["backup_enabled"]:
+            self.backups.start_periodic_backups(
+                period=self.config["backup_period"]
+            )
     # Only needed if the device require simple node descriptor from the coordinator
     async def register_endpoint(self, endpoint=1):
         await super().add_endpoint(endpoint)
