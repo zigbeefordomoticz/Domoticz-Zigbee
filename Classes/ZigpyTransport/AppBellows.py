@@ -50,7 +50,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         LOGGER.debug("_load_db")
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
@@ -59,9 +59,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
+        self.callBackBackup = callBackBackup
         self.backups: zigpy.backups.BackupManager = zigpy.backups.BackupManager(self)
-
-        #self.bellows_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         try:
             await self._startup( auto_form=True )
@@ -116,12 +115,11 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
-        LOGGER.info("Backup at startup: %s" % await self.backups.create_backup())
-
-        if self.config["backup_enabled"]:
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
             self.backups.start_periodic_backups(
-                period=self.config["backup_period"]
+                period=self.config[zigpy.config.CONF_NWK_BACKUP_PERIOD]
             )
+
     # Only needed if the device require simple node descriptor from the coordinator
     async def register_endpoint(self, endpoint=1):
         await super().add_endpoint(endpoint)
@@ -220,6 +218,11 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         message: bytes,
         dst_addressing: Addressing,
     ) -> None:
+
+        self.callBackBackup( self.backups )
+        #self.extract_list_backup( self.backups)
+
+
         if sender is None or profile is None or cluster is None:
             # drop the paquet 
             return

@@ -139,6 +139,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_IEEE_address_request)
+from Modules.zigpyBackup import handle_zigpy_backup
 
 #from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 #from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -183,6 +184,7 @@ class BasePlugin:
         self.webserver = None
         self.transport = None  # USB or Wifi
         self.log = None
+        self.zigpy_backup = None
         # self._ReqRcv = bytearray()
 
         self.UnknownDevices = []  # List of unknown Device NwkId
@@ -576,7 +578,7 @@ class BasePlugin:
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status", "Start Zigpy Transport on zigate")
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -608,7 +610,7 @@ class BasePlugin:
             check_python_modules_version( self )
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status","Start Zigpy Transport on deCONZ")            
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -624,7 +626,7 @@ class BasePlugin:
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
           
@@ -862,7 +864,11 @@ class BasePlugin:
 
         self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
         return int(nwkid,16) ,int(ieee,16)
-    
+
+    def zigpy_backup_available(self, backups):
+        handle_zigpy_backup(self, backups)
+
+
     def onCommand(self, Unit, Command, Level, Color):
         self.log.logging(
             "Plugin", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color)
@@ -1607,11 +1613,11 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.48.0",
+        "zigpy": "0.49.0",
         "zigpy_znp": "0.8.1",
         "zigpy_deconz": "0.18.0",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.31.2",
+        "zigpy_ezsp": "0.31.3",
         }
 
     flag = True

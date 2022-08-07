@@ -26,6 +26,9 @@ import zigpy.types as t
 import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
+import zigpy.config
+from Modules.tools import print_stack
+
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_0302_frame_content, build_plugin_8009_frame_content,
     build_plugin_8011_frame_content,
@@ -176,15 +179,20 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
             self.log.logging("%s" %traceback.format_exc())
 
+    if "autoBackup" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoBackup"]:
+        config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = True
+        config[zigpy.config.CONF_NWK_BACKUP_PERIOD] = self.pluginconf.pluginConf["autoBackup"]
+    else:
+        config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = False
+
+        
     if "TXpower_set" in self.pluginconf.pluginConf:
         if radiomodule == "znp":
             config[conf.CONF_ZNP_CONFIG] ["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
         else:
             config["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
     
-    config["backup_enabled"] = True
     
-    config["backup_period"] = 60
 
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
@@ -229,6 +237,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             callBackHandleMessage=self.receiveData,
             callBackUpdDevice=self.ZigpyUpdDevice,
             callBackGetDevice=self.ZigpyGetDevice,
+            callBackBackup=self.ZigpyBackupAvailable,
             auto_form=True,
             force_form=new_network,
             log=self.log,
@@ -239,6 +248,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             "TransportZigpy",
             "Error",
             "Error at startup %s" %e)
+        print_stack( self )
         
     if new_network:
         # Assume that the new network has been created

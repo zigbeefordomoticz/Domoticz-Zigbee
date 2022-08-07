@@ -47,7 +47,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         LOGGER.debug("_load_db")
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         LOGGER.debug("startup in AppDeconz")
         self.log = log
         self.pluginconf = pluginconf
@@ -124,6 +124,11 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             LOGGER.error("Couldn't start application")
             await self.shutdown()
             raise
+            
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.backups.start_periodic_backups(
+                period=self.config[zigpy.config.CONF_NWK_BACKUP_PERIOD]
+            )
 
           
     async def register_endpoints(self):

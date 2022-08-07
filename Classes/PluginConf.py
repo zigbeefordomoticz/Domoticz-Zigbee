@@ -396,6 +396,14 @@ SETTINGS = {
     "CoordinatorConfiguration": {
         "Order": 7,
         "param": {
+            "autoBackup": {
+                "type": "int",
+                "default": 24 * 60,  # 24 hours
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+            },
             "blueLedOnOff": {
                 "type": "bool",
                 "default": 1,
