@@ -63,6 +63,20 @@
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
 					"Change": "00000001"
+				},
+				"0108": {
+					"DataType": "25",
+					"MinInterval": "0046",
+					"MaxInterval": "012C",
+					"TimeOut": "0000",
+					"Change": "00000001"
+				},
+				"010A": {
+					"DataType": "25",
+					"MinInterval": "0046",
+					"MaxInterval": "012C",
+					"TimeOut": "0000",
+					"Change": "00000001"
 				}
 			}
 		},
