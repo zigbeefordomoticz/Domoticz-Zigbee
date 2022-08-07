@@ -102,6 +102,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
                 LOGGER.info("Network is not formed")
                 if not auto_form:
                     raise
+
                 LOGGER.info("Forming a new network")
                 await self.form_network()
                 await self.load_network_info(load_devices=False)
@@ -110,15 +111,21 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             LOGGER.debug("Node info: %s", self.state.node_info)
             LOGGER.info("EZSP Configuration: %s", self.config)
             await self.start_network()
+
         except Exception:
             LOGGER.error("Couldn't start application")
             await self.shutdown()
             raise
 
         if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
-            self.backups.start_periodic_backups(
-                period=self.config[zigpy.config.CONF_NWK_BACKUP_PERIOD]
-            )
+            self.callBackBackup ( await self.backups.create_backup() )
+
+    async def shutdown(self) -> None:
+        """Shutdown controller."""
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+
+        await self.disconnect()
 
     # Only needed if the device require simple node descriptor from the coordinator
     async def register_endpoint(self, endpoint=1):
@@ -175,7 +182,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             dev.nwk = nwk
             self._update_nkdids_if_needed( ieee, dev.nwk )
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
-            
+
             
     def _update_nkdids_if_needed( self, ieee, new_nwkid ):
         _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
@@ -218,10 +225,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         message: bytes,
         dst_addressing: Addressing,
     ) -> None:
-
-        self.callBackBackup( self.backups )
-        #self.extract_list_backup( self.backups)
-
 
         if sender is None or profile is None or cluster is None:
             # drop the paquet 

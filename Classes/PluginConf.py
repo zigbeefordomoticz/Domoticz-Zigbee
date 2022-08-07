@@ -397,8 +397,8 @@ SETTINGS = {
         "Order": 7,
         "param": {
             "autoBackup": {
-                "type": "int",
-                "default": 24 * 60,  # 24 hours
+                "type": "bool",
+                "default": 1,
                 "current": None,
                 "restart": 0,
                 "hidden": False,

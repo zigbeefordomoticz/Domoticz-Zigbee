@@ -1,7 +1,5 @@
 
 
-
-
 def handle_zigpy_backup(self, backups):
 
     if not backups:
@@ -9,10 +7,11 @@ def handle_zigpy_backup(self, backups):
         return
 
     self.log.logging("TransportZigpy", "Log", "Backups: %s" %backups)
-    self.log.logging("TransportZigpy", "Log", "  Type: %s " %type(backups))
-    self.log.logging("TransportZigpy", "Log", "  Backups.backups: %s " %(backups.backups))
-    self.log.logging("TransportZigpy", "Log", "     Type: %s " %type(backups.backups))
 
+    _coordinator_backup = self.pluginconf.pluginConf["pluginData"] + "/Coordinator-%02d" %self.HardwareID + ".backup"
+    try:
+        with open(_coordinator_backup, "wt") as file:
+            file.write(str(backups) + "\n")
 
-    
-
+    except IOError:
+        Domoticz.Error("Error while Writing Coordinator backup %s" % _coordinator_backup)

@@ -100,9 +100,14 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             raise
 
         if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
-            self.backups.start_periodic_backups(
-                period=self.config[zigpy.config.CONF_NWK_BACKUP_PERIOD]
-            )
+            self.callBackBackup ( await self.backups.create_backup() )
+
+
+    async def shutdown(self) -> None:
+        """Shutdown controller."""
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+
 
     async def register_endpoints(self):
         await super().register_endpoints()  

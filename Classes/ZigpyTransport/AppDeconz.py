@@ -124,13 +124,16 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             LOGGER.error("Couldn't start application")
             await self.shutdown()
             raise
-            
-        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
-            self.backups.start_periodic_backups(
-                period=self.config[zigpy.config.CONF_NWK_BACKUP_PERIOD]
-            )
 
-          
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+
+    async def shutdown(self) -> None:
+        """Shutdown controller."""
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+
+
     async def register_endpoints(self):
         await self._register_endpoints()  
 
