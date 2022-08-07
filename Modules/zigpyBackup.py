@@ -1,4 +1,5 @@
 
+import Domoticz
 
 def handle_zigpy_backup(self, backups):
 
