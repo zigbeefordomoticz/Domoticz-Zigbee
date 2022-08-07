@@ -377,7 +377,7 @@ class ConfigureReporting:
         if len( attribute_list ) <= MAX_READ_ATTR_PER_REQ:
             zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
 
-        self.logging("Debug", "read_report_configure_request need to break attribute list into chunk %s" %str(attribute_list))
+        self.logging("Debug", "read_report_configure_request %s/%s need to break attribute list into chunk %s" %( nwkid, epout, str(attribute_list)))
         idx = 0
         while idx < len(attribute_list):
             end = idx + MAX_READ_ATTR_PER_REQ
