@@ -654,7 +654,7 @@ class BasePlugin:
                 )
 
         self.log.logging("Plugin", "Status", "Domoticz Widgets usage is at %s %% (%s units free)" % (
-            round( ( ( 255 - how_many_slot_available( Devices )) / 255 ) * 100, 1 ), how_many_slot_available( Devices ) )
+            round( ( ( 255 - how_many_slot_available( Devices )) / 255 ) * 100, 1 ), how_many_slot_available( Devices ) ))
         self.busy = False
 
     def onStop(self):  # sourcery skip: class-extract-method
