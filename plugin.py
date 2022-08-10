@@ -1613,11 +1613,11 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.49.0",
+        "zigpy": "0.49.1",
         "zigpy_znp": "0.8.1",
         "zigpy_deconz": "0.18.0",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.31.3",
+        "zigpy_ezsp": "0.32.0",
         }
 
     flag = True
