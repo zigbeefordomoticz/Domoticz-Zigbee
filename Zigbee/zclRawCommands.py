@@ -372,7 +372,7 @@ def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect="", groupaddrmod
     cluster_frame = 0b00010001
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = "%02x" % cluster_frame + sqn + "%02x" % ONOFF_COMMANDS[command] + effect
+    payload = "%02x" % cluster_frame + sqn + "%02x" % ONOFF_COMMANDS[command] + "%04x" % (struct.unpack(">H", struct.pack("H", int(effect, 16)))[0])
 
     raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
