@@ -495,7 +495,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                     elif self.ListOfDevices[NWKID]["Param"]["fadingOff"] == 255:
                         effect = "0001"  # No fade
 
-                    self.log.logging("Command", "Debug", "mgtCommand : %s fading Off effect: %s" % (NWKID, effect))
+                    self.log.logging("Command", "Log", "mgtCommand : %s fading Off effect: %s" % (NWKID, effect))
                     # Increase brightness by 20% (if possible) in 0.5 seconds then fade to off in 1 second (default)
                     actuator_off(self, NWKID, EPout, "Light", effect)
                     #sendZigateCmd(self, "0094", "02" + NWKID + ZIGATE_EP + EPout + effect)

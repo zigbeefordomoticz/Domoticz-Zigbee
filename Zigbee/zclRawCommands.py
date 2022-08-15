@@ -374,6 +374,7 @@ def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect=None, groupaddrm
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + "%02x" % ONOFF_COMMANDS[command] 
     if command == "OffWithEffect":
+        # Effect is a 2 uint8, so there is no need to convert to little indian
         payload += effect
     
     raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
