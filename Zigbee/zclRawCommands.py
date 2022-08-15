@@ -347,7 +347,7 @@ def zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, GrpId, ack
 # Cluster 0006: On/Off
 ######################
 def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect=None, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Log", "raw_zcl_zcl_onoff %s %s %s %s %s %s" % (nwkid, EPIn, EpOut, command, effect, groupaddrmode))
+    self.log.logging("zclCommand", "Debug", "raw_zcl_zcl_onoff %s %s %s %s %s %s" % (nwkid, EPIn, EpOut, command, effect, groupaddrmode))
 
     Cluster = "0006"
     ONOFF_COMMANDS = {

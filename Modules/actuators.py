@@ -94,7 +94,7 @@ def actuator_stop(self, nwkid, EPout, DeviceType):
         zcl_onoff_stop( self, nwkid, EPout)
 
 def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
-    self.log.logging("Command", "Log", "actuator_off %s %s %s %s" % ( nwkid, EPout, DeviceType, effect))
+    self.log.logging("Command", "Debug", "actuator_off %s %s %s %s" % ( nwkid, EPout, DeviceType, effect))
 
     if DeviceType == "AlarmWD":
         self.iaszonemgt.alarm_off(nwkid, EPout)
