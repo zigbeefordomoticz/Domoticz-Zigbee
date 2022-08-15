@@ -94,9 +94,9 @@ def actuator_stop(self, nwkid, EPout, DeviceType):
         zcl_onoff_stop( self, nwkid, EPout)
 
 def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
+    self.log.logging("Command", "Debug", "actuator_off %s %s %s %s" % ( nwkid, EPout, DeviceType, effect))
 
     if DeviceType == "AlarmWD":
-        self.log.logging("Command", "Log", "Alarm WarningDevice - value: %s" % "off")
         self.iaszonemgt.alarm_off(nwkid, EPout)
 
     elif DeviceType == "LivoloSWL":
@@ -108,7 +108,7 @@ def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
     elif DeviceType == "WindowCovering":
         zcl_window_covering_off(self, nwkid, EPout)
 
-    elif effect:
+    elif effect is not None:
         zcl_onoff_off_witheffect(self, nwkid, EPout, effect)
     else:
         zcl_onoff_off_noeffect(self, nwkid, EPout)
