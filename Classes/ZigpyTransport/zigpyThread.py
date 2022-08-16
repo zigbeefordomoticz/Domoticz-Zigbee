@@ -124,12 +124,14 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             conf.CONF_DEVICE: { "path": serialPort,  "baudrate": 115200}, 
             conf.CONF_NWK: {},
             conf.CONF_EZSP_CONFIG: {
-                "CONFIG_SOURCE_ROUTE_TABLE_SIZE": 0x64
             },
             "topology_scan_enabled": False,
             "handle_unknown_devices": True,
             "source_routing": True
             }
+        
+        if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
+            config[conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
             
         self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 

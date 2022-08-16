@@ -36,7 +36,7 @@ from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
 
 MAX_ATTR_PER_REQ = 3
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
-
+MAX_READ_ATTR_PER_REQ = 4
 
 class ConfigureReporting:
     def __init__(
@@ -373,7 +373,19 @@ class ConfigureReporting:
         return wip_flag
 
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
-        zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
+
+        if len( attribute_list ) <= MAX_READ_ATTR_PER_REQ:
+            zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
+
+        self.logging("Debug", "read_report_configure_request %s/%s need to break attribute list into chunk %s" %( nwkid, epout, str(attribute_list)))
+        idx = 0
+        while idx < len(attribute_list):
+            end = idx + MAX_READ_ATTR_PER_REQ
+            if idx + MAX_READ_ATTR_PER_REQ > len(attribute_list):
+                end = len(attribute_list)
+            self.logging("Debug", "      chunk %s" %str( attribute_list[ idx : end ]))
+            zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list[ idx : end ], is_ack_tobe_disabled(self, nwkid),)
+            idx = end
 
     def read_report_configure_response(self, MsgData, MsgLQI):
         

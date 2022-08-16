@@ -315,7 +315,7 @@ def zcl_onoff_off_noeffect(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
 def zcl_onoff_off_witheffect(self, nwkid, EPout, effect, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_onoff_off_witheffect %s %s %s" % (nwkid, EPout, effect))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        return raw_zcl_zcl_onoff(self, nwkid, ZIGATE_EP, EPout, "Off", effect=effect, groupaddrmode=False, ackIsDisabled=ackIsDisabled)
+        return raw_zcl_zcl_onoff(self, nwkid, ZIGATE_EP, EPout, "OffWithEffect", effect=effect, groupaddrmode=False, ackIsDisabled=ackIsDisabled)
     data = ZIGATE_EP + EPout + effect
     if ackIsDisabled:
         return send_zigatecmd_zcl_noack(self, nwkid, "0094", data)
@@ -323,7 +323,7 @@ def zcl_onoff_off_witheffect(self, nwkid, EPout, effect, ackIsDisabled=DEFAULT_A
 
 
 def zcl_group_toggle(self, nwkid, epin, EPout):
-    self.log.logging("zclCommand", "Log", "zcl_group_toggle %s %s" % (nwkid, EPout))
+    self.log.logging("zclCommand", "Debug", "zcl_group_toggle %s %s" % (nwkid, EPout))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, epin, EPout, "Toggle", groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "02"
@@ -331,7 +331,7 @@ def zcl_group_toggle(self, nwkid, epin, EPout):
 
 
 def zcl_group_onoff_stop(self, nwkid, epin, EPout):
-    self.log.logging("zclCommand", "Log", "zcl_group_onoff_stop %s %s" % (nwkid, EPout))
+    self.log.logging("zclCommand", "Debug", "zcl_group_onoff_stop %s %s" % (nwkid, EPout))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, epin, EPout, "Stop", groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout
@@ -347,7 +347,7 @@ def zcl_group_onoff_on(self, nwkid, epin, EPout):
 
 
 def zcl_group_onoff_off_noeffect(self, nwkid, epin, EPout):
-    self.log.logging("zclCommand", "Log", "zcl_group_onoff_off_noeffect %s %s %s" % (nwkid, epin, EPout))
+    self.log.logging("zclCommand", "Debug", "zcl_group_onoff_off_noeffect %s %s %s" % (nwkid, epin, EPout))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, epin, EPout, "Off", groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "00"
@@ -355,7 +355,7 @@ def zcl_group_onoff_off_noeffect(self, nwkid, epin, EPout):
 
 
 def zcl_group_onoff_off_witheffect(self, nwkid, epin, EPout, effect):
-    self.log.logging("zclCommand", "Log", "zcl_group_onoff_off_witheffect %s %s %s" % (nwkid, EPout, effect))
+    self.log.logging("zclCommand", "Debug", "zcl_group_onoff_off_witheffect %s %s %s" % (nwkid, EPout, effect))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return raw_zcl_zcl_onoff(self, nwkid, epin, EPout, "Off", effect=effect, groupaddrmode=True)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + effect
