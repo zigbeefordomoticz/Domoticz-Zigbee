@@ -54,6 +54,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackFunction = callBackHandleMessage
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackGetDevice = callBackGetDevice
+        self.callBackBackup = callBackBackup
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         try:

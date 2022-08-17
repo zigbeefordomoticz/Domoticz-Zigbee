@@ -13,6 +13,7 @@ def handle_zigpy_backup(self, backups):
     try:
         with open(_coordinator_backup, "wt") as file:
             file.write(str(backups) + "\n")
+            self.log.logging("TransportZigpy", "Status", "Coordinator backup is available: %s" %_coordinator_backup)
 
     except IOError:
         Domoticz.Error("Error while Writing Coordinator backup %s" % _coordinator_backup)
