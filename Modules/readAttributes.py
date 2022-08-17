@@ -498,9 +498,6 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             ReadAttributeReq(self, key, ZIGATE_EP, "06", "0000", listAttributes, ackIsDisabled=False, checkTime=False)  # Livolo
             ReadAttributeReq(self, key, ZIGATE_EP, "09", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
-    elif ( ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX):
-        ReadAttributeReq(self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
-        
     else:
         for epout in ListOfEp:
             self.log.logging(
@@ -509,7 +506,10 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
                 "Request Basic  via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes),
                 nwkid=key,
             )
-            
+            if epout == "01" and ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX:
+                # prevent doing a read attribute on Ep 0x01 for Develco
+                continue
+                
             ReadAttributeReq(self, key, ZIGATE_EP, epout, "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
 
