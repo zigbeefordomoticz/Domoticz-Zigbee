@@ -186,15 +186,12 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         config[zigpy.config.CONF_NWK_BACKUP_PERIOD] = self.pluginconf.pluginConf["autoBackup"]
     else:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = False
-
-        
+   
     if "TXpower_set" in self.pluginconf.pluginConf:
         if radiomodule == "znp":
             config[conf.CONF_ZNP_CONFIG] ["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
         else:
             config["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
-    
-    
 
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
