@@ -340,6 +340,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
 
+    async def coordinator_backup( self ):
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+
 
 def extract_versioning_for_plugin( brd_manuf, brd_name, version):
     FirmwareBranch = "99"   # Not found in the Table.

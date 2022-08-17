@@ -408,6 +408,8 @@ async def dispatch_command(self, data):
     elif data["cmd"] == "REMOVE-DEVICE":
         ieee = data["datas"]["Param1"]
         await self.app.remove_ieee(t.EUI64(t.uint64_t(ieee).serialize()))
+    elif data["cmd"] == "COORDINATOR-BACKUP":
+        await self.app.coordinator_backup()
 
     elif data["cmd"] == "REQ-NWK-STATUS":
         await asyncio.sleep(10)

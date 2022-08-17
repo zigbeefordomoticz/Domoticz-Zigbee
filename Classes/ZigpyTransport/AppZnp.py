@@ -325,6 +325,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
 
+    async def coordinator_backup( self ):
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+            
+        
 def extract_versioning_for_plugin( znp_model, znp_manuf):
     
     ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"

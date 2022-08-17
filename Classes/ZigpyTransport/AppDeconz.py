@@ -472,3 +472,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
     async def remove_ieee(self, ieee):
         pass
+
+    async def coordinator_backup( self ):
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )

@@ -79,8 +79,9 @@
 import pathlib
 import sys
 
-import Domoticz
 from pkg_resources import DistributionNotFound
+
+import Domoticz
 
 try:
     from Domoticz import Devices, Images, Parameters, Settings
@@ -126,8 +127,8 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import (get_device_nickname, how_many_devices,
-                           lookupForIEEE, chk_and_update_IEEE_NWKID,
+from Modules.tools import (chk_and_update_IEEE_NWKID, get_device_nickname,
+                           how_many_devices, lookupForIEEE, night_shift_jobs,
                            removeDeviceInList)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
@@ -137,9 +138,9 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_remove_device,
                                     zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
+from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_IEEE_address_request)
-from Modules.zigpyBackup import handle_zigpy_backup
 
 #from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 #from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -1080,6 +1081,17 @@ class BasePlugin:
         if self.internalHB % (23 * 3600 // HEARTBEAT) == 0:
             # Update the NetworkDevices attributes if needed , once by day
             build_list_of_device_model(self)
+
+        if (
+            self.zigbee_communication and
+            self.zigbee_communication == "zigpy"
+            and "autoBackup" in self.pluginconf.pluginConf 
+            and self.pluginconf.pluginConf["autoBackup"] 
+            and night_shift_jobs( self ) 
+            and self.internalHB % (24 * 3600 // HEARTBEAT) == 0
+            and self.ControllerLink
+        ):
+            self.ControllerLink.sendData( "COORDINATOR-BACKUP", {})
 
         if self.CommiSSionning:
             self.PluginHealth["Flag"] = 2
