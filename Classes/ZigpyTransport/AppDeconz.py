@@ -55,6 +55,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
+        self.callBackBackup = callBackBackup
 
         await asyncio.sleep( 2 )
 
