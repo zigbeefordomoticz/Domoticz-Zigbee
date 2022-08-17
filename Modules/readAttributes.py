@@ -31,6 +31,8 @@ from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            set_timestamp_datastruct)
 from Modules.tuya import tuya_cmd_0x0000_0xf0
 from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
+from Modules.macPrefix import DEVELCO_PREFIX
+
 
 ATTRIBUTES = {
     "0000": [
@@ -472,6 +474,7 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
     self.log.logging("ReadAttributes", "Log", "EP: %s" % self.ListOfDevices[key]["Ep"])
 
+    ieee = self.ListOfDevices[ key ]['IEEE']
     if len(ListOfEp) == 0:
         # We don't have yet any Endpoint information , we will then try several known Endpoint, and luckly we will get some answers
         self.log.logging(
@@ -481,9 +484,12 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             nwkid=key,
         )
 
-        ieee = self.ListOfDevices[ key ]['IEEE']
         if ( ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+
+        elif ( ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX):
+            ReadAttributeReq(self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+            
         else:
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
             ReadAttributeReq(self, key, ZIGATE_EP, "0b", "0000", listAttributes, ackIsDisabled=False, checkTime=False)  # Schneider
@@ -492,6 +498,9 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             ReadAttributeReq(self, key, ZIGATE_EP, "06", "0000", listAttributes, ackIsDisabled=False, checkTime=False)  # Livolo
             ReadAttributeReq(self, key, ZIGATE_EP, "09", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
+    elif ( ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX):
+        ReadAttributeReq(self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+        
     else:
         for epout in ListOfEp:
             self.log.logging(
@@ -500,6 +509,7 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
                 "Request Basic  via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes),
                 nwkid=key,
             )
+            
             ReadAttributeReq(self, key, ZIGATE_EP, epout, "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
 
