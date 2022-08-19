@@ -146,7 +146,7 @@ class LoggingManagement:
                 format="%(asctime)s %(levelname)-8s:%(message)s",
                 handlers=[RotatingFileHandler(logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
             )
-        if "PluginLogMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["PluginLogMode"] in ( 0o6400, 0o640, 0o644 ):
+        if "PluginLogMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["PluginLogMode"] in ( 0o600, 0o640, 0o644 ):
                 os.chmod(logfilename, self.pluginconf.pluginConf["PluginLogMode"])
 
 
