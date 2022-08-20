@@ -266,14 +266,7 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
         if Status == "00":
             DType = Data[idx : idx + 2]
             idx += 2
-            if DType in SIZE_DATA_TYPE:
-                size = SIZE_DATA_TYPE[DType] * 2
-                data = Data[idx : idx + size]
-                idx += size
-                value = decode_endian_data(data, DType)
-                lenData = "%04x" % (size // 2)
-
-            elif DType in ("48", "4c"):
+            if DType in ("48", "4c"):
                 nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
                 idx += 4
                 # Today found for attribute 0xff02 Xiaomi, just take all data
@@ -281,19 +274,41 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
                 data = Data[idx : idx + size]
                 idx += size
                 value = decode_endian_data(data, DType)
+                value = ""
                 lenData = "%04x" % (size // 2)
 
-            elif DType in ("41", "42"):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
+            elif DType in ("41", "42", ):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42 
                 size = int(Data[idx : idx + 2], 16) * 2
                 idx += 2
+                if size > 0:
+                    data = Data[idx : idx + size]
+                    idx += size
+                    value = decode_endian_data(data, DType, size)
+                    value = ""
+                lenData = "%04x" % (size // 2)
+
+            elif DType in ("43", ):  # Long Octet 
+                size = (struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0] ) * 2
+                idx += 4
+                if size > 0:
+                    data = Data[idx : idx + size]
+                    idx += size
+                    value = decode_endian_data(data, DType, size)
+                    value = ""
+                lenData = "%04x" % (size // 2)
+
+            elif DType in SIZE_DATA_TYPE:
+                size = SIZE_DATA_TYPE[DType] * 2
                 data = Data[idx : idx + size]
                 idx += size
-                value = decode_endian_data(data, DType, size)
+                value = decode_endian_data(data, DType)
                 lenData = "%04x" % (size // 2)
+
 
             else:
                 self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
                 self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" % (ClusterId, Attribute, Data))
+                self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - frame: %s" % (frame,))
                 return frame
 
             buildPayload += Attribute + Status + DType + lenData + value
