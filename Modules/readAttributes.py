@@ -1688,7 +1688,7 @@ def ReadAttributeRequest_ff66(self, key):
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_ff66 - Key: %s " % key, nwkid=key)
     EPout = "01"
-    listAttributes = [0x0000, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008]
+    listAttributes = retreive_ListOfAttributesByCluster(self, key, EPout, "ff66")
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
