@@ -45,7 +45,7 @@ from Modules.batterieManagement import UpdateBatteryAttribute
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if len(Attribute) == 0:
-        return
+        return ""
 
     self.log.logging( "Cluster", 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
 
@@ -97,10 +97,13 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
     if int(AttType, 16) == 0x39:  # Xiaomi Float
         return str(struct.unpack("f", struct.pack("I", int(Attribute, 16)))[0])
 
-    if int(AttType, 16) == 0x42:  # CharacterString
+    if int(AttType, 16) in ( 0x42, 0x43):  # CharacterString
         decode = ""
+        self.log.logging("Cluster", "Log", "decodeAttribute - to decode >%s<" % str(Attribute))
+
         try:
             decode = binascii.unhexlify(Attribute).decode("utf-8")
+            self.log.logging("Cluster", "Log", "decodeAttribute - ======> >%s< (%s)" % (decode, type(decode)))
         except:
             if handleErrors:  # If there is an error we force the result to '' This is used for 0x0000/0x0005
                 self.log.logging("Cluster", "Log", "decodeAttribute - seems errors decoding %s, so returning empty" % str(Attribute))
@@ -118,6 +121,8 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         # Cleaning
         decode = decode.strip("\x00")
         decode = decode.strip()
+        if decode is None:
+            decode = ""
         return decode
 
     # self.log.logging( "Cluster", 'Debug', "decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
@@ -4967,6 +4972,7 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         "0006": "ADIR1",
         "0007": "ADIR2",
         "0008": "ADIR3",
+
         # Mode standard
         "0200": "LTARF",
         "0201": "NTARF",
@@ -5020,7 +5026,15 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.ListOfDevices[ MsgSrcAddr ]['ZLinky'] = {}
         
     if MsgAttrID in ZLinky_TIC_COMMAND:
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "Store Attribute: %s - %s Data: %s / Value: %s" % (ZLinky_TIC_COMMAND[ MsgAttrID ] ,MsgAttrID, MsgClusterData, value),
+            MsgSrcAddr,
+        )
         store_ZLinky_infos( self, MsgSrcAddr, ZLinky_TIC_COMMAND[ MsgAttrID ], decodeAttribute(self, MsgAttType, MsgClusterData))
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
+
 
     if MsgAttrID == "0000":
         # Option tarifaire
@@ -5120,7 +5134,6 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s / Value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
-
 
 def store_ZLinky_infos( self, nwkid, command_tic, value):
 
