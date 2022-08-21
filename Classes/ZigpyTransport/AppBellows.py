@@ -39,6 +39,8 @@ from zigpy.zcl import clusters
 from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
                                  SCHEMA_DEVICE)
 
+import zigpy.backups
+
 LOGGER = logging.getLogger(__name__)
 
 class App_bellows(bellows.zigbee.application.ControllerApplication):
@@ -48,7 +50,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         LOGGER.debug("_load_db")
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
@@ -57,7 +59,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
-        #self.bellows_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
+        self.callBackBackup = callBackBackup
+        self.backups: zigpy.backups.BackupManager = zigpy.backups.BackupManager(self)
 
         try:
             await self._startup( auto_form=True )
@@ -99,6 +102,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
                 LOGGER.info("Network is not formed")
                 if not auto_form:
                     raise
+
                 LOGGER.info("Forming a new network")
                 await self.form_network()
                 await self.load_network_info(load_devices=False)
@@ -107,10 +111,21 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             LOGGER.debug("Node info: %s", self.state.node_info)
             LOGGER.info("EZSP Configuration: %s", self.config)
             await self.start_network()
+
         except Exception:
             LOGGER.error("Couldn't start application")
             await self.shutdown()
             raise
+
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+
+    async def shutdown(self) -> None:
+        """Shutdown controller."""
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+
+        await self.disconnect()
 
     # Only needed if the device require simple node descriptor from the coordinator
     async def register_endpoint(self, endpoint=1):
@@ -167,7 +182,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             dev.nwk = nwk
             self._update_nkdids_if_needed( ieee, dev.nwk )
             LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
-            
+
             
     def _update_nkdids_if_needed( self, ieee, new_nwkid ):
         _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
@@ -210,6 +225,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         message: bytes,
         dst_addressing: Addressing,
     ) -> None:
+
         if sender is None or profile is None or cluster is None:
             # drop the paquet 
             return
@@ -323,6 +339,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
+
+    async def coordinator_backup( self ):
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
 
 
 def extract_versioning_for_plugin( brd_manuf, brd_name, version):

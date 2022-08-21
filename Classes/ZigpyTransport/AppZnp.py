@@ -45,7 +45,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         LOGGER.debug("_load_db")
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
@@ -54,6 +54,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackFunction = callBackHandleMessage
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackGetDevice = callBackGetDevice
+        self.callBackBackup = callBackBackup
         self.znp_config[conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         try:
@@ -98,6 +99,16 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             LOGGER.error("Couldn't start application")
             await self.shutdown()
             raise
+
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+
+
+    async def shutdown(self) -> None:
+        """Shutdown controller."""
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+
 
     async def register_endpoints(self):
         await super().register_endpoints()  
@@ -314,6 +325,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
 
+    async def coordinator_backup( self ):
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+            
+        
 def extract_versioning_for_plugin( znp_model, znp_manuf):
     
     ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"

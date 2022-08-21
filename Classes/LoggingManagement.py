@@ -497,6 +497,9 @@ def zigpy_loging_mode(mode):
         requests_logger.setLevel(logging.DEBUG)
         requests_logger = logging.getLogger("zigpy.appdb_schemas")
         requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("zigpy.backups")
+        requests_logger.setLevel(logging.DEBUG)
+
     else:
         requests_logger = logging.getLogger("zigpy")
         requests_logger.setLevel(logging.WARNING)
@@ -535,6 +538,9 @@ def zigpy_logging_ezsp(mode):
         requests_logger.setLevel(logging.DEBUG)
         requests_logger = logging.getLogger("Classes.ZigpyTransport.AppBellows")
         requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppBellows")
+        requests_logger.setLevel(logging.DEBUG)
+
     else:
         requests_logger = logging.getLogger("bellows")
         requests_logger.setLevel(logging.WARNING)
