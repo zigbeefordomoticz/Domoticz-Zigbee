@@ -99,11 +99,11 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if int(AttType, 16) in ( 0x42, 0x43):  # CharacterString
         decode = ""
-        self.log.logging("Cluster", "Log", "decodeAttribute - to decode >%s<" % str(Attribute))
+        self.log.logging("Cluster", "Debug", "decodeAttribute - DataType: %s to decode >%s<" % ( AttType, str(Attribute)))
 
         try:
             decode = binascii.unhexlify(Attribute).decode("utf-8")
-            self.log.logging("Cluster", "Log", "decodeAttribute - ======> >%s< (%s)" % (decode, type(decode)))
+            self.log.logging("Cluster", "Debug", "decodeAttribute - ======> >%s< (%s) len: %s" % (decode, type(decode), len(decode)))
         except:
             if handleErrors:  # If there is an error we force the result to '' This is used for 0x0000/0x0005
                 self.log.logging("Cluster", "Log", "decodeAttribute - seems errors decoding %s, so returning empty" % str(Attribute))
