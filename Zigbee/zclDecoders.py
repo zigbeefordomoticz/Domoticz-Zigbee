@@ -274,7 +274,6 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
                 data = Data[idx : idx + size]
                 idx += size
                 value = decode_endian_data(data, DType)
-                value = ""
                 lenData = "%04x" % (size // 2)
 
             elif DType in ("41", "42", ):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42 
@@ -284,6 +283,7 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
                     data = Data[idx : idx + size]
                     idx += size
                     value = decode_endian_data(data, DType, size)
+                else:
                     value = ""
                 lenData = "%04x" % (size // 2)
 
@@ -294,6 +294,7 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
                     data = Data[idx : idx + size]
                     idx += size
                     value = decode_endian_data(data, DType, size)
+                else:
                     value = ""
                 lenData = "%04x" % (size // 2)
 
