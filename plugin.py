@@ -1630,7 +1630,7 @@ def check_python_modules_version( self ):
         "zigpy_znp": "0.8.2",
         "zigpy_deconz": "0.18.0",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.32.0",
+        "zigpy_ezsp": "0.33.0",
         }
 
     flag = True
