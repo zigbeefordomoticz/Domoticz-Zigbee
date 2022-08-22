@@ -84,13 +84,23 @@ def open_and_read( self, url ):
 
 def domoticz_request( self, url):
     self.logging("Debug",'domoticz request url: %s' %url)
-    request = urllib.request.Request(url)
+    try:
+        request = urllib.request.Request(url)
+    except urllib.error.URLError:
+        self.logging("Error", "domoticz_request - wrong URL to get access to Domoticz JSON/API: %s" %url)
+        return None
+    
     self.logging("Debug",'domoticz request result: %s' %request)
     if self.authentication_str:
         self.logging("Debug",'domoticz request Authorization: %s' %request)
         request.add_header("Authorization", "Basic %s" % self.authentication_str)
     self.logging("Debug",'domoticz request open url')
-    response = urllib.request.urlopen(request)
+    try:
+        response = urllib.request.urlopen(request)
+    except urllib.error.URLError:
+        self.logging("Error", "domoticz_request - wrong URL toget access to Domoticz JSON/API: %s" %url)
+        return None
+    
     return response.read()
   
 def domoticz_base_url(self):
@@ -99,6 +109,9 @@ def domoticz_base_url(self):
     self.logging("Debug",'Password: %s' %password)
     self.logging("Debug",'Host+port: %s' %host_port)
 
+    # Check that last char is not a / , if the case then remove it 
+    if self.api_base_url[-1] == '/':
+        self.api_base_url = self.api_base_url[:-1]
     if username and password and host_port:
         self.authentication_str = base64.encodebytes(('%s:%s' %(username, password)).encode()).decode().replace('\n','')
         url = 'http://' + host_port + '/json.htm?' + 'username=%s&password=%s&' %(username, password)
@@ -123,7 +136,12 @@ class DomoticzDB_Preferences:
         # sourcery skip: replace-interpolation-with-fstring
         url = domoticz_base_url(self)
         url += DOMOTICZ_HARDWARE_API
-        self.preferences = json.loads( domoticz_request( self, url) )
+
+        dz_response = domoticz_request( self, url)
+        if dz_response is None:
+            return
+
+        self.preferences = json.loads( dz_response )
         
     def logging(self, logType, message):
         # sourcery skip: replace-interpolation-with-fstring
@@ -160,7 +178,11 @@ class DomoticzDB_Hardware:
         url = domoticz_base_url(self)
         url += DOMOTICZ_HARDWARE_API
 
-        result = json.loads( domoticz_request( self, url) )
+        dz_result = domoticz_request( self, url)
+        if dz_result is None:
+            return
+        result = json.loads( dz_result )
+        
         for x in result['result']:
             idx = x[ "idx" ]
             self.hardware[ idx ] = x
@@ -176,8 +198,10 @@ class DomoticzDB_Hardware:
 
     def get_loglevel_value(self):
         # sourcery skip: replace-interpolation-with-fstring
-        self.logging("Debug", "get_loglevel_value %s " %(self.hardware[ '%s' %self.HardwareID ]['LogLevel']))
-        return self.hardware[ '%s' %self.HardwareID ]['LogLevel']
+        if self.hardware and ("%s" %self.HardwareID) in self.hardware: 
+            self.logging("Debug", "get_loglevel_value %s " %(self.hardware[ '%s' %self.HardwareID ]['LogLevel']))
+            return self.hardware[ '%s' %self.HardwareID ]['LogLevel']
+        return 7
 
     def multiinstances_z4d_plugin_instance(self):
         # sourcery skip: replace-interpolation-with-fstring
@@ -204,13 +228,19 @@ class DomoticzDB_DeviceStatus:
         url = domoticz_base_url(self)
         url += DOMOTICZ_DEVICEST_API + "%s" %ID
 
-        result = json.loads( domoticz_request( self, url))
+        dz_result = domoticz_request( self, url)
+        if dz_result is None:
+            return None
+        result = json.loads( dz_result )
         self.logging("Debug", "Result: %s" %result)
         return result
     
     def extract_AddValue(self, ID, attribute):
         # sourcery skip: replace-interpolation-with-fstring
         result = self.get_device_status( ID)
+        if result is None:
+            return 0
+        
         AdjValue = 0
         for x in result['result']:
             AdjValue = x[attribute]    
