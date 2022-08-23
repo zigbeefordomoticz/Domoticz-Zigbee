@@ -940,7 +940,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                             # We do update only if this is a On/off
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, "On", BatteryLevel, SignalLevel)
 
-            elif WidgetType in ("VenetianInverted", "Venetian", "WindowCovering", "VanneInverted", "Vanne"):
+            elif WidgetType in ("VenetianInverted", "Venetian", "WindowCovering", "VanneInverted", "Vanne", "Curtain", "CurtainInverted"):
                 value = int(value, 16)
                 self.log.logging(
                     "Widget",
@@ -997,7 +997,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     )
 
         if "WindowCovering" in ClusterType:  # 0x0102
-            if WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering"):
+            if WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted"):
                 value = int(value, 16)
                 self.log.logging(
                     "Widget",
@@ -1005,7 +1005,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (NWKID, Ep, ClusterType, WidgetType, value),
                     NWKID,
                 )
-                if WidgetType in ("VenetianInverted", "VanneInverted"):
+                if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
                     value = 100 - value
                     self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NWKID, Ep, value), NWKID)
                 # nValue will depends if we are on % or not

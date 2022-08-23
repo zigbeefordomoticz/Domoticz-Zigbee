@@ -803,7 +803,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in BSO-Orientation" % (t), NWKID)
 
-            if t == "VanneInverted":
+            if t in ( "VanneInverted", "CurtainInverted"):
                 # Blind Percentage Inverterd
                 createDomoticzWidget(
                     self,
@@ -834,7 +834,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in BlindInverted" % (t), NWKID)
 
-            if t == "Vanne":
+            if t in ( "Vanne", "Curtain"):
                 # Blind Percentage
                 createDomoticzWidget(
                     self,
