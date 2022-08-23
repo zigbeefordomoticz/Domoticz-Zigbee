@@ -396,6 +396,14 @@ SETTINGS = {
     "CoordinatorConfiguration": {
         "Order": 7,
         "param": {
+            "autoBackup": {
+                "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+            },
             "blueLedOnOff": {
                 "type": "bool",
                 "default": 1,

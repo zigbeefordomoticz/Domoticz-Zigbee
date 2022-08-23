@@ -1,1 +1,4 @@
-{"branch": "beta6", "version": "6.2.125"}
+{
+    "branch": "stable6",
+    "version": "6.1.006"
+}

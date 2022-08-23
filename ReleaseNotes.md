@@ -22,12 +22,11 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
-
-##   April 2022 - 
+## April 2022 -
 
 - [Hardware] - Profalux MOT C1Z06F
 - [Technical] - WebUI event management NetworkDevices
-- [Hardware] - LUMI lumi.switch.n1aeu1 WS-EUK03 
+- [Hardware] - LUMI lumi.switch.n1aeu1 WS-EUK03
 
 ## 5 April 2022 - stable6.1.003
 
@@ -35,6 +34,7 @@ Release Numbering
 - [Technical] - Rely on requirements.txt for python modules installation
 
 ## 3 April 2022 - stable6.1.002
+
 - [Issue] - Fix potential issue around Firmware decoding, and rest-api.
 - [Technical] - If plugin not started after 120s, then stop
 
@@ -42,7 +42,7 @@ Release Numbering
 
 - [Technical] - relying zigpy libraries for none Zigate Coordinators
 - [Hardware] - Enable Texas Instrument Coordinator based on zigpy-znp library
-- [Hardware] - Enable Silicon Labs Coordinator based on zigpy bellows library
+- [Hardware] - Enable Silicon Labs Coordinator based on zigpy bellows library
 - [Technical] - Enable analytics information from WebUI
 - [Hardware] - Moes Curtain Switch calibration
 - [Hardware] - Moes Siren without temp/humi sensors

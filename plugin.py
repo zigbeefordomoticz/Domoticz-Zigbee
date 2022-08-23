@@ -79,8 +79,9 @@
 import pathlib
 import sys
 
-import Domoticz
 from pkg_resources import DistributionNotFound
+
+import Domoticz
 
 try:
     from Domoticz import Devices, Images, Parameters, Settings
@@ -126,8 +127,8 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import (get_device_nickname, how_many_devices,
-                           lookupForIEEE, chk_and_update_IEEE_NWKID,
+from Modules.tools import (chk_and_update_IEEE_NWKID, get_device_nickname,
+                           how_many_devices, lookupForIEEE, night_shift_jobs,
                            removeDeviceInList)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
@@ -137,6 +138,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_remove_device,
                                     zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
+from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_IEEE_address_request)
 
@@ -183,6 +185,7 @@ class BasePlugin:
         self.webserver = None
         self.transport = None  # USB or Wifi
         self.log = None
+        self.zigpy_backup = None
         # self._ReqRcv = bytearray()
 
         self.UnknownDevices = []  # List of unknown Device NwkId
@@ -576,7 +579,7 @@ class BasePlugin:
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status", "Start Zigpy Transport on zigate")
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -593,7 +596,7 @@ class BasePlugin:
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status", "Start Zigpy Transport on ZNP")
             
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -608,7 +611,7 @@ class BasePlugin:
             check_python_modules_version( self )
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status","Start Zigpy Transport on deCONZ")            
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -624,7 +627,7 @@ class BasePlugin:
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
           
@@ -863,7 +866,11 @@ class BasePlugin:
 
         self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
         return int(nwkid,16) ,int(ieee,16)
-    
+
+    def zigpy_backup_available(self, backups):
+        handle_zigpy_backup(self, backups)
+
+
     def onCommand(self, Unit, Command, Level, Color):
         self.log.logging(
             "Plugin", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color)
@@ -1074,6 +1081,17 @@ class BasePlugin:
         if self.internalHB % (23 * 3600 // HEARTBEAT) == 0:
             # Update the NetworkDevices attributes if needed , once by day
             build_list_of_device_model(self)
+
+        if (
+            self.zigbee_communication and
+            self.zigbee_communication == "zigpy"
+            and "autoBackup" in self.pluginconf.pluginConf 
+            and self.pluginconf.pluginConf["autoBackup"] 
+            and night_shift_jobs( self ) 
+            and self.internalHB % (24 * 3600 // HEARTBEAT) == 0
+            and self.ControllerLink
+        ):
+            self.ControllerLink.sendData( "COORDINATOR-BACKUP", {})
 
         if self.CommiSSionning:
             self.PluginHealth["Flag"] = 2
@@ -1608,11 +1626,11 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.48.0",
-        "zigpy_znp": "0.8.1",
+        "zigpy": "0.50.1",
+        "zigpy_znp": "0.8.2",
         "zigpy_deconz": "0.18.0",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.31.2",
+        "zigpy_ezsp": "0.33.0",
         }
 
     flag = True

@@ -1,9 +1,10 @@
 ## Contributing
+
 Thank you for considering contributing to Zigbee for Domoticz plugin. It is people like you that make it such a great and powerful tool.
 
 You can contribute on different matters :
 
-* Testing purpose 
+* Testing purpose
 Contributors will help in the testing of the beta and pre-release.
 You don't need to have specific known-how or knowledge, you'll have to run and test the code and report issues, gaps with docuentation ...
 
@@ -15,18 +16,18 @@ Contributors will help in developping/contributing to the plugin documentation, 
 We are looking for help on improving the User Interface. We have already a nice look and feel of our plugin Web interface, but there is room for further improvement and many on CSS side.
 
 Technology to be used:
-- html 
-- Javascript 
-- jquery
-- css
 
+* html
+* Javascript
+* jquery
+* css
 
 * Plugin core
 The plugin is written in Python3. The integration with Domoticz is done over the 'Python Plugin Framework' provided by domoticz.
 You want to participate in the developement of the plugin, by either adding new Zigbee hardware devices, just contact us.
 
-
 ## Where do I go from here ?
+
 If you've noticed a bug or have an enhancement request, or simply you took on issue from the GitHub Issue list, go ahead and propose your implementation.
 
 ### Fork & create a branch
@@ -67,6 +68,7 @@ git remote add upstream <gitusername>@github.com:sasu-drooz/Domoticz-Zigate.git
 git checkout stable
 git pull upstream stable
 ```
+
 Then update your feature branch from your local copy of stable, and push it!
 
 ```sh
@@ -90,4 +92,3 @@ git checkout 325-add-chipolo-plug
 git pull --rebase upstream master
 git push --force-with-lease 325-add-chipolo-plug
 ```
-
