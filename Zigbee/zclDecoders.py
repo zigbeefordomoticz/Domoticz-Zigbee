@@ -89,6 +89,9 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         if Command in OTA_UPGRADE_COMMAND:
             self.log.logging("zclDecoder", "Debug", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
             return frame
+        
+    if ClusterId == "0020":
+        return buildframe_for_cluster_0020(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
     if ClusterId == "0500" and is_direction_to_server(fcf) and Command == "00":
         return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
@@ -568,6 +571,20 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Ta
 
 
 # Cluster: 0x0019
+
+# Cluster 0x0020
+# Pool Control
+
+def buildframe_for_cluster_0020(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+
+    if Command == "00":  # Check-in Command
+        # respond with a Check-in Response command indicating that the server SHOULD or SHOULD not begin fast poll mode.
+        # Will be handle via receive_poll_cluster() call from inRawAPS
+        # Let's return the Data Indication
+        return frame
+    
+    return frame
+    
 
 # Cluster 0x0500
 # Cmd : 0x00 Zone Enroll Response  -> 0400
