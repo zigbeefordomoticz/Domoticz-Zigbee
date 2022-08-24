@@ -7,7 +7,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: "3.6"
+          python-version: "3.7"
       - run: pip install bandit black codespell flake8 isort mypy pytest pyupgrade safety
       - run: bandit -r . || true
       - run: black --check . || true
