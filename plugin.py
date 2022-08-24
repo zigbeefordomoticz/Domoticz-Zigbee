@@ -94,6 +94,7 @@ import os
 import sys
 import threading
 import time
+import os
 
 from Classes.AdminWidgets import AdminWidgets
 # from Classes.APS import APSManagement
@@ -269,6 +270,10 @@ class BasePlugin:
     def onStart(self):
         Domoticz.Log("Zigbee for Domoticz plugin started!")
         assert sys.version_info >= (3, 4)  # nosec
+        
+        if check_requirements( self ):
+            self.onStop()
+            return
 
         if check_requirements( self ):
             self.onStop()
@@ -1234,7 +1239,6 @@ def zigateInit_Phase1(self):
     """
     self.log.logging("Plugin", "Debug", "zigateInit_Phase1 PDMDone: %s" % (self.ErasePDMDone))
     # Check if we have to Erase PDM.
-
     if self.zigbee_communication == "native" and Parameters["Mode3"] == "True" and not self.ErasePDMDone and not self.ErasePDMinProgress:  # Erase PDM
         zigate_erase_eeprom(self)
         self.log.logging("Plugin", "Status", "Erase coordinator PDM")

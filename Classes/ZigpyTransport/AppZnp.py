@@ -8,6 +8,7 @@ import binascii
 import logging
 import time
 from typing import Any, Optional
+import time
 
 import zigpy.appdb
 import zigpy.config
@@ -120,7 +121,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
 
 
-
     async def shutdown(self) -> None:
         """Shutdown controller."""
         if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
@@ -192,7 +192,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         except KeyError:
             time.sleep(1.0)
             dev = self.add_device(ieee, nwk)
-            LOGGER.info("New device 0x%04x (%s) joined the network", nwk, ieee)
+            LOGGER.debug("New device 0x%04x (%s) joined the network", nwk, ieee)
 
         if dev.nwk != nwk:
             dev.nwk = nwk

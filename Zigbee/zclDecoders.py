@@ -24,6 +24,7 @@ def is_duplicate_zcl_frame(self, Nwkid, ClusterId, Sqn):
     if Nwkid not in self.ListOfDevices:
         return False
     return False
+
     if "ZCL-IN-SQN" not in self.ListOfDevices[ Nwkid ]:
         self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"] = {}
     if ClusterId not in self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"]:

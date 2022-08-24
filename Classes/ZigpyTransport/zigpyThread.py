@@ -40,6 +40,7 @@ from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
                               InvalidResponse)
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
+from Modules.macPrefix import casaiaPrefix_zigpy
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True

@@ -23,7 +23,16 @@ Release Numbering
 - Even numbers  --> Beta/6
 
 
-##   April 2022 - 
+## 17  May 2022 - stable6 - 6.1.005
+- [Hardware] - SonOff Mini Relay No Neutral
+- [Technical] - upstream (zigpy related) update
+- [Technical] - handling Default Response (zigpy)
+- [Hardware] - Certification of Hue White and Color Ambiance A60 E27, Model LCA001
+- [WebUI] - add Web UI menu to Custom UI
+- [Hardware] - Bitron siren
+
+
+## 15 April 2022 - stable6 - 6.1.004
 
 - [Hardware] - Profalux MOT C1Z06F
 - [Technical] - WebUI event management NetworkDevices
