@@ -23,7 +23,65 @@ Release Numbering
 - Even numbers  --> Beta/6
 
 
+## Aug. 2022 - stable6 - 6.3.001
+
+- [Technical] - Pipiche38/refactor/domoticz db (#1197)
+- [Technical] - make the Transaction key available in the REST /zigate api
+- [Technical] - fix processConfigureReporting() got an unexpected keyword argument NWKID
+- [Hardware] - ZBMINI-L is a switch without neutre, but is main powered
+- [Technical] - refactor signal and battery collects for Domoticz display
+- [Technical] - Set IASBattery % to 5 when battery is not ok
+- [Technical] - store IASBattery when receiving a cluster 0500 attribut 0002
+- [Technical] - capture and handle more zigpy exception
+- [Technical] - for IAS devices not repporting battery, rely on IASBattery atttribute
+- [Technical] - Topology based on Routing table (#1198) Provide the possibility to have the Network Topology based on Routing table which then will rely on Associated Devices for end devices, and Neighbour tables for LQI
+- [Technical] -  Display the % of Domoticz Widgets usage ( against the 255 limits) When reaching then limit, and Widget creation time display also log messages
+- [Hardware] - CAC221 and AC221 default IRcode set to 28 (#1208)
+- [Technical] - New DomoticzDB needs to get Port, UserName,Password  (#1204)
+- [Technical] - Enter Base API url at plugin start #1201
+- [Hardware] - finishing iTRV integration around Boost capabilities
+- [Technical] - Allow to disable the Eratic temperature value tracking
+- [Hardware] - Tuya TS0004 Smart Switch relay 4CH (#1207)
+- [WebUI] -  Toplogy refactoring (#1213)
+- [Technical] - Keeping RoutingTable history
+- [Technical] - Time stamps alignement between the various tables, when doing a Topology request
+- [Hardware] - enable _TZE200_81isopgh as a Tuya Water Timer
+- [Technical] - Pipiche38/restapi/cfgreporing2 (#1210)
+- [Technical] - Makes ParamConfigureReporting persistent
+- [Technical] - update to match with WebUI json format
+- [Technical] - enable fake data for developping the WebUI
+- [Technical] - update the way to convert Dictionary for WebUI
+- [Technical] - normalise config reporting for Casa.ia and Owon
+- [Technical] - disable DeviceList in json format
+- [Hardware] - New manfuacturer for the Tuya Smart Energy counter
+- [Technical] - force to use SetLevel without On/Off when profalux (#1218)
+- [Technical] - try to reconnect device if they have change their nwkid
+- [Technical] - do not flag as faulty if we have reconnected in between
+- [Technical] - update DeviceExist and make sure that I/Os are doing after the proper action
+- [Hardware] - ZigBee Air Conditioning Thermostat Fan Coil Unit Digital Temp Conditi… (#1202)
+- [Technical] - force MoveToLevel with OnOff for lights
+- [Technical] - do not do the IEEE address request as it looks like it do not work correctly on bellows and may be all zigpy
+- [Technical] - Alignement with zigpy new-radio-API
+- [Hardware] -  handle ConBee and RaspBee
+- [Hardware] - add _TZ3000_amdymr7l for tS011F model as a Plug
+- [Hardware] - better manage Blitzwolf plug
+- [Technical] - python3.8 as the minimum python level required
+- [Technical] -  Removing pyserial and dnspython submodules (#1231)
+- [Technical] -  Implement ZCL CLuster 0003 commands (#1237)
+- [Technical] -  Add thread id to log (#1238)
+- [Technical] -  disable zigpy topology and add SOURCE_ROUTING_TABLE_SIZE to 100 entries
+- [Technical] -  Implement the WebUI Configuration Reporting only on changes based
+- [Technical] -  readConfigurationReportingAfterOffOn to enable a read Configuration Reporting after a device annoucement
+- [Technical] -  fix issues on Topology report where Associated Devices where not always reported in the diagrapm
+- [Technical] -  force to use RAW mode when in Zigate as issue #1227
+- [WebUI] -  revised WebUI CfgReporting menu should be disable for ZiGate
+- [Technical] -  do not dedpuplicate on ZCL has several frames could be part of one transaction
+- [Hardware] -  re-align the ZLinky configuration to comply with what the device returns during a read configuration reports
+- [Technical] -  Reverse Proxy compatible WebUI (#1246)
+- [WebUI] -  Put the WebUI under a root /z4d instead of / This will allow reverse-proxy via sub-folder and in such open only 1 port to reverse-proxy domoticz and WebUI
+
 ## 17  May 2022 - stable6 - 6.1.005
+
 - [Hardware] - SonOff Mini Relay No Neutral
 - [Technical] - upstream (zigpy related) update
 - [Technical] - handling Default Response (zigpy)
@@ -31,12 +89,11 @@ Release Numbering
 - [WebUI] - add Web UI menu to Custom UI
 - [Hardware] - Bitron siren
 
-
 ## 15 April 2022 - stable6 - 6.1.004
 
 - [Hardware] - Profalux MOT C1Z06F
 - [Technical] - WebUI event management NetworkDevices
-- [Hardware] - LUMI lumi.switch.n1aeu1 WS-EUK03 
+- [Hardware] - LUMI lumi.switch.n1aeu1 WS-EUK03
 
 ## 5 April 2022 - stable6.1.003
 
@@ -44,6 +101,7 @@ Release Numbering
 - [Technical] - Rely on requirements.txt for python modules installation
 
 ## 3 April 2022 - stable6.1.002
+
 - [Issue] - Fix potential issue around Firmware decoding, and rest-api.
 - [Technical] - If plugin not started after 120s, then stop
 
