@@ -2,8 +2,6 @@
     "_comment": "",
     "Ep": {
         "01": {
-            "0005": "",
-            "0006": "",
             "Type": ""
         },
         "02": {
@@ -13,6 +11,7 @@
             "0004": "",
             "0005": "",
             "0006": "",
+            "0009": "",
             "000a": "",
             "0019": "",
             "0b04": "",
@@ -33,8 +32,8 @@
             "Attributes": {
                 "0000": {
                     "DataType": "29",
-                    "MinInterval": "0001",
-                    "MaxInterval": "012C",
+                    "MinInterval": "ffff",
+                    "MaxInterval": "0000",
                     "TimeOut": "0000",
                     "Change": "0010"
                 }
@@ -44,8 +43,8 @@
             "Attributes": {
                 "0000": {
                     "DataType": "10",
-                    "MinInterval": "0001",
-                    "MaxInterval": "012C",
+                    "MinInterval": "ffff",
+                    "MaxInterval": "0000",
                     "TimeOut": "0FFF",
                     "Change": "01"
                 }
@@ -55,10 +54,10 @@
             "Attributes": {
                 "0000": {
                     "DataType": "25",
-                    "MinInterval": "FFFF",
+                    "MinInterval": "ffff",
                     "MaxInterval": "0000",
                     "TimeOut": "0000",
-                    "Change": "00000000000003E8"
+                    "Change": "00000000000003e8"
                 }
             }
         },
@@ -66,22 +65,22 @@
             "Attributes": {
                 "0505": {
                     "DataType": "21",
-                    "MinInterval": "0005",
-                    "MaxInterval": "012C",
+                    "MinInterval": "ffff",
+                    "MaxInterval": "0000",
                     "TimeOut": "0000",
                     "Change": "0064"
                 },
                 "0508": {
                     "DataType": "21",
-                    "MinInterval": "0005",
-                    "MaxInterval": "012C",
+                    "MinInterval": "ffff",
+                    "MaxInterval": "0000",
                     "TimeOut": "0000",
                     "Change": "0064"
                 },
                 "050b": {
                     "DataType": "29",
-                    "MinInterval": "0005",
-                    "MaxInterval": "012C",
+                    "MinInterval": "ffff",
+                    "MaxInterval": "0000",
                     "TimeOut": "0000",
                     "Change": "000a"
                 }
@@ -95,11 +94,7 @@
             "0005",
             "0006",
             "0007",
-            "8000",
-            "8010",
-            "8020",
-            "8030",
-            "8050"
+            "8000"
         ],
         "0002": [
             "0000"
@@ -109,6 +104,8 @@
             "0000"
         ],
         "000a": [],
+        "0019": [],
+        "0406": [],
         "0702": [
             "0000",
             "0200",

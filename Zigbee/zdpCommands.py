@@ -14,6 +14,7 @@ from Modules.sendZigateCommand import raw_APS_request, send_zigatecmd_raw
 
 from Zigbee.zdpRawCommands import (zdp_raw_active_endpoint_request,
                                    zdp_raw_binding_device,
+                                   zdp_raw_IEEE_address_request,
                                    zdp_raw_leave_request,
                                    zdp_raw_node_descriptor_request,
                                    zdp_raw_NWK_address_request,
@@ -24,12 +25,30 @@ from Zigbee.zdpRawCommands import (zdp_raw_active_endpoint_request,
                                    zdp_raw_unbinding_device)
 
 
-def zdp_IEEE_address_request(self, lookup, u8RequestType, u8StartIndex):
-    self.log.logging("zdpCommand", "Debug", "zdp_IEEE_address_request %s %s %s" % (lookup, u8RequestType, u8StartIndex))
+def zdp_NWK_address_request(self, router_nwkid, lookup_ieee, u8RequestType="00", u8StartIndex="00"):
+    # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
+    # zdp_raw_NWK_address_request(self, router, ieee, u8RequestType, u8StartIndex)
+    # The NWK_addr_req is generated from a Local Device wishing to inquire as to the 16-bit address of
+    # the Remote De- vice based on its known IEEE address. 
+    # The destination addressing on this command shall be unicast or broadcast to all devices 
+    # for which macRxOnWhenIdle = TRUE.
+    self.log.logging("zdpCommand", "Log", "zdp_NWK_address_request %s %s %s %s" % (router_nwkid, lookup_ieee, u8RequestType, u8StartIndex))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        return zdp_raw_NWK_address_request(self, "0000", lookup, u8RequestType, u8StartIndex)
-    return send_zigatecmd_raw(self, "0041", "02" + lookup + lookup + u8RequestType + u8StartIndex)
+        return zdp_raw_NWK_address_request(self, router_nwkid, lookup_ieee, u8RequestType, u8StartIndex)
+    return send_zigatecmd_raw(self, "0040", "02" + router_nwkid + lookup_ieee + u8RequestType + u8StartIndex)
 
+
+def zdp_IEEE_address_request(self, router_nwkid, lookup_nwkid, u8RequestType="00", u8StartIndex="00"):
+    # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
+    # zdp_raw_IEEE_address_request(self, router, nwkid, u8RequestType, u8StartIndex):
+    # The Node_Desc_req command is generated from a local device wishing to inquire as to the node descriptor of a remote device. 
+    # This command shall be unicast either to the remote device itself or 
+    # to an alternative device that contains the discovery information of the remote device.
+
+    self.log.logging("zdpCommand", "Log", "zdp_IEEE_address_request %s %s %s" % (lookup_nwkid, u8RequestType, u8StartIndex))
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        return zdp_raw_IEEE_address_request(self, router_nwkid, lookup_nwkid, u8RequestType, u8StartIndex)
+    return send_zigatecmd_raw(self, "0041", "02" + router_nwkid + lookup_nwkid + u8RequestType + u8StartIndex)
 
 def zdp_node_descriptor_request(self, nwkid):
     self.log.logging("zdpCommand", "Debug", "zdp_node_descriptor_request %s" % (nwkid,))

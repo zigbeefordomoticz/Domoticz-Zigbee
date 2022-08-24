@@ -20,6 +20,7 @@ CASAIA_MANUF_CODE_BE = "3c11"
 CASAIA_AC201_CLUSTER = "ffad"
 CASAIA_AC211_CLUSTER = "ffac"
 CASAIA_CONFIG_FILENAME = "Casa.ia.json"
+DEFAULT_IRCODE = "28"
 
 DEVICE_TYPE = "00"
 DEVICE_ID = "01"
@@ -890,15 +891,25 @@ def get_pac_code(self, ieee):
 
     nwkid = self.IEEE2NWK[ieee]
     if "CASA.IA" not in self.ListOfDevices[nwkid]:
-        return None
+        return set_pac_default_code( self, nwkid )
 
     if DEVICE_ID not in self.ListOfDevices[nwkid]["CASA.IA"]:
-        return None
+        return set_pac_default_code( self, nwkid )
 
     if "IRCode" not in self.ListOfDevices[nwkid]["CASA.IA"][DEVICE_ID]:
-        return None
+        return set_pac_default_code( self, nwkid )
 
-    if int(self.ListOfDevices[nwkid]["CASA.IA"][DEVICE_ID]["IRCode"], 16) in (0x0, 0xFFFF):
-        return None
+    if int(self.ListOfDevices[nwkid]["CASA.IA"][DEVICE_ID]["IRCode"], 16) in {0x0, 0xFFFF}:
+        return set_pac_default_code( self, nwkid )
 
     return self.ListOfDevices[nwkid]["CASA.IA"][DEVICE_ID]["IRCode"]
+
+def set_pac_default_code( self, nwkid ):
+    
+    if "CASA.IA" not in self.ListOfDevices[nwkid]:
+        self.ListOfDevices[nwkid]["CASA.IA"] = {}
+    if DEVICE_ID not in self.ListOfDevices[nwkid]["CASA.IA"]:
+        self.ListOfDevices[nwkid]["CASA.IA"][DEVICE_ID] = {}
+    if "IRCode" not in self.ListOfDevices[nwkid]["CASA.IA"][DEVICE_ID]:
+        self.ListOfDevices[nwkid]["CASA.IA"][DEVICE_ID]["IRCode"] = DEFAULT_IRCODE
+    return DEFAULT_IRCODE

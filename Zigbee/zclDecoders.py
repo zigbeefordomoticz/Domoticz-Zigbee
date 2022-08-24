@@ -6,17 +6,25 @@
 
 
 import struct
-from Modules.tools import retreive_cmd_payload_from_8002, is_direction_to_client, is_direction_to_server
-from Zigbee.encoder_tools import encapsulate_plugin_frame, decode_endian_data
-from Modules.zigateConsts import ADDRESS_MODE, SIZE_DATA_TYPE, ZIGATE_EP
+from os import stat
+
+from Modules.tools import (is_direction_to_client, is_direction_to_server,
+                           retreive_cmd_payload_from_8002)
+from Modules.zigateConsts import (SIZE_DATA_TYPE, ZIGATE_EP, composite_value,
+                                  discrete_value)
+
+from Zigbee.encoder_tools import decode_endian_data, encapsulate_plugin_frame
 from Zigbee.zclRawCommands import zcl_raw_default_response
+
 
 def is_duplicate_zcl_frame(self, Nwkid, ClusterId, Sqn):
     
-    if self.zigbee_communitation != "zigpy":
+    if self.zigbee_communication != "zigpy":
         return False
     if Nwkid not in self.ListOfDevices:
         return False
+    return False
+
     if "ZCL-IN-SQN" not in self.ListOfDevices[ Nwkid ]:
         self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"] = {}
     if ClusterId not in self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"]:
@@ -33,11 +41,11 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
     fcf = Payload[:2]
     default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
 
-    if self.zigbee_communitation == "zigpy" and is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn):
-        self.log.logging("zclDecoder", "Log", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
+    if self.zigbee_communication == "zigpy" and is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn):
+        self.log.logging("zclDecoder", "Debug", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
         return None
  
-    if self.zigbee_communitation == "zigpy" and  not default_response_disable:
+    if self.zigbee_communication == "zigpy" and not default_response_disable:
         # Let's answer
         self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
         zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf )
@@ -54,7 +62,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
     if ClusterId == "0004":
         return buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
 
-    if ClusterId == "0005" and Command == "05": #Only Recall Scene supported
+    if ClusterId == "0005" and Command == "05":  # Only Recall Scene supported
         return buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
 
     if ClusterId == "0006":
@@ -82,6 +90,9 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         if Command in OTA_UPGRADE_COMMAND:
             self.log.logging("zclDecoder", "Debug", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
             return frame
+        
+    if ClusterId == "0020":
+        return buildframe_for_cluster_0020(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
     if ClusterId == "0500" and is_direction_to_server(fcf) and Command == "00":
         return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
@@ -133,11 +144,14 @@ def buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPo
 
     if Command == "07":  # Configure Reporting Response
         return buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+    
+    if Command == '09':  # Read Configure Reporting Response
+        return buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
     if Command == "0a":  # Report attributes
         return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
-    if Command == "0b":  #
+    if Command == "0b":  # Default Response
         return frame
 
     if Command == "0d":  # Discover Attributes Response
@@ -364,7 +378,55 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
 
     return encapsulate_plugin_frame("8120", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
+def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+    self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - %s %s %s Data: %s" % (
+        SrcNwkId, SrcEndPoint, ClusterId, Data))
+  
+    buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId  
+    
+    idx = 0
+    while idx < len(Data):
+        status = Data[idx:idx+2]
+        buildPayload += status
+        idx += 2
+        direction = Data[idx:idx+2]
+        buildPayload += direction
+        idx += 2
+        attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+        buildPayload += attribute
+        idx += 4
 
+        DataType = MinInterval = MaxInterval = Change = None
+        if status == "00":
+            DataType = Data[idx:idx+2]
+            buildPayload += DataType
+            idx += 2
+            MinInterval = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+            buildPayload += MinInterval
+            idx += 4
+            MaxInterval = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+            buildPayload += MaxInterval
+            idx += 4
+            
+            if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
+                pass
+        
+            elif DataType in SIZE_DATA_TYPE:
+                size = SIZE_DATA_TYPE[DataType] * 2
+                Change = decode_endian_data(Data[idx : idx + size], DataType)
+                buildPayload += Change
+                idx += size
+                
+            if direction == "01":
+                timeout = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
+                buildPayload += timeout
+                idx += 1
+                                      
+            self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - NwkId: %s Ep: %s Cluster: %s Attribute: %s Status: %s DataType: %s Min: %s Max: %s Change: %s" % (
+                SrcNwkId, SrcEndPoint, ClusterId, attribute, status, DataType, MinInterval, MaxInterval, Change))
+
+    return encapsulate_plugin_frame("8122", buildPayload, frame[len(frame) - 4 : len(frame) - 2])    
+    
 # Cluster Specific commands
 
 # Cluster 0x0003 - Identify
@@ -441,7 +503,7 @@ def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkI
     self.log.logging("zclDecoder", "Debug", "buildframe8062_ Group Count: %s" %group_count)
     group_list = ""
     idx = 0
-    while  idx < int(group_count,16) * 4:
+    while idx < int(group_count,16) * 4:
         self.log.logging("zclDecoder", "Debug", "buildframe8062_ GroupId: %s" %decode_endian_data( Data[ 4 + idx : (4 + idx) + 4 ], "21"))
         group_list += decode_endian_data( Data[ 4 + idx : (4 + idx) + 4 ], "21")
         idx += 4
@@ -466,8 +528,8 @@ def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId,
 # Cluster 0x0005 - Scenes
 
 def buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    if Command == "05": #Recall Scene
-        GroupID = decode_endian_data(Data[0:4], "09")
+    if Command == "05":  # Recall Scene
+        GroupID = decode_endian_data(Data[:4], "09")
         SceneID = Data[4:6]
         TransitionTime = 'ffff'
 
@@ -494,6 +556,20 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Ta
 
 
 # Cluster: 0x0019
+
+# Cluster 0x0020
+# Pool Control
+
+def buildframe_for_cluster_0020(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+
+    if Command == "00":  # Check-in Command
+        # respond with a Check-in Response command indicating that the server SHOULD or SHOULD not begin fast poll mode.
+        # Will be handle via receive_poll_cluster() call from inRawAPS
+        # Let's return the Data Indication
+        return frame
+    
+    return frame
+    
 
 # Cluster 0x0500
 # Cmd : 0x00 Zone Enroll Response  -> 0400

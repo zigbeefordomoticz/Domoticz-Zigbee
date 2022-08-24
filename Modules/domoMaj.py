@@ -14,6 +14,8 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
                                UpdateDevice_v2)
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
+from Zigbee.zdpCommands import zdp_IEEE_address_request
+from Modules.tools import zigpy_plugin_sanity_check
 
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
@@ -25,6 +27,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
     # Sanity Checks
     if NWKID not in self.ListOfDevices:
         self.log.logging("Widget", "Error", "MajDomoDevice - %s not known" % NWKID, NWKID)
+        zigpy_plugin_sanity_check(self, NWKID)
         return
 
     if Ep not in self.ListOfDevices[NWKID]["Ep"]:
@@ -35,9 +38,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         self.log.logging(
             "Widget",
             "Log",
-            "MajDomoDevice NwkId: %s status: %s not inDB" % (NWKID, self.ListOfDevices[NWKID]["Status"]),
+            "MajDomoDevice NwkId: %s status: %s not inDB request IEEE for possible reconnection" % (NWKID, self.ListOfDevices[NWKID]["Status"]),
             NWKID,
         )
+        if not zigpy_plugin_sanity_check(self, NWKID):
+            zdp_IEEE_address_request(self, NWKID, NWKID, u8RequestType="00", u8StartIndex="00")
         return
 
     if "IEEE" not in self.ListOfDevices[NWKID]:
@@ -208,7 +213,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # Line 3
                 sValue = "%s;%s;%s" % (ampere1, ampere2, ampere)
 
-            self.log.logging("Widget", "Log", "------>  Ampere3 : %s from Attribute: %s" % (sValue, Attribute_), NWKID)
+            self.log.logging("Widget", "Debug", "------>  Ampere3 : %s from Attribute: %s" % (sValue, Attribute_), NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
         if "Power" in ClusterType:  # Instant Power/Watts
@@ -339,7 +344,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 if ( 
                     "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and 
                     "0000" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"] and 
-                    self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] not in  ({}, "", "0")
+                    self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"] not in ({}, "", "0")
                 ): 
                     # summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
                     summation = self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0000"]
@@ -536,13 +541,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 4 %s %s:%s" % (value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "ThermoMode_5" and Attribute_ == "001c":
+            elif WidgetType in ("ThermoMode_5", "ThermoMode_6",)and Attribute_ == "001c":
                 # Use by Tuya TRV
                 nValue = value
                 sValue = '%02d' %( nValue * 10)
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-
             elif WidgetType in ("ThermoMode", "ACMode",  ) and Attribute_ == "001c":
                 # value seems to come as int or str. To be fixed
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode %s type: %s" % (value, type(value)), NWKID)
@@ -558,7 +562,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
                         UpdateDevice_v2(self, Devices, DeviceUnit, 4, "40", BatteryLevel, SignalLevel)
                         
-            elif  WidgetType in ("CAC221ACMode",  ) and Attribute_ == "001c":
+            elif WidgetType in ("CAC221ACMode", ) and Attribute_ == "001c":
                 self.log.logging("Widget", "Debug", "------>  Thermostat CAC221ACMode %s type: %s" % (value, type(value)), NWKID)
                 if value in THERMOSTAT_MODE_2_LEVEL:
                     if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
@@ -599,7 +603,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
         if ClusterType == "Temp" and WidgetType in ("Temp", "Temp+Hum", "Temp+Hum+Baro") and Attribute_ == "":  # temperature
-
             if check_erratic_value(self, NWKID, "Temp", value, -50, 100):
                 # We got an erratic value, no update to Domoticz
                 continue
@@ -686,8 +689,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             self.log.logging("Widget", "Debug", "------>  Baro: %s, WidgetType: %s" % (value, WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
-                from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-
                 adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(Devices[DeviceUnit].ID), 1)
             baroValue = round((value + adjvalue), 1)
             self.log.logging("Widget", "Debug", "------> Adj Value : %s from: %s to %s " % (adjvalue, value, baroValue), NWKID)
@@ -801,6 +802,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         nValue = 2
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
+            elif ClusterType == "Switch" and WidgetType == "Alarm":
+                pass
+            
             elif ClusterType == "Door" and WidgetType == "DoorSensor":
                 nValue = int(value)
                 if nValue == 0:
@@ -1455,22 +1459,32 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
             del self.ListOfDevices[NwkId][_attribute]
         return False
 
+    # The provided value is not in the expected range. We have an Eratic value.
+    if ( 
+        "Param" in self.ListOfDevices[NwkId] 
+        and "disableTrackingEraticValue" in self.ListOfDevices[NwkId]["Param"] 
+        and self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"]
+    ):
+        # We have an Eratic value, but we don't want to handle it, nor tell anybody !!!
+        return True
+
     if _attribute not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId][_attribute] = {}
         self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] = 1
 
     self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] += 1
-    if self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] > 3:
+    if self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] > 5:
         self.log.logging(
             "Widget",
             "Error",
             "Aberrant %s: %s (below %s or above %s) for device: %s" % (value_type, value, expected_min, expected_max, NwkId),
             NwkId,
         )
+        del self.ListOfDevices[NwkId][_attribute]
     else:
         self.log.logging(
             "Widget",
-            "Log",
+            "Debug",
             "Aberrant %s: %s (below % or above %s) for device: %s [%s]"
             % (
                 value_type,

@@ -18,12 +18,16 @@ For __Windows users__, please check the [Plugin V6 running on Windows](https://z
 ## Pre requisities
 
 * Domoticz 2021.1 or above
-* You need Python 3.7 at least
+* You need Python 3.8 at least
 * Zigpy layers will requires additional python3 modules to be install:
+
+  Go to the plugin Home directory ( domoticz/plugins/Domoticz-Zigate or Domoticz-Zigbee)
+
+  `sudo pip3 install -r requirements.txt`
 
 ## Plugin first installation or first time on release 6.xxx (stable6)
 
-1. Make sure the pre-requisites steps (here above) have been executed
+1. Make sure the pre-requisities steps (here above) have been executed
 
 2. Go in your Domoticz directory using a command line and open the plugins directory.
   Usually you should be under domoticz/plugins
@@ -77,6 +81,7 @@ This is the case where you have move from the stable5 branch to stable6/beta6.
 ## Tested Hardware Zigbee adapters/dongles/sticks/keys
 
 The plugin was originally developed for the [Zigate](https://zigate.fr) Coordinators in close relationship with [Zigate](https://zigate.fr) manufactuer.
+In case you are looking to use non-ZiGate coordinators, please see here the [list of open issues](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1235) against the Zigpy libraries and its radio modules
 
 ### Texas Instrument Zigbee Coordinators
 
@@ -91,6 +96,14 @@ You can also find a list of [Texas Instruments supported adapters](https://www.z
 A big thanks to [Elelabs](https://elelabs.com/) sponsorship and whom have help us to ensure full compatibility with their Zigbee Coordinator ELU013 and ELR023.
 
 As for TI coordinator, we rely on [zigpy-bellows](https://github.com/zigpy/bellows) for the Silicon Labs compatibility . A list of compatible hardware is available [here](https://github.com/zigpy/bellows#hardware-requirement)
+
+### dresden elektronik ConBee and RaspBee Zigbee Coordinators
+
+Thanks goes to [dresden elektronik](https://github.com/dresden-elektronik/) / [Phoscon](https://phoscon.de/) for sponsorship and help in adding initial suppport with their ConBee and RaspBee (deCONZ firmware based) Zigbee Coordinators.
+
+ConBee and RaspBee support is only in the beta6 branch for now as still experimental, however deconz support can otherwise be considered ready with only the minor limitations that Zigbee channel change is not yet possible, and there is currently no support for Wiser/Livolo devices (but a dresden elektronik / Phoscon developer is working on a new deCONZ firmware update for ConBee and RaspBee that should sort out Wiser/Livolo support).
+
+deCONZ firmware based adapters depends on [zigpy-deconz](https://github.com/zigpy/zigpy-deconz) for ConBee/RaspBee compatibility.
 
 ## LIMITATIONS
 

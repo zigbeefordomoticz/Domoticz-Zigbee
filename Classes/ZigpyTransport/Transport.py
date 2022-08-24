@@ -20,12 +20,14 @@ from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
 
 
 class ZigpyTransport(object):
-    def __init__(self, pluginParameters, pluginconf, F_out, zigpy_get_device, log, statistics, hardwareid, radiomodule, serialPort):
-        self.zigbee_communitation = "zigpy"
+    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_backup_available, log, statistics, hardwareid, radiomodule, serialPort):
+        self.zigbee_communication = "zigpy"
         self.pluginParameters = pluginParameters
         self.pluginconf = pluginconf
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
+        self.ZigpyUpdDevice = zigpy_upd_device
         self.ZigpyGetDevice = zigpy_get_device
+        self.ZigpyBackupAvailable = zigpy_backup_available
         self.log = log
         self.statistics = statistics
         self.hardwareid = hardwareid
@@ -43,6 +45,7 @@ class ZigpyTransport(object):
         self.FirmwareMajorVersion = None
         self.FirmwareVersion = None
         self.running = True
+        self.ControllerData = ControllerData
 
         self.permit_to_join_timer = { "Timer": None, "Duration": None}
 
@@ -50,25 +53,28 @@ class ZigpyTransport(object):
         self._concurrent_requests_semaphores_list = {}
         self._currently_waiting_requests_list = {}  
         self._currently_not_reachable = []
-
+        
+        self.log.logging("Transport", "Log", "ZigpyTransport __init__")
+        
         # Initialise SQN Management
         sqn_init_stack(self)
 
         self.app: zigpy.application.ControllerApplication | None = None
+        
         self.writer_queue = Queue()
         self.forwarder_queue = Queue()
         self.zigpy_loop = None
-        self.zigpy_thread = Thread(name="ZigpyCom_%s" % self.hardwareid, target=zigpy_thread, args=(self,))
-        self.forwarder_thread = Thread(name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,))
+        self.zigpy_thread = None
+        self.forwarder_thread = None
 
-    def open_zigate_connection(self):
+    def open_cie_connection(self):
         start_zigpy_thread(self)
         start_forwarder_thread(self)
 
-    def re_connect_zigate(self):
+    def re_connect_cie(self):
         pass
 
-    def close_zigate_connection(self):
+    def close_cie_connection(self):
         pass
 
     def thread_transport_shutdown(self):
@@ -99,6 +105,9 @@ class ZigpyTransport(object):
     def receiveData(self, message):
         self.log.logging("Transport", "Debug", "===> receiveData for Forwarded - Message %s" % (message))
         self.forwarder_queue.put(message)
+
+    def get_device_ieee( self, nwkid):
+        return self.app.get_device_ieee( nwkid )
 
     # TO be cleaned . This is to make the plugin working
     def update_ZiGate_HW_Version(self, version):

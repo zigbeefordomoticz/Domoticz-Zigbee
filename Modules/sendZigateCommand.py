@@ -198,10 +198,10 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
         "outRawAPS",
         "Debug",
         "raw_APS_request - Zigbee Communication: %s Profile: %s Cluster: %s TargetNwk: %s TargetEp: %s SrcEp: %s payload: %s ZDPsqn: %s GroupMode: %s ackIsDisable: %s"
-        % (self.zigbee_communitation, profileId, cluster, targetaddr, dest_ep, zigate_ep, payload, zigpyzqn, groupaddrmode, ackIsDisabled),
+        % (self.zigbee_communication, profileId, cluster, targetaddr, dest_ep, zigate_ep, payload, zigpyzqn, groupaddrmode, ackIsDisabled),
     )
 
-    if self.zigbee_communitation == "zigpy":
+    if self.zigbee_communication == "zigpy":
         return zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn, groupaddrmode, highpriority, ackIsDisabled)
     
     return zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled)
@@ -229,7 +229,7 @@ def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, paylo
 
     # In case of Firmware < 31e 0x0530 is always on noack even if address mode 0x02 is used.
     overwrittenackIsDisabled = ackIsDisabled
-    if self.FirmwareVersion and self.FirmwareVersion <= "031d":
+    if self.zigbee_communication == 'zigate' and self.FirmwareVersion and self.FirmwareVersion <= "031d":
         ackIsDisabled = False  # Force the usage of 0x02 address mode
         overwrittenackIsDisabled = True  # Indicate that we are without Ack
 

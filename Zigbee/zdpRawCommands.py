@@ -18,6 +18,7 @@ from Modules.tools import get_and_inc_ZDP_SQN
 
 
 def zdp_raw_NWK_address_request(self, router, ieee, u8RequestType, u8StartIndex):
+    # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
 
     Cluster = "0000"
     sqn = get_and_inc_ZDP_SQN(self, router)
@@ -29,6 +30,13 @@ def zdp_raw_NWK_address_request(self, router, ieee, u8RequestType, u8StartIndex)
         "zdp_raw_NWK_address_request  - [%s] %s Queue Length: %s"
         % (sqn, router, self.ControllerLink.loadTransmit()),
     )
+    else:
+        self.log.logging(
+            "zdpCommand",
+            "Debug",
+            "zdp_raw_NWK_address_request  - [%s] %s Queue Length: %s"
+            % (sqn, router, self.ControllerLink.loadTransmit()),
+        )
 
     raw_APS_request(
         self,
@@ -45,7 +53,9 @@ def zdp_raw_NWK_address_request(self, router, ieee, u8RequestType, u8StartIndex)
     return sqn
 
 
-def zdp_raw_IEEE_address_request(self, nwkid, u8RequestType, u8StartIndex):
+def zdp_raw_IEEE_address_request(self, router, nwkid, u8RequestType, u8StartIndex):
+    # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
+    
     Cluster = "0001"
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0] + u8RequestType + u8StartIndex
@@ -56,10 +66,17 @@ def zdp_raw_IEEE_address_request(self, nwkid, u8RequestType, u8StartIndex):
         "zdp_raw_IEEE_address_request  - [%s] %s Queue Length: %s"
         % (sqn, nwkid, self.ControllerLink.loadTransmit()),
     )
+    else:
+        self.log.logging(
+            "zdpCommand",
+            "Debug",
+            "zdp_raw_IEEE_address_request  - [%s] %s Queue Length: %s"
+            % (sqn, nwkid, self.ControllerLink.loadTransmit()),
+        )
 
     raw_APS_request(
         self,
-        nwkid,
+        router,
         "00",
         Cluster,
         "0000",
@@ -441,7 +458,7 @@ def zdp_raw_permit_joining_request(self, tgtnwkid, duration, significance):
             significance,
         ),
     )
-    if self.zigbee_communitation == "zigpy":
+    if self.zigbee_communication == "zigpy":
         if (
             tgtnwkid not in ('FFFC', 'fffc')
             and tgtnwkid in self.ListOfDevices

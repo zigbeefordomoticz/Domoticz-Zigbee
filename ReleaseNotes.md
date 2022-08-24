@@ -23,7 +23,6 @@ Release Numbering
 - Even numbers  --> Beta/6
 
 
-
 ## 17  May 2022 - stable6 - 6.1.005
 - [Hardware] - SonOff Mini Relay No Neutral
 - [Technical] - upstream (zigpy related) update

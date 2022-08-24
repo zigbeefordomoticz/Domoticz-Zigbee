@@ -12,7 +12,7 @@
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate
-from Modules.tools import  updSQN, extract_info_from_8085
+from Modules.tools import updSQN, extract_info_from_8085
 
 
 def ikea_openclose_remote(self, Devices, NwkId, Ep, command, Data, Sqn):

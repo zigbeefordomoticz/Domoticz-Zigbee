@@ -1,0 +1,37 @@
+{
+	"_comment": "Tuya ZigBee Air Conditioning Thermostat Fan Coil Unit Digital Temp Conditioner Controller",
+	"_version": "0.10",
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"0005": "",
+			"0202": "",
+			"ef00": "",
+			"000a": "",
+			"0019": "",
+			"Type": "Temp/ThermoSetpoint/ThermoOnOff/ThermoMode_6/HeatingStatus/FanControl"
+		}
+	},
+	"Type": "",
+	"ClusterToBind": [
+		"0000",
+		"ef00"
+	],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0000",
+			"0001",
+			"0005",
+			"0007",
+			"fffe"
+		]
+	},
+	"Param": {
+		"ValveDetection": 1,
+		"SensorMode": 0,
+		"Calibration": 0
+	}
+}

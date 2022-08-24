@@ -27,5 +27,8 @@
 		"0405": [
 			"0000"
 		]
+	},
+	"Param": {
+		"disableTrackingEraticValue": 0
 	}
 }
