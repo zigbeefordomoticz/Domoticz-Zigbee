@@ -255,7 +255,7 @@ def resetMotion(self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl,
         if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion(Devices[unit].ID) > 0:
             return
 
-    if (now - lastupdate) >= TimedOut:
+    if (now - lastupdate) >= TimedOut:  
         Devices[unit].Update(nValue=0, sValue="Off")
         self.log.logging(
             "Widget",

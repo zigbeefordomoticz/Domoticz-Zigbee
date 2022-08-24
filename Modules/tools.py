@@ -505,7 +505,6 @@ def is_fake_ep( self, nwkid, ep):
     )
 
 def is_bind_ep( self, nwkid, ep):
-
     return (
         "Model" not in self.ListOfDevices[nwkid]
         or self.ListOfDevices[nwkid]["Model"] not in self.DeviceConf
