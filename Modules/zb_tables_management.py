@@ -380,7 +380,7 @@ def mgtm_binding(self, nwkid, table):
 
     if (
         "TimeStamp" in self.ListOfDevices[nwkid]["BindingTable"] 
-        and self.ListOfDevices[nwkid]["BindingTable"] < time.time() + 24 * 3600
+        and self.ListOfDevices[nwkid]["BindingTable"]["TimeStamp"] < ( time.time() + ( 24 * 3600 ))
     ):
         return
 

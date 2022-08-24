@@ -24,9 +24,6 @@ import Domoticz
 LOG_ERROR_HISTORY = "PluginZigbee_log_error_history.json"
 LOG_FILE = "/PluginZigbee_"
 
-LOG_ERROR_HISTORY = "PluginZigbee_log_error_history.json"
-LOG_FILE = "/PluginZigbee_"
-
 class LoggingManagement:
     def __init__(self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
         self._newError = False
