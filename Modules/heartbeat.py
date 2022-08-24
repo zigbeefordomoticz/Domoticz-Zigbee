@@ -638,9 +638,10 @@ def processKnownDevices(self, Devices, NWKID):
     if self.pluginconf.pluginConf["checkConfigurationReporting"]:
         rescheduleAction = rescheduleAction or check_configuration_reporting(self, NWKID, _mainPowered, intHB)
 
-    # Do Attribute Disocvery if needed
     if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
         rescheduleAction = rescheduleAction or attributeDiscovery(self, NWKID)
+        
+    if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 3600) == 0):
         mgtm_binding(self, NWKID, "BindingTable")
 
     # If corresponding Attributes not present, let's do a Request Node Description
