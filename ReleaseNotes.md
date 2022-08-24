@@ -22,6 +22,7 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
+
 ## Aug. 2022 - stable6 - 6.3.001
 
 - [Technical] - Pipiche38/refactor/domoticz db (#1197)
