@@ -1992,7 +1992,7 @@ def iTRV_local_temperature(self, NwkId):
 
 def get_wiserroom(self, NwkId):
     self.log.logging("Schneider", "Debug", f"get_wiserroom for: {NwkId}")
-    if "Param" in self.ListOfDevices[ NwkId ] and  "WiserRoomNumber" in self.ListOfDevices[ NwkId ]["Param"]:
+    if "Param" in self.ListOfDevices[ NwkId ] and "WiserRoomNumber" in self.ListOfDevices[ NwkId ]["Param"]:
         self.log.logging("Schneider", "Debug", f'get_wiserroom for: {NwkId} is room: {self.ListOfDevices[ NwkId ]["Param"]["WiserRoomNumber"]}')
 
         return self.ListOfDevices[ NwkId ]["Param"]["WiserRoomNumber"]
