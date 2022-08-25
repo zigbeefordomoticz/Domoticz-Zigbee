@@ -37,8 +37,8 @@ class TransportStatistics:
         self._maxTiming8011 = self._cumulTiming8011 = self._cntTiming8011 = self._averageTiming8011 = 0
         self._maxTiming8012 = self._cumulTiming8012 = self._cntTiming8012 = self._averageTiming8012 = 0
         self._maxRxProcesses = self._cumulRxProcess = self._cntRxProcess = self._averageRxProcess = 0
-        self._max_reading_thread_timing = self._cumul_reading_thread_timing  = self._cnt_reading_thread_timing = self._average_reading_thread_timing = 0
-        self._max_reading_zigpy_timing = self._cumul_reading_zigpy_timing  = self._cnt_reading_zigpy_timing = self._average_reading_zigpy_timing = 0
+        self._max_reading_thread_timing = self._cumul_reading_thread_timing = self._cnt_reading_thread_timing = self._average_reading_thread_timing = 0
+        self._max_reading_zigpy_timing = self._cumul_reading_zigpy_timing = self._cnt_reading_zigpy_timing = self._average_reading_zigpy_timing = 0
         self._start = int(time())
         self.TrendStats = []
         self.pluginconf = pluginconf

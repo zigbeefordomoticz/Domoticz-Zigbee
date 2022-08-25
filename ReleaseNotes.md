@@ -65,7 +65,7 @@ Release Numbering
 - [Hardware] -  handle ConBee and RaspBee
 - [Hardware] - add _TZ3000_amdymr7l for tS011F model as a Plug
 - [Hardware] - better manage Blitzwolf plug
-- [Technical] - python3.8 as the minimum python level required
+- [Technical] - python3.7 as the minimum python level required
 - [Technical] -  Removing pyserial and dnspython submodules (#1231)
 - [Technical] -  Implement ZCL CLuster 0003 commands (#1237)
 - [Technical] -  Add thread id to log (#1238)

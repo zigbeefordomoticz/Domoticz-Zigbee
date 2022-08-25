@@ -91,10 +91,8 @@ except ImportError:
 import gc
 import json
 import os
-import sys
 import threading
 import time
-import os
 
 from Classes.AdminWidgets import AdminWidgets
 # from Classes.APS import APSManagement
@@ -1088,8 +1086,8 @@ class BasePlugin:
             build_list_of_device_model(self)
 
         if (
-            self.zigbee_communication and
-            self.zigbee_communication == "zigpy"
+            self.zigbee_communication
+            and self.zigbee_communication == "zigpy"
             and "autoBackup" in self.pluginconf.pluginConf 
             and self.pluginconf.pluginConf["autoBackup"] 
             and night_shift_jobs( self ) 
@@ -1767,7 +1765,7 @@ def DumpHTTPResponseToLog(httpDict):
 
 def install_Z4D_to_domoticz_custom_ui():
 
-    line1 = '<iframe id="%s"' %Parameters['Name'] +  'style="width:100%;height:800px;overflow:scroll;">\n'
+    line1 = '<iframe id="%s"' %Parameters['Name'] + 'style="width:100%;height:800px;overflow:scroll;">\n'
     line2 = '</iframe>\n'
     line3 = '\n'
     line4 = '<script>\n'
