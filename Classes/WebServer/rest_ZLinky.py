@@ -85,17 +85,23 @@ def rest_zlinky(self, verb, data, parameters):
             "PROTOCOL Linky": linky_mode,
             'Parameters': []
         }
-        for y in ZLINKY_PARAMETERS[ linky_mode ]:
-            if y not in self.ListOfDevices[ nwkid ]["ZLinky"]:
+        self.logging("Log", "rest_zlinky - Linky Mode  %s " %linky_mode)
+        self.logging("Log", "rest_zlinky - Linky Tarif %s " %tarif)
+        
+        for zlinky_param in ZLINKY_PARAMETERS[ linky_mode ]:
+            if zlinky_param not in self.ListOfDevices[ nwkid ]["ZLinky"]:
+                self.logging("Log", "rest_zlinky - Exclude  %s " % (zlinky_param)) 
                 continue
-            if y in ZLINK_TARIF_MODE_EXCLUDE[ tarif ]:
+            if zlinky_param in ZLINK_TARIF_MODE_EXCLUDE[ tarif ]:
+                self.logging("Log", "rest_zlinky - Exclude  %s " % (zlinky_param)) 
                 continue
     
-            attr_value = self.ListOfDevices[ nwkid ]["ZLinky"][ y ]
-            device["Parameters"].append( { y: attr_value } )
+            attr_value = self.ListOfDevices[ nwkid ]["ZLinky"][ zlinky_param ]
+            device["Parameters"].append( { zlinky_param: attr_value } )
             
         zlinky.append( device )
-        
+      
+    self.logging("Log", "rest_zlinky - Read to send  %s " % (zlinky))  
     if verb == "GET" and len(parameters) == 0:
         if len(self.ControllerData) == 0:
             _response["Data"] = json.dumps(fake_zlinky_histo_mono(), sort_keys=True)
@@ -110,7 +116,7 @@ def fake_zlinky_histo_mono():
 
     return [
         {
-            "Nwkid": "5f21",
+            "Nwkid": "abcd",
             "PROTOCOL Linky": 0,
             "Parameters": [
                 { "OPTARIF": "BASE" },
