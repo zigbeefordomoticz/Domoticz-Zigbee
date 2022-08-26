@@ -59,7 +59,7 @@ def update_zlinky_device_model_if_needed( self, nwkid ):
     zlinky_conf = linky_device_conf(self, nwkid)
 
     if self.ListOfDevices[ nwkid ]["Model"] != zlinky_conf:
-        self.logging( "ZLinky", "Status", "Adjusting ZLinky model from %s to %s" %(
+        self.log.logging( "ZLinky", "Status", "Adjusting ZLinky model from %s to %s" %(
             self.ListOfDevices[ nwkid ]["Model"],
             zlinky_conf 
         ))
