@@ -70,7 +70,7 @@ TUYA_SIREN_MODEL = (
 TUYA_DIMMER_MANUFACTURER = ("_TZE200_dfxkcots",)
 TUYA_SWITCH_MANUFACTURER = (
     "_TZE200_7tdtqgwv",
-    "_TYST11_zivfvd7h",
+   # "_TYST11_zivfvd7h", Seen with @d2e2n2o it is a TRV and not a switch
     "_TZE200_oisqyl4o",
     "_TZE200_amp6tsvy",
 )
