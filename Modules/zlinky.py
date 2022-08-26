@@ -16,6 +16,51 @@ ZLINKY_MODE = {
     7: { "Mode": ('standard', 'tri prod'), "Conf": "" },
 }
 
+ZLinky_TIC_COMMAND = {
+    # Mode Historique
+    "0000": "OPTARIF",
+    "0001": "DEMAIN",
+    "0002": "HHPHC",
+    "0003": "PPOT",
+    "0004": "PEJP",
+    "0005": "ADPS",
+    "0006": "ADIR1",
+    "0007": "ADIR2",
+    "0008": "ADIR3",
+
+    # Mode standard
+    "0200": "LTARF",
+    "0201": "NTARF",
+    "0202": "DATE",
+    "0203": "EASD01",
+    "0204": "EASD02",
+    "0205": "EASD03",
+    "0206": "EASD04",
+    "0207": "SINSTI",
+    "0208": "SMAXIN",
+    "0209": "SMAXIN-1",
+    "0210": "CCAIN",
+    "0211": "CCAIN-1",
+    "0212": "SMAXN-1",
+    "0213": "SMAXN2-1",
+    "0214": "SMAXN3-1",
+    "0215": "MSG1",
+    "0216": "MSG2",
+    "0217": "STGE",
+    "0218": "DPM1",
+    "0219": "FPM1",
+    "0220": "DPM2",
+    "0221": "FPM2",
+    "0222": "DPM3",
+    "0223": "FPM3",
+    "0224": "RELAIS",
+    "0225": "NJOURF",
+    "0226": "NJOURF+1",
+    "0227": "PJOURF+1",
+    "0228": "PPOINTE1",
+    "0300": "PROTOCOL Linky"
+}
+
 
 def linky_mode( self, nwkid ):
     
