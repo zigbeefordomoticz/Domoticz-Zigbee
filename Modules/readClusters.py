@@ -3953,13 +3953,14 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0308":  # Serial Number
+        value = binascii.unhexlify(value).decode("utf-8")
         self.log.logging(
             "Cluster",
             "Debug",
             "Cluster0702 - 0x0308 - Serial Number %s" % (value),
             MsgSrcAddr,
         )
-        value = binascii.unhexlify(value).decode("utf-8")
+        
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         store_ZLinky_infos( self, MsgSrcAddr, 'ADC0', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'ADSC', value)
