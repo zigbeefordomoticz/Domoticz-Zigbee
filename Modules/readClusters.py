@@ -3754,6 +3754,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
             store_ZLinky_infos( self, MsgSrcAddr, 'BASE', value)
+            store_ZLinky_infos( self, MsgSrcAddr, 'EAST', value)
 
 
         elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS011F-plug":
