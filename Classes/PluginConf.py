@@ -1316,6 +1316,14 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "debugZLinky": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
         },
     },
     # Others
