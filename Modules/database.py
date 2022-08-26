@@ -23,6 +23,7 @@ from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
+from Modules.zlinky import update_zlinky_device_model_if_needed
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -224,6 +225,11 @@ def LoadDeviceList(self):
             and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
         ):
             Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
+            
+        if "Model" in self.ListOfDevices[ addr ] and  self.ListOfDevices[ addr ]["Model"] == "ZLinky_TIC":
+            # We need to adjust the Model to the right mode
+            update_zlinky_device_model_if_needed(self, addr)
+
 
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
@@ -918,4 +924,3 @@ def cleanup_table_entries( self):
                         one_more_time = True
                         break
                     idx += 1
-

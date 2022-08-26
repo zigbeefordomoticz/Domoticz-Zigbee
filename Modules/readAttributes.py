@@ -1380,33 +1380,10 @@ def ReadAttributeReq_ZLinky(self, nwkid):
     EPout = "01"
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
 
-    cluster = "ff66"
-    attribute_request_list = []
-    attribute_request_list.append( 0x0300 )  # Linky Mode
-    attribute_request_list.append( 0x0000 )  # Opt Tarif
-    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
-
-    cluster = "0702"
-    attribute_request_list = []
-    attribute_request_list.append( 0x0308 )  # Serial Number
-    attribute_request_list.append( 0x0000 )  # Index Base
-    attribute_request_list.append( 0x0020 )  # Tarif en cours
-    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
-
-    cluster = "0b01"
-    attribute_request_list = []
-    attribute_request_list.append( 0x000d )  # Intensité sousscrite
-    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
-
-    cluster = "0b04"
-    attribute_request_list = []
-    attribute_request_list.append( 0x050a )  # Intensité Maximal
-    attribute_request_list.append( 0x050a )  # Intensité Maximal
-    attribute_request_list.append( 0x090a )  # Intensité Maximal Phase 2
-    attribute_request_list.append( 0x0a0a )  # Intensité Maximal Phase 3
-    attribute_request_list.append( 0x050d )  # Intensité Maximal Tri attentite
-    attribute_request_list.append( 0x050f )  # Intensité Maximal Tri atteinte
-    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, attribute_request_list, ackIsDisabled=False)
+    for cluster in ( "ff66", "0702", "0b01", "0b04" ):
+        self.log.logging("ReadAttributes", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout + " Cluster = " + cluster, nwkid=nwkid)
+        listAttributes = retreive_ListOfAttributesByCluster(self, nwkid, EPout, cluster)
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, listAttributes, ackIsDisabled=False)
 
 
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
@@ -1436,12 +1413,14 @@ def ReadAttributeRequest_0702_PC321(self, key):
     # Cluster 0x0702 Metering / Specific 0x0000
     ListOfEp = getListOfEpForCluster(self, key, "0702")
     EPout = "01"
-    listAttributes = [ 0x2000, 0x2001, 0x2002, 
-                      0x2100, 0x2101, 0x2102, 0x2103,
-                      0x3000, 0x3001, 0x3002,
-                      0x3100, 0x3101, 0x3102, 0x3103,
-                      0x4000, 0x4001, 0x4002,
-                        0x4100, 0x4101, 0x4102, 0x4103 ]
+    listAttributes = [ 
+        0x2000, 0x2001, 0x2002,
+        0x2100, 0x2101, 0x2102, 0x2103,
+        0x3000, 0x3001, 0x3002,
+        0x3100, 0x3101, 0x3102, 0x3103,
+        0x4000, 0x4001, 0x4002,
+        0x4100, 0x4101, 0x4102, 0x4103
+    ]
     self.log.logging("ReadAttributes", "Debug", "Request PC321 Attributes on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, manufacturer_spec="01",manufacturer="113c", ackIsDisabled=is_ack_tobe_disabled(self, key))
     

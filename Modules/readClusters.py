@@ -17,10 +17,13 @@ from time import time
 
 import Domoticz
 
+from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device, timedOutDevice
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster)
+from Modules.schneider_wiser import (receiving_heatingdemand_attribute,
+                                     receiving_heatingpoint_attribute)
 from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
                            checkAttribute, get_deviceconf_parameter_value,
                            getEPforClusterType, is_hex, set_status_datastruct,
@@ -33,11 +36,10 @@ from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
                           TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER,
                           TUYA_eTRV4_MANUFACTURER)
-from Modules.schneider_wiser import receiving_heatingpoint_attribute, receiving_heatingdemand_attribute
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
-from Modules.batterieManagement import UpdateBatteryAttribute
+from Modules.zlinky import update_zlinky_device_model_if_needed
 
 # from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
 
@@ -5135,6 +5137,10 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
+    elif MsgAttrID == "0300":
+        # Linky Mode
+        update_zlinky_device_model_if_needed( self, MsgSrcAddr )
+        
 def store_ZLinky_infos( self, nwkid, command_tic, value):
 
     if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
