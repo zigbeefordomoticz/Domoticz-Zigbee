@@ -108,7 +108,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "zigate-erase-PDM": {"Name": "zigate-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
         "zigate-mode": {"Name": "zigate-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
         "zigate": {"Name": "zigate", "Verbs": {"GET"}, "function": self.rest_zigate},
-
+        "zlinky": { "Name": "zlinky", "Verbs": {"GET"}, "function": self.rest_zlinky, },
         "coordinator-erase-PDM": {"Name": "coordinator-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
         "coordinator-mode": {"Name": "coordinator-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
         "coordinator": {"Name": "coordinator", "Verbs": {"GET"}, "function": self.rest_zigate}, 
@@ -122,7 +122,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
         if verb not in REST_COMMANDS[command]["Verbs"]:
             self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
-            
+
     if command in REST_COMMANDS and verb in REST_COMMANDS[command]["Verbs"]:
         HTTPresponse = setupHeadersResponse()
         if self.pluginconf.pluginConf["enableKeepalive"]:

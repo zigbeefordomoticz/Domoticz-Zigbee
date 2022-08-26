@@ -71,6 +71,7 @@ class WebServer(object):
     from Classes.WebServer.tools import DumpHTTPResponseToLog, keepConnectionAlive
     from Classes.WebServer.rest_PluginUpgrade import rest_plugin_upgrade
     from Classes.WebServer.rest_CfgReporting import rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config
+    from Classes.WebServer.rest_ZLinky import rest_zlinky
 
     hearbeats = 0
 
