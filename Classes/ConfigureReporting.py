@@ -446,6 +446,8 @@ class ConfigureReporting:
             for _cluster in self.ListOfDevices[ Nwkid ]["Ep"][ _ep ]:
                 if _cluster not in configuration_reporting:
                     continue
+                if "Attributes" not in configuration_reporting[ _cluster ]:
+                    continue
 
                 self.logging("Debug", f"---- check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster}", nwkid=Nwkid)
                 cluster_configuration = configuration_reporting[ _cluster ]["Attributes"]
