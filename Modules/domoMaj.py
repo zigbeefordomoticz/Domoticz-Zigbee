@@ -203,6 +203,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # Retreive the previous values
             sValue = "%s;%s;%s" % (0, 0, 0)
             ampere1, ampere2, ampere3 = retreive_data_from_current(self, Devices, DeviceUnit, "%s;%s;%s")
+            if ampere2 == ampere3 == '65535.0':
+                ampere2 = '0.0'
+                ampere3 = '0.0'
             ampere = round(float(value), 2)
             if Attribute_ == "0508":
                 # Line 1
