@@ -226,7 +226,7 @@ def LoadDeviceList(self):
         ):
             Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
             
-        if "Model" in self.ListOfDevices[ addr ] and  self.ListOfDevices[ addr ]["Model"] == "ZLinky_TIC":
+        if "Model" in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]["Model"] == "ZLinky_TIC":
             # We need to adjust the Model to the right mode
             update_zlinky_device_model_if_needed(self, addr)
 

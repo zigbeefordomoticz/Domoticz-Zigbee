@@ -4189,10 +4189,10 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         store_ZLinky_infos( self, MsgSrcAddr, 'ISOUSC', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'PREF', value)
         
-    elif  MsgAttrID == "000a":
+    elif MsgAttrID == "000a":
         store_ZLinky_infos( self, MsgSrcAddr, 'VTIC', value)
         
-    elif  MsgAttrID == "000e":
+    elif MsgAttrID == "000e":
         store_ZLinky_infos( self, MsgSrcAddr, 'PCOUP', value)
         
 
