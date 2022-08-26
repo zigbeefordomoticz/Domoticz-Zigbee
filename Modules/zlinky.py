@@ -58,14 +58,14 @@ def update_zlinky_device_model_if_needed( self, nwkid ):
 
     zlinky_conf = linky_device_conf(self, nwkid)
 
-    if self.ListOfDevices[ nwkid ]["model"] != zlinky_conf:
+    if self.ListOfDevices[ nwkid ]["Model"] != zlinky_conf:
         self.logging( "ZLinky", "Status", "Adjusting ZLinky model from %s to %s" %(
-            self.ListOfDevices[ nwkid ]["model"],
+            self.ListOfDevices[ nwkid ]["Model"],
             zlinky_conf 
         ))
         
         # Looks like we have to update the Model in order to use the right attributes
-        self.ListOfDevices[ nwkid ]["model"] = zlinky_conf
+        self.ListOfDevices[ nwkid ]["Model"] = zlinky_conf
 
         # Read Attribute has to be redone from scratch
         if "ReadAttributes" in self.ListOfDevices[nwkid]:
