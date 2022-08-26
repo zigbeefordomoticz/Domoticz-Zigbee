@@ -1803,7 +1803,7 @@ def Cluster000f(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 # - 01 00 6f 0018000100
                 self.log.logging(
                     "Cluster",
-                    "Log",
+                    "Debug",
                     "Frient Present value Model %s Value: %s" % (self.ListOfDevices[MsgSrcAddr]["Model"], MsgClusterData),
                     MsgSrcAddr,
                 )
