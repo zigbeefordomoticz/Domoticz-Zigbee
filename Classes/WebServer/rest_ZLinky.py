@@ -91,23 +91,23 @@ def rest_zlinky(self, verb, data, parameters):
 
 
 def fake_zlinky_histo_mono():
-    
+
     return [
         {
-            "Nwkid": "5f21", 
+            "Nwkid": "5f21",
             "PROTOCOL Linky": 0,
             "Parameters": [
-                {"PEJP": 0}, 
-                {"DEMAIN": ""}, 
-                {"EASF01": 454596}, 
-                
-                {"OPTARIF": "BASE"}, 
-                {"HHPHC": 0}, 
-                {"PPOT": 0}, 
-                {"ADPS": "0"}, 
-                {"ADIR3": "0"}, 
-                {"ADIR2": "0"}, 
-                {"ADIR1": "0"}
-                ]
-            }
-        ]
+                { "ADC0": None },
+                { "BASE": None },
+                { "OPTARIF": "BASE" },
+                { "ISOUSC": None },
+                { "IMAX": None },
+                { "PTEC": None },
+                { "DEMAIN": "" },
+                { "HHPHC": 0 },
+                { "PEJP": 0 },
+                { "ADPS": "0" }
+            ],
+            "ZDeviceName": "ZLinky"
+        }
+    ]
