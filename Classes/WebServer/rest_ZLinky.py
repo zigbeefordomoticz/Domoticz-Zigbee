@@ -46,6 +46,12 @@ ZLINKY_PARAMETERS = {
     
 }
 
+ZLINK_TARIF_MODE_EXCLUDE = {
+    "BASE": ( "PTECT", "DEMAIN", "HCHP","HCHC", "EJPHN", "EJPHPM", "BBRHCJB", "BBRHPJB", "BBRHCJW", "BBRHPJW", "BBRHCJR", "BBRHPJR" ),
+    "HC": ( "DEMAIN", "EJPHN", "EJPHPM", "BBRHCJB", "BBRHPJB", "BBRHCJW", "BBRHPJW", "BBRHCJR", "BBRHPJR" ),
+    "EJP": ( "DEMAIN", "HCHP","HCHC", "BBRHPJB", "BBRHCJW", "BBRHPJW", "BBRHCJR", "BBRHPJR"),
+    "BBR": ( "HCHP","HCHC", "EJPHN", "EJPHPM",)
+}
 
 
 
@@ -63,6 +69,15 @@ def rest_zlinky(self, verb, data, parameters):
             continue
         if "PROTOCOL Linky" not in self.ListOfDevices[ x ]['ZLinky']:
             return
+        if "OPTARIF" not in self.ListOfDevices[ x ]['ZLinky']:
+            return
+        
+        tarif = "BASE"
+        for x in ZLINK_TARIF_MODE_EXCLUDE:
+            if x in self.ListOfDevices[ x ]['ZLinky'][ "OPTARIF"]:
+                tarif = x
+                break
+
         linky_mode = self.ListOfDevices[ x ]["ZLinky"]["PROTOCOL Linky"]
         device = {
             'Nwkid': x,
@@ -72,7 +87,8 @@ def rest_zlinky(self, verb, data, parameters):
         }
         for y in ZLINKY_PARAMETERS[ linky_mode ]:
             if y not in self.ListOfDevices[ x ]["ZLinky"]:
-                device["Parameters"].append( { y: None } )
+                continue
+            if y in ZLINK_TARIF_MODE_EXCLUDE[ tarif ]:
                 continue
     
             attr_value = self.ListOfDevices[ x ]["ZLinky"][ y ]
@@ -97,12 +113,7 @@ def fake_zlinky_histo_mono():
             "Nwkid": "5f21",
             "PROTOCOL Linky": 0,
             "Parameters": [
-                { "ADC0": None },
-                { "BASE": None },
                 { "OPTARIF": "BASE" },
-                { "ISOUSC": None },
-                { "IMAX": None },
-                { "PTEC": None },
                 { "DEMAIN": "" },
                 { "HHPHC": 0 },
                 { "PEJP": 0 },
