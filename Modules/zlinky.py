@@ -1,6 +1,12 @@
 
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 
+ZLINK_CONF_MODEL = (
+    "ZLinky_TIC-historique-mono" , "ZLinky_TIC-historique-tri",
+    "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-tri",
+    "ZLinky_TIC-standard-mono-prod", "ZLinky_TIC-standard-tri-prod"
+    )
+
 ZLINKY_MODE = {
     0: { "Mode": ('historique', 'mono'), "Conf": "ZLinky_TIC-historique-mono" },
     1: { "Mode": ('standard', 'mono'), "Conf": "ZLinky_TIC-standard-mono" },
