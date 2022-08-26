@@ -60,38 +60,38 @@ def rest_zlinky(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
     _response["Data"] = None
-    
+
     # find if we have a ZLinky
     zlinky = []
-    
-    for x in self.ListOfDevices:
-        if 'ZLinky' not in self.ListOfDevices[ x ]:
+
+    for nwkid in self.ListOfDevices:
+        if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
             continue
-        if "PROTOCOL Linky" not in self.ListOfDevices[ x ]['ZLinky']:
+        if "PROTOCOL Linky" not in self.ListOfDevices[ nwkid ]['ZLinky']:
             return
-        if "OPTARIF" not in self.ListOfDevices[ x ]['ZLinky']:
+        if "OPTARIF" not in self.ListOfDevices[ nwkid ]['ZLinky']:
             return
-        
+
         tarif = "BASE"
-        for x in ZLINK_TARIF_MODE_EXCLUDE:
-            if x in self.ListOfDevices[ x ]['ZLinky'][ "OPTARIF"]:
-                tarif = x
+        for _tarif in ZLINK_TARIF_MODE_EXCLUDE:
+            if _tarif in self.ListOfDevices[ nwkid ]['ZLinky'][ "OPTARIF"]:
+                tarif = _tarif
                 break
 
-        linky_mode = self.ListOfDevices[ x ]["ZLinky"]["PROTOCOL Linky"]
+        linky_mode = self.ListOfDevices[ nwkid ]["ZLinky"]["PROTOCOL Linky"]
         device = {
-            'Nwkid': x,
-            'ZDeviceName': get_device_nickname( self, NwkId=x),
+            'Nwkid': nwkid,
+            'ZDeviceName': get_device_nickname( self, NwkId=nwkid),
             "PROTOCOL Linky": linky_mode,
             'Parameters': []
         }
         for y in ZLINKY_PARAMETERS[ linky_mode ]:
-            if y not in self.ListOfDevices[ x ]["ZLinky"]:
+            if y not in self.ListOfDevices[ nwkid ]["ZLinky"]:
                 continue
             if y in ZLINK_TARIF_MODE_EXCLUDE[ tarif ]:
                 continue
     
-            attr_value = self.ListOfDevices[ x ]["ZLinky"][ y ]
+            attr_value = self.ListOfDevices[ nwkid ]["ZLinky"][ y ]
             device["Parameters"].append( { y: attr_value } )
             
         zlinky.append( device )
