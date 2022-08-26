@@ -204,6 +204,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             sValue = "%s;%s;%s" % (0, 0, 0)
             ampere1, ampere2, ampere3 = retreive_data_from_current(self, Devices, DeviceUnit, "%s;%s;%s")
             if ampere2 == ampere3 == '65535.0':
+                self.log.logging("Widget", "Debug", "------>  Something going wrong ..... ampere %s %s %s" %(ampere1, ampere2, ampere3))
                 ampere2 = '0.0'
                 ampere3 = '0.0'
             ampere = round(float(value), 2)
