@@ -1697,7 +1697,7 @@ READ_ATTRIBUTES_REQUEST = {
     "0500": (ReadAttributeRequest_0500, "polling0500"),
     "0502": (ReadAttributeRequest_0502, "polling0502"),
     "0702": (ReadAttributeRequest_0702, "polling0702"),
-    "0b01": (ReadAttributeRequest_0b01, "polling0b04"),
+    "0b01": (ReadAttributeRequest_0b01, "polling0b01"),
     "0b04": (ReadAttributeRequest_0b04, "polling0b04"),
     "0b05": (ReadAttributeRequest_0b05, "polling0b05"),
     "e000": (ReadAttributeRequest_e000, "polling0b05"),
@@ -1705,5 +1705,5 @@ READ_ATTRIBUTES_REQUEST = {
     "fc01": (ReadAttributeRequest_fc01, "pollingfc01"),
     "fc21": (ReadAttributeRequest_fc21, "pollingfc21"),
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),
-    "ff66": (ReadAttributeRequest_ff66, "polling0b04"),
+    "ff66": (ReadAttributeRequest_ff66, "pollingff66"),
 }
