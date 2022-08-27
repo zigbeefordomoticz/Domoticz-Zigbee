@@ -387,6 +387,7 @@ def mgtm_binding(self, nwkid, table):
     if "Devices" in get_BindTable_entry(self, nwkid):
         del get_BindTable_entry(self, nwkid)["Devices"]
         get_BindTable_entry(self, nwkid)["Devices"] = []
+        self.log.logging("NetworkMap", "Debug", "=======> mgtm_binding performing the initial request: %s %s" %(nwkid, table))
     mgt_binding_table_req(self, nwkid, "00")
 
 def create_BindTable_structutre( self, nwkid ):
