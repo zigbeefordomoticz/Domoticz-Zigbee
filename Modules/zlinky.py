@@ -1,5 +1,5 @@
 
-from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING, STORE_READ_CONFIGURE_REPORTING
 
 ZLINK_CONF_MODEL = (
     "ZLinky_TIC",
@@ -130,5 +130,11 @@ def update_zlinky_device_model_if_needed( self, nwkid ):
         if STORE_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
             del self.ListOfDevices[nwkid][STORE_CONFIGURE_REPORTING]
 
+        if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
+            del self.ListOfDevices[nwkid][STORE_READ_CONFIGURE_REPORTING]
+            
         if self.configureReporting:
             self.configureReporting.check_configuration_reporting_for_device( nwkid, force=True)
+            
+        if "Heartbeat" in self.ListOfDevices[nwkid]:
+            self.ListOfDevices[nwkid]["Heartbeat"] = "0"
