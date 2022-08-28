@@ -35,12 +35,12 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "casaia-list-devices": {
             "Name": "casaia-list-devices",
             "Verbs": {"GET"},
-            "function": self.rest_casa_device_list,
+            "function": self.rest_casa_device_list
         },
         "casaia-update-ircode": {
             "Name": "casaia-list-devices",
             "Verbs": {"PUT"},
-            "function": self.rest_casa_device_ircode_update,
+            "function": self.rest_casa_device_ircode_update
         },
         "cfgrpt-ondemand": {"Name": "cfgrpt-ondemand", "Verbs": {"GET"}, "function": self.rest_cfgrpt_ondemand},
         "cfgrpt-ondemand-config": {"Name": "cfgrpt-ondemand-config", "Verbs": { "GET", "PUT", "DELETE" }, "function": self.rest_cfgrpt_ondemand_with_config},
@@ -48,7 +48,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "clear-error-history": {
             "Name": "clear-error-history",
             "Verbs": {"GET"},
-            "function": self.rest_logErrorHistoryClear,
+            "function": self.rest_logErrorHistoryClear
         },
         "dev-cap": {"Name": "dev-cap", "Verbs": {"GET"}, "function": self.rest_dev_capabilities},
         "dev-command": {"Name": "dev-command", "Verbs": {"PUT"}, "function": self.rest_dev_command},
@@ -62,13 +62,13 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "ota-firmware-device-list": {
             "Name": "ota-firmware-list",
             "Verbs": {"GET"},
-            "function": self.rest_ota_devices_for_manufcode,
+            "function": self.rest_ota_devices_for_manufcode
         },
         "ota-firmware-list": {"Name": "ota-firmware-list", "Verbs": {"GET"}, "function": self.rest_ota_firmware_list},
         "ota-firmware-update": {
             "Name": "ota-firmware-update",
             "Verbs": {"PUT"},
-            "function": self.rest_ota_firmware_update,
+            "function": self.rest_ota_firmware_update
         },
         "permit-to-join": {"Name": "permit-to-join", "Verbs": {"GET", "PUT"}, "function": self.rest_PermitToJoin},
         "plugin-health": {"Name": "plugin-health", "Verbs": {"GET"}, "function": self.rest_plugin_health},
@@ -87,7 +87,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "scan-device-for-grp": {
             "Name": "ScanDevscan-device-for-grpiceForGrp",
             "Verbs": {"PUT"},
-            "function": self.rest_scan_devices_for_group,
+            "function": self.rest_scan_devices_for_group
         },
         "setting-debug": {"Name": "setting", "Verbs": {"GET", "PUT"}, "function": self.rest_Settings_with_debug},
         "setting": {"Name": "setting", "Verbs": {"GET", "PUT"}, "function": self.rest_Settings_wo_debug},
@@ -102,7 +102,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "zgroup-list-available-device": {
             "Name": "zgroup-list-available-device",
             "Verbs": {"GET"},
-            "function": self.rest_zGroup_lst_avlble_dev,
+            "function": self.rest_zGroup_lst_avlble_dev
         },
         "zgroup": {"Name": "device", "Verbs": {"GET", "PUT"}, "function": self.rest_zGroup},
         "zigate-erase-PDM": {"Name": "zigate-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},

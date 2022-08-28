@@ -102,13 +102,13 @@ def rest_zlinky(self, verb, data, parameters):
         zlinky.append( device )
       
     self.logging("Log", "rest_zlinky - Read to send  %s " % (zlinky))  
+
     if verb == "GET" and len(parameters) == 0:
         if len(self.ControllerData) == 0:
             _response["Data"] = json.dumps(fake_zlinky_histo_mono(), sort_keys=True)
             return _response
 
         _response["Data"] = json.dumps(zlinky, sort_keys=True)
-
     return _response
 
 
