@@ -4496,11 +4496,11 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-    elif MsgAttrID == "0511" and  "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+    elif MsgAttrID == "0511" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
         store_ZLinky_infos( self, MsgSrcAddr, 'UMOY1', int(decodeAttribute(self, MsgAttType, MsgClusterData)))   
-    elif MsgAttrID == "0911" and  "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+    elif MsgAttrID == "0911" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
         store_ZLinky_infos( self, MsgSrcAddr, 'UMOY2', int(decodeAttribute(self, MsgAttType, MsgClusterData)))     
-    elif MsgAttrID == "0a11" and  "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+    elif MsgAttrID == "0a11" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
         store_ZLinky_infos( self, MsgSrcAddr, 'UMOY3', int(decodeAttribute(self, MsgAttType, MsgClusterData)))     
   
     else:
