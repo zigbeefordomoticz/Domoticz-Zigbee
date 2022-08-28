@@ -13,8 +13,8 @@ ZLINKY_MODE = {
     1: { "Mode": ('standard', 'mono'), "Conf": "ZLinky_TIC-standard-mono" },
     2: { "Mode": ('historique', 'tri'), "Conf": "ZLinky_TIC-historique-tri" },
     3: { "Mode": ('standard', 'tri'), "Conf": "ZLinky_TIC-standard-tri" },
-    5: { "Mode": ('standard', 'mono prod'), "Conf": "" },
-    7: { "Mode": ('standard', 'tri prod'), "Conf": "" },
+    5: { "Mode": ('standard', 'mono prod'), "Conf": "ZLinky_TIC-standard-mono-prod" },
+    7: { "Mode": ('standard', 'tri prod'), "Conf": "ZLinky_TIC-standard-tri-prod" },
 }
 
 ZLinky_TIC_COMMAND = {
