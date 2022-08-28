@@ -505,7 +505,6 @@ def is_fake_ep( self, nwkid, ep):
     )
 
 def is_bind_ep( self, nwkid, ep):
-
     return (
         "Model" not in self.ListOfDevices[nwkid]
         or self.ListOfDevices[nwkid]["Model"] not in self.DeviceConf
@@ -1438,24 +1437,19 @@ def repair_dict_after_load(b64_dict, Attribute):
 def is_domoticz_db_available(self):
     #  Domoticz 2021.1 build 13495
 
-    Domoticz.Log(
-        "is_domoticz_db_available: Fashion: %s , Major: %s, Minor: %s"
-        % (self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor)
-    )
-
     if not self.VersionNewFashion:
-        Domoticz.Log("is_domoticz_db_available: %s due to Fashion" % False)
+        #Domoticz.Log("is_domoticz_db_available: %s due to Fashion" % False)
         return False
 
     if self.DomoticzMajor < 2021:
-        Domoticz.Log("is_domoticz_db_available: %s due to Major" % False)
+        #Domoticz.Log("is_domoticz_db_available: %s due to Major" % False)
         return False
 
     if self.DomoticzMajor == 2021 and self.DomoticzMinor < 1:
-        Domoticz.Log("is_domoticz_db_available: %s due to Minor" % False)
+       # Domoticz.Log("is_domoticz_db_available: %s due to Minor" % False)
         return False
 
-    Domoticz.Log("is_domoticz_db_available: %s" % True)
+    #Domoticz.Log("is_domoticz_db_available: %s" % True)
     return True
 
 def get_device_nickname( self, NwkId=None, Ieee=None):

@@ -3,7 +3,7 @@ Thank you for considering contributing to Zigbee for Domoticz plugin. It is peop
 
 You can contribute on different matters :
 
-* Testing purpose 
+* Testing purpose
 Contributors will help in the testing of the beta and pre-release.
 You don't need to have specific known-how or knowledge, you'll have to run and test the code and report issues, gaps with docuentation ...
 
@@ -15,8 +15,8 @@ Contributors will help in developping/contributing to the plugin documentation, 
 We are looking for help on improving the User Interface. We have already a nice look and feel of our plugin Web interface, but there is room for further improvement and many on CSS side.
 
 Technology to be used:
-- html 
-- Javascript 
+- html
+- Javascript
 - jquery
 - css
 
@@ -90,4 +90,3 @@ git checkout 325-add-chipolo-plug
 git pull --rebase upstream master
 git push --force-with-lease 325-add-chipolo-plug
 ```
-

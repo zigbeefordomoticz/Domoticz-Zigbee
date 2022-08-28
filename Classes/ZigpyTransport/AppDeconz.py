@@ -47,8 +47,42 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         LOGGER.debug("_load_db")
 
+    async def initialize(self, *, auto_form: bool = False):
+        """
+        Starts the network on a connected radio, optionally forming one with random
+        settings if necessary.
+        """
+        try:
+            await self.load_network_info(load_devices=False)
+            
+        except zigpy.exceptions.NetworkNotFormed:
+            LOGGER.info("Network is not formed")
+
+            if not auto_form:
+                raise
+
+            #if not self.backups.backups:
+            #    # Form a new network if we have no backup
+            #    LOGGER.info("Forming a new network")
+            #    await self.form_network()
+            #else:
+            #    # Otherwise, restore the most recent backup
+            #    LOGGER.info("Restoring the most recent network backup")
+            #    await self.backups.restore_backup(self.backups.backups[-1])
+
+            await self.load_network_info(load_devices=False)
+
+        LOGGER.debug("Network info: %s", self.state.network_info)
+        LOGGER.debug("Node info: %s", self.state.node_info)
+        LOGGER.info("deConz Configuration: %s", self.config)
+
+        await self.start_network()
+
+        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup ( await self.backups.create_backup() )
+
+
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
-        LOGGER.debug("startup in AppDeconz")
         self.log = log
         self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
@@ -60,10 +94,13 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await asyncio.sleep( 2 )
 
         try:
-            await self._startup( auto_form=True )
-        except Exception:
+            await self.connect()
+            await self.initialize(auto_form=True)
+        except Exception as e:
+            LOGGER.error("Couldn't start application", exc_info=e)
             await self.shutdown()
             raise
+
         if force_form:
             await super().form_network()
 
@@ -103,37 +140,12 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
 
 
-    async def _startup(self, *, auto_form: bool = False):
-        """
-        Starts a network, optionally forming one with random settings if necessary.
-        """
-        await self.connect()
-        try:
-            try:
-                await self.load_network_info(load_devices=False)
-            except zigpy.exceptions.NetworkNotFormed:
-                LOGGER.info("Network is not formed")
-                if not auto_form:
-                    raise
-                LOGGER.info("Forming a new network")
-                await self.form_network()
-            LOGGER.debug("Network info: %s", self.state.network_info)
-            LOGGER.debug("Node info: %s", self.state.node_info)
-            LOGGER.info("Deconz Configuration: %s", self.config)
-            await self.start_network()
-        except Exception:
-            LOGGER.error("Couldn't start application")
-            await self.shutdown()
-            raise
-
-        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup ( await self.backups.create_backup() )
 
     async def shutdown(self) -> None:
         """Shutdown controller."""
         if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup ( await self.backups.create_backup() )
-
+        await self.disconnect()
 
     async def register_endpoints(self):
         await self._register_endpoints()  

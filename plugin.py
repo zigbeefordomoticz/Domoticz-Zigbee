@@ -91,7 +91,6 @@ except ImportError:
 import gc
 import json
 import os
-import sys
 import threading
 import time
 
@@ -269,6 +268,10 @@ class BasePlugin:
     def onStart(self):
         Domoticz.Log("Zigbee for Domoticz plugin started!")
         assert sys.version_info >= (3, 4)  # nosec
+        
+        if check_requirements( self ):
+            self.onStop()
+            return
 
         if check_requirements( self ):
             self.onStop()
@@ -1083,8 +1086,8 @@ class BasePlugin:
             build_list_of_device_model(self)
 
         if (
-            self.zigbee_communication and
-            self.zigbee_communication == "zigpy"
+            self.zigbee_communication
+            and self.zigbee_communication == "zigpy"
             and "autoBackup" in self.pluginconf.pluginConf 
             and self.pluginconf.pluginConf["autoBackup"] 
             and night_shift_jobs( self ) 
@@ -1234,7 +1237,6 @@ def zigateInit_Phase1(self):
     """
     self.log.logging("Plugin", "Debug", "zigateInit_Phase1 PDMDone: %s" % (self.ErasePDMDone))
     # Check if we have to Erase PDM.
-
     if self.zigbee_communication == "native" and Parameters["Mode3"] == "True" and not self.ErasePDMDone and not self.ErasePDMinProgress:  # Erase PDM
         zigate_erase_eeprom(self)
         self.log.logging("Plugin", "Status", "Erase coordinator PDM")
@@ -1626,11 +1628,11 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.49.1",
-        "zigpy_znp": "0.8.1",
+        "zigpy": "0.50.2",
+        "zigpy_znp": "0.8.2",
         "zigpy_deconz": "0.18.0",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.32.0",
+        "zigpy_ezsp": "0.33.1",
         }
 
     flag = True
@@ -1763,7 +1765,7 @@ def DumpHTTPResponseToLog(httpDict):
 
 def install_Z4D_to_domoticz_custom_ui():
 
-    line1 = '<iframe id="%s"' %Parameters['Name'] +  'style="width:100%;height:800px;overflow:scroll;">\n'
+    line1 = '<iframe id="%s"' %Parameters['Name'] + 'style="width:100%;height:800px;overflow:scroll;">\n'
     line2 = '</iframe>\n'
     line3 = '\n'
     line4 = '<script>\n'

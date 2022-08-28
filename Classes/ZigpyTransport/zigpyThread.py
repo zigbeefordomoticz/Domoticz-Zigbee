@@ -40,6 +40,7 @@ from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
                               InvalidResponse)
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
+from Modules.macPrefix import casaiaPrefix_zigpy
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
@@ -121,7 +122,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         import bellows.config as conf
         from Classes.ZigpyTransport.AppBellows import App_bellows
         config = {
-            conf.CONF_DEVICE: { "path": serialPort,  "baudrate": 115200}, 
+            conf.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
             conf.CONF_NWK: {},
             conf.CONF_EZSP_CONFIG: {
             },
@@ -189,7 +190,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
    
     if "TXpower_set" in self.pluginconf.pluginConf:
         if radiomodule == "znp":
-            config[conf.CONF_ZNP_CONFIG] ["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
+            config[conf.CONF_ZNP_CONFIG]["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
         else:
             config["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
 
@@ -215,8 +216,12 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
             return
     except Exception as e:
-            self.log.logging("TransportZigpy", "Error", "Error while starting radio %s on port: %s - Error: %s" %(
-            radiomodule, serialPort, e))
+            self.log.logging(
+                "TransportZigpy", 
+                "Error", 
+                "Error while starting radio %s on port: %s - Error: %s" %(
+                    radiomodule, serialPort, e)
+                )
 
     self.log.logging("TransportZigpy", "Debug", "4- %s" %radiomodule) 
     if self.pluginParameters["Mode3"] == "True":

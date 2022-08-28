@@ -198,7 +198,8 @@ def remove_table_entry(self, nwkid, tablename, time_stamp):
         one_more_time = False
         for idx in range(len(self.ListOfDevices[nwkid][tablename])):
             self.log.logging("NetworkMap", "Debug", "remove_table_entry idx: %s" %idx)
-            if ( "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
+            if ( 
+                "Time" in self.ListOfDevices[nwkid][tablename][ idx ]
                 and self.ListOfDevices[nwkid][tablename][ idx ]["Time"] == int(time_stamp)
             ):
                 self.log.logging("NetworkMap", "Debug", "remove_table_entry %s / %s" %( nwkid, tablename))
@@ -376,11 +377,18 @@ def mgtm_binding(self, nwkid, table):
 
     if isinstance( self.ListOfDevices[ nwkid ]["BindingTable"], list):
         create_BindTable_structutre( self, nwkid )
-    
+
+    if (
+        "TimeStamp" in self.ListOfDevices[nwkid]["BindingTable"] 
+        and self.ListOfDevices[nwkid]["BindingTable"]["TimeStamp"] < ( time.time() + ( 24 * 3600 ))
+    ):
+        return
+
     if "Devices" in get_BindTable_entry(self, nwkid):
         del get_BindTable_entry(self, nwkid)["Devices"]
         get_BindTable_entry(self, nwkid)["Devices"] = []
-    mgt_binding_table_req(self, nwkid), "00"
+        self.log.logging("NetworkMap", "Debug", "=======> mgtm_binding performing the initial request: %s %s" %(nwkid, table))
+    mgt_binding_table_req(self, nwkid, "00")
 
 def create_BindTable_structutre( self, nwkid ):
         self.ListOfDevices[ nwkid ]["BindingTable"] = {

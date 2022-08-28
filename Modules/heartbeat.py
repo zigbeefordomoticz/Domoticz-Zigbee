@@ -55,13 +55,17 @@ from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 # Network Energy start: 30' after plugin start
 # Legrand re-enforcement: Every 5'
 
-READATTRIBUTE_FEQ = 10 // HEARTBEAT  # 10seconds ...
-QUIET_AFTER_START = 60 // HEARTBEAT  # Quiet periode after a plugin start
-CONFIGURERPRT_FEQ = 30 // HEARTBEAT
-LEGRAND_FEATURES = 300 // HEARTBEAT
-SCHNEIDER_FEATURES = 300 // HEARTBEAT
-NETWORK_TOPO_START = 900 // HEARTBEAT
-NETWORK_ENRG_START = 1800 // HEARTBEAT
+
+QUIET_AFTER_START = (60 // HEARTBEAT)  # Quiet periode after a plugin start
+NETWORK_TOPO_START = (900 // HEARTBEAT)
+NETWORK_ENRG_START = (1800 // HEARTBEAT)
+READATTRIBUTE_FEQ = (10 // HEARTBEAT)  # 10seconds ...
+CONFIGURERPRT_FEQ = (( 30 // HEARTBEAT) + 1)
+LEGRAND_FEATURES = (( 300 // HEARTBEAT ) + 3)
+SCHNEIDER_FEATURES = (( 300 // HEARTBEAT) + 5)
+BINDING_TABLE_REFRESH = (( 3600 // HEARTBEAT ) + 7)
+NODE_DESCRIPTOR_REFRESH = (( 3600 // HEARTBEAT) + 11)
+ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 13)
 
 
 def attributeDiscovery(self, NwkId):
@@ -552,7 +556,7 @@ def processKnownDevices(self, Devices, NWKID):
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = rescheduleAction or pollingManufSpecificDevices(self, NWKID, intHB)
 
-    _doReadAttribute = bool((self.pluginconf.pluginConf["enableReadAttributes"] or self.pluginconf.pluginConf["resetReadAttributes"]) and (intHB % READATTRIBUTE_FEQ) == 0)
+    _doReadAttribute = bool((self.pluginconf.pluginConf["enableReadAttributes"] or self.pluginconf.pluginConf["resetReadAttributes"]) and intHB != 0 and (intHB % READATTRIBUTE_FEQ) == 0)
 
     if ( 
         self.ControllerLink.loadTransmit() > 5
@@ -638,13 +642,14 @@ def processKnownDevices(self, Devices, NWKID):
     if self.pluginconf.pluginConf["checkConfigurationReporting"]:
         rescheduleAction = rescheduleAction or check_configuration_reporting(self, NWKID, _mainPowered, intHB)
 
-    # Do Attribute Disocvery if needed
-    if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
+    if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and intHB != 0 and ((intHB % ATTRIBUTE_DISCOVERY_REFRESH) == 0):
         rescheduleAction = rescheduleAction or attributeDiscovery(self, NWKID)
+        
+    if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and intHB != 0 and ((intHB % BINDING_TABLE_REFRESH) == 0):
         mgtm_binding(self, NWKID, "BindingTable")
 
     # If corresponding Attributes not present, let's do a Request Node Description
-    if night_shift_jobs( self ) and not enabledEndDevicePolling and ((intHB % 1800) == 0):
+    if night_shift_jobs( self ) and not enabledEndDevicePolling and intHB != 0 and ((intHB % NODE_DESCRIPTOR_REFRESH) == 0):
         req_node_descriptor = False
         if (
             "Manufacturer" not in self.ListOfDevices[NWKID]
@@ -690,7 +695,7 @@ def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
         # Device is not a good state
         return False
 
-    if (intHB % (60 // HEARTBEAT)) != 0:
+    if intHB != 0 and (intHB % (60 // HEARTBEAT)) != 0:
         # check only every minute
         return
 
