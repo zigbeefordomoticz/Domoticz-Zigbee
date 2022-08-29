@@ -35,10 +35,11 @@ from Modules.tools import getEpForCluster
 from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           SmartRelayStatus03, SmartRelayStatus04,
                           get_tuya_attribute, tuya_backlight_command,
-                          tuya_cmd_ts004F, tuya_energy_childLock,
-                          tuya_external_switch_mode, tuya_garage_run_time,
-                          tuya_switch_indicate_light, tuya_switch_relay_status,
-                          tuya_TS0004_back_light, tuya_TS0004_indicate_light,
+                          tuya_cmd_ts004F, tuya_curtain_mode,
+                          tuya_energy_childLock, tuya_external_switch_mode,
+                          tuya_garage_run_time, tuya_switch_indicate_light,
+                          tuya_switch_relay_status, tuya_TS0004_back_light,
+                          tuya_TS0004_indicate_light,
                           tuya_window_cover_calibration,
                           tuya_window_cover_motor_reversal)
 from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
@@ -219,6 +220,8 @@ DEVICE_PARAMETERS = {
     "WiseriTrvWindowOpen": iTRV_open_window_detection,
     "TuyaMotoReversal": tuya_window_cover_motor_reversal,
     "TuyaBackLight": tuya_backlight_command,
+    "TuyaCurtainMode": tuya_curtain_mode,
+    "TuyaCalibrationTime": tuya_window_cover_calibration,
     "eTRVExerciseDay": danfoss_exercise_day_of_week,
     "eTRVExerciseTime": danfoss_exercise_trigger_time,
     "DanfossTRVOrientation": danfoss_orientation,
@@ -244,7 +247,7 @@ DEVICE_PARAMETERS = {
     "SmartRelayStatus01": SmartRelayStatus01,
     "SmartRelayStatus02": SmartRelayStatus02,
     "SmartRelayStatus03": SmartRelayStatus03,
-    "SmartRelayStatus04": SmartRelayStatus04,  
+    "SmartRelayStatus04": SmartRelayStatus04,
 }
 
 def sanity_check_of_param(self, NwkId):

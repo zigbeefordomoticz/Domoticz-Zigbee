@@ -446,7 +446,7 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
     elif command in ( "GoToLiftPercentage", "GoToTiltPercentage"):
         payload += percentage
 
-    self.log.logging("zclCommand", "Error", "zcl_raw_window_covering payload %s %s" % (nwkid, payload))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_window_covering payload %s %s" % (nwkid, payload))
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
