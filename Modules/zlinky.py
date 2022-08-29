@@ -1,5 +1,5 @@
 
-from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING, STORE_READ_CONFIGURE_REPORTING
 
 ZLINK_CONF_MODEL = (
     "ZLinky_TIC",
@@ -13,8 +13,8 @@ ZLINKY_MODE = {
     1: { "Mode": ('standard', 'mono'), "Conf": "ZLinky_TIC-standard-mono" },
     2: { "Mode": ('historique', 'tri'), "Conf": "ZLinky_TIC-historique-tri" },
     3: { "Mode": ('standard', 'tri'), "Conf": "ZLinky_TIC-standard-tri" },
-    5: { "Mode": ('standard', 'mono prod'), "Conf": "" },
-    7: { "Mode": ('standard', 'tri prod'), "Conf": "" },
+    5: { "Mode": ('standard', 'mono prod'), "Conf": "ZLinky_TIC-standard-mono-prod" },
+    7: { "Mode": ('standard', 'tri prod'), "Conf": "ZLinky_TIC-standard-tri-prod" },
 }
 
 ZLinky_TIC_COMMAND = {
@@ -130,5 +130,11 @@ def update_zlinky_device_model_if_needed( self, nwkid ):
         if STORE_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
             del self.ListOfDevices[nwkid][STORE_CONFIGURE_REPORTING]
 
+        if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
+            del self.ListOfDevices[nwkid][STORE_READ_CONFIGURE_REPORTING]
+            
         if self.configureReporting:
             self.configureReporting.check_configuration_reporting_for_device( nwkid, force=True)
+            
+        if "Heartbeat" in self.ListOfDevices[nwkid]:
+            self.ListOfDevices[nwkid]["Heartbeat"] = "0"

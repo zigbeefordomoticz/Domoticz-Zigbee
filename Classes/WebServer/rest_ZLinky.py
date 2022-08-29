@@ -61,6 +61,7 @@ def rest_zlinky(self, verb, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
     _response["Data"] = None
 
+    self.logging("Debug", "rest_zlinky - for %s %s %s" % (verb, data, parameters))  
     # find if we have a ZLinky
     zlinky = []
 
@@ -68,10 +69,11 @@ def rest_zlinky(self, verb, data, parameters):
         if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
             continue
         if "PROTOCOL Linky" not in self.ListOfDevices[ nwkid ]['ZLinky']:
-            return
+            continue
         if "OPTARIF" not in self.ListOfDevices[ nwkid ]['ZLinky']:
-            return
+            continue
 
+        self.logging("Log", "rest_zlinky - found %s " % (nwkid))  
         tarif = "BASE"
         for _tarif in ZLINK_TARIF_MODE_EXCLUDE:
             if _tarif in self.ListOfDevices[ nwkid ]['ZLinky'][ "OPTARIF"]:
@@ -102,13 +104,13 @@ def rest_zlinky(self, verb, data, parameters):
         zlinky.append( device )
       
     self.logging("Log", "rest_zlinky - Read to send  %s " % (zlinky))  
+
     if verb == "GET" and len(parameters) == 0:
         if len(self.ControllerData) == 0:
             _response["Data"] = json.dumps(fake_zlinky_histo_mono(), sort_keys=True)
             return _response
 
         _response["Data"] = json.dumps(zlinky, sort_keys=True)
-
     return _response
 
 
