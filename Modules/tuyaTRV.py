@@ -1148,7 +1148,6 @@ def tuya_trv_onoff(self, nwkid, onoff):
 
 def tuya_trv_mode(self, nwkid, mode):
     self.log.logging("Tuya", "Debug", "tuya_trv_mode - %s tuya_trv_mode: %s" % (nwkid, mode), nwkid)
-    Domoticz.Log("type: %s" % type(mode))
     # Mode = 0  => Off
     # Mode = 10 => Auto
     # Mode = 20 => Manual
