@@ -98,9 +98,7 @@ class ConfigureReporting:
             del self.ListOfDevices[nwkid][STORE_CONFIGURE_REPORTING]
         configure_reporting_for_one_device(self, nwkid, False)
 
-    def prepare_and_send_configure_reporting(
-        self, key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure
-    ):
+    def prepare_and_send_configure_reporting( self, key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure ):
 
         # Create the list of Attribute reporting configuration for a specific cluster
         # Finally send the command
@@ -159,31 +157,13 @@ class ConfigureReporting:
             attribute_reporting_configuration.append(attribute_reporting_record)
 
             if len(attribute_reporting_configuration) == maxAttributesPerRequest:
-                self.send_configure_reporting_attributes_set(
-                    key,
-                    ZIGATE_EP,
-                    Ep,
-                    cluster,
-                    direction,
-                    manufacturer_spec,
-                    manufacturer,
-                    attribute_reporting_configuration,
-                )
+                self.send_configure_reporting_attributes_set( key, ZIGATE_EP, Ep, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, )
                 # Reset the Lenght to 0
                 attribute_reporting_configuration = []
 
         # Send remaining records
         if attribute_reporting_configuration:
-            self.send_configure_reporting_attributes_set(
-                key,
-                ZIGATE_EP,
-                Ep,
-                cluster,
-                direction,
-                manufacturer_spec,
-                manufacturer,
-                attribute_reporting_configuration,
-            )
+            self.send_configure_reporting_attributes_set( key, ZIGATE_EP, Ep, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, )
 
     def send_configure_reporting_attributes_set(
         self,
@@ -376,7 +356,8 @@ class ConfigureReporting:
 
         if len( attribute_list ) <= MAX_READ_ATTR_PER_REQ:
             zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
-
+            return
+        
         self.logging("Debug", "read_report_configure_request %s/%s need to break attribute list into chunk %s" %( nwkid, epout, str(attribute_list)))
         idx = 0
         while idx < len(attribute_list):
@@ -648,11 +629,7 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, clust
             if "ZDeviceID" in cluster_configuration[attr] and (
                 ZDeviceID not in cluster_configuration[attr]["ZDeviceID"] and len(cluster_configuration[attr]["ZDeviceID"]) != 0
             ):
-                self.logging(
-                    "Debug",
-                    f"------> configure_reporting_for_one_cluster - {key}/{Ep} skip Attribute {attr} for Cluster {cluster} due to ZDeviceID {ZDeviceID}",
-                    nwkid=key,
-                )
+                self.logging( "Debug", f"------> configure_reporting_for_one_cluster - {key}/{Ep} skip Attribute {attr} for Cluster {cluster} due to ZDeviceID {ZDeviceID}", nwkid=key, )
                 continue
 
         # Check against Attribute List only if the Model is not defined in the Certified Conf.
@@ -663,43 +640,25 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, clust
             continue
 
         # Check if we have a Manufacturer Specific Cluster/Attribute. If that is the case, we need to send what we have ,
-        # and then pile what we have until we switch back to non manufacturer specific
+        # and then send the Manufacturer attribute, and finaly continue the job
         manufacturer_code = manufacturer_specific_attribute(self, key, cluster, attr, cluster_configuration[attr])
         if manufacturer_code:
             # Send what we have
             if ListOfAttributesToConfigure:
-                self.prepare_and_send_configure_reporting(
-                    key,
-                    Ep,
-                    cluster_configuration,
-                    cluster,
-                    direction,
-                    manufacturer_spec,
-                    manufacturer,
-                    ListOfAttributesToConfigure,
-                )
+                self.prepare_and_send_configure_reporting( key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure, )
 
             self.logging("Debug", f"------> configure_reporting_for_one_cluster Reporting: Manuf Specific Attribute {attr}", nwkid=key)
 
             # Process the Attribute
             ListOfAttributesToConfigure = []
+            ListOfAttributesToConfigure.append(attr)
+            
             manufacturer_spec = "01"
 
-            ListOfAttributesToConfigure.append(attr)
-            self.prepare_and_send_configure_reporting(
-                key,
-                Ep,
-                cluster_configuration,
-                cluster,
-                direction,
-                manufacturer_spec,
-                manufacturer_code,
-                ListOfAttributesToConfigure,
-            )
+            self.prepare_and_send_configure_reporting( key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer_code, ListOfAttributesToConfigure, )
 
             # Look for the next attribute and do not assume it is Manuf Specif
             ListOfAttributesToConfigure = []
-
             manufacturer_spec = "00"
             manufacturer = "0000"
 
@@ -708,16 +667,8 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, clust
         ListOfAttributesToConfigure.append(attr)
         self.logging("Debug", f"------> configure_reporting_for_one_cluster  {key}/{Ep} Cluster {cluster} Adding attr: {attr} ", nwkid=key)
 
-        self.prepare_and_send_configure_reporting(
-            key,
-            Ep,
-            cluster_configuration,
-            cluster,
-            direction,
-            manufacturer_spec,
-            manufacturer,
-            ListOfAttributesToConfigure,
-        )
+    self.logging("Debug", f"------> configure_reporting_for_one_cluster  {key}/{Ep} Cluster {cluster} ready with: {ListOfAttributesToConfigure} ", nwkid=key)
+    self.prepare_and_send_configure_reporting( key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure, )
 
 
 def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
