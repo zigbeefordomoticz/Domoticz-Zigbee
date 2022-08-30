@@ -34,9 +34,10 @@ from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
                                              sqn_get_internal_sqn_from_app_sqn)
 
-MAX_ATTR_PER_REQ = 3
+
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
 MAX_READ_ATTR_PER_REQ = 4
+MAX_ATTR_PER_REQ = 3
 
 class ConfigureReporting:
     def __init__(
@@ -107,6 +108,8 @@ class ConfigureReporting:
         maxAttributesPerRequest = MAX_ATTR_PER_REQ
         if self.pluginconf.pluginConf["breakConfigureReporting"]:
             maxAttributesPerRequest = 1
+        elif 'Model' in self.ListOfDevices[ key ] and "ZLinky" in self.ListOfDevices[ key ]["Model"]:
+            maxAttributesPerRequest = 2
 
         attribute_reporting_configuration = []
         for attr in ListOfAttributesToConfigure:
@@ -345,7 +348,6 @@ class ConfigureReporting:
                     continue
                     # We do not find any atrributes for the cluster !!!
 
-                
         if wip_flag:
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["Retry"] += 1
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["TimeStamp"] = time.time()
@@ -354,15 +356,22 @@ class ConfigureReporting:
 
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
 
-        if len( attribute_list ) <= MAX_READ_ATTR_PER_REQ:
+        maxAttributesPerRequest = MAX_READ_ATTR_PER_REQ
+        if self.pluginconf.pluginConf["breakConfigureReporting"]:
+            maxAttributesPerRequest = 1
+        elif 'Model' in self.ListOfDevices[ nwkid ] and "ZLinky" in self.ListOfDevices[ nwkid ]["Model"]:
+            maxAttributesPerRequest = 2
+
+
+        if len( attribute_list ) <= maxAttributesPerRequest:
             zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
             return
         
         self.logging("Debug", "read_report_configure_request %s/%s need to break attribute list into chunk %s" %( nwkid, epout, str(attribute_list)))
         idx = 0
         while idx < len(attribute_list):
-            end = idx + MAX_READ_ATTR_PER_REQ
-            if idx + MAX_READ_ATTR_PER_REQ > len(attribute_list):
+            end = idx + maxAttributesPerRequest
+            if idx + maxAttributesPerRequest > len(attribute_list):
                 end = len(attribute_list)
             self.logging("Debug", "      chunk %s" %str( attribute_list[ idx : end ]))
             zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list[ idx : end ], is_ack_tobe_disabled(self, nwkid),)
