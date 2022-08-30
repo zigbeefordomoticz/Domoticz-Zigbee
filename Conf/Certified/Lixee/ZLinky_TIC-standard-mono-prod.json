@@ -27,7 +27,6 @@
 	"ConfigureReporting": {
 		"0702": {
 			"Attributes": {
-				"0000": { "DataType": "25", "MinInterval": "0046", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000001" },
 				"0001": { "DataType": "25", "MinInterval": "0046", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000001" },
 				"0100": { "DataType": "25", "MinInterval": "0046", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000001" },
 				"0102": { "DataType": "25", "MinInterval": "0046", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000001" },
@@ -44,39 +43,37 @@
 		"0b04": {
 			"Attributes": {
 				"0305": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
-				"0505": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
-				"0905": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
-				"0a05": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
+				"050e": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
+				"090e": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
+				"0a0e": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
 
-				"0505": { "DataType": "21", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
 				"0508": { "DataType": "21", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
-				"050b": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
-				"050d": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
-				"090b": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
-				"050f": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
-				"0511": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" }
+				"050b": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
+				"050d": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
+				"050f": { "DataType": "21", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
+				"090b": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" }
 			}
 		},
 		"ff66": {
 			"Attributes": {
-				"0203": { "DataType": "23", "MinInterval": "0001", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
-				"0204": { "DataType": "23", "MinInterval": "0001", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
-				"0205": { "DataType": "23", "MinInterval": "0001", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
-				"0206": { "DataType": "23", "MinInterval": "0001", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
+				"0207": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "0001" },
+				"0208": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "0001" },
 
-				"0207": { "DataType": "29", "MinInterval": "0001", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "0001" },
-				"0208": { "DataType": "29", "MinInterval": "0001", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "0001" },
-				"0210": { "DataType": "29", "MinInterval": "0001", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "0001" }
+				"0203": { "DataType": "23", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
+				"0204": { "DataType": "23", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
+				"0205": { "DataType": "23", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
+				"0206": { "DataType": "23", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
+				"0210": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "0001" }
 			}
 		}
 	},
 	"ReadAttributes": {
 		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "4000" ],
 		"0003": [],
-		"0702": [ "0308", "0307"],
+		"0702": [ "0308", "0307" ],
 		"0b01": [ "000a", "000d", "000e" ],
 		"0b04": [ "0505", "0508", "050a", "050d", "050f", "050b", "090b", "0511" ],
-		"ff66": [ "0300", "0000", "0200", "0201", "0202", "0217", "0212", "0215", "0216", "0218", "0219", "0220", "0221", "0222", "0223", "0224", "0225", "0226", "0227", "0228", "0209", "0211"],
+		"ff66": [ "0300", "0000", "0200", "0201", "0209", "0211", "0212", "0215", "0216", "0217", "0218", "0219", "0220", "0221", "0222", "0223", "0224", "0225", "0226", "0227", "0228"],
 		"0019": []
 	},
 	"PollingEnabled": 1,
