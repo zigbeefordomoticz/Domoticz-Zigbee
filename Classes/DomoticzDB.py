@@ -109,6 +109,11 @@ def domoticz_base_url(self):
     self.logging("Debug",'Password: %s' %password)
     self.logging("Debug",'Host+port: %s' %host_port)
 
+    if len(self.api_base_url) == 0:
+        # Seems that the field is empty
+        self.logging( "Error", "You need to setup the URL Base to access the Domoticz JSON/API")
+        return None
+        
     # Check that last char is not a / , if the case then remove it 
     if self.api_base_url[-1] == '/':
         self.api_base_url = self.api_base_url[:-1]
@@ -135,6 +140,8 @@ class DomoticzDB_Preferences:
     def load_preferences(self):
         # sourcery skip: replace-interpolation-with-fstring
         url = domoticz_base_url(self)
+        if url is None:
+            return
         url += DOMOTICZ_HARDWARE_API
 
         dz_response = domoticz_request( self, url)
@@ -176,6 +183,8 @@ class DomoticzDB_Hardware:
     def load_hardware(self):  
         # sourcery skip: replace-interpolation-with-fstring
         url = domoticz_base_url(self)
+        if url is None:
+            return
         url += DOMOTICZ_HARDWARE_API
 
         dz_result = domoticz_request( self, url)
@@ -226,6 +235,8 @@ class DomoticzDB_DeviceStatus:
         # "http://%s:%s@127.0.0.1:%s" 
         # sourcery skip: replace-interpolation-with-fstring
         url = domoticz_base_url(self)
+        if url is None:
+            return
         url += DOMOTICZ_DEVICEST_API + "%s" %ID
 
         dz_result = domoticz_request( self, url)
