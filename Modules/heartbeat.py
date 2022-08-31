@@ -580,6 +580,11 @@ def processKnownDevices(self, Devices, NWKID):
             NWKID,
         )
 
+        profalux = False
+        if "Manufacturer" in self.ListOfDevices[NWKID]:
+            profalux = self.ListOfDevices[NWKID]["Manufacturer"] == "1110" and self.ListOfDevices[NWKID]["ZDeviceID"] in ( "0200", "0202", )
+
+
         # Read Attributes if enabled
         now = int(time.time())  # Will be used to trigger ReadAttributes
         for tmpEp in self.ListOfDevices[NWKID]["Ep"]:
@@ -600,6 +605,10 @@ def processKnownDevices(self, Devices, NWKID):
                     if self.ListOfDevices[NWKID]["Model"] == "lumi.ctrl_neutral2" and tmpEp not in ("02", "03"):
                         continue
 
+                if profalux and Cluster == "0006":
+                    # We skip as we rely only on Level and Reports
+                    continue
+                
                 if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
                     self.log.logging(
                         "Heartbeat",
