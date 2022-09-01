@@ -3401,7 +3401,15 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
             idx += 4
             MsgStatus = MsgData[idx : idx + 2]
             idx += 2
-            Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus, )
+            Decode8120_attribute(
+                self,
+                MsgSQN,
+                MsgSrcAddr,
+                MsgSrcEp,
+                MsgClusterId,
+                MsgAttributeId,
+                MsgStatus,
+            )
 
 
 def Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
