@@ -3370,7 +3370,7 @@ def Decode8110_raw(
 
 def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
 
-    self.log.logging("Input", "Debug", "Decode8120 - Configure reporting response: %s" % MsgData)
+    self.log.logging("Input", "Log", "Decode8120 - Configure reporting response: %s" % MsgData)
     if len(MsgData) < 14:
         Domoticz.Error("Decode8120 - uncomplet message %s " % MsgData)
         return
@@ -3400,31 +3400,21 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
             MsgAttributeId = MsgData[idx : idx + 4]
             idx += 4
             MsgStatus = MsgData[idx : idx + 2]
-            idx += 4
-            Decode8120_attribute(
-                self,
-                MsgSQN,
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                MsgAttributeId,
-                MsgStatus,
-            )
+            idx += 2
+            Decode8120_attribute( self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus, )
 
 
 def Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
 
     self.log.logging(
         "Input",
-        "Debug",
+        "Log",
         "Decode8120 --> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s"
         % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus),
         MsgSrcAddr,
     )
 
-    self.configureReporting.read_configure_reporting_response(
-        MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus
-    )
+    self.configureReporting.read_configure_reporting_response( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus )
 
 
 def Decode8122(self, Devices, MsgData, MsgLQI):  # Read Configure Report response
