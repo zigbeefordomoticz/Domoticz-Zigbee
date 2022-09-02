@@ -105,7 +105,7 @@
 	},
 	"Param": {
 		"PowerOnAfterOffOn": 2,
-		"IndicatorMode": 1,
+		"TuyaBackLight": 1,
 		"PowerPollingFreq": 300
 	}
 }
