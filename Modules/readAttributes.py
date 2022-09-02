@@ -1376,11 +1376,11 @@ def ReadAttributeRequest_0702_0000(self, key):
         ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 def ReadAttributeReq_ZLinky(self, nwkid):
-
+ 
     EPout = "01"
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
 
-    for cluster in ( "ff66", "0702", "0b01", "0b04" ):
+    for cluster in ( "0702", "0b01", "0b04" ):
         self.log.logging("ReadAttributes", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout + " Cluster = " + cluster, nwkid=nwkid)
         listAttributes = retreive_ListOfAttributesByCluster(self, nwkid, EPout, cluster)
         ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, listAttributes, ackIsDisabled=False)
