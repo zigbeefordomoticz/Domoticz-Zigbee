@@ -3422,9 +3422,7 @@ def Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         MsgSrcAddr,
     )
 
-    self.configureReporting.read_configure_reporting_response(
-        MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus
-    )
+    self.configureReporting.read_configure_reporting_response( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus )
 
 
 def Decode8122(self, Devices, MsgData, MsgLQI):  # Read Configure Report response
