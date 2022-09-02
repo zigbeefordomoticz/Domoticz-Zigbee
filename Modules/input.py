@@ -3370,7 +3370,7 @@ def Decode8110_raw(
 
 def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
 
-    self.log.logging("Input", "Log", "Decode8120 - Configure reporting response: %s" % MsgData)
+    self.log.logging("Input", "Debug", "Decode8120 - Configure reporting response: %s" % MsgData)
     if len(MsgData) < 14:
         Domoticz.Error("Decode8120 - uncomplet message %s " % MsgData)
         return
@@ -3416,7 +3416,7 @@ def Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     self.log.logging(
         "Input",
-        "Log",
+        "Debug",
         "Decode8120 --> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s"
         % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus),
         MsgSrcAddr,
