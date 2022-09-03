@@ -66,6 +66,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             if not auto_form:
                 raise
 
+            LOGGER.info("Forming a new network")
+            await self._ezsp.leaveNetwork()
+            await super().form_network()
+
             #if not self.backups.backups:
             #    # Form a new network if we have no backup
             #    LOGGER.info("Forming a new network")
