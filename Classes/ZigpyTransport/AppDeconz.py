@@ -61,6 +61,10 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             if not auto_form:
                 raise
 
+            LOGGER.info("Forming a new network")
+            await super().form_network()
+
+
             #if not self.backups.backups:
             #    # Form a new network if we have no backup
             #    LOGGER.info("Forming a new network")
