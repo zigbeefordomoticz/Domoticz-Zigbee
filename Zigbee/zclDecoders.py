@@ -87,7 +87,14 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
             "08": "Query Device Specific File Request",
             "09": "Query Device Specific File response",
         }
-        if Command in OTA_UPGRADE_COMMAND:
+        if Command == "03":
+            # Image Block request,
+            return buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+            
+        if Command == "06":
+            return buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+            
+        elif Command in OTA_UPGRADE_COMMAND:
             self.log.logging("zclDecoder", "Debug", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
             return frame
         
@@ -566,7 +573,31 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Ta
 
 
 # Cluster: 0x0019
+def  buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+    
+    FieldControl =  decode_endian_data(Data[:2], "20")
+    ManufCode = decode_endian_data(Data[2:6], "21")
+    ImageType = decode_endian_data(Data[6:10], "21")
+    ImageVersion = decode_endian_data(Data[10:18],  "23")
+    ImageOffset = decode_endian_data(Data[18:26], "23")
+    MaxDataSize = decode_endian_data(Data[26:28], "20")
+    MinBlockPeriod = decode_endian_data(Data[28:32], "21")
+    IEEE = "0000000000000000"
+    buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId + IEEE + ImageOffset + ImageVersion + ImageType + ManufCode + MinBlockPeriod + MaxDataSize + FieldControl
+    return encapsulate_plugin_frame("8501", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
+
+def  buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+    return frame
+    
+    ImageVersion = int(MsgData[14:22], 16)
+    ImageType = int(MsgData[22:26], 16)
+    ManufCode = int(MsgData[26:30], 16)
+    MsgStatus = MsgData[30:32]
+    
+    buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId 
+    return encapsulate_plugin_frame("8503", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+ 
 # Cluster 0x0020
 # Pool Control
 
