@@ -94,6 +94,10 @@ def rest_cfgrpt_ondemand_with_config_delete(self, verb, data, parameters , _resp
 def rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response):
     
     self.logging("Debug", f"rest_cfgrpt_ondemand_with_config_get  {verb} {data} {parameters}")
+    if len(parameters) != 1:
+        self.logging("Error", f"rest_cfgrpt_ondemand_with_config_get incorrect request existing parameters !!! {verb} {data} {parameters}")
+        return _response
+
     deviceId = parameters[0]
     cfg_rpt_record = get_cfg_rpt_record( self, deviceId )
 
@@ -213,6 +217,8 @@ def convert_to_json( self, data ):
     self.logging("Debug", f"convert_to_json Data {data}")
     cluster_list = []
 
+    if data is None:
+        return json.dumps(  [] )
     for cluster in data:
         cluster_info = {"ClusterId": cluster, "Attributes": []}
         for attribute in data[ cluster ]["Attributes"]:
@@ -233,7 +239,7 @@ def get_cfg_rpt_record(self, NwkId):
         "Model" in self.ListOfDevices[NwkId]
         and self.ListOfDevices[NwkId]["Model"] != {}
         and self.ListOfDevices[NwkId]["Model"] in self.DeviceConf
-        and "ConfigureReporting" in self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]
+        and "ConfigureReporting" in self.DeviceConf[ self.ListOfDevices[NwkId]["Model"] ]
     ):
         return self.DeviceConf[ self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting" ]
 
