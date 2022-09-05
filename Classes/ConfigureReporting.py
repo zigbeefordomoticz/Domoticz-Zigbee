@@ -202,10 +202,13 @@ class ConfigureReporting:
 
     def read_configure_reporting_response(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
         # This is the response receive after a Configuration Reporting request
+        self.logging( "Debug", "read_configure_reporting_response %s %s %s %s %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus))
         
         if MsgAttributeId:
             set_status_datastruct( self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus, )
-            if MsgStatus != "00":
+            if MsgStatus == "00":
+                self.read_report_configure_request( MsgSrcAddr , MsgSrcEp, MsgClusterId, list(get_list_isqn_int_attr_datastruct(self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId)) )
+            else:        
                 self.logging(
                     "Debug",
                     f"Configure Reporting response - ClusterID: {MsgClusterId}/{MsgAttributeId}, MsgSrcAddr: {MsgSrcAddr}, MsgSrcEp:{MsgSrcEp} , Status: {MsgStatus}",
@@ -729,15 +732,11 @@ def read_report_configure_response_zigpy(self, MsgData, MsgLQI):  # Read Configu
             MinInterval = MsgData[idx:idx + 4]
             idx += 4
             self.logging( "Debug", f" - MinInterval: {MinInterval}  restofdata: {MsgData[idx:]}",nwkid=NwkId )
-            
             MaxInterval = MsgData[idx:idx + 4]
             idx += 4
             self.logging( "Debug", f" - MaxInterval: {MaxInterval}  restofdata: {MsgData[idx:]}",nwkid=NwkId)
             
-            if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
-                pass
-
-            elif DataType in SIZE_DATA_TYPE:
+            if analog_value(int(DataType,16)) and DataType in SIZE_DATA_TYPE:
                 size = SIZE_DATA_TYPE[DataType] * 2
                 Change = MsgData[idx : idx + size]
                 idx += size             

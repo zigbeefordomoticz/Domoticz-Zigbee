@@ -95,10 +95,11 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackBackup = callBackBackup
 
-        await asyncio.sleep( 2 )
+        await asyncio.sleep( 3 )
 
         try:
             await self.connect()
+            await asyncio.sleep( 1 )
             await self.initialize(auto_form=True)
         except Exception as e:
             LOGGER.error("Couldn't start application", exc_info=e)

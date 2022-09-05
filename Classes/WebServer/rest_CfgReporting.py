@@ -9,7 +9,8 @@ import time
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Modules.pluginDbAttributes import STORE_CUSTOM_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import STORE_READ_CONFIGURE_REPORTING, STORE_CONFIGURE_REPORTING, STORE_CUSTOM_CONFIGURE_REPORTING
+
 from Modules.zigateConsts import SIZE_DATA_TYPE
 
 
@@ -79,8 +80,14 @@ def rest_cfgrpt_ondemand_with_config_delete(self, verb, data, parameters , _resp
     
     if STORE_CUSTOM_CONFIGURE_REPORTING in self.ListOfDevices[ deviceId ]:
         del self.ListOfDevices[ deviceId ][ STORE_CUSTOM_CONFIGURE_REPORTING ]
+        
+    if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ deviceId ]:
+        del self.ListOfDevices[ deviceId ][ STORE_READ_CONFIGURE_REPORTING ]
+        
+    if STORE_CONFIGURE_REPORTING in self.ListOfDevices[ deviceId ]:
+        del self.ListOfDevices[ deviceId ][ STORE_CONFIGURE_REPORTING ]
 
-    action = {"Name": "Configure reporting record removed", "TimeStamp": int(time.time())}
+    action = {"Name": "Reset Configure reporting records removed", "TimeStamp": int(time.time())}
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
 
