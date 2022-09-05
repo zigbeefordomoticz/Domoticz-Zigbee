@@ -453,6 +453,7 @@ class ConfigureReporting:
                             continue
                         
                     self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed - {Nwkid} {_cluster} {attribut} Checking {attribute_current_configuration} versus {cluster_configuration[attribut]} " , nwkid=Nwkid)
+                    cluster_update = False
                     for x in ( "Change", "MinInterval", "MaxInterval"):
                         if x not in attribute_current_configuration:
                             continue
@@ -471,7 +472,12 @@ class ConfigureReporting:
                         self.logging( "Status", f" - Attribut {attribut} request to force a Configure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
                         configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                         wip_flap = True
+                        cluster_update = True
                         break   # No need to check for an other difference
+                    if cluster_update:
+                        # We need to move to the next cluster, as we have requested
+                        # a cluster cfg reporting update
+                        break
         return wip_flap
            
 ####
