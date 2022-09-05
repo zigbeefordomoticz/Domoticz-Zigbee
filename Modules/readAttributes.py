@@ -1511,9 +1511,7 @@ def ReadAttributeRequest_0b04_050b_0505_0508(self, key):
             "Request Metering Instant Power on 0x0b04 cluster: " + key + " EPout = " + EPout,
             nwkid=key,
         )
-        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
-        # istAttributes = [  0x0508 ]
-        # eadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0b05(self, key):
