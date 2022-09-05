@@ -590,12 +590,6 @@ def  buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoin
 def  buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     return frame
     
-    ImageVersion = int(MsgData[14:22], 16)
-    ImageType = int(MsgData[22:26], 16)
-    ManufCode = int(MsgData[26:30], 16)
-    MsgStatus = MsgData[30:32]
-    
-    buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId 
     return encapsulate_plugin_frame("8503", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
  
 # Cluster 0x0020
