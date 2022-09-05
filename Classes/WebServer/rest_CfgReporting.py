@@ -10,8 +10,7 @@ import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.pluginDbAttributes import STORE_READ_CONFIGURE_REPORTING, STORE_CONFIGURE_REPORTING, STORE_CUSTOM_CONFIGURE_REPORTING
-
-from Modules.zigateConsts import SIZE_DATA_TYPE
+from Modules.zigateConsts import SIZE_DATA_TYPE, analog_value
 
 
 def rest_cfgrpt_ondemand(self, verb, data, parameters):
@@ -95,6 +94,10 @@ def rest_cfgrpt_ondemand_with_config_delete(self, verb, data, parameters , _resp
 def rest_cfgrpt_ondemand_with_config_get(self, verb, data, parameters , _response):
     
     self.logging("Debug", f"rest_cfgrpt_ondemand_with_config_get  {verb} {data} {parameters}")
+    if len(parameters) != 1:
+        self.logging("Error", f"rest_cfgrpt_ondemand_with_config_get incorrect request existing parameters !!! {verb} {data} {parameters}")
+        return _response
+
     deviceId = parameters[0]
     cfg_rpt_record = get_cfg_rpt_record( self, deviceId )
 
@@ -190,8 +193,8 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
                     cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["TimeOut"] = "%04x" %int(info["TimeOut"],16)
                 if "DataType" in info:
                     cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["DataType"] = "%02x" % int(info["DataType"],16)
-                    if "Change" in info:
-                        cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["Change"] = datatype_formating( self, info["Change"], info["DataType"] )
+                    if "Change" in info and analog_value(int(info["DataType"], 16)): 
+                            cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["Change"] = datatype_formating( self, info["Change"], info["DataType"] )
                         
     self.ListOfDevices[ nwkid ][ STORE_CUSTOM_CONFIGURE_REPORTING ] = cluster_config_reporting
     action = {"Name": "Configure reporting record updated", "TimeStamp": int(time.time())}
@@ -214,6 +217,8 @@ def convert_to_json( self, data ):
     self.logging("Debug", f"convert_to_json Data {data}")
     cluster_list = []
 
+    if data is None:
+        return json.dumps(  [] )
     for cluster in data:
         cluster_info = {"ClusterId": cluster, "Attributes": []}
         for attribute in data[ cluster ]["Attributes"]:
@@ -234,7 +239,7 @@ def get_cfg_rpt_record(self, NwkId):
         "Model" in self.ListOfDevices[NwkId]
         and self.ListOfDevices[NwkId]["Model"] != {}
         and self.ListOfDevices[NwkId]["Model"] in self.DeviceConf
-        and "ConfigureReporting" in self.DeviceConf[self.ListOfDevices[NwkId]["Model"]]
+        and "ConfigureReporting" in self.DeviceConf[ self.ListOfDevices[NwkId]["Model"] ]
     ):
         return self.DeviceConf[ self.ListOfDevices[NwkId]["Model"]]["ConfigureReporting" ]
 
