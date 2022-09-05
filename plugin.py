@@ -1427,7 +1427,8 @@ def zigateInit_Phase3(self):
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
         zigate_get_nwk_state(self)
 
-
+    if self.iaszonemgt and self.ControllerIEEE:
+        self.iaszonemgt.setZigateIEEE(self.ControllerIEEE)
 
 def check_firmware_level(self):
     # Check Firmware version
