@@ -107,9 +107,10 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         try:
             decode = binascii.unhexlify(Attribute).decode("utf-8")
             self.log.logging("Cluster", "Debug", "decodeAttribute - ======> >%s< (%s) len: %s" % (decode, type(decode), len(decode)))
-        except:
+        except Exception as e:
             if handleErrors:  # If there is an error we force the result to '' This is used for 0x0000/0x0005
-                self.log.logging("Cluster", "Log", "decodeAttribute - seems errors decoding %s, so returning empty" % str(Attribute))
+                self.log.logging("Cluster", "Log", "decodeAttribute - seems errors decoding %s/%s, so returning empty" % (
+                    str(Attribute), e))
                 decode = ""
             else:
                 decode = binascii.unhexlify(Attribute).decode("utf-8", errors="ignore")
@@ -397,7 +398,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name in (
                 "_TZ3000_w0qqde0g", "_TZ3000_gjnozsaz", "_TZ3000_zloso4jk",
                 "_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak",
-                 "_TZ3000_typdpbpg", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l"
+                "_TZ3000_typdpbpg", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l"
             ):
                 modelName = "TS011F-plug"
 
@@ -1331,12 +1332,12 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # Curtain Mode
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
         self.log.logging(
-                "Cluster",
-                "Log",
-                "ReadCluster - ClusterId=0006 - NwkId: %s Ep: %s Attr: %s Value: %s Curtain Mode" % (
-                    MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData),
-                MsgSrcAddr,
-            )
+            "Cluster",
+            "Log",
+            "ReadCluster - ClusterId=0006 - NwkId: %s Ep: %s Attr: %s Value: %s Curtain Mode" % (
+                MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData),
+            MsgSrcAddr,
+        )
         
                 
     elif MsgAttrID == "8001":
@@ -4301,16 +4302,20 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     )
 
     if MsgAttrID == "0305":
-        store_ZLinky_infos( self, MsgSrcAddr, 'ERQ1', int(decodeAttribute(self, MsgAttType, MsgClusterData)))
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+            store_ZLinky_infos( self, MsgSrcAddr, 'ERQ1', int(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
     elif MsgAttrID == "050e":
-        store_ZLinky_infos( self, MsgSrcAddr, 'ERQ2', int(decodeAttribute(self, MsgAttType, MsgClusterData)))
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+            store_ZLinky_infos( self, MsgSrcAddr, 'ERQ2', int(decodeAttribute(self, MsgAttType, MsgClusterData)))
         
     elif MsgAttrID == "090e":
-        store_ZLinky_infos( self, MsgSrcAddr, 'ERQ3', int(decodeAttribute(self, MsgAttType, MsgClusterData)))
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+            store_ZLinky_infos( self, MsgSrcAddr, 'ERQ3', int(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
     elif MsgAttrID == "0a0e":
-        store_ZLinky_infos( self, MsgSrcAddr, 'ERQ4', int(decodeAttribute(self, MsgAttType, MsgClusterData)))
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+            store_ZLinky_infos( self, MsgSrcAddr, 'ERQ4', int(decodeAttribute(self, MsgAttType, MsgClusterData)))
     
     if MsgAttrID == "050b":  # Active Power
         
@@ -4348,11 +4353,14 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         if MsgAttrID == "0505":
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
-            store_ZLinky_infos( self, MsgSrcAddr, 'URMS1', value)
+            if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+                store_ZLinky_infos( self, MsgSrcAddr, 'URMS1', value)
         elif MsgAttrID == "0905":
-            store_ZLinky_infos( self, MsgSrcAddr, 'URMS2', value)
+            if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+                store_ZLinky_infos( self, MsgSrcAddr, 'URMS2', value)
         elif MsgAttrID == "0a05":
-            store_ZLinky_infos( self, MsgSrcAddr, 'URMS3', value)            
+            if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+                store_ZLinky_infos( self, MsgSrcAddr, 'URMS3', value)            
 
     elif MsgAttrID == "0508":  # RMSCurrent
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
