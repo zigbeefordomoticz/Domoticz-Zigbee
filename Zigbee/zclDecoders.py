@@ -102,6 +102,10 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
 
     if ClusterId == "0500" and is_direction_to_client(fcf) and Command == "01":
         return buildframe_8400_cmd(self, "8400", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
+    
+    if ClusterId == "0501":
+        # Handle in inRawAPS
+        return frame
 
     if ClusterId in ( "ef00", "ff00"):
         # Do not log a message as this will be handled by the inRawAPS and delegated.
