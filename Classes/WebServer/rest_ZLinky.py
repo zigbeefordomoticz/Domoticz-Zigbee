@@ -73,7 +73,7 @@ def rest_zlinky(self, verb, data, parameters):
         if "OPTARIF" not in self.ListOfDevices[ nwkid ]['ZLinky']:
             continue
 
-        self.logging("Log", "rest_zlinky - found %s " % (nwkid))  
+        self.logging("Debug", "rest_zlinky - found %s " % (nwkid))  
         tarif = "BASE"
         for _tarif in ZLINK_TARIF_MODE_EXCLUDE:
             if _tarif in self.ListOfDevices[ nwkid ]['ZLinky'][ "OPTARIF"]:
@@ -87,15 +87,15 @@ def rest_zlinky(self, verb, data, parameters):
             "PROTOCOL Linky": linky_mode,
             'Parameters': []
         }
-        self.logging("Log", "rest_zlinky - Linky Mode  %s " %linky_mode)
-        self.logging("Log", "rest_zlinky - Linky Tarif %s " %tarif)
+        self.logging("Debug", "rest_zlinky - Linky Mode  %s " %linky_mode)
+        self.logging("Debug", "rest_zlinky - Linky Tarif %s " %tarif)
         
         for zlinky_param in ZLINKY_PARAMETERS[ linky_mode ]:
             if zlinky_param not in self.ListOfDevices[ nwkid ]["ZLinky"]:
-                self.logging("Log", "rest_zlinky - Exclude  %s " % (zlinky_param)) 
+                self.logging("Debug", "rest_zlinky - Exclude  %s " % (zlinky_param)) 
                 continue
             if zlinky_param in ZLINK_TARIF_MODE_EXCLUDE[ tarif ]:
-                self.logging("Log", "rest_zlinky - Exclude  %s " % (zlinky_param)) 
+                self.logging("Debug", "rest_zlinky - Exclude  %s " % (zlinky_param)) 
                 continue
     
             attr_value = self.ListOfDevices[ nwkid ]["ZLinky"][ zlinky_param ]
@@ -103,7 +103,7 @@ def rest_zlinky(self, verb, data, parameters):
             
         zlinky.append( device )
       
-    self.logging("Log", "rest_zlinky - Read to send  %s " % (zlinky))  
+    self.logging("Debug", "rest_zlinky - Read to send  %s " % (zlinky))  
 
     if verb == "GET" and len(parameters) == 0:
         if len(self.ControllerData) == 0:
