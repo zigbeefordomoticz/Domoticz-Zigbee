@@ -51,8 +51,8 @@ OTA_CLUSTER_ID = "0019"
 OTA_CODES = {
     "Ikea": {"Folder": "IKEA-TRADFRI", "ManufCode": 0x117C, "ManufName": "IKEA of Sweden", "Enabled": True},
     "Ledvance": {"Folder": "LEDVANCE", "ManufCode": 0x1189, "ManufName": "LEDVANCE", "Enabled": True},
-    "Osram#1": {"Folder": "LEDVANCE", "ManufCode": 0xBBAA, "ManufName": "OSRAM", "Enabled": True},
-    "Osram#2": {"Folder": "LEDVANCE", "ManufCode": 0x110C, "ManufName": "OSRAM", "Enabled": True},
+    "Osram1": {"Folder": "OSRAM", "ManufCode": 0xBBAA, "ManufName": "OSRAM", "Enabled": True},
+    "Osram2": {"Folder": "LEDVANCE", "ManufCode": 0x110C, "ManufName": "OSRAM", "Enabled": True},
     "Legrand": {"Folder": "LEGRAND", "ManufCode": 0x1021, "ManufName": "Legrand", "Enabled": True},
     "Philips": {"Folder": "PHILIPS", "ManufCode": 0x100B, "ManufName": "Philips", "Enabled": True},
     "Schneider": {"Folder": "SCHNEIDER-WISER", "ManufCode": 0x105E, "ManufName": "Schneider Electric", "Enabled": True},
@@ -765,8 +765,9 @@ def cleanup_after_completed_upgrade(self, NwkId, Status):
     self.ListInUpdate["Process"] = None
 
     # Reset the controller (ziagte in native mode only for now)
-    sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
-    sendZigateCmd(self, "0011", "")  # Software Reset
+    if self.zigbee_communication == "native":
+        sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
+        sendZigateCmd(self, "0011", "")  # Software Reset
 
 
 def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update=False):
@@ -849,6 +850,7 @@ def is_image_for_query_next_image_request( self, manuf_code, image_type, file_ve
             if int(file_version,16) < self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
                 logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device")
                 return self.ListOfImages["Brands"][brand_name][file_name]
+            
             elif int(file_version,16) >= self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
                 return self.ListOfImages["Brands"][brand_name][file_name]
     return None
@@ -888,11 +890,13 @@ def ota_scan_folder(self):  # OK 13/10
         ota_dir = self.pluginconf.pluginConf["pluginOTAFirmware"] + OTA_CODES[brand]["Folder"]
         ota_image_files = [f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
 
+        logging(self, "Debug", "   screening %s" %ota_dir)
         for ota_image_file in ota_image_files:
             if ota_image_file in ("README.md", "README.txt", ".PRECIOUS", ".precious"):
                 continue
-
+            logging(self, "Debug", "       found %s" %ota_image_file)
             header_return = ota_extract_image_headers(self, OTA_CODES[brand]["Folder"], ota_image_file)
+            
             if header_return is None:
                 continue
             image_type, headers, ota_image = header_return
@@ -922,10 +926,10 @@ def ota_scan_folder(self):  # OK 13/10
                 "intSize": headers["size"],
             }
     # Logging if Debug
-    logging(self, "Debug", "ota_scan_folder Following Firmware have been loaded ")
+    logging(self, "Status", "ota_scan_folder Following Firmware have been loaded ")
     for brand, value in self.ListOfImages["Brands"].items():
         for ota_image_file in value:
-            logging(self, "Debug", " --> Brand: %s Image File: %s" % (brand, ota_image_file))
+            logging(self, "Status", " --> Brand: %s Image File: %s" % (brand, ota_image_file))
 
 
 def check_image_valid_version(self, brand, image_type, ota_image_file, headers):  # OK 13/10
@@ -960,12 +964,14 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
 
 def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
     # Load headers from the image
-    ota_image = _open_image_file(self.pluginconf.pluginConf["pluginOTAFirmware"] + subfolder + "/" + image)
+    ota_image = _open_image_file(self, self.pluginconf.pluginConf["pluginOTAFirmware"] + subfolder + "/" + image)
     if ota_image is None:
+        logging( self, "Error", "ota_extract_image_headers - unable to open file %s" % (self.pluginconf.pluginConf["pluginOTAFirmware"] + subfolder + "/" + image), )
         return None
 
     offset = offset_start_firmware(ota_image)
     if offset is None:
+        logging( self, "Error", "ota_extract_image_headers - Doesn't look as a OTA file %s" % (self.pluginconf.pluginConf["pluginOTAFirmware"] + subfolder + "/" + image), )
         return None
 
     logging(self, "Debug", "ota_extract_image_headers - offset:%s ..." % offset)
@@ -983,15 +989,15 @@ def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
     return (headers["image_type"], headers, ota_image)
 
 
-def _open_image_file(filename):  # OK 13/10
+def _open_image_file(self, filename):  # OK 13/10
     try:
         with open(filename, "rb") as file:
             ota_image = file.read()
     except OSError as err:
-        Domoticz.Error("ota_extract_image_headers - error when opening %s - %s" % (filename, err))
+        logging(self, "Error", "ota_extract_image_headers - error when opening %s - %s" % (filename, err))
         return None
     if len(ota_image) < 69:
-        Domoticz.Error("ota_extract_image_headers - invalid file size read %s - %s" % (filename, len(ota_image)))
+        logging(self, "Error","ota_extract_image_headers - invalid file size read %s - %s" % (filename, len(ota_image)))
         return None
     return ota_image
 
