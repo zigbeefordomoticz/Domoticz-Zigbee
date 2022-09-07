@@ -27,6 +27,7 @@ from Modules.paramDevice import sanity_check_of_param
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
+                                    ReadAttributeRequest_0702_0000,
                                     ReadAttributeRequest_0001,
                                     ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0008_0000,
@@ -185,6 +186,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "PollingCusterff66": ReadAttributeRequest_ff66,
         "OnOffPollingFreq": ManufSpecOnOffPolling,
         "PowerPollingFreq": ReadAttributeRequest_0b04_050b_0505_0508,
+        "MeterPollingFreq": ReadAttributeRequest_0702_0000,
         "PC321PollingFreq": ReadAttributeRequest_0702_PC321,
         "AC201Polling": pollingCasaia,
         "TuyaPing": ping_tuya_device,

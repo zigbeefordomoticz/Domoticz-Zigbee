@@ -199,10 +199,13 @@ class ConfigureReporting:
 
     def read_configure_reporting_response(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
         # This is the response receive after a Configuration Reporting request
+        self.logging( "Debug", "read_configure_reporting_response %s %s %s %s %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus))
         
         if MsgAttributeId:
             set_status_datastruct( self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus, )
-            if MsgStatus != "00":
+            if MsgStatus == "00":
+                self.read_report_configure_request( MsgSrcAddr , MsgSrcEp, MsgClusterId, list(get_list_isqn_int_attr_datastruct(self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId)) )
+            else:        
                 self.logging(
                     "Debug",
                     f"Configure Reporting response - ClusterID: {MsgClusterId}/{MsgAttributeId}, MsgSrcAddr: {MsgSrcAddr}, MsgSrcEp:{MsgSrcEp} , Status: {MsgStatus}",
@@ -450,6 +453,7 @@ class ConfigureReporting:
                             continue
                         
                     self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed - {Nwkid} {_cluster} {attribut} Checking {attribute_current_configuration} versus {cluster_configuration[attribut]} " , nwkid=Nwkid)
+                    cluster_update = False
                     for x in ( "Change", "MinInterval", "MaxInterval"):
                         if x not in attribute_current_configuration:
                             continue
@@ -468,7 +472,12 @@ class ConfigureReporting:
                         self.logging( "Status", f" - Attribut {attribut} request to force a Configure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
                         configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                         wip_flap = True
+                        cluster_update = True
                         break   # No need to check for an other difference
+                    if cluster_update:
+                        # We need to move to the next cluster, as we have requested
+                        # a cluster cfg reporting update
+                        break
         return wip_flap
            
 ####
@@ -718,15 +727,11 @@ def read_report_configure_response_zigpy(self, MsgData, MsgLQI):  # Read Configu
             MinInterval = MsgData[idx:idx + 4]
             idx += 4
             self.logging( "Debug", f" - MinInterval: {MinInterval}  restofdata: {MsgData[idx:]}",nwkid=NwkId )
-            
             MaxInterval = MsgData[idx:idx + 4]
             idx += 4
             self.logging( "Debug", f" - MaxInterval: {MaxInterval}  restofdata: {MsgData[idx:]}",nwkid=NwkId)
             
-            if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
-                pass
-
-            elif DataType in SIZE_DATA_TYPE:
+            if analog_value(int(DataType,16)) and DataType in SIZE_DATA_TYPE:
                 size = SIZE_DATA_TYPE[DataType] * 2
                 Change = MsgData[idx : idx + size]
                 idx += size             
