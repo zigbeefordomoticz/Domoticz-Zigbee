@@ -91,6 +91,8 @@ def linky_device_conf(self, nwkid):
         if self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"] not in ZLINKY_MODE:
             return "ZLinky_TIC"
 
+        self.log.logging( "Cluster", "Status", "linky_device_conf %s found 0xff66/0x0300: %s" %( nwkid, self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"] ))
+
         mode = self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"]
         return ZLINKY_MODE[ mode ]["Conf"]
 
@@ -99,6 +101,9 @@ def linky_device_conf(self, nwkid):
 
     if self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] not in ZLINKY_MODE:
         return "ZLinky_TIC"
+    
+    self.log.logging( "Cluster", "Status", "linky_device_conf %s found Protocol Linky: %s" %( nwkid, self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ))
+
 
     return ZLINKY_MODE[ self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ]["Conf"]
     
@@ -111,10 +116,7 @@ def update_zlinky_device_model_if_needed( self, nwkid ):
     zlinky_conf = linky_device_conf(self, nwkid)
 
     if self.ListOfDevices[ nwkid ]["Model"] != zlinky_conf:
-        self.log.logging( "ZLinky", "Status", "Adjusting ZLinky model from %s to %s" %(
-            self.ListOfDevices[ nwkid ]["Model"],
-            zlinky_conf 
-        ))
+        self.log.logging( "ZLinky", "Status", "Adjusting ZLinky model from %s to %s" %( self.ListOfDevices[ nwkid ]["Model"], zlinky_conf  ))
         
         # Looks like we have to update the Model in order to use the right attributes
         self.ListOfDevices[ nwkid ]["Model"] = zlinky_conf
@@ -137,4 +139,4 @@ def update_zlinky_device_model_if_needed( self, nwkid ):
             self.configureReporting.check_configuration_reporting_for_device( nwkid, force=True)
             
         if "Heartbeat" in self.ListOfDevices[nwkid]:
-            self.ListOfDevices[nwkid]["Heartbeat"] = "0"
+            self.ListOfDevices[nwkid]["Heartbeat"] = "-1"
