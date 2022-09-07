@@ -12,6 +12,7 @@
 
 import datetime
 import time
+import os.path
 
 import Domoticz
 
@@ -1551,3 +1552,39 @@ def print_stack( self ):
     import inspect
     for x in inspect.stack():
         self.logging("Debug","[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
+
+
+
+def helper_copyfile(source, dest, move=True):
+
+    try:
+        import shutil
+
+        if move:
+            shutil.move(source, dest)
+        else:
+            shutil.copy(source, dest)
+    except Exception:
+        with open(source, "r") as src, open(dest, "wt") as dst:
+            for line in src:
+                dst.write(line)
+
+
+def helper_versionFile(source, nbversion):
+
+    if nbversion == 0:
+        return
+
+    if nbversion == 1:
+        helper_copyfile(source, source + "-%02d" % 1)
+    else:
+        for version in range(nbversion - 1, 0, -1):
+            _fileversion_n = source + "-%02d" % version
+            if not os.path.isfile(_fileversion_n):
+                continue
+
+            _fileversion_n1 = source + "-%02d" % (version + 1)
+            helper_copyfile(_fileversion_n, _fileversion_n1)
+
+        # Last one
+        helper_copyfile(source, source + "-%02d" % 1, move=False)

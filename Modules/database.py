@@ -24,6 +24,7 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 
+
 CIE_ATTRIBUTES = {
     "Version", 
     "ZDeviceName", 
@@ -121,41 +122,6 @@ MANUFACTURER_ATTRIBUTES = (
     )
 
 
-def _copyfile(source, dest, move=True):
-
-    try:
-        import shutil
-
-        if move:
-            shutil.move(source, dest)
-        else:
-            shutil.copy(source, dest)
-    except Exception:
-        with open(source, "r") as src, open(dest, "wt") as dst:
-            for line in src:
-                dst.write(line)
-
-
-def _versionFile(source, nbversion):
-
-    if nbversion == 0:
-        return
-
-    if nbversion == 1:
-        _copyfile(source, source + "-%02d" % 1)
-    else:
-        for version in range(nbversion - 1, 0, -1):
-            _fileversion_n = source + "-%02d" % version
-            if not os.path.isfile(_fileversion_n):
-                continue
-
-            _fileversion_n1 = source + "-%02d" % (version + 1)
-            _copyfile(_fileversion_n, _fileversion_n1)
-
-        # Last one
-        _copyfile(source, source + "-%02d" % 1, move=False)
-
-
 def LoadDeviceList(self):
     # Load DeviceList.txt into ListOfDevices
     #
@@ -194,7 +160,7 @@ def LoadDeviceList(self):
         )
 
     self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : " + _DeviceListFileName)
-    _versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
+    Modules.tools.helper_versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize(_DeviceListFileName)
