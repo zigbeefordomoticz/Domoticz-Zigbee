@@ -573,12 +573,12 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Ta
 
 
 # Cluster: 0x0019
-def  buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     
-    FieldControl =  decode_endian_data(Data[:2], "20")
+    FieldControl = decode_endian_data(Data[:2], "20")
     ManufCode = decode_endian_data(Data[2:6], "21")
     ImageType = decode_endian_data(Data[6:10], "21")
-    ImageVersion = decode_endian_data(Data[10:18],  "23")
+    ImageVersion = decode_endian_data(Data[10:18], "23")
     ImageOffset = decode_endian_data(Data[18:26], "23")
     MaxDataSize = decode_endian_data(Data[26:28], "20")
     MinBlockPeriod = decode_endian_data(Data[28:32], "21")
@@ -587,10 +587,10 @@ def  buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoin
     return encapsulate_plugin_frame("8501", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def  buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+def buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     return frame
     
-    return encapsulate_plugin_frame("8503", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+    #return encapsulate_plugin_frame("8503", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
  
 # Cluster 0x0020
 # Pool Control

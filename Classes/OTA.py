@@ -906,7 +906,7 @@ def ota_scan_folder(self):  # OK 13/10
 
             # Check if the Image type is not used by another brand
             if image_type in self.ListOfImages["ImageType"] and self.ListOfImages["ImageType"][image_type] != brand:
-                logging(self, "Error", "ota_scan_folder Firmware %s not loaded, another firmware with the same ImageType and another brand is already loaded"  %ota_image_file)
+                logging(self, "Error", "ota_scan_folder Firmware %s not loaded, another firmware with the same ImageType and another brand is already loaded" %ota_image_file)
                 continue
 
             self.ListOfImages["ImageType"][image_type] = brand
