@@ -3487,7 +3487,7 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "0030":
         self.log.logging("Cluster", "Debug", "ReadCluster - ClusterId=0406 - Attribut 0030: " + str(MsgClusterData), MsgSrcAddr)
 
-    elif MsgAttrID ==  "0044":
+    elif MsgAttrID == "0044":
         self.log.logging(
             "Cluster",
             "Debug",
@@ -3495,7 +3495,7 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-    elif MsgAttrID ==  "0043":
+    elif MsgAttrID == "0043":
         self.log.logging(
             "Cluster",
             "Debug",
@@ -3504,7 +3504,7 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
         
-    elif MsgAttrID ==  "0042":
+    elif MsgAttrID == "0042":
         self.log.logging(
             "Cluster",
             "Debug",
@@ -3513,7 +3513,7 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-    elif MsgAttrID ==  "0041":
+    elif MsgAttrID == "0041":
         self.log.logging(
             "Cluster",
             "Debug",
@@ -3522,7 +3522,7 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-    elif MsgAttrID ==  "0040":
+    elif MsgAttrID == "0040":
         self.log.logging(
             "Cluster",
             "Debug",
