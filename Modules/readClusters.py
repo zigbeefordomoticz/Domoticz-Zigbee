@@ -786,7 +786,26 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster - 0x0000 - Attribut %s: %s" %(MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))),
             MsgSrcAddr,
         )
- 
+
+    elif MsgAttrID == "0033":
+        # Philips Hue / Led Indication
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - 0x0000 - Attribut %s: %s" %(MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))),
+            MsgSrcAddr,
+        )
+        
+    elif MsgAttrID == "0032":
+        # Philips Hue
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - 0x0000 - Attribut %s: %s" %(MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData))),
+            MsgSrcAddr,
+        )
+        
+        
     elif MsgAttrID == "4000":  # SW Build
         self.log.logging(
             "Cluster",
@@ -3480,6 +3499,51 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "0030":
         self.log.logging("Cluster", "Debug", "ReadCluster - ClusterId=0406 - Attribut 0030: " + str(MsgClusterData), MsgSrcAddr)
+
+    elif MsgAttrID == "0044":
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ),
+            MsgSrcAddr,
+        )
+
+    elif MsgAttrID == "0043":
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ),
+            
+            MsgSrcAddr,
+        )
+        
+    elif MsgAttrID == "0042":
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ),
+            
+            MsgSrcAddr,
+        )
+
+    elif MsgAttrID == "0041":
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ),
+            
+            MsgSrcAddr,
+        )
+
+    elif MsgAttrID == "0040":
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ),
+            
+            MsgSrcAddr,
+        )
+
 
     else:
         self.log.logging(

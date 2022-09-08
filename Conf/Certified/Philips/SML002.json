@@ -32,5 +32,7 @@
 	"Param": {
 		"occupancySensibility": 0,
 		"PIROccupiedToUnoccupiedDelay": 30
-	}
+	},
+        "BatteryDevice": 1,
+	"BatteryPercentageConverter": 2
 }

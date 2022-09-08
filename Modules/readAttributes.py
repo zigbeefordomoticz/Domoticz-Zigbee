@@ -567,6 +567,18 @@ def ReadAttributeRequest_0000_for_general(self, key):
                     listAttrGeneric.append(_attr)
             del listAttributes
             listAttributes = listAttrGeneric
+        
+        elif "Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "100b":
+            manufacturer_code = "100b"
+            for _attr in list(listAttributes):
+                if _attr in (0x0033):
+                    listAttrSpecific.append(_attr)
+                else:
+                    listAttrGeneric.append(_attr)
+            del listAttributes
+            listAttributes = listAttrGeneric
+
+
         # Domoticz.Log("List Attributes: " + " ".join("0x{:04x}".format(num) for num in listAttributes) )
 
         if listAttributes:
@@ -578,16 +590,7 @@ def ReadAttributeRequest_0000_for_general(self, key):
                 + " ".join("0x{:04x}".format(num) for num in listAttributes),
                 nwkid=key,
             )
-            ReadAttributeReq(
-                self,
-                key,
-                ZIGATE_EP,
-                EPout,
-                "0000",
-                listAttributes,
-                ackIsDisabled=is_ack_tobe_disabled(self, key),
-                checkTime=False,
-            )
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key), checkTime=False, )
 
         # Domoticz.Log("List Attributes Manuf Spec: " + " ".join("0x{:04x}".format(num) for num in listAttrSpecific) )
         if listAttrSpecific:
@@ -599,18 +602,7 @@ def ReadAttributeRequest_0000_for_general(self, key):
                 + " ".join("0x{:04x}".format(num) for num in listAttrSpecific),
                 nwkid=key,
             )
-            ReadAttributeReq(
-                self,
-                key,
-                ZIGATE_EP,
-                EPout,
-                "0000",
-                listAttrSpecific,
-                manufacturer_spec="01",
-                manufacturer=manufacturer_code,
-                ackIsDisabled=is_ack_tobe_disabled(self, key),
-                checkTime=False,
-            )
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific, manufacturer_spec="01", manufacturer=manufacturer_code, ackIsDisabled=is_ack_tobe_disabled(self, key), checkTime=False, )
 
 
 def ReadAttributeRequest_0001(self, key, force_disable_ack=None):
