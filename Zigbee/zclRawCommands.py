@@ -453,18 +453,19 @@ def zcl_raw_ota_image_notify(self, nwkid, EPIn, EPout, PayloadType, QueryJitter,
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn
 
-def zcl_raw_ota_query_next_image_response(self, nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, imagesize ):
+def zcl_raw_ota_query_next_image_response(self, sqn, nwkid, EPIn, EPout, status, ManufCode=None, Imagetype=None, FileVersion=None, imagesize=None ):
     self.log.logging("zclCommand", "Debug", "zcl_raw_ota_query_next_image_response %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, imagesize))
     
     Command = "02"
-    ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
-    Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
-    FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
-    imagesize = "%08x" % struct.unpack(">I", struct.pack("I", int(imagesize, 16)))[0]
-    
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     cluster_frame = 0b00011001    # Cluster Specific / Server to Client / With Default Response
-    payload = "%02x" % cluster_frame + sqn + Command + status + ManufCode + Imagetype + FileVersion + imagesize
+    payload = "%02x" % cluster_frame + sqn + Command + status
+    if status == "00":
+        ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
+        Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
+        FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
+        imagesize = "%08x" % struct.unpack(">I", struct.pack("I", int(imagesize, 16)))[0]
+    
+        payload +=  ManufCode + Imagetype + FileVersion + imagesize
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn
 
@@ -499,7 +500,7 @@ def zcl_raw_ota_image_block_response_abort(self, nwkid, EPIn, EPout, abortstatus
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn   
                                              
-def zcl_raw_ota_upgrade_end_response(self, nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime):
+def zcl_raw_ota_upgrade_end_response(self, sqn, nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime):
     # "0504"
     self.log.logging("zclCommand", "Debug", "zcl_raw_ota_upgrade_end_response %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime))
     
@@ -511,7 +512,6 @@ def zcl_raw_ota_upgrade_end_response(self, nwkid, EPIn, EPout, ManufCode, Imaget
     currenttime = "%08x" % struct.unpack(">I", struct.pack("I", int(currenttime, 16)))[0]
     upgradetime = "%08x" % struct.unpack(">I", struct.pack("I", int(upgradetime, 16)))[0]
 
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + Command + ManufCode + Imagetype + FileVersion + currenttime + upgradetime
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn
