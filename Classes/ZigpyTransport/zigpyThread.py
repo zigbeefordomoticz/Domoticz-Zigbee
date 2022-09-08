@@ -135,6 +135,9 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
             config[conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
             
+        if "BellowsSourceRouting" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsSourceRouting"]:
+            config[conf.CONF_EZSP_CONFIG]["CONF_PARAM_SRC_RTG"] = True
+            
         self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
     elif radiomodule =="zigate":
