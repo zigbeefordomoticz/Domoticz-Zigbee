@@ -25,7 +25,8 @@ from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
                                      legrand_enable_Led_InDark_by_nwkid,
                                      legrand_enable_Led_Shutter_by_nwkid)
 from Modules.lumi import setXiaomiVibrationSensitivity
-from Modules.philips import (philips_set_pir_occupancySensibility,
+from Modules.philips import (philips_led_indication,
+                             philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
 from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
                                     ReadAttributeRequest_0406_0010)
@@ -204,6 +205,7 @@ def ias_wd_sirene_max_alarm_dureation( self, nwkid, duration):
 
 
 DEVICE_PARAMETERS = {
+    "HueLedIndication": philips_led_indication,
     "PowerOnAfterOffOn": param_PowerOnAfterOffOn,
     "PIROccupiedToUnoccupiedDelay": param_Occupancy_settings_PIROccupiedToUnoccupiedDelay,
     "occupancySensibility": philips_set_pir_occupancySensibility,
