@@ -468,7 +468,7 @@ def zcl_raw_ota_query_next_image_response(self, nwkid, EPIn, EPout, status, Manu
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn
 
-def zcl_raw_ota_image_block_response_success(self, nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, imagedata ):
+def zcl_raw_ota_image_block_response_success(self, sqn, nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, imagedata ):
     self.log.logging("zclCommand", "Debug", "zcl_raw_ota_image_block_response_success %s %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize))
     
     # "0502"
@@ -479,7 +479,6 @@ def zcl_raw_ota_image_block_response_success(self, nwkid, EPIn, EPout, status, M
     FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
     fileoffset = "%08x" % struct.unpack(">I", struct.pack("I", int(fileoffset, 16)))[0]
 
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + Command + status + ManufCode + Imagetype + FileVersion + fileoffset + datasize + imagedata
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn

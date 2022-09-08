@@ -607,7 +607,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     logging( self, "Debug", "ota_send_block - Block sent to %s/%s Received yet: %s Sent now: %s" % (dest_addr, dest_ep, _offset, _lenght), )
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         rawdatas = "".join("%02x" % i for i in _raw_ota_data)
-        return zcl_raw_ota_image_block_response_success(self, dest_addr, ZIGATE_EP, dest_ep, "%02x" % _status, manufacturer_code, image_type, image_version, "%08x" % _offset, "%02x" % _lenght, rawdatas )
+        return zcl_raw_ota_image_block_response_success(self, "%02x" % sequence, dest_addr, ZIGATE_EP, dest_ep, "%02x" % _status, manufacturer_code, image_type, image_version, "%08x" % _offset, "%02x" % _lenght, rawdatas )
 
     self.ControllerLink.sendData("0502", datas, ackIsDisabled=False, NwkId=dest_addr)
 
