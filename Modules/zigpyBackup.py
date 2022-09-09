@@ -1,6 +1,6 @@
 
 import Domoticz
-
+import os.path
 
 import Modules.tools
 
@@ -13,7 +13,8 @@ def handle_zigpy_backup(self, backups):
     _coordinator_backup = self.pluginconf.pluginConf["pluginData"] + "/Coordinator-%02d" %self.HardwareID + ".backup"
 
     self.log.logging("TransportZigpy", "Log", "Backups: %s" %backups)
-    Modules.tools.helper_versionFile(_coordinator_backup, self.pluginconf.pluginConf["numDeviceListVersion"])
+    if os.path.exists(_coordinator_backup):
+        Modules.tools.helper_versionFile(_coordinator_backup, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     try:
         with open(_coordinator_backup, "wt") as file:
