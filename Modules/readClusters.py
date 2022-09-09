@@ -5198,9 +5198,12 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     # ZLinky
     value = decodeAttribute(self, MsgAttType, MsgClusterData)
+    if MsgAttType in ( "41", "42", "43"):
+        value = ''.join(map(lambda x: x if ord(x) in range(0, 128) else ' ', value))
+        
     self.log.logging(
         "Cluster",
-        "Debug",
+        "Log",
         "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s / Value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
         MsgSrcAddr,
     )
