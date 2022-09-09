@@ -128,12 +128,15 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             },
             "topology_scan_enabled": False,
             "handle_unknown_devices": True,
-            "source_routing": False         # If enable bellows is doing source routing, if not then it is ezsp taking care 
+            "source_routing": True         # If enable bellows is doing source routing, if not then it is ezsp taking care 
                                             # https://github.com/zigpy/bellows/issues/493#issuecomment-1239892344
             }
         
         if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
             config[conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
+            
+        if "BellowsSourceRouting" in self.pluginconf.pluginConf:
+            config["source_routing"] = bool( self.pluginconf.pluginConf["BellowsSourceRouting"] )
             
         self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 

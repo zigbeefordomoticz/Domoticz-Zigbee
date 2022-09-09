@@ -127,7 +127,6 @@ class ZigpyTransport(object):
 
     def loadTransmit(self):
         # Provide the Load of the Sending Queue
-        _queue = self.writer_queue.qsize()
-        for device in list(self._currently_waiting_requests_list):
-            _queue += self._currently_waiting_requests_list[device]
-        return _queue
+        #for device in list(self._currently_waiting_requests_list):
+        #    _queue += self._currently_waiting_requests_list[device]
+        return self.writer_queue.qsize()
