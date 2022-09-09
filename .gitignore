@@ -13,6 +13,7 @@ Data/GroupsList-*
 Data/zigatePDM-*
 Data/ZigateGroupsConfig**
 Data/Zigate.json
+Data/*.backup**
 www/zigate/reports/*
 Logs/*
 Reports/*
