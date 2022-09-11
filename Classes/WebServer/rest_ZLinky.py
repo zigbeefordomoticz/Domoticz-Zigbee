@@ -54,6 +54,20 @@ ZLINK_TARIF_MODE_EXCLUDE = {
 }
 
 
+def zlinky_version_infos(self, nwkid ):
+
+    date_build = version_build = ''
+    # Retreive Build time
+    if 'SWBUILD_1' in self.ListOfDevices[ nwkid ]:
+        date_build = self.ListOfDevices[ nwkid ]['SWBUILD_1' ]
+    # Retreive Version number
+    if 'SWBUILD_3' in self.ListOfDevices[ nwkid ]:
+        version_build = self.ListOfDevices[ nwkid ]['SWBUILD_3' ]
+    
+    return date_build, version_build
+        
+    
+
 
 
 def rest_zlinky(self, verb, data, parameters): 
@@ -81,14 +95,21 @@ def rest_zlinky(self, verb, data, parameters):
                 break
 
         linky_mode = self.ListOfDevices[ nwkid ]["ZLinky"]["PROTOCOL Linky"]
+        version_info = zlinky_version_infos(self, nwkid )
         device = {
             'Nwkid': nwkid,
             'ZDeviceName': get_device_nickname( self, NwkId=nwkid),
             "PROTOCOL Linky": linky_mode,
-            'Parameters': []
+            'Parameters': [
+                {"DateCode": version_info[0]},
+                {"SWBuildID": version_info[1]},
+            ]
         }
         self.logging("Debug", "rest_zlinky - Linky Mode  %s " %linky_mode)
         self.logging("Debug", "rest_zlinky - Linky Tarif %s " %tarif)
+        self.logging("Debug", "rest_zlinky - Linky DateCode %s " % version_info[0])
+        self.logging("Debug", "rest_zlinky - Linky Version %s " %version_info[1])
+
         
         for zlinky_param in ZLINKY_PARAMETERS[ linky_mode ]:
             if zlinky_param not in self.ListOfDevices[ nwkid ]["ZLinky"]:
