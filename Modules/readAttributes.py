@@ -136,18 +136,7 @@ ATTRIBUTES = {
     "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
 }
 
-def ReadAttributeReq(
-    self,
-    addr,
-    EpIn,
-    EpOut,
-    Cluster,
-    ListOfAttributes,
-    manufacturer_spec="00",
-    manufacturer="0000",
-    ackIsDisabled=True,
-    checkTime=True,
-):
+def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, ):
 
     # Check if we are in pairing mode and Read Attribute must be broken down in 1 attribute max, otherwise use the default value
     maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
@@ -166,6 +155,9 @@ def ReadAttributeReq(
     
     elif "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
         maxReadAttributesByRequest = 1
+
+    elif 'Model' in self.ListOfDevices[ addr ] and "ZLinky" in self.ListOfDevices[ addr ]["Model"]:
+        maxReadAttributesByRequest = 2
 
     if not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled)
@@ -222,7 +214,7 @@ def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttribute
         
         Attr_ = "%04x" % (x)
         if skipThisAttribute(self, addr, EpOut, Cluster, Attr_):
-            # Domoticz.Log("Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_))
+            self.log.logging("ReadAttributes", "Debug", "Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_), nwkid=addr)
             continue
 
         reset_attr_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, Attr_)
@@ -244,19 +236,7 @@ def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttribute
         + ", ".join("0x{:04x}".format(num) for num in ListOfAttributes),
         nwkid=addr,
     )
-    i_sqn = read_attribute(
-        self,
-        addr,
-        EpIn,
-        EpOut,
-        Cluster,
-        direction,
-        manufacturer_spec,
-        manufacturer,
-        lenAttr,
-        Attr,
-        ackIsDisabled=ackIsDisabled,
-    )
+    i_sqn = read_attribute( self, addr, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=ackIsDisabled, )
 
     for x in attributeList:
         set_isqn_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, x, i_sqn)
@@ -279,7 +259,7 @@ def skipThisAttribute(self, addr, EpOut, Cluster, Attr):
         Domoticz.Log("Skip Attribute 6 %s/%s %s %s" % (addr, EpOut, Cluster, Attr))
         self.log.logging(
             "ReadAttributes",
-            "Debug2",
+            "Debug",
             "normalizedReadAttrReq - Skip Read Attribute due to DeviceConf Nwkid: %s Cluster: %s Attribute: %s" % (addr, Cluster, Attr),
             nwkid=addr,
         )
@@ -1658,6 +1638,9 @@ def ReadAttributeRequest_ff66(self, key):
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_ff66 - Key: %s " % key, nwkid=key)
     EPout = "01"
     listAttributes = retreive_ListOfAttributesByCluster(self, key, EPout, "ff66")
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_ff66 - Key: %s request %s" % (
+        key, listAttributes), nwkid=key)
+
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
