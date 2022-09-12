@@ -204,7 +204,7 @@ class OTAManagement(object):
         ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request)
 
     def ota_request_firmware_completed(self, MsgData):
-        logging(self, "Debug2", "Decode8503 - Request Firmware Completed %s/%s" % (MsgData, len(MsgData)))
+        logging(self, "Debug", "Decode8503 - Request Firmware Completed %s/%s" % (MsgData, len(MsgData)))
 
         MsgSQN = MsgData[:2]
         MsgEP = MsgData[2:4]

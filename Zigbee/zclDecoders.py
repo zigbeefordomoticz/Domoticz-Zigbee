@@ -599,9 +599,20 @@ def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     return encapsulate_plugin_frame("8501", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 def buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    return frame
-    
-    #return encapsulate_plugin_frame("8503", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
+        '8503', ClusterId, Command, Data, frame))
+
+    status = decode_endian_data(Data[:2], "20")
+    ManufCode = decode_endian_data(Data[2:6], "21")
+    ImageType = decode_endian_data(Data[6:10], "21")
+    ImageVersion = decode_endian_data(Data[10:18], "23")
+
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 %s %s %s %s %s %s %s " % ( 
+        status, ManufCode,ImageType, ImageVersion ))  
+
+    buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId + ImageVersion + ImageType + ManufCode + status
+    return encapsulate_plugin_frame("8503", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
  
 # Cluster 0x0020
 # Pool Control
