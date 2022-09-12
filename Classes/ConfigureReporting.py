@@ -109,7 +109,7 @@ class ConfigureReporting:
         if self.pluginconf.pluginConf["breakConfigureReporting"]:
             maxAttributesPerRequest = 1
         elif 'Model' in self.ListOfDevices[ key ] and "ZLinky" in self.ListOfDevices[ key ]["Model"]:
-            maxAttributesPerRequest = 2
+            maxAttributesPerRequest = 1
 
         attribute_reporting_configuration = []
         for attr in ListOfAttributesToConfigure:
@@ -363,7 +363,7 @@ class ConfigureReporting:
         if self.pluginconf.pluginConf["breakConfigureReporting"]:
             maxAttributesPerRequest = 1
         elif 'Model' in self.ListOfDevices[ nwkid ] and "ZLinky" in self.ListOfDevices[ nwkid ]["Model"]:
-            maxAttributesPerRequest = 2
+            maxAttributesPerRequest = 1
 
 
         if len( attribute_list ) <= maxAttributesPerRequest:
@@ -459,9 +459,13 @@ class ConfigureReporting:
                     if "Status" in attribute_current_configuration and attribute_current_configuration["Status"] != "00":
                         if attribute_current_configuration["Status"] == '8b':
                             configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
-                        else:
-                            self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed invalid status {attribute_current_configuration['Status']}", nwkid=Nwkid)
-                            continue
+                            # There is no need to continue as we have requested a Cluster
+                            wip_flap = True
+                            cluster_update = True
+                            break
+ 
+                        self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed invalid status {attribute_current_configuration['Status']}", nwkid=Nwkid)
+                        continue
                         
                     self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed - {Nwkid} {_cluster} {attribut} Checking {attribute_current_configuration} versus {cluster_configuration[attribut]} " , nwkid=Nwkid)
                     cluster_update = False
