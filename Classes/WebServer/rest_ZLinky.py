@@ -119,8 +119,12 @@ def rest_zlinky(self, verb, data, parameters):
                 self.logging("Debug", "rest_zlinky - Exclude  %s " % (zlinky_param)) 
                 continue
     
-            attr_value = self.ListOfDevices[ nwkid ]["ZLinky"][ zlinky_param ]
-            device["Parameters"].append( { zlinky_param: attr_value } )
+            if zlinky_param == "STGE":
+                for x in self.ListOfDevices[ nwkid ]["ZLinky"][ "STGE"]:
+                    device["Parameters"].append( { x: self.ListOfDevices[ nwkid ]["ZLinky"]["STGE"][x] } )
+            else:
+                attr_value = self.ListOfDevices[ nwkid ]["ZLinky"][ zlinky_param ]
+                device["Parameters"].append( { zlinky_param: attr_value } )
             
         zlinky.append( device )
       
