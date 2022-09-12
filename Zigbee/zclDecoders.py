@@ -574,18 +574,29 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Ta
 
 # Cluster: 0x0019
 def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    
+
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
+        '8501', ClusterId, Command, Data, frame))
+
     FieldControl = decode_endian_data(Data[:2], "20")
     ManufCode = decode_endian_data(Data[2:6], "21")
     ImageType = decode_endian_data(Data[6:10], "21")
     ImageVersion = decode_endian_data(Data[10:18], "23")
     ImageOffset = decode_endian_data(Data[18:26], "23")
     MaxDataSize = decode_endian_data(Data[26:28], "20")
-    MinBlockPeriod = decode_endian_data(Data[28:32], "21")
-    IEEE = "0000000000000000"
-    buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId + IEEE + ImageOffset + ImageVersion + ImageType + ManufCode + MinBlockPeriod + MaxDataSize + FieldControl
-    return encapsulate_plugin_frame("8501", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+    if len(Data) == 32:
+        MinBlockPeriod = decode_endian_data(Data[28:32], "21")
+    else:
+        MinBlockPeriod = '0000'
 
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 %s %s %s %s %s %s %s " % ( 
+        FieldControl, ManufCode, ImageType, ImageVersion, ImageOffset, MaxDataSize, MinBlockPeriod))  
+
+    IEEE = "0000000000000000"
+    buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId + IEEE 
+    buildPayload += ImageOffset + ImageVersion + ImageType + ManufCode + MinBlockPeriod + MaxDataSize + FieldControl
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 payload: %s" %buildPayload)
+    return encapsulate_plugin_frame("8501", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 def buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     return frame

@@ -134,10 +134,13 @@ class OTAManagement(object):
         # BLOCK_REQUEST  0x8501  ZiGate will receive this command when device asks OTA firmware
         logging(self, "Debug", "ota_request_firmware - Request Firmware Block (%s) %s" % (len(MsgData), MsgData))
 
+        if len(MsgData) not in ( 60 , 62):
+            logging(self, "Debug", "ota_request_firmware - Incorrect lenght (%s) %s" % (len(MsgData), MsgData))
+            return
         MsgSQN = MsgData[:2]
         MsgEP = MsgData[2:4]
-        # MsgClusterId =         MsgData[4:8]
-        # MsgaddrMode =          MsgData[8:10]
+        MsgClusterId = MsgData[4:8]
+        MsgaddrMode = MsgData[8:10]
         MsgSrcAddr = MsgData[10:14]
         MsgIEEE = MsgData[14:30]
         MsgFileOffset = MsgData[30:38]
