@@ -39,7 +39,7 @@ from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
-from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
+from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND, decode_STEG,
                             update_zlinky_device_model_if_needed)
 
 # from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
@@ -4079,7 +4079,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0307":  # PRM
-        store_ZLinky_infos( self, MsgSrcAddr, 'PRM', value)
+        store_ZLinky_infos( self, MsgSrcAddr, 'PRM', binascii.unhexlify(value).decode("utf-8"))
         
     elif MsgAttrID == "0308":  # Serial Number
         value = binascii.unhexlify(value).decode("utf-8")
@@ -4587,11 +4587,11 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
             # Check if Intensity is below subscription level
             if MsgAttrID == "0908":
-                self.log.logging("Cluster", "Log", "ReadCluster %s - %s/%s %s Current L2 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr)
+                self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L2 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr)
                 zlinky_check_alarm(self, Devices, MsgSrcAddr, "f2", value)
                 store_ZLinky_infos( self, MsgSrcAddr, 'IRMS2', value)
             elif MsgAttrID == "0a08":
-                self.log.logging("Cluster", "Log", "ReadCluster %s - %s/%s %s Current L3 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr)
+                self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L3 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr)
                 zlinky_check_alarm(self, Devices, MsgSrcAddr, "f3", value)
                 store_ZLinky_infos( self, MsgSrcAddr, 'IRMS3', value)
         
@@ -5203,7 +5203,7 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         
     self.log.logging(
         "Cluster",
-        "Log",
+        "Debug",
         "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s / Value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
         MsgSrcAddr,
     )
@@ -5221,7 +5221,6 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         store_ZLinky_infos( self, MsgSrcAddr, ZLinky_TIC_COMMAND[ MsgAttrID ], value)
         
-
 
     if MsgAttrID == "0000":
         # Option tarifaire
@@ -5316,16 +5315,29 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s / Value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
+
+    elif MsgAttrID == "0217":
+        # STGE
+        stge = binascii.unhexlify( value ).decode("utf-8")
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster %s - %s/%s STGE Attribute: %s Type: %s Size: %s Data: %s / Value: %s" % (
+                MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, stge),
+            MsgSrcAddr,
+        )
+        store_ZLinky_infos( self, MsgSrcAddr, "STGE", decode_STEG( stge ))
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, stge)
 
     elif MsgAttrID == "0300":
         # Linky Mode
         self.log.logging(
             "Cluster",
-            "Log",
+            "Debug",
             "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s / Value: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
             MsgSrcAddr,
         )
