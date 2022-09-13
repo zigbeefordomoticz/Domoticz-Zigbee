@@ -4315,8 +4315,17 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, )
     if MsgAttrID == "000d":
-        store_ZLinky_infos( self, MsgSrcAddr, 'ISOUSC', value)
-        store_ZLinky_infos( self, MsgSrcAddr, 'PREF', value)
+        # Looks like in standard mode PREF is in VA while in historique mode ISOUSC is in A
+        # Donc en mode standard ISOUSC = ( value * 1000) / 200
+        if "ZLinky" in self.ListOfDevices[MsgSrcAddr] and "PROTOCOL Linky" in self.ListOfDevices[MsgSrcAddr]["ZLinky"]:
+            if self.ListOfDevices[MsgSrcAddr]["ZLinky"]["PROTOCOL Linky"] in (0, 2):
+                # Mode Historique mono ( 0 )
+                # Mode Historique tri ( 2 )
+                store_ZLinky_infos( self, MsgSrcAddr, 'ISOUSC', value)
+            else:
+                # Mode standard 
+                store_ZLinky_infos( self, MsgSrcAddr, 'PREF', value)
+                store_ZLinky_infos( self, MsgSrcAddr, 'ISOUSC', ( value * 1000) / 200)
         
     elif MsgAttrID == "000a":
         store_ZLinky_infos( self, MsgSrcAddr, 'VTIC', value)
@@ -4623,67 +4632,26 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         return
 
     Isousc = 0
-    if "0b01" in self.ListOfDevices[MsgSrcAddr]["Ep"]["01"] and "000d" in self.ListOfDevices[MsgSrcAddr]["Ep"]["01"]["0b01"] and isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"]["01"]["0b01"]["000d"], int):
-        Isousc = int(self.ListOfDevices[MsgSrcAddr]["Ep"]["01"]["0b01"]["000d"])
+    if "ZLinky" in self.ListOfDevices[MsgSrcAddr] and "ISOUSC" in self.ListOfDevices[MsgSrcAddr]["ZLinky"]:
+        Isousc = self.ListOfDevices[MsgSrcAddr]["ZLinky"]["ISOUSC"]
     else:
-        self.log.logging(
-            "Cluster",
-            "Error",
-            "zlinky_check_alarm - %s/%s no Subscription found !!!!" % (MsgSrcAddr, MsgSrcEp),
-            MsgSrcAddr,
-        )
+        self.log.logging(  "Cluster",  "Error",  "zlinky_check_alarm - %s/%s no Subscription found !!!!" % (MsgSrcAddr, MsgSrcEp),  MsgSrcAddr,  )
 
     if Isousc == 0:
         return
 
     flevel = (value * 100) / Isousc
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, Isousc, flevel),
-        MsgSrcAddr,
-    )
+    self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, Isousc, flevel), MsgSrcAddr, )
 
     if flevel > 98:
-        MajDomoDevice(
-            self,
-            Devices,
-            MsgSrcAddr,
-            MsgSrcEp,
-            "0009",
-            "03|Reach >98 %% of Max subscribe %s" % (Isousc),
-            Attribute_="0005",
-        )
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "zlinky_check_alarm - %s/%s Alarm-01" % (MsgSrcAddr, MsgSrcEp),
-            MsgSrcAddr,
-        )
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "03|Reach >98 %% of Max subscribe %s" % (Isousc), Attribute_="0005", )
+        self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-01" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
     elif flevel > 90:
-        MajDomoDevice(
-            self,
-            Devices,
-            MsgSrcAddr,
-            MsgSrcEp,
-            "0009",
-            "02|Reach >90 %% of Max subscribe %s" % (Isousc),
-            Attribute_="0005",
-        )
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp),
-            MsgSrcAddr,
-        )
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "02|Reach >90 %% of Max subscribe %s" % (Isousc), Attribute_="0005", )
+        self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "00|Normal", Attribute_="0005")
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
 
 
 def Cluster0b05(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
