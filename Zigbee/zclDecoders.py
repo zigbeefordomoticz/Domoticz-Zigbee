@@ -87,7 +87,14 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
             "08": "Query Device Specific File Request",
             "09": "Query Device Specific File response",
         }
-        if Command in OTA_UPGRADE_COMMAND:
+        if Command == "03":
+            # Image Block request,
+            return buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+            
+        if Command == "06":
+            return buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+            
+        elif Command in OTA_UPGRADE_COMMAND:
             self.log.logging("zclDecoder", "Debug", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
             return frame
         
@@ -566,7 +573,47 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Ta
 
 
 # Cluster: 0x0019
+def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
 
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
+        '8501', ClusterId, Command, Data, frame))
+
+    FieldControl = decode_endian_data(Data[:2], "20")
+    ManufCode = decode_endian_data(Data[2:6], "21")
+    ImageType = decode_endian_data(Data[6:10], "21")
+    ImageVersion = decode_endian_data(Data[10:18], "23")
+    ImageOffset = decode_endian_data(Data[18:26], "23")
+    MaxDataSize = decode_endian_data(Data[26:28], "20")
+    if len(Data) == 32:
+        MinBlockPeriod = decode_endian_data(Data[28:32], "21")
+    else:
+        MinBlockPeriod = '0000'
+
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 %s %s %s %s %s %s %s " % ( 
+        FieldControl, ManufCode, ImageType, ImageVersion, ImageOffset, MaxDataSize, MinBlockPeriod))  
+
+    IEEE = "0000000000000000"
+    buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId + IEEE 
+    buildPayload += ImageOffset + ImageVersion + ImageType + ManufCode + MinBlockPeriod + MaxDataSize + FieldControl
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 payload: %s" %buildPayload)
+    return encapsulate_plugin_frame("8501", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+def buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
+        '8503', ClusterId, Command, Data, frame))
+
+    status = decode_endian_data(Data[:2], "20")
+    ManufCode = decode_endian_data(Data[2:6], "21")
+    ImageType = decode_endian_data(Data[6:10], "21")
+    ImageVersion = decode_endian_data(Data[10:18], "23")
+
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 %s %s %s %s" % ( 
+        status, ManufCode, ImageType, ImageVersion ))  
+
+    buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId + ImageVersion + ImageType + ManufCode + status
+    return encapsulate_plugin_frame("8503", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+ 
 # Cluster 0x0020
 # Pool Control
 
