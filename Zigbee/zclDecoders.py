@@ -608,8 +608,8 @@ def buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     ImageType = decode_endian_data(Data[6:10], "21")
     ImageVersion = decode_endian_data(Data[10:18], "23")
 
-    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 %s %s %s %s %s %s %s " % ( 
-        status, ManufCode,ImageType, ImageVersion ))  
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 %s %s %s %s" % ( 
+        status, ManufCode, ImageType, ImageVersion ))  
 
     buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId + ImageVersion + ImageType + ManufCode + status
     return encapsulate_plugin_frame("8503", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
