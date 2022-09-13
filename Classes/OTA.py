@@ -117,6 +117,7 @@ class OTAManagement(object):
             "AuthorizedForUpdate": [],
             "Retry": 0,
         }
+        self.AuthorizedForDowngrade = {}
 
         self.once = True
         ota_scan_folder(self)
@@ -350,6 +351,8 @@ class OTAManagement(object):
             target_ep = x["Ep"]
             force_update = x["ForceUpdate"]
             firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update)
+            if force_update:
+                self.AuthorizedForDowngrade[ target_nwkid ] = True
 
     def query_next_image_request(self, srcnwkid, srcep, Sqn, Data):
         # This is a Client -> Server (direction set to 0x00)
@@ -379,7 +382,7 @@ class OTAManagement(object):
         self.ListOfDevices[srcnwkid]["OTAClient"]["ImageType"] = imagetype
         self.ListOfDevices[srcnwkid]["OTAClient"]["CurrentImageVersion"] = currentVersion 
 
-        image_found = is_image_for_query_next_image_request( self, manufcode, imagetype, currentVersion )
+        image_found = is_image_for_query_next_image_request( self, srcnwkid, manufcode, imagetype, currentVersion )
         if image_found:     
             fileversion = "%08x" %image_found["originalVersion"]
             imagesize = "%08x" %image_found["intSize"]
@@ -641,6 +644,10 @@ def cleanup_after_completed_upgrade(self, NwkId, Status):
         "cleanup_after_completed_upgrade - After cleanup self.ListInUpdate['Nwkid']: %s self.ListInUpdate['AuthorizedForUpdate']: %s"
         % (self.ListInUpdate["NwkId"], self.ListInUpdate["AuthorizedForUpdate"]),
     )
+
+    if NwkId in self.AuthorizedForDowngrade and self.AuthorizedForDowngrade[ NwkId ]:
+        del self.AuthorizedForDowngrade[ NwkId ]
+
     self.ListInUpdate["Process"] = None
 
     # Reset the controller (ziagte in native mode only for now)
@@ -704,7 +711,7 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
 def logging(self, logType, message):  # OK 13/10
     self.log.logging("OTA", logType, message)
 
-def is_image_for_query_next_image_request( self, manuf_code, image_type, file_version):
+def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, file_version):
 
     logging(self, "Debug", "is_image_for_query_next_image_request - %s %s %s" % (manuf_code, image_type, file_version))
     for brand_name in self.ListOfImages["Brands"]:
@@ -730,8 +737,9 @@ def is_image_for_query_next_image_request( self, manuf_code, image_type, file_ve
                 logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device")
                 return self.ListOfImages["Brands"][brand_name][file_name]
             
-            #elif int(file_version,16) >= self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
-            #    return self.ListOfImages["Brands"][brand_name][file_name]
+            if nwkid in self.AuthorizedForDowngrade and self.AuthorizedForDowngrade[ nwkid ]:
+                return self.ListOfImages["Brands"][brand_name][file_name]
+
     return None
 
                 
