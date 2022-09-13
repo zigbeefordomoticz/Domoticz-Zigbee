@@ -18,9 +18,20 @@ ZLINKY_MODE = {
 }
 
 ZLINKY_UPGRADE_PATHS = {
-    "Linky_TIC": ( 0,1,2,3,5,7),
-    "ZLinky_TIC-historique-mono": ( "ZLinky_TIC-standard-mono","ZLinky_TIC-standard-mono-prod", ),
-    "ZLinky_TIC-historique-tri": ( "ZLinky_TIC-historique-tri","ZLinky_TIC-standard-tri-prod",),
+    "ZLinky_TIC": ( 
+        "ZLinky_TIC-standard-mono",
+        "ZLinky_TIC-standard-mono-prod", 
+        ),
+    "ZLinky_TIC-historique-mono": ( 
+        "ZLinky_TIC-standard-mono",
+        "ZLinky_TIC-standard-mono-prod",
+        "ZLinky_TIC-historique-tri",
+        "ZLinky_TIC-standard-tri-prod" 
+        ),
+    "ZLinky_TIC-historique-tri": ( 
+        "ZLinky_TIC-historique-tri",
+        "ZLinky_TIC-standard-tri-prod",
+        ),
     "ZLinky_TIC-standard-mono-prod": (),
     "ZLinky_TIC-standard-tri": (),
 }
@@ -129,9 +140,12 @@ def update_zlinky_device_model_if_needed( self, nwkid ):
 
     if self.ListOfDevices[ nwkid ]["Model"] != zlinky_conf:
         if not linky_upgrade_authorized( self.ListOfDevices[ nwkid ]["Model"], zlinky_conf ):
+            self.log.logging( "ZLinky", "Log", "Not authorized adjustement ZLinky model from %s to %s" %( 
+                self.ListOfDevices[ nwkid ]["Model"], zlinky_conf  ))
             return
 
-        self.log.logging( "ZLinky", "Status", "Adjusting ZLinky model from %s to %s" %( self.ListOfDevices[ nwkid ]["Model"], zlinky_conf  ))
+        self.log.logging( "ZLinky", "Status", "Adjusting ZLinky model from %s to %s" %( 
+            self.ListOfDevices[ nwkid ]["Model"], zlinky_conf  ))
         
         # Looks like we have to update the Model in order to use the right attributes
         self.ListOfDevices[ nwkid ]["Model"] = zlinky_conf

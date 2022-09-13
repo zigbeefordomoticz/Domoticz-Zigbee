@@ -1357,6 +1357,31 @@ def ReadAttributeReq_ZLinky(self, nwkid):
         listAttributes = retreive_ListOfAttributesByCluster(self, nwkid, EPout, cluster)
         ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, listAttributes, ackIsDisabled=False)
 
+def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
+    # - La couleur du jour est déterminée au fur et à mesure de l'année et est diffusée par Edf la veille vers 12h.
+    # - Une journée Tempo commence à 6h du matin jusqu'au lendemain même heure.
+    # - Les heures creuses sont de 22h à 6h du matin, sur tout le territoire.
+    # - Les Samedi et Jours fériés ne sont Jamais ''Rouge'' et les Dimanche toujours ''Bleu''.
+    # - Une saison tempo est de Septembre à Août. Le 1er Septembre, le compteur de jour restant est remis à 0.
+
+   # Purpose is to retreive the Color
+   WORK_TO_BE_DONE = { 
+        "ff66": [ 
+            0x0001, # Couleur du lendemain
+            0x0217, # STGE
+        ],
+        "0702": [
+            0x0020, # Periode Tarifaire en cours
+        ]
+   }
+
+   EPout = "01"
+   for cluster in WORK_TO_BE_DONE:
+        self.log.logging("ReadAttributes", "Log", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
+            nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
+   
+
 
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
     # The list of Attributes could be based on the Contract

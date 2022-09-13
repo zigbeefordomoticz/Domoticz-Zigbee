@@ -11,6 +11,7 @@
 """
 
 import time
+import datetime
 
 import Domoticz
 from Zigbee.zdpCommands import (zdp_IEEE_address_request,
@@ -39,6 +40,7 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0702_PC321,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
                                     ReadAttributeReq_ZLinky,
+                                    ReadAttributeReq_Scheduled_ZLinky,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
                                     ping_tuya_device)
@@ -195,6 +197,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "TempPollingFreq": ReadAttributeRequest_0402,
         "HumiPollingFreq": ReadAttributeRequest_0405,
         "BattPollingFreq": ReadAttributeRequest_0001,
+        "ScheduledZLinkyRead": ReadAttributeReq_Scheduled_ZLinky,
     }
 
     if "Param" not in self.ListOfDevices[NwkId]:
@@ -211,7 +214,26 @@ def pollingManufSpecificDevices(self, NwkId, HB):
     )
 
     for param in self.ListOfDevices[NwkId]["Param"]:
-        if param in FUNC_MANUF:
+        if param == "ScheduledZLinkyRead":
+            # We are requesting to execute at a particular time
+            _current_time = datetime.datetime.now().strftime("%H:%M" )
+            _target_time = self.ListOfDevices[NwkId]["Param"][ param ]
+            self.log.logging(
+                "Heartbeat",
+                "Debug",
+                "++ pollingManufSpecificDevices -  %s ScheduledZLinkyRead: Current: %s Target: %s"
+                % (NwkId,_current_time, _target_time  ),
+                NwkId,
+            )
+
+            if _current_time == _target_time and "ScheduledZLinkyRead" not in self.ListOfDevices[ NwkId ]:
+                self.ListOfDevices[ NwkId ][ "ScheduledZLinkyRead" ] = True
+                ReadAttributeReq_Scheduled_ZLinky( self, NwkId)
+
+            elif _current_time != _target_time and "ScheduledZLinkyRead" in self.ListOfDevices[ NwkId ]:
+                del self.ListOfDevices[ NwkId ][ "ScheduledZLinkyRead" ]
+
+        elif param in FUNC_MANUF:
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
             if _FEQ == 0:  # Disable
                 continue
