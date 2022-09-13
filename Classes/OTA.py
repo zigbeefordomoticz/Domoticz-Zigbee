@@ -730,8 +730,8 @@ def is_image_for_query_next_image_request( self, manuf_code, image_type, file_ve
                 logging(self, "Debug", "is_image_for_query_next_image_request - We have newest firmware available for this device")
                 return self.ListOfImages["Brands"][brand_name][file_name]
             
-            elif int(file_version,16) >= self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
-                return self.ListOfImages["Brands"][brand_name][file_name]
+            #elif int(file_version,16) >= self.ListOfImages["Brands"][brand_name][file_name]["originalVersion"]:
+            #    return self.ListOfImages["Brands"][brand_name][file_name]
     return None
 
                 
