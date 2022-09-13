@@ -1016,12 +1016,12 @@ def async_request(  # OK 24/10
         return False
 
     if image_type not in self.ListOfImages["ImageType"]:
-        logging(self, "Log", "async_request: No Firmware available to satify this request by %s" % (MsgSrcAddr))
+        logging(self, "Log", "async_request: No Firmware available to satisfy this request by %s" % (MsgSrcAddr))
         return False
 
     entry = retreive_image(self, image_type)
     if entry is None:
-        logging(self, "Error", "async_request: No Firmware available to satify this request by %s !!!" % (MsgSrcAddr))
+        logging(self, "Error", "async_request: No Firmware available to satisfy this request by %s !!!" % (MsgSrcAddr))
 
     brand, ota_image_file = entry
     available_image = self.ListOfImages["Brands"][brand][ota_image_file]
@@ -1170,7 +1170,7 @@ def display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFil
     _completion = round(((int(MsgFileOffset, 16) / _size) * 100), 1)
 
     if (_completion % 5) == 0:
-        logging(self, "Log", "Firmware transfert for %s/%s - Progress: %4s %%" % (MsgSrcAddr, MsgEP, _completion))
+        logging(self, "Status", "Firmware transfert for %s/%s - Progress: %4s %%" % (MsgSrcAddr, MsgEP, _completion))
         if "Firmware Update" not in self.PluginHealth:
             self.PluginHealth["Firmware Update"] = {}
 
