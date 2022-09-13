@@ -465,7 +465,7 @@ def zcl_raw_ota_query_next_image_response(self, sqn, nwkid, EPIn, EPout, status,
         FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
         imagesize = "%08x" % struct.unpack(">I", struct.pack("I", int(imagesize, 16)))[0]
     
-        payload +=  ManufCode + Imagetype + FileVersion + imagesize
+        payload += ManufCode + Imagetype + FileVersion + imagesize
     raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
     return sqn
 
