@@ -7,11 +7,12 @@
 import binascii
 import logging
 import time
-import zigpy.exceptions
+
 import zigpy.application
-import zigpy_znp.types as t
+import zigpy.exceptions
+import zigpy.types as t
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_8002_frame_content, build_plugin_8014_frame_content, 
+    build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 
 LOGGER = logging.getLogger(__name__)
