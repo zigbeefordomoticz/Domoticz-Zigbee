@@ -650,6 +650,10 @@ def cleanup_after_completed_upgrade(self, NwkId, Status):
 
     self.ListInUpdate["Process"] = None
 
+    # Read Attribute in order to refresh the Attributs
+    ReadAttributeRequest_0000(self, NwkId, fullScope=True)
+
+
     # Reset the controller (ziagte in native mode only for now)
     if self.zigbee_communication == "native":
         sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
@@ -1082,9 +1086,6 @@ def notify_upgrade_end(
         logging(self, "Status", _textmsg)
         if "Firmware Update" in self.PluginHealth and len(self.PluginHealth["Firmware Update"]) > 0:
             self.PluginHealth["Firmware Update"]["Progress"] = "Success"
-
-        # Read Attribute in order to refresh the Attributs
-        ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=True)
 
     elif Status == "Aborted":
         _textmsg = "Firmware update aborted error code %s for Device %s in %s hour %s min %s sec" % (
