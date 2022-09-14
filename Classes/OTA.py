@@ -651,7 +651,7 @@ def cleanup_after_completed_upgrade(self, NwkId, Status):
     self.ListInUpdate["Process"] = None
 
     # Read Attribute in order to refresh the Attributs
-    ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=True)
+    ReadAttributeRequest_0000(self, NwkId, fullScope=True)
 
 
     # Reset the controller (ziagte in native mode only for now)
