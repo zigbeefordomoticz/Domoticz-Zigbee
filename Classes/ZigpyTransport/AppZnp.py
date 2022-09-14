@@ -5,6 +5,8 @@
 #
 
 import logging
+
+import Classes.ZigpyTransport.AppGeneric
 import zigpy.config as zigpy_conf
 import zigpy.device
 import zigpy.profiles
@@ -14,11 +16,9 @@ import zigpy_znp.config as znp_conf
 import zigpy_znp.types as t
 import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_8010_frame_content,
-    build_plugin_8015_frame_content)
+    build_plugin_8010_frame_content, build_plugin_8015_frame_content)
 from Modules.zigbeeVersionTable import ZNP_MODEL
 from zigpy.zcl import clusters
-import Classes.ZigpyTransport.AppGeneric
 
 LOGGER = logging.getLogger(__name__)
 
