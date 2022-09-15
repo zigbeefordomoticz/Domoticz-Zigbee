@@ -522,6 +522,8 @@ def zigpy_logging_znp(mode):
         requests_logger.setLevel(logging.DEBUG)
         requests_logger = logging.getLogger("Classes.ZigpyTransport.AppZnp")
         requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppGeneric")
+        requests_logger.setLevel(logging.DEBUG)
     else:
         requests_logger = logging.getLogger("zigpy_znp")
         requests_logger.setLevel(logging.WARNING)
