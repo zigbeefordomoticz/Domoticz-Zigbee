@@ -240,24 +240,24 @@ def decode_STEG( stge ):
     # Couleur du lendemain: bit 26 et 27
     # Préavis points mobiles: bit 28 à 29
     # Pointe mobile: bit 30 et 31
-    contact_sec =      ( stge     & 0b00000000000000000000000000000001)
-    organe_coupure =   ( stge     & 0b00000000000000000000000000001110) >> 1
-    etat_cache_bornes = (stge     & 0b00000000000000000000000000010000) >> 4
-    sur_tension =      ( stge     & 0b00000000000000000000000001000000) >> 6
-    depassement_puissance = (stge & 0b00000000000000000000000010000000) >> 7
-    mode_fonctionnement =(stge    & 0b00000000000000000000000100000000) >> 8
-    sens_energie =     ( stge     & 0b00000000000000000000001000000000) >> 9
-    tarif_fourniture = ( stge     & 0b00000000000000000011110000000000) >> 10
-    tarif_distributeur =(stge     & 0b00000000000000001100000000000000) >> 14
-    Mode_horloge =   ( stge       & 0b00000000000000010000000000000000) >> 16
-    sortie_tic =     ( stge       & 0b00000000000000100000000000000000) >> 17
-    sortie_euridis = ( stge       & 0b00000000000110000000000000000000) >> 19
-    status_cpl = ( stge           & 0b00000000011000000000000000000000) >> 21
-    synchro_cpl = ( stge          & 0b00000000100000000000000000000000) >> 23
-    couleur_jour = ( stge         & 0b00000011000000000000000000000000) >> 24
-    couleur_demain = ( stge       & 0b00001100000000000000000000000000) >> 26
+    contact_sec = ( stge & 0b00000000000000000000000000000001)
+    organe_coupure = ( stge & 0b00000000000000000000000000001110) >> 1
+    etat_cache_bornes = ( stge & 0b00000000000000000000000000010000) >> 4
+    sur_tension = ( stge & 0b00000000000000000000000001000000) >> 6
+    depassement_puissance = ( stge & 0b00000000000000000000000010000000) >> 7
+    mode_fonctionnement =(stge & 0b00000000000000000000000100000000) >> 8
+    sens_energie = ( stge & 0b00000000000000000000001000000000) >> 9
+    tarif_fourniture = ( stge & 0b00000000000000000011110000000000) >> 10
+    tarif_distributeur =( stge & 0b00000000000000001100000000000000) >> 14
+    Mode_horloge = ( stge & 0b00000000000000010000000000000000) >> 16
+    sortie_tic = ( stge & 0b00000000000000100000000000000000) >> 17
+    sortie_euridis = ( stge & 0b00000000000110000000000000000000) >> 19
+    status_cpl = ( stge & 0b00000000011000000000000000000000) >> 21
+    synchro_cpl = ( stge & 0b00000000100000000000000000000000) >> 23
+    couleur_jour = ( stge & 0b00000011000000000000000000000000) >> 24
+    couleur_demain = ( stge & 0b00001100000000000000000000000000) >> 26
     preavis_point_mobile = ( stge & 0b00110000000000000000000000000000) >> 28
-    pointe_mobile = ( stge        & 0b11000000000000000000000000000000) >> 30
+    pointe_mobile = ( stge & 0b11000000000000000000000000000000) >> 30
 
     if contact_sec in CONTACT_SEC:
         contact_sec = CONTACT_SEC[ contact_sec ]

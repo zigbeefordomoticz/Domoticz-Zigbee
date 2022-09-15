@@ -4635,7 +4635,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
     if "ZLinky" in self.ListOfDevices[MsgSrcAddr] and "ISOUSC" in self.ListOfDevices[MsgSrcAddr]["ZLinky"]:
         Isousc = self.ListOfDevices[MsgSrcAddr]["ZLinky"]["ISOUSC"]
     else:
-        self.log.logging(  "Cluster",  "Error",  "zlinky_check_alarm - %s/%s no Subscription found !!!!" % (MsgSrcAddr, MsgSrcEp),  MsgSrcAddr,  )
+        self.log.logging(  "Cluster", "Error", "zlinky_check_alarm - %s/%s no Subscription found !!!!" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr,)
 
     if Isousc == 0:
         return
