@@ -39,8 +39,11 @@ from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
-from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND, decode_STEG,
-                            update_zlinky_device_model_if_needed)
+from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
+                            convert_kva_to_ampere, decode_STEG,
+                            store_ZLinky_infos,
+                            update_zlinky_device_model_if_needed,
+                            zlinky_check_alarm, zlinky_color_tarif)
 
 # from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
 
@@ -4298,12 +4301,6 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
 
-def zlinky_color_tarif(self, MsgSrcAddr, color):
-    if "ZLinky" not in self.ListOfDevices[MsgSrcAddr]:
-        self.ListOfDevices[MsgSrcAddr]["ZLinky"] = {}
-    self.ListOfDevices[MsgSrcAddr]["ZLinky"]["Color"] = color
-
-
 def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     self.log.logging(
         "Cluster",
@@ -4325,7 +4322,7 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             else:
                 # Mode standard 
                 store_ZLinky_infos( self, MsgSrcAddr, 'PREF', value)
-                store_ZLinky_infos( self, MsgSrcAddr, 'ISOUSC', ( value * 1000) / 200)
+                store_ZLinky_infos( self, MsgSrcAddr, 'ISOUSC', convert_kva_to_ampere(value) )
         
     elif MsgAttrID == "000a":
         store_ZLinky_infos( self, MsgSrcAddr, 'VTIC', value)
@@ -4333,28 +4330,6 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "000e":
         store_ZLinky_infos( self, MsgSrcAddr, 'PCOUP', value)
         
-
-
-# def fake_index_zlinky( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
-#    self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s SIMULATE INDEX - TO BE REMOVED" % (MsgClusterId, MsgSrcAddr, MsgSrcEp) )
-#    from random import randrange
-# 
-#    if MsgSrcAddr not in self.ListOfDevices:
-#        return 0
-#    if MsgSrcEp not in self.ListOfDevices[ MsgSrcAddr ]['Ep']:
-#        return 0
-#    if MsgClusterId not in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ]:
-#        return 0
-#    if MsgAttrID not in self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ MsgClusterId ]:
-#        return 0
-#    if self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ MsgClusterId ][MsgAttrID] in  ( {}, ''):
-#        return 1
-# 
-#    old_value = self.ListOfDevices[ MsgSrcAddr ]['Ep'][ MsgSrcEp ][ MsgClusterId ][ MsgAttrID ]
-#    new_value = old_value + randrange( 0, 100)
-#    self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s ---------- return %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, old_value, new_value) )
-#    return new_value
-
 
 def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
@@ -4467,7 +4442,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
             # Check if Intensity is below subscription level
-            zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value)
+            MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, "0009",  zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
 
         else:
             # Other type of devices
@@ -4597,11 +4572,12 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Check if Intensity is below subscription level
             if MsgAttrID == "0908":
                 self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L2 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr)
-                zlinky_check_alarm(self, Devices, MsgSrcAddr, "f2", value)
+                MajDomoDevice( self, Devices, MsgSrcAddr, "f2", "0009",  zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
                 store_ZLinky_infos( self, MsgSrcAddr, 'IRMS2', value)
+
             elif MsgAttrID == "0a08":
                 self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L3 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr)
-                zlinky_check_alarm(self, Devices, MsgSrcAddr, "f3", value)
+                MajDomoDevice( self, Devices, MsgSrcAddr, "f3", "0009",  zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
                 store_ZLinky_infos( self, MsgSrcAddr, 'IRMS3', value)
         
         else:
@@ -4624,34 +4600,6 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
-
-
-def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
-
-    if value == 0:
-        return
-
-    Isousc = 0
-    if "ZLinky" in self.ListOfDevices[MsgSrcAddr] and "ISOUSC" in self.ListOfDevices[MsgSrcAddr]["ZLinky"]:
-        Isousc = self.ListOfDevices[MsgSrcAddr]["ZLinky"]["ISOUSC"]
-    else:
-        self.log.logging(  "Cluster", "Error", "zlinky_check_alarm - %s/%s no Subscription found !!!!" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr,)
-
-    if Isousc == 0:
-        return
-
-    flevel = (value * 100) / Isousc
-    self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, Isousc, flevel), MsgSrcAddr, )
-
-    if flevel > 98:
-        MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "03|Reach >98 %% of Max subscribe %s" % (Isousc), Attribute_="0005", )
-        self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-01" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
-    elif flevel > 90:
-        MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "02|Reach >90 %% of Max subscribe %s" % (Isousc), Attribute_="0005", )
-        self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
-    else:
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0009", "00|Normal", Attribute_="0005")
-        self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
 
 
 def Cluster0b05(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -5311,8 +5259,3 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )
         update_zlinky_device_model_if_needed( self, MsgSrcAddr )
         
-def store_ZLinky_infos( self, nwkid, command_tic, value):
-
-    if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
-        self.ListOfDevices[ nwkid ][ 'ZLinky' ] = {}
-    self.ListOfDevices[ nwkid ][ 'ZLinky' ][ command_tic ] = value

@@ -1,5 +1,6 @@
 
-from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING, STORE_READ_CONFIGURE_REPORTING
+from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
+                                        STORE_READ_CONFIGURE_REPORTING)
 
 ZLINK_CONF_MODEL = (
     "ZLinky_TIC",
@@ -82,6 +83,89 @@ ZLinky_TIC_COMMAND = {
     "0228": "PPOINTE1",
     "0300": "PROTOCOL Linky"
 }
+
+def convert_kva_to_ampere( kva ):
+    return ( kva * 1000) / 200
+
+def zlinky_color_tarif(self, MsgSrcAddr, color):
+    if "ZLinky" not in self.ListOfDevices[MsgSrcAddr]:
+        self.ListOfDevices[MsgSrcAddr]["ZLinky"] = {}
+    self.ListOfDevices[MsgSrcAddr]["ZLinky"]["Color"] = color
+
+def store_ZLinky_infos( self, nwkid, command_tic, value):
+
+    if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
+        self.ListOfDevices[ nwkid ][ 'ZLinky' ] = {}
+    self.ListOfDevices[ nwkid ][ 'ZLinky' ][ command_tic ] = value
+
+def get_ISOUSC( self, nwkid ):
+
+    if (
+        "ZLinky" in self.ListOfDevices[nwkid] 
+        and "ISOUSC" in self.ListOfDevices[nwkid]["ZLinky"]
+    ):
+        return self.ListOfDevices[nwkid]["ZLinky"]["ISOUSC"]
+
+    ampere = False
+    if (
+        "ZLinky" in self.ListOfDevices[nwkid] 
+        and "PROTOCOL Linky" in self.ListOfDevices[nwkid]["ZLinky"]
+        and self.ListOfDevices[nwkid]["ZLinky"]["PROTOCOL Linky"] in (0, 2)
+    ):
+        # We are in Historique mode , so value is given in Ampere
+        ampere = True
+
+    # Let's check if we have in the Ep values
+    if (
+        "Ep" in self.ListOfDevices[nwkid]
+        and "01" in self.ListOfDevices[nwkid]["Ep"]
+        and "0b01" in self.ListOfDevices[nwkid]["Ep"]["01"]
+        and "000d" in self.ListOfDevices[nwkid]["Ep"]["01"]["0b01"]
+    ):
+
+        if ampere:
+            return self.ListOfDevices[nwkid]["Ep"]["01"]["0b01"]["000d"]
+
+        return convert_kva_to_ampere( self.ListOfDevices[nwkid]["Ep"]["01"]["0b01"]["000d"] )
+
+    return 0
+
+def get_OPTARIF( self, nwkid):
+
+    if (
+        "ZLinky" in self.ListOfDevices[nwkid] 
+        and "OPTARIF" in self.ListOfDevices[nwkid]["ZLinky"]
+    ):
+        return self.ListOfDevices[nwkid]["ZLinky"]["OPTARIF"]
+
+    return "BASE"
+
+def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
+
+    if value == 0:
+        return "00|Normal"
+
+    Isousc = get_ISOUSC( self, MsgSrcAddr )
+
+    if Isousc == 0:
+        return "00|Normal"
+
+    flevel = (value * 100) / Isousc
+    self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, Isousc, flevel), MsgSrcAddr, )
+
+    if flevel > 98:
+        self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-01" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
+        return "03|Reach >98 %% of Max subscribe %s" % (Isousc)
+
+       
+    elif flevel > 90:
+        self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
+        return "02|Reach >90 %% of Max subscribe %s" % (Isousc)
+
+        
+    self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
+    return "00|Normal"
+        
 
 
 def linky_mode( self, nwkid ):

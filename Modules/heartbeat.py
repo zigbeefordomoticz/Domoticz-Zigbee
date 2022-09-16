@@ -40,6 +40,7 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0702_PC321,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
                                     ReadAttributeReq_ZLinky,
+                                    ReadAttribute_ZLinkyIndex,
                                     ReadAttributeReq_Scheduled_ZLinky,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
@@ -183,6 +184,7 @@ def check_delay_binding( self, NwkId, model ):
 def pollingManufSpecificDevices(self, NwkId, HB):
 
     FUNC_MANUF = {
+        "ZLinkyIndexes": ReadAttribute_ZLinkyIndex,
         "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,
         "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,
         "PollingCusterff66": ReadAttributeRequest_ff66,

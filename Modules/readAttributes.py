@@ -19,10 +19,12 @@ from Classes.LoggingManagement import LoggingManagement
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
                                   send_zigatecmd_zcl_noack)
-from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_DEVELCO,
+from Modules.macPrefix import DEVELCO_PREFIX
+from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
+                                       PREFIX_MACADDR_DEVELCO,
                                        PREFIX_MACADDR_IKEA_TRADFRI,
                                        PREFIX_MACADDR_OPPLE,
-                                       PREFIX_MACADDR_TUYA, PREFIX_MACADDR_CASAIA, 
+                                       PREFIX_MACADDR_TUYA,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
@@ -31,8 +33,7 @@ from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            set_timestamp_datastruct)
 from Modules.tuya import tuya_cmd_0x0000_0xf0
 from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
-from Modules.macPrefix import DEVELCO_PREFIX
-
+from Modules.zlinky import get_OPTARIF
 
 ATTRIBUTES = {
     "0000": [
@@ -1353,7 +1354,7 @@ def ReadAttributeReq_ZLinky(self, nwkid):
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
 
     for cluster in ( "0702", "0b01", "0b04" ):
-        self.log.logging("ReadAttributes", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout + " Cluster = " + cluster, nwkid=nwkid)
+        self.log.logging("ZLinky", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout + " Cluster = " + cluster, nwkid=nwkid)
         listAttributes = retreive_ListOfAttributesByCluster(self, nwkid, EPout, cluster)
         ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, listAttributes, ackIsDisabled=False)
 
@@ -1377,11 +1378,10 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
 
    EPout = "01"
    for cluster in WORK_TO_BE_DONE:
-        self.log.logging("ReadAttributes", "Log", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
+        self.log.logging("ZLinky", "Log", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
             nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
         ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
    
-
 
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
     # The list of Attributes could be based on the Contract
@@ -1402,9 +1402,28 @@ def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
         else:
             listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
 
-    self.log.logging("ReadAttributes", "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
+    self.log.logging("ReadAttributes", "ZLinky", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
 
+def ReadAttribute_ZLinkyIndex( self, nwkid ):
+    # This can be used as a backup if the reporting do not work
+
+    INDEX_ATTRIBUTES = {
+        "BA": [ 0x0100 ],
+        "HC": [ 0x0100, 0x0102],
+        "EJ": [ 0x0100, 0x0102],
+        "BB": [ 0x0100, 0x0102, 0x014, 0x016, 0x0108, 0x010a]
+    }
+
+    EPout = "01"
+    self.log.logging("ZLinky", "Debug", "ReadAttribute_ZLinkyIndex: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
+    optarif = get_OPTARIF( self, nwkid)[:2]
+    self.log.logging("ZLinky", "Debug", "ReadAttribute_ZLinkyIndex: %s Cluster: %s Attributes: %s Optarif: %s" %(
+        nwkid, "0702", INDEX_ATTRIBUTES[ optarif ], optarif), nwkid=nwkid)
+    if optarif in INDEX_ATTRIBUTES:
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "0702", INDEX_ATTRIBUTES[ optarif ], ackIsDisabled=False)
+        
+    
 def ReadAttributeRequest_0702_PC321(self, key):
     
     # Cluster 0x0702 Metering / Specific 0x0000
