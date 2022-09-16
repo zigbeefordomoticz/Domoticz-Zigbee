@@ -3846,7 +3846,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
             # HP or Base
             self.log.logging(
-                "Cluster",
+                "ZLinky",
                 "Debug",
                 "Cluster0702 - 0x0000 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value),
                 MsgSrcAddr,
@@ -3940,12 +3940,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if value == "":
             return
 
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value),
-            MsgSrcAddr,
-        )
+        self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
         store_ZLinky_infos( self, MsgSrcAddr, 'EASF01', value)
@@ -3957,12 +3952,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # HC
         if value == 0:
             return
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value),
-            MsgSrcAddr,
-        )
+        self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
         store_ZLinky_infos( self, MsgSrcAddr, 'EASF02', value)

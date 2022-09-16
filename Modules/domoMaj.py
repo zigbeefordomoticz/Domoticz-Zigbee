@@ -263,19 +263,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 if "ZLinky" in self.ListOfDevices[NWKID] and "Color" in self.ListOfDevices[NWKID]["ZLinky"]:
                     tarif_color = self.ListOfDevices[NWKID]["ZLinky"]["Color"]
 
-                self.log.logging("Widget", "Debug", "------>  P1Meter_ZL : %s (%s)" % (value, type(value)), NWKID)
+                self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
                 cur_usage1, cur_usage2, cur_return1, cur_return2, cons, prod = retreive_data_from_current(self, Devices, DeviceUnit, "0;0;0;0;0;0")
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
 
                 if Attribute_ == "050f":
-                    self.log.logging(
-                        "Widget",
-                        "Debug",
-                        "------>  P1Meter_ZL : Trigger by Puissance Apparente: Color: %s Ep: %s" % (tarif_color, Ep),
-                        NWKID,
-                    )
+                    self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Puissance Apparente: Color: %s Ep: %s" % (tarif_color, Ep), NWKID, )
                     cons = round(float(value), 2)
                     usage1 = cur_usage1
                     usage2 = cur_usage2
@@ -283,12 +278,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     return2 = cur_return2
                 else:
                     # We are so receiving a usage update
-                    self.log.logging(
-                        "Widget",
-                        "Debug",
-                        "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep),
-                        NWKID,
-                    )
+                    self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NWKID, )
                     if "0b04" in self.ListOfDevices[NWKID]["Ep"]["01"] and "050f" in self.ListOfDevices[NWKID]["Ep"]["01"]["0b04"]:
                         cons = round(float(self.ListOfDevices[NWKID]["Ep"]["01"]["0b04"]["050f"]), 2)
 
@@ -307,7 +297,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         cons = 0.0
 
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
-                self.log.logging("Widget", "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NWKID)
+                self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
