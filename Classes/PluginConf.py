@@ -1374,6 +1374,15 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "ZiGateConfigureReporting": {
+                "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+
+            },
             "BellowsNoMoreEndDeviceChildren": {
                 "type": "bool",
                 "default": 0,
