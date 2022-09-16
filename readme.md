@@ -83,6 +83,8 @@ This is the case where you have move from the stable5 branch to stable6/beta6.
 The plugin was originally developed for the [Zigate](https://zigate.fr) Coordinators in close relationship with [Zigate](https://zigate.fr) manufactuer.
 In case you are looking to use non-ZiGate coordinators, please see here the [list of open issues](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1235) against the Zigpy libraries and its radio modules
 
+Our main developpement platform are Raspberry and Texas Instrument or Silicon Labs coordinators. Those are providing much more functionnalities than the ZiGate, and so most of the coming features are not available on ZiGate ( real time Backup, Topology Report based on routing tables, on demand Over The Air device firmware upgrade ... )
+
 ### Texas Instrument Zigbee Coordinators
 
 Since late 2021 where we have started opening the plugin to further brands of Zigbee Coordinators and begun focusing on compatibility with the [zzh](https://electrolama.com/projects/zig-a-zig-ah/) from [Electrolama](https://electrolama.com), thanks to their sponsorship.
