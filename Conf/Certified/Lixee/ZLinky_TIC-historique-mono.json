@@ -13,12 +13,8 @@
 			"ff66": "",
 			"Type": "Meter/Power/P1Meter_ZL/Ampere3/Alarm_ZL/Alarm_ZL2/Alarm_ZL3"
 		},
-		"f2": {
-			"Type": "P1Meter_ZL/Alarm_ZL"
-		},
-		"f3": {
-			"Type": "P1Meter_ZL/Alarm_ZL"
-		}
+		"f2": { "Type": "P1Meter_ZL/Alarm_ZL" },
+		"f3": { "Type": "P1Meter_ZL/Alarm_ZL" }
 	},
 	"FakeEp": [ "f2", "f3" ],
 	"Type": "",
@@ -37,7 +33,8 @@
 		},
 		"0b04": {
 			"Attributes": {
-				"0508": { "DataType": "21", "MinInterval": "0046", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }
+				"0508": { "DataType": "21", "MinInterval": "0046", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
+				"050f": { "DataType": "21", "MinInterval": "000A", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }
 			}
 		},
 		"ff66": {

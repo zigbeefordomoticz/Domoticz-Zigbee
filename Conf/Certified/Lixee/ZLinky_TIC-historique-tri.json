@@ -13,12 +13,8 @@
 			"ff66": "",
 			"Type": "Meter/Power/P1Meter_ZL/Ampere3/Alarm_ZL/Alarm_ZL2/Alarm_ZL3"
 		},
-		"f2": {
-			"Type": "P1Meter_ZL/Alarm_ZL"
-		},
-		"f3": {
-			"Type": "P1Meter_ZL/Alarm_ZL"
-		}
+		"f2": { "Type": "P1Meter_ZL/Alarm_ZL" },
+		"f3": { "Type": "P1Meter_ZL/Alarm_ZL" }
 	},
 	"FakeEp": [ "f2", "f3" ],
 	"Type": "",
