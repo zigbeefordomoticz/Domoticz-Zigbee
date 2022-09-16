@@ -19,21 +19,24 @@ ZLINKY_MODE = {
 
 ZLINKY_UPGRADE_PATHS = {
     "ZLinky_TIC": ( 
+        "ZLinky_TIC-historique-mono",
+        "ZLinky_TIC-historique-tri",
         "ZLinky_TIC-standard-mono",
         "ZLinky_TIC-standard-mono-prod", 
+        "ZLinky_TIC-standard-tri",
+        "ZLinky_TIC-standard-tri-prod" 
         ),
     "ZLinky_TIC-historique-mono": ( 
         "ZLinky_TIC-standard-mono",
         "ZLinky_TIC-standard-mono-prod",
-        "ZLinky_TIC-historique-tri",
-        "ZLinky_TIC-standard-tri-prod" 
         ),
     "ZLinky_TIC-historique-tri": ( 
-        "ZLinky_TIC-historique-tri",
-        "ZLinky_TIC-standard-tri-prod",
+        "ZLinky_TIC-standard-tri",
+        "ZLinky_TIC-standard-tri-prod" 
         ),
     "ZLinky_TIC-standard-mono-prod": (),
     "ZLinky_TIC-standard-tri": (),
+    "ZLinky_TIC-standard-tri-prod": (),
 }
 ZLinky_TIC_COMMAND = {
     # Mode Historique
