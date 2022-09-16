@@ -282,12 +282,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     if "0b04" in self.ListOfDevices[NWKID]["Ep"]["01"] and "050f" in self.ListOfDevices[NWKID]["Ep"]["01"]["0b04"]:
                         cons = round(float(self.ListOfDevices[NWKID]["Ep"]["01"]["0b04"]["050f"]), 2)
 
-                    if Attribute_ in ("0000", "0100", "0104", "0108"):
+                    if Attribute_ in ( "0000", "0100", "0104", "0108",):
                         usage1 = int(round(float(value), 0))
                         usage2 = cur_usage2
                         return1 = cur_return1
                         return2 = cur_return2
-                    elif Attribute_ in ("0102", "0106", "010a"):
+                    elif Attribute_ in ( "0102", "0106", "010a", ):
                         usage1 = cur_usage1
                         usage2 = int(round(float(value), 0))
                         return1 = cur_return1

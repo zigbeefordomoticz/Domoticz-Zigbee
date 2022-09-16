@@ -184,7 +184,6 @@ def check_delay_binding( self, NwkId, model ):
 def pollingManufSpecificDevices(self, NwkId, HB):
 
     FUNC_MANUF = {
-        "ZLinkyIndexes": ReadAttribute_ZLinkyIndex,
         "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,
         "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,
         "PollingCusterff66": ReadAttributeRequest_ff66,
@@ -199,7 +198,8 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "TempPollingFreq": ReadAttributeRequest_0402,
         "HumiPollingFreq": ReadAttributeRequest_0405,
         "BattPollingFreq": ReadAttributeRequest_0001,
-        "ScheduledZLinkyRead": ReadAttributeReq_Scheduled_ZLinky,
+        "ZLinkyIndexes": ReadAttributeReq_Scheduled_ZLinky,      # Based on a specific time
+        "ZLinkyPollingPTEC": ReadAttributeReq_Scheduled_ZLinky   # Every 15' by default
     }
 
     if "Param" not in self.ListOfDevices[NwkId]:
@@ -216,7 +216,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
     )
 
     for param in self.ListOfDevices[NwkId]["Param"]:
-        if param == "ScheduledZLinkyRead":
+        if param == "ZLinkyPollingPTEC":
             # We are requesting to execute at a particular time
             _current_time = datetime.datetime.now().strftime("%H:%M" )
             _target_time = self.ListOfDevices[NwkId]["Param"][ param ]

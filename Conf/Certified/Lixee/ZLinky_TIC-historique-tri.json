@@ -63,6 +63,6 @@
 	"Param": {
 		"PollingCusterff66": 86400,
 		"ZLinkyPollingGlobal": 86400,
-		"ScheduledZLinkyRead": "14:20"
+		"ZLinkyPollingPTEC": 900
 	}
 }
