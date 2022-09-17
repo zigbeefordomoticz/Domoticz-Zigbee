@@ -802,7 +802,13 @@ def read_report_configure_response_zigate(self, MsgData, MsgLQI):  # Read Config
         idx += 4
         self.logging( "Debug", f" - MinInterval: {MinInterval}  restofdata: {MsgData[idx:]}",nwkid=NwkId )
         
-        if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
+        try:
+            int_datatype = int(DataType,16)
+        except Exception as e:
+            self.logging( "Debug", f" - unable to convert datatype {DataType} into int. NwkId: {NwkId} Ep: {Ep} ClusterId: {ClusterId} {MsgData}", nwkid=NwkId)
+            return 
+
+        if composite_value( int_datatype ) or discrete_value( int_datatype ):
             pass
 
         elif DataType in SIZE_DATA_TYPE:
