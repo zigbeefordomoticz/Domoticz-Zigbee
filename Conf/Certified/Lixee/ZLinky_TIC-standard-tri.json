@@ -11,7 +11,7 @@
 			"0b01": "",
 			"0b04": "",
 			"ff66": "",
-			"Type": "Power/P1Meter_ZL/Ampere3/Alarm_ZL/Alarm_ZL2/Alarm_ZL3"
+			"Type": "Meter/Power/P1Meter_ZL/Ampere3/Alarm_ZL/Alarm_ZL2/Alarm_ZL3"
 		},
 		"f2": {
 			"Type": "P1Meter_ZL/Alarm_ZL"

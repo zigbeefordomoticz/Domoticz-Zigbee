@@ -401,3 +401,32 @@ def decode_STEG( stge ):
         'Préavis pointes mobiles ': preavis_point_mobile,
         'Pointe mobile ': pointe_mobile,
     }
+
+
+def zlinky_sum_all_indexes( self, nwkid ):
+
+    ZLINKY_INDEX_TO_READ = {
+        "BA": [ "0100"],
+        "HC": [ "0100", "0102"],
+        "EJ": [ "0100", "0102"],
+        "BB": [ "0100", "0102", "0104", "0106", "0108", "010a"]
+    }
+
+    if (
+        "Ep" not in self.ListOfDevices[nwkid]
+        or "01" not in self.ListOfDevices[nwkid]["Ep"]
+        or "0702" not in self.ListOfDevices[nwkid]["Ep"]["01"]
+    ):
+        return 0
+
+    opttarif = get_OPTARIF( self, nwkid )[:2]
+    if opttarif not in ZLINKY_INDEX_TO_READ:
+        return 0
+
+    index_total = 0
+    for x in ZLINKY_INDEX_TO_READ[ opttarif ]:
+        if x not in self.ListOfDevices[nwkid]["Ep"]["01"]["0702"]:
+            continue
+        index_total += self.ListOfDevices[nwkid]["Ep"]["01"]["0702"][ x ]
+
+    return index_total

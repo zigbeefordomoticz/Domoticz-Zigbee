@@ -16,7 +16,7 @@ from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Zigbee.zdpCommands import zdp_IEEE_address_request
 from Modules.tools import zigpy_plugin_sanity_check
-from Modules.zlinky import ZLINK_CONF_MODEL
+from Modules.zlinky import ZLINK_CONF_MODEL, zlinky_sum_all_indexes
 
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
@@ -321,22 +321,25 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif (
-                WidgetType == "Meter" 
+                "Model" in self.ListOfDevices[ NWKID ] 
+                and self.ListOfDevices[ NWKID ]["Model"] in ZLINK_CONF_MODEL
+                and WidgetType == "Meter" 
                 and ( 
                     Attribute_ == "0000" 
                     or ( Attribute_ in ("0100", "0102") and Ep == "01") 
                     or ( Attribute_ in ("0104", "0106") and Ep == "f2")
                     or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                     )
-            ):    
-                # We are in the case were we receive Summation , let's find the last instant power and update
+            ):
                 check_set_meter_widget( Devices, DeviceUnit, 0)    
                 instant, _summation = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
-                summation = round(float(value), 2)
+                summation = round(float(zlinky_sum_all_indexes( self, NWKID )), 2)
+                self.log.logging("ZLinky", "Debug", "------> Summation for Meter : %s" %summation)
                 
                 sValue = "%s;%s" % (instant, summation)
-                self.log.logging("Widget", "Debug", "------>  : " + sValue)
+                self.log.logging("ZLinky", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+
 
             if (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and clusterID == "000c"):  # kWh
                 # We receive Instant
