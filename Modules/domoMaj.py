@@ -281,16 +281,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NWKID, )
                     if "0b04" in self.ListOfDevices[NWKID]["Ep"]["01"] and "050f" in self.ListOfDevices[NWKID]["Ep"]["01"]["0b04"]:
                         cons = round(float(self.ListOfDevices[NWKID]["Ep"]["01"]["0b04"]["050f"]), 2)
-                    
-                    if Attribute_ in ( "0102", "0106", "010a", ): 
-                        # Usage 1 / BASE, HP, BBRHPJB, BBRHPJW, BBRHPJR
+
+                    if Attribute_ in ("0000", "0100", "0104", "0108"):
+                        # Usage 1
                         usage1 = int(round(float(value), 0))
                         usage2 = cur_usage2
                         return1 = cur_return1
                         return2 = cur_return2
                         
-                    elif Attribute_ in ( "0100", "0104", "0108",):
-                        # Usage 2 / HC , BBRHCJB, BBRHCJW, BBRHCJR
+                    elif Attribute_ in ("0102", "0106", "010a"):
+                        # Usage 2
                         usage1 = cur_usage1
                         usage2 = int(round(float(value), 0))
                         return1 = cur_return1
