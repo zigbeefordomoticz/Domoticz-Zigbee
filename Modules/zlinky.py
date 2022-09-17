@@ -305,7 +305,10 @@ def decode_STEG( stge ):
     # '003A4001'
     # '0b1110100100000000000001'
 
-    stge = int( stge, 16)
+    try:
+        stge = int( stge, 16)
+    except Exception as e:
+        return {}
 
     # Decodage Registre Statuts
 
