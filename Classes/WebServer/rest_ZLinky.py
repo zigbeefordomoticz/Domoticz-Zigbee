@@ -6,6 +6,15 @@ from Classes.WebServer.headerResponse import (prepResponseMessage,
 from Modules.tools import get_device_nickname
 from Modules.zlinky import ZLINKY_MODE
 
+ZLINKY_INDEXES = [ 
+    "BASE", "EAST",  
+    "EASF01", "HCHC", "EJPHN", "BBRHCJB", 
+    "EASF02", "HCHP", "EJPHPM", "BBRHCJW", 
+    "EASF03", "BBRHCJW", 
+    "EASF04", "BBRHPJW", 
+    "EASF05", "BBRHCJR", 
+    "EASF06", "BBRHPJR", "EASF07", "EASF08", "EASF09", "EASF10",
+    "EASD01", "EASD02", "EASD03", "EASD04", ]
 ZLINKY_PARAMETERS = {
     0: ( 
         "ADC0", "BASE", "OPTARIF", "ISOUSC", "IMAX", "PTEC", "DEMAIN", "HHPHC", "PEJP", "ADPS", 
@@ -118,12 +127,16 @@ def rest_zlinky(self, verb, data, parameters):
             if zlinky_param in ZLINK_TARIF_MODE_EXCLUDE[ tarif ]:
                 self.logging("Debug", "rest_zlinky - Exclude  %s " % (zlinky_param)) 
                 continue
-    
+
+
             if zlinky_param == "STGE":
                 for x in self.ListOfDevices[ nwkid ]["ZLinky"][ "STGE"]:
                     device["Parameters"].append( { x: self.ListOfDevices[ nwkid ]["ZLinky"]["STGE"][x] } )
             else:
                 attr_value = self.ListOfDevices[ nwkid ]["ZLinky"][ zlinky_param ]
+                if zlinky_param in ZLINKY_INDEXES:
+                    attr_value = int(attr_value) / 1000
+
                 device["Parameters"].append( { zlinky_param: attr_value } )
             
         zlinky.append( device )
