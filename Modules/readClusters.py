@@ -4432,7 +4432,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
             # Check if Intensity is below subscription level
-            MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, "0009",  zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
+            MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, "0009", zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
 
         else:
             # Other type of devices
@@ -4562,12 +4562,12 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Check if Intensity is below subscription level
             if MsgAttrID == "0908":
                 self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L2 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr)
-                MajDomoDevice( self, Devices, MsgSrcAddr, "f2", "0009",  zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
+                MajDomoDevice( self, Devices, MsgSrcAddr, "f2", "0009", zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
                 store_ZLinky_infos( self, MsgSrcAddr, 'IRMS2', value)
 
             elif MsgAttrID == "0a08":
                 self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L3 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr)
-                MajDomoDevice( self, Devices, MsgSrcAddr, "f3", "0009",  zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
+                MajDomoDevice( self, Devices, MsgSrcAddr, "f3", "0009", zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
                 store_ZLinky_infos( self, MsgSrcAddr, 'IRMS3', value)
         
         else:
