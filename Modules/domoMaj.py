@@ -248,7 +248,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  P1Meter : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-            if WidgetType == "P1Meter_ZL" and "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ZLINK_CONF_MODEL and Attribute_ in ("0100", "0102", "0104", "0106", "0108", "010a", "050f"):
+            if WidgetType == "P1Meter_ZL" and "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a", "050f"):
  
                 if Attribute_ != "050f" and Ep == "01" and Attribute_ not in ("0100", "0102"):
                     # Ep = 01, so we store Base, or HP,HC, or BBRHCJB, BBRHPJB
@@ -281,13 +281,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NWKID, )
                     if "0b04" in self.ListOfDevices[NWKID]["Ep"]["01"] and "050f" in self.ListOfDevices[NWKID]["Ep"]["01"]["0b04"]:
                         cons = round(float(self.ListOfDevices[NWKID]["Ep"]["01"]["0b04"]["050f"]), 2)
-
-                    if Attribute_ in ( "0000", "0100", "0104", "0108",):
+                    
+                    if Attribute_ in ( "0102", "0106", "010a", ): 
+                        # Usage 1 / BASE, HP, BBRHPJB, BBRHPJW, BBRHPJR
                         usage1 = int(round(float(value), 0))
                         usage2 = cur_usage2
                         return1 = cur_return1
                         return2 = cur_return2
-                    elif Attribute_ in ( "0102", "0106", "010a", ):
+                        
+                    elif Attribute_ in ( "0100", "0104", "0108",):
+                        # Usage 2 / HC , BBRHCJB, BBRHCJW, BBRHCJR
                         usage1 = cur_usage1
                         usage2 = int(round(float(value), 0))
                         return1 = cur_return1
@@ -315,7 +318,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
-
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif (
@@ -326,8 +328,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     or ( Attribute_ in ("0104", "0106") and Ep == "f2")
                     or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                     )
-            ):
-                
+            ):    
                 # We are in the case were we receive Summation , let's find the last instant power and update
                 check_set_meter_widget( Devices, DeviceUnit, 0)    
                 instant, _summation = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
@@ -337,7 +338,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
-            elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and clusterID == "000c"):  # kWh
+            if (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and clusterID == "000c"):  # kWh
                 # We receive Instant
                 # Let's check if we have Summation in the datastructutre
                 summation = 0
