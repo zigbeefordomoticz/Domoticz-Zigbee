@@ -43,7 +43,8 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             convert_kva_to_ampere, decode_STEG,
                             store_ZLinky_infos,
                             update_zlinky_device_model_if_needed,
-                            zlinky_check_alarm, zlinky_color_tarif)
+                            zlinky_check_alarm, zlinky_color_tarif,
+                            zlinky_totalisateur)
 
 # from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
 
@@ -3940,13 +3941,16 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if value == "":
             return
 
+        
         self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        zlinky_totalisateur(self, MsgSrcAddr, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
         store_ZLinky_infos( self, MsgSrcAddr, 'EASF01', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'HCHC', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'EJPHN', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'BBRHCJB', value)
+        
 
     elif MsgAttrID == "0102" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
         # HP or BBRHPJB
@@ -3954,6 +3958,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             return
         self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        zlinky_totalisateur(self, MsgSrcAddr, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
         store_ZLinky_infos( self, MsgSrcAddr, 'EASF02', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'HCHP', value)
@@ -3965,15 +3970,18 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             return
 
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        zlinky_totalisateur(self, MsgSrcAddr, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, "f2", MsgClusterId, str(value), Attribute_=MsgAttrID)
         store_ZLinky_infos( self, MsgSrcAddr, 'EASF03', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'BBRHCJW', value)
+
         
     elif MsgAttrID == "0106" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
         if value == 0:
             return
 
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        zlinky_totalisateur(self, MsgSrcAddr, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, "f2", MsgClusterId, str(value), Attribute_=MsgAttrID)
         store_ZLinky_infos( self, MsgSrcAddr, 'EASF04', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'BBRHPJW', value)
@@ -3982,6 +3990,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if value == 0:
             return
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        zlinky_totalisateur(self, MsgSrcAddr, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, "f3", MsgClusterId, str(value), Attribute_=MsgAttrID)
         store_ZLinky_infos( self, MsgSrcAddr, 'EASF05', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'BBRHCJR', value)
@@ -3991,6 +4000,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             return
 
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        zlinky_totalisateur(self, MsgSrcAddr, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, "f3", MsgClusterId, str(value), Attribute_=MsgAttrID)
         store_ZLinky_infos( self, MsgSrcAddr, 'EASF06', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'BBRHPJR', value)

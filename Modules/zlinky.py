@@ -1,4 +1,6 @@
 
+import time
+
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 
@@ -405,28 +407,27 @@ def decode_STEG( stge ):
 
 def zlinky_sum_all_indexes( self, nwkid ):
 
-    ZLINKY_INDEX_TO_READ = {
-        "BA": [ "0100"],
-        "HC": [ "0100", "0102"],
-        "EJ": [ "0100", "0102"],
-        "BB": [ "0100", "0102", "0104", "0106", "0108", "010a"]
-    }
-
-    if (
-        "Ep" not in self.ListOfDevices[nwkid]
-        or "01" not in self.ListOfDevices[nwkid]["Ep"]
-        or "0702" not in self.ListOfDevices[nwkid]["Ep"]["01"]
-    ):
+    if "ZLinky" not in self.ListOfDevices[nwkid]:
+        return 0
+    if "INDEX_MID" not in self.ListOfDevices[nwkid]["ZLinky"]:
+        return 0
+    if "CompteurTotalisateur" not in self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]:
         return 0
 
-    opttarif = get_OPTARIF( self, nwkid )[:2]
-    if opttarif not in ZLINKY_INDEX_TO_READ:
-        return 0
+    return self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]["CompteurTotalisateur"]
 
-    index_total = 0
-    for x in ZLINKY_INDEX_TO_READ[ opttarif ]:
-        if x not in self.ListOfDevices[nwkid]["Ep"]["01"]["0702"]:
-            continue
-        index_total += self.ListOfDevices[nwkid]["Ep"]["01"]["0702"][ x ]
+def zlinky_totalisateur(self, nwkid, attribute, value):
 
-    return index_total
+    if "ZLinky" not in self.ListOfDevices[nwkid]:
+        self.ListOfDevices[nwkid]["ZLinky"] = {}
+    if "INDEX_MID" not in self.ListOfDevices[nwkid]["ZLinky"]:
+        self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"] = {}
+        self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]["CompteurTotalisateur"] = 0
+
+    previous_index = 0
+    if attribute in self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]:
+        previous_index = self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"][ attribute ]["Compteur"]
+        
+    increment = value - previous_index
+    self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]["CompteurTotalisateur"] += increment
+    self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"][ attribute ] = { "TimeStamp": time.time() , "Compteur": value}
