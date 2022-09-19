@@ -23,12 +23,12 @@
 	"ConfigureReporting": {
 		"0702": {
 			"Attributes": {
-				"0100": { "DataType": "25", "MinInterval": "0046", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000005" },
-				"0102": { "DataType": "25", "MinInterval": "0046", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000005" },
-				"0104": { "DataType": "25", "MinInterval": "0046", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000005" },
-				"0106": { "DataType": "25", "MinInterval": "0046", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000005" },
-				"0108": { "DataType": "25", "MinInterval": "0046", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000005" },
-				"010a": { "DataType": "25", "MinInterval": "0046", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000005" }
+				"0100": { "DataType": "25", "MinInterval": "000E", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000005" },
+				"0102": { "DataType": "25", "MinInterval": "000E", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000005" },
+				"0104": { "DataType": "25", "MinInterval": "000E", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000005" },
+				"0106": { "DataType": "25", "MinInterval": "000E", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000005" },
+				"0108": { "DataType": "25", "MinInterval": "000E", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000005" },
+				"010a": { "DataType": "25", "MinInterval": "000E", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000005" }
 			}
 		},
 		"0b04": {
@@ -36,7 +36,7 @@
 				"0508": { "DataType": "21", "MinInterval": "0046", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
 				"0908": { "DataType": "21", "MinInterval": "0046", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
 				"0a08": { "DataType": "21", "MinInterval": "0046", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
-				"050f": { "DataType": "21", "MinInterval": "0056", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }
+				"050f": { "DataType": "21", "MinInterval": "000E", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0005" }
 			}
 		},
 		"ff66": {
