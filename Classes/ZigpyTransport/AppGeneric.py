@@ -49,8 +49,7 @@ async def initialize (self, *, auto_form: bool = False):
         await self.load_network_info(load_devices=False)
 
     LOGGER.debug("Network info: %s", self.state.network_info)
-    LOGGER.debug("Node info: %s", self.state.node_info)
-    LOGGER.info("ZNP Configuration: %s", self.config)
+    LOGGER.debug("Node info   : %s", self.state.node_info)
 
     await self.start_network()
 

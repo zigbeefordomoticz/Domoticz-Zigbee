@@ -1,36 +1,22 @@
 #!/usr/bin/env python3
 # coding: utf-8 -*-
 #
-# Author: badz & pipiche38
+# Author: deufo, badz & pipiche38
 #
 
 import logging
-from typing import Any, Optional
 
-import bellows.config as conf
-import bellows.ezsp.v4.types as t
+import bellows.config as bellows_conf
+import bellows.types as t
 import bellows.zigbee.application
 import Classes.ZigpyTransport.AppGeneric
-import zigpy.appdb
-import zigpy.backups
-import zigpy.config
+import zigpy.config as zigpy_conf
 import zigpy.device
-import zigpy.exceptions
-import zigpy.group
-import zigpy.ota
-import zigpy.quirks
-import zigpy.state
-import zigpy.topology
-import zigpy.util
-import zigpy.zcl
-import zigpy.zdo
 from bellows.exception import EzspError
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8010_frame_content, build_plugin_8015_frame_content)
 from Modules.zigbeeVersionTable import ZNP_MODEL
 from zigpy.types import Addressing
-from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                                 SCHEMA_DEVICE)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +31,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
     async def initialize(self, *, auto_form: bool = False):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form = auto_form)
+        LOGGER.info("EZSP Configuration: %s", self.config)
 
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
@@ -56,7 +43,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackBackup = callBackBackup
-        self.backups: zigpy.backups.BackupManager = zigpy.backups.BackupManager(self)
 
         """
         Starts a network, optionally forming one with random settings if necessary.
@@ -86,6 +72,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             LOGGER.debug("EZSP Radio board name: %s", brd_name)
             LOGGER.debug("EmberZNet version: %s" %version)
             LOGGER.info("EZSP Configuration %s", self.config)
+            
         except EzspError as exc:
             LOGGER.error("EZSP Radio does not support getMfgToken command: %s" %str(exc))
 
@@ -95,7 +82,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
     async def shutdown(self) -> None:
         """Shutdown controller."""
-        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup ( await self.backups.create_backup() )
         await self.disconnect()
 
@@ -113,7 +100,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     def get_device_ieee(self, nwk):
         return Classes.ZigpyTransport.AppGeneric.get_device_ieee(self, nwk)
 
-            
     def handle_leave(self, nwk, ieee):
         Classes.ZigpyTransport.AppGeneric.handle_leave(self, nwk, ieee)
 
@@ -164,12 +150,12 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         pass
 
     async def set_extended_pan_id(self,extended_pan_ip):
-        self.config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
+        self.config[bellows_conf.CONF_NWK][bellows_conf.CONF_NWK_EXTENDED_PAN_ID] = extended_pan_ip
         await self._ezsp.leaveNetwork()
         await super().form_network()
 
     async def set_channel(self,channel):   # BE CAREFUL - NEW network formed 
-        self.config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = channel
+        self.config[bellows_conf.CONF_NWK][bellows_conf.CONF_NWK_CHANNEL] = channel
         await self._ezsp.leaveNetwork()
         await super().form_network()
             
@@ -177,12 +163,12 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await self.remove( ieee )
 
     async def coordinator_backup( self ):
-        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup ( await self.backups.create_backup() )
 
 
 def extract_versioning_for_plugin( brd_manuf, brd_name, version):
-    FirmwareBranch = "99"   # Not found in the Table.
+    FirmwareBranch = "98"   # Not found in the Table.
     if brd_manuf == 'Elelabs':
         if 'ELU01' in brd_name:
             FirmwareBranch = "31"

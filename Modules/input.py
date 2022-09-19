@@ -1148,9 +1148,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
         MsgData, MsgLen, self.FirmwareBranch, self.FirmwareMajorVersion, self.FirmwareVersion))
     
     if self.FirmwareBranch in FIRMWARE_BRANCH:
-        if int(self.FirmwareBranch) == 99:
+        if int(self.FirmwareBranch) in ( 98, 99):
             self.log.logging("Input", "Error", "Untested Zigbee adapater model, please report to the Zigbee for Domoticz team")
-            self.pluginParameters["CoordinatorModel"] = "Unknown model"
+            self.pluginParameters["CoordinatorModel"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
            
         elif int(self.FirmwareBranch) == 11:
             #Zigpy-Zigate

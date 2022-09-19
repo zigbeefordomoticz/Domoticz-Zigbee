@@ -31,6 +31,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def initialize(self, *, auto_form: bool = False):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form = auto_form)
+        LOGGER.info("ZNP Configuration: %s", self.config)
 
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.

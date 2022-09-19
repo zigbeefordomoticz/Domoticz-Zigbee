@@ -4,25 +4,12 @@
 # Author: badz & pipiche38
 #
 import asyncio
-import binascii
-import datetime
 import logging
-import traceback
-from typing import Any, Optional
 
 import Classes.ZigpyTransport.AppGeneric
-import Domoticz
-import zigpy.appdb
-import zigpy.config
+import zigpy.config as zigpy_conf
 import zigpy.device
-import zigpy.exceptions
-import zigpy.group
-import zigpy.ota
-import zigpy.quirks
-import zigpy.state
-import zigpy.topology
 import zigpy.types as t
-import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
@@ -30,14 +17,8 @@ import zigpy_deconz
 import zigpy_deconz.zigbee.application
 from Classes.ZigpyTransport.plugin_encoders import \
     build_plugin_8010_frame_content
-from serial import SerialException
-from zigpy_deconz.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
-                                 SCHEMA_DEVICE)
 
 LOGGER = logging.getLogger(__name__)
-
-
-
 
 class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def new(self, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
@@ -49,6 +30,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
     async def initialize(self, *, auto_form: bool = False):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form = auto_form)
+        LOGGER.info("deCONZ Configuration: %s", self.config)
 
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         self.log = log
@@ -110,7 +92,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
     async def shutdown(self) -> None:
         """Shutdown controller."""
-        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup ( await self.backups.create_backup() )
         await self.disconnect()
 
@@ -326,5 +308,5 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         pass
 
     async def coordinator_backup( self ):
-        if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup ( await self.backups.create_backup() )
