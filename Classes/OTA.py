@@ -389,7 +389,7 @@ class OTAManagement(object):
             if "autoServeOTA" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoServeOTA"]:
                 self.ListInUpdate["AuthorizedForUpdate"].append( srcnwkid )
                 return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
-            elif srcnwkid in  self.ListInUpdate["AuthorizedForUpdate"]:
+            elif srcnwkid in self.ListInUpdate["AuthorizedForUpdate"]:
                 # We are in the case were we get a request, but do not authorised selfserving OTA
                 return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
                        
