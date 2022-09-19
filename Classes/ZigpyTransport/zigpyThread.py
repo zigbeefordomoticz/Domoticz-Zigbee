@@ -219,7 +219,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
             return
     except Exception as e:
-            self.log.logging( "TransportZigpy",  "Error",  "Error while starting radio %s on port: %s - Error: %s" %( radiomodule, serialPort, e) )
+            self.log.logging( "TransportZigpy", "Error", "Error while starting radio %s on port: %s - Error: %s" %( radiomodule, serialPort, e) )
 
     self.log.logging("TransportZigpy", "Debug", "4- %s" %radiomodule) 
     if self.pluginParameters["Mode3"] == "True":
