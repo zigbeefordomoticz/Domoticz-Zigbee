@@ -142,6 +142,11 @@ def get_OPTARIF( self, nwkid):
 
     return "BASE"
 
+def get_instant_power( self, nwkid ):
+
+    return round(float(self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"]["050f"]), 2) if "0b04" in self.ListOfDevices[nwkid]["Ep"]["01"] and "050f" in self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"] else 0
+
+
 def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
 
     if value == 0:
@@ -421,13 +426,11 @@ def zlinky_totalisateur(self, nwkid, attribute, value):
     if "ZLinky" not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]["ZLinky"] = {}
     if "INDEX_MID" not in self.ListOfDevices[nwkid]["ZLinky"]:
-        self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"] = {}
-        self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]["CompteurTotalisateur"] = 0
-
+        self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"] = {"CompteurTotalisateur": 0}
     previous_index = 0
     if attribute in self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]:
         previous_index = self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"][ attribute ]["Compteur"]
-        
+
     increment = value - previous_index
     self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]["CompteurTotalisateur"] += increment
     self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"][ attribute ] = { "TimeStamp": time.time() , "Compteur": value}

@@ -8,15 +8,16 @@
     Description: Update of Domoticz Widget
 """
 import Domoticz
+from Zigbee.zdpCommands import zdp_IEEE_address_request
 
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                UpdateDevice_v2)
+from Modules.tools import zigpy_plugin_sanity_check
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
-from Zigbee.zdpCommands import zdp_IEEE_address_request
-from Modules.tools import zigpy_plugin_sanity_check
-from Modules.zlinky import ZLINK_CONF_MODEL, zlinky_sum_all_indexes
+from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
+                            zlinky_sum_all_indexes)
 
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
@@ -263,24 +264,23 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 if "ZLinky" in self.ListOfDevices[NWKID] and "Color" in self.ListOfDevices[NWKID]["ZLinky"]:
                     tarif_color = self.ListOfDevices[NWKID]["ZLinky"]["Color"]
 
-                self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL : %s (%s)" % (value, type(value)), NWKID)
+                self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL : %s Attribute: %s (%s)" % (value, Attribute_, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                cur_usage1, cur_usage2, cur_return1, cur_return2, cons, prod = retreive_data_from_current(self, Devices, DeviceUnit, "0;0;0;0;0;0")
+                cur_usage1, cur_usage2, cur_return1, cur_return2, cons2, prod2 = retreive_data_from_current(self, Devices, DeviceUnit, "0;0;0;0;0;0")
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
 
                 if Attribute_ == "050f":
-                    self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Puissance Apparente: Color: %s Ep: %s" % (tarif_color, Ep), NWKID, )
-                    cons = round(float(value), 2)
-                    usage1 = cur_usage1
-                    usage2 = cur_usage2
-                    return1 = cur_return1
-                    return2 = cur_return2
+                    #self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Puissance Apparente: Color: %s Ep: %s" % (tarif_color, Ep), NWKID, )
+                    #cons = round(float(value), 2)
+                    #usage1 = cur_usage1
+                    #usage2 = cur_usage2
+                    #return1 = cur_return1
+                    #return2 = cur_return2
+                    pass
                 else:
                     # We are so receiving a usage update
                     self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NWKID, )
-                    if "0b04" in self.ListOfDevices[NWKID]["Ep"]["01"] and "050f" in self.ListOfDevices[NWKID]["Ep"]["01"]["0b04"]:
-                        cons = round(float(self.ListOfDevices[NWKID]["Ep"]["01"]["0b04"]["050f"]), 2)
 
                     if Attribute_ in ("0000", "0100", "0104", "0108"):
                         # Usage 1
@@ -299,7 +299,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     if tarif_color == "Blue" and Ep != "01" or tarif_color == "White" and Ep != "f2" or tarif_color == "Red" and Ep != "f3":
                         cons = 0.0
 
-                sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
+                sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, get_instant_power(self, NWKID), prod2)
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
