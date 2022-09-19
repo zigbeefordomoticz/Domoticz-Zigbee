@@ -143,10 +143,12 @@ def get_OPTARIF( self, nwkid):
     return "BASE"
 
 def get_instant_power( self, nwkid ):
-
     return round(float(self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"]["050f"]), 2) if "0b04" in self.ListOfDevices[nwkid]["Ep"]["01"] and "050f" in self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"] else 0
 
-
+def get_tarif_color( self, nwkid ):
+    return self.ListOfDevices[nwkid]["ZLinky"]["Color"] if "ZLinky" in self.ListOfDevices[nwkid] and "Color" in self.ListOfDevices[nwkid]["ZLinky"] else None
+   
+    
 def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
 
     if value == 0:
