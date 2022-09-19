@@ -249,7 +249,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  P1Meter : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-            if WidgetType == "P1Meter_ZL" and "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a", "050f"):
+            if (
+                WidgetType == "P1Meter_ZL" 
+                and "Model" in self.ListOfDevices[NWKID] 
+                and self.ListOfDevices[NWKID]["Model"] 
+                in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a")
+            ):
  
                 if Attribute_ != "050f" and Ep == "01" and Attribute_ not in ("0100", "0102"):
                     # Ep = 01, so we store Base, or HP,HC, or BBRHCJB, BBRHPJB
@@ -272,34 +277,25 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): retreive value: %s;%s;%s;%s;%s;%s" % (Ep, cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod), NWKID)
 
-                if Attribute_ == "050f":
-                    #self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Puissance Apparente: Color: %s Ep: %s" % (tarif_color, Ep), NWKID, )
-                    #cons = round(float(value), 2)
-                    #usage1 = cur_usage1
-                    #usage2 = cur_usage2
-                    #return1 = cur_return1
-                    #return2 = cur_return2
-                    pass
-                else:
-                    # We are so receiving a usage update
-                    self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NWKID, )
-                    cons = get_instant_power(self, NWKID)
-                    if Attribute_ in ("0000", "0100", "0104", "0108"):
-                        # Usage 1
-                        usage1 = int(round(float(value), 0))
-                        usage2 = cur_usage2
-                        return1 = cur_return1
-                        return2 = cur_return2
+                # We are so receiving a usage update
+                self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NWKID, )
+                cons = get_instant_power(self, NWKID)
+                if Attribute_ in ("0000", "0100", "0104", "0108"):
+                    # Usage 1
+                    usage1 = int(round(float(value), 0))
+                    usage2 = cur_usage2
+                    return1 = cur_return1
+                    return2 = cur_return2
 
-                    elif Attribute_ in ("0102", "0106", "010a"):
-                        # Usage 2
-                        usage1 = cur_usage1
-                        usage2 = int(round(float(value), 0))
-                        return1 = cur_return1
-                        return2 = cur_return2
+                elif Attribute_ in ("0102", "0106", "010a"):
+                    # Usage 2
+                    usage1 = cur_usage1
+                    usage2 = int(round(float(value), 0))
+                    return1 = cur_return1
+                    return2 = cur_return2
 
-                    if tarif_color == "Blue" and Ep != "01" or tarif_color == "White" and Ep != "f2" or tarif_color == "Red" and Ep != "f3":
-                        cons = 0.0
+                if tarif_color == "Blue" and Ep != "01" or tarif_color == "White" and Ep != "f2" or tarif_color == "Red" and Ep != "f3":
+                    cons = 0.0
 
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, cur_prod)
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NWKID)
