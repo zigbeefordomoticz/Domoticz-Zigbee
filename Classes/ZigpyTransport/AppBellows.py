@@ -21,6 +21,8 @@ from zigpy.types import Addressing
 LOGGER = logging.getLogger(__name__)
 
 class App_bellows(bellows.zigbee.application.ControllerApplication):
+    
+    @classmethod
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         LOGGER.debug("new")
 

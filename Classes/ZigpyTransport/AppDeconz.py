@@ -21,7 +21,8 @@ from Classes.ZigpyTransport.plugin_encoders import \
 LOGGER = logging.getLogger(__name__)
 
 class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
-    async def new(self, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
+    @classmethod
+    async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         LOGGER.debug("new")
 
     async def _load_db(self) -> None:
