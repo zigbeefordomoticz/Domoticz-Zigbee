@@ -252,8 +252,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if (
                 WidgetType == "P1Meter_ZL" 
                 and "Model" in self.ListOfDevices[NWKID] 
-                and self.ListOfDevices[NWKID]["Model"] 
-                in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a")
+                and self.ListOfDevices[NWKID]["Model"] in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a")
             ):
  
                 if Attribute_ != "050f" and Ep == "01" and Attribute_ not in ("0100", "0102"):
