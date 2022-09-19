@@ -104,7 +104,7 @@ def domoticz_base_url(self):
     
     if self.url_ready:
         self.logging( "Debug", "domoticz_base_url - API URL ready %s Basic Authentication: %s" %(self.url_ready, self.authentication_str))
-        return url
+        return self.url_ready
     
     username, password, host_port = extract_username_password( self, self.api_base_url )
     self.logging("Debug",'Username: %s' %username)
