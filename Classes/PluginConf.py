@@ -54,6 +54,15 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": False,
             },
+            "autoServeOTA": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+            },
+            
             "pingDevices": {
                 "type": "bool",
                 "default": 1,
