@@ -205,9 +205,8 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
     if set_channel != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
 
-    # Starting the Radio module
+    # Ready for starting the Radio module
     try:
-        
         if radiomodule == "zigate":
             self.app = App_zigate(config)
         elif radiomodule == "znp":
@@ -220,21 +219,11 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
             return
     except Exception as e:
-            self.log.logging(
-                "TransportZigpy", 
-                "Error", 
-                "Error while starting radio %s on port: %s - Error: %s" %(
-                    radiomodule, serialPort, e)
-                )
+            self.log.logging( "TransportZigpy", "Error", "Error while starting radio %s on port: %s - Error: %s" %( radiomodule, serialPort, e) )
 
     self.log.logging("TransportZigpy", "Debug", "4- %s" %radiomodule) 
     if self.pluginParameters["Mode3"] == "True":
-        self.log.logging(
-            "TransportZigpy",
-            "Status",
-            "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x"
-            % (set_channel, set_channel, set_extendedPanId),
-        )
+        self.log.logging( "TransportZigpy", "Status", "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x" % (set_channel, set_channel, set_extendedPanId), )
         new_network = True
     else:
         new_network = False
@@ -252,20 +241,47 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             permit_to_join_timer=self.permit_to_join_timer,
         )
     except Exception as e:
-        self.log.logging(
-            "TransportZigpy",
-            "Error",
-            "Error at startup %s" %e)
+        self.log.logging( "TransportZigpy", "Error", "Error at startup %s" %e)
         print_stack( self )
         
     if new_network:
         # Assume that the new network has been created
-        self.log.logging(
-            "TransportZigpy",
-            "Status",
-            "Assuming new network formed")
+        self.log.logging( "TransportZigpy", "Status", "Assuming new network formed")
         self.ErasePDMDone = True  
 
+    display_network_infos(self)
+    self.ControllerData["Network key"] = ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key )
+    
+    post_coordinator_startup(self, radiomodule)
+    
+    # Run forever
+    await worker_loop(self)
+
+    await self.app.shutdown()
+    self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
+
+
+def post_coordinator_startup(self, radiomodule):
+    # Send Network information to plugin, in order to poplulate various objetcs
+    self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
+
+    # Send Controller Active Node and Node Descriptor
+    self.forwarder_queue.put( build_plugin_8045_frame_list_controller_ep( self, ) )
+
+    self.log.logging( "TransportZigpy", "Debug", "Active Endpoint List:  %s" % str(self.app.get_device(nwk=t.NWK(0x0000)).endpoints.keys()), )
+    for epid, ep in self.app.get_device(nwk=t.NWK(0x0000)).endpoints.items():
+        if epid == 0:
+            continue
+        self.log.logging( "TransportZigpy", "Debug", "Simple Descriptor:  %s" % ep)
+        self.forwarder_queue.put(build_plugin_8043_frame_list_node_descriptor(self, epid, ep))
+
+    self.log.logging( "TransportZigpy", "Debug", "Controller Model %s" % self.app.get_device(nwk=t.NWK(0x0000)).model )
+    self.log.logging( "TransportZigpy", "Debug", "Controller Manufacturer %s" % self.app.get_device(nwk=t.NWK(0x0000)).manufacturer )
+    # Let send a 0302 to simulate an Off/on
+    self.forwarder_queue.put( build_plugin_0302_frame_content( self, ) )
+   
+    
+def display_network_infos(self):
     self.log.logging( "TransportZigpy", "Status", "Network settings")
     self.log.logging( "TransportZigpy", "Status", "  Channel: %s" %self.app.channel)
     self.log.logging( "TransportZigpy", "Status", "  PAN ID: 0x%04X" %self.app.pan_id)
@@ -273,38 +289,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
     self.log.logging( "TransportZigpy", "Status", "  Device IEEE: %s" %self.app.ieee)
     self.log.logging( "TransportZigpy", "Status", "  Device NWK: 0x%04X" %self.app.nwk)
     self.log.logging( "TransportZigpy", "Debug", "  Network key: " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
-    self.ControllerData["Network key"] = ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key )
-    
-    # Send Network information to plugin, in order to poplulate various objetcs
-    self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
-
-    # Send Controller Active Node and Node Descriptor
-    self.forwarder_queue.put( build_plugin_8045_frame_list_controller_ep( self, ) )
-
-    self.log.logging(
-        "TransportZigpy",
-        "Debug",
-        "Active Endpoint List:  %s" % str(self.app.get_device(nwk=t.NWK(0x0000)).endpoints.keys()),
-    )
-    for epid, ep in self.app.get_device(nwk=t.NWK(0x0000)).endpoints.items():
-        if epid == 0:
-            continue
-        self.log.logging("TransportZigpy", "Debug", "Simple Descriptor:  %s" % ep)
-        self.forwarder_queue.put(build_plugin_8043_frame_list_node_descriptor(self, epid, ep))
-
-    self.log.logging("TransportZigpy", "Debug", "Controller Model %s" % self.app.get_device(nwk=t.NWK(0x0000)).model)
-    self.log.logging(
-        "TransportZigpy", "Debug", "Controller Manufacturer %s" % self.app.get_device(nwk=t.NWK(0x0000)).manufacturer
-    )
-
-    # Let send a 0302 to simulate an Off/on
-    self.forwarder_queue.put( build_plugin_0302_frame_content( self, ) )
-
-    # Run forever
-    await worker_loop(self)
-
-    await self.app.shutdown()
-    self.log.logging("TransportZigpy", "Debug", "Exiting co-rounting radio_start")
+ 
 
 async def worker_loop(self):
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
@@ -320,11 +305,7 @@ async def worker_loop(self):
             break
 
         data = json.loads(entry)
-        self.log.logging(
-            "TransportZigpy",
-            "Debug",
-            "got a command %s" % data["cmd"],
-        )
+        self.log.logging( "TransportZigpy", "Debug", "got a command %s" % data["cmd"], )
 
         if self.pluginconf.pluginConf["ZiGateReactTime"]:
             t_start = 1000 * time.time()

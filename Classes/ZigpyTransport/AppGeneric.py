@@ -7,11 +7,14 @@
 import binascii
 import logging
 import time
-import zigpy.exceptions
+
 import zigpy.application
-import zigpy_znp.types as t
+import zigpy.config as zigpy_conf
+import zigpy.device
+import zigpy.exceptions
+import zigpy.types as t
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_8002_frame_content, build_plugin_8014_frame_content, 
+    build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 
 LOGGER = logging.getLogger(__name__)
@@ -48,12 +51,11 @@ async def initialize (self, *, auto_form: bool = False):
         await self.load_network_info(load_devices=False)
 
     LOGGER.debug("Network info: %s", self.state.network_info)
-    LOGGER.debug("Node info: %s", self.state.node_info)
-    LOGGER.info("ZNP Configuration: %s", self.config)
+    LOGGER.debug("Node info   : %s", self.state.node_info)
 
     await self.start_network()
 
-    if self.config[zigpy.config.CONF_NWK_BACKUP_ENABLED]:
+    if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
         self.callBackBackup ( await self.backups.create_backup() )
 
 def get_device(self, ieee=None, nwk=None):
