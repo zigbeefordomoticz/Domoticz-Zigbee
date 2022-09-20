@@ -3023,6 +3023,16 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
 
 def scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, msgtype):
 
+    self.log.logging(
+        "Input",
+        "Debug",
+        "scan_attribute_reponse - Sqn: %s i_sqn: %s Nwkid: %s Ep: %s Cluster: %s MsgData: %s Type: %s"
+        % (
+            MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, msgtype
+        ),
+        MsgSrcAddr,
+    )
+
     idx = 12
     while idx < len(MsgData):
         MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
@@ -3036,8 +3046,9 @@ def scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, M
             MsgAttSize = MsgData[idx : idx + 4]
             idx += 4
             size = int(MsgAttSize, 16) * 2
-            MsgClusterData = MsgData[idx : idx + size]
-            idx += size
+            if size > 0:
+                MsgClusterData = MsgData[idx : idx + size]
+                idx += size
         else:
             self.log.logging(
                 "Input",
@@ -3411,9 +3422,7 @@ def Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         MsgSrcAddr,
     )
 
-    self.configureReporting.read_configure_reporting_response(
-        MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus
-    )
+    self.configureReporting.read_configure_reporting_response( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus )
 
 
 def Decode8122(self, Devices, MsgData, MsgLQI):  # Read Configure Report response

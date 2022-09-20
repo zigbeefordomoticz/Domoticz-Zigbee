@@ -1325,6 +1325,14 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "debugZLinky": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            },
         },
     },
     # Others
@@ -1375,6 +1383,15 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
+            "ZiGateConfigureReporting": {
+                "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+
+            },
             "BellowsNoMoreEndDeviceChildren": {
                 "type": "bool",
                 "default": 0,
@@ -1819,6 +1836,14 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": True,
             },
+            "polling0b01": {
+                "type": "int",
+                "default": 86400,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
             "polling0b04": {
                 "type": "int",
                 "default": 900,
@@ -1827,6 +1852,15 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": True,
             },
+            "pollingff66": {
+                "type": "int",
+                "default": 3661,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
+            
             "polling0b05": {
                 "type": "int",
                 "default": 86400,

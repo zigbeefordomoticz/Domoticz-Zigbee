@@ -11,7 +11,7 @@ from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.pluginDbAttributes import STORE_READ_CONFIGURE_REPORTING, STORE_CONFIGURE_REPORTING, STORE_CUSTOM_CONFIGURE_REPORTING
 
-from Modules.zigateConsts import SIZE_DATA_TYPE
+from Modules.zigateConsts import SIZE_DATA_TYPE, analog_value
 
 
 def rest_cfgrpt_ondemand(self, verb, data, parameters):
@@ -190,7 +190,7 @@ def rest_cfgrpt_ondemand_with_config_put(self, verb, data, parameters , _respons
                     cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["TimeOut"] = "%04x" %int(info["TimeOut"],16)
                 if "DataType" in info:
                     cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["DataType"] = "%02x" % int(info["DataType"],16)
-                    if "Change" in info:
+                    if "Change" in info and analog_value(int(info["DataType"], 16)):
                         cluster_config_reporting[ cluster_info["ClusterId"] ]["Attributes"][ attribute[ "Attribute"] ]["Change"] = datatype_formating( self, info["Change"], info["DataType"] )
                         
     self.ListOfDevices[ nwkid ][ STORE_CUSTOM_CONFIGURE_REPORTING ] = cluster_config_reporting

@@ -34,9 +34,10 @@ from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
                                              sqn_get_internal_sqn_from_app_sqn)
 
-MAX_ATTR_PER_REQ = 3
+
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
 MAX_READ_ATTR_PER_REQ = 4
+MAX_ATTR_PER_REQ = 3
 
 class ConfigureReporting:
     def __init__(
@@ -106,6 +107,8 @@ class ConfigureReporting:
 
         maxAttributesPerRequest = MAX_ATTR_PER_REQ
         if self.pluginconf.pluginConf["breakConfigureReporting"]:
+            maxAttributesPerRequest = 1
+        elif 'Model' in self.ListOfDevices[ key ] and "ZLinky" in self.ListOfDevices[ key ]["Model"]:
             maxAttributesPerRequest = 1
 
         attribute_reporting_configuration = []
@@ -348,7 +351,6 @@ class ConfigureReporting:
                     continue
                     # We do not find any atrributes for the cluster !!!
 
-                
         if wip_flag:
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["Retry"] += 1
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["TimeStamp"] = time.time()
@@ -357,15 +359,22 @@ class ConfigureReporting:
 
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
 
-        if len( attribute_list ) <= MAX_READ_ATTR_PER_REQ:
+        maxAttributesPerRequest = MAX_READ_ATTR_PER_REQ
+        if self.pluginconf.pluginConf["breakConfigureReporting"]:
+            maxAttributesPerRequest = 1
+        elif 'Model' in self.ListOfDevices[ nwkid ] and "ZLinky" in self.ListOfDevices[ nwkid ]["Model"]:
+            maxAttributesPerRequest = 1
+
+
+        if len( attribute_list ) <= maxAttributesPerRequest:
             zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
             return
         
         self.logging("Debug", "read_report_configure_request %s/%s need to break attribute list into chunk %s" %( nwkid, epout, str(attribute_list)))
         idx = 0
         while idx < len(attribute_list):
-            end = idx + MAX_READ_ATTR_PER_REQ
-            if idx + MAX_READ_ATTR_PER_REQ > len(attribute_list):
+            end = idx + maxAttributesPerRequest
+            if idx + maxAttributesPerRequest > len(attribute_list):
                 end = len(attribute_list)
             self.logging("Debug", "      chunk %s" %str( attribute_list[ idx : end ]))
             zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list[ idx : end ], is_ack_tobe_disabled(self, nwkid),)
@@ -430,6 +439,8 @@ class ConfigureReporting:
             for _cluster in self.ListOfDevices[ Nwkid ]["Ep"][ _ep ]:
                 if _cluster not in configuration_reporting:
                     continue
+                if "Attributes" not in configuration_reporting[ _cluster ]:
+                    continue
 
                 self.logging("Debug", f"---- check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster}", nwkid=Nwkid)
                 cluster_configuration = configuration_reporting[ _cluster ]["Attributes"]
@@ -448,9 +459,13 @@ class ConfigureReporting:
                     if "Status" in attribute_current_configuration and attribute_current_configuration["Status"] != "00":
                         if attribute_current_configuration["Status"] == '8b':
                             configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
-                        else:
-                            self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed invalid status {attribute_current_configuration['Status']}", nwkid=Nwkid)
-                            continue
+                            # There is no need to continue as we have requested a Cluster
+                            wip_flap = True
+                            cluster_update = True
+                            break
+ 
+                        self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed invalid status {attribute_current_configuration['Status']}", nwkid=Nwkid)
+                        continue
                         
                     self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed - {Nwkid} {_cluster} {attribut} Checking {attribute_current_configuration} versus {cluster_configuration[attribut]} " , nwkid=Nwkid)
                     cluster_update = False
@@ -787,7 +802,13 @@ def read_report_configure_response_zigate(self, MsgData, MsgLQI):  # Read Config
         idx += 4
         self.logging( "Debug", f" - MinInterval: {MinInterval}  restofdata: {MsgData[idx:]}",nwkid=NwkId )
         
-        if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
+        try:
+            int_datatype = int(DataType,16)
+        except Exception as e:
+            self.logging( "Error", f" - unable to convert datatype {DataType} into int. NwkId: {NwkId} Ep: {Ep} ClusterId: {ClusterId} {MsgData}", nwkid=NwkId)
+            return 
+
+        if composite_value( int_datatype ) or discrete_value( int_datatype ):
             pass
 
         elif DataType in SIZE_DATA_TYPE:
