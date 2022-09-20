@@ -114,10 +114,10 @@ class ConfigureReporting:
         attribute_reporting_configuration = []
         for attr in ListOfAttributesToConfigure:
             attrType = cluster_configuration[attr]["DataType"]
-            minInter = cluster_configuration[attr]["MinInterval"]
-            maxInter = cluster_configuration[attr]["MaxInterval"]
-            timeOut = cluster_configuration[attr]["TimeOut"]
-            chgFlag = cluster_configuration[attr]["Change"]
+            #minInter = cluster_configuration[attr]["MinInterval"]
+            #maxInter = cluster_configuration[attr]["MaxInterval"]
+            #timeOut = cluster_configuration[attr]["TimeOut"]
+            #chgFlag = cluster_configuration[attr]["Change"]
 
             if analog_value(int(attrType, 16)):
                 # Analog values: For attributes with 'analog' data type (see 2.6.2), 
@@ -126,10 +126,10 @@ class ConfigureReporting:
                 attribute_reporting_record = {
                     "Attribute": attr,
                     "DataType": attrType,
-                    "minInter": minInter,
-                    "maxInter": maxInter,
-                    "rptChg": chgFlag,
-                    "timeOut": timeOut,
+                    "minInter": cluster_configuration[attr]["MinInterval"],
+                    "maxInter": cluster_configuration[attr]["MaxInterval"],
+                    "rptChg": cluster_configuration[attr]["Change"],
+                    "timeOut": cluster_configuration[attr]["TimeOut"],
                 }
             elif discrete_value(int(attrType, 16)):
                 # Discrete value: For attributes of 'discrete' data type (see 2.6.2),
@@ -137,18 +137,18 @@ class ConfigureReporting:
                 attribute_reporting_record = {
                     "Attribute": attr,
                     "DataType": attrType,
-                    "minInter": minInter,
-                    "maxInter": maxInter,
-                    "timeOut": timeOut,
+                    "minInter": cluster_configuration[attr]["MinInterval"],
+                    "maxInter": cluster_configuration[attr]["MaxInterval"],
+                    "timeOut": cluster_configuration[attr]["TimeOut"],
                 }
             elif composite_value(int(attrType, 16)):
                 # Composite value: assumed "rptChg" is omitted
                 attribute_reporting_record = {
                     "Attribute": attr,
                     "DataType": attrType,
-                    "minInter": minInter,
-                    "maxInter": maxInter,
-                    "timeOut": timeOut,
+                    "minInter": cluster_configuration[attr]["MinInterval"],
+                    "maxInter": cluster_configuration[attr]["MaxInterval"],
+                    "timeOut": cluster_configuration[attr]["TimeOut"],
                 }
             else:
                 self.logging(
