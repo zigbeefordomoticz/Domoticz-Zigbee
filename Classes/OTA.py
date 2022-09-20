@@ -386,15 +386,18 @@ class OTAManagement(object):
         if image_found:     
             fileversion = "%08x" %image_found["originalVersion"]
             imagesize = "%08x" %image_found["intSize"]
-            self.ListInUpdate["AuthorizedForUpdate"].append( srcnwkid )
-            return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
-            
+            if "autoServeOTA" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoServeOTA"]:
+                self.ListInUpdate["AuthorizedForUpdate"].append( srcnwkid )
+                return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
+            elif srcnwkid in self.ListInUpdate["AuthorizedForUpdate"]:
+                # We are in the case were we get a request, but do not authorised selfserving OTA
+                return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
+                       
         # For now we respond NO IMAGE AVAILABLE 0x98                              
         zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '98')
 
 
 # Routines sending Data
-
 
 def ota_load_image_to_zigate(self, image_type, force_version=None):  # OK 13/10
     # Load the image headers into Zigate

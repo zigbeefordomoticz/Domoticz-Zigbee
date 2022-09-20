@@ -5,6 +5,8 @@
 #
 
 import logging
+
+import Classes.ZigpyTransport.AppGeneric
 import zigpy.config as zigpy_conf
 import zigpy.device
 import zigpy.profiles
@@ -14,15 +16,14 @@ import zigpy_znp.config as znp_conf
 import zigpy_znp.types as t
 import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.plugin_encoders import (
-    build_plugin_8010_frame_content,
-    build_plugin_8015_frame_content)
+    build_plugin_8010_frame_content, build_plugin_8015_frame_content)
 from Modules.zigbeeVersionTable import ZNP_MODEL
 from zigpy.zcl import clusters
-import Classes.ZigpyTransport.AppGeneric
 
 LOGGER = logging.getLogger(__name__)
 
 class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
+    @classmethod
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         LOGGER.debug("new")
 
@@ -31,6 +32,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def initialize(self, *, auto_form: bool = False):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form = auto_form)
+        LOGGER.info("ZNP Configuration: %s", self.config)
 
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
@@ -171,17 +173,11 @@ def extract_versioning_for_plugin( znp_model, znp_manuf):
     
     ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"
     ZNP_30X = "CC2531, Z-Stack 3.0.x"
-    
-    for x in ZNP_MODEL:
-        if znp_model[:len(x)] == x:
-            FirmwareBranch = ZNP_MODEL[x]
-            break
-    else:
-        # Not found in the Table.
-        FirmwareBranch = "99"
-        
+
+    FirmwareBranch = next((ZNP_MODEL[x] for x in ZNP_MODEL if znp_model[: len(x)] == x), "99")
+
     year = znp_model[ znp_model.find("build") + 6 : -5 ]
     FirmwareMajorVersion = "%02d" %int(znp_model[ znp_model.find("build") + 8 : -5 ])
     FirmwareVersion = "%04d" %int(znp_model[ znp_model.find("build") + 10: -1])
-        
+
     return FirmwareBranch, FirmwareMajorVersion, FirmwareVersion

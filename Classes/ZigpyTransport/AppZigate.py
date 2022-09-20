@@ -36,6 +36,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
+    @classmethod
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         LOGGER.debug("new")
 
