@@ -70,7 +70,7 @@ SCHNEIDER_FEATURES = (( 300 // HEARTBEAT) + 5)
 BINDING_TABLE_REFRESH = (( 3600 // HEARTBEAT ) + 11)
 NODE_DESCRIPTOR_REFRESH = (( 3600 // HEARTBEAT) + 13)
 ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 7)
-CHECKING_DELAY_READATTRIBUTE = (( 300 // HEARTBEAT ) + 7)
+CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 
 
 def attributeDiscovery(self, NwkId):
@@ -152,6 +152,9 @@ def check_delay_readattributes( self, NwkId ):
         func = READ_ATTRIBUTES_REQUEST[cluster][0]
         func(self, NwkId)
         self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters'].remove( cluster )
+        
+    if len(self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters']) == 0:
+        del self.ListOfDevices[ NwkId ]['DelayReadAttributes']
             
         
 def check_delay_binding( self, NwkId, model ):
