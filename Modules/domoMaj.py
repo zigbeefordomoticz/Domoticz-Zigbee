@@ -285,6 +285,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     usage2 = cur_usage2
                     return1 = cur_return1
                     return2 = cur_return2
+                    if usage1 == cur_usage1:
+                        # Skip update as there is no consumption
+                        continue
 
                 elif Attribute_ in ("0102", "0106", "010a"):
                     # Usage 2
@@ -292,6 +295,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     usage2 = int(round(float(value), 0))
                     return1 = cur_return1
                     return2 = cur_return2
+                    if usage2 == cur_usage2:
+                        # Skip update as there is no consumption
+                        continue
 
                 if tarif_color == "Blue" and Ep != "01" or tarif_color == "White" and Ep != "f2" or tarif_color == "Red" and Ep != "f3":
                     cons = 0.0
