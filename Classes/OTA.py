@@ -27,12 +27,12 @@
 #
 # """
 
-import binascii
+
 import struct
 from datetime import datetime
 from os import listdir
 from os.path import isfile, join
-from time import time
+import time
 
 import Domoticz
 from Modules.readAttributes import ReadAttributeRequest_0000
@@ -195,7 +195,7 @@ class OTAManagement(object):
 
         self.ListInUpdate["Status"] = "Block requested"
         self.ListInUpdate["intFileOffset"] = int(MsgFileOffset, 16)
-        self.ListInUpdate["LastBlockSent"] = time()
+        self.ListInUpdate["LastBlockSent"] = time.time()
 
         # self. ota_management( MsgSrcAddr, MsgEP )
 
@@ -285,7 +285,7 @@ class OTAManagement(object):
         )
 
         # Do we have a TimeOut on Sending Blocks
-        if self.ListInUpdate["NwkId"] and self.ListInUpdate["LastBlockSent"] != 0 and (time() > self.ListInUpdate["LastBlockSent"] + 300):
+        if self.ListInUpdate["NwkId"] and self.ListInUpdate["LastBlockSent"] != 0 and (time.time() > self.ListInUpdate["LastBlockSent"] + 300):
             logging(self, "Error", "Ota detects Timeout while sending blocks for %s" % self.ListInUpdate["NwkId"])
             if self.ListInUpdate["NwkId"] in self.ListInUpdate["AuthorizedForUpdate"]:
                 self.ListInUpdate["AuthorizedForUpdate"].remove(self.ListInUpdate["NwkId"])
@@ -444,7 +444,7 @@ def ota_load_image_to_zigate(self, image_type, force_version=None):  # OK 13/10
     self.ImageLoaded["ImageVersion"] = image_version
     self.ImageLoaded["image_type"] = image_type
     self.ImageLoaded["manufacturer_code"] = manufacturer_code
-    self.ImageLoaded["LoadedTimeStamp"] = time()
+    self.ImageLoaded["LoadedTimeStamp"] = time.time()
 
 
 def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request):  # OK 24/10
@@ -467,7 +467,8 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
 
     sequence = int(block_request["Sequence"], 16)
     _offset = int(block_request["Offset"], 16)
-    image_version = "%08x" % self.ListInUpdate["ImageVersion"]
+    #image_version = "%08x" % self.ListInUpdate["ImageVersion"]
+    image_version = "%08x" %msg_image_version
     image_type = "%04x" % image_type
     manufacturer_code = "%04x" % self.ListInUpdate["intManufCode"]
 
@@ -484,7 +485,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     for i in _raw_ota_data:
         datas += "%02x" % i
 
-    self.ListInUpdate["TimeStamps"] = time()
+    self.ListInUpdate["TimeStamps"] = time.time()
     self.ListInUpdate["Status"] = "Transfer Progress"
     self.ListInUpdate["Received"] = _offset
     self.ListInUpdate["Sent"] = _offset + _lenght
@@ -517,7 +518,7 @@ def ota_image_advertize(self, dest_addr, dest_ep, image_version, image_type=0xFF
     IMG_NTFY_PAYLOAD_TYPE = 3
 
     self.ImageLoaded["Notified"] = True
-    self.ImageLoaded["NotifiedTimeStamp"] = time()
+    self.ImageLoaded["NotifiedTimeStamp"] = time.time()
 
     if IMG_NTFY_PAYLOAD_TYPE == 0:
         image_version = 0xFFFFFFFF  # Wildcard
@@ -591,8 +592,8 @@ def ota_upgrade_end_response(self, sqn, dest_addr, dest_ep, intMsgImageVersion, 
         del self.ListOfDevices[dest_addr]["OTAUpgrade"]
         self.ListOfDevices[dest_addr]["OTAUpgrade"] = {}
 
-    now = int(time())
-    self.ListOfDevices[dest_addr]["OTAUpgrade"][now] = {"Time": datetime.fromtimestamp(time()).strftime("%Y-%m-%d %H:%M:%S")}
+    now = int(time.time())
+    self.ListOfDevices[dest_addr]["OTAUpgrade"][now] = {"Time": datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")}
  
     self.ListOfDevices[dest_addr]["OTAUpgrade"][now]["Version"] = "%08X" % _FileVersion
     self.ListOfDevices[dest_addr]["OTAUpgrade"][now]["Type"] = "%04X" % _ImageType
@@ -654,13 +655,24 @@ def cleanup_after_completed_upgrade(self, NwkId, Status):
     self.ListInUpdate["Process"] = None
 
     # Read Attribute in order to refresh the Attributs
-    ReadAttributeRequest_0000(self, NwkId, fullScope=True)
+    delay_checking_version(self, NwkId)
 
 
     # Reset the controller (ziagte in native mode only for now)
     if self.zigbee_communication == "native":
         sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
         sendZigateCmd(self, "0011", "")  # Software Reset
+
+def delay_checking_version(self, NwkId):
+    
+    if 'DelayReadAttributes' not in self.ListOfDevices[ NwkId ]:
+        self.ListOfDevices[ NwkId ]['DelayReadAttributes'] = {'Clusters': []}
+    self.ListOfDevices[ NwkId ]['DelayReadAttributes']['TargetTime'] = time.time() + 120
+    if "0000" not in self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters']:
+        self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters'].append( "0000" )
+    if "0019" not in self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters']:
+        self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters'].append( "0019" )
+
 
 
 def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update=False):
@@ -1070,7 +1082,7 @@ def notify_upgrade_end(
     intMsgImageVersion,
 ):  # OK 26/10
 
-    _transferTime_hh, _transferTime_mm, _transferTime_ss = convertTime(int(time() - self.ListInUpdate["StartTime"]))
+    _transferTime_hh, _transferTime_mm, _transferTime_ss = convertTime(int(time.time() - self.ListInUpdate["StartTime"]))
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
     _name = None
     _textmsg = ""
@@ -1216,7 +1228,7 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     self.ListInUpdate["Brand"] = brand
     self.ListInUpdate["FileName"] = ota_image_file
     self.ListInUpdate["LastBlockSent"] = 0
-    self.ListInUpdate["StartTime"] = time()
+    self.ListInUpdate["StartTime"] = time.time()
 
     if "Firmware Update" not in self.PluginHealth:
         self.PluginHealth["Firmware Update"] = {}
