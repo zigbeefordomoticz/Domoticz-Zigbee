@@ -79,6 +79,8 @@
 	},
 	"PollingEnabled": 1,
 	"Param": {
+		"ConfigurationReportChunk": 1,
+		"ReadAttributesChunk": 2,
 		"PollingCusterff66": 3600,
 		"ZLinkyPollingGlobal": 86400,
 		"ZLinkyPollingPTEC": 900
