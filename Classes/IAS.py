@@ -105,8 +105,15 @@ class IAS_Zone_Management:
     def IAS_device_enrollment(self, NwkId):
         # This is coming from the plugin.
         # Let's see first if anything has to be done
-        if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ( "MOSZB-140", "SMSZB-120"):
+        if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("MOSZB-140", "SMSZB-120"):
             # Frient trigger itself the Device Enrollment
+            return
+        
+        if "Param" in self.ListOfDevices[NwkId] and "ForceIASRegistrationEp" in self.ListOfDevices[NwkId]["Param"]:
+            Epout = self.ListOfDevices[NwkId]["Param"]["ForceIASRegistrationEp"]
+            self.logging("Log", f"setZigateIEEE - Set Zigate IEEE: {self.ControllerIEEE}")
+            set_IAS_CIE_Address(self, NwkId, Epout)
+            del self.ListOfDevices[NwkId]["Param"]["ForceIASRegistrationEp"]
             return
 
         ias_ep_list = getEpForCluster(self, NwkId, "0500", strict=True)
@@ -114,21 +121,21 @@ class IAS_Zone_Management:
         self.logging("Debug", "IAS_EP_LIST: %s" %str(ias_ep_list))
         if not ias_ep_list:
             return
-        
+
         if is_device_enrollment_completed(self, NwkId):
             return
-        
+
         self.logging("Debug", f"IAS device Enrollment for {NwkId} on {ias_ep_list}, type: {type(ias_ep_list)} ")
         if "IAS" not in self.ListOfDevices[ NwkId ]:
             self.ListOfDevices[NwkId]["IAS"] = {}
         if "Auto-Enrollment" not in self.ListOfDevices[NwkId]["IAS"]:
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"] = {}
         if "Status" not in self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]:
-            
+
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrollment In Progress"
         if "Ep" not in self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]:
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"] ={}
-            
+
         if self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] == "Enrolled":
             return
 
@@ -137,11 +144,11 @@ class IAS_Zone_Management:
             self.logging("Debug", f"IAS device Enrollment for {NwkId} - Checking Ep: {ep}")
             if self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"] != {} and ep in self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"]:
                 continue
-            
+
             self.logging("Debug", f"IAS device Enrollment for {NwkId} - start Enrollment on Ep: {ep}")
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"][str(ep)] = {"Status": "Service Discovery", "TimeStamp": time.time()}
             IAS_CIE_service_discovery( self, NwkId, str(ep))
-            
+
         if is_device_enrollment_completed(self, NwkId):
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
 
@@ -206,7 +213,7 @@ class IAS_Zone_Management:
             if Ep not in self.ListOfDevices[NwkId]["Ep"] or self.ListOfDevices[NwkId]["Ep"][ Ep ] in ( "", {}):
                 # If we get the enrollment at the begin, it will then define the End Point, and we won't request it
                 zdp_simple_descriptor_request(self, NwkId, Ep)
-                
+            
             bindDevice(self, self.ListOfDevices[ NwkId ]['IEEE'], Ep, "0500")
             if is_device_enrollment_completed(self, NwkId):
                 self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled2"
@@ -403,6 +410,7 @@ def format_list_attributes( self, ListOfAttributes):
 
 
 # Host -> Node
+        
 def set_IAS_CIE_Address(self, NwkId, Epout):
     # If the IAS CIE determines it wants to enroll the IAS Zone server, 
     # it SHALL send a Write Attribute command on the IAS Zone server’s IAS_CIE_Address attribute with its IEEE address.
