@@ -106,6 +106,13 @@ def philips_set_pir_occupancySensibility(self, nwkid, level):
             self, nwkid, ZIGATE_EP, "02", "0406", "100b", "01", "0030", "20", "%02x" % level, ackIsDisabled=False)
         ReadAttributeRequest_0406_philips_0030(self, nwkid)
 
+def philips_led_indication(self, nwkid, onoff):
+
+    if onoff in (0, 1):
+        write_attribute(
+            self, nwkid, ZIGATE_EP, "02", "0000", "100b", "01", "0033", "20", "%02x" % onoff, ackIsDisabled=False)
+        ReadAttributeRequest_0406_philips_0030(self, nwkid)
+
 
 def philips_set_poweron_after_offon(self, mode):
     # call from WebServer

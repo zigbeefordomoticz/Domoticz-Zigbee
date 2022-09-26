@@ -1,0 +1,15 @@
+hostname.fullqualofiedname:443 {
+    encode gzip
+
+
+    # Reverse Plugin Zigbee for Domoticz
+    reverse_proxy /zigate*   127.0.0.1:9440
+    reverse_proxy /rest-z4d* 127.0.0.1:9440
+
+    # Reverse Domoticz
+    reverse_proxy 127.0.0.88:8080
+
+    log {
+        output file /var/log/caddy/domoticz.log
+    }
+}

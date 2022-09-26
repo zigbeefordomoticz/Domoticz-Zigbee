@@ -5,48 +5,58 @@
 #
 
 import os
+import urllib.parse 
 
 import Domoticz
 
-CURL_COMMAND = "/usr/bin/curl"
+LINUX_CURL_COMMAND = "/usr/bin/curl"
+WINDOWS_CURL_COMMAND = "c:\Windows\System32\curl.exe"
 
+def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_api="http://127.0.0.1:8080"):
+    # sourcery skip: replace-interpolation-with-fstring
 
-def restartPluginViaDomoticzJsonApi(self, stop=False):
-
-    if not os.path.isfile(CURL_COMMAND):
-        Domoticz.Log("Unable to restart the plugin, %s not available" % CURL_COMMAND)
+    curl_command = WINDOWS_CURL_COMMAND if os.name == 'nt' else LINUX_CURL_COMMAND
+    if not os.path.isfile(curl_command):
+        Domoticz.Log("Unable to restart the plugin, %s not available" % curl_command)
         return
 
-    
-    if stop:
-        enabled="false"
-    else:
-        enabled="true"
-    
-    if self.WebUsername and self.WebPassword:
-        url = "http://%s:%s@127.0.0.1:%s" % (self.WebUsername, self.WebPassword, self.pluginconf.pluginConf["port"])
-    else:
-        url = "http://127.0.0.1:%s" % self.pluginconf.pluginConf["port"]
+    erasePDM = "True" if erasePDM else "False"
+    enabled = "false" if stop else "true"
 
-    url += "/json.htm?type=command&param=updatehardware&htype=94"
-    url += "&idx=%s" % self.pluginParameters["HardwareID"]
-    url += "&name=%s" % self.pluginParameters["Name"].replace(" ", "%20")
-    url += "&address=%s" % self.pluginParameters["Address"]
-    url += "&port=%s" % self.pluginParameters["Port"]
-    url += "&serialport=%s" % self.pluginParameters["SerialPort"]
-    url += "&Mode1=%s" % self.pluginParameters["Mode1"]
-    url += "&Mode2=%s" % self.pluginParameters["Mode2"]
-    url += "&Mode3=%s" % self.pluginParameters["Mode3"]
-    url += "&Mode4=%s" % self.pluginParameters["Mode4"]
-    url += "&Mode5=%s" % self.pluginParameters["Mode5"]
-    url += "&Mode6=%s" % self.pluginParameters["Mode6"]
-    url += "&extra=%s" % self.pluginParameters["Key"]
-    url += "&enabled=%s" % enabled
-    url += "&datatimeout=0"
+    #if webUserName and webPassword:
+    #    url = "http://%s:%s@127.0.0.1:%s" % (self.WebUsername, self.WebPassword, self.pluginconf.pluginConf["port"])
+    #else:
+    #    url = "http://127.0.0.1:%s" % self.pluginconf.pluginConf["port"]
+
+    url = url_base_api + "/json.htm?"
+
+    url_infos = {
+        "type": "command",
+        "param": "updatehardware",
+        "htype": "94", # Python Plugin Framework
+        "idx": self.pluginParameters["HardwareID"],
+        "name": self.pluginParameters["Name"],
+        "address": self.pluginParameters["Address"],
+        "port": self.pluginParameters["Port"],
+        "serialport": self.pluginParameters["SerialPort"],
+        "Mode1": self.pluginParameters["Mode1"],
+        "Mode2": self.pluginParameters["Mode2"],
+        "Mode3": erasePDM,
+        "Mode4": self.pluginParameters["Mode4"],
+        "Mode5": self.pluginParameters["Mode5"],
+        "Mode6": self.pluginParameters["Mode6"],
+        "extra": self.pluginParameters["Key"],
+        "enabled": enabled,
+        "datatimeout": "0",
+    }
+
     if "LogLevel" in self.pluginParameters:
-        url += "&loglevel=%s" % self.pluginParameters["LogLevel"]
+        url_infos["loglevel"] = self.pluginParameters["LogLevel"]
+
+    Domoticz.Log("URL INFOS %s" %url_infos)
+    url += urllib.parse.urlencode(url_infos, quote_via=urllib.parse.quote )
 
     Domoticz.Status("Plugin Restart command : %s" % url)
 
-    _cmd = CURL_COMMAND + " '%s' &" % url
+    _cmd = curl_command + " '%s' &" % url
     os.system(_cmd)  # nosec

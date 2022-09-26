@@ -7,12 +7,6 @@
 [submodule "external/zigpy-zigate"]
 	path = external/zigpy-zigate
 	url = https://github.com/zigbeefordomoticz/zigpy-zigate
-[submodule "external/pyserial"]
-	path = external/pyserial
-	url = https://github.com/pyserial/pyserial.git
-[submodule "external/dnspython"]
-	path = external/dnspython
-	url = https://github.com/rthalley/dnspython
 [submodule "external/zigpy-deconz"]
 	path = external/zigpy-deconz
 	url = https://github.com/zigbeefordomoticz/zigpy-deconz.git
