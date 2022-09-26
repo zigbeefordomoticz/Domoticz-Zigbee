@@ -14,8 +14,8 @@
 import time
 
 import Domoticz
-
 import Modules.paramDevice
+
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
                                   send_zigatecmd_zcl_noack)
@@ -137,23 +137,11 @@ ATTRIBUTES = {
     "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
 }
 
-def _read_attribute_get_device_config_param( self, NwkId, config_parameter):
-    
-    self.log.logging("ReadAttributes", "Log", "get_device_config_param: %s Config: %s" %( NwkId,config_parameter ))
-    
-    if NwkId not in self.ListOfDevices:
-        return None
-    if "Param" not in self.ListOfDevices[NwkId]:
-        return None
-    if config_parameter not in self.ListOfDevices[NwkId]["Param"]:
-        return None
-    return self.ListOfDevices[NwkId]["Param"][ config_parameter ]
-
 
 def get_max_read_attribute_value( self, nwkid=None):
     
     # This is about Read Configuration Reporting from a device
-    read_configuration_report_chunk = _read_attribute_get_device_config_param( self, nwkid, "ReadAttributeChunk")
+    read_configuration_report_chunk = Modules.paramDevice.get_device_config_param( self, nwkid, "ReadAttributeChunk")
 
     if "PairingInProgress" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PairingInProgress"]:
         read_configuration_report_chunk = 1
@@ -172,7 +160,7 @@ def get_max_read_attribute_value( self, nwkid=None):
 
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, ):
-    maxReadAttributesByRequest = get_max_read_attribute_value( addr )    
+    maxReadAttributesByRequest = get_max_read_attribute_value( self, addr )    
     if not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled)
     else:
