@@ -259,14 +259,16 @@ def sanity_check_of_param(self, NwkId):
         return
 
     for param in self.ListOfDevices[NwkId]["Param"]:
-        value = self.ListOfDevices[NwkId]["Param"][param]
         if param in DEVICE_PARAMETERS:
             # Domoticz.Log("sanity_check_of_param - calling %s" %param)
             func = DEVICE_PARAMETERS[param]
+            value = self.ListOfDevices[NwkId]["Param"][param]
             func(self, NwkId, value)
 
 
 def get_device_config_param( self, NwkId, config_parameter):
+    
+    self.log.logging("ReadAttributes", "Log", "get_device_config_param: %s Config: %s" %( NwkId,config_parameter ))
     
     if NwkId not in self.ListOfDevices:
         return None
