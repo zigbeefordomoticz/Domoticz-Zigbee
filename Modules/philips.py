@@ -4,6 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 import Domoticz
+import struct
 
 from Modules.basicOutputs import (raw_APS_request, set_poweron_afteroffon,
                                   write_attribute)
@@ -11,7 +12,8 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0006_400x,
                                     ReadAttributeRequest_0008_0000,
                                     ReadAttributeRequest_0406_philips_0030)
-from Modules.tools import is_ack_tobe_disabled, retreive_cmd_payload_from_8002
+from Modules.domoMaj import MajDomoDevice
+from Modules.tools import is_hex, retreive_cmd_payload_from_8002, checkAndStoreAttributeValue
 from Modules.zigateConsts import ZIGATE_EP
 
 PHILIPS_POWERON_MODE = {0x00: "Off", 0x01: "On", 0xFF: "Previous state"}  # Off  # On  # Previous state
@@ -87,9 +89,11 @@ def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
 
     default_response, GlobalCommand, sqn, ManufacturerCode, cmd, data = retreive_cmd_payload_from_8002(MsgPayload)
 
-    if _ModelName == "RWL021" and cmd == "00" and ClusterID == "fc00":
+    if self.zigbee_communication == "native" and _ModelName == "RWL021" and cmd == "00" and ClusterID == "fc00":
         # This is handle by the firmware
         return
+    elif  _ModelName == "RWL021" and cmd == "00" and ClusterID == "fc00":
+         philips_dimmer_switch( self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload)
 
     self.log.logging(
         "Philips",
@@ -148,3 +152,168 @@ def philips_set_poweron_after_offon_device(self, mode, nwkid):
     )
     set_poweron_afteroffon(self, nwkid, OnOffMode=mode)
     ReadAttributeRequest_0006_400x(self, nwkid)
+
+
+
+def philips_dimmer_switch(self,  Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, dstNWKID, dstEP, MsgPayload):
+
+    # On:  1d/0b10/23/0001/00003/000210000
+    # Off: 1d/0b10/26/0004/00003/002210100
+    # Plus:1d/0b10/28/0002/00003/002210200
+    
+    MsgAttrID = MsgPayload[8:12]
+    MsgClusterData = MsgPayload[12:]
+    
+    self.log.logging(
+        "Cluster",
+        "Debug",
+        "ReadCluster %s - %s/%s - reading self.ListOfDevices[%s]['Ep'][%s][%s][%s] = %s"
+        % (
+            MsgClusterId,
+            MsgSrcAddr,
+            MsgSrcEp,
+            MsgSrcAddr,
+            MsgSrcEp,
+            MsgClusterId,
+            MsgAttrID,
+            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId],
+        ),
+        MsgSrcAddr,
+    )
+
+    DIMMER_STEP = 1
+    if "0000" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
+        prev_Value = str(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0000"]).split(";")
+        if len(prev_Value) == 3:
+            for val in prev_Value:
+                if not is_hex(val):
+                    prev_Value = "0;80;0".split(";")
+                    break
+        else:
+            prev_Value = "0;80;0".split(";")
+    else:
+        prev_Value = "0;80;0".split(";")
+
+    prev_onoffvalue = onoffValue = int(prev_Value[0], 16)
+    prev_lvlValue = lvlValue = int(prev_Value[1], 16)
+    prev_duration = duration = int(prev_Value[2], 16)
+
+    self.log.logging(
+        "Cluster",
+        "Debug",
+        "ReadCluster - %s - %s/%s - past OnOff: %s, Lvl: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue),
+        MsgSrcAddr,
+    )
+    if MsgAttrID == "0001":  # On button
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - %s - %s/%s - ON Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
+            MsgSrcAddr,
+        )
+        onoffValue = 1
+
+    elif MsgAttrID == "0004":  # Off  Button
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - %s - %s/%s - OFF Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
+            MsgSrcAddr,
+        )
+        onoffValue = 0
+
+    elif MsgAttrID in ("0002", "0003"):  # Dim+ / 0002 is +, 0003 is -
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - %s - %s/%s - DIM Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
+            MsgSrcAddr,
+        )
+        action = MsgClusterData[2:4]
+        duration = MsgClusterData[6:10]
+        duration = struct.unpack("H", struct.pack(">H", int(duration, 16)))[0]
+
+        if action in ("00"):  # Short press
+            self.log.logging(
+                "Cluster",
+                "Debug",
+                "ReadCluster - %s - %s/%s - DIM Action: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, action),
+                MsgSrcAddr,
+            )
+            onoffValue = 1
+            # Short press/Release - Make one step   , we just report the press
+            if MsgAttrID == "0002":
+                lvlValue += DIMMER_STEP
+            elif MsgAttrID == "0003":
+                lvlValue -= DIMMER_STEP
+
+        elif action in ("01"):  # Long press
+            delta = duration - prev_duration  # Time press since last message
+            onoffValue = 1
+            if MsgAttrID == "0002":
+                lvlValue += round(delta * DIMMER_STEP)
+            elif MsgAttrID == "0003":
+                lvlValue -= round(delta * DIMMER_STEP)
+
+        elif action in ("03"):  # Release after Long Press
+            self.log.logging(
+                "Cluster",
+                "Debug",
+                "ReadCluster - %s - %s/%s - DIM Release after %s seconds" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, round(duration / 10)),
+                MsgSrcAddr,
+            )
+
+        else:
+            self.log.logging(
+                "Cluster",
+                "Debug",
+                "ReadCluster - %s - %s/%s - DIM Action: %s not processed" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, action),
+                MsgSrcAddr,
+            )
+            return  # No need to update
+
+        # Check if we reach the limits Min and Max
+        if lvlValue > 255:
+            lvlValue = 255
+        if lvlValue <= 0:
+            lvlValue = 0
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - %s - %s/%s - Level: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, lvlValue),
+            MsgSrcAddr,
+        )
+    else:
+        self.log.logging(
+            "Cluster",
+            "Log",
+            "readCluster - %s - %s/%s unknown attribute: %s %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData),
+            MsgSrcAddr,
+        )
+
+    # Update Domo
+    sonoffValue = "%02x" % onoffValue
+    slvlValue = "%02x" % lvlValue
+    sduration = "%02x" % duration
+
+    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0000", "%s;%s;%s" % (sonoffValue, slvlValue, sduration))
+    self.log.logging(
+        "Cluster",
+        "Debug",
+        "ReadCluster %s - %s/%s - updating self.ListOfDevices[%s]['Ep'][%s][%s] = %s"
+        % (
+            MsgClusterId,
+            MsgSrcAddr,
+            MsgSrcEp,
+            MsgSrcAddr,
+            MsgSrcEp,
+            MsgClusterId,
+            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId],
+        ),
+        MsgSrcAddr,
+    )
+
+    if prev_onoffvalue != onoffValue:
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006", sonoffValue)
+    if prev_lvlValue != lvlValue:
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, slvlValue)
