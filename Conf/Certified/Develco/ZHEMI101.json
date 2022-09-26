@@ -63,7 +63,5 @@
 			"0400"
 		]
 	},
-	"Param": {
-		"ReadAttributeChunk": 5
-	}
+	"Param": {}
 }

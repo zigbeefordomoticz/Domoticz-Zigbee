@@ -110,7 +110,7 @@ class GroupsManagement(object):
         DeviceConf,
         log,
     ):
-        self.zigbee_communication = zigbee_communitation
+        self.zigbee_communitation = zigbee_communitation
         self.HB = 0
         self.pluginconf = PluginConf
         self.ControllerLink = ZigateComm  # Point to the ZigateComm object

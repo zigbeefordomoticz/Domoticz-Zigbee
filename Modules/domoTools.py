@@ -78,10 +78,6 @@ def RetreiveSignalLvlBattery(self, NwkID):
     if NwkID not in self.ListOfDevices:
         return ("", "")
 
-    return ( get_signal_level(self, NwkID), get_battery_level(self, NwkID))
-
-def get_signal_level(self, NwkID):
-    
     SignalLevel = ""
     if "LQI" in self.ListOfDevices[NwkID]:
         SignalLevel = self.ListOfDevices[NwkID]["LQI"]
@@ -104,6 +100,7 @@ def get_signal_level(self, NwkID):
 
     if isinstance(SignalLevel, int):
         # rssi = round((SignalLevel * 11) / 255)
+
         DomoticzRSSI = 0
         if SignalLevel >= SEUIL3:
             #  SEUIL3 < ZiGate LQI < 255 -> 11
@@ -119,40 +116,34 @@ def get_signal_level(self, NwkID):
             SignalLevel = SignalLevel - SEUIL1
             DomoticzRSSI = 1 + round((SignalLevel * 3) / gamme)
 
-    return DomoticzRSSI
+    # Domoticz.Log("RetreiveSignalLvlBattery - convert ZiGate LQI: %s to Domoticz LQI: %s" %(SignalLevel, DomoticzRSSI ))
+    SignalLevel = DomoticzRSSI
 
-    
-def get_battery_level(self, NwkID):
-
-    if "Battery" in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]["Battery"] not in ( {}, ):
+    BatteryLevel = ""
+    if "Battery" in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]["Battery"] != {}:
         self.log.logging(
             "Widget",
             "Debug",
-            "------>  From Battery NwkId: %s Battery: %s Type: %s"
+            "------>  NwkId: %s Battery: %s Type: %s"
             % (NwkID, self.ListOfDevices[NwkID]["Battery"], type(self.ListOfDevices[NwkID]["Battery"])),
             NwkID,
         )
         if isinstance(self.ListOfDevices[NwkID]["Battery"], (float)):
-            return int(round((self.ListOfDevices[NwkID]["Battery"])))
+            BatteryLevel = int(round((self.ListOfDevices[NwkID]["Battery"])))
         if isinstance(self.ListOfDevices[NwkID]["Battery"], (int)):
-            return self.ListOfDevices[NwkID]["Battery"]
-    elif (
-        "IASBattery" in self.ListOfDevices[NwkID]
+            BatteryLevel = self.ListOfDevices[NwkID]["Battery"]
+    if (
+        BatteryLevel == ""
+        and "IASBattery" in self.ListOfDevices[NwkID]
         and isinstance(self.ListOfDevices[NwkID]["IASBattery"], int)
     ):
-        self.log.logging(
-            "Widget",
-            "Debug",
-            "------>  From IASBattery NwkId: %s Battery: %s Type: %s"
-            % (NwkID, self.ListOfDevices[NwkID]["IASBattery"], type(self.ListOfDevices[NwkID]["IASBattery"])),
-            NwkID,
-        )
+        BatteryLevel = self.ListOfDevices[NwkID]["IASBattery"]
 
-        return self.ListOfDevices[NwkID]["IASBattery"]
+    if BatteryLevel == "" or (not isinstance(BatteryLevel, (int, float))):
+        BatteryLevel = 255
 
-    return 255
-    
-    
+    return (SignalLevel, BatteryLevel)
+
 
 def WidgetForDeviceId(self, NwkId, DeviceId):
 
@@ -229,19 +220,20 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             resetMotion(self, Devices, NWKID, WidgetType, unit, SignalLevel, BatteryLvl, now, LUpdate, TimedOutMotion)
 
         elif TimedOutSwitchButton and WidgetType in SWITCH_LVL_MATRIX:
-            if "ForceUpdate" in SWITCH_LVL_MATRIX[WidgetType] and SWITCH_LVL_MATRIX[WidgetType]["ForceUpdate"]:
-                resetSwitchSelectorPushButton(
-                    self,
-                    Devices,
-                    NWKID,
-                    WidgetType,
-                    unit,
-                    SignalLevel,
-                    BatteryLvl,
-                    now,
-                    LUpdate,
-                    TimedOutSwitchButton,
-                )
+            if "ForceUpdate" in SWITCH_LVL_MATRIX[WidgetType]:
+                if SWITCH_LVL_MATRIX[WidgetType]["ForceUpdate"]:
+                    resetSwitchSelectorPushButton(
+                        self,
+                        Devices,
+                        NWKID,
+                        WidgetType,
+                        unit,
+                        SignalLevel,
+                        BatteryLvl,
+                        now,
+                        LUpdate,
+                        TimedOutSwitchButton,
+                    )
 
 
 def resetMotion(self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut):

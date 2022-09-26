@@ -41,7 +41,7 @@ class ZigateTransport(object):
         wifiAddress=None,
         wifiPort=None,
     ):
-        self.zigbee_communication = "native"
+        self.zigbee_communitation = "native"
         
         # Call back function to send back to plugin
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
@@ -212,14 +212,14 @@ class ZigateTransport(object):
             self._connection = None
         open_connection(self)
 
-    def open_cie_connection(self):
+    def open_zigate_connection(self):
         if not self._connection:
             self.set_connection()
         if (not self.pluginconf.pluginConf["byPassDzConnection"] or self.force_dz_communication) and self._connection:
             self._connection.Connect()
         self.logging_transport("Log", "Connection open: %s" % self._connection)
 
-    def re_connect_cie(self):
+    def re_connect_zigate(self):
 
         self.logging_transport("Error", "Reconnection: Old: %s" % self._connection)
         if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
@@ -231,13 +231,13 @@ class ZigateTransport(object):
             self.loggilogging_transportng_send("Error", "---> Connection state: %s" % self._connection.Connected())
             if self._connection.Connected():
                 self.logging_transport("Error", "--->Connection still exist !!! Need to shutdown")
-                self.close_cie_connection()
+                self.close_zigate_connection()
                 self._connection = None
 
         self.logging_transport("Error", "--->Connection still exist !!! Need to shutdown")
-        self.open_cie_connection()
+        self.open_zigate_connection()
 
-    def close_cie_connection(self):
+    def close_zigate_connection(self):
         self.logging_transport("Log", "Request closing connection: %s" % self._connection)
 
         self.running = False  # It will shutdown the Thread

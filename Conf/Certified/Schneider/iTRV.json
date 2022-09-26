@@ -60,8 +60,6 @@
 	"Param": {
 		"WiserLockThermostat": 0,
 		"WiseriTrvWindowOpen": 1,
-		"WiserRoomNumber": 1,
-		"OverrideDurationInMinutes": 30,
-		"OverrideTempInDegree": 2
+		"WiserRoomNumber": 1
 	}
 }

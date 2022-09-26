@@ -94,8 +94,5 @@
 		]
 	},
 	"BatteryDevice": 1,
-	"BatteryPercentageConverter": 2,
-	"Param": {
-		"alarmDuration": 0
-	}
+	"BatteryPercentageConverter": 2
 }

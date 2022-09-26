@@ -36,7 +36,7 @@ POWER_LEVEL = {0: 00, 1: 52, 2: 40, 3: 32}  # Max (Default)  #  #  # Min
 
 def set_TxPower(self, powerlevel):
 
-    if self.zigbee_communication == "zigpy":
+    if self.zigbee_communitation == "zigpy":
         if powerlevel < -22:
             powerlevel = -22
         elif powerlevel > 22:

@@ -11,7 +11,6 @@ from time import time
 
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage, setupHeadersResponse)
-from Modules.zb_tables_management import get_device_table_entry, get_list_of_timestamps, remove_entry_from_all_tables
 
 
 def rest_req_topologie(self, verb, data, parameters):
@@ -22,12 +21,12 @@ def rest_req_topologie(self, verb, data, parameters):
         action = {"Name": "Req-Topology", "TimeStamp": int(time())}
         _response["Data"] = json.dumps(action, sort_keys=True)
 
-        self.logging("Status", "Request a Start of Network Topology scan")
+        self.logging("Log", "Request a Start of Network Topology scan")
         if self.networkmap:
             if not self.networkmap.NetworkMapPhase():
                 self.networkmap.start_scan()
             else:
-                self.logging("Error", "Cannot start Network Topology as one is in progress...")
+                self.logging("Log", "Cannot start Network Topology as one is in progress...")
 
     return _response
 
@@ -42,44 +41,38 @@ def rest_netTopologie(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
 
-    if not self.pluginconf.pluginConf["TopologyV2"]:
-        _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkTopology-v3-" + "%02d" % self.hardwareID + ".json"
-        self.logging("Debug", "Filename: %s" % _filename)
+    _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkTopology-v3-" + "%02d" % self.hardwareID + ".json"
+    self.logging("Debug", "Filename: %s" % _filename)
 
-        if not os.path.isfile(_filename):
-            _response["Data"] = json.dumps({}, sort_keys=True)
-            return _response
+    if not os.path.isfile(_filename):
+        _response["Data"] = json.dumps({}, sort_keys=True)
+        return _response
 
-        # Read the file, as we have anyway to do it
-        _topo = {}  # All Topo reports
-        _timestamps_lst = []  # Just the list of Timestamps
-        with open(_filename, "rt") as handle:
-            for line in handle:
-                if line[0] != "{" and line[-1] != "}":
-                    continue
-                entry = json.loads(line)
-                for _ts in entry:
-                    _timestamps_lst.append(int(_ts))
-                    _topo[_ts] = []  # List of Father -> Child relation for one TimeStamp
-                    reportLQI = entry[_ts]
-                    _topo[_ts] = extract_report(self, reportLQI)
+    # Read the file, as we have anyway to do it
+    _topo = {}  # All Topo reports
+    _timestamps_lst = []  # Just the list of Timestamps
+    with open(_filename, "rt") as handle:
+        for line in handle:
+            if line[0] != "{" and line[-1] != "}":
+                continue
+            entry = json.loads(line)
+            for _ts in entry:
+                _timestamps_lst.append(int(_ts))
+                _topo[_ts] = []  # List of Father -> Child relation for one TimeStamp
+                reportLQI = entry[_ts]
+                _topo[_ts] = extract_report(self, reportLQI)
 
     if verb == "DELETE":
         if len(parameters) == 0:
             os.remove(_filename)
-            action = {"Name": "File-Removed", "FileName": _filename}
+            action = {}
+            action["Name"] = "File-Removed"
+            action["FileName"] = _filename
             _response["Data"] = json.dumps(action, sort_keys=True)
-
 
         elif len(parameters) == 1:
             timestamp = parameters[0]
-            if self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
-                remove_entry_from_all_tables( self, timestamp )
-                action = {"Name": "Report %s removed" % timestamp}
-                _response["Data"] = json.dumps(action, sort_keys=True)
-
-
-            elif timestamp in _topo:
+            if timestamp in _topo:
                 self.logging("Debug", "Removing Report: %s from %s records" % (timestamp, len(_topo)))
                 with open(_filename, "r+") as handle:
                     d = handle.readlines()
@@ -90,47 +83,43 @@ def rest_netTopologie(self, verb, data, parameters):
                             continue
                         entry = json.loads(line)
                         entry_ts = entry.keys()
-                        if len(entry_ts) != 1:
-                            continue
-                        if timestamp in entry_ts:
-                            self.logging("Debug", "--------> Skiping %s" % timestamp)
+                        if len(entry_ts) == 1:
+                            if timestamp in entry_ts:
+                                self.logging("Debug", "--------> Skiping %s" % timestamp)
+                                continue
+                        else:
                             continue
                         handle.write(line)
                     handle.truncate()
 
-                action = {"Name": "Report %s removed" % timestamp}
+                action = {}
+                action["Name"] = "Report %s removed" % timestamp
                 _response["Data"] = json.dumps(action, sort_keys=True)
-                
             else:
                 Domoticz.Error("Removing Topo Report %s not found" % timestamp)
                 _response["Data"] = json.dumps([], sort_keys=True)
         return _response
 
     if verb == "GET":
+        
+            
         if len(parameters) == 0:
             # Send list of Time Stamps
             if len(self.ControllerData) == 0:
                 _timestamps_lst = [1643561599, 1643564628]
-                
-            elif self.pluginconf.pluginConf["TopologyV2"]:
-                _timestamps_lst = get_list_of_timestamps( self, "0000", "Neighbours")
-
             _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
         elif len(parameters) == 1:
-            if self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
-                timestamp = parameters[0]
-                _response["Data"] = json.dumps(collect_routing_table(self,timestamp ), sort_keys=True)
 
-            elif len(self.ControllerData) == 0:
-                _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
-            else:
-                timestamp = parameters[0]
-                if timestamp in _topo:
-                    self.logging("Debug", "Topologie sent: %s" % _topo[timestamp])
-                    _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
+                if len(self.ControllerData) == 0:
+                    _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
                 else:
-                    _response["Data"] = json.dumps([], sort_keys=True)
+                    timestamp = parameters[0]
+                    if timestamp in _topo:
+                        self.logging("Debug", "Topologie sent: %s" % _topo[timestamp])
+                        _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
+                    else:
+                        _response["Data"] = json.dumps([], sort_keys=True)
 
     return _response
 
@@ -164,7 +153,7 @@ def extract_report(self, reportLQI):
 
     if is_sibling_required(reportLQI) or self.pluginconf.pluginConf["Sibling"]:
         reportLQI = check_sibbling(self, reportLQI)
-
+    
     self.logging("Debug", "AFTER Sibling report" )
     for item in reportLQI:
         for x in reportLQI[item]["Neighbours"]:
@@ -271,7 +260,8 @@ def get_node_name( self, node):
         return "Zigbee Coordinator"
     if node not in self.ListOfDevices:
         return node
-    if "ZDeviceName" in self.ListOfDevices[node] and self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
+    if "ZDeviceName" in self.ListOfDevices[node]:
+        if self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
             return self.ListOfDevices[node]["ZDeviceName"]
     return node
     
@@ -388,63 +378,3 @@ def find_device_type(self, node):
         if self.ListOfDevices[node]["DeviceType"] == "RFD":
             return "End Device"
     return None
-
-
-
-def collect_routing_table(self, time_stamp=None):
-    
-    _topo = []
-    self.logging( "Debug", "collect_routing_table - TimeStamp: %s" %time_stamp)
-    for father in self.ListOfDevices:
-        for child in extract_routes(self, father, time_stamp):
-            if child not in self.ListOfDevices:
-                continue
-            _relation = {
-                "Father": get_node_name( self, father), 
-                "Child": get_node_name( self, child), 
-                "_lnkqty": get_lqi_from_neighbours(self, father, child), 
-                "DeviceType": find_device_type(self, child)
-                }
-            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
-                _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
-            _topo.append( _relation ) 
-            
-        for child in collect_associated_devices( self, father, time_stamp):
-            if child not in self.ListOfDevices:
-                continue
-            _relation = {
-                "Father": get_node_name( self, father), 
-                "Child": get_node_name( self, child), 
-                "_lnkqty": get_lqi_from_neighbours(self, father, child), 
-                "DeviceType": find_device_type(self, child)
-                }
-            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
-                _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
-            if _relation not in _topo:
-                _topo.append( _relation )
-    return _topo
-
-       
-def collect_associated_devices( self, node, time_stamp=None):
-    last_associated_devices = get_device_table_entry(self, node, "AssociatedDevices", time_stamp)
-    self.logging( "Debug", "collect_associated_devices %s -> %s" %(node, str(last_associated_devices)))
-    return list(last_associated_devices)
-        
-        
-def extract_routes( self, node, time_stamp=None):
-    node_routes = []
-    
-    for route in get_device_table_entry(self, node, "RoutingTable", time_stamp):
-        self.logging( "Debug","---> route: %s" %route)
-        node_routes.extend(item for item in route if route[item]["Status"] == "Active (0)")
-    return node_routes            
-        
-
-def get_lqi_from_neighbours(self, father, child, time_stamp=None):
-    # Take the LQI from the latest report
-    for item2 in get_device_table_entry(self, father, "Neighbours", time_stamp):
-        for node in item2:
-            if node != child:
-                continue
-            return item2[ node ]["_lnkqty"] 
-    return 1

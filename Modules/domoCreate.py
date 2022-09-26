@@ -66,22 +66,13 @@ def deviceName(self, NWKID, DeviceType, IEEE_, EP_):
 
     return devName
 
-def how_many_slot_available( Devices ):
-    return sum(x not in Devices for x in range( 1, 255 ))
-
 
 def FreeUnit(self, Devices, nbunit_=1):
     """
     FreeUnit
     Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
     """
-    if how_many_slot_available( Devices ) <= 5:
-        self.log.logging("Widget", "Status", "It seems that you can create only 5 Domoticz widgets more !!!")
-    elif how_many_slot_available( Devices ) <= 15:
-        self.log.logging("Widget", "Status", "It seems that you can create only 15 Domoticz widgets more !!")
-    elif how_many_slot_available( Devices ) <= 30:
-        self.log.logging("Widget", "Status", "It seems that you can create only 30 Domoticz widgets more !")
-        
+    FreeUnit = ""
     for x in range(1, 255):
         if x not in Devices:
             if nbunit_ == 1:
@@ -406,7 +397,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." % (t), NWKID)
 
             # 4 Selector , OffHidden, Style 0 (command)
-            if t in ("DSwitch", "blindIKEA", "ThermoMode_5", "ThermoMode_6"):
+            if t in ("DSwitch", "blindIKEA", "ThermoMode_5"):
                 Options = createSwitchSelector(self, 4, DeviceType=t, OffHidden=True, SelectorStyle=0)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DSwitch..." % (t), NWKID)
@@ -803,7 +794,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in BSO-Orientation" % (t), NWKID)
 
-            if t in ( "VanneInverted", "CurtainInverted"):
+            if t == "VanneInverted":
                 # Blind Percentage Inverterd
                 createDomoticzWidget(
                     self,
@@ -834,7 +825,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in BlindInverted" % (t), NWKID)
 
-            if t in ( "Vanne", "Curtain"):
+            if t == "Vanne":
                 # Blind Percentage
                 createDomoticzWidget(
                     self,

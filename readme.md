@@ -18,16 +18,12 @@ For __Windows users__, please check the [Plugin V6 running on Windows](https://z
 ## Pre requisities
 
 * Domoticz 2021.1 or above
-* You need Python 3.8 at least
+* You need Python 3.7 at least
 * Zigpy layers will requires additional python3 modules to be install:
-
-  Go to the plugin Home directory ( domoticz/plugins/Domoticz-Zigate or Domoticz-Zigbee)
-
-  `sudo pip3 install -r requirements.txt`
 
 ## Plugin first installation or first time on release 6.xxx (stable6)
 
-1. Make sure the pre-requisities steps (here above) have been executed
+1. Make sure the pre-requisites steps (here above) have been executed
 
 2. Go in your Domoticz directory using a command line and open the plugins directory.
   Usually you should be under domoticz/plugins
@@ -81,17 +77,12 @@ This is the case where you have move from the stable5 branch to stable6/beta6.
 ## Tested Hardware Zigbee adapters/dongles/sticks/keys
 
 The plugin was originally developed for the [Zigate](https://zigate.fr) Coordinators in close relationship with [Zigate](https://zigate.fr) manufactuer.
-In case you are looking to use non-ZiGate coordinators, please see here the [list of open issues](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1235) against the Zigpy libraries and its radio modules
-
-Our main developement platforms is now using Texas Instruments or Silicon Labs Zigbee Coordinator adapters with Domoticz on Raspberry Pi. Those TI and Silabs based are Zigbee coordinators now provide much more functionnalities than ZiGate Zigbee coordinators, and so most of the newest and upcoming features are not available with ZiGate,  (features like example; real-time backup, Topology Report based on routing tables, and on-demand Over The Air device OTA firmware upgrades).
-
-Note that regardless of model of Zigbee Coordinator it is generally recommended that users both initially and then relativly regularly upgrade the firmware on your Zigbee Coordinator adapter to try keeping it at least the latest known stable version, this is able one of the first steps before starting troubleshooting any issues.
 
 ### Texas Instrument Zigbee Coordinators
 
 Since late 2021 where we have started opening the plugin to further brands of Zigbee Coordinators and begun focusing on compatibility with the [zzh](https://electrolama.com/projects/zig-a-zig-ah/) from [Electrolama](https://electrolama.com), thanks to their sponsorship.
 
-Any Texas Instruments CC253x, CC13x2, CC26x2 adapters based on the [Zigbee Network Processors](http://dev.ti.com/tirex/content/simplelink_zigbee_sdk_plugin_2_20_00_06/docs/zigbee_user_guide/html/zigbee/introduction.html ) should be supported, more information could be found on [zigpy-znp](https://github.com/zigpy/zigpy-znp) which provided the layer to interface with the coordinator. Note however that CC2530 and CC2531 are no longer recommended as they use obsolete hardware chips and do not officially support Zigbee 3.0 capable firmware.
+Any Texas Instruments CC2531, CC13x2, CC26x2 adapters based on the [Zigbee Network Processors](http://dev.ti.com/tirex/content/simplelink_zigbee_sdk_plugin_2_20_00_06/docs/zigbee_user_guide/html/zigbee/introduction.html ) should be supported, more information could be found on [zigpy-znp](https://github.com/zigpy/zigpy-znp) which provided the layer to interface with the coordinator.
 
 You can also find a list of [Texas Instruments supported adapters](https://www.zigbee2mqtt.io/guide/adapters/#recommended) which also works with [zigpy-znp](https://github.com/zigpy/zigpy-znp) and as such should also work with this plugin
 
@@ -99,15 +90,7 @@ You can also find a list of [Texas Instruments supported adapters](https://www.z
 
 A big thanks to [Elelabs](https://elelabs.com/) sponsorship and whom have help us to ensure full compatibility with their Zigbee Coordinator ELU013 and ELR023.
 
-We rely on [zigpy-bellows](https://github.com/zigpy/bellows) for the Silicon Labs compatibility. A list of compatible hardware is available [here](https://github.com/zigpy/bellows#hardware-requirement)
-
-### dresden elektronik ConBee and RaspBee Zigbee Coordinators
-
-Thanks goes to [dresden elektronik](https://github.com/dresden-elektronik/) / [Phoscon](https://phoscon.de/) for sponsorship and help in adding initial suppport with their ConBee and RaspBee (deCONZ firmware based) Zigbee Coordinators.
-
-ConBee and RaspBee support is only in the beta6 branch for now as still experimental, however deconz support can otherwise be considered ready with only the minor limitations that Zigbee channel change is not yet possible, and there is currently no support for Wiser/Livolo devices (but a dresden elektronik / Phoscon developer is working on a new deCONZ firmware update for ConBee and RaspBee adapters that should sort out Wiser/Livolo device support).
-
-deCONZ firmware based adapters depends on [zigpy-deconz](https://github.com/zigpy/zigpy-deconz) for ConBee/RaspBee compatibility.
+As for TI coordinator, we rely on [zigpy-bellows](https://github.com/zigpy/bellows) for the Silicon Labs compatibility . A list of compatible hardware is available [here](https://github.com/zigpy/bellows#hardware-requirement)
 
 ## LIMITATIONS
 

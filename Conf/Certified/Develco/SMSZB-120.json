@@ -52,7 +52,6 @@
             "0020"
         ],
         "0003": [],
-        "0019": [],
         "0402": [
             "0000"
         ],
@@ -69,7 +68,6 @@
     },
     "VoltageConverter": 10,
     "Param": {
-        "AlarmDuration": 5,
-        "ReadAttributeChunk": 5
+        "AlarmDuration": 5
     }
 }

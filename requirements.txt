@@ -20,4 +20,3 @@ typing-extensions
 voluptuous
 yarl
 cryptography
-dnspython==2.2.1

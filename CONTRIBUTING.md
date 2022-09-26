@@ -1,29 +1,21 @@
 ## Contributing
-Thank you for considering contributing to Zigbee for Domoticz plugin. It is people like you that make it such a great and powerful tool.
+Thank you for considering contributing to Zigbee for Domoticz plugin. 
+
+The plugin is writen in python3 and since 2022 is using the zigpy libraries. In addition, the plugin embarques a Web User Interface which is writen in Angular 13 with typescript, Bootstrap sass and Html5 
 
 You can contribute on different matters :
 
-* Testing purpose
-Contributors will help in the testing of the beta and pre-release.
-You don't need to have specific known-how or knowledge, you'll have to run and test the code and report issues, gaps with docuentation ...
-
-* End User Documentation
-Contributors will help in developping/contributing to the plugin documentation, in order to improve the end user experience
-
-* User Interface
-
-We are looking for help on improving the User Interface. We have already a nice look and feel of our plugin Web interface, but there is room for further improvement and many on CSS side.
-
-Technology to be used:
-- html
-- Javascript
-- jquery
-- css
-
-
-* Plugin core
+* [Plugin core](https://github.com/zigbeefordomoticz/Domoticz-Zigbee)
 The plugin is written in Python3. The integration with Domoticz is done over the 'Python Plugin Framework' provided by domoticz.
 You want to participate in the developement of the plugin, by either adding new Zigbee hardware devices, just contact us.
+
+* [End User Documentation](https://github.com/zigbeefordomoticz/wiki)
+Contributors will help in developping/contributing to the plugin documentation, in order to improve the end user experience
+
+* [User Interface](https://github.com/zigbeefordomoticz/Domoticz-Zigbee-UI)
+ 
+You want to develop web pages in order to Administrate, Interact with the plugin data, let us known.
+
 
 
 ## Where do I go from here ?
@@ -31,7 +23,7 @@ If you've noticed a bug or have an enhancement request, or simply you took on is
 
 ### Fork & create a branch
 
-If this is something you think you can fix, then [fork Domoticz-Zigate][] and
+If this is something you think you can fix, then [fork Domoticz-Zigbee][] and
 create a branch with a descriptive name. Make sure to select the right branch ( stable, beta )
 
 A good branch name would be (where issue #325 is the ticket you're working on):
@@ -90,3 +82,4 @@ git checkout 325-add-chipolo-plug
 git pull --rebase upstream master
 git push --force-with-lease 325-add-chipolo-plug
 ```
+
