@@ -14,6 +14,7 @@
 import time
 
 from Modules.bindings import bindDevice, unbindDevice
+from Modules.paramDevice import get_device_config_param
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
@@ -34,10 +35,19 @@ from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
                                              sqn_get_internal_sqn_from_app_sqn)
 
-
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
-MAX_READ_ATTR_PER_REQ = 4
-MAX_ATTR_PER_REQ = 3
+
+
+def get_max_cfg_rpt_attribute_value( self, nwkid=None):
+    
+    # This is about Read Configuration Reporting from a device
+    if nwkid:  
+        read_configuration_report_chunk = get_device_config_param( self, nwkid, "ConfigurationReportChunk")
+    
+    if read_configuration_report_chunk:
+        return get_device_config_param( self, nwkid, "ConfigurationReportChunk")
+    return self.pluginconf.pluginConf["ConfigureReportingChunk"]
+
 
 class ConfigureReporting:
     def __init__(
@@ -105,11 +115,7 @@ class ConfigureReporting:
         # Finally send the command
         self.logging("Debug", f"------ prepare_and_send_configure_reporting - key: {key} ep: {Ep} cluster: {cluster} Cfg: {cluster_configuration}", nwkid=key)
 
-        maxAttributesPerRequest = MAX_ATTR_PER_REQ
-        if self.pluginconf.pluginConf["breakConfigureReporting"]:
-            maxAttributesPerRequest = 1
-        elif 'Model' in self.ListOfDevices[ key ] and "ZLinky" in self.ListOfDevices[ key ]["Model"]:
-            maxAttributesPerRequest = 1
+        maxAttributesPerRequest = get_max_cfg_rpt_attribute_value( self, nwkid=key)
 
         attribute_reporting_configuration = []
         for attr in ListOfAttributesToConfigure:
@@ -359,12 +365,7 @@ class ConfigureReporting:
 
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
 
-        maxAttributesPerRequest = MAX_READ_ATTR_PER_REQ
-        if self.pluginconf.pluginConf["breakConfigureReporting"]:
-            maxAttributesPerRequest = 1
-        elif 'Model' in self.ListOfDevices[ nwkid ] and "ZLinky" in self.ListOfDevices[ nwkid ]["Model"]:
-            maxAttributesPerRequest = 1
-
+        maxAttributesPerRequest = get_max_cfg_rpt_attribute_value( self, "Read", nwkid=nwkid)
 
         if len( attribute_list ) <= maxAttributesPerRequest:
             zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)

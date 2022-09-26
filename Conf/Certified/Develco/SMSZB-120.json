@@ -69,6 +69,7 @@
     },
     "VoltageConverter": 10,
     "Param": {
-        "AlarmDuration": 5
+        "AlarmDuration": 5,
+        "ReadAttributeChunk": 5
     }
 }

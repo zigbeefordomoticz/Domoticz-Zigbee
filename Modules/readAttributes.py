@@ -26,6 +26,7 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
                                        PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_TUYA,
                                        PREFIX_MACADDR_XIAOMI)
+from Modules.paramDevice import get_device_config_param
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
                            is_time_to_perform_work, reset_attr_datastruct,
@@ -137,46 +138,33 @@ ATTRIBUTES = {
     "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
 }
 
+def get_max_read_attribute_value( self, nwkid=None):
+    
+    # This is about Read Configuration Reporting from a device
+    read_configuration_report_chunk = get_device_config_param( self, nwkid, "ReadAttributeChunk")
+
+    if "PairingInProgress" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PairingInProgress"]:
+        read_configuration_report_chunk = 1
+
+    elif read_configuration_report_chunk and 'IEEE' in self.ListOfDevices[ nwkid ]:
+            if self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_IKEA_TRADFRI:
+                maxReadAttributesByRequest = self.pluginconf.pluginConf["ReadAttributeChunk"]
+
+            elif self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
+                read_configuration_report_chunk = 5
+
+            elif self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_CASAIA:
+                read_configuration_report_chunk = 2
+
+    return read_configuration_report_chunk or self.pluginconf.pluginConf["ReadAttributeChunk"]
+
+
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, ):
-
-    # Check if we are in pairing mode and Read Attribute must be broken down in 1 attribute max, otherwise use the default value
-    maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
-    
-    if 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_IKEA_TRADFRI:
-        maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
-    
-    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
-        maxReadAttributesByRequest = 5
-        
-    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_DEVELCO:
-        maxReadAttributesByRequest = 5
-        
-    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_CASAIA:
-        maxReadAttributesByRequest = 2
-    
-    elif "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
-        maxReadAttributesByRequest = 1
-
-    elif 'Model' in self.ListOfDevices[ addr ] and "ZLinky" in self.ListOfDevices[ addr ]["Model"]:
-        maxReadAttributesByRequest = 2
-
+    maxReadAttributesByRequest = get_max_read_attribute_value( addr )    
     if not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled)
     else:
-        self.log.logging(
-            "ReadAttributes",
-            "Debug2",
-            "----------> ------- %s/%s %s ListOfAttributes: " % (addr, EpOut, Cluster)
-            + " ".join("0x{:04x}".format(num) for num in ListOfAttributes),
-            nwkid=addr,
-        )
         for shortlist in split_list(ListOfAttributes, wanted_parts=maxReadAttributesByRequest):
-            self.log.logging(
-                "ReadAttributes",
-                "Debug2",
-                "----------> ------- Shorter: " + ", ".join("0x{:04x}".format(num) for num in shortlist),
-                nwkid=addr,
-            )
             normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, shortlist, manufacturer_spec, manufacturer, ackIsDisabled)
 
 
@@ -189,8 +177,6 @@ def split_list(l, wanted_parts=1):
 
 def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled):
 
-    # Start method
-    # Domoticz.Log("--> normalizedReadAttributeReq --> manufacturer_spec = '%s', manufacturer = '%s'" %(manufacturer_spec, manufacturer))
     if "Health" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["Health"] == "Not Reachable":
         return
 
