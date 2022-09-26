@@ -268,7 +268,7 @@ def sanity_check_of_param(self, NwkId):
 
 def get_device_config_param( self, NwkId, config_parameter):
     
-    self.log.logging("ReadAttributes", "Log", "get_device_config_param: %s Config: %s" %( NwkId,config_parameter ))
+    #self.log.logging("ReadAttributes", "Log", "get_device_config_param: %s Config: %s" %( NwkId,config_parameter ))
     
     if NwkId not in self.ListOfDevices:
         return None
@@ -276,7 +276,8 @@ def get_device_config_param( self, NwkId, config_parameter):
         return None
     if config_parameter not in self.ListOfDevices[NwkId]["Param"]:
         return None
-    self.log.logging("ReadAttributes", "Log", "get_device_config_param: %s Config: %s return %s" %( 
-        NwkId,config_parameter, self.ListOfDevices[NwkId]["Param"][ config_parameter ]))
+    #self.log.logging("ReadAttributes", "Log", "get_device_config_param: %s Config: %s return %s" %( 
+    #    NwkId,config_parameter, self.ListOfDevices[NwkId]["Param"][ config_parameter ]))
+
     return self.ListOfDevices[NwkId]["Param"][ config_parameter ]
         
