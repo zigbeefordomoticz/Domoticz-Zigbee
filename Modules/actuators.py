@@ -18,14 +18,13 @@ from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
                                 zcl_move_to_colour,
                                 zcl_move_to_colour_temperature,
                                 zcl_move_to_level_with_onoff,
-                                zcl_move_to_level_without_onoff,
                                 zcl_onoff_off_noeffect,
                                 zcl_onoff_off_witheffect, zcl_onoff_on,
                                 zcl_onoff_stop, zcl_toggle,
                                 zcl_window_covering_off,
                                 zcl_window_covering_on,
                                 zcl_window_covering_stop,
-                                zcl_window_covering_level, zcl_window_covering_percentage)
+                                zcl_window_coverting_level)
 
 from Modules.basicOutputs import set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
@@ -94,21 +93,21 @@ def actuator_stop(self, nwkid, EPout, DeviceType):
         zcl_onoff_stop( self, nwkid, EPout)
 
 def actuator_off(self, nwkid, EPout, DeviceType, effect=None):
-    self.log.logging("Command", "Debug", "actuator_off %s %s %s %s" % ( nwkid, EPout, DeviceType, effect))
 
     if DeviceType == "AlarmWD":
+        self.log.logging("Command", "Log", "Alarm WarningDevice - value: %s" % "off")
         self.iaszonemgt.alarm_off(nwkid, EPout)
 
     elif DeviceType == "LivoloSWL":
-        zcl_move_to_level_without_onoff(self, nwkid, EPout, "01", "0001")
+        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "01", "0001")
 
     elif DeviceType == "LivoloSWR":
-        zcl_move_to_level_without_onoff(self, nwkid, EPout, "01", "0002")
+        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "01", "0002")
 
     elif DeviceType == "WindowCovering":
         zcl_window_covering_off(self, nwkid, EPout)
 
-    elif effect is not None:
+    elif effect:
         zcl_onoff_off_witheffect(self, nwkid, EPout, effect)
     else:
         zcl_onoff_off_noeffect(self, nwkid, EPout)
@@ -117,17 +116,18 @@ def actuator_on(self, nwkid, EPout, DeviceType):
 
     if DeviceType == "LivoloSWL":
         # Level = 108 / 0x6C for On
-        zcl_move_to_level_without_onoff(self, nwkid, EPout, "6C", "0001")
+        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "6C", "0001")
 
     elif DeviceType == "LivoloSWR":
-        zcl_move_to_level_without_onoff(self, nwkid, EPout, "6C", "0002")
+        zcl_move_to_level_with_onoff(self, nwkid, EPout, "00", "6C", "0002")
+
 
     elif DeviceType == "WindowCovering":
         zcl_window_covering_on(self, nwkid, EPout)
     else:
         zcl_onoff_on(self, nwkid, EPout)
 
-def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010", withOnOff=True):
+def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010"):
 
     if DeviceType == "ThermoMode":
         actuator_setthermostat(self, nwkid, EPout, value)
@@ -141,14 +141,15 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010", 
             value = 1
         elif value >= 100:
             value = 99
+        value = "%02x" % value
         self.log.logging(
             "Command",
             "Log",
             "WindowCovering - Lift Percentage Command - %s/%s value: 0x%s %s" % (nwkid, EPout, value, value),
         )
-        value = "%02x" % value
-        zcl_window_covering_percentage(self, nwkid, EPout, value)
+        zcl_window_coverting_level(self, nwkid, EPout, value)
     else:
+        OnOff = "01"  # 00 = off, 01 = on
         if value == 100:
             value = 255
         elif value == 0:
@@ -159,10 +160,7 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010", 
                 value = 1
 
         value = Hex_Format(2, value)
-        if withOnOff:
-            zcl_move_to_level_with_onoff( self, nwkid, EPout, "01", value, transition)   
-        else:
-            zcl_move_to_level_without_onoff( self, nwkid, EPout, value, transition)  
+        zcl_move_to_level_with_onoff( self, nwkid, EPout, OnOff, value, transition)      
 
 def actuator_setthermostat(self, nwkid, ep, value):
 
@@ -285,7 +283,7 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
     cw = int(Hue_List["cw"])  # 0 < cw < 255 Cold White
     ww = int(Hue_List["ww"])  # 0 < ww < 255 Warm White
     if cw != 0 and ww != 0:
-        TempKelvin = int((255 - ww) * (6500 - 1700) / 255 + 1700)
+        TempKelvin = int(((255 - int(ww)) * (6500 - 1700) / 255) + 1700)
         TempMired = 1000000 // TempKelvin
         self.log.logging(
             "Command", "Log", "handle_color_mode_4 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
@@ -293,27 +291,25 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
         zcl_move_to_colour_temperature( self, nwkid, EPout, Hex_Format(4, TempMired), transitionTemp)
 
     # Process Colour
-    _h, _s, _l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
-    saturation = _s * 100  # 0 > 100
-    saturation = int(saturation * 254 // 100)
-    hue = _h * 360  # 0 > 360
+    h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
+    saturation = s * 100  # 0 > 100
+    hue = h * 360  # 0 > 360
     hue = int(hue * 254 // 360)
-    
+    saturation = int(saturation * 254 // 100)
     self.log.logging("Command", "Log", "handle_color_mode_4 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
     zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
        
 def handle_color_mode_9998( self, nwkid, EPout, Hue_List):
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)    
-    _h, _s, _l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
-    saturation = _s * 100  # 0 > 100
-    saturation = int(saturation * 254 // 100)
-    hue = _h * 360  # 0 > 360
+    h, s, l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
+    saturation = s * 100  # 0 > 100
+    hue = h * 360  # 0 > 360
     hue = int(hue * 254 // 360)
-    
+    saturation = int(saturation * 254 // 100)
     self.log.logging("Command", "Debug", "handle_color_mode_9998 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
     zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
 
-    value = int(_l * 254 // 100)
+    value = int(l * 254 // 100)
     OnOff = "01"
     self.log.logging( "Command", "Debug", "handle_color_mode_9998 Set Level: %s instead of Level: %s" % (value, value), nwkid)
     actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)

@@ -356,16 +356,6 @@ SWITCH_LVL_MATRIX = {
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Manual|Away"}},
     },   
-    "ThermoMode_6": {
-        0: (0, "00"),  # Off
-        1: (1, "10"),  # Cool
-        2: (2, "20"),  # Heat
-        3: (3, "30"),  # Fan
-        "ForceUpdate": False,
-        "LevelNames": "Off|Cool|Heat|Fan",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Ventilateur"}},
-    },
       
     "HeatingStatus": {
         0: (0, "Off"),

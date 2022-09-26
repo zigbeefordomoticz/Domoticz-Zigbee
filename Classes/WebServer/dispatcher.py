@@ -32,12 +32,22 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "binding-table-req": {"Name": "binding", "Verbs": {"GET"}, "function": self.rest_binding_table_req},
         "binding-table-disp": {"Name": "binding", "Verbs": {"GET"}, "function": self.rest_binding_table_disp},
         "binding-group": {"Name": "binding-group", "Verbs": {"PUT"}, "function": self.rest_group_binding},
-        "casaia-list-devices": { "Name": "casaia-list-devices", "Verbs": {"GET"}, "function": self.rest_casa_device_list },
-        "casaia-update-ircode": { "Name": "casaia-list-devices", "Verbs": {"PUT"}, "function": self.rest_casa_device_ircode_update },
-        "cfgrpt-ondemand": {"Name": "cfgrpt-ondemand", "Verbs": {"GET"}, "function": self.rest_cfgrpt_ondemand},
-        "cfgrpt-ondemand-config": {"Name": "cfgrpt-ondemand-config", "Verbs": { "GET", "PUT", "DELETE" }, "function": self.rest_cfgrpt_ondemand_with_config},
+        "casaia-list-devices": {
+            "Name": "casaia-list-devices",
+            "Verbs": {"GET"},
+            "function": self.rest_casa_device_list,
+        },
+        "casaia-update-ircode": {
+            "Name": "casaia-list-devices",
+            "Verbs": {"PUT"},
+            "function": self.rest_casa_device_ircode_update,
+        },
         "change-channel": {"Name": "change-channel", "Verbs": {"PUT"}, "function": self.rest_change_channel},
-        "clear-error-history": { "Name": "clear-error-history", "Verbs": {"GET"}, "function": self.rest_logErrorHistoryClear },
+        "clear-error-history": {
+            "Name": "clear-error-history",
+            "Verbs": {"GET"},
+            "function": self.rest_logErrorHistoryClear,
+        },
         "dev-cap": {"Name": "dev-cap", "Verbs": {"GET"}, "function": self.rest_dev_capabilities},
         "dev-command": {"Name": "dev-command", "Verbs": {"PUT"}, "function": self.rest_dev_command},
         "device": {"Name": "device", "Verbs": {"GET"}, "function": self.rest_Device},
@@ -47,12 +57,20 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "log-error-history": {"Name": "log-error-history", "Verbs": {"GET"}, "function": self.rest_logErrorHistory},
         "new-hrdwr": {"Name": "new-hrdwr", "Verbs": {"GET"}, "function": self.rest_new_hrdwr},
         "nwk-stat": {"Name": "nwk_stat", "Verbs": {"GET", "DELETE"}, "function": self.rest_nwk_stat},
-        "ota-firmware-device-list": { "Name": "ota-firmware-list", "Verbs": {"GET"}, "function": self.rest_ota_devices_for_manufcode },
+        "ota-firmware-device-list": {
+            "Name": "ota-firmware-list",
+            "Verbs": {"GET"},
+            "function": self.rest_ota_devices_for_manufcode,
+        },
         "ota-firmware-list": {"Name": "ota-firmware-list", "Verbs": {"GET"}, "function": self.rest_ota_firmware_list},
-        "ota-firmware-update": { "Name": "ota-firmware-update", "Verbs": {"PUT"}, "function": self.rest_ota_firmware_update },
+        "ota-firmware-update": {
+            "Name": "ota-firmware-update",
+            "Verbs": {"PUT"},
+            "function": self.rest_ota_firmware_update,
+        },
         "permit-to-join": {"Name": "permit-to-join", "Verbs": {"GET", "PUT"}, "function": self.rest_PermitToJoin},
         "plugin-health": {"Name": "plugin-health", "Verbs": {"GET"}, "function": self.rest_plugin_health},
-        "plugin-upgrade": {"Name": "plugin-upgrade", "Verbs": {"GET"}, "function": self.rest_plugin_upgrade},
+        "plugin-upgrade":  {"Name": "plugin-upgrade", "Verbs": {"GET"}, "function": self.rest_plugin_upgrade},
         "plugin-restart": {"Name": "plugin-restart", "Verbs": {"GET"}, "function": self.rest_plugin_restart},
         "plugin-stat": {"Name": "plugin-stat", "Verbs": {"GET"}, "function": self.rest_plugin_stat},
         "plugin": {"Name": "plugin", "Verbs": {"GET"}, "function": self.rest_PluginEnv},
@@ -64,7 +82,11 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "req-topologie": {"Name": "req-topologie", "Verbs": {"GET"}, "function": self.rest_req_topologie},
         "rescan-groups": {"Name": "rescan-groups", "Verbs": {"GET"}, "function": self.rest_rescan_group},
         "restart-needed": {"Name": "restart-needed", "Verbs": {"GET"}, "function": self.rest_restart_needed},
-        "scan-device-for-grp": { "Name": "ScanDevscan-device-for-grpiceForGrp", "Verbs": {"PUT"}, "function": self.rest_scan_devices_for_group },
+        "scan-device-for-grp": {
+            "Name": "ScanDevscan-device-for-grpiceForGrp",
+            "Verbs": {"PUT"},
+            "function": self.rest_scan_devices_for_group,
+        },
         "setting-debug": {"Name": "setting", "Verbs": {"GET", "PUT"}, "function": self.rest_Settings_with_debug},
         "setting": {"Name": "setting", "Verbs": {"GET", "PUT"}, "function": self.rest_Settings_wo_debug},
         "sw-reset-zigate": {"Name": "sw-reset-zigate", "Verbs": {"GET"}, "function": self.rest_reset_zigate},
@@ -75,12 +97,16 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "zdevice-name": {"Name": "zdevice-name", "Verbs": {"GET", "PUT", "DELETE"}, "function": self.rest_zDevice_name},
         "zdevice-raw": {"Name": "zdevice-raw", "Verbs": {"GET", "PUT"}, "function": self.rest_zDevice_raw},
         "zdevice": {"Name": "zdevice", "Verbs": {"GET", "DELETE"}, "function": self.rest_zDevice},
-        "zgroup-list-available-device": { "Name": "zgroup-list-available-device", "Verbs": {"GET"}, "function": self.rest_zGroup_lst_avlble_dev },
+        "zgroup-list-available-device": {
+            "Name": "zgroup-list-available-device",
+            "Verbs": {"GET"},
+            "function": self.rest_zGroup_lst_avlble_dev,
+        },
         "zgroup": {"Name": "device", "Verbs": {"GET", "PUT"}, "function": self.rest_zGroup},
         "zigate-erase-PDM": {"Name": "zigate-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
         "zigate-mode": {"Name": "zigate-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
-        "zigate": { "Name": "zigate", "Verbs": {"GET"}, "function": self.rest_zigate },
-        "zlinky": { "Name": "zlinky", "Verbs": {"GET"}, "function": self.rest_zlinky },
+        "zigate": {"Name": "zigate", "Verbs": {"GET"}, "function": self.rest_zigate},
+
         "coordinator-erase-PDM": {"Name": "coordinator-erase-PDM", "Verbs": {"GET"}, "function": self.rest_zigate_erase_PDM},
         "coordinator-mode": {"Name": "coordinator-mode", "Verbs": {"GET"}, "function": self.rest_zigate_mode},
         "coordinator": {"Name": "coordinator", "Verbs": {"GET"}, "function": self.rest_zigate}, 
@@ -90,13 +116,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
 
     HTTPresponse = {}
 
-    if command not in REST_COMMANDS:
-        self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
-        if verb not in REST_COMMANDS[command]["Verbs"]:
-            self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
-
     if command in REST_COMMANDS and verb in REST_COMMANDS[command]["Verbs"]:
-        self.logging("Debug", "do_rest - Verb: %s, Command: %s, Param: %s found ready to execute" % (verb, command, parameters))
         HTTPresponse = setupHeadersResponse()
         if self.pluginconf.pluginConf["enableKeepalive"]:
             HTTPresponse["Headers"]["Connection"] = "Keep-alive"
@@ -111,21 +131,20 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
             _response = prepResponseMessage(self, setupHeadersResponse())
             _data = {}
             for x in REST_COMMANDS:
-                _data[x] = {"Verbs": []}
+                _data[x] = {}
+                _data[x]["Verbs"] = []
                 for y in REST_COMMANDS[x]["Verbs"]:
                     _data[x]["Verbs"].append(y)
             _response["Data"] = json.dumps(_data)
             HTTPresponse = _response
 
         elif version == "1" and REST_COMMANDS[command]["function"]:
-            self.logging("Debug", "do_rest - calling REST_COMMANDS[%s]['function'] with %s %s %s" % (command, verb, data, parameters))
             HTTPresponse = REST_COMMANDS[command]["function"](verb, data, parameters)
 
         elif version == "2" and REST_COMMANDS[command]["functionv2"]:
             HTTPresponse = REST_COMMANDS[command]["functionv2"](verb, data, parameters)
 
     self.logging("Debug", "==> return HTTPresponse: %s" % (HTTPresponse))
-    
     if HTTPresponse == {} or HTTPresponse is None:
         # We reach here due to failure !
         HTTPresponse = prepResponseMessage(self, setupHeadersResponse())

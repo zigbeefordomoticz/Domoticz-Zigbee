@@ -6,12 +6,9 @@
 
 from time import time
 
-from Zigbee.zdpCommands import zdp_binding_device, zdp_unbinding_device
-
-from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
-from Modules.tools import is_fake_ep
 from Modules.zigateConsts import CLUSTERS_LIST
-
+from Zigbee.zdpCommands import ( zdp_binding_device, zdp_unbinding_device)
+from Modules.tools import is_fake_ep
 
 def bindGroup(self, ieee, ep, cluster, groupid):
 
@@ -294,8 +291,8 @@ def unbindDevice(self, ieee, ep, cluster, destaddr=None, destep="01"):
     nwkid = self.IEEE2NWK[ieee]
 
     # If doing unbind, the Configure Reporting is lost
-    if STORE_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
-        del self.ListOfDevices[nwkid][STORE_CONFIGURE_REPORTING]
+    if "ConfigureReporting" in self.ListOfDevices[nwkid]:
+        del self.ListOfDevices[nwkid]["ConfigureReporting"]
 
     # Remove the Bind
     if "Bind" in self.ListOfDevices[nwkid] and ep in self.ListOfDevices[nwkid]["Bind"] and cluster in self.ListOfDevices[nwkid]["Bind"][ep]:

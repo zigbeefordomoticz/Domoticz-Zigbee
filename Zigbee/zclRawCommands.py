@@ -114,7 +114,7 @@ def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_com
         return
     cmd = "0b"
     if orig_fcf is None:
-        frame_control_field = "%02x" %0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
+        frame_control_field = "%02x"  %0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
     else:
         # The frame control field SHALL be specified as follows. The frame type sub-field SHALL be set to indicate
         # a global command (0b00). The manufacturer specific sub-field SHALL be set to 0 if this command is being
@@ -173,77 +173,15 @@ def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, dir
         if "rptChg" in x:
             payload += decode_endian_data(x["rptChg"], x["DataType"])
 
-    # payload +=  "%04x" % struct.unpack(">H", struct.pack("H",int(x['timeOut'],16)))[0]
-    self.log.logging("zclCommand", "Debug", "zcl_raw_configure_reporting_requestv2  payload: %s" % payload)
+        # payload +=  "%04x" % struct.unpack(">H", struct.pack("H",int(x['timeOut'],16)))[0]
+        self.log.logging("zclCommand", "Debug", "zcl_raw_configure_reporting_requestv2  payload: %s" % payload)
 
     raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
 
-def zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list, ackIsDisabled=DEFAULT_ACK_MODE):
-    self.log.logging("zclCommand", "Debug", "zcl_raw_read_report_config_request %s %s %s %s %s %s %s" % (
-        nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list))
-
-    cmd = "08"  # 
-    cluster_frame = 0b00010000
-    if manuf_specific == "01":
-        cluster_frame += 0b00000100
-
-    fcf = "%02x" % cluster_frame
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = fcf
-    if manuf_specific == "01":
-        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_code, 16)))[0]
-    payload += sqn + cmd
-    
-    for attribute in attribute_list:
-        payload += "00" + "%04x" % struct.unpack(">H", struct.pack("H", attribute))[0]
-
-    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
-    return sqn
 
 # Discover Attributes
 
-# Cluster 0004: Identify
-
-def zcl_raw_identify(self, nwkid, epin, epout, command, identify_time=None, identify_effect=None, identify_variant=None, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
-
-    self.log.logging("zclCommand", "Debug", "zcl_raw_identify %s %s %s %s %s %s %s %s %s" % (nwkid, epin, epout, command, identify_time, identify_effect, identify_variant, groupaddrmode, ackIsDisabled))
-    IDENTIFY_COMMAND = {
-        "Identify": 0x00,
-        "IdentifyQuery": 0x01,
-        "TriggerEffect": 0x40
-    }
-    
-    Cluster = "0003"
-    
-    if command not in IDENTIFY_COMMAND:
-        return
-    if command == 'Identify' and identify_time is None:
-        return
-    if command == 'TriggerEffect' and identify_effect is None and identify_variant is None:
-        return
-    
-    # Cluster Frame:
-    # 0b xxxx xxxx
-    #           |- Frame Type: Cluster Specific (0x01)
-    #          |-- Manufacturer Specific False
-    #         |--- Command Direction: Client to Server (0)
-    #       | ---- Disable default response: True
-    #    |||- ---- Reserved : 0x000
-    #
-    cluster_frame = 0b00010001
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = "%02x" % cluster_frame + sqn + "%02x" % IDENTIFY_COMMAND[command] 
-    
-    if command == 'Identify' and identify_time:
-        payload += identify_time
-    elif command == 'TriggerEffect' and identify_effect and identify_variant:
-        payload += identify_effect + identify_variant
-
-    raw_APS_request(self, nwkid, epout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
-    return sqn
-    
-    
 # Cluster 0004: Groups
 
 def zcl_raw_add_group_membership(self, nwkid, epin, epout, GrpId, ackIsDisabled=DEFAULT_ACK_MODE):
@@ -290,7 +228,7 @@ def zcl_raw_look_for_group_member_ship(self, nwkid, epin, epout, nbgroup, group_
     payload += sqn + cmd + nbgroup  
 
     idx = 0
-    while idx < int(nbgroup,16) * 4:
+    while  idx < int(nbgroup,16)*4:
         payload += decode_endian_data( group_list[ idx : idx + 4 ], "21")
         idx += 4
 
@@ -346,7 +284,7 @@ def zcl_raw_send_group_member_ship_identify(self, nwkid, epin, epout, GrpId, ack
 
 # Cluster 0006: On/Off
 ######################
-def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect=None, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
+def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect="", groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "raw_zcl_zcl_onoff %s %s %s %s %s %s" % (nwkid, EPIn, EpOut, command, effect, groupaddrmode))
 
     Cluster = "0006"
@@ -372,11 +310,8 @@ def raw_zcl_zcl_onoff(self, nwkid, EPIn, EpOut, command, effect=None, groupaddrm
     cluster_frame = 0b00010001
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = "%02x" % cluster_frame + sqn + "%02x" % ONOFF_COMMANDS[command] 
-    if command == "OffWithEffect":
-        # Effect is a 2 uint8, so there is no need to convert to little indian
-        payload += effect
-    
+    payload = "%02x" % cluster_frame + sqn + "%02x" % ONOFF_COMMANDS[command] + effect
+
     raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 
@@ -401,7 +336,7 @@ def zcl_raw_level_move_to_level(self, nwkid, EPIn, EPout, command, level="00", m
     #       | ---- Disable default response: True
     #    |||- ---- Reserved : 0x000
     #
-    cluster_frame = 0b00010001 
+    cluster_frame = 0b00010001
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + "%02x" % LEVEL_COMMANDS[command]
@@ -416,119 +351,6 @@ def zcl_raw_level_move_to_level(self, nwkid, EPIn, EPout, command, level="00", m
     return sqn
 
 
-# Cluster 0019: OTA
-
-# All OTA Upgrade cluster commands SHALL be sent with APS retry option, hence, require APS acknowledgement; unless stated otherwise.
-
-# OTA Upgrade cluster commands, the frame control value SHALL follow the description below:
-# Frame type is 0x01: 
-#   commands are cluster specific (not a global command). Manufacturer specific is 0x00: commands are not manufacturer specific.
-# Direction: 
-#   SHALL be either 0x00 (client->server) or 0x01 (server->client) depending on the com- mands.
-# Disable default response is 0x00 
-#   for all OTA request commands sent from client to server: 
-#   default re- sponse command SHALL be sent when the server receives OTA Upgrade cluster request commands that 
-#   it does not support or in case an error case happens. A detailed explanation of each error case along with 
-#   its recommended action is described for each OTA cluster command.
-# Disable default response is 0x01
-#   for all OTA response commands (sent from server to client) and for 
-#   broadcast/multicast Image Notify command: default response command is not sent when the client re- ceives 
-#   a valid OTA Upgrade cluster response commands or when it receives broadcast or multicast Im- age Notify command. 
-#   However, if a client receives invalid OTA Upgrade cluster response command, a default response SHALL be sent. 
-#   A detailed explanation of each error case along with its recom- mended action is described for each OTA cluster command.
-
-
-def zcl_raw_ota_image_notify(self, nwkid, EPIn, EPout, PayloadType, QueryJitter, ManufCode, Imagetype, FileVersion ):
-    # 505
-    self.log.logging("zclCommand", "Debug", "zcl_raw_ota_image_notify %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, PayloadType, QueryJitter, ManufCode, Imagetype, FileVersion))
-    
-    cluster_frame = 0b00001001    # Cluster Specific / Server to Client / disable Default Response
-    Command = "00"
-    ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
-    Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
-    FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
-    
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = "%02x" % cluster_frame + sqn + Command + PayloadType + QueryJitter + ManufCode + Imagetype + FileVersion
-    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
-    return sqn
-
-def zcl_raw_ota_query_next_image_response(self, sqn, nwkid, EPIn, EPout, status, ManufCode=None, Imagetype=None, FileVersion=None, imagesize=None ):
-    self.log.logging("zclCommand", "Debug", "zcl_raw_ota_query_next_image_response %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, imagesize))
-    
-    Command = "02"
-    cluster_frame = 0b00011001    # Cluster Specific / Server to Client / With Default Response
-    payload = "%02x" % cluster_frame + sqn + Command + status
-    if status == "00":
-        ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
-        Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
-        FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
-        imagesize = "%08x" % struct.unpack(">I", struct.pack("I", int(imagesize, 16)))[0]
-    
-        payload += ManufCode + Imagetype + FileVersion + imagesize
-    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
-    return sqn
-
-def zcl_raw_ota_image_block_response_success(self, sqn, nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, imagedata ):
-    self.log.logging("zclCommand", "Debug", "zcl_raw_ota_image_block_response_success %s %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize))
-    
-    # "0502"
-    Command = "05"
-    cluster_frame = 0b00011001    # Cluster Specific / Server to Client / With Default Response
-    ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
-    Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
-    FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
-    fileoffset = "%08x" % struct.unpack(">I", struct.pack("I", int(fileoffset, 16)))[0]
-
-    payload = "%02x" % cluster_frame + sqn + Command + status + ManufCode + Imagetype + FileVersion + fileoffset + datasize + imagedata
-    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
-    return sqn
-
-def zcl_raw_ota_image_block_response_wait_for_data( self, nwkid, EPIn, EPout, waitforstatus, currenttime, requesttime, minblockperiod):
-    Command = "05"
-    cluster_frame = 0b00011001    # Cluster Specific / Server to Client / With Default Response
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = "%02x" % cluster_frame + sqn + Command + waitforstatus + currenttime + requesttime + minblockperiod
-    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
-    return sqn
-
-def zcl_raw_ota_image_block_response_abort(self, nwkid, EPIn, EPout, abortstatus):
-    Command = "05"
-    cluster_frame = 0b00011001    # Cluster Specific / Server to Client / With Default Response
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = "%02x" % cluster_frame + sqn + Command + abortstatus
-    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
-    return sqn   
-                                             
-def zcl_raw_ota_upgrade_end_response(self, sqn, nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime):
-    # "0504"
-    self.log.logging("zclCommand", "Debug", "zcl_raw_ota_upgrade_end_response %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, ManufCode, Imagetype, FileVersion, currenttime, upgradetime))
-    
-    Command = "07"
-    cluster_frame = 0b00011001   # Cluster Specific / Server to Client / With Default Response
-    ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
-    Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
-    FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
-    currenttime = "%08x" % struct.unpack(">I", struct.pack("I", int(currenttime, 16)))[0]
-    upgradetime = "%08x" % struct.unpack(">I", struct.pack("I", int(upgradetime, 16)))[0]
-
-    payload = "%02x" % cluster_frame + sqn + Command + ManufCode + Imagetype + FileVersion + currenttime + upgradetime
-    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
-    return sqn
-
-def zcl_raw_ota_query_device_specific_file_response(self, nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, imagesize):
-    Command = "09"
-    ManufCode = "%04x" % (struct.unpack(">H", struct.pack("H", int(ManufCode, 16)))[0])
-    Imagetype = "%04x" % (struct.unpack(">H", struct.pack("H", int(Imagetype, 16)))[0])
-    FileVersion = "%08x" % struct.unpack(">I", struct.pack("I", int(FileVersion, 16)))[0]
-    imagesize = "%08x" % struct.unpack(">I", struct.pack("I", int(imagesize, 16)))[0]
-
-    cluster_frame = 0b00011001    # Cluster Specific / Server to Client / With Default Response
-    sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = "%02x" % cluster_frame + sqn + Command + status + ManufCode + Imagetype + FileVersion +imagesize
-    raw_APS_request(self, nwkid, EPout, "0019", "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, ackIsDisabled=False)
-    return sqn
-
 # Cluster 0102: Window Covering
 ################################
 
@@ -539,7 +361,6 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
     Cluster = "0102"
     WINDOW_COVERING_COMMANDS = {"Up": 0x00, "Down": 0x01, "Stop": 0x02, "GoToLiftValue": 0x04, "GoToLiftPercentage": 0x05, "GoToTiltValue": 0x07, "GoToTiltPercentage": 0x08}
     if command not in WINDOW_COVERING_COMMANDS:
-        self.log.logging("zclCommand", "Error", "zcl_raw_window_covering UNKNOW COMMAND drop it %s %s %s %s %s" % (nwkid, EPout, command, level, percentage))
         return
 
     # Cluster Frame:
@@ -554,12 +375,11 @@ def zcl_raw_window_covering(self, nwkid, EPIn, EPout, command, level="00", perce
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     payload = "%02x" % cluster_frame + sqn + "%02x" % WINDOW_COVERING_COMMANDS[command]
-    if command in ( "GoToLiftValue", "GoToTiltValue"):
+    if command in ("MovetoLevel", "MovetoLevelWithOnOff"):
         payload += level
-    elif command in ( "GoToLiftPercentage", "GoToTiltPercentage"):
+    elif command == ("GoToLiftValue", "GoToTiltValue"):
         payload += percentage
 
-    self.log.logging("zclCommand", "Debug", "zcl_raw_window_covering payload %s %s" % (nwkid, payload))
     raw_APS_request(self, nwkid, EPout, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPIn, groupaddrmode=groupaddrmode, ackIsDisabled=ackIsDisabled)
     return sqn
 

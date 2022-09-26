@@ -54,15 +54,6 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": False,
             },
-            "autoServeOTA": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
-            
             "pingDevices": {
                 "type": "bool",
                 "default": 1,
@@ -88,15 +79,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": False,
             },
-            "NightShift": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
- 
-            }
         },
     },
     "GroupManagement": {
@@ -173,20 +155,10 @@ SETTINGS = {
             }
         },
     },
-    "Zigpy": {
-        "Order": 3,
-        "param": {    
-            "Konke": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "Livolo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "Orvibo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "Terncy": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "Wiser": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "Wiser2": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-        }
-    },
     "Provisioning": {
         "Order": 3,
-        "param": {    
+        "param": {
+            "Livolo": {"type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False},
             "enableSchneiderWiser": {
                 "type": "bool",
                 "default": 0,
@@ -195,43 +167,26 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": False,
             },
-            "ConfigureReportingChunk": {
-                "type": "int",
-                "default": 3,
+            "breakConfigureReporting": {
+                "type": "bool",
+                "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
-            "ReadAttributeChunk": {
-                "type": "int",
-                "default": 3,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            }
         },
     },
     "WebInterface": {
         "Order": 4,
         "param": {
-            "TopologyV2": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
-
             "Sibling": {
                 "type": "bool",
                 "default": 1,
                 "current": None,
                 "restart": 0,
-                "hidden": True,
-                "Advanced": True,
+                "hidden": False,
+                "Advanced": False,
             },
             "Lang": {
                 "type": "str",
@@ -270,7 +225,7 @@ SETTINGS = {
                 "default": 1,
                 "current": None,
                 "restart": 0,
-                "hidden": True,
+                "hidden": False,
                 "Advanced": True,
             },
             "enableChunk": {
@@ -351,9 +306,9 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "checkConfigurationReporting": {
-                "type": "int",
-                "default": 75600,
+            "reenforceConfigureReporting": {
+                "type": "bool",
+                "default": 0,
                 "current": None,
                 "restart": 0,
                 "hidden": False,
@@ -413,14 +368,6 @@ SETTINGS = {
     "CoordinatorConfiguration": {
         "Order": 7,
         "param": {
-            "autoBackup": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
             "blueLedOnOff": {
                 "type": "bool",
                 "default": 1,
@@ -844,15 +791,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "debugDeviceAnnoucement": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
-
             "debugBasicOutput": {
                 "type": "bool",
                 "default": 0,
@@ -1333,14 +1271,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-            "debugZLinky": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
         },
     },
     # Others
@@ -1391,78 +1321,21 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
-            "ZiGateConfigureReporting": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-
-            },
-            "BellowsNoMoreEndDeviceChildren": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 1,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "BellowsSourceRouting": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 1,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "PluginLogMode": {
-                "type": "list",
-                "list": { "system defaut": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},
-                "default": 0,
-                "current": None,
-                "restart": 1,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "reconnectonIEEEaddr": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "reconnectonNWKaddr": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "forceZigpy_noasyncio": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
             "disableZCLDefaultResponse": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": True,
+                "hidden": False,
                 "Advanced": True,
+  
             },
             "ControllerInHybridMode": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "ControllerInRawMode": {
@@ -1470,7 +1343,7 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
                 "Advanced": True,
             },
             "nPDUaPDUThreshold": {
@@ -1489,6 +1362,30 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
+            "RoutingTableRequestFeq": {
+                "type": "int",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
+            "BindingTableRequestFeq": {
+                "type": "int",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
+            "doManyToOneRoute": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
             "DropBadAnnoucement": {
                 "type": "bool",
                 "default": 1,
@@ -1498,14 +1395,6 @@ SETTINGS = {
                 "Advanced": True,
             },
             "expJsonDatabase": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
-            "storeDomoticzDatabase": {
                 "type": "bool",
                 "default": 0,
                 "current": None,
@@ -1518,7 +1407,15 @@ SETTINGS = {
                 "default": 0,
                 "current": None,
                 "restart": 0,
-                "hidden": False,
+                "hidden": True,
+                "Advanced": True,
+            },
+            "XiaomiLeave": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
                 "Advanced": True,
             },
             "rebindLivolo": {
@@ -1844,14 +1741,6 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": True,
             },
-            "polling0b01": {
-                "type": "int",
-                "default": 86400,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
             "polling0b04": {
                 "type": "int",
                 "default": 900,
@@ -1860,15 +1749,6 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": True,
             },
-            "pollingff66": {
-                "type": "int",
-                "default": 3661,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
-            
             "polling0b05": {
                 "type": "int",
                 "default": 86400,
@@ -1981,7 +1861,7 @@ class PluginConf:
         self.VersionNewFashion = VersionNewFashion
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
-        self.zigbee_communication = zigbee_communication 
+        self.zigbee_communitation = zigbee_communication 
 
         setup_folder_parameters(self, homedir)
 
@@ -1992,7 +1872,7 @@ class PluginConf:
         else:
             _load_oldfashon(self, homedir, hardwareid)
 
-        if self.zigbee_communication == "zigpy":
+        if self.zigbee_communitation == "zigpy":
             zigpy_setup(self)
             
         # Reset eraseZigatePDM to default
@@ -2025,7 +1905,7 @@ class PluginConf:
         with open(pluginConfFile, "wt") as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
-        if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
+        if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"]:
             setConfigItem(Key="PluginConf", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
 
 
@@ -2164,6 +2044,7 @@ def _param_checking(self):
 
 
 def zigpy_setup(self):
+
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
             if param == "TXpower_set":
@@ -2175,9 +2056,9 @@ def zigpy_setup(self):
                     "hidden": False,
                     "Advanced": True,
                 }
-    if self.pluginConf["enableSchneiderWiser"]:
-        self.pluginConf["Wiser"] =1
-                                
+                
+        
+        
 def setup_folder_parameters(self, homedir):
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:

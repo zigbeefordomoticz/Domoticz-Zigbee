@@ -17,7 +17,7 @@ import Domoticz
 try:
     import dns.resolver
 except:
-    Domoticz.Error("Missing serial or dns modules. https://zigbeefordomoticz.github.io/wiki/en-eng/missing-modules.html")
+    Domoticz.Error("Missing serial or dns modules. https://github.com/zigbeefordomoticz/wiki/blob/zigpy/en-eng/missing-modules.md#make-sure-that-you-have-correctly-installed-the-plugin")
 
 PLUGIN_TXT_RECORD = "zigate_plugin.pipiche.net"
 ZIGATEV1_FIRMWARE_TXT_RECORD = "zigatev1.pipiche.net"
@@ -64,7 +64,7 @@ def checkPluginVersion(zigbee_communitation, branch, zigate_model):
             firmwareVersion[major_minor.split("=")[0]] = major_minor.split("=")[1].strip('"')
             #Domoticz.Log("checkPluginVersion - Available Firmware Version is, %s , %s" %(major_minor.split("=")[0], firmwareVersion[ major_minor.split("=")[0] ]))
 
-    if zigbee_communitation == "native" and branch in pluginVersion and "firmMajor" in firmwareVersion and "firmMinor" in firmwareVersion:
+    if zigbee_communitation == "native" and  branch in pluginVersion and "firmMajor" in firmwareVersion and "firmMinor" in firmwareVersion:
         return (pluginVersion[branch], firmwareVersion["firmMajor"], firmwareVersion["firmMinor"])
     if zigbee_communitation == "zigpy" and branch in pluginVersion:
         return (pluginVersion[branch], 0, 0)

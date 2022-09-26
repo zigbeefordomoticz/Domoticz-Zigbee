@@ -86,9 +86,10 @@ def inRawAps(
         return
 
     if cluster == "0019":  # OTA Cluster
-        if self.OTA and Command == "01":
+        if Command == "01":
             # Query Next Image Request
-            self.OTA.query_next_image_request(srcnwkid, srcep, Sqn, Data)
+            if self.OTA:
+                self.OTA.query_next_image_request(srcnwkid, srcep, Sqn, Data)
 
         return
 

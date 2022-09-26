@@ -37,7 +37,7 @@ def epDescrZigate(self, ep):
 
 def receiveZigateEpList(self, ep_count, ep_list):
 
-    if "0000" not in self.ListOfDevices or "Ep" not in self.ListOfDevices["0000"]:
+    if "0000" not in self.ListOfDevices:
         return
     for i in range(0, 2 * int(ep_count, 16), 2):
         tmpEp = ep_list[i : i + 2]

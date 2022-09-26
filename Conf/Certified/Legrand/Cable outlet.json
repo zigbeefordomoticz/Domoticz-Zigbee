@@ -41,7 +41,7 @@
 					"MinInterval": "0001",
 					"MaxInterval": "012C",
 					"TimeOut": "0258",
-					"Change": "0002"
+					"Change": "0001"
 				}
 			}
 		}
