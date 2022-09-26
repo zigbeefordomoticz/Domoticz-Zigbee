@@ -67,9 +67,10 @@ READATTRIBUTE_FEQ = (10 // HEARTBEAT)  # 10seconds ...
 CONFIGURERPRT_FEQ = (( 30 // HEARTBEAT) + 1)
 LEGRAND_FEATURES = (( 300 // HEARTBEAT ) + 3)
 SCHNEIDER_FEATURES = (( 300 // HEARTBEAT) + 5)
-BINDING_TABLE_REFRESH = (( 3600 // HEARTBEAT ) + 7)
-NODE_DESCRIPTOR_REFRESH = (( 3600 // HEARTBEAT) + 11)
-ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 13)
+BINDING_TABLE_REFRESH = (( 3600 // HEARTBEAT ) + 11)
+NODE_DESCRIPTOR_REFRESH = (( 3600 // HEARTBEAT) + 13)
+ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 7)
+CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 
 
 def attributeDiscovery(self, NwkId):
@@ -137,7 +138,25 @@ def ManufSpecOnOffPolling(self, NwkId):
     ReadAttributeRequest_0006_0000(self, NwkId)
     ReadAttributeRequest_0008_0000(self, NwkId)
 
-
+def check_delay_readattributes( self, NwkId ):
+    
+    if 'DelayReadAttributes' not in self.ListOfDevices[ NwkId ]:
+        return
+    
+    if time.time() < self.ListOfDevices[ NwkId ]['DelayReadAttributes']['TargetTime']:
+        return
+    
+    for cluster in list(self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters']):
+        if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+            return
+        func = READ_ATTRIBUTES_REQUEST[cluster][0]
+        func(self, NwkId)
+        self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters'].remove( cluster )
+        
+    if len(self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters']) == 0:
+        del self.ListOfDevices[ NwkId ]['DelayReadAttributes']
+            
+        
 def check_delay_binding( self, NwkId, model ):
     # Profalux is the first one, but could get others
     # At pairing we need to leave time for the remote to get binded to the VR
@@ -330,8 +349,7 @@ def checkHealth(self, NwkId):
     # If device flag as Not Reachable, don't do anything
     return (
         "Health" not in self.ListOfDevices[NwkId]
-        or self.ListOfDevices[NwkId]["Health"] != "Not Reachable"
-    )
+        or self.ListOfDevices[NwkId]["Health"] != "Not Reachable")
 
 
 def pingRetryDueToBadHealth(self, NwkId):
@@ -558,6 +576,10 @@ def processKnownDevices(self, Devices, NWKID):
     if "CheckParam" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["CheckParam"] and intHB > (60 // HEARTBEAT):
         sanity_check_of_param(self, NWKID)
         self.ListOfDevices[NWKID]["CheckParam"] = False
+
+    if ( intHB % CHECKING_DELAY_READATTRIBUTE) == 0:
+        check_delay_readattributes( self, NWKID )
+
 
     # Starting this point, it is ony relevant for Main Powered Devices.
     # Some battery based end device with ZigBee 30 use polling and can receive commands.

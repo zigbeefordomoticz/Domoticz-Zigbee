@@ -11,21 +11,18 @@ If you want to contribue , please let us know , we are looking for help in vario
 - certifying new ZigBee devices
 - improving the plugin
 - increasing the level of documentation for end user
-
-## Attention
-
-stable will remain on 4.11.17 and no further update will be done. This is the latest version supported with DomoticZ below 2020 ( 4.xxxx like )
-stable-2020 is the new stable branche dedicated for DomoticZ equal and above 2020.1
+- imporving the plugin WebUI
 
 Release Numbering
 
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
+## Sept. 2022 - stable6 - 6.3.001
 
-## Aug. 2022 - stable6 - 6.3.001
-
-- [Technical] - Pipiche38/refactor/domoticz db (#1197)
+- [Hardware] - ZLinky support for Historique, Standard, Mono, tri and Production mode. WebUI interface to visualise ALL Linky attributes
+- [Technical] - Full implementation of Over-The-Air device firmware upgrade
+- [Technical] - refactor of domoticz db access (#1197)
 - [Technical] - make the Transaction key available in the REST /zigate api
 - [Technical] - fix processConfigureReporting() got an unexpected keyword argument NWKID
 - [Hardware] - ZBMINI-L is a switch without neutre, but is main powered

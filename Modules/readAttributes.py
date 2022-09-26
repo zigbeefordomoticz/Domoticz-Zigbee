@@ -26,6 +26,7 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
                                        PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_TUYA,
                                        PREFIX_MACADDR_XIAOMI)
+import Modules.paramDevice
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
                            is_time_to_perform_work, reset_attr_datastruct,
@@ -160,7 +161,9 @@ def get_max_read_attribute_value( self, nwkid=None):
 
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, ):
+
     maxReadAttributesByRequest = get_max_read_attribute_value( self, addr )    
+
     if not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled)
     else:
