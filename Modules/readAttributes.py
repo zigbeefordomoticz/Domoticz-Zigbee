@@ -26,14 +26,14 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
                                        PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_TUYA,
                                        PREFIX_MACADDR_XIAOMI)
-from Modules.paramDevice import get_device_config_param
+import Modules.paramDevice
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
                            is_time_to_perform_work, reset_attr_datastruct,
                            set_isqn_datastruct, set_status_datastruct,
                            set_timestamp_datastruct)
 from Modules.tuya import tuya_cmd_0x0000_0xf0
-from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
+from Modules.zigateConsts import ZIGATE_EP
 from Modules.zlinky import get_OPTARIF
 
 ATTRIBUTES = {
@@ -141,7 +141,7 @@ ATTRIBUTES = {
 def get_max_read_attribute_value( self, nwkid=None):
     
     # This is about Read Configuration Reporting from a device
-    read_configuration_report_chunk = get_device_config_param( self, nwkid, "ReadAttributeChunk")
+    read_configuration_report_chunk = Modules.paramDevice.get_device_config_param( self, nwkid, "ReadAttributeChunk")
 
     if "PairingInProgress" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PairingInProgress"]:
         read_configuration_report_chunk = 1
