@@ -10,11 +10,11 @@
 
 """
 
-from datetime import datetime
-from time import time
+
+import time
 
 import Domoticz
-from Classes.LoggingManagement import LoggingManagement
+import Modules.paramDevice
 
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
@@ -138,6 +138,7 @@ ATTRIBUTES = {
     "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
 }
 
+
 def get_max_read_attribute_value( self, nwkid=None):
     
     # This is about Read Configuration Reporting from a device
@@ -160,7 +161,9 @@ def get_max_read_attribute_value( self, nwkid=None):
 
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, ):
-    maxReadAttributesByRequest = get_max_read_attribute_value( addr )    
+
+    maxReadAttributesByRequest = get_max_read_attribute_value( self, addr )    
+
     if not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled)
     else:
@@ -227,7 +230,7 @@ def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttribute
 
     for x in attributeList:
         set_isqn_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, x, i_sqn)
-    set_timestamp_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, int(time()))
+    set_timestamp_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, int(time.time()))
 
 
 def skipThisAttribute(self, addr, EpOut, Cluster, Attr):
