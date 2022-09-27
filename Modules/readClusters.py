@@ -19,15 +19,16 @@ import Domoticz
 
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
-from Modules.domoTools import Update_Battery_Device, timedOutDevice
+from Modules.domoTools import timedOutDevice
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster)
+from Modules.philips import philips_dimmer_switch
 from Modules.schneider_wiser import (receiving_heatingdemand_attribute,
                                      receiving_heatingpoint_attribute)
 from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
                            checkAttribute, get_deviceconf_parameter_value,
                            getEPforClusterType, is_hex, set_status_datastruct,
-                           set_timestamp_datastruct, voltage2batteryP)
+                           set_timestamp_datastruct)
 from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER,
                           TUYA_ENERGY_MANUFACTURER, TUYA_SIREN_MANUFACTURER,
@@ -45,8 +46,6 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
-
-# from Classes.Transport.sqnMgmt import sqn_get_internal_sqn_from_app_sqn, TYPE_APP_ZCL
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -96,7 +95,7 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         return str(struct.unpack("q", struct.pack("Q", int(Attribute, 16)))[0])
 
     if int(AttType, 16) == 0x30:  # 8BitEnum
-        return int(Attribute[0:2], 16)
+        return int(Attribute[:2], 16)
 
     if int(AttType, 16) == 0x31:  # 16BitEnum
         return str(struct.unpack("h", struct.pack("H", int(Attribute[:4], 16)))[0])
@@ -4773,193 +4772,23 @@ def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "ROM001":
         if MsgAttrID == "0001":  # On button
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "ReadCluster - %s - %s/%s - ON Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
-                MsgSrcAddr,
-            )
+            self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s - ON Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0008", "on")
         elif MsgAttrID == "0004":  # Off  Button
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "ReadCluster - %s - %s/%s - Off Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
-                MsgSrcAddr,
-            )
+            self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s - Off Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0008", "off")
         elif MsgAttrID == "0002":  # Dim+
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "ReadCluster - %s - %s/%s - Dim+ Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
-                MsgSrcAddr,
-            )
+            self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s - Dim+ Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0008", "moveup")
         elif MsgAttrID == "0003":  # Dim-
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "ReadCluster - %s - %s/%s - Dim- Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
-                MsgSrcAddr,
-            )
+            self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s - Dim- Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0008", "movedown")
         return
 
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s - reading self.ListOfDevices[%s]['Ep'][%s][%s][%s] = %s"
-        % (
-            MsgClusterId,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId],
-        ),
-        MsgSrcAddr,
-    )
-
-    DIMMER_STEP = 1
-    if "0000" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-        prev_Value = str(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0000"]).split(";")
-        if len(prev_Value) == 3:
-            for val in prev_Value:
-                if not is_hex(val):
-                    prev_Value = "0;80;0".split(";")
-                    break
-        else:
-            prev_Value = "0;80;0".split(";")
-    else:
-        prev_Value = "0;80;0".split(";")
-
-    prev_onoffvalue = onoffValue = int(prev_Value[0], 16)
-    prev_lvlValue = lvlValue = int(prev_Value[1], 16)
-    prev_duration = duration = int(prev_Value[2], 16)
-
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster - %s - %s/%s - past OnOff: %s, Lvl: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue),
-        MsgSrcAddr,
-    )
-    if MsgAttrID == "0001":  # On button
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s - %s/%s - ON Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
-            MsgSrcAddr,
-        )
-        onoffValue = 1
-
-    elif MsgAttrID == "0004":  # Off  Button
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s - %s/%s - OFF Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
-            MsgSrcAddr,
-        )
-        onoffValue = 0
-
-    elif MsgAttrID in ("0002", "0003"):  # Dim+ / 0002 is +, 0003 is -
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s - %s/%s - DIM Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp),
-            MsgSrcAddr,
-        )
-        action = MsgClusterData[2:4]
-        duration = MsgClusterData[6:10]
-        duration = struct.unpack("H", struct.pack(">H", int(duration, 16)))[0]
-
-        if action in ("00"):  # Short press
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "ReadCluster - %s - %s/%s - DIM Action: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, action),
-                MsgSrcAddr,
-            )
-            onoffValue = 1
-            # Short press/Release - Make one step   , we just report the press
-            if MsgAttrID == "0002":
-                lvlValue += DIMMER_STEP
-            elif MsgAttrID == "0003":
-                lvlValue -= DIMMER_STEP
-
-        elif action in ("01"):  # Long press
-            delta = duration - prev_duration  # Time press since last message
-            onoffValue = 1
-            if MsgAttrID == "0002":
-                lvlValue += round(delta * DIMMER_STEP)
-            elif MsgAttrID == "0003":
-                lvlValue -= round(delta * DIMMER_STEP)
-
-        elif action in ("03"):  # Release after Long Press
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "ReadCluster - %s - %s/%s - DIM Release after %s seconds" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, round(duration / 10)),
-                MsgSrcAddr,
-            )
-
-        else:
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "ReadCluster - %s - %s/%s - DIM Action: %s not processed" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, action),
-                MsgSrcAddr,
-            )
-            return  # No need to update
-
-        # Check if we reach the limits Min and Max
-        if lvlValue > 255:
-            lvlValue = 255
-        if lvlValue <= 0:
-            lvlValue = 0
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s - %s/%s - Level: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, lvlValue),
-            MsgSrcAddr,
-        )
-    else:
-        self.log.logging(
-            "Cluster",
-            "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-            MsgSrcAddr,
-        )
-
-    # Update Domo
-    sonoffValue = "%02x" % onoffValue
-    slvlValue = "%02x" % lvlValue
-    sduration = "%02x" % duration
-
-    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0000", "%s;%s;%s" % (sonoffValue, slvlValue, sduration))
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s - updating self.ListOfDevices[%s]['Ep'][%s][%s] = %s"
-        % (
-            MsgClusterId,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId],
-        ),
-        MsgSrcAddr,
-    )
-
-    if prev_onoffvalue != onoffValue:
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006", sonoffValue)
-    if prev_lvlValue != lvlValue:
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, slvlValue)
-
+    if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "RWL021":      
+        philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+    
+    
 
 def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 

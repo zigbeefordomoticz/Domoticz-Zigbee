@@ -123,7 +123,9 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
             % ( Command, SrcNwkId, SrcEndPoint, ClusterId, Data, GlobalCommand, Sqn, ManufacturerCode, ),)
         return frame
     
-
+    if ClusterId == "fc00" and ManufacturerCode == "100b":
+        return frame
+    
     self.log.logging(
         "zclDecoder",
         "Log",
