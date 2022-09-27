@@ -4161,6 +4161,10 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, step_size, up_down),
         )
 
+    elif _ModelName in ( "RWL021", ):
+        self.log.logging( "Input", "Log", "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
+            _ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
+
     else:
         self.log.logging(
             "Input",
@@ -4382,24 +4386,18 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         )
 
     elif _ModelName in ( "RWL021", ):
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Input", "Log", "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
+            _ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
+        if MsgCmd == "40":
+            MajDomoDevice(self, Devices, MsgSrcAddr, "02", "0006", "00")
+        elif MsgCmd == "01":
+            MajDomoDevice(self, Devices, MsgSrcAddr, "02", "0006", "01")
         
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", str(int(MsgCmd, 16)))
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Input", "Log", "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
+            _ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
 
 
 def Decode80A5(self, Devices, MsgData, MsgLQI):
