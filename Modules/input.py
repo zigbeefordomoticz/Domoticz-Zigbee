@@ -4386,7 +4386,15 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             ),
         )
 
-
+    elif _ModelName == ( " RWL021", ):
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
+            % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
+            MsgSrcAddr,
+        )
+        
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", str(int(MsgCmd, 16)))
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
