@@ -4386,7 +4386,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             ),
         )
 
-    elif _ModelName == ( " RWL021", ):
+    elif _ModelName == ( "RWL021", ):
         self.log.logging(
             "Input",
             "Log",
