@@ -541,7 +541,7 @@ def ReadAttributeRequest_0000_for_general(self, key):
         elif "Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "100b":
             manufacturer_code = "100b"
             for _attr in list(listAttributes):
-                if _attr in (0x0033):
+                if _attr in (0x0033, ):
                     listAttrSpecific.append(_attr)
                 else:
                     listAttrGeneric.append(_attr)
