@@ -161,16 +161,7 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
 
 def interview_state_8043(self, NWKID, RIA, knownModel, status):
     # At that stage, we have at least One Ep Description
-    self.log.logging(
-        "Pairing",
-        "Debug",
-        "interview_state_8043 - NWKID: %s, Status: %s, RIA: %s,"
-        % (
-            NWKID,
-            status,
-            RIA,
-        ),
-    )
+    self.log.logging( "Pairing", "Debug", "interview_state_8043 - NWKID: %s, Status: %s, RIA: %s," % ( NWKID, status, RIA, ),)
 
     self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
 
@@ -227,16 +218,7 @@ def request_node_descriptor(self, NWKID, RIA=None, status=None):
 
 
 def interview_state_8045(self, NWKID, RIA=None, status=None):
-    self.log.logging(
-        "Pairing",
-        "Debug",
-        "interview_state_8045 - NWKID: %s, Status: %s, RIA: %s,"
-        % (
-            NWKID,
-            status,
-            RIA,
-        ),
-    )
+    self.log.logging( "Pairing", "Debug", "interview_state_8045 - NWKID: %s, Status: %s, RIA: %s," % ( NWKID, status, RIA, ), )
     if RIA:
         self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
     self.ListOfDevices[NWKID]["Heartbeat"] = "0"
@@ -246,12 +228,7 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
         self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Request Model Name" % (RIA, NWKID))
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # Reuest Model Name
 
-    if request_next_Ep(self, NWKID):
-        # All Ep discovered
-        return "0043"
-
-    # Still some Ep to be discovered
-    return "0045"
+    return "0043" if request_next_Ep(self, NWKID) else "0045"
 
 def request_next_Ep(self, Nwkid):
     for iterEp in self.ListOfDevices[Nwkid]["Ep"]:
