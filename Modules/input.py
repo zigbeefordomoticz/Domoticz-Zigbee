@@ -4184,13 +4184,6 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     updLQI(self, MsgSrcAddr, MsgLQI)
     self.log.logging( "Input", 'Debug', "Decode8095 - MsgData: %s" % MsgData, MsgSrcAddr)
 
-    self.log.logging(
-        "Input",
-        "Debug",
-        "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Payload: %s Unknown: %s "
-        % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload, unknown_),
-        MsgSrcAddr,
-    )
 
     if MsgSrcAddr not in self.ListOfDevices:
         zigpy_plugin_sanity_check(self, MsgSrcAddr)
@@ -4212,6 +4205,8 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         return
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
+    self.log.logging( "Input", "Debug", "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Payload: %s Unknown: %s Model: %s" % (
+        MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload, unknown_, _ModelName), MsgSrcAddr, )
 
     if _ModelName in ("TRADFRI remote control", "Remote Control N2"):
         # Ikea Remote 5 buttons round.
@@ -4371,7 +4366,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             ),
         )
 
-    elif _ModelName == ( "lumi.remote.b28ac1",):
+    elif _ModelName in ( "lumi.remote.b28ac1",):
         self.log.logging(
             "Input",
             "Log",
@@ -4386,7 +4381,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             ),
         )
 
-    elif _ModelName == ( "RWL021", ):
+    elif _ModelName in ( "RWL021", ):
         self.log.logging(
             "Input",
             "Log",
