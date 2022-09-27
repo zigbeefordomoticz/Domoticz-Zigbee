@@ -164,9 +164,9 @@ def zigpy_philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterI
    
     MsgAttrID = "%04x" %struct.unpack("H", struct.pack(">H", int( MsgPayload[10:14], 16)))[0] 
     MsgClusterData = MsgPayload[14+2:]
-    philips_dimmer_switch(self,  Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+    philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-def philips_dimmer_switch(self,  Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData):
+def philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData):
 
     self.log.logging( "Philips", "Debug", "philips_dimmer_switch %s - %s/%s - MsgAttrID = %s MsgClusterData: %s" % ( 
         MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgAttrID, MsgClusterData ))
