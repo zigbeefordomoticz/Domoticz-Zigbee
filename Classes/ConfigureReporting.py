@@ -365,7 +365,7 @@ class ConfigureReporting:
 
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
 
-        maxAttributesPerRequest = get_max_cfg_rpt_attribute_value( self, "Read", nwkid=nwkid)
+        maxAttributesPerRequest = get_max_cfg_rpt_attribute_value( self, nwkid=nwkid)
 
         if len( attribute_list ) <= maxAttributesPerRequest:
             zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
