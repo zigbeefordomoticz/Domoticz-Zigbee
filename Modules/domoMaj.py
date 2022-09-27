@@ -1141,7 +1141,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     nValue, sValue = getDimmerLevelOfColor(self, value)
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
-            elif WidgetType == "LegrandSelector":
+            elif WidgetType in ("LegrandSelector", "LegrandSleepWakeupSelector"):
                 self.log.logging("Widget", "Debug", "------> LegrandSelector : Value -> %s" % value, NWKID)
                 if value == "00":
                     nValue = 0
