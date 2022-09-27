@@ -82,5 +82,7 @@
         ]
     },
     "VoltageConverter": 10,
-    "Param": {}
+    "Param": {
+        "ReadAttributeChunk": 5
+    }
 }

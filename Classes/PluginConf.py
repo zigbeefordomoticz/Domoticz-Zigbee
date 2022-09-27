@@ -195,14 +195,22 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": False,
             },
-            "breakConfigureReporting": {
-                "type": "bool",
-                "default": 0,
+            "ConfigureReportingChunk": {
+                "type": "int",
+                "default": 3,
                 "current": None,
                 "restart": 0,
-                "hidden": True,
+                "hidden": False,
                 "Advanced": True,
             },
+            "ReadAttributeChunk": {
+                "type": "int",
+                "default": 3,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": True,
+            }
         },
     },
     "WebInterface": {
