@@ -50,5 +50,7 @@
 		"0405": [ "0000" ]
 	},
 	"VoltageConverter": 10,
-	"Param": {}
+	"Param": {
+		"ReadAttributeChunk": 5
+	}
 }

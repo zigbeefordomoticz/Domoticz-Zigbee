@@ -65,5 +65,7 @@
             "0011"
         ]
     },
-    "Param": {}
+    "Param": {
+        "ReadAttributeChunk": 5
+    }
 }
