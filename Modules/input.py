@@ -3948,19 +3948,13 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         # 5 Butons remote
         ikea_remote_control_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
 
-    elif _ModelName in ("ROM001",):
+    elif _ModelName in ("ROM001", ):
         # ZigateRead - MsgType: 8095, MsgLength: 000b, MsgCRC: 19, Data: 00010006029b6e400000, LQI: 183
         # Apr 19 14:19:59 rasp domoticz[31994]: 2021-04-19 14:19:59.194  DIN3-Zigate: (DIN3-Zigate) Decode8095 - SQN: 00, Addr: 9b6e, Ep: 01, Cluster: 0006, Cmd: 40, Unknown: 02
         self.log.logging("Input", "Debug", "Decode8085 - Philips Hue ROM001  MsgCmd: %s" % MsgCmd, MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0008", "move")
 
-    elif _ModelName in (
-        "TRADFRI onoff switch",
-        "TRADFRI on/off switch",
-        "TRADFRI SHORTCUT Button",
-        "TRADFRI openclose remote",
-        "TRADFRI open/close remote",
-    ):
+    elif _ModelName in ( "TRADFRI onoff switch", "TRADFRI on/off switch", "TRADFRI SHORTCUT Button", "TRADFRI openclose remote", "TRADFRI open/close remote", ):
         # Ikea Switch On/Off
         ikea_remote_switch_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
 
@@ -4085,11 +4079,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
-    elif _ModelName in (
-        "lumi.remote.b686opcn01-bulb",
-        "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b286opcn01-bulb",
-    ):
+    elif _ModelName in ( "lumi.remote.b686opcn01-bulb", "lumi.remote.b486opcn01-bulb", "lumi.remote.b286opcn01-bulb", ):
         AqaraOppleDecoding(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData)
 
     elif _ModelName == "tint-Remote-white":
@@ -4115,6 +4105,20 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
         if MsgCmd == "03":  # Stop
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "08")
+
+    elif _ModelName == "TS1001":
+
+        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8085 - Lidl Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mod: %s step_size: %s up_down: %s"
+            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, step_size, up_down),
+        )
+
+    elif _ModelName in ( "RWL021", ):
+        self.log.logging( "Input", "Log", "Decode8085 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
+            _ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
 
     elif "Manufacturer" in self.ListOfDevices[MsgSrcAddr]:
         if self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "1110":  # Profalux
@@ -4150,20 +4154,6 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             )
             if selector:
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
-
-    elif _ModelName == "TS1001":
-
-        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8085 - Lidl Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mod: %s step_size: %s up_down: %s"
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, step_size, up_down),
-        )
-
-    elif _ModelName in ( "RWL021", ):
-        self.log.logging( "Input", "Log", "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
-            _ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
 
     else:
         self.log.logging(
