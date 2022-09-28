@@ -1290,11 +1290,19 @@ def check_ota_availability_from_index( self, manufcode, imagetype, fileversion )
     return next((_image for _image in self.zigbee_ota_index if (_image["manufacturerCode"] == manufcode and _image["imageType"] == imagetype and _image["fileVersion"] >= fileversion)), {})
     
 def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, fileversion, _ota_available ):
-    
+
+    folder = next((OTA_CODES[supported_manufacturer]["IKEA-TRADFRI"] for supported_manufacturer in OTA_CODES if OTA_CODES[supported_manufacturer]["ManufCode"] == manufcode), None)
+
     logging(self, "Status", "We have detected a potential new firmware for the device %s [%s]" %( get_device_nickname( self, NwkId=srcnwkid, ), srcnwkid ))
-    logging(self, "Status", "   Current version: %s" % fileversion)
+    logging(self, "Status", "   current version: %s" % fileversion)
     logging(self, "Status", "     firmware type: %s" % imagetype)
-    logging(self, "Status", "    Newest version: %s" % _ota_available["fileVersion"])
+    logging(self, "Status", "    newest version: %s" % _ota_available["fileVersion"])
     logging(self, "Status", "     firmware type: %s" % _ota_available["imageType"])
     logging(self, "Status", "   URL to download: %s" % _ota_available["url"])
 
+    if folder:
+        logging(self, "Status", "   Folder to store: %s" % folder)
+    else:
+        logging(self, "Status", "   to get this Manufacturer supported: %s" % manufcode)
+        logging(self, "Status", "   provide those informations: %s" % _ota_available)
+        logging(self, "Status", "   open an Issue on GitHub here: https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=&template=feature_request.md&title=")
