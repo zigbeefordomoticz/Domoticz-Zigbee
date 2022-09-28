@@ -122,6 +122,7 @@ class OTAManagement(object):
         }
         self.AuthorizedForDowngrade = {}
         self.zigbee_ota_index = None
+        self.zigbee_ota_found_in_index = []
         self.once = True
         loading_zigbee_ota_index( self )
         logging(self, "Debug", "zigbee_ota_index: %s" %self.zigbee_ota_index)
@@ -391,16 +392,21 @@ class OTAManagement(object):
         if image_found:     
             fileversion = "%08x" %image_found["originalVersion"]
             imagesize = "%08x" %image_found["intSize"]
+            
             if "autoServeOTA" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoServeOTA"]:
                 self.ListInUpdate["AuthorizedForUpdate"].append( srcnwkid )
                 return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
+            
             elif srcnwkid in self.ListInUpdate["AuthorizedForUpdate"]:
                 # We are in the case were we get a request, but do not authorised selfserving OTA
                 return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
+            
         elif "CheckFirmwareAgainstZigbeeOTARepository" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["CheckFirmwareAgainstZigbeeOTARepository"]:
-            _ota_available = check_ota_availability_from_index( self, int(manufcode,16), int(imagetype,16), int(currentVersion,16) )
-            if _ota_available:
-                notify_ota_firmware_available(self, srcnwkid, int(manufcode,16), int(imagetype,16), int(currentVersion,16), _ota_available )
+            if (int(manufcode,16), int(imagetype,16), int(currentVersion,16)) not in self.zigbee_ota_found_in_index:
+                _ota_available = check_ota_availability_from_index( self, int(manufcode,16), int(imagetype,16), int(currentVersion,16) )
+                if _ota_available:
+                    self.zigbee_ota_found_in_index.append( ( int(manufcode,16), int(imagetype,16), int(currentVersion,16))  )
+                    notify_ota_firmware_available(self, srcnwkid, int(manufcode,16), int(imagetype,16), int(currentVersion,16), _ota_available )
 
         # No Image available
         zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '98')
@@ -1277,10 +1283,11 @@ def loading_zigbee_ota_index( self ):
     logging(self, "Error", "loading_zigbee_ota_index: Reason: %s" %reason)
 
 def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ):
+        
     logging(self, "Log", "check_ota_availability_from_index: Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
         manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
 
-    return next((_image for _image in self.zigbee_ota_index if (_image["manufacturerCode"] == manufcode and _image["imageType"] == imagetype and _image["fileVersion"] > fileversion)), {})
+    return next((_image for _image in self.zigbee_ota_index if (_image["manufacturerCode"] == manufcode and _image["imageType"] == imagetype and _image["fileVersion"] >= fileversion)), {})
     
 def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, fileversion, _ota_available ):
     
