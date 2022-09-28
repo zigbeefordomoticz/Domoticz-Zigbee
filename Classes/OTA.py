@@ -49,7 +49,7 @@ from Classes.LoggingManagement import LoggingManagement
 # This file is hosted on @koenkk repository.
 # This file is maintained from the community, so make sure what you do.
 ZIGBEE_OTA_INDEX = 'https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json'
-IKEATRADFRI_INDEX = 'https://fw.ota.homesmart.ikea.net/feed/version_info.json'
+IKEATRADFRI_INDEX = 'http://fw.ota.homesmart.ikea.net/feed/version_info.json'
 
 OTA_CLUSTER_ID = "0019"
 
@@ -1324,5 +1324,5 @@ def _load_json_from_url( self, url ):
     except socket.timeout as e:
         reason = f'socket.timeout {e}'
         
-    logging(self, "Error", "loading_zigbee_ota_index: Reason: %s" %reason)
+    logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %reason)
     return []
