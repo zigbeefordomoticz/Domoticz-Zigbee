@@ -62,6 +62,14 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": False,
             },
+            "CheckFirmwareAgainstZigbeeOTARepository": {
+                "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+            },
             
             "pingDevices": {
                 "type": "bool",
