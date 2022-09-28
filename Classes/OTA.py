@@ -49,6 +49,7 @@ from Classes.LoggingManagement import LoggingManagement
 # This file is hosted on @koenkk repository.
 # This file is maintained from the community, so make sure what you do.
 ZIGBEE_OTA_INDEX = 'https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json'
+IKEATRADFRI_INDEX = 'https://fw.ota.homesmart.ikea.net/feed/version_info.json'
 
 OTA_CLUSTER_ID = "0019"
 
@@ -893,7 +894,7 @@ def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
     logging(
         self,
         "Status",
-        "Available Firmware - ManufCode: %4x ImageType: 0x%04x FileVersion: %8x Size: %8s Bytes Filename: %s"
+        "Available Firmware - ManufCode: %4x ImageType: 0x%04x FileVersion: 0x%8x Size: %8s Bytes Filename: %s"
         % (headers["manufacturer_code"], headers["image_type"], headers["image_version"], headers["size"], image),
     )
 
@@ -1255,32 +1256,23 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
 
 def loading_zigbee_ota_index( self ):
     
-    import json
-    import socket
-    import urllib.request
     
     self.zigbee_ota_index = []
 
-    try:
-        with urllib.request.urlopen(ZIGBEE_OTA_INDEX) as response:
-            self.zigbee_ota_index = json.loads( response.read() )
-            return
-    except urllib.error.HTTPError as e:
-        if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
-            reason = f'{e.code} {str(e.reason)}'
-        elif isinstance(e.reason, socket.timeout):
-            reason = f'HTTPError socket.timeout {e.reason} - {e}'
-        else:
-            reason = f'unknow {e.reason} - {e}'
-    except urllib.error.URLError as e:
-        if isinstance(e.reason, socket.timeout):
-            reason = f'URLError socket.timeout {e.reason} - {e}'
-        else:
-            reason = f'unknow {e.reason} - {e}'
-    except socket.timeout as e:
-        reason = f'socket.timeout {e}'
-        
-    logging(self, "Error", "loading_zigbee_ota_index: Reason: %s" %reason)
+    self.zigbee_ota_index = _load_json_from_url( self, ZIGBEE_OTA_INDEX )
+
+    _zigbee_ikea_index = _load_json_from_url( self, IKEATRADFRI_INDEX )
+    for ikea_image in _zigbee_ikea_index:
+        if "fw_file_version_MSB" not in ikea_image or "fw_file_version_LSB" not in ikea_image:
+            continue
+        item_to_add = {
+                "fileVersion": int( "%04x%04x" %(ikea_image["fw_file_version_MSB"], ikea_image["fw_file_version_LSB"]),16 ),
+                "manufacturerCode": ikea_image[ "fw_manufacturer_id"],
+                "imageType": ikea_image[ "fw_image_type" ],
+                "url": ikea_image[ "fw_binary_url"], 
+        }
+        self.zigbee_ota_index.append(item_to_add )
+        logging(self, "Debug", "adding Ikea %s" %item_to_add)
 
 def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ):
         
@@ -1306,3 +1298,31 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
         logging(self, "Status", "   to get this Manufacturer supported: %s" % manufcode)
         logging(self, "Status", "   provide those informations: %s" % _ota_available)
         logging(self, "Status", "   open an Issue on GitHub here: https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=&template=feature_request.md&title=")
+
+def _load_json_from_url( self, url ):
+
+    import json
+    import socket
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen( url ) as response:
+            return json.loads( response.read() )
+
+    except urllib.error.HTTPError as e:
+        if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
+            reason = f'{e.code} {str(e.reason)}'
+        elif isinstance(e.reason, socket.timeout):
+            reason = f'HTTPError socket.timeout {e.reason} - {e}'
+        else:
+            reason = f'unknow {e.reason} - {e}'
+    except urllib.error.URLError as e:
+        if isinstance(e.reason, socket.timeout):
+            reason = f'URLError socket.timeout {e.reason} - {e}'
+        else:
+            reason = f'unknow {e.reason} - {e}'
+    except socket.timeout as e:
+        reason = f'socket.timeout {e}'
+        
+    logging(self, "Error", "loading_zigbee_ota_index: Reason: %s" %reason)
+    return []
