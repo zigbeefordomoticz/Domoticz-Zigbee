@@ -51,6 +51,7 @@ OTA_CLUSTER_ID = "0019"
 
 OTA_CODES = {
     "Ikea": {"Folder": "IKEA-TRADFRI", "ManufCode": 0x117C, "ManufName": "IKEA of Sweden", "Enabled": True},
+    "Danfoss": {"Folder": "DANFOSS", "ManufCode": 0x1246, "ManufName": "Danfoss", "Enabled": True},
     "Ledvance": {"Folder": "LEDVANCE", "ManufCode": 0x1189, "ManufName": "LEDVANCE", "Enabled": True},
     "Osram1": {"Folder": "OSRAM", "ManufCode": 0xBBAA, "ManufName": "OSRAM", "Enabled": True},
     "Osram2": {"Folder": "LEDVANCE", "ManufCode": 0x110C, "ManufName": "OSRAM", "Enabled": True},
