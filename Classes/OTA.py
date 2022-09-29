@@ -1277,7 +1277,7 @@ def loading_zigbee_ota_index( self ):
 
 def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ):
         
-    logging(self, "Log", "check_ota_availability_from_index: Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
+    logging(self, "Debug", "check_ota_availability_from_index: Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
         manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
 
     return next((_image for _image in self.zigbee_ota_index if (_image["manufacturerCode"] == manufcode and _image["imageType"] == imagetype and _image["fileVersion"] > fileversion)), {})
