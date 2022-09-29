@@ -109,12 +109,7 @@ class IAS_Zone_Management:
             # Frient trigger itself the Device Enrollment
             return
         
-        if "Param" in self.ListOfDevices[NwkId] and "ForceIASRegistrationEp" in self.ListOfDevices[NwkId]["Param"]:
-            Epout = self.ListOfDevices[NwkId]["Param"]["ForceIASRegistrationEp"]
-            self.logging("Log", f"setZigateIEEE - Set Zigate IEEE: {self.ControllerIEEE}")
-            set_IAS_CIE_Address(self, NwkId, Epout)
-            del self.ListOfDevices[NwkId]["Param"]["ForceIASRegistrationEp"]
-            return
+        self.force_IAS_registration_if_needed( NwkId)
 
         ias_ep_list = getEpForCluster(self, NwkId, "0500", strict=True)
         self.logging("Debug", f"IAS device Enrollment for {NwkId} on {ias_ep_list}, type: {type(ias_ep_list)} ")
@@ -152,8 +147,18 @@ class IAS_Zone_Management:
         if is_device_enrollment_completed(self, NwkId):
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
 
-                
-        
+    def force_IAS_registration_if_needed(self, NwkId):
+        # Usally call when Model Name is define, so we can immediatly check if CIE needs to be writen on the device
+        # This has been required for Lidl PIR
+
+        if "Param" not in self.ListOfDevices[NwkId] or "ForceIASRegistrationEp" not in self.ListOfDevices[NwkId]["Param"]:
+            return
+
+        Epout = self.ListOfDevices[NwkId]["Param"]["ForceIASRegistrationEp"]
+        self.logging("Log", f"setZigateIEEE - Set Zigate IEEE: {self.ControllerIEEE}")
+        set_IAS_CIE_Address(self, NwkId, Epout)
+        del self.ListOfDevices[NwkId]["Param"]["ForceIASRegistrationEp"]
+
     def IAS_CIE_service_discovery_response( self, NwkId, ep, Data):
         self.logging("Debug", f"IAS device Enrollment for {NwkId} - received a Read Attribute Response on Discovery Request for Ep: {ep}")
         attributes = retreive_attributes(self, Data)
@@ -175,7 +180,7 @@ class IAS_Zone_Management:
           
         if is_device_enrollment_completed(self, NwkId):
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
-  
+
     def IAS_zone_enroll_request(self, NwkId, Ep, ZoneType, sqn):
         self.logging("Debug", f"IAS device Enrollment Request for {NwkId}/{Ep} ZoneType: {ZoneType}")
 
@@ -232,7 +237,6 @@ class IAS_Zone_Management:
         bindDevice(self, self.ListOfDevices[ NwkId ]['IEEE'], Ep, "0500")
         if is_device_enrollment_completed(self, NwkId):
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
-            
 
     def IAS_zone_enroll_request_response(self, NwkId, Ep, EnrollResponseCode, ZoneId):
         self.logging("Debug", f"IAS device Enrollment Request Response for {NwkId}/{Ep} Response: {EnrollResponseCode} ZoneId: {ZoneId}")
@@ -251,7 +255,7 @@ class IAS_Zone_Management:
         if is_device_enrollment_completed(self, NwkId):
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
             self.ListOfDevices[NwkId]["IAS"]["ZoneId"] = ZoneId
-     
+
     def IAS_CIE_write_response(self, NwkId, Ep, Status):
         # We are receiving a Write Attribute response
         self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep}  Status: {Status}")
@@ -282,7 +286,7 @@ class IAS_Zone_Management:
         data_type = "21"
         duration = "%04x" %duration
         zcl_write_attribute( self, NwkId, ZIGATE_EP, Epout, "0502", "00", "0000", "0000", data_type, duration, ackIsDisabled=False )
-        
+
     def write_IAS_WD_Squawk(self, NwkId, ep, SquawkMode):
         SQUAWKMODE = {"disarmed": 0b00000000, "armed": 0b00000001}
 
@@ -355,6 +359,8 @@ class IAS_Zone_Management:
         raw_APS_request(self, NwkId, ep, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
         return sqn
 
+
+
 def ias_sirene_mode( self, NwkId , mode, warning_duration ):
     strobe_mode = warning_mode = strobe_level = 0x00
     if self.ListOfDevices[NwkId]["Model"] == "WarningDevice":
@@ -408,7 +414,6 @@ def format_list_attributes( self, ListOfAttributes):
         Attr = "".join("%04x" % (x) for x in ListOfAttributes)
     return lenAttr, Attr
 
-
 # Host -> Node
         
 def set_IAS_CIE_Address(self, NwkId, Epout):
@@ -423,7 +428,7 @@ def set_IAS_CIE_Address(self, NwkId, Epout):
     data_type = "F0"  # ZigBee_IeeeAddress = 0xf0
     data = str(self.ControllerIEEE)
     zcl_write_attribute( self, NwkId, ZIGATE_EP, Epout, cluster_id, "00", "0000", attribute, data_type, data, ackIsDisabled=False )
-    
+  
 def check_IAS_CIE_Address(self, NwkId, Epout):
     self.logging("Debug", f"Request IAS CIE Address of the device {NwkId}/{Epout}")
     lenAttr, attributes = format_list_attributes( self, 0x010)
@@ -475,7 +480,6 @@ def retreive_attributes(self, MsgData):
             idx += 6
     
     return attributes
-
 
 def is_device_enrollment_completed(self, NwkId):
     
