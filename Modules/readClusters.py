@@ -663,6 +663,8 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 "Result based on DeviceConf is: %s" % str(self.ListOfDevices[MsgSrcAddr]),
                 MsgSrcAddr,
             )
+            if self.iaszonemgt:
+                self.iaszonemgt.force_IAS_registration_if_needed(MsgSrcAddr)
 
     elif MsgAttrID == "0006":  # CLD_BAS_ATTR_DATE_CODE
         # 20151006091b090
