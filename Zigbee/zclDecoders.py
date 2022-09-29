@@ -123,7 +123,9 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
             % ( Command, SrcNwkId, SrcEndPoint, ClusterId, Data, GlobalCommand, Sqn, ManufacturerCode, ),)
         return frame
     
-
+    if ClusterId == "fc00" and ManufacturerCode == "100b":
+        return frame
+    
     self.log.logging(
         "zclDecoder",
         "Log",
@@ -609,7 +611,7 @@ def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
         FieldControl, ManufCode, ImageType, ImageVersion, ImageOffset, MaxDataSize, MinBlockPeriod))  
 
     IEEE = "0000000000000000"
-    buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId + IEEE 
+    buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId + IEEE 
     buildPayload += ImageOffset + ImageVersion + ImageType + ManufCode + MinBlockPeriod + MaxDataSize + FieldControl
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 payload: %s" %buildPayload)
     return encapsulate_plugin_frame("8501", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
@@ -627,7 +629,7 @@ def buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 %s %s %s %s" % ( 
         status, ManufCode, ImageType, ImageVersion ))  
 
-    buildPayload = Sqn + TargetEp + ClusterId + "02" + SrcNwkId + ImageVersion + ImageType + ManufCode + status
+    buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId + ImageVersion + ImageType + ManufCode + status
     return encapsulate_plugin_frame("8503", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
  
 # Cluster 0x0020

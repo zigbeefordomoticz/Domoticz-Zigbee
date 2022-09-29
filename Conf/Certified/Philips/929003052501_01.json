@@ -1,0 +1,46 @@
+{
+    "_comment": "Philips Hue Ensis Black - Up",
+	"_version": "1.0",
+	"Ep":{
+		"0b": {
+			"0000": "", 
+			"0003": "", 
+			"0004": "",
+			"0005": "", 
+			"0006": "", 
+			"0008": "", 
+			"0300": "", 
+			"1000": "", 
+			"fc01": "",
+			"fc03": "",
+			"0019": "", 
+			"Type": "ColorControlRGBWW"
+		},
+		"f2": {
+			"0021": "", 
+			"Type": ""
+		}
+	},
+	"Type":"",
+	"NickName":"",
+	"ClusterToBind": [ "0019", "0006", "0008" ],
+        "ConfigureReporting": {
+        },
+  	"ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "000a", "0020", "0021", "4000" ] ,
+		"0006": [ "0000", "4001", "4002" ],
+		"0008": [ "0000" ],
+		"0300": [ "0000", "0001", "0003", "0004", "0007", "0008", "400a" ],
+		"fc01": [],
+		"fc03": [],
+		"0019": []
+	},
+	"Param": {
+		"PowerOnAfterOffOn": 255,
+		"OnOffPollingFreq": 300,
+		"fadingOff": 0,  
+		"moveToHueSatu": 0,
+		"moveToColourTemp": 0,
+		"moveToColourRGB": 0,
+		"moveToLevel": 0	}
+}
