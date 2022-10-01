@@ -498,11 +498,6 @@ class WebServer(object):
 
             setting_lst = []
             for _theme in sorted(SETTINGS.keys()):
-                if  (
-                    _theme == "Zigpy" 
-                    and ( self.zigbee_communication != "zigpy" or (self.zigbee_communication == "zigpy" and self.ControllerLink._radiomodule != "deCONZ"))
-                ):
-                    continue
                 if _theme in ("Reserved", "PluginTransport"):
                     continue
                 if sendDebug and _theme != "VerboseLogging":
@@ -519,6 +514,11 @@ class WebServer(object):
                     if param not in SETTINGS[_theme]["param"]:
                         continue
                     if SETTINGS[_theme]["param"][param]["hidden"]:
+                        continue
+                    if  (
+                        "ZigpyRadio" in SETTINGS[_theme]["param"][param]
+                        and self.ControllerLink._radiomodule != SETTINGS[_theme]["param"][param]["ZigpyRadio"]
+                    ):
                         continue
 
                     setting = {

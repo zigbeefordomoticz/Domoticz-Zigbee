@@ -141,6 +141,7 @@ SETTINGS = {
                 "restart": 1,
                 "hidden": False,
                 "Advanced": True,
+                "ZigpyRadio": ""
             },
             "zigatePartOfGroup0000": {
                 "type": "bool",
@@ -149,6 +150,7 @@ SETTINGS = {
                 "restart": 1,
                 "hidden": False,
                 "Advanced": True,
+                "ZigpyRadio": ""
             },
         },
     },
@@ -167,124 +169,38 @@ SETTINGS = {
     },
     # Zigpy related parameters ( not applicable for ZiGate native)
     "Zigpy": {
-        "Order": 3,
+        "Order": 4,
         "param": {    
-            "Konke": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "Livolo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "Orvibo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "Terncy": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "Wiser": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "Wiser2": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
-            "autoBackup": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
-            "BackupFullDevices": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,  
-            },
-            "BellowsNoMoreEndDeviceChildren": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 1,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "BellowsSourceRouting": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 1,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "forceZigpy_noasyncio": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
-
+            "Konke": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
+            "Livolo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
+            "Orvibo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
+            "Terncy": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
+            "Wiser": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
+            "Wiser2": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
+            "autoBackup": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
+            "BackupFullDevices": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False,"ZigpyRadio": "znp" },
+            "BellowsNoMoreEndDeviceChildren": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp" },
+            "BellowsSourceRouting": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp" },
+            "forceZigpy_noasyncio": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
         }
     },
     # OTA Related parameters
     "OTA": {
         "Order": 3,
         "param": {   
-            "autoServeOTA": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
-            "checkFirmwareAgainstZigbeeOTARepository": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
-            "ZigbeeOTA_Repository":{
-                "type": "path",
-                "default": "https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json",
-                "current": None,
-                "restart": 1,
-                "hidden": False,
-                "Advanced": True,
-                
-            },
-            "IkeaTradfri_Repository":{
-                "type": "path",
-                "default": "http://fw.ota.homesmart.ikea.net/feed/version_info.json",
-                "current": None,
-                "restart": 1,
-                "hidden": False,
-                "Advanced": True,
-                
-            },
+            "autoServeOTA": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
+            "checkFirmwareAgainstZigbeeOTARepository": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
+            "ZigbeeOTA_Repository":{ "type": "path", "default": "https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json", "current": None, "restart": 1, "hidden": False, "Advanced": True, },
+            "IkeaTradfri_Repository":{ "type": "path", "default": "http://fw.ota.homesmart.ikea.net/feed/version_info.json", "current": None, "restart": 1, "hidden": False, "Advanced": True, },
         }  
     },
     "Provisioning": {
         "Order": 3,
         "param": {    
-            "enableSchneiderWiser": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
-            "ConfigureReportingChunk": {
-                "type": "int",
-                "default": 3,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "ReadAttributeChunk": {
-                "type": "int",
-                "default": 3,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            }
+            "enableSchneiderWiser": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
+            "ConfigureReportingChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "ReadAttributeChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "ZiGateConfigureReporting": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,"ZigpyRadio": ""},
         },
     },
     "WebInterface": {
@@ -298,7 +214,6 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": True,
             },
-
             "Sibling": {
                 "type": "bool",
                 "default": 1,
@@ -306,6 +221,7 @@ SETTINGS = {
                 "restart": 0,
                 "hidden": True,
                 "Advanced": True,
+                "ZigpyRadio": ""
             },
             "Lang": {
                 "type": "str",
@@ -330,47 +246,13 @@ SETTINGS = {
                 "restart": 0,
                 "hidden": False,
                 "Advanced": False,
+                "ZigpyRadio": "",
             },
-            "enableGzip": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "enableDeflate": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
-            "enableChunk": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
-            "enableKeepalive": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
-            "enableCache": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
-                "Advanced": True,
-            },
+            "enableGzip": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
+            "enableDeflate": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
+            "enableChunk": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
+            "enableKeepalive": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
+            "enableCache": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
         },
     },
     # Device Management
@@ -519,6 +401,7 @@ SETTINGS = {
                 "restart": 0,
                 "hidden": True,
                 "Advanced": True,
+                "ZigpyRadio": ""
             },
             "eraseZigatePDM": {
                 "type": "bool",
@@ -527,6 +410,7 @@ SETTINGS = {
                 "restart": 0,
                 "hidden": True,
                 "Advanced": True,
+                "ZigpyRadio": ""
             },
             "Certification": {
                 "type": "list",
@@ -536,6 +420,7 @@ SETTINGS = {
                 "restart": True,
                 "hidden": False,
                 "Advanced": False,
+                "ZigpyRadio": ""
             },
             "CertificationCode": {
                 "type": "int",
@@ -544,6 +429,7 @@ SETTINGS = {
                 "restart": 1,
                 "hidden": True,
                 "Advanced": False,
+                "ZigpyRadio": ""
             },
             "channel": {
                 "type": "list",
@@ -1457,15 +1343,6 @@ SETTINGS = {
     "Experimental": {
         "Order": 15,
         "param": {
-            "ZiGateConfigureReporting": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": True,
-
-            },
             "PluginLogMode": {
                 "type": "list",
                 "list": { "system defaut": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},
@@ -1522,6 +1399,7 @@ SETTINGS = {
                 "restart": 0,
                 "hidden": True,
                 "Advanced": True,
+                "ZigpyRadio": ""
             },
             "forceAckOnZCL": {
                 "type": "bool",
