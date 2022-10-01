@@ -32,7 +32,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
 
     async def initialize(self, *, auto_form: bool = False):
-        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form = auto_form)
+        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form)
         LOGGER.info("EZSP Configuration: %s", self.config)
 
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
@@ -85,7 +85,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def shutdown(self) -> None:
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup ( await self.backups.create_backup() )
+            self.callBackBackup(await self.backups.create_backup(load_devices=True))
         await self.disconnect()
 
     # Only needed if the device require simple node descriptor from the coordinator
@@ -166,7 +166,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup ( await self.backups.create_backup() )
+            self.callBackBackup(await self.backups.create_backup(load_devices=True))
 
 
 def extract_versioning_for_plugin( brd_manuf, brd_name, version):
