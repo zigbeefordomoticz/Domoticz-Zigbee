@@ -429,6 +429,15 @@ SETTINGS = {
                 "hidden": False,
                 "Advanced": False,
             },
+            "BackupFullDevices": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+                
+            },
             "blueLedOnOff": {
                 "type": "bool",
                 "default": 1,

@@ -56,7 +56,7 @@ async def initialize(self, *, auto_form: bool = False):
 
     await self.start_network()
     if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-        self.callBackBackup( await self.backups.create_backup(load_devices=True))
+        self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
 def get_device(self, ieee=None, nwk=None):
     # LOGGER.debug("get_device nwk %s ieee %s" % (nwk, ieee))
