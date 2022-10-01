@@ -54,22 +54,6 @@ SETTINGS = {
                 "hidden": True,
                 "Advanced": False,
             },
-            "autoServeOTA": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
-            "CheckFirmwareAgainstZigbeeOTARepository": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
             
             "pingDevices": {
                 "type": "bool",
@@ -181,6 +165,7 @@ SETTINGS = {
             }
         },
     },
+    # Zigpy related parameters ( not applicable for ZiGate native)
     "Zigpy": {
         "Order": 3,
         "param": {    
@@ -190,7 +175,88 @@ SETTINGS = {
             "Terncy": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
             "Wiser": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
             "Wiser2": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True},
+            "autoBackup": {
+                "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+            },
+            "BackupFullDevices": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,  
+            },
+            "BellowsNoMoreEndDeviceChildren": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 1,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "BellowsSourceRouting": {
+                "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 1,
+                "hidden": False,
+                "Advanced": True,
+            },
+            "forceZigpy_noasyncio": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": True,
+                "Advanced": True,
+            },
+
         }
+    },
+    # OTA Related parameters
+    "OTA": {
+        "Order": 3,
+        "param": {   
+            "autoServeOTA": {
+                "type": "bool",
+                "default": 0,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+            },
+            "checkFirmwareAgainstZigbeeOTARepository": {
+                "type": "bool",
+                "default": 1,
+                "current": None,
+                "restart": 0,
+                "hidden": False,
+                "Advanced": False,
+            },
+            "ZigbeeOTA_Repository":{
+                "type": "path",
+                "default": "https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json",
+                "current": None,
+                "restart": 1,
+                "hidden": False,
+                "Advanced": True,
+                
+            },
+            "IkeaTradfri_Repository":{
+                "type": "path",
+                "default": "http://fw.ota.homesmart.ikea.net/feed/version_info.json",
+                "current": None,
+                "restart": 1,
+                "hidden": False,
+                "Advanced": True,
+                
+            },
+        }  
     },
     "Provisioning": {
         "Order": 3,
@@ -421,23 +487,6 @@ SETTINGS = {
     "CoordinatorConfiguration": {
         "Order": 7,
         "param": {
-            "autoBackup": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-            },
-            "BackupFullDevices": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": False,
-                "Advanced": False,
-                
-            },
             "blueLedOnOff": {
                 "type": "bool",
                 "default": 1,
@@ -1417,22 +1466,6 @@ SETTINGS = {
                 "Advanced": True,
 
             },
-            "BellowsNoMoreEndDeviceChildren": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 1,
-                "hidden": False,
-                "Advanced": True,
-            },
-            "BellowsSourceRouting": {
-                "type": "bool",
-                "default": 1,
-                "current": None,
-                "restart": 1,
-                "hidden": False,
-                "Advanced": True,
-            },
             "PluginLogMode": {
                 "type": "list",
                 "list": { "system defaut": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},
@@ -1456,14 +1489,6 @@ SETTINGS = {
                 "current": None,
                 "restart": 0,
                 "hidden": False,
-                "Advanced": True,
-            },
-            "forceZigpy_noasyncio": {
-                "type": "bool",
-                "default": 0,
-                "current": None,
-                "restart": 0,
-                "hidden": True,
                 "Advanced": True,
             },
             "disableZCLDefaultResponse": {

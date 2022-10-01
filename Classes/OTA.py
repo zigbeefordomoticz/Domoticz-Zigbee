@@ -48,8 +48,6 @@ from Classes.LoggingManagement import LoggingManagement
 
 # This file is hosted on @koenkk repository.
 # This file is maintained from the community, so make sure what you do.
-ZIGBEE_OTA_INDEX = 'https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json'
-IKEATRADFRI_INDEX = 'http://fw.ota.homesmart.ikea.net/feed/version_info.json'
 
 OTA_CLUSTER_ID = "0019"
 
@@ -403,7 +401,7 @@ class OTAManagement(object):
                 # We are in the case were we get a request, but do not authorised selfserving OTA
                 return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
             
-        elif "CheckFirmwareAgainstZigbeeOTARepository" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["CheckFirmwareAgainstZigbeeOTARepository"]:
+        elif "checkFirmwareAgainstZigbeeOTARepository" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["checkFirmwareAgainstZigbeeOTARepository"]:
             if (int(manufcode,16), int(imagetype,16), int(currentVersion,16)) not in self.zigbee_ota_found_in_index:
                 _ota_available = check_ota_availability_from_index( self, int(manufcode,16), int(imagetype,16), int(currentVersion,16) )
                 if _ota_available:
@@ -1260,9 +1258,9 @@ def loading_zigbee_ota_index( self ):
     
     self.zigbee_ota_index = []
 
-    self.zigbee_ota_index = _load_json_from_url( self, ZIGBEE_OTA_INDEX )
+    self.zigbee_ota_index = _load_json_from_url( self, self.pluginconf.pluginConf["ZigbeeOTA_Repository"] )
 
-    _zigbee_ikea_index = _load_json_from_url( self, IKEATRADFRI_INDEX )
+    _zigbee_ikea_index = _load_json_from_url( self, self.pluginconf.pluginConf["IkeaTradfri_Repository"] )
     for ikea_image in _zigbee_ikea_index:
         if "fw_file_version_MSB" not in ikea_image or "fw_file_version_LSB" not in ikea_image:
             continue
