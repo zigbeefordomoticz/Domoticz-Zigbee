@@ -517,6 +517,7 @@ class WebServer(object):
                         continue
                     if  (
                         "ZigpyRadio" in SETTINGS[_theme]["param"][param]
+                        and self.zigbee_communication == 'zigpy' 
                         and self.ControllerLink._radiomodule != SETTINGS[_theme]["param"][param]["ZigpyRadio"]
                     ):
                         continue
