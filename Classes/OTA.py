@@ -725,7 +725,8 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
     self.ListInUpdate["Process"] = None
     # Do we have to overwrite the Image Version in order to force update
     if force_update:
-        image_version = self.ListOfImages["Brands"][brand][file_name]["originalVersion"] + 0x00100000
+        # Increase Application release by + 0x10 and Application Build by +0x10
+        image_version = self.ListOfImages["Brands"][brand][file_name]["originalVersion"] + 0x10100000
         logging(
             self,
             "Status",
