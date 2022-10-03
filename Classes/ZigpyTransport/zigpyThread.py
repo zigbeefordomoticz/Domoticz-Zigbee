@@ -230,6 +230,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 
     try:
         await self.app.startup(
+            self.hardwareid,
             pluginconf,
             callBackHandleMessage=self.receiveData,
             callBackUpdDevice=self.ZigpyUpdDevice,

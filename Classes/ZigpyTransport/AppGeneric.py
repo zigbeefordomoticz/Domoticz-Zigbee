@@ -17,6 +17,7 @@ import zigpy.backups
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
+from zigpy.backups import NetworkBackup
 
 LOGGER = logging.getLogger(__name__)
 
@@ -28,6 +29,12 @@ async def initialize(self, *, auto_form: bool = False):
     Starts the network on a connected radio, optionally forming one with random
     settings if necessary.
     """
+    
+    _retreived_backup = _retreive_backup( self )
+    if _retreive_backup:
+        LOGGER.info("Last backup retreived: %s" %   zigpy.backups.NetworkBackup( _retreived_backup ))
+        self.backups.add_backup( backup = NetworkBackup.from_dict( _retreived_backup ))
+     
     try:
         await self.load_network_info(load_devices=False)
 
@@ -40,14 +47,14 @@ async def initialize(self, *, auto_form: bool = False):
         LOGGER.info("Forming a new network")
         await super(type(self),self).form_network()
 
-        #if not self.backups.backups:
-        #    # Form a new network if we have no backup
-        #    LOGGER.info("Forming a new network")
-        #    await self.form_network()
-        #else:
-        #    # Otherwise, restore the most recent backup
-        #    LOGGER.info("Restoring the most recent network backup")
-        #    await self.backups.restore_backup(self.backups.backups[-1])
+        if not self.backups.backups:
+            # Form a new network if we have no backup
+            LOGGER.info("Forming a new network")
+            await self.form_network()
+        else:
+            # Otherwise, restore the most recent backup
+            LOGGER.info("Restoring the most recent network backup")
+            await self.backups.restore_backup(self.backups.backups[-1])
 
         await self.load_network_info(load_devices=True)
 
@@ -214,3 +221,10 @@ def handle_message(
         )
 
     return
+
+
+def _retreive_backup( self ):
+    from Modules.zigpyBackup import handle_zigpy_retreive_last_backup
+    
+    LOGGER.info("Retreiving last backup")
+    return handle_zigpy_retreive_last_backup( self )

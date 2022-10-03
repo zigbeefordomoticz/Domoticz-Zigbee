@@ -34,7 +34,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form)
         LOGGER.info("ZNP Configuration: %s", self.config)
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
@@ -44,6 +44,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackGetDevice = callBackGetDevice
         self.callBackBackup = callBackBackup
+        self.HardwareID = HardwareID
         self.znp_config[znp_conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         """
