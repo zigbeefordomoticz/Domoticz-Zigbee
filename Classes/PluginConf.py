@@ -77,8 +77,6 @@ SETTINGS = {
             "ZigbeeOTA_Repository":{ "type": "path", "default": "https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json", "current": None, "restart": 1, "hidden": False, "Advanced": True, },
             "IkeaTradfri_Repository":{ "type": "path", "default": "http://fw.ota.homesmart.ikea.net/feed/version_info.json", "current": None, "restart": 1, "hidden": False, "Advanced": True, },
             "Sonoff_Repository":{ "type": "path", "default": "https://zigbee-ota.sonoff.tech/releases/upgrade.json", "current": None, "restart": 1, "hidden": False, "Advanced": True, },
-
-
         }  
     },
     "Provisioning": {
