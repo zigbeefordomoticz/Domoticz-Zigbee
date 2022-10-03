@@ -861,11 +861,6 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
     if existing_image["originalVersion"] >= headers["image_version"]:
         # The up coming Image is older than the one already scaned
         # drop it
-        logging(
-            self,
-            "Log",
-            "ota_scan_folder - trying to load an older version of Image Type %s - Do remove file %s" % (image_type, ota_image_file),
-        )
         return False
     # Existing Image is an older version comparing to what we load.
     # Overwrite with the new one.
