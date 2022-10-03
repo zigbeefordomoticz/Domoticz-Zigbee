@@ -1250,26 +1250,40 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
 
 def loading_zigbee_ota_index( self ):
     
-    
     self.zigbee_ota_index = []
-
     self.zigbee_ota_index = _load_json_from_url( self, self.pluginconf.pluginConf["ZigbeeOTA_Repository"] )
+    self.zigbee_ota_index.extend( convert_ikea_format_to_list( _load_json_from_url( self, self.pluginconf.pluginConf["IkeaTradfri_Repository"] )) )
+    self.zigbee_ota_index.extend( convert_sonoff_format_to_list( _load_json_from_url( self, self.pluginconf.pluginConf["Sonoff_Repository"] )) )
 
-    _zigbee_ikea_index = _load_json_from_url( self, self.pluginconf.pluginConf["IkeaTradfri_Repository"] )
+    
+def convert_sonoff_format_to_list( _zigbee_sonoff_index ):
+    _build_list = []
+    for sonoff_image in _zigbee_sonoff_index:
+        item_to_add = {
+            "fileVersion": sonoff_image["fw_file_version"],
+            "manufacturerCode": sonoff_image[ "fw_manufacturer_id"],
+            "imageType": sonoff_image[ "fw_image_type" ],
+            "url": sonoff_image[ "fw_binary_url"], 
+        }
+        _build_list.append(item_to_add )
+    return _build_list
+   
+def convert_ikea_format_to_list( _zigbee_ikea_index ):
+    _build_list = []
     for ikea_image in _zigbee_ikea_index:
         if "fw_file_version_MSB" not in ikea_image or "fw_file_version_LSB" not in ikea_image:
             continue
         item_to_add = {
-                "fileVersion": int( "%04x%04x" %(ikea_image["fw_file_version_MSB"], ikea_image["fw_file_version_LSB"]),16 ),
-                "manufacturerCode": ikea_image[ "fw_manufacturer_id"],
-                "imageType": ikea_image[ "fw_image_type" ],
-                "url": ikea_image[ "fw_binary_url"], 
+            "fileVersion": int( "%04x%04x" %(ikea_image["fw_file_version_MSB"], ikea_image["fw_file_version_LSB"]),16 ),
+            "manufacturerCode": ikea_image[ "fw_manufacturer_id"],
+            "imageType": ikea_image[ "fw_image_type" ],
+            "url": ikea_image[ "fw_binary_url"], 
         }
-        self.zigbee_ota_index.append(item_to_add )
-        logging(self, "Debug", "adding Ikea %s" %item_to_add)
+        _build_list.append(item_to_add )
+    return _build_list
 
-def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ):
-        
+    
+def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ): 
     logging(self, "Debug", "check_ota_availability_from_index: Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
         manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
 
@@ -1299,24 +1313,29 @@ def _load_json_from_url( self, url ):
     import socket
     import urllib.request
 
-    try:
-        with urllib.request.urlopen( url ) as response:
-            return json.loads( response.read() )
+    retry = 3
+    while retry:
+        try:
+            with urllib.request.urlopen( url ) as response:
+                return json.loads( response.read() )
 
-    except urllib.error.HTTPError as e:
-        if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
-            reason = f'{e.code} {str(e.reason)}'
-        elif isinstance(e.reason, socket.timeout):
-            reason = f'HTTPError socket.timeout {e.reason} - {e}'
-        else:
-            reason = f'unknow {e.reason} - {e}'
-    except urllib.error.URLError as e:
-        if isinstance(e.reason, socket.timeout):
-            reason = f'URLError socket.timeout {e.reason} - {e}'
-        else:
-            reason = f'unknow {e.reason} - {e}'
-    except socket.timeout as e:
-        reason = f'socket.timeout {e}'
-        
-    logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %reason)
+        except urllib.error.HTTPError as e:
+            if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
+                reason = f'{e.code} {str(e.reason)}'
+            elif isinstance(e.reason, socket.timeout):
+                reason = f'HTTPError socket.timeout {e.reason} - {e}'
+            else:
+                reason = f'unknow {e.reason} - {e}'
+        except urllib.error.URLError as e:
+            if isinstance(e.reason, socket.timeout):
+                reason = f'URLError socket.timeout {e.reason} - {e}'
+            else:
+                reason = f'unknow {e.reason} - {e}'
+        except socket.timeout as e:
+            reason = f'socket.timeout {e}'
+
+        logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %reason)
+        time.sleep(1)
+        retry -= 1
+
     return []
