@@ -1551,7 +1551,7 @@ def print_stack( self ):
     
     import inspect
     for x in inspect.stack():
-        self.log.logging("Debug","[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
+        self.log.logging( "Zigpy", "Error", "[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
 
 
 
