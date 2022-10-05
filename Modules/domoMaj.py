@@ -36,7 +36,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NWKID, Ep), NWKID)
         return
 
-    if "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] != "inDB":
+    if ( "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] == "erasePDM" and
+         "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]):
+        # Most likely we have request a coordinator re-initialisation and the latest backup has been put in place
+        # simply put the device back
+        self.ListOfDevices[NWKID]["Status"] = "inDB"
+        
+    elif "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] != "inDB":
         self.log.logging(
             "Widget",
             "Log",
