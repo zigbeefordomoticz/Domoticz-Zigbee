@@ -35,13 +35,11 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
         # In case of a fresh coordinator, let's load the latest backup
         _retreived_backup = _retreive_backup( self )
-        if _retreive_backup:
+        if _retreived_backup:
             LOGGER.info("Last backup retreived: %s" % zigpy.backups.NetworkBackup( _retreived_backup ))
             self.backups.add_backup( backup = NetworkBackup.from_dict( _retreived_backup ))
 
     if force_form:
-        if self.is_bellows():
-            await self._ezsp.leaveNetwork()
 
         with contextlib.suppress(Exception):
             if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:

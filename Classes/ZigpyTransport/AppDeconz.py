@@ -29,8 +29,8 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
         LOGGER.debug("_load_db")
 
-    async def initialize(self, *, auto_form: bool = False):
-        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form)
+    async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
+        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
         LOGGER.info("deCONZ Configuration: %s", self.config)
 
     async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
@@ -48,7 +48,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         try:
             await self.connect()
             await asyncio.sleep( 1 )
-            await self.initialize(auto_form=True)
+            await self.initialize(auto_form=True, force_form=force_form)
         except Exception as e:
             LOGGER.error("Couldn't start application", exc_info=e)
             await self.shutdown()
