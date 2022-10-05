@@ -5,6 +5,7 @@
 #
 
 import binascii
+import contextlib
 import logging
 import time
 
@@ -29,26 +30,26 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     Starts the network on a connected radio, optionally forming one with random
     settings if necessary.
     """
-    self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
-    
+    self.log.logging("TransportZigpy", "Debug", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
+
     if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
         # In case of a fresh coordinator, let's load the latest backup
         _retreived_backup = _retreive_backup( self )
         if _retreive_backup:
             LOGGER.info("Last backup retreived: %s" % zigpy.backups.NetworkBackup( _retreived_backup ))
             self.backups.add_backup( backup = NetworkBackup.from_dict( _retreived_backup ))
-  
+
     if force_form:
         if self.is_bellows():
             await self._ezsp.leaveNetwork()
-            
-        if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
-            self.log.logging( "Zigpy", "Status","Restoring the most recent network backup")
-            await self.backups.restore_backup(self.backups.backups[-1])
-        else:
-            await super(type(self),self).form_network()
-            
-    
+
+        with contextlib.suppress(Exception):
+            if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
+                self.log.logging( "Zigpy", "Status","Restoring the most recent network backup")
+                await self.backups.restore_backup(self.backups.backups[-1])
+            else:
+                await super(type(self),self).form_network()
+
     try:
         await self.load_network_info(load_devices=False)
 
