@@ -29,9 +29,8 @@ async def initialize(self, *, auto_form: bool = False):
     Starts the network on a connected radio, optionally forming one with random
     settings if necessary.
     """
-    self.log.logging( "Zigpy", "Log", "AppGeneric:initialize - starting - backuprestore_mode %s" %self.backuprestore_mode)
     
-    if self.backuprestore_mode in ( "mode1", "mode2"):
+    if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
         # In case of a fresh coordinator, let's load the latest backup
         _retreived_backup = _retreive_backup( self )
         if _retreive_backup:

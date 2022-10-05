@@ -43,14 +43,13 @@ class App_zigate(zigpy_zigate.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         LOGGER.debug("_load_db")
 
-    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None,backuprestore_mode=None ):
+    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
         self.pluginconf = pluginconf
         self.log = log
         self.HardwareID = HardwareID
-        self.backuprestore_mode=backuprestore_mode
         
         try:
             await self._startup( auto_form=True )

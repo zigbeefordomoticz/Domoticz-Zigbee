@@ -81,10 +81,8 @@ def zigpy_thread(self):
         "Debug",
         "zigpy_thread -extendedPANID %s %d" % (self.pluginconf.pluginConf["extendedPANID"], extendedPANID),
     )
-
-    backuprestore_mode = self.backuprestore_mode
     
-    task = radio_start(self, self.pluginconf, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID,backuprestore_mode=backuprestore_mode)
+    task = radio_start(self, self.pluginconf, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
 
     self.zigpy_loop.run_until_complete(task)
     self.zigpy_loop.run_until_complete(asyncio.sleep(1))
@@ -115,7 +113,7 @@ def get_or_create_eventloop():
     asyncio.set_event_loop( loop )
     return loop   
     
-async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0, backuprestore_mode=0):
+async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
 
@@ -242,7 +240,6 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             force_form=new_network,
             log=self.log,
             permit_to_join_timer=self.permit_to_join_timer,
-            backuprestore_mode= backuprestore_mode
         )
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error at startup %s" %e)

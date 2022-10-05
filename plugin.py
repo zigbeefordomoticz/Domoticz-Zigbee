@@ -160,15 +160,6 @@ ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 160
 
 REQUIRES = ["aiohttp", "aiosqlite>=0.16.0", "crccheck", "pycryptodome", "voluptuous"]
 
-BACKUPRESTORE_MODE = {
-    "0": "mode1",     # Automatically recover the last backup if the coordinator has been erase, or if a new coordinator
-    "1": "mode2",     # Erase coordinator and restore the last backup
-    "2": "mode3",     # Erase coordinator (not restore, start from)
-    "3": "mode4",     # Do nothing
-    "True": "mode3",
-    "False": "mode4"
-}
-
 class BasePlugin:
     enabled = False
 
@@ -253,7 +244,6 @@ class BasePlugin:
 
         self.PDM = None
         self.PDMready = False
-        self.backuprestore_mode = None
 
         self.InitPhase3 = False
         self.InitPhase2 = False
@@ -293,7 +283,6 @@ class BasePlugin:
             self.onStop()
             return
 
-        
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
             self.zigbee_communication = "native"
@@ -322,11 +311,6 @@ class BasePlugin:
             Domoticz.Error("Please cross-check the Domoticz Hardware settingi for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
             self.onStop()
 
-        # Introduce for Zigpy backup/Restore of Coordinator. Do not supported on ZiGate
-        if Parameters["Mode1"] in ( "ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP"):
-            if Parameters["Mode3"] in BACKUPRESTORE_MODE:
-                self.backuprestore_mode = BACKUPRESTORE_MODE[ Parameters["Mode3"] ]
-         
         # Set plugin heartbeat to 1s
         Domoticz.Heartbeat(1)
 
@@ -595,7 +579,7 @@ class BasePlugin:
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status", "Start Zigpy Transport on zigate")
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"], self.backuprestore_mode) 
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -612,7 +596,7 @@ class BasePlugin:
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status", "Start Zigpy Transport on ZNP")
             
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"], self.backuprestore_mode)  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -627,7 +611,7 @@ class BasePlugin:
             check_python_modules_version( self )
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status","Start Zigpy Transport on deCONZ")            
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"], self.backuprestore_mode)  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
             
@@ -643,7 +627,7 @@ class BasePlugin:
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"], self.backuprestore_mode)  
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
           

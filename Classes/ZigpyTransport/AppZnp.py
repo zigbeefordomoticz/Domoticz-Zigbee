@@ -34,7 +34,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form)
         LOGGER.info("ZNP Configuration: %s", self.config)
 
-    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None,backuprestore_mode=None):
+    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
@@ -45,7 +45,6 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.callBackBackup = callBackBackup
         self.HardwareID = HardwareID
-        self.backuprestore_mode=backuprestore_mode
         self.znp_config[znp_conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         """
@@ -62,7 +61,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         if force_form:
             await super().form_network()
-            if self.backuprestore_mode in ( "mode1", "mode2"):
+            if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
                 self.log.logging( "Zigpy", "Status","Restoring the most recent network backup")
                 await self.backups.restore_backup(self.backups.backups[-1])
 
@@ -77,6 +76,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         znp_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin( znp_model, znp_manuf)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
+        
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 

@@ -33,7 +33,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form)
         LOGGER.info("deCONZ Configuration: %s", self.config)
 
-    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None,backuprestore_mode=None):
+    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         self.log = log
         self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
@@ -42,7 +42,6 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackBackup = callBackBackup
         self.HardwareID = HardwareID
-        self.backuprestore_mode=backuprestore_mode
 
         await asyncio.sleep( 3 )
 
@@ -57,7 +56,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
         if force_form:
             await super().form_network()
-            if self.backuprestore_mode in ( "mode1", "mode2"):
+            if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
                 self.log.logging( "Zigpy", "Status","Restoring the most recent network backup")
                 await self.backups.restore_backup(self.backups.backups[-1])
  
