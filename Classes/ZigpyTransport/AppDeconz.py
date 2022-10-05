@@ -54,12 +54,6 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
-        if force_form:
-            await super().form_network()
-            if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
-                self.log.logging( "Zigpy", "Status","Restoring the most recent network backup")
-                await self.backups.restore_backup(self.backups.backups[-1])
- 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         await self.load_network_info( load_devices=True )
@@ -317,3 +311,10 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+
+    def is_bellows(self):
+        return False
+    def is_znp(self):
+        return False
+    def is_deconz(self):
+        return True

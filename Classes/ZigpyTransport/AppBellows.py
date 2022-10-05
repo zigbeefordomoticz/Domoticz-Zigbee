@@ -59,13 +59,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
-        if force_form:
-            await self._ezsp.leaveNetwork()
-            await super().form_network()
-            if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
-                self.log.logging( "Zigpy", "Status","Restoring the most recent network backup")
-                await self.backups.restore_backup(self.backups.backups[-1])
-
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         # await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
@@ -174,7 +167,13 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
-
+    def is_bellows(self):
+        return True
+    def is_znp(self):
+        return False
+    def is_deconz(self):
+        return False
+    
 def extract_versioning_for_plugin( brd_manuf, brd_name, version):
     FirmwareBranch = "98"   # Not found in the Table.
     if brd_manuf == 'Elelabs':

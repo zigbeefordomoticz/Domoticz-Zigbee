@@ -30,8 +30,8 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def _load_db(self) -> None:
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
 
-    async def initialize(self, *, auto_form: bool = False):
-        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form)
+    async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
+        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
         LOGGER.info("ZNP Configuration: %s", self.config)
 
     async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
@@ -53,17 +53,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         try:
             await self.connect()
-            await self.initialize(auto_form=True)
+            await self.initialize(auto_form=True, force_form=force_form)
         except Exception as e:
             LOGGER.error("Couldn't start application", exc_info=e)
             await self.shutdown()
             raise
-
-        if force_form:
-            await super().form_network()
-            if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
-                self.log.logging( "Zigpy", "Status","Restoring the most recent network backup")
-                await self.backups.restore_backup(self.backups.backups[-1])
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
@@ -174,6 +168,13 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+
+    def is_bellows(self):
+        return False
+    def is_znp(self):
+        return True
+    def is_deconz(self):
+        return False
             
         
 def extract_versioning_for_plugin( znp_model, znp_manuf):
