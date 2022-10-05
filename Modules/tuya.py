@@ -18,13 +18,13 @@ import Domoticz
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
-
+from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
                            get_and_inc_ZCL_SQN, is_ack_tobe_disabled, updSQN)
-from Modules.tuyaSiren import tuya_siren_response, tuya_siren2_response
+from Modules.tuyaSiren import tuya_siren2_response, tuya_siren_response
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
-from Modules.tuyaTRV import TUYA_eTRV_MODEL, get_model_name, tuya_eTRV_response
+from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_response
 from Modules.zigateConsts import ZIGATE_EP
 
 # Tuya TRV Commands
@@ -70,7 +70,6 @@ TUYA_SIREN_MODEL = (
 TUYA_DIMMER_MANUFACTURER = ("_TZE200_dfxkcots",)
 TUYA_SWITCH_MANUFACTURER = (
     "_TZE200_7tdtqgwv",
-   # "_TYST11_zivfvd7h", Seen with @d2e2n2o it is a TRV and not a switch
     "_TZE200_oisqyl4o",
     "_TZE200_amp6tsvy",
 )
@@ -128,6 +127,9 @@ TUYA_THERMOSTAT_MANUFACTURER = (
 #    "_TYST11_ckud7u2l",
 #)
 
+TUYA_SMOKE_MANUFACTURER = (
+    "_TZE200_ntcy3xu1",
+)
 
 # https://github.com/zigpy/zigpy/discussions/653#discussioncomment-314395
 TUYA_eTRV1_MANUFACTURER = (
@@ -159,7 +161,7 @@ TUYA_eTRV_MANUFACTURER = (
     "_TZE200_qc4fpmcn",
 )
 
-TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL
+TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL + TUYA_SMOKE_MANUFACTURER
 TUYA_MANUFACTURER_NAME = (
     TUYA_ENERGY_MANUFACTURER
     + TS011F_MANUF_NAME
@@ -180,6 +182,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_WATER_TIMER
     + TUYA_SMART_ALLIN1
     + TUYA_GARAGE_DOOR
+    + TUYA_SMOKE_MANUFACTURER
 )
 
 
@@ -388,8 +391,8 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             transid = MsgPayload[6:10]  # uint16
             version = MsgPayload[10:12]  # int8
             store_tuya_attribute(self, NwkId, "TUYA_MCU_VERSION_RSP", version)
-        except:
-            Domoticz.Error("tuyaReadRawAPS - MCU_VERSION_RSP error on Payload: %s" % MsgPayload)
+        except Exception as e:
+            Domoticz.Error("tuyaReadRawAPS - MCU_VERSION_RSP error on Payload: %s reason %s" % (MsgPayload,e))
 
     elif cmd == "23":  # TUYA_REPORT_LOG
         pass
@@ -453,6 +456,9 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
 
     elif _ModelName == "TS0601-Energy":
         tuya_energy_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+
+    elif _ModelName == "TS0601-smoke":
+        tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     else:
         attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
@@ -1294,7 +1300,7 @@ def tuya_external_switch_mode( self, NwkId, mode):
         self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - None existing mode %s" % mode, NwkId)
         return
     EPout = "01"
-    mode = "%02x" %TUYA_SWITCH_MODE [mode]
+    mode = "%02x" %TUYA_SWITCH_MODE[mode]
     write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_TS0004_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)
 
 def tuya_TS0004_back_light(self, nwkid, mode):
@@ -1349,3 +1355,39 @@ def _check_tuya_attribute(self, nwkid, ep, cluster, attribute ):
         self.log.logging("Heartbeat", "Log", "No Attribute: %s" %attribute, nwkid)
         return False
     return True
+
+def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+
+    self.log.logging("Tuya", "Log", "tuya_smoke_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    if dp == 0x01:
+        # State
+        self.log.logging("Tuya", "Log", "tuya_smoke_response - Smoke state %s %s %s" % (NwkId, srcEp, data), NwkId)
+        store_tuya_attribute(self, NwkId, "SmokeState", data)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0500", data)
+
+    elif dp == 0x0e:
+        #  0: Low battery, 2:Full battery , 1: medium ????
+        self.log.logging("Tuya", "Log", "tuya_smoke_response - Battery Level %s %s %s" % (NwkId, srcEp, data), NwkId)
+        store_tuya_attribute(self, NwkId, "Battery", data)
+        if int(data,16) == 0:
+            self.ListOfDevices[NwkId]["Battery"] = 25
+            Update_Battery_Device(self, Devices, NwkId, 25) 
+        elif int(data,16) == 1:
+            self.ListOfDevices[NwkId]["Battery"] = 50
+            Update_Battery_Device(self, Devices, NwkId, 50)
+        else:
+            self.ListOfDevices[NwkId]["Battery"] = 90
+            Update_Battery_Device(self, Devices, NwkId, 90)
+
+    elif dp == 0x04:
+        # Tamper
+        self.log.logging("Tuya", "Log", "tuya_smoke_response - Tamper %s %s %s" % (NwkId, srcEp, data), NwkId)
+        store_tuya_attribute(self, NwkId, "SmokeTamper", data)
+        if int(data,16):
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0009", "01")
+        else:
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0009", "00")
+
+    else:
+        self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)

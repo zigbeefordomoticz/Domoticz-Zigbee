@@ -48,8 +48,6 @@ from Classes.LoggingManagement import LoggingManagement
 
 # This file is hosted on @koenkk repository.
 # This file is maintained from the community, so make sure what you do.
-ZIGBEE_OTA_INDEX = 'https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json'
-IKEATRADFRI_INDEX = 'http://fw.ota.homesmart.ikea.net/feed/version_info.json'
 
 OTA_CLUSTER_ID = "0019"
 
@@ -403,7 +401,7 @@ class OTAManagement(object):
                 # We are in the case were we get a request, but do not authorised selfserving OTA
                 return zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '00', manufcode, imagetype, fileversion, imagesize)
             
-        elif "CheckFirmwareAgainstZigbeeOTARepository" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["CheckFirmwareAgainstZigbeeOTARepository"]:
+        elif "checkFirmwareAgainstZigbeeOTARepository" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["checkFirmwareAgainstZigbeeOTARepository"]:
             if (int(manufcode,16), int(imagetype,16), int(currentVersion,16)) not in self.zigbee_ota_found_in_index:
                 _ota_available = check_ota_availability_from_index( self, int(manufcode,16), int(imagetype,16), int(currentVersion,16) )
                 if _ota_available:
@@ -727,7 +725,8 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
     self.ListInUpdate["Process"] = None
     # Do we have to overwrite the Image Version in order to force update
     if force_update:
-        image_version = self.ListOfImages["Brands"][brand][file_name]["originalVersion"] + 0x00100000
+        # Increase Application release by + 0x10 and Application Build by +0x10
+        image_version = self.ListOfImages["Brands"][brand][file_name]["originalVersion"] + 0x10100000
         logging(
             self,
             "Status",
@@ -863,11 +862,6 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
     if existing_image["originalVersion"] >= headers["image_version"]:
         # The up coming Image is older than the one already scaned
         # drop it
-        logging(
-            self,
-            "Log",
-            "ota_scan_folder - trying to load an older version of Image Type %s - Do remove file %s" % (image_type, ota_image_file),
-        )
         return False
     # Existing Image is an older version comparing to what we load.
     # Overwrite with the new one.
@@ -1257,26 +1251,40 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
 
 def loading_zigbee_ota_index( self ):
     
-    
     self.zigbee_ota_index = []
+    self.zigbee_ota_index = _load_json_from_url( self, self.pluginconf.pluginConf["ZigbeeOTA_Repository"] )
+    self.zigbee_ota_index.extend( convert_ikea_format_to_list( _load_json_from_url( self, self.pluginconf.pluginConf["IkeaTradfri_Repository"] )) )
+    self.zigbee_ota_index.extend( convert_sonoff_format_to_list( _load_json_from_url( self, self.pluginconf.pluginConf["Sonoff_Repository"] )) )
 
-    self.zigbee_ota_index = _load_json_from_url( self, ZIGBEE_OTA_INDEX )
-
-    _zigbee_ikea_index = _load_json_from_url( self, IKEATRADFRI_INDEX )
+    
+def convert_sonoff_format_to_list( _zigbee_sonoff_index ):
+    _build_list = []
+    for sonoff_image in _zigbee_sonoff_index:
+        item_to_add = {
+            "fileVersion": sonoff_image["fw_file_version"],
+            "manufacturerCode": sonoff_image[ "fw_manufacturer_id"],
+            "imageType": sonoff_image[ "fw_image_type" ],
+            "url": sonoff_image[ "fw_binary_url"], 
+        }
+        _build_list.append(item_to_add )
+    return _build_list
+   
+def convert_ikea_format_to_list( _zigbee_ikea_index ):
+    _build_list = []
     for ikea_image in _zigbee_ikea_index:
         if "fw_file_version_MSB" not in ikea_image or "fw_file_version_LSB" not in ikea_image:
             continue
         item_to_add = {
-                "fileVersion": int( "%04x%04x" %(ikea_image["fw_file_version_MSB"], ikea_image["fw_file_version_LSB"]),16 ),
-                "manufacturerCode": ikea_image[ "fw_manufacturer_id"],
-                "imageType": ikea_image[ "fw_image_type" ],
-                "url": ikea_image[ "fw_binary_url"], 
+            "fileVersion": int( "%04x%04x" %(ikea_image["fw_file_version_MSB"], ikea_image["fw_file_version_LSB"]),16 ),
+            "manufacturerCode": ikea_image[ "fw_manufacturer_id"],
+            "imageType": ikea_image[ "fw_image_type" ],
+            "url": ikea_image[ "fw_binary_url"], 
         }
-        self.zigbee_ota_index.append(item_to_add )
-        logging(self, "Debug", "adding Ikea %s" %item_to_add)
+        _build_list.append(item_to_add )
+    return _build_list
 
-def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ):
-        
+    
+def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ): 
     logging(self, "Debug", "check_ota_availability_from_index: Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
         manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
 
@@ -1306,24 +1314,29 @@ def _load_json_from_url( self, url ):
     import socket
     import urllib.request
 
-    try:
-        with urllib.request.urlopen( url ) as response:
-            return json.loads( response.read() )
+    retry = 3
+    while retry:
+        try:
+            with urllib.request.urlopen( url ) as response:
+                return json.loads( response.read() )
 
-    except urllib.error.HTTPError as e:
-        if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
-            reason = f'{e.code} {str(e.reason)}'
-        elif isinstance(e.reason, socket.timeout):
-            reason = f'HTTPError socket.timeout {e.reason} - {e}'
-        else:
-            reason = f'unknow {e.reason} - {e}'
-    except urllib.error.URLError as e:
-        if isinstance(e.reason, socket.timeout):
-            reason = f'URLError socket.timeout {e.reason} - {e}'
-        else:
-            reason = f'unknow {e.reason} - {e}'
-    except socket.timeout as e:
-        reason = f'socket.timeout {e}'
-        
-    logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %reason)
+        except urllib.error.HTTPError as e:
+            if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
+                reason = f'{e.code} {str(e.reason)}'
+            elif isinstance(e.reason, socket.timeout):
+                reason = f'HTTPError socket.timeout {e.reason} - {e}'
+            else:
+                reason = f'unknow {e.reason} - {e}'
+        except urllib.error.URLError as e:
+            if isinstance(e.reason, socket.timeout):
+                reason = f'URLError socket.timeout {e.reason} - {e}'
+            else:
+                reason = f'unknow {e.reason} - {e}'
+        except socket.timeout as e:
+            reason = f'socket.timeout {e}'
+
+        logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %reason)
+        time.sleep(1)
+        retry -= 1
+
     return []

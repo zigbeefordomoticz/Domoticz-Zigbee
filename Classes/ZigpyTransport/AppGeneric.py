@@ -13,6 +13,7 @@ import zigpy.config as zigpy_conf
 import zigpy.device
 import zigpy.exceptions
 import zigpy.types as t
+import zigpy.backups
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
@@ -22,7 +23,7 @@ LOGGER = logging.getLogger(__name__)
 async def _load_db(self) -> None:
     pass
 
-async def initialize (self, *, auto_form: bool = False):
+async def initialize(self, *, auto_form: bool = False):
     """
     Starts the network on a connected radio, optionally forming one with random
     settings if necessary.
@@ -48,15 +49,14 @@ async def initialize (self, *, auto_form: bool = False):
         #    LOGGER.info("Restoring the most recent network backup")
         #    await self.backups.restore_backup(self.backups.backups[-1])
 
-        await self.load_network_info(load_devices=False)
+        await self.load_network_info(load_devices=True)
 
     LOGGER.debug("Network info: %s", self.state.network_info)
     LOGGER.debug("Node info   : %s", self.state.node_info)
 
     await self.start_network()
-
     if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-        self.callBackBackup ( await self.backups.create_backup() )
+        self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
 def get_device(self, ieee=None, nwk=None):
     # LOGGER.debug("get_device nwk %s ieee %s" % (nwk, ieee))
@@ -214,4 +214,3 @@ def handle_message(
         )
 
     return
-

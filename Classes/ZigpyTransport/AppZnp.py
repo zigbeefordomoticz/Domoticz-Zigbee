@@ -31,7 +31,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
 
     async def initialize(self, *, auto_form: bool = False):
-        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form = auto_form)
+        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form)
         LOGGER.info("ZNP Configuration: %s", self.config)
 
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
@@ -77,7 +77,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def shutdown(self) -> None:
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup ( await self.backups.create_backup() )
+            self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
         await self.disconnect()
 
 
@@ -166,7 +166,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup ( await self.backups.create_backup() )
+            self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
             
         
 def extract_versioning_for_plugin( znp_model, znp_manuf):

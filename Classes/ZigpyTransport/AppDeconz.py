@@ -30,7 +30,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         LOGGER.debug("_load_db")
 
     async def initialize(self, *, auto_form: bool = False):
-        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form = auto_form)
+        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form)
         LOGGER.info("deCONZ Configuration: %s", self.config)
 
     async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
@@ -94,7 +94,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def shutdown(self) -> None:
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup ( await self.backups.create_backup() )
+            self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
         await self.disconnect()
 
     async def register_endpoints(self):
@@ -310,4 +310,4 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup ( await self.backups.create_backup() )
+            self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
