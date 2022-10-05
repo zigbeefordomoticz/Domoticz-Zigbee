@@ -95,7 +95,6 @@ import threading
 import time
 
 from Classes.AdminWidgets import AdminWidgets
-# from Classes.APS import APSManagement
 from Classes.ConfigureReporting import ConfigureReporting
 from Classes.DomoticzDB import (DomoticzDB_DeviceStatus, DomoticzDB_Hardware,
                                 DomoticzDB_Preferences)
@@ -108,8 +107,7 @@ from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
-from Modules.basicOutputs import (ZigatePermitToJoin,
-                                  do_Many_To_One_RouteRequest, leaveRequest,
+from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
                                   setExtendedPANID, setTimeServer,
                                   start_Zigate, zigateBlueLed)
 from Modules.casaia import restart_plugin_reset_ModuleIRCode
@@ -138,8 +136,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_set_certificate, zigate_set_mode)
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
-from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
-                                zdp_IEEE_address_request)
+from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
 #from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 #from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -925,9 +922,11 @@ class BasePlugin:
         self.log.logging("Plugin", "Status", "onDisconnect called")
 
     def onHeartbeat(self):
+
         if not self.VersionNewFashion or self.pluginconf is None:
             # Not yet ready
             return
+        
         self.internalHB += 1
 
         if self.PDMready:
@@ -943,25 +942,7 @@ class BasePlugin:
 
         # Starting PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
-        if self.transport != "None" and not self.PDMready:
-            if (
-                (self.internalHB % 10) == 0
-                and (( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING ) or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_WARNING ) )
-            ):
-                self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Mostlikly there is a communication issue" % (self.internalHB), )
-                self.log.logging("Plugin", "Error", "[   ] Stop the plugin and check the Coordinator connectivity.")
-
-            if self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP:
-                debuging_information(self, "Log")
-                restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
-
-            if (
-                (self.internalHB % 10) == 0
-                and ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP or self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP )
-            ):
-                self.log.logging( "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready) )
-                zigate_get_firmware_version(self)
-
+        if not _coordinator_ready(self):
             return
 
         if self.transport != "None":
@@ -969,82 +950,18 @@ class BasePlugin:
                 "Plugin",
                 "Debug",
                 "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s ErasePDMinProgress: %s ErasePDMDone: %s"
-                % (
-                    self.busy,
-                    self.PluginHealth,
-                    self.startZigateNeeded,
-                    self.HeartbeatCount,
-                    self.InitPhase1,
-                    self.InitPhase2,
-                    self.InitPhase3,
-                    self.ControllerLink.pdm_lock_status(),
-                    self.ErasePDMinProgress,
-                    self.ErasePDMDone,
-                ),
+                % ( self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ControllerLink.pdm_lock_status(), self.ErasePDMinProgress, self.ErasePDMDone, ),
             )
 
-        if self.transport != "None" and (self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
-            # Require Transport
-            # Perform erasePDM if required
-            if not self.InitPhase1:
-                zigateInit_Phase1(self)
-                return
-
-            # Check if Restart is needed ( After an ErasePDM or a Soft Reset
-            if self.startZigateNeeded:
-                if self.HeartbeatCount > self.startZigateNeeded + TEMPO_START_ZIGATE:
-                    # Need to check if and ErasePDM has been performed.
-                    # In case case, we have to set the extendedPANID
-                    # ErasePDM has been requested, we are in the next Loop.
-                    if self.ErasePDMDone and self.pluginconf.pluginConf["extendedPANID"] is not None:
-                        self.log.logging(
-                            "Plugin",
-                            "Status",
-                            "ZigateConf - Setting extPANID : 0x%016x" % (self.pluginconf.pluginConf["extendedPANID"]),
-                        )
-                        setExtendedPANID(self, self.pluginconf.pluginConf["extendedPANID"])
-
-                    start_Zigate(self)
-                    self.startZigateNeeded = False
-                return
-
-            if not self.InitPhase2:
-                zigateInit_Phase2(self)
-                return
+        if not _post_readiness_startup_completed( self ):
+            return
 
         if self.transport != "None" and not self.InitPhase3:
             zigateInit_Phase3(self)
             return
 
         # Checking Version
-        self.pluginParameters["TimeStamp"] = int(time.time())
-        if self.transport != "None" and self.pluginconf.pluginConf["internetAccess"] and (
-            self.pluginParameters["available"] is None or self.HeartbeatCount % (12 * 3600 // HEARTBEAT) == 0
-        ):
-            (
-                self.pluginParameters["available"],
-                self.pluginParameters["available-firmMajor"],
-                self.pluginParameters["available-firmMinor"],
-            ) = checkPluginVersion(self.zigbee_communication, self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
-            self.pluginParameters["FirmwareUpdate"] = False
-            self.pluginParameters["PluginUpdate"] = False
-
-            if checkPluginUpdate(self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
-                if "beta" in self.pluginParameters["PluginBranch"] :
-                    log_mode = "Error"
-                else:
-                    log_mode = "Status"
-                self.log.logging("Plugin", log_mode, "There is a newer plugin version available on gitHub. Current %s Available %s" %(
-                    self.pluginParameters["PluginVersion"], self.pluginParameters["available"]))
-                self.pluginParameters["PluginUpdate"] = True
-            if checkFirmwareUpdate(
-                self.FirmwareMajorVersion,
-                self.FirmwareVersion,
-                self.pluginParameters["available-firmMajor"],
-                self.pluginParameters["available-firmMinor"],
-            ):
-                self.log.logging("Plugin", "Status", "There is a newer Zigate Firmware version available")
-                self.pluginParameters["FirmwareUpdate"] = True
+        _check_plugin_version( self )
 
         if self.transport == "None":
             return
@@ -1052,15 +969,10 @@ class BasePlugin:
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
         prevLenDevices = len(Devices)
 
-        # Garbage collector ( experimental for now)
-        if self.internalHB % (3600 // HEARTBEAT) == 0:
-            self.log.logging("Plugin", "Debug", "Garbage Collection status: %s" % str(gc.get_count()))
-            self.log.logging("Plugin", "Debug", "Garbage Collection triggered: %s" % str(gc.collect()))
+        do_python_garbage_collection( self )
 
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
-
-        #self.iaszonemgt.IAS_heartbeat()
 
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)
@@ -1077,20 +989,11 @@ class BasePlugin:
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
 
-        if self.internalHB % (23 * 3600 // HEARTBEAT) == 0:
-            # Update the NetworkDevices attributes if needed , once by day
-            build_list_of_device_model(self)
+        
+        # Update the NetworkDevices attributes if needed , once by day
+        build_list_of_device_model(self)
 
-        if (
-            self.zigbee_communication
-            and self.zigbee_communication == "zigpy"
-            and "autoBackup" in self.pluginconf.pluginConf 
-            and self.pluginconf.pluginConf["autoBackup"] 
-            and night_shift_jobs( self ) 
-            and self.internalHB % (24 * 3600 // HEARTBEAT) == 0
-            and self.ControllerLink
-        ):
-            self.ControllerLink.sendData( "COORDINATOR-BACKUP", {})
+        _trigger_coordinator_backup( self )
 
         if self.CommiSSionning:
             self.PluginHealth["Flag"] = 2
@@ -1110,48 +1013,14 @@ class BasePlugin:
             self.OTA.heartbeat()
 
         # Check PermitToJoin
-        if (
-            self.permitTojoin["Duration"] != 255
-            and self.permitTojoin["Duration"] != 0
-            and int(time.time()) >= (self.permitTojoin["Starttime"] + self.permitTojoin["Duration"])
-        ):
-            zdp_get_permit_joint_status(self)
-            #sendZigateCmd(self, "0014", "")  # Request status
-            self.permitTojoin["Duration"] = 0
-
-        # Heartbeat - Ping Zigate every minute to check connectivity
-        # If fails then try to reConnect
-        if self.pluginconf.pluginConf["Ping"] and self.zigbee_communication == "native":
-            pingZigate(self)
-            self.Ping["Nb Ticks"] += 1
+        _check_permit_to_joint_status(self)
 
         if self.HeartbeatCount % (3600 // HEARTBEAT) == 0:
             self.log.loggingCleaningErrorHistory()
             zigate_get_time(self)
             #sendZigateCmd(self, "0017", "")
 
-        # Update MaxLoad if needed
-        busy_ = self.ControllerLink.loadTransmit() >= MAX_FOR_ZIGATE_BUZY
-        # Maintain trend statistics
-        self.statistics._Load = self.ControllerLink.loadTransmit()
-        self.statistics.addPointforTrendStats(self.HeartbeatCount)
-
-        if busy_:
-            self.PluginHealth["Flag"] = 2
-            self.PluginHealth["Txt"] = "Busy"
-            self.adminWidgets.updateStatusWidget(Devices, "Busy")
-
-        elif not self.connectionState:
-            self.PluginHealth["Flag"] = 3
-            self.PluginHealth["Txt"] = "No Communication"
-            self.adminWidgets.updateStatusWidget(Devices, "No Communication")
-
-        else:
-            self.PluginHealth["Flag"] = 1
-            self.PluginHealth["Txt"] = "Ready"
-            self.adminWidgets.updateStatusWidget(Devices, "Ready")
-
-        self.busy = busy_
+        self.busy = _check_if_busy(self)
         return True
 
 def networksize_update(self):
@@ -1161,6 +1030,9 @@ def networksize_update(self):
         routers + enddevices, routers, enddevices)
 
 def build_list_of_device_model(self):
+    
+    if self.internalHB % (23 * 3600 // HEARTBEAT) != 0:
+        return
     
     self.pluginParameters["NetworkDevices"] = {}
     for x in self.ListOfDevices:
@@ -1573,7 +1445,7 @@ def pingZigate(self):
             # self.connectionState = 0
             # self.Ping['TimeStamp'] = int(time.time())
             # self.ControllerLink.re_conn()
-            restartPluginViaDomoticzJsonApi(self, url_base_api=Parameters["Mode5"])
+            restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
 
         elif (self.Ping["Nb Ticks"] % 3) == 0:
             zdp_get_permit_joint_status(self)
@@ -1796,3 +1668,138 @@ def uninstall_Z4D_to_domoticz_custom_ui():
     except Exception as e:
         Domoticz.Error('Error during installing plugin custom page')
         Domoticz.Error(repr(e))
+
+def do_python_garbage_collection( self ):
+    # Garbage collector ( experimental for now)
+    if self.internalHB % (3600 // HEARTBEAT) == 0:
+        self.log.logging("Plugin", "Debug", "Garbage Collection status: %s" % str(gc.get_count()))
+        self.log.logging("Plugin", "Debug", "Garbage Collection triggered: %s" % str(gc.collect()))
+
+def _check_if_busy(self):
+    busy_ = self.ControllerLink.loadTransmit() >= MAX_FOR_ZIGATE_BUZY
+    # Maintain trend statistics
+    self.statistics._Load = self.ControllerLink.loadTransmit()
+    self.statistics.addPointforTrendStats(self.HeartbeatCount)
+
+    if busy_:
+        self.PluginHealth["Flag"] = 2
+        self.PluginHealth["Txt"] = "Busy"
+        self.adminWidgets.updateStatusWidget(Devices, "Busy")
+
+    elif not self.connectionState:
+        self.PluginHealth["Flag"] = 3
+        self.PluginHealth["Txt"] = "No Communication"
+        self.adminWidgets.updateStatusWidget(Devices, "No Communication")
+
+    else:
+        self.PluginHealth["Flag"] = 1
+        self.PluginHealth["Txt"] = "Ready"
+        self.adminWidgets.updateStatusWidget(Devices, "Ready")
+
+def _check_permit_to_joint_status(self):
+    if (
+        self.permitTojoin["Duration"] != 255
+        and self.permitTojoin["Duration"] != 0
+        and int(time.time()) >= (self.permitTojoin["Starttime"] + self.permitTojoin["Duration"])
+    ):
+        zdp_get_permit_joint_status(self)
+        #sendZigateCmd(self, "0014", "")  # Request status
+        self.permitTojoin["Duration"] = 0
+
+    # Heartbeat - Ping Zigate every minute to check connectivity
+    # If fails then try to reConnect
+    if self.pluginconf.pluginConf["Ping"] and self.zigbee_communication == "native":
+        pingZigate(self)
+        self.Ping["Nb Ticks"] += 1
+
+def _trigger_coordinator_backup( self ):
+    if (
+        self.zigbee_communication
+        and self.zigbee_communication == "zigpy"
+        and "autoBackup" in self.pluginconf.pluginConf 
+        and self.pluginconf.pluginConf["autoBackup"] 
+        and night_shift_jobs( self ) 
+        and self.internalHB % (24 * 3600 // HEARTBEAT) == 0
+        and self.ControllerLink
+    ):
+        self.ControllerLink.sendData( "COORDINATOR-BACKUP", {})
+
+def _check_plugin_version( self ):
+    self.pluginParameters["TimeStamp"] = int(time.time())
+    if self.transport != "None" and self.pluginconf.pluginConf["internetAccess"] and (
+        self.pluginParameters["available"] is None or self.HeartbeatCount % (12 * 3600 // HEARTBEAT) == 0
+    ):
+        (
+            self.pluginParameters["available"],
+            self.pluginParameters["available-firmMajor"],
+            self.pluginParameters["available-firmMinor"],
+        ) = checkPluginVersion(self.zigbee_communication, self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
+        self.pluginParameters["FirmwareUpdate"] = False
+        self.pluginParameters["PluginUpdate"] = False
+
+        if checkPluginUpdate(self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
+            if "beta" in self.pluginParameters["PluginBranch"] :
+                log_mode = "Error"
+            else:
+                log_mode = "Status"
+            self.log.logging("Plugin", log_mode, "There is a newer plugin version available on gitHub. Current %s Available %s" %(
+                self.pluginParameters["PluginVersion"], self.pluginParameters["available"]))
+            self.pluginParameters["PluginUpdate"] = True
+        if checkFirmwareUpdate(
+            self.FirmwareMajorVersion,
+            self.FirmwareVersion,
+            self.pluginParameters["available-firmMajor"],
+            self.pluginParameters["available-firmMinor"],
+        ):
+            self.log.logging("Plugin", "Status", "There is a newer Zigate Firmware version available")
+            self.pluginParameters["FirmwareUpdate"] = True
+
+def _coordinator_ready( self ):
+    if self.transport == "None" or self.PDMready:
+        return True
+    if (
+        (self.internalHB % 10) == 0
+        and (( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING ) or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_WARNING ) )
+    ):
+        self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Mostlikly there is a communication issue" % (self.internalHB), )
+        self.log.logging("Plugin", "Error", "[   ] Stop the plugin and check the Coordinator connectivity.")
+
+    if self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP:
+        debuging_information(self, "Log")
+        restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
+
+    if (
+        (self.internalHB % 10) == 0
+        and ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP or self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP )
+    ):
+        self.log.logging( "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready) )
+        zigate_get_firmware_version(self)
+    return False
+
+def _post_readiness_startup_completed( self ):
+    if self.transport != "None" and (self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
+        # Require Transport
+        # Perform erasePDM if required
+        if not self.InitPhase1:
+            zigateInit_Phase1(self)
+            return False
+
+        # Check if Restart is needed ( After an ErasePDM or a Soft Reset
+        if self.startZigateNeeded:
+            if self.HeartbeatCount > self.startZigateNeeded + TEMPO_START_ZIGATE:
+                # Need to check if and ErasePDM has been performed.
+                # In case case, we have to set the extendedPANID
+                # ErasePDM has been requested, we are in the next Loop.
+                if self.ErasePDMDone and self.pluginconf.pluginConf["extendedPANID"] is not None:
+                    self.log.logging( "Plugin", "Status", "ZigateConf - Setting extPANID : 0x%016x" % (self.pluginconf.pluginConf["extendedPANID"]), )
+                    setExtendedPANID(self, self.pluginconf.pluginConf["extendedPANID"])
+
+                start_Zigate(self)
+                self.startZigateNeeded = False
+            return False
+
+        if not self.InitPhase2:
+            zigateInit_Phase2(self)
+            return False
+        
+    return True
