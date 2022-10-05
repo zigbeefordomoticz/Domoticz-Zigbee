@@ -34,7 +34,7 @@ async def initialize(self, *, auto_form: bool = False):
         # In case of a fresh coordinator, let's load the latest backup
         _retreived_backup = _retreive_backup( self )
         if _retreive_backup:
-            LOGGER.info("Last backup retreived: %s" %   zigpy.backups.NetworkBackup( _retreived_backup ))
+            LOGGER.info("Last backup retreived: %s" % zigpy.backups.NetworkBackup( _retreived_backup ))
             self.backups.add_backup( backup = NetworkBackup.from_dict( _retreived_backup ))
      
     try:
