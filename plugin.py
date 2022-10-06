@@ -1762,31 +1762,33 @@ def _check_plugin_version( self ):
 
 def _coordinator_ready( self ):
     self.log.logging( "Plugin", "Debug", "_coordinator_ready transport: %s PDMready: %s" %(self.transport, self.PDMready)) 
-    if self.transport != "None" and not self.PDMready:
-        if (
-            (
-                ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING ) 
-                or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_WARNING ) 
-            ) 
-            and (self.internalHB % 10) == 0
-        ):
-            self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Mostlikly there is a communication issue" % (self.internalHB), )
-            
-        if (
-            ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP )
-            or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP) 
-        ):
-            debuging_information(self, "Log")
-            self.log.logging("Plugin", "Error", "[   ] Stopping the plugin and lease do check the Coordinator connectivity.")
-            restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
+    if self.transport == "None" or self.PDMready:
+        return True
 
-        if (self.internalHB % 10) == 0:
-            self.log.logging( "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready) )
-            zigate_get_firmware_version(self)
-            #sendZigateCmd(self, "0010", "")
-            return False
+    if (
+        (
+            ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING ) 
+            or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_WARNING ) 
+        ) 
+        and (self.internalHB % 10) == 0
+    ):
+        self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Mostlikly there is a communication issue" % (self.internalHB), )
+        
+    if (
+        ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP )
+        or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP) 
+    ):
+        debuging_information(self, "Log")
+        self.log.logging("Plugin", "Error", "[   ] Stopping the plugin and lease do check the Coordinator connectivity.")
+        restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
+
+    if (self.internalHB % 10) == 0:
+        self.log.logging( "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready) )
+        zigate_get_firmware_version(self)
+        #sendZigateCmd(self, "0010", "")
+        return False
     
-    return True
+    return False
     
 def _post_readiness_startup_completed( self ):
     if self.transport != "None" and (self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
