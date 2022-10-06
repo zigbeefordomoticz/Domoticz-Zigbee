@@ -339,43 +339,10 @@ class BasePlugin:
         self.homedirectory = Parameters["HomeFolder"]
         self.HardwareID = Parameters["HardwareID"]
         self.Key = Parameters["Key"]
-        lst_version = Parameters["DomoticzVersion"].split(" ")
-
-        if len(lst_version) == 1:
-            # No Build
-            major, minor = lst_version[0].split(".")
-            self.DomoticzBuild = 0
-            self.DomoticzMajor = int(major)
-            self.DomoticzMinor = int(minor)
-            # Domoticz.Log("Major: %s Minor: %s" %(int(major), int(minor)))
-            self.VersionNewFashion = True
-
-            if self.DomoticzMajor < 2020:
-                # Old fashon Versioning
-                Domoticz.Error(
-                    "Domoticz version %s %s %s not supported, please upgrade to a more recent"
-                    % (Parameters["DomoticzVersion"], major, minor)
-                )
-                self.VersionNewFashion = False
-                self.onStop()
-                return
-                
-        elif len(lst_version) != 3:
-            Domoticz.Error(
-                "Domoticz version %s unknown not supported, please upgrade to a more recent"
-                % (Parameters["DomoticzVersion"])
-            )
-            self.VersionNewFashion = False
-            self.onStop()
+        
+        if not get_domoticz_version( self ):
             return
-            
-        else:
-            major, minor = lst_version[0].split(".")
-            build = lst_version[2].strip(")")
-            self.DomoticzBuild = int(build)
-            self.DomoticzMajor = int(major)
-            self.DomoticzMinor = int(minor)
-            self.VersionNewFashion = True
+
 
         # Import PluginConf.txt
         Domoticz.Log("load PluginConf")
@@ -418,14 +385,10 @@ class BasePlugin:
          
         self.StartupFolder = Parameters["StartupFolder"]
 
-        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus(
-            Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log
-        )
+        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log )
 
         self.log.logging("Plugin", "Debug", "   - Hardware table")
-        self.domoticzdb_Hardware = DomoticzDB_Hardware(
-            Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log, self.pluginParameters
-        )
+        self.domoticzdb_Hardware = DomoticzDB_Hardware( Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log, self.pluginParameters )
         
         if (
             self.zigbee_communication 
@@ -440,7 +403,9 @@ class BasePlugin:
             if log_level:
                 self.pluginParameters["LogLevel"] = log_level
                 self.log.logging("Plugin", "Debug", "LogLevel: %s" % self.pluginParameters["LogLevel"])
+                
         self.log.logging("Plugin", "Debug", "   - Preferences table")
+        
         self.domoticzdb_Preferences = DomoticzDB_Preferences(Parameters["Mode5"], self.pluginconf, self.log)
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
         # Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
@@ -1059,6 +1024,47 @@ def build_list_of_device_model(self):
                 self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
                 if modelname not in self.DeviceConf:
                     unknown_device_model(self, x, modelname,manufcode, manufname )
+
+
+def get_domoticz_version( self ):
+    lst_version = Parameters["DomoticzVersion"].split(" ")
+    if len(lst_version) == 1:
+        # No Build
+        major, minor = lst_version[0].split(".")
+        self.DomoticzBuild = 0
+        self.DomoticzMajor = int(major)
+        self.DomoticzMinor = int(minor)
+        # Domoticz.Log("Major: %s Minor: %s" %(int(major), int(minor)))
+        self.VersionNewFashion = True
+
+        if self.DomoticzMajor < 2020:
+            # Old fashon Versioning
+            Domoticz.Error(
+                "Domoticz version %s %s %s not supported, please upgrade to a more recent"
+                % (Parameters["DomoticzVersion"], major, minor)
+            )
+            self.VersionNewFashion = False
+            self.onStop()
+            return False
+
+    elif len(lst_version) != 3:
+        Domoticz.Error(
+            "Domoticz version %s unknown not supported, please upgrade to a more recent"
+            % (Parameters["DomoticzVersion"])
+        )
+        self.VersionNewFashion = False
+        self.onStop()
+        return False
+
+    else:
+        major, minor = lst_version[0].split(".")
+        build = lst_version[2].strip(")")
+        self.DomoticzBuild = int(build)
+        self.DomoticzMajor = int(major)
+        self.DomoticzMinor = int(minor)
+        self.VersionNewFashion = True
+        
+    return True
 
 
 def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
@@ -1755,27 +1761,33 @@ def _check_plugin_version( self ):
             self.pluginParameters["FirmwareUpdate"] = True
 
 def _coordinator_ready( self ):
-    if self.transport == "None" or self.PDMready:
-        return True
-    if (
-        (self.internalHB % 10) == 0
-        and (( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING ) or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_WARNING ) )
-    ):
-        self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Mostlikly there is a communication issue" % (self.internalHB), )
-        self.log.logging("Plugin", "Error", "[   ] Stop the plugin and check the Coordinator connectivity.")
+    self.log.logging( "Plugin", "Debug", "_coordinator_ready transport: %s PDMready: %s" %(self.transport, self.PDMready)) 
+    if self.transport != "None" and not self.PDMready:
+        if (
+            (
+                ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING ) 
+                or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_WARNING ) 
+            ) 
+            and (self.internalHB % 10) == 0
+        ):
+            self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Mostlikly there is a communication issue" % (self.internalHB), )
+            
+        if (
+            ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP )
+            or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP) 
+        ):
+            debuging_information(self, "Log")
+            self.log.logging("Plugin", "Error", "[   ] Stopping the plugin and lease do check the Coordinator connectivity.")
+            restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
 
-    if self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP:
-        debuging_information(self, "Log")
-        restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
-
-    if (
-        (self.internalHB % 10) == 0
-        and ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP or self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP )
-    ):
-        self.log.logging( "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready) )
-        zigate_get_firmware_version(self)
-    return False
-
+        if (self.internalHB % 10) == 0:
+            self.log.logging( "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready) )
+            zigate_get_firmware_version(self)
+            #sendZigateCmd(self, "0010", "")
+            return False
+    
+    return True
+    
 def _post_readiness_startup_completed( self ):
     if self.transport != "None" and (self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
         # Require Transport
