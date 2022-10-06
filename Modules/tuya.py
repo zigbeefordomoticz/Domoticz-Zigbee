@@ -1370,11 +1370,14 @@ def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
         self.log.logging("Tuya", "Log", "tuya_smoke_response - Battery Level %s %s %s" % (NwkId, srcEp, data), NwkId)
         store_tuya_attribute(self, NwkId, "Battery", data)
         if int(data,16) == 0:
-            Update_Battery_Device(self, Devices, NwkId, 5)
+            self.ListOfDevices[NwkId]["Battery"] = 25
+            Update_Battery_Device(self, Devices, NwkId, 25) 
         elif int(data,16) == 1:
+            self.ListOfDevices[NwkId]["Battery"] = 50
             Update_Battery_Device(self, Devices, NwkId, 50)
         else:
-            Update_Battery_Device(self, Devices, NwkId, 100)
+            self.ListOfDevices[NwkId]["Battery"] = 90
+            Update_Battery_Device(self, Devices, NwkId, 90)
 
     elif dp == 0x04:
         # Tamper
