@@ -938,8 +938,8 @@ class WebServer(object):
             if len(parameters) == 0:
                 zdev_lst = []
                 for item in self.ListOfDevices:
-                    if item == "0000":
-                        continue
+                    #if item == "0000":
+                    #    continue
                     device = {"_NwkId": item}
                     # Main Attributes
                     for attribut in (
@@ -971,10 +971,10 @@ class WebServer(object):
                             if self.ListOfDevices[item][attribut] == {}:
                                 device[attribut] = ""
 
-                            elif attribut == "ConsistencyCheck" and self.ListOfDevices[item]["Status"] == "notDB":
+                            elif attribut == "ConsistencyCheck" and "Status" in self.ListOfDevices[item] and self.ListOfDevices[item]["Status"] == "notDB":
                                 self.ListOfDevices[item][attribut] = "not in DZ"
 
-                            elif self.ListOfDevices[item][attribut] == "" and self.ListOfDevices[item]["MacCapa"] == "8e":
+                            elif self.ListOfDevices[item][attribut] == "" and "MacCapa" in self.ListOfDevices[item] and self.ListOfDevices[item]["MacCapa"] == "8e":
                                 if attribut == "DeviceType":
                                     device[attribut] = "FFD"
                                 elif attribut == "LogicalType":
@@ -982,7 +982,7 @@ class WebServer(object):
                                 elif attribut == "PowerSource":
                                     device[attribut] = "Main"
 
-                            elif attribut == "LogicalType" and self.ListOfDevices[item][attribut] not in (
+                            elif attribut == "LogicalType" and attribut in self.ListOfDevices[item] and self.ListOfDevices[item][attribut] not in (
                                 "Router",
                                 "Coordinator",
                                 "End Device",
@@ -1040,12 +1040,8 @@ class WebServer(object):
                                     device["Type"] = self.ListOfDevices[item]["Ep"][epId]["Type"]
                                     continue
 
-                                _cluster = {}
-                                if cluster in ZCL_CLUSTERS_LIST:
-                                    _cluster[cluster] = ZCL_CLUSTERS_LIST[cluster]
+                                _cluster = {cluster: ZCL_CLUSTERS_LIST[cluster] if cluster in ZCL_CLUSTERS_LIST else "Unknown"}
 
-                                else:
-                                    _cluster[cluster] = "Unknown"
                                 _ep["ClusterList"].append(_cluster)
 
                             ep_lst.append(_ep)
