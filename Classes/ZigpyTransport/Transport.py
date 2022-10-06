@@ -127,6 +127,8 @@ class ZigpyTransport(object):
 
     def loadTransmit(self):
         # Provide the Load of the Sending Queue
-        #for device in list(self._currently_waiting_requests_list):
-        #    _queue += self._currently_waiting_requests_list[device]
-        return self.writer_queue.qsize()
+        _queue = 0
+        for device in list(self._currently_waiting_requests_list): #both _concurrent_requests_semaphores_list & _currently_waiting_requests_list are created at same time
+            if self._concurrent_requests_semaphores_list[device].locked():
+                _queue += self._currently_waiting_requests_list[device] + 1
+        return max(_queue - 1, 0) + self.writer_queue.qsize()
