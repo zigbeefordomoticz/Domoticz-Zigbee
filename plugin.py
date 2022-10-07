@@ -994,9 +994,9 @@ def networksize_update(self):
     self.pluginParameters["NetworkSize"] = "Total: %s | Routers: %s | End Devices: %s" %(
         routers + enddevices, routers, enddevices)
 
-def build_list_of_device_model(self):
+def build_list_of_device_model(self, force=False):
     
-    if self.internalHB % (23 * 3600 // HEARTBEAT) != 0:
+    if not force and ( self.internalHB % (23 * 3600 // HEARTBEAT) != 0):
         return
     
     self.pluginParameters["NetworkDevices"] = {}
@@ -1272,7 +1272,7 @@ def zigateInit_Phase3(self):
         start_OTAManagement(self, Parameters["HomeFolder"])
 
     networksize_update(self)
-    build_list_of_device_model(self)
+    build_list_of_device_model(self, force=True)
 
     # Request to resend the IRCode with the next command of Casaia/Owon ACxxxx
     restart_plugin_reset_ModuleIRCode(self, nwkid=None)
