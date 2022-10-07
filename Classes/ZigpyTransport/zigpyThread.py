@@ -15,6 +15,7 @@ import traceback
 from threading import Thread
 from typing import Any, Optional
 
+import zigpy.config
 import zigpy.device
 import zigpy.exceptions
 import zigpy.group
@@ -26,21 +27,18 @@ import zigpy.types as t
 import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
-import zigpy.config
-from Modules.tools import print_stack
-
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_0302_frame_content, build_plugin_8009_frame_content,
     build_plugin_8011_frame_content,
     build_plugin_8043_frame_list_node_descriptor,
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
-from Modules.macPrefix import DELAY_FOR_VERY_KEY
+from Modules.macPrefix import DELAY_FOR_VERY_KEY, casaiaPrefix_zigpy
+from Modules.tools import print_stack
 from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
                               InvalidResponse)
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
-from Modules.macPrefix import casaiaPrefix_zigpy
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
@@ -81,7 +79,7 @@ def zigpy_thread(self):
         "Debug",
         "zigpy_thread -extendedPANID %s %d" % (self.pluginconf.pluginConf["extendedPANID"], extendedPANID),
     )
-
+    
     task = radio_start(self, self.pluginconf, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
 
     self.zigpy_loop.run_until_complete(task)
@@ -223,13 +221,15 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 
     self.log.logging("TransportZigpy", "Debug", "4- %s" %radiomodule) 
     if self.pluginParameters["Mode3"] == "True":
-        self.log.logging( "TransportZigpy", "Status", "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x" % (set_channel, set_channel, set_extendedPanId), )
+        self.log.logging( "TransportZigpy", "Status", "Coordinator initialisation requested  Channel %s(0x%02x) ExtendedPanId: 0x%016x" % (
+            set_channel, set_channel, set_extendedPanId), )
         new_network = True
     else:
         new_network = False
 
     try:
         await self.app.startup(
+            self.hardwareid,
             pluginconf,
             callBackHandleMessage=self.receiveData,
             callBackUpdDevice=self.ZigpyUpdDevice,

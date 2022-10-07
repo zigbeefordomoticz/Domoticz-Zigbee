@@ -31,11 +31,11 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
 
 
-    async def initialize(self, *, auto_form: bool = False):
-        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form)
+    async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
+        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
         LOGGER.info("EZSP Configuration: %s", self.config)
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
@@ -45,6 +45,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackBackup = callBackBackup
+        self.HardwareID = HardwareID
 
         """
         Starts a network, optionally forming one with random settings if necessary.
@@ -52,15 +53,11 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         try:
             await self.connect()
-            await self.initialize(auto_form=True)
+            await self.initialize(auto_form=True, force_form=force_form)
         except Exception as e:
             LOGGER.error("Couldn't start application", exc_info=e)
             await self.shutdown()
             raise
-
-        if force_form:
-            await self._ezsp.leaveNetwork()
-            await super().form_network()
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
@@ -80,6 +77,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin(brd_manuf, brd_name, version)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
+        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
 
     async def shutdown(self) -> None:
@@ -168,7 +167,13 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
-
+    def is_bellows(self):
+        return True
+    def is_znp(self):
+        return False
+    def is_deconz(self):
+        return False
+    
 def extract_versioning_for_plugin( brd_manuf, brd_name, version):
     FirmwareBranch = "98"   # Not found in the Table.
     if brd_manuf == 'Elelabs':

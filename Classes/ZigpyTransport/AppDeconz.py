@@ -29,11 +29,11 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
         LOGGER.debug("_load_db")
 
-    async def initialize(self, *, auto_form: bool = False):
-        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form)
+    async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
+        await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
         LOGGER.info("deCONZ Configuration: %s", self.config)
 
-    async def startup(self, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         self.log = log
         self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
@@ -41,21 +41,18 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackBackup = callBackBackup
+        self.HardwareID = HardwareID
 
         await asyncio.sleep( 3 )
 
         try:
             await self.connect()
             await asyncio.sleep( 1 )
-            await self.initialize(auto_form=True)
+            await self.initialize(auto_form=True, force_form=force_form)
         except Exception as e:
             LOGGER.error("Couldn't start application", exc_info=e)
             await self.shutdown()
             raise
-
-        if force_form:
-            await super().form_network()
-
 
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
@@ -86,10 +83,13 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             self.callBackFunction(build_plugin_8010_frame_content("42", deconz_major, deconz_minor))
         elif deconz_model == "ConBee":
             self.callBackFunction(build_plugin_8010_frame_content("43", deconz_major, deconz_minor))
-            
         else:
             LOGGER.info("Unknow Zigbee CIE from %s %s" %( deconz_manuf, deconz_model))
             self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
+            
+        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+
 
     async def shutdown(self) -> None:
         """Shutdown controller."""
@@ -311,3 +311,10 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+
+    def is_bellows(self):
+        return False
+    def is_znp(self):
+        return False
+    def is_deconz(self):
+        return True

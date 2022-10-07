@@ -5,29 +5,49 @@
 #
 
 import binascii
+import contextlib
 import logging
 import time
 
 import zigpy.application
+import zigpy.backups
 import zigpy.config as zigpy_conf
 import zigpy.device
 import zigpy.exceptions
 import zigpy.types as t
-import zigpy.backups
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
+from zigpy.backups import NetworkBackup
 
 LOGGER = logging.getLogger(__name__)
 
 async def _load_db(self) -> None:
     pass
 
-async def initialize(self, *, auto_form: bool = False):
+async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
     """
     Starts the network on a connected radio, optionally forming one with random
     settings if necessary.
     """
+    self.log.logging("TransportZigpy", "Debug", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
+
+    if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
+        # In case of a fresh coordinator, let's load the latest backup
+        _retreived_backup = _retreive_backup( self )
+        if _retreived_backup:
+            LOGGER.info("Last backup retreived: %s" % zigpy.backups.NetworkBackup( _retreived_backup ))
+            self.backups.add_backup( backup = NetworkBackup.from_dict( _retreived_backup ))
+
+    if force_form:
+
+        with contextlib.suppress(Exception):
+            if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
+                self.log.logging( "Zigpy", "Status","Restoring the most recent network backup")
+                await self.backups.restore_backup(self.backups.backups[-1])
+            else:
+                await super(type(self),self).form_network()
+
     try:
         await self.load_network_info(load_devices=False)
 
@@ -37,17 +57,17 @@ async def initialize(self, *, auto_form: bool = False):
         if not auto_form:
             raise
 
-        LOGGER.info("Forming a new network")
+        self.log.logging( "Zigpy", "Status","Forming a new network")
         await super(type(self),self).form_network()
 
-        #if not self.backups.backups:
-        #    # Form a new network if we have no backup
-        #    LOGGER.info("Forming a new network")
-        #    await self.form_network()
-        #else:
-        #    # Otherwise, restore the most recent backup
-        #    LOGGER.info("Restoring the most recent network backup")
-        #    await self.backups.restore_backup(self.backups.backups[-1])
+        if not self.backups.backups:
+            # Form a new network if we have no backup
+            self.log.logging( "Zigpy", "Status","Forming a new network")
+            await self.form_network()
+        else:
+            # Otherwise, restore the most recent backup
+            self.log.logging( "Zigpy", "Status","Restoring the most recent network backup")
+            await self.backups.restore_backup(self.backups.backups[-1])
 
         await self.load_network_info(load_devices=True)
 
@@ -55,8 +75,7 @@ async def initialize(self, *, auto_form: bool = False):
     LOGGER.debug("Node info   : %s", self.state.node_info)
 
     await self.start_network()
-    if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-        self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+    
 
 def get_device(self, ieee=None, nwk=None):
     # LOGGER.debug("get_device nwk %s ieee %s" % (nwk, ieee))
@@ -214,3 +233,10 @@ def handle_message(
         )
 
     return
+
+
+def _retreive_backup( self ):
+    from Modules.zigpyBackup import handle_zigpy_retreive_last_backup
+    
+    LOGGER.debug("Retreiving last backup")
+    return handle_zigpy_retreive_last_backup( self )
