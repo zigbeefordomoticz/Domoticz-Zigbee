@@ -1335,8 +1335,8 @@ def _load_json_from_url( self, url ):
         except socket.timeout as e:
             reason = f'socket.timeout {e}'
 
-        logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %reason)
         time.sleep(1)
         retry -= 1
 
+    logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %reason)
     return []
