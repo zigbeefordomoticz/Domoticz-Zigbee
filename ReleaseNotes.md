@@ -20,6 +20,12 @@ Release Numbering
 
 ## Sept. 2022 - stable6 - 6.3.001
 
+- [Hardware] - Integration of Tuya Smoke detector https://zigbee.blakadder.com/Tuya_YG400A.html
+- [Hardware] - Integration of Curtain Module WS-Zigbee-CP03
+- [Hardware] - New Lidl PIR 
+- [Hardware] - Certification of HUE Ensis lights
+- [Technical] - Automatic coordinator backup/restore for non-Zigate coordinators
+- [Technical] - Support of device Over-The-Air firmware upgrade for non-Zigate coordinators
 - [Hardware] - ZLinky support for Historique, Standard, Mono, tri and Production mode. WebUI interface to visualise ALL Linky attributes
 - [Technical] - Full implementation of Over-The-Air device firmware upgrade
 - [Technical] - refactor of domoticz db access (#1197)
