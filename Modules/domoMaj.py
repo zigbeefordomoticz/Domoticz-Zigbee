@@ -12,7 +12,7 @@ from Zigbee.zdpCommands import zdp_IEEE_address_request
 
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
-                               UpdateDevice_v2)
+                               UpdateDevice_v2, remove_bad_cluster_type_entry)
 from Modules.tools import zigpy_plugin_sanity_check
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
@@ -99,6 +99,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 break
         if DeviceUnit == 0:
             self.log.logging( "Widget", "Error", "Device %s not found !!!" % WidgetId, NWKID)
+            # House keeping, we need to remove this bad clusterType
+            if remove_bad_cluster_type_entry(self, NWKID, Ep, clusterID, WidgetId ):
+                self.log.logging( "Widget", "Log", "WidgetID %s not found, successfully remove the entry from device" % WidgetId, NWKID)
+            else:
+                self.log.logging( "Widget", "Error", "WidgetID %s not found, unable to remove the entry from device" % WidgetId, NWKID)
             continue
 
         Switchtype = Devices[DeviceUnit].SwitchType

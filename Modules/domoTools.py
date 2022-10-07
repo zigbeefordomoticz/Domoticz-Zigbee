@@ -266,9 +266,7 @@ def resetMotion(self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl,
         # UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLvl, SignalLevel)
 
 
-def resetSwitchSelectorPushButton(
-    self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut
-):
+def resetSwitchSelectorPushButton( self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut ):
     if Devices[unit].nValue == 0:
         return
     if (now - lastupdate) < TimedOut:
@@ -904,3 +902,19 @@ def subtypeRGB_FromProfile_Device_IDs(EndPoints, Model, ProfileID, ZDeviceID, Co
         Subtype = ColorControlFull
 
     return Subtype
+
+
+def remove_bad_cluster_type_entry(self, NwkId, Ep, clusterID, WidgetId ):
+    
+    if NwkId not in self.ListOfDevices:
+        return
+    if "Ep" not in self.ListOfDevices[ NwkId ]:
+        return
+    if (
+        Ep in self.ListOfDevices[NwkId]["Ep"] 
+        and "ClusterType" in self.ListOfDevices[NwkId]["Ep"][Ep] 
+        and WidgetId in self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"]
+    ):
+        del self.ListOfDevices[ NwkId ][ "Ep"][ Ep ][ "ClusterType" ][ WidgetId ]
+        return True
+    return False
