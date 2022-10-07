@@ -84,7 +84,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def shutdown(self) -> None:
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+            self.callBackBackup(await self.backups.create_backup(load_devices=True))
         await self.disconnect()
 
     # Only needed if the device require simple node descriptor from the coordinator
