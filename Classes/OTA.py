@@ -160,8 +160,8 @@ class OTAManagement(object):
         MsgMaxDataSize = MsgData[58:60]
         intMsgFieldControl = int(MsgData[60:62], 16)
 
-        logging( self, "Debug", "ota_request_firmware - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X"
-            % ( MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgBlockRequestDelay, 16), int(MsgMaxDataSize, 16), intMsgFieldControl, ),)
+        logging( self, "Debug", "ota_request_firmware - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % (
+            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgBlockRequestDelay, 16), int(MsgMaxDataSize, 16), intMsgFieldControl, ),)
 
         if self.ListInUpdate["NwkId"] is None:
             logging(self, "Debug", "ota_request_firmware - Async request from device: %s." % (MsgSrcAddr))
@@ -190,8 +190,8 @@ class OTAManagement(object):
             logging( self, "Error", "ota_request_firmware %s/%s - request update while an other is in progress %s " % (MsgSrcAddr, MsgEP, self.ListInUpdate["NwkId"]), )
             return
 
-        logging( self, "Debug", "ota_request_firmware - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X"
-            % ( int(MsgSQN, 16), MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgBlockRequestDelay, 16), int(MsgMaxDataSize, 16), intMsgFieldControl, ),)
+        logging( self, "Debug", "ota_request_firmware - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % ( 
+            int(MsgSQN, 16), MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgBlockRequestDelay, 16), int(MsgMaxDataSize, 16), intMsgFieldControl, ),)
 
         if self.ListInUpdate["Process"] is None:
             start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize)
@@ -207,8 +207,8 @@ class OTAManagement(object):
 
         # self. ota_management( MsgSrcAddr, MsgEP )
 
-        logging( self, "Debug", "ota_request_firmware - Block Request for %s/%s Image Type: 0x%04X Image Version: %08X Seq: %s Offset: %s Size: %s FieldCtrl: 0x%02X"
-            % ( MsgSrcAddr, block_request["ReqEp"], block_request["ImageType"], block_request["ImageVersion"], MsgSQN, (block_request["Offset"], 16), int(block_request["MaxDataSize"], 16), block_request["FieldControl"], ),)
+        logging( self, "Debug", "ota_request_firmware - Block Request for %s/%s Image Type: 0x%04X Image Version: %08X Seq: %s Offset: %s Size: %s FieldCtrl: 0x%02X" % ( 
+            MsgSrcAddr, block_request["ReqEp"], block_request["ImageType"], block_request["ImageVersion"], MsgSQN, (block_request["Offset"], 16), int(block_request["MaxDataSize"], 16), block_request["FieldControl"], ),)
 
         ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request)
 
@@ -1284,8 +1284,8 @@ def convert_ikea_format_to_list( _zigbee_ikea_index ):
 
     
 def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ): 
-    logging(self, "Debug", "check_ota_availability_from_index: Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
-        manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
+    logging(self, "Debug", "check_ota_availability_from_index: Index Size: %s Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
+        len(self.zigbee_ota_index), manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
 
     return next((_image for _image in self.zigbee_ota_index if (_image["manufacturerCode"] == manufcode and _image["imageType"] == imagetype and _image["fileVersion"] > fileversion)), {})
     
