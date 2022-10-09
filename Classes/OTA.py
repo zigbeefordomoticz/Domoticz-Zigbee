@@ -369,8 +369,9 @@ class OTAManagement(object):
         # maximum hardware versions in- cluded in the OTA file header.
 
         # If we have already an OTA in progress, let's just respond that no image available for now
-        if self.ListInUpdate["NwkId"] is not None and self.ListInUpdate["NwkId"] != srcnwkid:
+        if self.ListInUpdate["NwkId"] and self.ListInUpdate["NwkId"] != srcnwkid:
             zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '98')
+            return
 
         # Command: 0x01
 
