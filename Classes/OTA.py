@@ -493,6 +493,9 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     # Build the data block to be send based on the request
     _lenght = int(block_request["MaxDataSize"], 16)
     _raw_ota_data = self.ListInUpdate["OtaImage"][_offset : _offset + _lenght]
+    if len(_raw_ota_data) != _lenght:
+        logging( self, "Log", "ota_send_block - we reached the end of the image !! %s against %s" %(len(_raw_ota_data), _lenght ))
+        _lenght = len(_raw_ota_data)
 
     # Build the message and send
     datas = "02" + dest_addr + ZIGATE_EP + dest_ep
