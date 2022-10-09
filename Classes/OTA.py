@@ -109,6 +109,7 @@ class OTAManagement(object):
 
         self.ListInUpdate = {
             "FileName": None,
+            "Status": None,
             "intImageType": None,
             "intImageVersion": None,
             "ImageVersion": None,
@@ -130,6 +131,7 @@ class OTAManagement(object):
 
     def cancel_current_firmware_update(self):
         self.ListInUpdate["NwkId"] = None
+        self.ListInUpdate["Status"] = None
         self.ListInUpdate["LastBlockSent"] = 0
         self.ListInUpdate["Retry"] = 0
         self.ImageLoaded["NotifiedTimeStamp"] = 0
@@ -291,11 +293,13 @@ class OTAManagement(object):
         )
 
         # Do we have a TimeOut on Sending Blocks
-        if self.ListInUpdate["NwkId"] and self.ListInUpdate["LastBlockSent"] != 0 and (time.time() > self.ListInUpdate["LastBlockSent"] + 300):
-            logging(self, "Error", "Ota detects Timeout while sending blocks for %s" % self.ListInUpdate["NwkId"])
+        if self.ListInUpdate["NwkId"] and self.ListInUpdate["Status"] == "Transfer Progress" and (time.time() > self.ListInUpdate["LastBlockSent"] + 300):
+            logging(self, "Error", "Ota timed out on NwkId: %s for block: %s" % ( self.ListInUpdate["NwkId"],self.ListInUpdate["LastBlockSent"] ))
             if self.ListInUpdate["NwkId"] in self.ListInUpdate["AuthorizedForUpdate"]:
                 self.ListInUpdate["AuthorizedForUpdate"].remove(self.ListInUpdate["NwkId"])
             self.ListInUpdate["NwkId"] = None
+            self.ListInUpdate["Status"] = None
+            self.ListInUpdate["Retry"] = 0
             self.ListInUpdate["LastBlockSent"] = 0
             self.ImageLoaded["NotifiedTimeStamp"] = 0
             self.ImageLoaded["LoadedTimeStamp"] = 0
@@ -307,20 +311,14 @@ class OTAManagement(object):
             # Retry every 5s (heartbeat) after 10s after first notification
             self.ListInUpdate["Retry"] += 1
             logging(self, "Log", "Ota retries notifying device %s" % self.ListInUpdate["NwkId"])
-            ota_image_advertize(
-                self,
-                self.ListInUpdate["NwkId"],
-                self.ListInUpdate["Ep"],
-                int(self.ImageLoaded["ImageVersion"], 16),
-                int(self.ImageLoaded["image_type"], 16),
-                int(self.ImageLoaded["manufacturer_code"], 16),
-            )
+            ota_image_advertize( self, self.ListInUpdate["NwkId"], self.ListInUpdate["Ep"], int(self.ImageLoaded["ImageVersion"], 16), int(self.ImageLoaded["image_type"], 16), int(self.ImageLoaded["manufacturer_code"], 16), )
 
         if self.ListInUpdate["Retry"] == 10:
             logging(self, "Error", "Ota detects Timeout while notifying device %s" % self.ListInUpdate["NwkId"])
             if self.ListInUpdate["NwkId"] in self.ListInUpdate["AuthorizedForUpdate"]:
                 self.ListInUpdate["AuthorizedForUpdate"].remove(self.ListInUpdate["NwkId"])
             self.ListInUpdate["NwkId"] = None
+            self.ListInUpdate["Status"] = None
             self.ListInUpdate["LastBlockSent"] = 0
             self.ListInUpdate["Retry"] = 0
             self.ImageLoaded["LoadedTimeStamp"] = 0
@@ -659,6 +657,7 @@ def cleanup_after_completed_upgrade(self, NwkId, Status):
     # Cleanup
     logging(self, "Debug", "cleanup_after_completed_upgrade - Cleanup and house keeping %s %s" % (NwkId, Status))
     self.ListInUpdate["NwkId"] = None
+    self.ListInUpdate["Status"] = None
     if NwkId in self.ListInUpdate["AuthorizedForUpdate"] and Status == "00":
         self.ListInUpdate["AuthorizedForUpdate"].remove(NwkId)
     logging(
