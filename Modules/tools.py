@@ -1447,7 +1447,7 @@ def is_domoticz_db_available(self):
         return False
 
     if self.DomoticzMajor == 2021 and self.DomoticzMinor < 1:
-       # Domoticz.Log("is_domoticz_db_available: %s due to Minor" % False)
+        # Domoticz.Log("is_domoticz_db_available: %s due to Minor" % False)
         return False
 
     #Domoticz.Log("is_domoticz_db_available: %s" % True)
@@ -1549,7 +1549,12 @@ def night_shift_jobs( self ):
 
 def print_stack( self ):
     
-    import inspect
+    try:
+        import inspect
+    except Exception as e:
+        self.log.logging( "Zigpy", "Error", "Cannot import python module inspect")
+        return
+    
     for x in inspect.stack():
         self.log.logging( "Zigpy", "Error", "[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
 
