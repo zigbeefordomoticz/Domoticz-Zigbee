@@ -1607,7 +1607,12 @@ def _path_check(self):
 
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
-            if SETTINGS[theme]["param"][param]["type"] == "path" and not os.path.exists(self.pluginConf[param]):
+            if SETTINGS[theme]["param"][param]["type"] != "path":
+                continue
+            if self.pluginConf[param].find("http") != -1:
+                # this is a url
+                continue
+            if not os.path.exists(self.pluginConf[param]):
                 Domoticz.Error("Cannot access path: %s" % self.pluginConf[param])
 
 
