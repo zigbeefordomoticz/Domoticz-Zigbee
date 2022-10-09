@@ -370,6 +370,10 @@ class OTAManagement(object):
         # If client’s hardware version is included in the command, the server SHALL examine the value against the minimum and
         # maximum hardware versions in- cluded in the OTA file header.
 
+        # If we have already an OTA in progress, let's just respond that no image available for now
+        if self.ListInUpdate["NwkId"] is not None and self.ListInUpdate["NwkId"] != srcnwkid:
+            zcl_raw_ota_query_next_image_response(self, Sqn, srcnwkid, ZIGATE_EP, srcep, '98')
+
         # Command: 0x01
 
         fieldcontrol = int(Data[:2],16)
@@ -1232,12 +1236,8 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     self.PluginHealth["Firmware Update"]["Device"] = MsgSrcAddr
 
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
-    _name = None
 
-    for x in self.Devices:
-        if self.Devices[x].DeviceID == _ieee:
-            _name = self.Devices[x].Name
-            break
+    _name = next((self.Devices[x].Name for x in self.Devices if self.Devices[x].DeviceID == _ieee), None)
 
     _durhh, _durmm, _durss = convertTime(self.ListInUpdate["intSize"] // int(MsgMaxDataSize, 16))
     _textmsg = "Firmware update started for Device: %s with %s - Estimated Time: %s H %s min %s sec " % (
