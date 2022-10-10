@@ -293,8 +293,8 @@ class OTAManagement(object):
         )
 
         # Do we have a TimeOut on Sending Blocks
-        if self.ListInUpdate["NwkId"] and self.ListInUpdate["Status"] == "Transfer Progress" and (time.time() > self.ListInUpdate["LastBlockSent"] + 300):
-            logging(self, "Error", "Ota timed out on NwkId: %s for block: %s" % ( self.ListInUpdate["NwkId"],self.ListInUpdate["LastBlockSent"] ))
+        if self.ListInUpdate["NwkId"] and self.ListInUpdate["Status"] == "Transfer Progress" and self.ListInUpdate["LastBlockSent"] != 0 and (time.time() > self.ListInUpdate["LastBlockSent"] + 300):
+            logging(self, "Error", "Ota timed out on NwkId: %s for block: %s" % ( self.ListInUpdate["NwkId"],self.ListInUpdate["intFileOffset"] ))
             if self.ListInUpdate["NwkId"] in self.ListInUpdate["AuthorizedForUpdate"]:
                 self.ListInUpdate["AuthorizedForUpdate"].remove(self.ListInUpdate["NwkId"])
             self.ListInUpdate["NwkId"] = None
