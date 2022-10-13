@@ -503,6 +503,11 @@ def is_valid_cluster_attribute( self, Nwkid, _ep, _cluster, attribut):
     
     if Nwkid not in self.ListOfDevices:
         return False
+
+    if _ep in self.ListOfDevices[Nwkid]["Ep"] and _cluster in self.ListOfDevices[Nwkid]["Ep"][ _ep ] and "ClusterType" not in self.ListOfDevices[Nwkid]["Ep"][ _ep ]:
+        # Check if we are expecting 
+        return False
+
     if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[Nwkid]:
         return True
     if "Ep" not in self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]:
