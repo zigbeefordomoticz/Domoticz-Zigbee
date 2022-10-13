@@ -242,7 +242,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         )
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error at startup %s" %e)
-        print_stack( self )
+        #print_stack( self )
         
     if new_network:
         # Assume that the new network has been created
