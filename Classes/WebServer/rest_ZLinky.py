@@ -63,6 +63,26 @@ ZLINK_TARIF_MODE_EXCLUDE = {
 }
 
 
+ZLINKY_STEG_ATTRIBUTS = (
+    'Contact sec '
+    'Organe de coupure '
+    'État du cache-bornes distributeur'
+    'Surtension sur une des phases '
+    'Dépassement de la puissance de référence'
+    'Fonctionnement producteur/consommateur'
+    'Sens énergie active '
+    'Tarif en cours sur le contrat fourniture'
+    'Tarif en cours sur le contrat distributeur'
+    'Mode dégradée horloge'
+    'État de la sortie télé-information '
+    'État de la sortie communication'
+    'Statut du CPL '
+    'Synchronisation CPL '
+    'Couleur du jour'
+    'Couleur du lendemain'
+    'Préavis pointes mobiles '
+    'Pointe mobile '
+)
 def zlinky_version_infos(self, nwkid ):
 
     date_build = version_build = ''
@@ -130,8 +150,9 @@ def rest_zlinky(self, verb, data, parameters):
 
 
             if zlinky_param == "STGE":
-                for x in self.ListOfDevices[ nwkid ]["ZLinky"][ "STGE"]:
-                    device["Parameters"].append( { x: self.ListOfDevices[ nwkid ]["ZLinky"]["STGE"][x] } )
+                continue
+                #for x in self.ListOfDevices[ nwkid ]["ZLinky"][ "STGE"]:
+                #    device["Parameters"].append( { x: self.ListOfDevices[ nwkid ]["ZLinky"]["STGE"][x] } )
             else:
                 attr_value = self.ListOfDevices[ nwkid ]["ZLinky"][ zlinky_param ]
                 if zlinky_param in ZLINKY_INDEXES:
