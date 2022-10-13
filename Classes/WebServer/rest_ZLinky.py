@@ -64,24 +64,24 @@ ZLINK_TARIF_MODE_EXCLUDE = {
 
 
 ZLINKY_STEG_ATTRIBUTS = (
-    'Contact sec '
-    'Organe de coupure '
-    'État du cache-bornes distributeur'
-    'Surtension sur une des phases '
-    'Dépassement de la puissance de référence'
-    'Fonctionnement producteur/consommateur'
-    'Sens énergie active '
-    'Tarif en cours sur le contrat fourniture'
-    'Tarif en cours sur le contrat distributeur'
-    'Mode dégradée horloge'
-    'État de la sortie télé-information '
-    'État de la sortie communication'
-    'Statut du CPL '
-    'Synchronisation CPL '
-    'Couleur du jour'
-    'Couleur du lendemain'
-    'Préavis pointes mobiles '
-    'Pointe mobile '
+    'Contact sec ',
+    'Organe de coupure ',
+    'État du cache-bornes distributeur',
+    'Surtension sur une des phases ',
+    'Dépassement de la puissance de référence',
+    'Fonctionnement producteur/consommateur',
+    'Sens énergie active ',
+    'Tarif en cours sur le contrat fourniture',
+    'Tarif en cours sur le contrat distributeur',
+    'Mode dégradée horloge',
+    'État de la sortie télé-information ',
+    'État de la sortie communication',
+    'Statut du CPL ',
+    'Synchronisation CPL ',
+    'Couleur du jour',
+    'Couleur du lendemain',
+    'Préavis pointes mobiles ',
+    'Pointe mobile ',
 )
 def zlinky_version_infos(self, nwkid ):
 
