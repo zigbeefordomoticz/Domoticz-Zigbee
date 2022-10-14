@@ -448,11 +448,16 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
     result = None
+    
+    if "Delay" in data:
+        delay = data["Delay"]
+    else:
+        delay = None
 
     self.log.logging(
         "TransportZigpy",
         "Debug",
-        "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s"
+        "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s, Delay: %s"
         % (
             Function,
             int(NwkId, 16),
@@ -463,6 +468,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
             addressmode,
             not AckIsDisable,
             Sqn,
+            delay,
         ),
     )
 
@@ -501,9 +507,9 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         try:
             if CREATE_TASK:
                 task = asyncio.create_task(
-                    transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
+                    transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay) )
             else:
-                await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )
+                await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay)
                 await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
                 
         except DeliveryError as e:
@@ -519,9 +525,9 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call request destination: %s" % destination)
         if CREATE_TASK:
             task = asyncio.create_task(
-                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
+                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay) )
         else:
-            await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )
+            await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay )
             await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
             
     if result:
@@ -601,7 +607,7 @@ def check_transport_readiness(self):
     if self._radiomodule == "ezsp":
         return True
         
-async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False ):
+async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False, delay=None ):
     # sourcery skip: replace-interpolation-with-fstring    
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
@@ -609,6 +615,8 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
         return
 
     try:
+        if delay:
+            await asyncio.sleep(delay)
         async with _limit_concurrency(self, destination, sequence):
             self.log.logging( "TransportZigpy", "Debug", "transport_request: _limit_concurrency %s %s" %(destination, sequence))
             if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:
