@@ -36,8 +36,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NWKID, Ep), NWKID)
         return
 
-    if ( "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] == "erasePDM" and
-         "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]):
+    if ( 
+        "Status" in self.ListOfDevices[NWKID] 
+        and self.ListOfDevices[NWKID]["Status"] == "erasePDM" 
+        and "autoRestore" in self.pluginconf.pluginConf 
+        and self.pluginconf.pluginConf["autoRestore"]
+    ):
         # Most likely we have request a coordinator re-initialisation and the latest backup has been put in place
         # simply put the device back
         self.ListOfDevices[NWKID]["Status"] = "inDB"
@@ -761,9 +765,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             nValue = int(value, 16)
             if nValue == 1:
                 sValue = "On"
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
             else:
                 sValue = "Off"
-            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
 
         if WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff",) and (
             (
@@ -1434,7 +1439,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if WidgetType == "Lux":
                 nValue = int(value)
                 sValue = value
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
 
         # Check if this Device belongs to a Group. In that case update group
         CheckUpdateGroup(self, NWKID, Ep, clusterID)
