@@ -44,6 +44,7 @@ def extract_username_password( self, url_base_api ):
         return None, None, None
     self.logging("Debug", f'Extract username/password {url_base_api} ==> {items} ')
     host_port = items[1]
+    items[0] = items[0][:4].lower() + items[0][4:]
     item1 = items[0].replace('http://','')
     usernamepassword = item1.split(':')
     if len(usernamepassword) != 2:
