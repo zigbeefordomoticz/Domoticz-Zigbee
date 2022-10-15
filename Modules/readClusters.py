@@ -19,7 +19,6 @@ import Domoticz
 
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
-
 from Modules.domoTools import timedOutDevice
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster)
@@ -27,8 +26,9 @@ from Modules.philips import philips_dimmer_switch
 from Modules.schneider_wiser import (receiving_heatingdemand_attribute,
                                      receiving_heatingpoint_attribute)
 from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
-                           checkAttribute, get_deviceconf_parameter_value,
-                           getEPforClusterType, is_hex, set_status_datastruct,
+                           checkAttribute, checkValidValue,
+                           get_deviceconf_parameter_value, getEPforClusterType,
+                           is_hex, set_status_datastruct,
                            set_timestamp_datastruct)
 from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER,
