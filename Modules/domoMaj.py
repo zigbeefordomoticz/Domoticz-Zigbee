@@ -635,14 +635,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 from Classes.DomoticzDB import DomoticzDB_DeviceStatus
 
                 adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(Devices[DeviceUnit].ID), 1)
+            CurrentnValue = Devices[DeviceUnit].nValue
+            CurrentsValue = Devices[DeviceUnit].sValue
             self.log.logging(
                 "Widget",
                 "Debug",
-                "------> Adj Value : %s from: %s to %s " % (adjvalue, value, (value + adjvalue)),
+                "------> Adj Value : %s from: %s to %s [%s]" % (adjvalue, value, (value + adjvalue), CurrentsValue),
                 NWKID,
             )
-            CurrentnValue = Devices[DeviceUnit].nValue
-            CurrentsValue = Devices[DeviceUnit].sValue
             if CurrentsValue == "":
                 # First time after device creation
                 CurrentsValue = "0;0;0;0;0"
@@ -655,7 +655,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Temp update: %s - %s" % (NewNvalue, NewSvalue))
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum":
+#            elif WidgetType == "Temp+Hum":
+            elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
                 NewNvalue = 0
                 NewSvalue = "%s;%s;%s" % (round(value + adjvalue, 1), SplitData[1], SplitData[2])
                 self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s - %s" % (NewNvalue, NewSvalue))
@@ -679,6 +680,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if CurrentsValue == "":
                 # First time after device creation
                 CurrentsValue = "0;0;0;0;0"
+            elif not ";" in CurrentsValue:
+                CurrentsValue = CurrentsValue + ";0;0;0;0"
             SplitData = CurrentsValue.split(";")
             NewNvalue = 0
             NewSvalue = ""
@@ -696,7 +699,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Humi update: %s - %s" % (NewNvalue, NewSvalue))
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum":  # temp+hum xiaomi
+            elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
                 NewNvalue = 0
                 NewSvalue = "%s;%s;%s" % (SplitData[0], value, humiStatus)
                 self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s - %s" % (NewNvalue, NewSvalue))

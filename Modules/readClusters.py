@@ -19,6 +19,7 @@ import Domoticz
 
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
+
 from Modules.domoTools import timedOutDevice
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster)
@@ -1595,6 +1596,15 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 "readCluster - %s - %s/%s Xiaomi attribute: %s:  %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData)),
                 MsgSrcAddr,
             )
+            if not checkValidValue(self, MsgSrcAddr, MsgAttType, MsgClusterData):
+                self.log.logging(
+                    "Cluster",
+                    "Info",
+                    "Cluster000c - MsgAttrID: %s MsgAttType: %s DataLen: %s : invalid Data Value found : %s"
+                    % (MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                    MsgSrcAddr,
+                )
+                return
             MajDomoDevice(
                 self,
                 Devices,
@@ -1615,7 +1625,7 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-        if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
+        if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0 and self.ListOfDevices[MsgSrcAddr]["Model"] != "lumi.airmonitor.acn01":
             # Magic Cub
             rotation_angle = struct.unpack("f", struct.pack("I", int(MsgClusterData, 16)))[0]
             self.log.logging("Cluster", "Debug", "ReadCluster - ClusterId=000c - Magic Cube angle: %s" % rotation_angle, MsgSrcAddr)
@@ -3283,7 +3293,7 @@ def Cluster0402(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # Store value in int centi-degre
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
-        if value > 0x7FFF and value < 0x954D:
+        if 0x7FFF < value < 0x954D or value == 0x8000:
             self.log.logging(
                 "Cluster",
                 "Debug",
@@ -3642,8 +3652,9 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             acmain = (int(MsgClusterData, 16) & 0b0000000010000000) >> 7
             test = (int(MsgClusterData, 16) & 0b0000000100000000) >> 8
             batdef = (int(MsgClusterData, 16) & 0b0000001000000000) >> 9
+            doorbell = (int(MsgClusterData, 16) & 0b1000000000000000) >> 15
 
-            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = "alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" % (
+            self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = "alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s, doorbell: %s" % (
                 alarm1,
                 alarm2,
                 tamper,
@@ -3654,12 +3665,13 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 acmain,
                 test,
                 batdef,
+                doorbell
             )
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster 0500/0002 - IAS Zone - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s"
-                % (MsgSrcAddr, alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef),
+                "ReadCluster 0500/0002 - IAS Zone - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s, doorbell: %s"
+                % (MsgSrcAddr, alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef, doorbell),
                 MsgSrcAddr,
             )
 
@@ -3674,8 +3686,9 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["acmain"] = acmain
                 self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["test"] = test
                 self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["battdef"] = batdef
+                self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["doorbell"] = doorbell
 
-            self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["GlobalInfos"] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" % (
+            self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["GlobalInfos"] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" % (
                 alarm1,
                 alarm2,
                 tamper,
@@ -3686,11 +3699,12 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 acmain,
                 test,
                 batdef,
+                doorbell
             )
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["TimeStamp"] = int(time())
             if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("RC-EF-3.0", "RC-EM"):   # alarm1 or alarm2 not used on thoses devices
                 return
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02d" % (alarm1 or alarm2))
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02d" % (alarm1 or alarm2 or doorbell))
 
             if batter:
                 # Battery Warning
@@ -3833,6 +3847,16 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         return
 
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
+
+    if not checkValidValue(self, MsgSrcAddr, MsgAttType, MsgClusterData):
+        self.log.logging(
+            "Cluster",
+            "Info",
+            "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s : invalid Data Value found : %s"
+            % (MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+            MsgSrcAddr,
+        )
+        return
 
     value = decodeAttribute(self, MsgAttType, MsgClusterData)
     if MsgAttType not in ("41", "42"):
@@ -4853,17 +4877,20 @@ def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Enable Led if On
             self.ListOfDevices[MsgSrcAddr]["Legrand"]["EnableLedIfOn"] = int(MsgClusterData, 16)
 
-            
 def Clusterfc03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # Philips cluster - NOT IMPLEMENTED
+
     self.log.logging(
         "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "Info",
+        "ReadCluster unimplemented %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
+    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+    if "Model" not in self.ListOfDevices[MsgSrcAddr]:
+        return
 
-    
+
 def Clusterfc40(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     self.log.logging(
