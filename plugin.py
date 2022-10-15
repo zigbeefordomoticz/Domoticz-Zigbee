@@ -376,7 +376,7 @@ class BasePlugin:
         self.log.logging(
             "Plugin",
             "Status",
-            "Zigate plugin %s-%s started"
+            "Zigbee for Domoticz (z4d) plugin %s-%s started"
             % (self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]),
         )
 
