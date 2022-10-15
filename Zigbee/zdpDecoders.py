@@ -10,7 +10,7 @@ from Zigbee.encoder_tools import encapsulate_plugin_frame
 
 def is_duplicate_zdp_frame(self, Nwkid, ClusterId, Sqn):
     
-    if self.zigbee_communitation != "zigpy":
+    if self.zigbee_communication != "zigpy":
         return False
     if Nwkid not in self.ListOfDevices:
         return False
@@ -45,11 +45,11 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
 
     if ClusterId == "0003":
         # Power_Desc_req
-        self.log.logging("zdpDecoder", "Log", "Power_Desc_req NOT IMPLEMENTED YET")
+        self.log.logging("zdpDecoder", "Debug", "Power_Desc_req NOT IMPLEMENTED YET")
         return frame
-    
+
     if ClusterId == "0036":
-        self.log.logging("zdpDecoder", "Log", "Mgmt_Permit_Joining_req NOT IMPLEMENTED %s" %Payload)
+        self.log.logging("zdpDecoder", "Debug", "Mgmt_Permit_Joining_req NOT IMPLEMENTED %s" %Payload)
         return None
 
     if ClusterId == "0013":
@@ -103,12 +103,9 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         # Mgmt_Lqi_rsp
         return buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
 
-    if ClusterId == "8032":
-        # Mgmt_Rtg_rsp
-        return buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame)
-
-    if ClusterId == "8033":
+    if ClusterId in ( "8032", "8033"):
         # handle directly as raw in Modules/inputs/Decode8002
+        # Mgmt_Rtg_rsp and Mgmt_Bind_rsp
         return frame
 
     if ClusterId == "8034":
@@ -272,43 +269,64 @@ def buildframe_nwk_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payl
     status = Payload[2:4]
     ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[4:20], 16)))[0]
     if status != "00":
-        
         buildPayload = sqn + status + ieee
-    else:
-        nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
-    
-        self.log.logging("zdpDecoder", "Debug", "buildframe_nwk_address_response sqn: %s status: %s ieee: %s nwkid: %s" %( sqn, status, ieee, nwkid))
-        NumAssocDev = Payload[24:26] if len(Payload) > 24 else ""
-        StartIndex = Payload[26:28] if len(Payload) > 26 else ""
-        if len(Payload) > 28:
-            NWKAddrAssocDevList = ""
-            idx = 28
-            for _ in range(int(NumAssocDev,16)):
-                NWKAddrAssocDevList += "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx:idx + 4], 16)))[0]
-                idx += 4
-        buildPayload = sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
+        return encapsulate_plugin_frame("8040", buildPayload, frame[len(frame) - 4 : len(frame) - 2])   
+
+    nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
+    self.log.logging("zdpDecoder", "Debug", "buildframe_nwk_address_response sqn: %s status: %s ieee: %s nwkid: %s" %( sqn, status, ieee, nwkid))
+    NumAssocDev = Payload[24:26] if len(Payload) > 24 else ""
+    StartIndex = Payload[26:28] if len(Payload) > 26 else ""
+    if len(Payload) > 28:
+        NWKAddrAssocDevList = ""
+        idx = 28
+        for _ in range(int(NumAssocDev,16)):
+            NWKAddrAssocDevList += "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx:idx + 4], 16)))[0]
+            idx += 4
+    buildPayload = sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
     return encapsulate_plugin_frame("8040", buildPayload, frame[len(frame) - 4 : len(frame) - 2])    
 
-
 def buildframe_ieee_address_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    NWKAddrAssocDevList = ""
+    self.log.logging(
+        "zdpDecoder", 
+        "Debug", 
+        "buildframe_ieee_address_response SrcNwkId: %s Payload: %s  frame: %s len: %s" %( SrcNwkId, Payload, frame, len(Payload)))
+
+    
+    if len(Payload) != 24 and len(Payload) <= 26:
+        # Expected len are:
+        #  24 we have SQN, Status, Ieee, Nwkid
+        #  28 or more we have SQN, Status, Ieee, Nwkid, NumAssociated Device, Start Index, associated device list
+
+        self.log.logging(
+            "zdpDecoder", 
+            "Debug", 
+            "buildframe_ieee_address_response Drop as unconsistent message SrcNwkId: %s Payload: %s  frame: %s len: %s" %( 
+                SrcNwkId, Payload, frame, len(Payload)))
+        return None
+    
+
     sqn = Payload[:2]
     status = Payload[2:4]
     ieee = "%016x" % struct.unpack("Q", struct.pack(">Q", int(Payload[4:20], 16)))[0]
     if status != "00":
         buildPayload = sqn + status + ieee
-    else:
-        nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
-        self.log.logging("zdpDecoder", "Debug", "buildframe_ieee_address_response sqn: %s status: %s ieee: %s nwkid: %s" %( sqn, status, ieee, nwkid))
-        NumAssocDev = Payload[24:26] if len(Payload) > 24 else ""
-        StartIndex = Payload[26:28] if len(Payload) > 26 else ""
-        if len(Payload) > 28:
-            NWKAddrAssocDevList = ""
-            idx = 28
-            for _ in range(int(NumAssocDev,16)):
-                NWKAddrAssocDevList += "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx:idx + 4], 16)))[0]
-                idx += 4
-        buildPayload = sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
+        return encapsulate_plugin_frame("8041", buildPayload, frame[len(frame) - 4 : len(frame) - 2])    
+
+    nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[20:24], 16)))[0]
+    self.log.logging(
+        "zdpDecoder", 
+        "Debug", 
+        "buildframe_ieee_address_response sqn: %s status: %s ieee: %s nwkid: %s" %( sqn, status, ieee, nwkid))
+    NWKAddrAssocDevList = ""
+    NumAssocDev = Payload[24:26] if len(Payload) > 24 else ""
+    StartIndex = Payload[26:28] if len(Payload) > 26 else ""
+    if len(Payload) > 28:
+        NWKAddrAssocDevList = ""
+        idx = 28
+        for _ in range(int(NumAssocDev,16)):
+            NWKAddrAssocDevList += "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[idx:idx + 4], 16)))[0]
+            idx += 4
+    buildPayload = sqn + status + ieee + nwkid + NumAssocDev + StartIndex + NWKAddrAssocDevList
     return encapsulate_plugin_frame("8041", buildPayload, frame[len(frame) - 4 : len(frame) - 2])    
     
 
@@ -401,13 +419,6 @@ def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, P
         
         
     return encapsulate_plugin_frame("804E", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
-
-
-
-def buildframe_routing_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_routing_response NOT IMPLEMENTED YET")
-    return frame
-
 
 def buildframe_leave_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     self.log.logging("zdpDecoder", "Debug", "buildframe_leave_response")

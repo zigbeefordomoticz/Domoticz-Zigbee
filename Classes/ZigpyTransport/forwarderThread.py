@@ -13,6 +13,7 @@ from Classes.ZigpyTransport.tools import handle_thread_error
 
 
 def start_forwarder_thread(self):
+    self.forwarder_thread = Thread(name="ZigpyForwarder_%s" % self.hardwareid, target=forwarder_thread, args=(self,))
     self.forwarder_thread.start()
 
 
@@ -31,6 +32,8 @@ def forwarder_thread(self):
             message = self.forwarder_queue.get()
             if message == "STOP":
                 break
+            if message is None:
+                continue
             if len(message) == 0:
                 continue
             self.statistics._received += 1

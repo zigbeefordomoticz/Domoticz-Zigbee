@@ -61,22 +61,13 @@ def check_and_update_manufcode(self):
 
 PREFIX_MAC_LEN = 6
 PREFIX_MACADDR_IKEA_TRADFRI = ( "000d6f", "14b457")
-PREFIX_MACADDR_DEVELCO      = ( "0015bc", )
-PREFIX_MACADDR_TUYA         = ( 
-                               "842e14", 
-                               "847127", 
-                               "84fd27",
-                               "588e81",
-                               "60a423", 
-                               "a4c138",
-                               "b4e3f9",
-                               "bc33ac",
-                               )
-PREFIX_MACADDR_LEGRAND      = ( "000474", )
-PREFIX_MACADDR_PROFALUX     = ( "20918a", )
+PREFIX_MACADDR_DEVELCO = ( "0015bc", )
+PREFIX_MACADDR_TUYA = ( "842e14", "847127", "84fd27", "588e81", "60a423", "a4c138", "b4e3f9", "bc33ac", )
+PREFIX_MACADDR_LEGRAND = ( "000474", )
+PREFIX_MACADDR_PROFALUX = ( "20918a", )
 PREFIX_MACADDR_WIZER_LEGACY = ( "00124b", )
-PREFIX_MACADDR_WIZER_HOME   = ( "588E81", )
-PREFIX_MACADDR_LIVOLO       = ( "00124b", )
-PREFIX_MACADDR_XIAOMI       = ( "00158d", )  # Seems to be also INR
-PREFIX_MACADDR_OPPLE        = ( "04cf8c", )
-PREFIX_MACADDR_CASAIA       = ( "90fd9f", "3c6a2c")
+PREFIX_MACADDR_WIZER_HOME = ( "588E81", )
+PREFIX_MACADDR_LIVOLO = ( "00124b", )
+PREFIX_MACADDR_XIAOMI = ( "00158d", )  # Seems to be also INR
+PREFIX_MACADDR_OPPLE = ( "04cf8c", )
+PREFIX_MACADDR_CASAIA = ( "90fd9f", "3c6a2c")

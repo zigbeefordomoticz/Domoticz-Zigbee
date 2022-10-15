@@ -672,6 +672,10 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # Converted to value , raw value from 0 to 255
         # sValue is just a string of Level
         zigate_cmd = "0081"
+        if Level > 100:
+            Level = 100
+        elif Level < 0:
+            Level = 0
         #OnOff = "01"
         # value = int(Level*255//100)
         value = "%02X" % int(Level * 255 // 100)

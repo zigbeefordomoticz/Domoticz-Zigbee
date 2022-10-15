@@ -10,411 +10,275 @@
 
 """
 
-import sqlite3
+
+import base64
+import binascii
+import json
+import socket
+import time
+import urllib.request
+
 import Domoticz
-import os.path
-from base64 import b64decode
-from time import time
-from datetime import datetime
+
+from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Classes.LoggingManagement import LoggingManagement
 
 CACHE_TIMEOUT = (15 * 60) + 15  # num seconds
 
+DOMOTICZ_SETTINGS_API = "type=settings"
+DOMOTICZ_HARDWARE_API = "type=hardware"
+DOMOTICZ_DEVICEST_API = "type=devices&rid="
+
+def isBase64( sb ):    
+    try:
+        return base64.b64encode(base64.b64decode(sb)).decode() == sb
+    except TypeError:
+        return False
+    except binascii.Error:
+        return False
+    
+def extract_username_password( self, url_base_api ):
+    
+    items = url_base_api.split('@')
+    if len(items) != 2:
+        return None, None, None
+    self.logging("Debug", f'Extract username/password {url_base_api} ==> {items} ')
+    host_port = items[1]
+    items[0] = items[0][:4].lower() + items[0][4:]
+    item1 = items[0].replace('http://','')
+    usernamepassword = item1.split(':')
+    if len(usernamepassword) != 2:
+        self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ==> {item1} ==> {usernamepassword}')
+        return None, None, None
+        
+    username, password = usernamepassword
+    return username, password, host_port
+
+def open_and_read( self, url ):
+    
+    retry = 3
+    while retry:
+        try:
+            with urllib.request.urlopen(url) as response:
+                return response.read()
+        except urllib.error.HTTPError as e:
+            if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
+                reason = f'{e.code} {str(e.reason)}'
+            elif isinstance(e.reason, socket.timeout):
+                reason = f'HTTPError socket.timeout {e.reason} - {e}'
+            else:
+                raise
+        except urllib.error.URLError as e:
+            if isinstance(e.reason, socket.timeout):
+                reason = f'URLError socket.timeout {e.reason} - {e}'
+            else:
+                raise
+        except socket.timeout as e:
+            reason = f'socket.timeout {e}'
+        netloc = urllib.parse.urlsplit(url).netloc  # e.g. nominatim.openstreetmap.org
+        self.logging("Error", f'*** {netloc} {reason}; will retry')
+        time.sleep(1)
+        retry -= 1
+
+def domoticz_request( self, url):
+    self.logging("Debug",'domoticz request url: %s' %url)
+    try:
+        request = urllib.request.Request(url)
+    except urllib.error.URLError:
+        self.logging("Error", "domoticz_request - wrong URL to get access to Domoticz JSON/API: %s" %url)
+        return None
+    
+    self.logging("Debug",'domoticz request result: %s' %request)
+    if self.authentication_str:
+        self.logging("Debug",'domoticz request Authorization: %s' %request)
+        request.add_header("Authorization", "Basic %s" % self.authentication_str)
+    self.logging("Debug",'domoticz request open url')
+    try:
+        response = urllib.request.urlopen(request)
+    except urllib.error.URLError:
+        self.logging("Error", "domoticz_request - wrong URL toget access to Domoticz JSON/API: %s" %url)
+        return None
+    
+    return response.read()
+  
+def domoticz_base_url(self):
+    
+    if self.url_ready:
+        self.logging( "Debug", "domoticz_base_url - API URL ready %s Basic Authentication: %s" %(self.url_ready, self.authentication_str))
+        return self.url_ready
+    
+    username, password, host_port = extract_username_password( self, self.api_base_url )
+    self.logging("Debug",'Username: %s' %username)
+    self.logging("Debug",'Password: %s' %password)
+    self.logging("Debug",'Host+port: %s' %host_port)
+
+    if len(self.api_base_url) == 0:
+        # Seems that the field is empty
+        self.logging( "Error", "You need to setup the URL Base to access the Domoticz JSON/API")
+        return None
+        
+    # Check that last char is not a / , if the case then remove it 
+    if self.api_base_url[-1] == '/':
+        self.api_base_url = self.api_base_url[:-1]
+    if username and password and host_port:
+        self.authentication_str = base64.encodebytes(('%s:%s' %(username, password)).encode()).decode().replace('\n','')
+        url = 'http://' + host_port + '/json.htm?' + 'username=%s&password=%s&' %(username, password)
+    else:
+        url = self.api_base_url + '/json.htm?'
+    self.logging("Debug", "url: %s" %url)
+    self.url_ready = url
+    return url      
 
 class DomoticzDB_Preferences:
-    def __init__(self, database, pluginconf, log):
-        self.dbConn = None
-        self.dbCursor = None
-        self.preferences = None
-        self.WebUserName = None
-        self.WebPassword = None
-        self.database = database
-        self.debugDZDB = None
+    # sourcery skip: replace-interpolation-with-fstring
+    
+    def __init__(self, api_base_url, pluginconf, log):
+        self.api_base_url = api_base_url
+        self.preferences = {}
         self.pluginconf = pluginconf
         self.log = log
+        self.authentication_str = None
+        self.url_ready = None
+        self.load_preferences()
 
-        # Check if we have access to the database, if not Error and return
-        if not os.path.isfile(database):
-            Domoticz.Error("DB_DeviceStatus - Not existing DB %s" % self.database)
+
+    def load_preferences(self):
+        # sourcery skip: replace-interpolation-with-fstring
+        url = domoticz_base_url(self)
+        if url is None:
+            return
+        url += DOMOTICZ_HARDWARE_API
+
+        dz_response = domoticz_request( self, url)
+        if dz_response is None:
             return
 
+        self.preferences = json.loads( dz_response )
+        
     def logging(self, logType, message):
+        # sourcery skip: replace-interpolation-with-fstring
         self.log.logging("DZDB", logType, message)
-
-    def _openDB(self):
-
-        self.logging("Debug", "DB_Preferences - Opening %s" % self.database)
-        try:
-            self.dbConn = sqlite3.connect(self.database)
-            self.dbCursor = self.dbConn.cursor()
-
-        except sqlite3.Error as e:
-            Domoticz.Error("retreiveAcceptNewHardware - Database error: %s" % e)
-            self.closeDB()
-            return 0
-
-    def closeDB(self):
-
-        if self.dbConn is not None:
-            self.logging("Debug", "DB_Preferences - Closing %s" % self.database)
-            self.dbConn.close()
-        self.dbConn = None
-        self.dbCursor = None
 
     def retreiveAcceptNewHardware(self):
-
-        if self.preferences is not None:
-            return self.preferences
-
-        if self.dbConn is None and self.dbCursor is None:
-            self._openDB()
-            try:
-                self.dbCursor.execute("SELECT nValue FROM Preferences WHERE Key = 'AcceptNewHardware'")
-                value = self.dbCursor.fetchone()
-                if value is None:
-                    self.closeDB()
-                    return 0
-                self.preferences = value[0]
-                self.closeDB()
-                return value[0]
-            except sqlite3.Error as e:
-                Domoticz.Error("retreiveAcceptNewHardware - Database error: %s" % e)
-                self.closeDB()
-                return 0
-
-            except Exception as e:
-                Domoticz.Error("retreiveAcceptNewHardware - Exception: %s" % e)
-                self.closeDB()
-                return 0
-
-            self.closeDB()
-            return 0
+        # sourcery skip: replace-interpolation-with-fstring
+        self.logging("Debug", "retreiveAcceptNewHardware status %s" %self.preferences['AcceptNewHardware'])
+        return self.preferences['AcceptNewHardware']
 
     def retreiveWebUserNamePassword(self):
-
-        if self.WebUserName is not None and self.WebPassword is not None:
-            return (self.WebUserName, self.WebPassword)
-
-        if self.dbConn is None and self.dbCursor is None:
-            self._openDB()
-            try:
-                self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebUserName' ")
-                self.WebUserName = self.dbCursor.fetchone()
-                if self.WebUserName:
-                    self.WebUserName = self.WebUserName[0]
-                    self.WebUserName = b64decode(self.WebUserName).decode("UTF-8")
-                else:
-                    self.WebUserName = None
-
-            except sqlite3.Error as e:
-                Domoticz.Error("retreiveWebUserNamePassword - Database error: %s" % e)
-                self.WebUserName = None
-            except Exception as e:
-                Domoticz.Error("retreiveWebUserNamePassword - Exception: %s" % e)
-                self.WebUserName = None
-
-            try:
-                self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebPassword' ")
-                self.WebPassword = self.dbCursor.fetchone()
-                if self.WebPassword:
-                    self.WebPassword = self.WebPassword[0]
-                else:
-                    self.WebPassword = None
-
-                self.closeDB()
-                return (self.WebUserName, self.WebPassword)
-            except sqlite3.Error as e:
-                Domoticz.Error("retreiveWebUserNamePassword - Database error: %s" % e)
-                self.WebPassword = None
-                self.closeDB()
-                return (self.WebUserName, self.WebPassword)
-            except Exception as e:
-                Domoticz.Error("retreiveWebUserNamePassword - Exception: %s" % e)
-                self.WebPassword = None
-                self.closeDB()
-                return (self.WebUserName, self.WebPassword)
-
-            self.closeDB()
-            self.WebUserName = None
-            self.WebPassword = None
-            return (None, None)
-
-    def unsetAcceptNewHardware(self):
-
-        if self.dbCursor is None:
-            self._openDB()
-            self.dbCursor.execute("UPDATE Preferences Set nValue = '0' Where Key = 'AcceptNewHardware' ")
-            self.dbConn.commit()
-            self.closeDB()
-
-    def setAcceptNewHardware(self):
-
-        if self.dbCursor is None:
-            self._openDB()
-            self.dbCursor.execute("UPDATE Preferences Set nValue = '1' Where Key = 'AcceptNewHardware' ")
-            self.dbConn.commit()
-            self.closeDB()
-
+        # sourcery skip: replace-interpolation-with-fstring
+        webUserName = webPassword = ''
+        if 'WebPassword' in self.preferences:
+            webPassword = self.preferences['WebPassword']
+        if 'WebUserName' in self.preferences:
+            webUserName = self.preferences['WebUserName']
+        self.logging("Debug", "retreiveWebUserNamePassword %s %s" %(webUserName, webPassword))   
+        return webUserName, webPassword
 
 class DomoticzDB_Hardware:
-    def __init__(self, database, pluginconf, hardwareID, log):
-        self.dbConn = None
-        self.dbCursor = None
+    def __init__(self, api_base_url, pluginconf, hardwareID, log, pluginParameters):
+        self.api_base_url = api_base_url
+        self.authentication_str = None
+        self.url_ready = None
+        self.hardware = {}
         self.HardwareID = hardwareID
-        self.database = database
-        self.debugDZDB = None
         self.pluginconf = pluginconf
         self.log = log
+        self.pluginParameters = pluginParameters
+        self.load_hardware()
 
-        # Check if we have access to the database, if not Error and return
-        if not os.path.isfile(database):
-            Domoticz.Error("DB_DeviceStatus - Not existing DB %s" % self.database)
+    def load_hardware(self):  
+        # sourcery skip: replace-interpolation-with-fstring
+        url = domoticz_base_url(self)
+        if url is None:
             return
+        url += DOMOTICZ_HARDWARE_API
+
+        dz_result = domoticz_request( self, url)
+        if dz_result is None:
+            return
+        result = json.loads( dz_result )
+        
+        for x in result['result']:
+            idx = x[ "idx" ]
+            self.hardware[ idx ] = x
 
     def logging(self, logType, message):
         self.log.logging("DZDB", logType, message)
 
-    def _openDB(self):
-        self.logging("Debug", "DB_Hardware - Opening %s" % self.database)
-        self.dbConn = sqlite3.connect(self.database)
-        self.dbCursor = self.dbConn.cursor()
-
-    def closeDB(self):
-        if self.dbConn:
-            self.logging("Debug", "DB_Hardware Closing %s" % self.database)
-            self.dbConn.close()
-            self.dbConn = None
-            self.dbCursor = None
-
-    def disableErasePDM(self):
-        if self.dbCursor is None:
-            self._openDB()
-            # Permit to Join is stored in Mode3
-            self.dbCursor.execute("UPDATE Hardware Set Mode3 = 'False' Where ID = '%s' " % self.HardwareID)
-            self.dbConn.commit()
-            self.closeDB()
-
-    def updateMode4(self, newValue):
-        if self.dbCursor is None:
-            self._openDB()
-            self.dbCursor.execute("UPDATE Hardware Set Mode4 = %s Where ID = '%s' " % (newValue, self.HardwareID))
-            self.dbConn.commit()
-            self.closeDB()
+    def disableErasePDM(self, webUserName, webPassword):
+        # sourcery skip: replace-interpolation-with-fstring
+        # To disable the ErasePDM, we have to restart the plugin
+        # This is usally done after ErasePDM
+        restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=self.api_base_url)
 
     def get_loglevel_value(self):
-        if self.dbCursor is None:
-            self._openDB()
-            try:
-                self.dbCursor.execute("SELECT LogLevel from Hardware Where ID = '%s' " % (self.HardwareID))
-                value = self.dbCursor.fetchone()
-            except:
-                value = None
-            if value is None:
-                self.logging("Log", "Dz LogLevel --> Unknown !!!")
-                self.dbConn.commit()
-                self.closeDB()
-                return None
-            # else:
-            #    self.logging(  "Log", "Dz LogLevel --> Value: %s" %value)
-            self.dbConn.commit()
-            self.closeDB()
-            return value
+        # sourcery skip: replace-interpolation-with-fstring
+        if self.hardware and ("%s" %self.HardwareID) in self.hardware: 
+            self.logging("Debug", "get_loglevel_value %s " %(self.hardware[ '%s' %self.HardwareID ]['LogLevel']))
+            return self.hardware[ '%s' %self.HardwareID ]['LogLevel']
+        return 7
 
-        self.closeDB()
-        return None
-
+    def multiinstances_z4d_plugin_instance(self):
+        # sourcery skip: replace-interpolation-with-fstring
+        self.logging("Debug", "multiinstances_z4d_plugin_instance")
+        if sum("Zigate" in self.hardware[ x ]["Extra"] for x in self.hardware) > 1:
+            return True
+        return False
 
 class DomoticzDB_DeviceStatus:
-    def __init__(self, database, pluginconf, hardwareID, log):
-        self.database = database
-        self.dbConn = None
-        self.dbCursor = None
+    def __init__(self, api_base_url, pluginconf, hardwareID, log):
+        self.api_base_url = api_base_url
         self.HardwareID = hardwareID
-        self.debugDZDB = None
         self.pluginconf = pluginconf
         self.log = log
-
-        self.AdjValue = {"Baro": {}, "TimeOutMotion": {}, "Temp": {}}
-        # Check if we have access to the database, if not Error and return
-        if not os.path.isfile(database):
-            return
+        self.authentication_str = None
+        self.url_ready = None
 
     def logging(self, logType, message):
+        # sourcery skip: replace-interpolation-with-fstring
         self.log.logging("DZDB", logType, message)
 
-    def _openDB(self):
-
-        # Check if we have access to the database, if not Error and return
-        if not os.path.isfile(self.database):
-            Domoticz.Error("DB_DeviceStatus - Not existing DB %s" % self.database)
+    def get_device_status(self, ID):
+        # "http://%s:%s@127.0.0.1:%s" 
+        # sourcery skip: replace-interpolation-with-fstring
+        url = domoticz_base_url(self)
+        if url is None:
             return
+        url += DOMOTICZ_DEVICEST_API + "%s" %ID
 
-        self.logging("Debug", "DB_DeviceStatus - Opening %s" % self.database)
-        self.dbConn = sqlite3.connect(self.database)
-        self.logging("Debug", "-----> dbConn: %s" % str(self.dbConn))
-        self.dbCursor = self.dbConn.cursor()
-        self.logging("Debug", "-----> dbCursor: %s" % str(self.dbCursor))
-
-    def closeDB(self):
-
-        if self.dbConn is not None:
-            self.logging("Debug", "DB_DeviceStatus - Closing %s" % self.database)
-            self.dbConn.close()
-        self.dbConn = None
-        self.dbCursor = None
-
-    def retreiveAddjValue_baro(self, ID):
-        """
-        Retreive the AddjValue of Device.ID
-        """
-
-        if ID not in self.AdjValue["Baro"]:
-            self.logging("Debug", "Init Baro cache")
-            self.AdjValue["Baro"][ID] = {}
-            self.AdjValue["Baro"][ID]["Value"] = None
-            self.AdjValue["Baro"][ID]["Stamp"] = 0
-
-        self.logging(
-            "Debug",
-            "Baro - Value: %s, Stamp: %s, Today: %s"
-            % (self.AdjValue["Baro"][ID]["Value"], self.AdjValue["Baro"][ID]["Stamp"], int(time())),
-        )
-        # if self.AdjValue['Baro'][ID]['Value'] is not None and (int(time()) < self.AdjValue['Baro'][ID]['Stamp'] + CACHE_TIMEOUT):
-        if self.AdjValue["Baro"][ID]["Value"] is not None:
-            self.logging("Debug", "Return from Baro cache %s" % self.AdjValue["Baro"][ID]["Value"])
-            return self.AdjValue["Baro"][ID]["Value"]
-
-        # We need to look to DB
-        if self.dbCursor is None:
-            self._openDB()
-            try:
-                self.logging("Debug", "DB AddjValue2 access for %s" % ID)
-                self.dbCursor.execute(
-                    "SELECT AddjValue2 FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" % (ID, self.HardwareID)
-                )
-                value = self.dbCursor.fetchone()
-                self.logging("Debug", "--> Value: %s" % value)
-                if value is None:
-                    self.AdjValue["Baro"][ID]["Value"] = 0
-                    self.AdjValue["Baro"][ID]["Stamp"] = int(time())
-                    self.closeDB()
-                    return 0
-                self.AdjValue["Baro"][ID]["Value"] = value[0]
-                self.AdjValue["Baro"][ID]["Stamp"] = int(time())
-                self.closeDB()
-                return value[0]
-            except sqlite3.Error as e:
-                Domoticz.Error("retreiveAddjValue_baro - Database error: %s" % e)
-                self.closeDB()
-                return 0
-
-            except Exception as e:
-                Domoticz.Error("retreiveAddjValue_baro - Exception: %s" % e)
-                self.closeDB()
-                return 0
-
-            Domoticz.Error(
-                "retreiveAddjValue_baro - Unexpected exception for ID: %s HardwareID: %s" % (ID, self.HardwareID)
-            )
-            self.closeDB()
+        dz_result = domoticz_request( self, url)
+        if dz_result is None:
+            return None
+        result = json.loads( dz_result )
+        self.logging("Debug", "Result: %s" %result)
+        return result
+    
+    def extract_AddValue(self, ID, attribute):
+        # sourcery skip: replace-interpolation-with-fstring
+        result = self.get_device_status( ID)
+        if result is None:
             return 0
+        
+        AdjValue = 0
+        for x in result['result']:
+            AdjValue = x[attribute]    
+        self.logging("Debug", "return extract_AddValue %s %s %s" % (ID, attribute, AdjValue)  )  
+        return AdjValue
+       
+    def retreiveAddjValue_baro(self, ID):
+        # sourcery skip: replace-interpolation-with-fstring
+        return self.extract_AddValue( ID, 'AddjValue2')
 
     def retreiveTimeOut_Motion(self, ID):
+        # sourcery skip: replace-interpolation-with-fstring
         """
         Retreive the TmeeOut Motion value of Device.ID
         """
-
-        if ID not in self.AdjValue["TimeOutMotion"]:
-            self.logging("Debug", "Init Timeoud cache")
-            self.AdjValue["TimeOutMotion"][ID] = {}
-            self.AdjValue["TimeOutMotion"][ID]["Value"] = None
-            self.AdjValue["TimeOutMotion"][ID]["Stamp"] = 0
-
-        # if self.AdjValue['TimeOutMotion'][ID]['Value'] is not None  and ( int(time()) < self.AdjValue['TimeOutMotion'][ID]['Stamp'] + CACHE_TIMEOUT):
-        if self.AdjValue["TimeOutMotion"][ID]["Value"] is not None:
-            self.logging("Debug", "Return from Timeout cache %s" % self.AdjValue["TimeOutMotion"][ID]["Value"])
-            return self.AdjValue["TimeOutMotion"][ID]["Value"]
-
-        if self.dbCursor is None:
-            self._openDB()
-            try:
-                self.logging("Debug", "DB access AddjValue for %s" % ID)
-                self.dbCursor.execute(
-                    "SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" % (ID, self.HardwareID)
-                )
-                value = self.dbCursor.fetchone()
-                self.logging("Debug", "--> Value: %s" % value)
-                if value is None:
-                    self.closeDB()
-                    return 0
-                self.AdjValue["TimeOutMotion"][ID]["Value"] = value[0]
-                self.AdjValue["TimeOutMotion"][ID]["Stamp"] = int(time())
-                self.closeDB()
-                return value[0]
-
-            except sqlite3.Error as e:
-                Domoticz.Error("retreiveTimeOut_Motion - Database error: %s" % e)
-                self.logging("Debug", "retreiveTimeOut_Motion for ID: %s HardwareID: %s" % (ID, self.HardwareID))
-                self.closeDB()
-                return 0
-
-            except Exception as e:
-                Domoticz.Error("retreiveTimeOut_Motion - Exception: %s" % e)
-                self.logging("Debug", "retreiveTimeOut_Motion for ID: %s HardwareID: %s" % (ID, self.HardwareID))
-                self.closeDB()
-                return 0
-
-            Domoticz.Error(
-                "retreiveTimeOut_Motion - Unexpected exception for ID: %s HardwareID: %s" % (ID, self.HardwareID)
-            )
-            self.closeDB()
-            return 0
+        return self.extract_AddValue( ID, 'AddjValue')  
 
     def retreiveAddjValue_temp(self, ID):
+        # sourcery skip: replace-interpolation-with-fstring
         """
         Retreive the AddjValue of Device.ID
         """
-
-        if ID not in self.AdjValue["Temp"]:
-            self.AdjValue["Temp"][ID] = {}
-            self.AdjValue["Temp"][ID]["Value"] = None
-            self.AdjValue["Temp"][ID]["Stamp"] = 0
-
-        # if self.AdjValue['Temp'][ID]['Value'] is not None and ( int(time()) < self.AdjValue['Temp'][ID]['Stamp'] + CACHE_TIMEOUT):
-        if self.AdjValue["Temp"][ID]["Value"] is not None:
-            self.logging("Debug", "Return from Temp cache %s" % self.AdjValue["Temp"][ID]["Value"])
-            return self.AdjValue["Temp"][ID]["Value"]
-
-        if self.dbCursor is None:
-            self._openDB()
-            try:
-                self.logging("Debug", "DB access AddjValue for %s" % ID)
-                self.dbCursor.execute(
-                    "SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" % (ID, self.HardwareID)
-                )
-                value = self.dbCursor.fetchone()
-                self.logging("Debug", "--> Value: %s" % value)
-                if value is None:
-                    self.closeDB()
-                    return 0
-
-                self.AdjValue["Temp"][ID]["Value"] = value[0]
-                self.AdjValue["Temp"][ID]["Stamp"] = int(time())
-                self.closeDB()
-                return value[0]
-
-            except sqlite3.Error as e:
-                Domoticz.Error("retreiveAddjValue_temp - Database error: %s" % e)
-                self.closeDB()
-                return 0
-
-            except Exception as e:
-                Domoticz.Error("retreiveAddjValue_temp - Exception: %s" % e)
-                self.closeDB()
-                return 0
-
-            Domoticz.Error(
-                "retreiveAddjValue_temp - Unexpected exception for ID: %s HardwareID: %s" % (ID, self.HardwareID)
-            )
-            self.closeDB()
-            return 0
+        return self.extract_AddValue( ID, 'AddjValue')

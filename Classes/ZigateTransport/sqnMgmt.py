@@ -67,7 +67,7 @@ def sqn_get_internal_sqn_from_aps_sqn(self, e_sqn):
 
 def sqn_get_internal_sqn_from_app_sqn(self, e_sqn, sqnAPP_type):
     
-    if self.zigbee_communitation != "native":
+    if self.zigbee_communication != "native":
         return e_sqn
     
     if sqnAPP_type == TYPE_APP_ZIGATE:

@@ -1,0 +1,74 @@
+{
+	"_comment": "Linky module Configuration for Mode: Standard Monophasé",
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0003": "",
+			"0004": "",
+			"0005": "",
+			"0019": "",
+			"0702": "",
+			"0b01": "",
+			"0b04": "",
+			"ff66": "",
+			"Type": "Meter/Power/P1Meter_ZL/Ampere3/Alarm_ZL/Alarm_ZL2/Alarm_ZL3"
+		},
+		"f2": { "Type": "P1Meter_ZL/Alarm_ZL" },
+		"f3": { "Type": "P1Meter_ZL/Alarm_ZL" }
+	},
+	"FakeEp": [ "f2", "f3" ],
+	"Type": "",
+	"bindEp": [ "01" ],
+	"ClusterToBind": [ "0702", "0b04", "ff66" ],
+	"ConfigureReporting": {
+		"0702": {
+			"Attributes": {
+				"0100": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" },
+				"0102": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" },
+				"0104": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" },
+				"0106": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" },
+				"0108": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" },
+				"010a": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" },
+				"010c": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" },
+				"010e": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" },
+				"0110": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" },
+				"0112": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" }
+			}
+		},
+		"0b04": {
+			"Attributes": {
+				"0508": { "DataType": "21", "MinInterval": "000A", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
+				"050b": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
+				"050d": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
+				"050f": { "DataType": "21", "MinInterval": "000E", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
+				"090b": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }
+			}
+		},
+		"ff66": {
+			"Attributes": {
+				"0203": { "DataType": "23", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
+				"0204": { "DataType": "23", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
+				"0205": { "DataType": "23", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
+				"0206": { "DataType": "23", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "00000001" },
+				"0210": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "fffe", "TimeOut": "0000", "Change": "0001" }
+			}
+		}
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "4000" ],
+		"0003": [],
+		"0702": [ "0308", "0307" ],
+		"0b01": [ "000a", "000d", "000e" ],
+		"0b04": [ "0505", "0508", "050a", "050d", "050f", "050b", "090b", "0511" ],
+		"ff66": [ "0300", "0000", "0100", "0200", "0201", "0211", "0212", "0215", "0216", "0217", "0218", "0219", "0220", "0221", "0222", "0223", "0224", "0225", "0226", "0227", "0228"],
+		"0019": []
+	},
+	"PollingEnabled": 1,
+	"Param": {
+		"ConfigurationReportChunk": 1,
+		"ReadAttributesChunk": 2,
+		"PollingCusterff66": 3600,
+		"ZLinkyPollingGlobal": 86400,
+		"ZLinkyPollingPTEC": 900
+	}
+}
