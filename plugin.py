@@ -939,6 +939,9 @@ class BasePlugin:
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
 
+        # Reset Motion sensors
+        ResetDevice(self, Devices)
+
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)
         # Group Management
@@ -947,14 +950,12 @@ class BasePlugin:
 
         # Write the ListOfDevice every 5 minutes or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
-            WriteDeviceList(self, ( (5 * 60) // HEARTBEAT) )
-            
+            WriteDeviceList(self, ( (5 * 60) // HEARTBEAT) )  
         else:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
-
-        
+  
         # Update the NetworkDevices attributes if needed , once by day
         build_list_of_device_model(self)
 
@@ -969,9 +970,6 @@ class BasePlugin:
             self.statistics._Load = self.ControllerLink.loadTransmit()
             self.statistics.addPointforTrendStats(self.HeartbeatCount)
             return
-
-        # Reset Motion sensors
-        ResetDevice(self, Devices, "Motion", 5)
 
         # OTA upgrade
         if self.OTA:

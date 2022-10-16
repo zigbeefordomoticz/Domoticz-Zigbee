@@ -765,13 +765,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
             
         if ClusterType == WidgetType == "Motion":
+            self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NWKID)
+            
             nValue = int(value, 16)
             if nValue == 1:
-                sValue = "On"
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, "On", BatteryLevel, SignalLevel, ForceUpdate_=True)
             else:
-                sValue = "Off"
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, "Off", BatteryLevel, SignalLevel, ForceUpdate_=False)
 
         if WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff",) and (
             (
