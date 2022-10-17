@@ -47,7 +47,7 @@ def add_group_member_ship_response(self, MsgData):
         return
     if len(MsgData) == 14:  # Firmware < 030f
         MsgSrcAddr = None
-        MsgSequenceNumber = MsgData[0:2]
+        MsgSequenceNumber = MsgData[:2]
         MsgEP = MsgData[2:4]
         MsgClusterID = MsgData[4:8]
         MsgStatus = MsgData[8:10]
@@ -58,7 +58,7 @@ def add_group_member_ship_response(self, MsgData):
             % (MsgSequenceNumber, MsgGroupID, MsgStatus),
         )
     elif len(MsgData) == 18:  # Firmware >= 030f
-        MsgSequenceNumber = MsgData[0:2]
+        MsgSequenceNumber = MsgData[:2]
         MsgEP = MsgData[2:4]
         MsgClusterID = MsgData[4:8]
         MsgStatus = MsgData[8:10]
@@ -74,8 +74,8 @@ def add_group_member_ship_response(self, MsgData):
     if MsgSrcAddr not in self.ListOfDevices:
         self.logging(
             "Error",
-            "add_group_member_ship_response Requesting to add group %s membership on non existing device %s"
-            % (MsgGroupID, MsgSrcAddr),
+            "add_group_member_ship_response Requesting to add group %s membership on non existing device %s response %s MsgData: %s"
+            % (MsgGroupID, MsgSrcAddr, MsgStatus, MsgData),
         )
         return
 

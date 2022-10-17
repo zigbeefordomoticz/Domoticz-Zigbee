@@ -18,10 +18,10 @@ import Domoticz
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
-
+from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
                            get_and_inc_ZCL_SQN, is_ack_tobe_disabled, updSQN)
-from Modules.tuyaSiren import tuya_siren_response, tuya_siren2_response
+from Modules.tuyaSiren import tuya_siren2_response, tuya_siren_response
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_response
@@ -38,23 +38,27 @@ from Modules.zigateConsts import ZIGATE_EP
 
 TUYA_MANUF_CODE = "1002"
 
+
 #   "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
 
-TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f",)
+TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l" )
 TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4", "_TZ3000_tk3s5tyg")
 
 
 # TS0601
-TUYA_WATER_TIMER = ("_TZE200_htnnfasr", "_TZE200_akjefhj5")
+TUYA_WATER_TIMER = ("_TZE200_htnnfasr", "_TZE200_akjefhj5", "_TZE200_81isopgh",)
 TUYA_ENERGY_MANUFACTURER = (
     "_TZE200_fsb6zw01",
     "_TZE200_byzdayie",
+    "_TZE200_ewxhg6o9"
 )
 TUYA_GARAGE_DOOR = ( "_TZE200_nklqjk62", )
 TUYA_SMARTAIR_MANUFACTURER = (
     "_TZE200_8ygsuhe1",
     "_TZE200_yvx5lh6k",
 )
+
+TUYA_TEMP_HUMI = ( "_TZE200_bjawzodf", "_TZE200_bq5c8xfe", )
 
 TUYA_SIREN_MANUFACTURER = (
     "_TZE200_d0yu2xgi",
@@ -68,7 +72,6 @@ TUYA_SIREN_MODEL = (
 TUYA_DIMMER_MANUFACTURER = ("_TZE200_dfxkcots",)
 TUYA_SWITCH_MANUFACTURER = (
     "_TZE200_7tdtqgwv",
-    "_TYST11_zivfvd7h",
     "_TZE200_oisqyl4o",
     "_TZE200_amp6tsvy",
 )
@@ -117,6 +120,7 @@ TUYA_THERMOSTAT_MANUFACTURER = (
     "_TZE200_aoclfnxz",
     "_TYST11_zuhszj9s",
     "_TYST11_jeaxp72v",
+    "_TZE200_dzuqwsyg"    # https://www.domoticz.com/forum/viewtopic.php?p=290066#p290066
 )
 #TUYA_eTRV1_MANUFACTURER = (
 #    "_TZE200_kfvq6avy",
@@ -125,6 +129,9 @@ TUYA_THERMOSTAT_MANUFACTURER = (
 #    "_TYST11_ckud7u2l",
 #)
 
+TUYA_SMOKE_MANUFACTURER = (
+    "_TZE200_ntcy3xu1",
+)
 
 # https://github.com/zigpy/zigpy/discussions/653#discussioncomment-314395
 TUYA_eTRV1_MANUFACTURER = (
@@ -156,7 +163,7 @@ TUYA_eTRV_MANUFACTURER = (
     "_TZE200_qc4fpmcn",
 )
 
-TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL
+TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL + TUYA_SMOKE_MANUFACTURER + TUYA_TEMP_HUMI
 TUYA_MANUFACTURER_NAME = (
     TUYA_ENERGY_MANUFACTURER
     + TS011F_MANUF_NAME
@@ -177,6 +184,8 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_WATER_TIMER
     + TUYA_SMART_ALLIN1
     + TUYA_GARAGE_DOOR
+    + TUYA_SMOKE_MANUFACTURER
+    + TUYA_TEMP_HUMI
 )
 
 
@@ -297,10 +306,6 @@ def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
 
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
-    # 19 79 06 00006c02000400000033
-    
-    
-
     if NwkId not in self.ListOfDevices:
         return
     if ClusterID != "ef00":
@@ -313,7 +318,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         self.log.logging("Tuya", "Debug2", "tuyaReadRawAPS - MsgPayload %s too short" % (MsgPayload), NwkId)
         return
 
-    fcf = MsgPayload[0:2]  # uint8
+    fcf = MsgPayload[:2]  # uint8
     sqn = MsgPayload[2:4]  # uint8
     updSQN(self, NwkId, sqn)
 
@@ -385,8 +390,8 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             transid = MsgPayload[6:10]  # uint16
             version = MsgPayload[10:12]  # int8
             store_tuya_attribute(self, NwkId, "TUYA_MCU_VERSION_RSP", version)
-        except:
-            Domoticz.Error("tuyaReadRawAPS - MCU_VERSION_RSP error on Payload: %s" % MsgPayload)
+        except Exception as e:
+            Domoticz.Error("tuyaReadRawAPS - MCU_VERSION_RSP error on Payload: %s reason %s" % (MsgPayload,e))
 
     elif cmd == "23":  # TUYA_REPORT_LOG
         pass
@@ -433,7 +438,7 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName == "TS0601-_TZE200_nklqjk62":
         tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
         
-    elif _ModelName in ("TS0601-thermostat"):
+    elif _ModelName in ("TS0601-thermostat", "TS0601-_TZE200_dzuqwsyg", ):
         tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName in (TUYA_eTRV_MODEL):
@@ -451,6 +456,12 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName == "TS0601-Energy":
         tuya_energy_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
+    elif _ModelName == "TS0601-smoke":
+        tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+
+    elif _ModelName == "TS0601-temphumi":
+        tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        
     else:
         attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
         store_tuya_attribute(self, NwkId, attribute_name, data)
@@ -520,7 +531,7 @@ def tuya_send_default_response(self, Nwkid, srcEp, sqn, cmd, orig_fcf):
 
     payload = fcf + sqn + "0b"
     if manuf_spec == "01":
-        payload += TUYA_MANUF_CODE[2:4] + TUYA_MANUF_CODE[0:2]
+        payload += TUYA_MANUF_CODE[2:4] + TUYA_MANUF_CODE[:2]
     payload += cmd + "00"
     raw_APS_request(
         self,
@@ -672,7 +683,7 @@ def tuya_switch_indicate_light(self, NwkId, light=0x01):
     if light not in (0x00, 0x01, 0x02):
         self.log.logging("Tuya", "Error", "tuya_switch_indicate_light - Unexpected light: %s" % light)
         return
-
+        
     EPout = "01"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
@@ -963,30 +974,34 @@ def tuya_dimmer_dimmer(self, NwkId, srcEp, percent):
 
 # Tuya Smart Cover Switch
 def tuya_window_cover_calibration(self, nwkid, duration):
-    # (0x0102) | Write Attributes (0x02) | 0xf001 | 8-Bit (0x30) | 0 (0x00) | Start Calibration
-    # (0x0102) | Write Attributes (0x02) | 0xf001 | 8-Bit (0x30) | 1 (0x01) | End Calibration
-    #write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f001", "30", start_stop, ackIsDisabled=True)
+    # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
     self.log.logging(
         "Tuya",
         "Debug",
-        "tuya_window_cover_calibration - Nwkid: %s Calibtration %s" % (nwkid, duration),
+        "tuya_window_cover_calibration - Nwkid: %s Calibration %s" % (nwkid, duration),
         nwkid,
     )
 
     self.log.logging( "Tuya", "Debug", "tuya_window_cover_calibration - duration %s" % ( duration), nwkid, )
-
     write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
 
 
 
 def tuya_window_cover_motor_reversal(self, nwkid, mode):
-    # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off
+    # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off / Default
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
     if int(mode) in {0, 1}:
         write_attribute(
             self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False
         )
 
+def tuya_curtain_mode(self, nwkid, mode):
+    # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 0 (0x00) | Kick Back
+    # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 1 (0x01) | Seesaw
+    if int(mode) in {0, 1}:
+        write_attribute(
+            self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" % int(mode), ackIsDisabled=False
+        )
 
 def tuya_backlight_command(self, nwkid, mode):
     if int(mode) in {0, 1, 2}:
@@ -1212,28 +1227,195 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
 def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     if dp == 0x01:
-        # Switch
+        # Switch / Trigger
         self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Switch %s" % int(data, 16), NwkId)
         MajDomoDevice(self, Devices, NwkId, "01", "0006", "%02x" %(int(data, 16)) )
-        store_tuya_attribute(self, NwkId, "Door", data)
-        
+        store_tuya_attribute(self, NwkId, "DoorSwitch", data)
+
     elif dp == 0x03:
-        # Door: 0x00 => Closed, 0x01 => Open
-        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door %s" % int(data, 16), NwkId)
+        # Door Contact: 0x00 => Closed, 0x01 => Open
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door Contact %s" % int(data, 16), NwkId)
         MajDomoDevice(self, Devices, NwkId, "01", "0500", "%02x" %(int(data, 16)) )
-        store_tuya_attribute(self, NwkId, "Door", data)
+        store_tuya_attribute(self, NwkId, "DoorContact", data)
+
+    elif dp == 0x0c:
+        # Door Status
+        # 00a8 0c 04 0001 02
+        self.log.logging("Tuya", "Debug", "tuya_garage_door_response - Door Status %s" % int(data, 16), NwkId)
+        store_tuya_attribute(self, NwkId, "DoorStatus", data)
         
     else:
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
         
 
-def tuya_garage_door_action( self, NwkId, action):
+def tuya_garage_door_action( self, NwkId, onoff):
     # 000f/0101/0001/00
     # 0010/0101/0001/01
+    self.log.logging("Tuya", "Debug", "tuya_garage_door_action - action %s" % onoff, NwkId)
     EPout = "01"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
     action = "0101"
-    data = "%02x" % int(action)
+    data = "%02x" %int(onoff)
+    self.log.logging("Tuya", "Debug", "tuya_garage_door_action - action %s data: %s" % (action,data), NwkId)
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+    
+def tuya_garage_run_time(self, NwkId, duration):
+    # 0006/0402/0004/0000001e  30 secondes
+    # 0007/0402/0004/0000003c  60 secondes
+    self.log.logging("Tuya", "Debug", "tuya_garage_run_time - duration %s" % duration, NwkId)
+    EPout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "0402"
+    data = "%04x" % int(duration)
+    tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+def tuya_garage_timeout(self, NwkId, duration):
+    # 0008/0502/0004/0000012c  300 secondes - 5 minutes
+    self.log.logging("Tuya", "Debug", "tuya_garage_timeout - duration %s" % duration, NwkId)
+    EPout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "0502"
+    data = "%04x" % int(duration)
+    tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+TUYA_TS0004_MANUF_CODE = "1141"
+TUYA_CLUSTER_EOOO_ID = "e000"
+TUYA_CLUSTER_EOO1_ID = "e001"
+TUYA_SWITCH_MODE = {
+    "Toggle": 0x00,
+    "State": 0x01,
+    "Momentary": 0x02
+}
+
+def tuya_external_switch_mode( self, NwkId, mode):
+ 
+    self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - mode %s" % mode, NwkId)
+    if mode not in TUYA_SWITCH_MODE:
+        self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - None existing mode %s" % mode, NwkId)
+        return
+    EPout = "01"
+    mode = "%02x" %TUYA_SWITCH_MODE[mode]
+    write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_TS0004_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)
+
+def tuya_TS0004_back_light(self, nwkid, mode):
+    
+    if int(mode) in {0, 1}:
+        write_attribute(self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "5000", "30", "%02x" %int(mode), ackIsDisabled=False)
+    else:
+        return
+    
+def tuya_TS0004_indicate_light(self, nwkid, mode):
+    if int(mode) in {0, 1, 2}:
+        write_attribute(self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" %int(mode), ackIsDisabled=False)
+    else:
+        return
+
+def SmartRelayStatus_by_ep( self, nwkid, ep, mode):
+    
+    if int(mode) in {0, 1, 2}:
+        return
+    if ep not in self.ListOfDevices[nwkid]["Ep"]:
+        self.log.logging("Heartbeat", "Error", "No ep: %s" %ep, nwkid)
+        return
+    if "e001" not in self.ListOfDevices[nwkid]["Ep"][ ep ]:
+        self.log.logging("Heartbeat", "Log", "No Cluster: %s" %"e001", nwkid)
+        return
+    if "d010" not in self.ListOfDevices[nwkid]["Ep"][ ep ][ "e001" ]:
+        self.log.logging("Heartbeat", "Log", "No Attribute: %s" %"d010", nwkid)
+
+    write_attribute(self, nwkid, ZIGATE_EP, ep, "e001", "0000", "00", "d010", "30", "%02x" %int(mode), ackIsDisabled=False)
+
+    
+def SmartRelayStatus01(self, nwkid, mode):
+    SmartRelayStatus_by_ep( self, nwkid, "01", mode)
+    
+def SmartRelayStatus02(self, nwkid, mode):
+    SmartRelayStatus_by_ep( self, nwkid, "02", mode)
+
+def SmartRelayStatus03(self, nwkid, mode): 
+    SmartRelayStatus_by_ep( self, nwkid, "03", mode)
+
+def SmartRelayStatus04(self, nwkid, mode):
+    SmartRelayStatus_by_ep( self, nwkid, "04", mode)
+
+def _check_tuya_attribute(self, nwkid, ep, cluster, attribute ):
+    if ep not in self.ListOfDevices[nwkid]["Ep"]:
+        self.log.logging("Heartbeat", "Log", "No ep: %s" %ep, nwkid)
+        return False
+    if cluster not in self.ListOfDevices[nwkid]["Ep"][ ep ]:
+        self.log.logging("Heartbeat", "Log", "No Cluster: %s" %cluster, nwkid)
+        return False
+    if attribute not in self.ListOfDevices[nwkid]["Ep"][ ep ][ cluster ]:
+        self.log.logging("Heartbeat", "Log", "No Attribute: %s" %attribute, nwkid)
+        return False
+    return True
+
+def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+
+    self.log.logging("Tuya", "Log", "tuya_smoke_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    if dp == 0x01:
+        # State
+        self.log.logging("Tuya", "Log", "tuya_smoke_response - Smoke state %s %s %s" % (NwkId, srcEp, data), NwkId)
+        store_tuya_attribute(self, NwkId, "SmokeState", data)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0500", data)
+
+    elif dp == 0x0e:
+        #  0: Low battery, 2:Full battery , 1: medium ????
+        self.log.logging("Tuya", "Log", "tuya_smoke_response - Battery Level %s %s %s" % (NwkId, srcEp, data), NwkId)
+        store_tuya_attribute(self, NwkId, "Battery", data)
+        if int(data,16) == 0:
+            self.ListOfDevices[NwkId]["Battery"] = 25
+            Update_Battery_Device(self, Devices, NwkId, 25) 
+        elif int(data,16) == 1:
+            self.ListOfDevices[NwkId]["Battery"] = 50
+            Update_Battery_Device(self, Devices, NwkId, 50)
+        else:
+            self.ListOfDevices[NwkId]["Battery"] = 90
+            Update_Battery_Device(self, Devices, NwkId, 90)
+
+    elif dp == 0x04:
+        # Tamper
+        self.log.logging("Tuya", "Log", "tuya_smoke_response - Tamper %s %s %s" % (NwkId, srcEp, data), NwkId)
+        store_tuya_attribute(self, NwkId, "SmokeTamper", data)
+        if int(data,16):
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0009", "01")
+        else:
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0009", "00")
+
+    else:
+        self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+
+
+def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    
+    self.log.logging("Tuya", "Log", "tuya_temphumi_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    if dp == 0x01:  # Temperature, 
+        store_tuya_attribute(self, NwkId, "Temp", data)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0402", (int(data, 16) / 10))
+        checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", int(data, 16))
+       
+    elif dp == 0x02:   # Humi
+        humi = int(data, 16) // 10
+        store_tuya_attribute(self, NwkId, "Humi", humi)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0405", humi)
+        store_tuya_attribute(self, NwkId, "Humi", data)
+        
+    elif dp == 0x04:   # Battery ????
+        store_tuya_attribute(self, NwkId, "Battery", data)
+        checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", int(data, 16))
+        self.ListOfDevices[NwkId]["Battery"] = int(data, 16)
+        Update_Battery_Device(self, Devices, NwkId, int(data, 16))
+        store_tuya_attribute(self, NwkId, "BatteryStatus", data)
+        
+    else:
+        self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)

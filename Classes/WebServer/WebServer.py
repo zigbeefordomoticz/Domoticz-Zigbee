@@ -8,7 +8,7 @@ import json
 import mimetypes
 import os
 import os.path
-from time import time
+import time
 
 import Domoticz
 from Classes.DomoticzDB import DomoticzDB_Preferences
@@ -70,6 +70,8 @@ class WebServer(object):
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import DumpHTTPResponseToLog, keepConnectionAlive
     from Classes.WebServer.rest_PluginUpgrade import rest_plugin_upgrade
+    from Classes.WebServer.rest_CfgReporting import rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config
+    from Classes.WebServer.rest_ZLinky import rest_zlinky
 
     hearbeats = 0
 
@@ -95,7 +97,7 @@ class WebServer(object):
         httpPort,
         log,
     ):
-        self.zigbee_communitation = zigbee_communitation
+        self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
         self.httpClientConn = None
         self.httpServerConns = {}
@@ -118,6 +120,7 @@ class WebServer(object):
         self.pluginParameters = PluginParameters
         self.networkmap = None
         self.networkenergy = None
+        self.configureReporting = None
 
         self.permitTojoin = permitTojoin
 
@@ -150,6 +153,9 @@ class WebServer(object):
     def update_networkmap(self, networkmap):
         self.networkmap = networkmap
 
+    def update_configureReporting(self,configureReporting ):
+        self.configureReporting = configureReporting
+        
     def add_element_to_devices_in_pairing_mode( self, nwkid):
         if nwkid not in self.DevicesInPairingMode:
             self.DevicesInPairingMode.append( nwkid )
@@ -193,7 +199,7 @@ class WebServer(object):
             self.logging("Status", "Erase ZiGate PDM")
             Domoticz.Error("Erase ZiGate PDM non implémenté pour l'instant")
             if self.pluginconf.pluginConf["eraseZigatePDM"]:
-                if self.pluginParameters["Mode2"] != "None" and self.zigbee_communitation == "native":
+                if self.pluginParameters["Mode2"] != "None" and self.zigbee_communication == "native":
                     sendZigateCmd(self, "0012", "")
                 self.pluginconf.pluginConf["eraseZigatePDM"] = 0
 
@@ -211,12 +217,12 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            if self.pluginParameters["Mode2"] != "None" and self.zigbee_communitation == "native":
+            if self.pluginParameters["Mode2"] != "None" and self.zigbee_communication == "native":
                 self.ControllerData["startZigateNeeded"] = True
                 # start_Zigate( self )
                 sendZigateCmd(self, "0002", "00")  # Force Zigate to Normal mode
                 sendZigateCmd(self, "0011", "")  # Software Reset
-            action = {"Name": "Software reboot of ZiGate", "TimeStamp": int(time())}
+            action = {"Name": "Software reboot of ZiGate", "TimeStamp": int(time.time())}
         _response["Data"] = json.dumps(action, sort_keys=True)
         return _response
 
@@ -237,7 +243,9 @@ class WebServer(object):
                 coordinator_infos["Branch Version"] = self.ControllerData["Branch Version"]
                 coordinator_infos["Major Version"] = self.ControllerData["Major Version"] 
                 coordinator_infos["Minor Version"] = self.ControllerData["Minor Version"] 
-
+                if "Network key" in self.ControllerData:
+                    coordinator_infos[ "Network Key"] = self.ControllerData["Network key"] 
+                                      
                 if 0 <= int(self.ControllerData["Branch Version"]) < 20:   
                     coordinator_infos["Display Firmware Version"] = "Zig - %s" % self.ControllerData["Minor Version"] 
                 elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
@@ -369,9 +377,9 @@ class WebServer(object):
         if verb == "GET":
             from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
-            restartPluginViaDomoticzJsonApi(self)
+            restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=self.pluginParameters["Mode5"])
 
-            info = {"Text": "Plugin restarted", "TimeStamp": int(time())}
+            info = {"Text": "Plugin restarted", "TimeStamp": int(time.time())}
             _response["Data"] = json.dumps(info, sort_keys=True)
         return _response
 
@@ -401,7 +409,7 @@ class WebServer(object):
             Statistics["MaxLoad"] = 7
             Statistics["APSAck"] = 100
             Statistics["APSNck"] = 0
-            Statistics["StartTime"] = int(time()) - 120
+            Statistics["StartTime"] = int(time.time()) - 120
         else:
             Statistics["PDMLoads"] = self.statistics._pdmLoads
             Statistics["MaxZiGateRoundTime8000 "] = self.statistics._maxTiming8000
@@ -456,7 +464,7 @@ class WebServer(object):
 
                 Statistics["Trend"].append({"_TS": _TS, "Rxps": item["Rxps"], "Txps": item["Txps"], "Load": item["Load"]})
 
-        Statistics["Uptime"] = int(time() - Statistics["StartTime"])
+        Statistics["Uptime"] = int(time.time() - Statistics["StartTime"])
         if Statistics["Uptime"] > 0:
 
             Statistics["Txps"] = round(Statistics["Sent"] / Statistics["Uptime"], 2)
@@ -506,6 +514,12 @@ class WebServer(object):
                     if param not in SETTINGS[_theme]["param"]:
                         continue
                     if SETTINGS[_theme]["param"][param]["hidden"]:
+                        continue
+                    if  (
+                        "ZigpyRadio" in SETTINGS[_theme]["param"][param]
+                        and self.zigbee_communication == 'zigpy'
+                        and self.ControllerLink._radiomodule != SETTINGS[_theme]["param"][param]["ZigpyRadio"]
+                    ):
                         continue
 
                     setting = {
@@ -605,7 +619,7 @@ class WebServer(object):
                                         self.pluginconf.pluginConf["debugMatchId"] += self.IEEE2NWK[key] + ","
                                 self.pluginconf.pluginConf["debugMatchId"] = self.pluginconf.pluginConf["debugMatchId"][:-1]  # Remove the last ,
                                 
-                        elif param == "TXpower_set" and self.zigbee_communitation == "zigpy":
+                        elif param == "TXpower_set" and self.zigbee_communication == "zigpy":
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]["current"]:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
                                 set_TxPower(self, self.pluginconf.pluginConf[param])
@@ -639,10 +653,10 @@ class WebServer(object):
                 info["PermitToJoin"] = 255
             elif duration == 0:
                 info["PermitToJoin"] = 0
-            elif int(time()) >= timestamp + duration:
+            elif int(time.time()) >= timestamp + duration:
                 info["PermitToJoin"] = 0
             else:
-                rest = self.permitTojoin["Starttime"] + self.permitTojoin["Duration"] - int(time())
+                rest = self.permitTojoin["Starttime"] + self.permitTojoin["Duration"] - int(time.time())
 
                 self.logging("Debug", "remain %s s" % rest)
                 info["PermitToJoin"] = rest
@@ -763,7 +777,7 @@ class WebServer(object):
                 # for a remove in case device didn't send the leave
                 if "IEEE" in self.ControllerData and ieee:
                     # uParrentAddress + uChildAddress (uint64)
-                    if self.zigbee_communitation == "native":
+                    if self.zigbee_communication == "native":
                         sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
 
                 action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
@@ -795,7 +809,10 @@ class WebServer(object):
                         "Battery",
                     ):
                         if item in self.ListOfDevices[x]:
-                            if item == "MacCapa":
+                            if item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, ):
+                                if "IASBattery" in self.ListOfDevices[x]:
+                                    device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
+                            elif item == "MacCapa":
                                 device["MacCapa"] = []
                                 mac_capability = int(self.ListOfDevices[x][item], 16)
                                 AltPAN = mac_capability & 0x00000001
@@ -921,8 +938,8 @@ class WebServer(object):
             if len(parameters) == 0:
                 zdev_lst = []
                 for item in self.ListOfDevices:
-                    if item == "0000":
-                        continue
+                    #if item == "0000":
+                    #    continue
                     device = {"_NwkId": item}
                     # Main Attributes
                     for attribut in (
@@ -946,15 +963,18 @@ class WebServer(object):
                         "Stack Version",
                         "HW Version",
                     ):
+                        if attribut == "Battery" and attribut in self.ListOfDevices[item] and self.ListOfDevices[item]["Battery"] in ( {}, ):
+                            if "IASBattery" in self.ListOfDevices[item]:
+                                device[attribut] = str(self.ListOfDevices[item][ "IASBattery" ])
 
-                        if attribut in self.ListOfDevices[item]:
+                        elif attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
                                 device[attribut] = ""
 
-                            elif attribut == "ConsistencyCheck" and self.ListOfDevices[item]["Status"] == "notDB":
+                            elif attribut == "ConsistencyCheck" and "Status" in self.ListOfDevices[item] and self.ListOfDevices[item]["Status"] == "notDB":
                                 self.ListOfDevices[item][attribut] = "not in DZ"
 
-                            elif self.ListOfDevices[item][attribut] == "" and self.ListOfDevices[item]["MacCapa"] == "8e":
+                            elif self.ListOfDevices[item][attribut] == "" and "MacCapa" in self.ListOfDevices[item] and self.ListOfDevices[item]["MacCapa"] == "8e":
                                 if attribut == "DeviceType":
                                     device[attribut] = "FFD"
                                 elif attribut == "LogicalType":
@@ -962,7 +982,7 @@ class WebServer(object):
                                 elif attribut == "PowerSource":
                                     device[attribut] = "Main"
 
-                            elif attribut == "LogicalType" and self.ListOfDevices[item][attribut] not in (
+                            elif attribut == "LogicalType" and attribut in self.ListOfDevices[item] and self.ListOfDevices[item][attribut] not in (
                                 "Router",
                                 "Coordinator",
                                 "End Device",
@@ -1020,12 +1040,8 @@ class WebServer(object):
                                     device["Type"] = self.ListOfDevices[item]["Ep"][epId]["Type"]
                                     continue
 
-                                _cluster = {}
-                                if cluster in ZCL_CLUSTERS_LIST:
-                                    _cluster[cluster] = ZCL_CLUSTERS_LIST[cluster]
+                                _cluster = {cluster: ZCL_CLUSTERS_LIST[cluster] if cluster in ZCL_CLUSTERS_LIST else "Unknown"}
 
-                                else:
-                                    _cluster[cluster] = "Unknown"
                                 _ep["ClusterList"].append(_cluster)
 
                             ep_lst.append(_ep)
@@ -1129,6 +1145,83 @@ class WebServer(object):
                 _response["Data"] = json.dumps("Executing %s on %s" % (data["Command"], data["payload"]))
         return _response
 
+
+    def rest_raw_zigbee(self, verb, data, parameters):
+        
+        ZIGPY_RAW_COMMAND_ATTRIBUTES = (
+            'GroupAddressFlag',  # Boolean True if we send the request to a group
+            'AckMode',           # Boolean True if we send with Ack
+            'ProfileId',         # Profile ID "0000" (ZDP), 0x0104 (HA)
+            'ClusterId',         # Cluster Id "xxxx" ( ZDP clusters or ZCL clusters)
+            'TargetAddr',        # Target Nwkid "0000" for ZDP
+            'TargetEp',          # Target Endpoint "00" for ZDP
+            'SourceEp',          # Source Endpoint "00" for ZDP
+            'Sqn',               # Sqn number "xx"
+            'Payload',           # ZDP or ZCL payload (include fcf and sqn)
+        )
+
+        self.logging( "Debug","raw_command - %s %s" % (verb, data)) 
+        _response = prepResponseMessage(self, setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb != "PUT":
+            return _response
+        
+        _response["Data"] = None
+        if len(parameters) != 0:
+            return _response
+        
+        data = data.decode("utf8")
+        data = json.loads(data)
+        self.logging( "Debug","---> Data: %s" % str(data))
+        
+        for attr in  ZIGPY_RAW_COMMAND_ATTRIBUTES:
+            if attr not in data:
+                self.logging( "Error","Missing attribute: %s in zigbee-raw-command: %s" % ( attr, data))
+                _response["Data"] = json.dumps("Missing attribute: > %s < in zigbee-raw-command: %s" % ( attr, data) )
+                return _response
+                
+        group_flag = data['GroupAddressFlag']
+        target_address = data['TargetAddr']
+        target_ep = data['TargetEp']
+        clusterid = data['ClusterId']
+        profileid = data['ProfileId']
+        payload = data['Payload']
+        source_ep = data['SourceEp']
+        sqn = data['Sqn']
+        ack_mode = data['AckMode']
+
+        if group_flag:
+            addresse_mode = 0x01
+        elif ack_mode:
+            addresse_mode = 0x07
+        else:
+            addresse_mode = 0x02
+
+              
+        data = {
+            'AddressMode': addresse_mode,
+            'Function': 'rest_raw_zigbee',
+            'Profile': int(profileid, 16),
+            'Cluster': int(clusterid, 16),
+            'TargetNwk': int(target_address, 16),
+            'TargetEp': int(target_ep, 16),
+            'SrcEp': int(source_ep, 16),
+            'Sqn': int(sqn,16),
+            'payload': payload,
+            'timestamp': time.time()
+        }
+        
+        self.logging( "Log","Sending request to coordinator %s" % ( data))
+        self.log.logging(
+            "outRawAPS",
+            "Debug",
+            "zigpy_raw_APS_request - %s ==> Profile: %04x Cluster: %04x TargetNwk: %04x TargetEp: %02x SrcEp: %02x  payload: %s"
+            % ( 'rest_raw_zigbee', data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'], data['payload'])
+        )
+        self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(target_address,16), sqn=int(sqn,16), ackIsDisabled=ack_mode )
+        return _response
+        
     def rest_dev_command(self, verb, data, parameters):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -1341,30 +1434,29 @@ class WebServer(object):
             for x in self.ListOfDevices:
                 if x == "0000":
                         continue
-                        
+
                 if self.ListOfDevices[x]["ZDeviceName"] == "":
                     _deviceName = x
                 else:
                     _deviceName = self.ListOfDevices[x]["ZDeviceName"]
 
-                if "Battery" in self.ListOfDevices[x] and isinstance(self.ListOfDevices[x]["Battery"], int) :
+                if "Battery" in self.ListOfDevices[x] and isinstance(self.ListOfDevices[x]["Battery"], int):
                     if self.ListOfDevices[x]["Battery"] > 50:
-                        _battEnv["Battery"][">50%"][_deviceName] = {}
-                        _battEnv["Battery"][">50%"][_deviceName]["Battery"] = self.ListOfDevices[x]["Battery"]
+                        _battEnv["Battery"][">50%"][_deviceName] = {"Battery": self.ListOfDevices[x]["Battery"]}
+
                     elif self.ListOfDevices[x]["Battery"] > 30:
-                        _battEnv["Battery"]["<50%"][_deviceName] = {}
-                        _battEnv["Battery"]["<50%"][_deviceName]["Battery"] = self.ListOfDevices[x]["Battery"]
+                        _battEnv["Battery"]["<50%"][_deviceName] = {"Battery": self.ListOfDevices[x]["Battery"]}
+
                     else:
-                        _battEnv["Battery"]["<30%"][_deviceName] = {}
-                        _battEnv["Battery"]["<30%"][_deviceName]["Battery"] = self.ListOfDevices[x]["Battery"]
-                        
+                        _battEnv["Battery"]["<30%"][_deviceName] = {"Battery": self.ListOfDevices[x]["Battery"]}
+
                     if "BatteryUpdateTime" in self.ListOfDevices[x]:
-                        if (int(time()) - self.ListOfDevices[x]["BatteryUpdateTime"]) > 604800: # one week in seconds
-                            _battEnv["Update Time"]["> 1 week"][_deviceName] = {}
-                            _battEnv["Update Time"]["> 1 week"][_deviceName]["BatteryUpdateTime"] = self.ListOfDevices[x]["BatteryUpdateTime"]
+                        if (int(time.time()) - self.ListOfDevices[x]["BatteryUpdateTime"]) > 604800:   # one week in seconds
+                            _battEnv["Update Time"]["> 1 week"][_deviceName] = {"BatteryUpdateTime": self.ListOfDevices[x]["BatteryUpdateTime"]}
+
                         else:
-                            _battEnv["Update Time"]["< 1 week"][_deviceName] = {}
-                            _battEnv["Update Time"]["< 1 week"][_deviceName]["BatteryUpdateTime"] = self.ListOfDevices[x]["BatteryUpdateTime"]
+                            _battEnv["Update Time"]["< 1 week"][_deviceName] = {"BatteryUpdateTime": self.ListOfDevices[x]["BatteryUpdateTime"]}
+
                     else:
                         _battEnv["Update Time"]["Unknown"][_deviceName] = "Unknown"
 

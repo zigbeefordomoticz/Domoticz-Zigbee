@@ -10,27 +10,31 @@
 
 """
 
-from datetime import datetime
-from time import time
+
+import time
 
 import Domoticz
-from Classes.LoggingManagement import LoggingManagement
+import Modules.paramDevice
 
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
                                   send_zigatecmd_zcl_noack)
-from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_DEVELCO,
+from Modules.macPrefix import DEVELCO_PREFIX
+from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
+                                       PREFIX_MACADDR_DEVELCO,
                                        PREFIX_MACADDR_IKEA_TRADFRI,
                                        PREFIX_MACADDR_OPPLE,
-                                       PREFIX_MACADDR_TUYA, PREFIX_MACADDR_CASAIA, 
+                                       PREFIX_MACADDR_TUYA,
                                        PREFIX_MACADDR_XIAOMI)
+import Modules.paramDevice
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
                            is_time_to_perform_work, reset_attr_datastruct,
                            set_isqn_datastruct, set_status_datastruct,
                            set_timestamp_datastruct)
 from Modules.tuya import tuya_cmd_0x0000_0xf0
-from Modules.zigateConsts import MAX_READATTRIBUTES_REQ, ZIGATE_EP
+from Modules.zigateConsts import ZIGATE_EP
+from Modules.zlinky import get_OPTARIF
 
 ATTRIBUTES = {
     "0000": [
@@ -126,7 +130,8 @@ ATTRIBUTES = {
         0x0508,
     ],
     "0b05": [0x0000],  # Tuya
-    "e001": [0xd011],  # Tuya TS004F
+    "e000": [0xd001, 0xd002, 0xd003 ],
+    "e001": [0xd010, 0xd011, 0xd030 ],  # Tuya TS004F
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],   # Legrand
@@ -134,54 +139,35 @@ ATTRIBUTES = {
 }
 
 
-def ReadAttributeReq(
-    self,
-    addr,
-    EpIn,
-    EpOut,
-    Cluster,
-    ListOfAttributes,
-    manufacturer_spec="00",
-    manufacturer="0000",
-    ackIsDisabled=True,
-    checkTime=True,
-):
+def get_max_read_attribute_value( self, nwkid=None):
+    
+    # This is about Read Configuration Reporting from a device
+    read_configuration_report_chunk = Modules.paramDevice.get_device_config_param( self, nwkid, "ReadAttributeChunk")
 
-    # Check if we are in pairing mode and Read Attribute must be broken down in 1 attribute max, otherwise use the default value
-    maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
-    
-    if 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_IKEA_TRADFRI:
-        maxReadAttributesByRequest = MAX_READATTRIBUTES_REQ
-    
-    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
-        maxReadAttributesByRequest = 5
-        
-    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_DEVELCO:
-        maxReadAttributesByRequest = 5
-        
-    elif 'IEEE' in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]['IEEE'][: PREFIX_MAC_LEN] in PREFIX_MACADDR_CASAIA:
-        maxReadAttributesByRequest = 2
-    
-    elif "PairingInProgress" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["PairingInProgress"]:
-        maxReadAttributesByRequest = 1
+    if "PairingInProgress" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PairingInProgress"]:
+        read_configuration_report_chunk = 1
+
+    elif read_configuration_report_chunk and 'IEEE' in self.ListOfDevices[ nwkid ]:
+            if self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_IKEA_TRADFRI:
+                maxReadAttributesByRequest = self.pluginconf.pluginConf["ReadAttributeChunk"]
+
+            elif self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
+                read_configuration_report_chunk = 5
+
+            elif self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_CASAIA:
+                read_configuration_report_chunk = 2
+
+    return read_configuration_report_chunk or self.pluginconf.pluginConf["ReadAttributeChunk"]
+
+
+def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, ):
+
+    maxReadAttributesByRequest = get_max_read_attribute_value( self, addr )    
 
     if not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled)
     else:
-        self.log.logging(
-            "ReadAttributes",
-            "Debug2",
-            "----------> ------- %s/%s %s ListOfAttributes: " % (addr, EpOut, Cluster)
-            + " ".join("0x{:04x}".format(num) for num in ListOfAttributes),
-            nwkid=addr,
-        )
         for shortlist in split_list(ListOfAttributes, wanted_parts=maxReadAttributesByRequest):
-            self.log.logging(
-                "ReadAttributes",
-                "Debug2",
-                "----------> ------- Shorter: " + ", ".join("0x{:04x}".format(num) for num in shortlist),
-                nwkid=addr,
-            )
             normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, shortlist, manufacturer_spec, manufacturer, ackIsDisabled)
 
 
@@ -194,8 +180,6 @@ def split_list(l, wanted_parts=1):
 
 def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled):
 
-    # Start method
-    # Domoticz.Log("--> normalizedReadAttributeReq --> manufacturer_spec = '%s', manufacturer = '%s'" %(manufacturer_spec, manufacturer))
     if "Health" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["Health"] == "Not Reachable":
         return
 
@@ -220,7 +204,7 @@ def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttribute
         
         Attr_ = "%04x" % (x)
         if skipThisAttribute(self, addr, EpOut, Cluster, Attr_):
-            # Domoticz.Log("Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_))
+            self.log.logging("ReadAttributes", "Debug", "Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_), nwkid=addr)
             continue
 
         reset_attr_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, Attr_)
@@ -242,23 +226,11 @@ def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttribute
         + ", ".join("0x{:04x}".format(num) for num in ListOfAttributes),
         nwkid=addr,
     )
-    i_sqn = read_attribute(
-        self,
-        addr,
-        EpIn,
-        EpOut,
-        Cluster,
-        direction,
-        manufacturer_spec,
-        manufacturer,
-        lenAttr,
-        Attr,
-        ackIsDisabled=ackIsDisabled,
-    )
+    i_sqn = read_attribute( self, addr, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=ackIsDisabled, )
 
     for x in attributeList:
         set_isqn_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, x, i_sqn)
-    set_timestamp_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, int(time()))
+    set_timestamp_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, int(time.time()))
 
 
 def skipThisAttribute(self, addr, EpOut, Cluster, Attr):
@@ -277,7 +249,7 @@ def skipThisAttribute(self, addr, EpOut, Cluster, Attr):
         Domoticz.Log("Skip Attribute 6 %s/%s %s %s" % (addr, EpOut, Cluster, Attr))
         self.log.logging(
             "ReadAttributes",
-            "Debug2",
+            "Debug",
             "normalizedReadAttrReq - Skip Read Attribute due to DeviceConf Nwkid: %s Cluster: %s Attribute: %s" % (addr, Cluster, Attr),
             nwkid=addr,
         )
@@ -446,13 +418,13 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     self.log.logging("ReadAttributes", "Debug", "--> Build list Eps for Cluster Basic %s" %str(ListOfEp), nwkid=key)
 
     # Do we Have Manufacturer
-    if  ListOfEp and self.ListOfDevices[key]["Manufacturer"] in [ {}, ""]:
+    if ListOfEp and self.ListOfDevices[key]["Manufacturer"] in [ {}, ""]:
         self.log.logging("ReadAttributes", "Log", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
         if 0x0004 not in listAttributes:
             listAttributes.append(0x0004)
 
     # Do We have Model Name
-    if ( ListOfEp and  self.ListOfDevices[key]["Model"] in [ {}, ""] ):
+    if ( ListOfEp and self.ListOfDevices[key]["Model"] in [ {}, ""] ):
         self.log.logging("ReadAttributes", "Debug", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
         if 0x0005 not in listAttributes:
             listAttributes.append(0x0005)
@@ -472,6 +444,7 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
     self.log.logging("ReadAttributes", "Log", "EP: %s" % self.ListOfDevices[key]["Ep"])
 
+    ieee = self.ListOfDevices[ key ]['IEEE']
     if len(ListOfEp) == 0:
         # We don't have yet any Endpoint information , we will then try several known Endpoint, and luckly we will get some answers
         self.log.logging(
@@ -481,9 +454,12 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             nwkid=key,
         )
 
-        ieee = self.ListOfDevices[ key ]['IEEE']
         if ( ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+
+        elif ( ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX):
+            ReadAttributeReq(self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+            
         else:
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
             ReadAttributeReq(self, key, ZIGATE_EP, "0b", "0000", listAttributes, ackIsDisabled=False, checkTime=False)  # Schneider
@@ -500,6 +476,10 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
                 "Request Basic  via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes),
                 nwkid=key,
             )
+            if epout == "01" and ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX:
+                # prevent doing a read attribute on Ep 0x01 for Develco
+                continue
+                
             ReadAttributeReq(self, key, ZIGATE_EP, epout, "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
 
@@ -557,6 +537,18 @@ def ReadAttributeRequest_0000_for_general(self, key):
                     listAttrGeneric.append(_attr)
             del listAttributes
             listAttributes = listAttrGeneric
+        
+        elif "Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "100b":
+            manufacturer_code = "100b"
+            for _attr in list(listAttributes):
+                if _attr in (0x0033, ):
+                    listAttrSpecific.append(_attr)
+                else:
+                    listAttrGeneric.append(_attr)
+            del listAttributes
+            listAttributes = listAttrGeneric
+
+
         # Domoticz.Log("List Attributes: " + " ".join("0x{:04x}".format(num) for num in listAttributes) )
 
         if listAttributes:
@@ -568,16 +560,7 @@ def ReadAttributeRequest_0000_for_general(self, key):
                 + " ".join("0x{:04x}".format(num) for num in listAttributes),
                 nwkid=key,
             )
-            ReadAttributeReq(
-                self,
-                key,
-                ZIGATE_EP,
-                EPout,
-                "0000",
-                listAttributes,
-                ackIsDisabled=is_ack_tobe_disabled(self, key),
-                checkTime=False,
-            )
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key), checkTime=False, )
 
         # Domoticz.Log("List Attributes Manuf Spec: " + " ".join("0x{:04x}".format(num) for num in listAttrSpecific) )
         if listAttrSpecific:
@@ -589,18 +572,7 @@ def ReadAttributeRequest_0000_for_general(self, key):
                 + " ".join("0x{:04x}".format(num) for num in listAttrSpecific),
                 nwkid=key,
             )
-            ReadAttributeReq(
-                self,
-                key,
-                ZIGATE_EP,
-                EPout,
-                "0000",
-                listAttrSpecific,
-                manufacturer_spec="01",
-                manufacturer=manufacturer_code,
-                ackIsDisabled=is_ack_tobe_disabled(self, key),
-                checkTime=False,
-            )
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific, manufacturer_spec="01", manufacturer=manufacturer_code, ackIsDisabled=is_ack_tobe_disabled(self, key), checkTime=False, )
 
 
 def ReadAttributeRequest_0001(self, key, force_disable_ack=None):
@@ -906,9 +878,12 @@ def ReadAttributeRequest_0201(self, key):
         listAttrGeneric = []
         manufacturer_code = "0000"
 
-        if ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e") or (
-            ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "113c") or
-            "Manufacturer Name" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric"
+        if ( 
+            ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e") 
+            or (
+                ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "113c") 
+                or ( "Manufacturer Name" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric")
+            )
         ):
             # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
             if self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric":
@@ -1303,10 +1278,12 @@ def ReadAttributeRequest_0702(self, key):
         # Adjustement before request
         listAttrSpecific = []
         listAttrGeneric = []
-        if _manuf and self.ListOfDevices[key]["Manufacturer"] == "105e":
+        if _manuf and self.ListOfDevices[key]["Manufacturer"] in ("105e", "113c"):
             # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
             for _attr in list(listAttributes):
-                if _attr in (0xE200, 0xE201, 0xE202):
+                if self.ListOfDevices[key]["Manufacturer"] == "105e" and _attr in (0xE200, 0xE201, 0xE202):
+                    listAttrSpecific.append(_attr)
+                elif self.ListOfDevices[key]["Manufacturer"] == "113c" and _attr in [ 0x2000, 0x2001, 0x2002, 0x2100, 0x2101, 0x2102, 0x2103, 0x3000, 0x3001, 0x3002, 0x3100, 0x3101, 0x3102, 0x3103, 0x4000, 0x4001, 0x4002, 0x4100, 0x4101, 0x4102, 0x4103 ]:
                     listAttrSpecific.append(_attr)
                 else:
                     listAttrGeneric.append(_attr)
@@ -1360,6 +1337,40 @@ def ReadAttributeRequest_0702_0000(self, key):
         self.log.logging("ReadAttributes", "Debug", "Request Summation on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
         ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+def ReadAttributeReq_ZLinky(self, nwkid):
+ 
+    EPout = "01"
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
+
+    for cluster in ( "0702", "0b01", "0b04" ):
+        self.log.logging("ZLinky", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout + " Cluster = " + cluster, nwkid=nwkid)
+        listAttributes = retreive_ListOfAttributesByCluster(self, nwkid, EPout, cluster)
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, listAttributes, ackIsDisabled=False)
+
+def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
+    # - La couleur du jour est déterminée au fur et à mesure de l'année et est diffusée par Edf la veille vers 12h.
+    # - Une journée Tempo commence à 6h du matin jusqu'au lendemain même heure.
+    # - Les heures creuses sont de 22h à 6h du matin, sur tout le territoire.
+    # - Les Samedi et Jours fériés ne sont Jamais ''Rouge'' et les Dimanche toujours ''Bleu''.
+    # - Une saison tempo est de Septembre à Août. Le 1er Septembre, le compteur de jour restant est remis à 0.
+
+   # Purpose is to retreive the Color
+   WORK_TO_BE_DONE = { 
+        "ff66": [ 
+            0x0001, # Couleur du lendemain
+            0x0217, # STGE
+        ],
+        "0702": [
+            0x0020, # Periode Tarifaire en cours
+        ]
+   }
+
+   EPout = "01"
+   for cluster in WORK_TO_BE_DONE:
+        self.log.logging("ZLinky", "Log", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
+            nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
+   
 
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
     # The list of Attributes could be based on the Contract
@@ -1380,9 +1391,44 @@ def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
         else:
             listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
 
-    self.log.logging("ReadAttributes", "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
+    self.log.logging("ReadAttributes", "ZLinky", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
 
+def ReadAttribute_ZLinkyIndex( self, nwkid ):
+    # This can be used as a backup if the reporting do not work
+
+    INDEX_ATTRIBUTES = {
+        "BA": [ 0x0100 ],
+        "HC": [ 0x0100, 0x0102],
+        "EJ": [ 0x0100, 0x0102],
+        "BB": [ 0x0100, 0x0102, 0x014, 0x016, 0x0108, 0x010a]
+    }
+
+    EPout = "01"
+    self.log.logging("ZLinky", "Debug", "ReadAttribute_ZLinkyIndex: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
+    optarif = get_OPTARIF( self, nwkid)[:2]
+    self.log.logging("ZLinky", "Debug", "ReadAttribute_ZLinkyIndex: %s Cluster: %s Attributes: %s Optarif: %s" %(
+        nwkid, "0702", INDEX_ATTRIBUTES[ optarif ], optarif), nwkid=nwkid)
+    if optarif in INDEX_ATTRIBUTES:
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "0702", INDEX_ATTRIBUTES[ optarif ], ackIsDisabled=False)
+        
+    
+def ReadAttributeRequest_0702_PC321(self, key):
+    
+    # Cluster 0x0702 Metering / Specific 0x0000
+    ListOfEp = getListOfEpForCluster(self, key, "0702")
+    EPout = "01"
+    listAttributes = [ 
+        0x2000, 0x2001, 0x2002,
+        0x2100, 0x2101, 0x2102, 0x2103,
+        0x3000, 0x3001, 0x3002,
+        0x3100, 0x3101, 0x3102, 0x3103,
+        0x4000, 0x4001, 0x4002,
+        0x4100, 0x4101, 0x4102, 0x4103
+    ]
+    self.log.logging("ReadAttributes", "Debug", "Request PC321 Attributes on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, manufacturer_spec="01",manufacturer="113c", ackIsDisabled=is_ack_tobe_disabled(self, key))
+    
 
 def ReadAttributeRequest_0b01(self, key):
     # Cluster 0x0b04 Metering
@@ -1470,9 +1516,7 @@ def ReadAttributeRequest_0b04_050b_0505_0508(self, key):
             "Request Metering Instant Power on 0x0b04 cluster: " + key + " EPout = " + EPout,
             nwkid=key,
         )
-        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
-        # istAttributes = [  0x0508 ]
-        # eadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled = is_ack_tobe_disabled(self, key))
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0b04", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0b05(self, key):
@@ -1626,7 +1670,10 @@ def ReadAttributeRequest_ff66(self, key):
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_ff66 - Key: %s " % key, nwkid=key)
     EPout = "01"
-    listAttributes = [0x0000, 0x0002, 0x0003]
+    listAttributes = retreive_ListOfAttributesByCluster(self, key, EPout, "ff66")
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_ff66 - Key: %s request %s" % (
+        key, listAttributes), nwkid=key)
+
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
@@ -1656,7 +1703,7 @@ READ_ATTRIBUTES_REQUEST = {
     "0500": (ReadAttributeRequest_0500, "polling0500"),
     "0502": (ReadAttributeRequest_0502, "polling0502"),
     "0702": (ReadAttributeRequest_0702, "polling0702"),
-    "0b01": (ReadAttributeRequest_0b01, "polling0b04"),
+    "0b01": (ReadAttributeRequest_0b01, "polling0b01"),
     "0b04": (ReadAttributeRequest_0b04, "polling0b04"),
     "0b05": (ReadAttributeRequest_0b05, "polling0b05"),
     "e000": (ReadAttributeRequest_e000, "polling0b05"),
@@ -1664,5 +1711,5 @@ READ_ATTRIBUTES_REQUEST = {
     "fc01": (ReadAttributeRequest_fc01, "pollingfc01"),
     "fc21": (ReadAttributeRequest_fc21, "pollingfc21"),
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),
-    "ff66": (ReadAttributeRequest_ff66, "polling0b04"),
+    "ff66": (ReadAttributeRequest_ff66, "pollingff66"),
 }

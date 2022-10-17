@@ -19,7 +19,7 @@ ret="$?"
 if [ "$ret" != "0" ] ; then
     echo "Problem while running command 'git pull --recurse-submodules'."
     echo "Git Status: $(git status)"
-    exit -#
+    exit -1
 fi
 
 echo "(2) update python3 modules if needed"
