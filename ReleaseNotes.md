@@ -18,8 +18,9 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
-## Sept. 2022 - stable6 - 6.3.001 [Upgrade to 6.3](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/beta6/VERSION-6.3.md )
+## Oct. 2022 - stable6 - 6.3.001 [Upgrade to 6.3](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/beta6/VERSION-6.3.md )
 
+- [Hardware] - Tuya Smart Temp+Humi Sensor
 - [Tecnical] - OTA for zigpy devices
 - [Technical] - New REST API /raw-zigbee allowing to send zigbee raw commands
 - [Technical] - Enhacement of the WebUI
