@@ -48,7 +48,7 @@ SWITCH_LVL_MATRIX = {
     "Switch": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
     "ThermoOnOff": {0: (0, "Off"), 1: (1, "On"), "ForceUpdate": False},
     "SwitchButton": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": True},
-    "Motion": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": True},
+    #"Motion": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": True},
     "LivoloSWL": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
     "LivoloSWR": {"10": (0, "Off"), "11": (1, "On"), "ForceUpdate": False},
     "INNR_RC110_SCENE": {
@@ -168,6 +168,14 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "Off|On|Dim +|Dim -|Stop|Toggle",
         "Language": {
             "fr-FR": {"LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt|Toggle"}},
+    },
+    "LegrandSleepWakeupSelector": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "ForceUpdate": True,
+        "LevelNames": "Sleep|WakeUp",
+        "Language": {
+            "fr-FR": {"LevelNames": "Coucher|Lever"}},
     },
     "SwitchAQ2": {
         "1": (0, "00"),

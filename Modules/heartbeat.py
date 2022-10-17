@@ -11,6 +11,7 @@
 """
 
 import time
+import datetime
 
 import Domoticz
 from Zigbee.zdpCommands import (zdp_IEEE_address_request,
@@ -27,6 +28,7 @@ from Modules.paramDevice import sanity_check_of_param
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
+                                    ReadAttributeRequest_0702_0000,
                                     ReadAttributeRequest_0001,
                                     ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0008_0000,
@@ -38,6 +40,8 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0702_PC321,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
                                     ReadAttributeReq_ZLinky,
+                                    ReadAttribute_ZLinkyIndex,
+                                    ReadAttributeReq_Scheduled_ZLinky,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
                                     ping_tuya_device)
@@ -55,13 +59,18 @@ from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 # Network Energy start: 30' after plugin start
 # Legrand re-enforcement: Every 5'
 
-READATTRIBUTE_FEQ = 10 // HEARTBEAT  # 10seconds ...
-QUIET_AFTER_START = 60 // HEARTBEAT  # Quiet periode after a plugin start
-CONFIGURERPRT_FEQ = 30 // HEARTBEAT
-LEGRAND_FEATURES = 300 // HEARTBEAT
-SCHNEIDER_FEATURES = 300 // HEARTBEAT
-NETWORK_TOPO_START = 900 // HEARTBEAT
-NETWORK_ENRG_START = 1800 // HEARTBEAT
+
+QUIET_AFTER_START = (60 // HEARTBEAT)  # Quiet periode after a plugin start
+NETWORK_TOPO_START = (900 // HEARTBEAT)
+NETWORK_ENRG_START = (1800 // HEARTBEAT)
+READATTRIBUTE_FEQ = (10 // HEARTBEAT)  # 10seconds ...
+CONFIGURERPRT_FEQ = (( 30 // HEARTBEAT) + 1)
+LEGRAND_FEATURES = (( 300 // HEARTBEAT ) + 3)
+SCHNEIDER_FEATURES = (( 300 // HEARTBEAT) + 5)
+BINDING_TABLE_REFRESH = (( 3600 // HEARTBEAT ) + 11)
+NODE_DESCRIPTOR_REFRESH = (( 3600 // HEARTBEAT) + 13)
+ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 7)
+CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 
 
 def attributeDiscovery(self, NwkId):
@@ -129,7 +138,25 @@ def ManufSpecOnOffPolling(self, NwkId):
     ReadAttributeRequest_0006_0000(self, NwkId)
     ReadAttributeRequest_0008_0000(self, NwkId)
 
-
+def check_delay_readattributes( self, NwkId ):
+    
+    if 'DelayReadAttributes' not in self.ListOfDevices[ NwkId ]:
+        return
+    
+    if time.time() < self.ListOfDevices[ NwkId ]['DelayReadAttributes']['TargetTime']:
+        return
+    
+    for cluster in list(self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters']):
+        if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+            return
+        func = READ_ATTRIBUTES_REQUEST[cluster][0]
+        func(self, NwkId)
+        self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters'].remove( cluster )
+        
+    if len(self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters']) == 0:
+        del self.ListOfDevices[ NwkId ]['DelayReadAttributes']
+            
+        
 def check_delay_binding( self, NwkId, model ):
     # Profalux is the first one, but could get others
     # At pairing we need to leave time for the remote to get binded to the VR
@@ -181,6 +208,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "PollingCusterff66": ReadAttributeRequest_ff66,
         "OnOffPollingFreq": ManufSpecOnOffPolling,
         "PowerPollingFreq": ReadAttributeRequest_0b04_050b_0505_0508,
+        "MeterPollingFreq": ReadAttributeRequest_0702_0000,
         "PC321PollingFreq": ReadAttributeRequest_0702_PC321,
         "AC201Polling": pollingCasaia,
         "TuyaPing": ping_tuya_device,
@@ -189,6 +217,8 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "TempPollingFreq": ReadAttributeRequest_0402,
         "HumiPollingFreq": ReadAttributeRequest_0405,
         "BattPollingFreq": ReadAttributeRequest_0001,
+        "ZLinkyIndexes": ReadAttributeReq_Scheduled_ZLinky,      # Based on a specific time
+        "ZLinkyPollingPTEC": ReadAttributeReq_Scheduled_ZLinky   # Every 15' by default
     }
 
     if "Param" not in self.ListOfDevices[NwkId]:
@@ -205,7 +235,26 @@ def pollingManufSpecificDevices(self, NwkId, HB):
     )
 
     for param in self.ListOfDevices[NwkId]["Param"]:
-        if param in FUNC_MANUF:
+        if param == "ZLinkyPollingPTEC":
+            # We are requesting to execute at a particular time
+            _current_time = datetime.datetime.now().strftime("%H:%M" )
+            _target_time = self.ListOfDevices[NwkId]["Param"][ param ]
+            self.log.logging(
+                "Heartbeat",
+                "Debug",
+                "++ pollingManufSpecificDevices -  %s ScheduledZLinkyRead: Current: %s Target: %s"
+                % (NwkId,_current_time, _target_time  ),
+                NwkId,
+            )
+
+            if _current_time == _target_time and "ScheduledZLinkyRead" not in self.ListOfDevices[ NwkId ]:
+                self.ListOfDevices[ NwkId ][ "ScheduledZLinkyRead" ] = True
+                ReadAttributeReq_Scheduled_ZLinky( self, NwkId)
+
+            elif _current_time != _target_time and "ScheduledZLinkyRead" in self.ListOfDevices[ NwkId ]:
+                del self.ListOfDevices[ NwkId ][ "ScheduledZLinkyRead" ]
+
+        elif param in FUNC_MANUF:
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
             if _FEQ == 0:  # Disable
                 continue
@@ -300,8 +349,7 @@ def checkHealth(self, NwkId):
     # If device flag as Not Reachable, don't do anything
     return (
         "Health" not in self.ListOfDevices[NwkId]
-        or self.ListOfDevices[NwkId]["Health"] != "Not Reachable"
-    )
+        or self.ListOfDevices[NwkId]["Health"] != "Not Reachable")
 
 
 def pingRetryDueToBadHealth(self, NwkId):
@@ -529,6 +577,10 @@ def processKnownDevices(self, Devices, NWKID):
         sanity_check_of_param(self, NWKID)
         self.ListOfDevices[NWKID]["CheckParam"] = False
 
+    if ( intHB % CHECKING_DELAY_READATTRIBUTE) == 0:
+        check_delay_readattributes( self, NWKID )
+
+
     # Starting this point, it is ony relevant for Main Powered Devices.
     # Some battery based end device with ZigBee 30 use polling and can receive commands.
     # We should authporized them for Polling After Action, in order to get confirmation.
@@ -552,7 +604,7 @@ def processKnownDevices(self, Devices, NWKID):
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = rescheduleAction or pollingManufSpecificDevices(self, NWKID, intHB)
 
-    _doReadAttribute = bool((self.pluginconf.pluginConf["enableReadAttributes"] or self.pluginconf.pluginConf["resetReadAttributes"]) and (intHB % READATTRIBUTE_FEQ) == 0)
+    _doReadAttribute = bool((self.pluginconf.pluginConf["enableReadAttributes"] or self.pluginconf.pluginConf["resetReadAttributes"]) and intHB != 0 and (intHB % READATTRIBUTE_FEQ) == 0)
 
     if ( 
         self.ControllerLink.loadTransmit() > 5
@@ -638,13 +690,14 @@ def processKnownDevices(self, Devices, NWKID):
     if self.pluginconf.pluginConf["checkConfigurationReporting"]:
         rescheduleAction = rescheduleAction or check_configuration_reporting(self, NWKID, _mainPowered, intHB)
 
-    # Do Attribute Disocvery if needed
-    if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and ((intHB % 1800) == 0):
+    if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and intHB != 0 and ((intHB % ATTRIBUTE_DISCOVERY_REFRESH) == 0):
         rescheduleAction = rescheduleAction or attributeDiscovery(self, NWKID)
+        
+    if night_shift_jobs( self ) and _mainPowered and not enabledEndDevicePolling and intHB != 0 and ((intHB % BINDING_TABLE_REFRESH) == 0):
         mgtm_binding(self, NWKID, "BindingTable")
 
     # If corresponding Attributes not present, let's do a Request Node Description
-    if night_shift_jobs( self ) and not enabledEndDevicePolling and ((intHB % 1800) == 0):
+    if night_shift_jobs( self ) and not enabledEndDevicePolling and intHB != 0 and ((intHB % NODE_DESCRIPTOR_REFRESH) == 0):
         req_node_descriptor = False
         if (
             "Manufacturer" not in self.ListOfDevices[NWKID]
@@ -690,7 +743,7 @@ def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
         # Device is not a good state
         return False
 
-    if (intHB % (60 // HEARTBEAT)) != 0:
+    if intHB != 0 and (intHB % (60 // HEARTBEAT)) != 0:
         # check only every minute
         return
 

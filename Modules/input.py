@@ -1148,9 +1148,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
         MsgData, MsgLen, self.FirmwareBranch, self.FirmwareMajorVersion, self.FirmwareVersion))
     
     if self.FirmwareBranch in FIRMWARE_BRANCH:
-        if int(self.FirmwareBranch) == 99:
+        if int(self.FirmwareBranch) in ( 98, 99):
             self.log.logging("Input", "Error", "Untested Zigbee adapater model, please report to the Zigbee for Domoticz team")
-            self.pluginParameters["CoordinatorModel"] = "Unknown model"
+            self.pluginParameters["CoordinatorModel"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
            
         elif int(self.FirmwareBranch) == 11:
             #Zigpy-Zigate
@@ -3023,6 +3023,16 @@ def Decode8102(self, Devices, MsgData, MsgLQI):  # Attribute Reports
 
 def scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, msgtype):
 
+    self.log.logging(
+        "Input",
+        "Debug",
+        "scan_attribute_reponse - Sqn: %s i_sqn: %s Nwkid: %s Ep: %s Cluster: %s MsgData: %s Type: %s"
+        % (
+            MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, msgtype
+        ),
+        MsgSrcAddr,
+    )
+
     idx = 12
     while idx < len(MsgData):
         MsgAttrID = MsgAttStatus = MsgAttType = MsgAttSize = MsgClusterData = ""
@@ -3036,8 +3046,9 @@ def scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, M
             MsgAttSize = MsgData[idx : idx + 4]
             idx += 4
             size = int(MsgAttSize, 16) * 2
-            MsgClusterData = MsgData[idx : idx + size]
-            idx += size
+            if size > 0:
+                MsgClusterData = MsgData[idx : idx + size]
+                idx += size
         else:
             self.log.logging(
                 "Input",
@@ -3389,7 +3400,7 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
             MsgAttributeId = MsgData[idx : idx + 4]
             idx += 4
             MsgStatus = MsgData[idx : idx + 2]
-            idx += 4
+            idx += 2
             Decode8120_attribute(
                 self,
                 MsgSQN,
@@ -3411,9 +3422,7 @@ def Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         MsgSrcAddr,
     )
 
-    self.configureReporting.read_configure_reporting_response(
-        MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus
-    )
+    self.configureReporting.read_configure_reporting_response( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus )
 
 
 def Decode8122(self, Devices, MsgData, MsgLQI):  # Read Configure Report response
@@ -3715,7 +3724,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     if self.ListOfDevices[MsgSrcAddr]["Model"] in (
         "3AFE14010402000D", "3AFE28010402000D",
         "MOSZB-140",
-        "TS0202","TS0202-_TZ3210_jijr1sss",
+        "TY0202", "TS0202","TS0202-_TZ3210_jijr1sss",
     ):  # Konke Motion Sensor, Devlco/Frient Motion
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
         
@@ -3939,19 +3948,13 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         # 5 Butons remote
         ikea_remote_control_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
 
-    elif _ModelName in ("ROM001",):
+    elif _ModelName in ("ROM001", ):
         # ZigateRead - MsgType: 8095, MsgLength: 000b, MsgCRC: 19, Data: 00010006029b6e400000, LQI: 183
         # Apr 19 14:19:59 rasp domoticz[31994]: 2021-04-19 14:19:59.194  DIN3-Zigate: (DIN3-Zigate) Decode8095 - SQN: 00, Addr: 9b6e, Ep: 01, Cluster: 0006, Cmd: 40, Unknown: 02
         self.log.logging("Input", "Debug", "Decode8085 - Philips Hue ROM001  MsgCmd: %s" % MsgCmd, MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0008", "move")
 
-    elif _ModelName in (
-        "TRADFRI onoff switch",
-        "TRADFRI on/off switch",
-        "TRADFRI SHORTCUT Button",
-        "TRADFRI openclose remote",
-        "TRADFRI open/close remote",
-    ):
+    elif _ModelName in ( "TRADFRI onoff switch", "TRADFRI on/off switch", "TRADFRI SHORTCUT Button", "TRADFRI openclose remote", "TRADFRI open/close remote", ):
         # Ikea Switch On/Off
         ikea_remote_switch_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
 
@@ -4076,11 +4079,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
-    elif _ModelName in (
-        "lumi.remote.b686opcn01-bulb",
-        "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b286opcn01-bulb",
-    ):
+    elif _ModelName in ( "lumi.remote.b686opcn01-bulb", "lumi.remote.b486opcn01-bulb", "lumi.remote.b286opcn01-bulb", ):
         AqaraOppleDecoding(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData)
 
     elif _ModelName == "tint-Remote-white":
@@ -4106,6 +4105,20 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
         if MsgCmd == "03":  # Stop
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, "08")
+
+    elif _ModelName == "TS1001":
+
+        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
+        self.log.logging(
+            "Input",
+            "Log",
+            "Decode8085 - Lidl Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mod: %s step_size: %s up_down: %s"
+            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, step_size, up_down),
+        )
+
+    elif _ModelName in ( "RWL021", ):
+        self.log.logging( "Input", "Log", "Decode8085 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
+            _ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
 
     elif "Manufacturer" in self.ListOfDevices[MsgSrcAddr]:
         if self.ListOfDevices[MsgSrcAddr]["Manufacturer"] == "1110":  # Profalux
@@ -4142,16 +4155,6 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             if selector:
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector)
 
-    elif _ModelName == "TS1001":
-
-        step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8085 - Lidl Remote SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s step_mod: %s step_size: %s up_down: %s"
-            % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, step_size, up_down),
-        )
-
     else:
         self.log.logging(
             "Input",
@@ -4175,13 +4178,6 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     updLQI(self, MsgSrcAddr, MsgLQI)
     self.log.logging( "Input", 'Debug', "Decode8095 - MsgData: %s" % MsgData, MsgSrcAddr)
 
-    self.log.logging(
-        "Input",
-        "Debug",
-        "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Payload: %s Unknown: %s "
-        % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload, unknown_),
-        MsgSrcAddr,
-    )
 
     if MsgSrcAddr not in self.ListOfDevices:
         zigpy_plugin_sanity_check(self, MsgSrcAddr)
@@ -4203,6 +4199,8 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         return
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
+    self.log.logging( "Input", "Debug", "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Payload: %s Unknown: %s Model: %s" % (
+        MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload, unknown_, _ModelName), MsgSrcAddr, )
 
     if _ModelName in ("TRADFRI remote control", "Remote Control N2"):
         # Ikea Remote 5 buttons round.
@@ -4362,7 +4360,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             ),
         )
 
-    elif _ModelName == ( "lumi.remote.b28ac1",):
+    elif _ModelName in ( "lumi.remote.b28ac1",):
         self.log.logging(
             "Input",
             "Log",
@@ -4377,17 +4375,19 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             ),
         )
 
-
+    elif _ModelName in ( "RWL021", ):
+        self.log.logging( "Input", "Log", "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
+            _ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
+        if MsgCmd == "40":
+            MajDomoDevice(self, Devices, MsgSrcAddr, "02", "0006", "00")
+        elif MsgCmd == "01":
+            MajDomoDevice(self, Devices, MsgSrcAddr, "02", "0006", "01")
+        
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", str(int(MsgCmd, 16)))
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s "
-            % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Input", "Log", "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
+            _ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
 
 
 def Decode80A5(self, Devices, MsgData, MsgLQI):
@@ -4409,9 +4409,9 @@ def Decode80A5(self, Devices, MsgData, MsgLQI):
 
     if _ModelName == 'Remote switch Wake up Sleep':
         if GroupID == 'fff4':
-            MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "00")
+            MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0008", "00")
         elif GroupID == 'fff5':
-            MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "01")    
+            MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0008", "01")    
 
 
 

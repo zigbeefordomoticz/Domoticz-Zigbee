@@ -12,6 +12,7 @@
 
 import datetime
 import time
+import os.path
 
 import Domoticz
 
@@ -1017,6 +1018,15 @@ def checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAtt
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
 
+def checkValidValue(self, MsgSrcAddr, AttType, Data ):
+
+    if int(AttType, 16) == 0xe2:  # UTCTime
+        if Data == "ffffffff":
+            return False
+    if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.airmonitor.acn01":
+        if Data == "8000" or Data == "0000":
+            return False
+    return True
 
 def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 
@@ -1437,24 +1447,19 @@ def repair_dict_after_load(b64_dict, Attribute):
 def is_domoticz_db_available(self):
     #  Domoticz 2021.1 build 13495
 
-    Domoticz.Log(
-        "is_domoticz_db_available: Fashion: %s , Major: %s, Minor: %s"
-        % (self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor)
-    )
-
     if not self.VersionNewFashion:
-        Domoticz.Log("is_domoticz_db_available: %s due to Fashion" % False)
+        #Domoticz.Log("is_domoticz_db_available: %s due to Fashion" % False)
         return False
 
     if self.DomoticzMajor < 2021:
-        Domoticz.Log("is_domoticz_db_available: %s due to Major" % False)
+        #Domoticz.Log("is_domoticz_db_available: %s due to Major" % False)
         return False
 
     if self.DomoticzMajor == 2021 and self.DomoticzMinor < 1:
-        Domoticz.Log("is_domoticz_db_available: %s due to Minor" % False)
+        # Domoticz.Log("is_domoticz_db_available: %s due to Minor" % False)
         return False
 
-    Domoticz.Log("is_domoticz_db_available: %s" % True)
+    #Domoticz.Log("is_domoticz_db_available: %s" % True)
     return True
 
 def get_device_nickname( self, NwkId=None, Ieee=None):
@@ -1553,6 +1558,47 @@ def night_shift_jobs( self ):
 
 def print_stack( self ):
     
-    import inspect
+    try:
+        import inspect
+    except Exception as e:
+        self.log.logging( "Zigpy", "Error", "Cannot import python module inspect")
+        return
+    
     for x in inspect.stack():
-        self.logging("Debug","[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
+        self.log.logging( "Zigpy", "Error", "[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
+
+
+
+def helper_copyfile(source, dest, move=True):
+
+    try:
+        import shutil
+
+        if move:
+            shutil.move(source, dest)
+        else:
+            shutil.copy(source, dest)
+    except Exception:
+        with open(source, "r") as src, open(dest, "wt") as dst:
+            for line in src:
+                dst.write(line)
+
+
+def helper_versionFile(source, nbversion):
+
+    if nbversion == 0:
+        return
+
+    if nbversion == 1:
+        helper_copyfile(source, source + "-%02d" % 1)
+    else:
+        for version in range(nbversion - 1, 0, -1):
+            _fileversion_n = source + "-%02d" % version
+            if not os.path.isfile(_fileversion_n):
+                continue
+
+            _fileversion_n1 = source + "-%02d" % (version + 1)
+            helper_copyfile(_fileversion_n, _fileversion_n1)
+
+        # Last one
+        helper_copyfile(source, source + "-%02d" % 1, move=False)

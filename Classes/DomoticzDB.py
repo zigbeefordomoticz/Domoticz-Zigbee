@@ -42,8 +42,9 @@ def extract_username_password( self, url_base_api ):
     items = url_base_api.split('@')
     if len(items) != 2:
         return None, None, None
-    self.logging("Log", f'Extract username/password {url_base_api} ==> {items} ')
+    self.logging("Debug", f'Extract username/password {url_base_api} ==> {items} ')
     host_port = items[1]
+    items[0] = items[0][:4].lower() + items[0][4:]
     item1 = items[0].replace('http://','')
     usernamepassword = item1.split(':')
     if len(usernamepassword) != 2:
@@ -51,9 +52,6 @@ def extract_username_password( self, url_base_api ):
         return None, None, None
         
     username, password = usernamepassword
-    #if isBase64( username ) and isBase64( password):
-    #    return (base64.b64decode(username)).decode('ISO-8859-1'), (base64.b64decode(password)).decode('ISO-8859-1'), host_port
-        
     return username, password, host_port
 
 def open_and_read( self, url ):
@@ -104,11 +102,21 @@ def domoticz_request( self, url):
     return response.read()
   
 def domoticz_base_url(self):
+    
+    if self.url_ready:
+        self.logging( "Debug", "domoticz_base_url - API URL ready %s Basic Authentication: %s" %(self.url_ready, self.authentication_str))
+        return self.url_ready
+    
     username, password, host_port = extract_username_password( self, self.api_base_url )
     self.logging("Debug",'Username: %s' %username)
     self.logging("Debug",'Password: %s' %password)
     self.logging("Debug",'Host+port: %s' %host_port)
 
+    if len(self.api_base_url) == 0:
+        # Seems that the field is empty
+        self.logging( "Error", "You need to setup the URL Base to access the Domoticz JSON/API")
+        return None
+        
     # Check that last char is not a / , if the case then remove it 
     if self.api_base_url[-1] == '/':
         self.api_base_url = self.api_base_url[:-1]
@@ -118,6 +126,7 @@ def domoticz_base_url(self):
     else:
         url = self.api_base_url + '/json.htm?'
     self.logging("Debug", "url: %s" %url)
+    self.url_ready = url
     return url      
 
 class DomoticzDB_Preferences:
@@ -129,12 +138,15 @@ class DomoticzDB_Preferences:
         self.pluginconf = pluginconf
         self.log = log
         self.authentication_str = None
+        self.url_ready = None
         self.load_preferences()
 
 
     def load_preferences(self):
         # sourcery skip: replace-interpolation-with-fstring
         url = domoticz_base_url(self)
+        if url is None:
+            return
         url += DOMOTICZ_HARDWARE_API
 
         dz_response = domoticz_request( self, url)
@@ -166,6 +178,7 @@ class DomoticzDB_Hardware:
     def __init__(self, api_base_url, pluginconf, hardwareID, log, pluginParameters):
         self.api_base_url = api_base_url
         self.authentication_str = None
+        self.url_ready = None
         self.hardware = {}
         self.HardwareID = hardwareID
         self.pluginconf = pluginconf
@@ -176,6 +189,8 @@ class DomoticzDB_Hardware:
     def load_hardware(self):  
         # sourcery skip: replace-interpolation-with-fstring
         url = domoticz_base_url(self)
+        if url is None:
+            return
         url += DOMOTICZ_HARDWARE_API
 
         dz_result = domoticz_request( self, url)
@@ -217,6 +232,7 @@ class DomoticzDB_DeviceStatus:
         self.pluginconf = pluginconf
         self.log = log
         self.authentication_str = None
+        self.url_ready = None
 
     def logging(self, logType, message):
         # sourcery skip: replace-interpolation-with-fstring
@@ -226,6 +242,8 @@ class DomoticzDB_DeviceStatus:
         # "http://%s:%s@127.0.0.1:%s" 
         # sourcery skip: replace-interpolation-with-fstring
         url = domoticz_base_url(self)
+        if url is None:
+            return
         url += DOMOTICZ_DEVICEST_API + "%s" %ID
 
         dz_result = domoticz_request( self, url)

@@ -77,13 +77,14 @@ DEVICE_SWITCH_MATRIX = {
     (244, 73, 13): ("BSO",),
     (244, 73, 15): ("VenetianInverted", "Venetian"),
     (244, 73, 16): ("BlindInverted", "WindowCovering"),
-    (244, 73, 22): ("Vanne",),
-    (244, 73, 21): ("VanneInverted",)
+    (244, 73, 22): ("Vanne", "Curtain"),
+    (244, 73, 21): ("VanneInverted", "CurtainInverted")
 }
 
 ACTIONATORS = [
     "Switch",
     "Plug",
+    "Motion",
     "SwitchAQ2",
     "Smoke",
     "DSwitch",
@@ -94,6 +95,8 @@ ACTIONATORS = [
     "VenetianInverted",
     "VanneInverted",
     "Vanne",
+    "Curtain",
+    "CurtainInverted",
     "WindowCovering",
     "BSO",
     "BSO-Orientation",
@@ -250,13 +253,18 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             tuya_garage_door_action( self, NWKID, "02")
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
-        elif DeviceType in ("WindowCovering", "VenetianInverted", "Venetian", "Vanne", "VanneInverted"): 
+        elif DeviceType in ("WindowCovering", "VenetianInverted", "Venetian", "Vanne", "VanneInverted", "Curtain", "CurtainInverted"): 
             if _model_name in ("PR412", "CPR412", "CPR412-E"):
                 profalux_stop(self, NWKID)
             else:
                 # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
                 actuator_stop( self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "02")
+                
+            if DeviceType in ( "CurtainInverted", "Curtain"):
+                # Refresh will be done via the Report Attribute
+                return
+
             UpdateDevice_v2(self, Devices, Unit, 17, "0", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         else:
             actuator_stop( self, NWKID, EPout, "Light")
@@ -267,7 +275,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
     if Command == "Off":  # Manage the Off command.
         # Let's force a refresh of Attribute in the next Heartbeat
-        request_read_device_status(self, NWKID)
+        if DeviceType not in ( "CurtainInverted", "Curtain"):
+            # Refresh will be done via the Report Attribute
+            request_read_device_status(self, NWKID)
 
         self.log.logging(
             "Command",
@@ -443,20 +453,30 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             actuator_off(self, NWKID, EPout, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Blind inverted (On, for Close)
 
-        elif DeviceType in ("VenetianInverted", "VanneInverted"):
+        elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_on(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
             else:
                 actuator_on(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd( self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Venetian Inverted/Blind (On, for Close)
+                
+            if DeviceType in ( "CurtainInverted", "Curtain"):
+                # Refresh will be done via the Report Attribute
+                return
 
-        elif DeviceType in ( "Venetian", "Vanne"):
+
+        elif DeviceType in ( "Venetian", "Vanne", "Curtain"):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412", "CPR412-E"):
                 actuator_off(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
-            elif DeviceType == "Vanne" or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
+            elif DeviceType in ("Vanne", "Curtain",) or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
                 actuator_off(self, NWKID, EPout, "WindowCovering")
+                
+            if DeviceType in ( "CurtainInverted", "Curtain"):
+                # Refresh will be done via the Report Attribute
+                return
+
             else:
                 actuator_on(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "00")  # Venetian /Blind (Off, for Close)
@@ -612,21 +632,32 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             actuator_on(self, NWKID, EPout, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "00")  # Blind inverted (Off, for Open)
 
-        elif DeviceType in ("VenetianInverted", "VanneInverted"):
+        elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_off(self, NWKID, EPout, "Light")
             else:
                 actuator_off(self, NWKID, EPout, "WindowCovering")
+                
+            if DeviceType in ( "CurtainInverted", "Curtain"):
+                # Refresh will be done via the Report Attribute
+                return
 
-        elif DeviceType in ("Venetian", "Vanne"):
+
+        elif DeviceType in ("Venetian", "Vanne", "Curtain"):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_on(self, NWKID, EPout, "Light")
-                #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")        
-            elif DeviceType == "Vanne" or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
+                #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")    
+                    
+            elif DeviceType in ( "Vanne", "Curtain",) or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
                 actuator_on(self, NWKID, EPout, "WindowCovering")
+
             else:
                 actuator_off(self, NWKID, EPout, "WindowCovering")
                 #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "01")  # Venetian/Blind (On, for Open)
+                
+            if DeviceType in ( "CurtainInverted", "Curtain"):
+                # Refresh will be done via the Report Attribute
+                return
 
         elif DeviceType == "HeatingSwitch":
             thermostat_Mode(self, NWKID, "Heat")
@@ -1140,7 +1171,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             actuator_setlevel(self, NWKID, EPout, Level, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
 
-        elif DeviceType in ("Venetian","Vanne"):
+        elif DeviceType in ("Venetian", "Vanne", "Curtain",):
             if Level == 0:
                 Level = 1
             elif Level >= 100:
@@ -1153,9 +1184,14 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 NWKID,
             )
             actuator_setlevel(self, NWKID, EPout, Level, "WindowCovering")
+            
+            if DeviceType in ( "CurtainInverted", "Curtain"):
+                # Refresh will be done via the Report Attribute
+                return
+
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
 
-        elif DeviceType in ("VenetianInverted", "VanneInverted"):
+        elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
             Level = 100 - Level
             if Level == 0:
                 Level = 1
@@ -1171,6 +1207,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             )
             actuator_setlevel(self, NWKID, EPout, Level, "WindowCovering")
             #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
+            
+            if DeviceType in ( "CurtainInverted", "Curtain"):
+                # Refresh will be done via the Report Attribute
+                return
 
         elif DeviceType == "AlarmWD":
             self.log.logging("Command", "Debug", "Alarm WarningDevice - value: %s" % Level)

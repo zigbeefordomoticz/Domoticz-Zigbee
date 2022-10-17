@@ -14,6 +14,7 @@
 import time
 
 from Modules.bindings import bindDevice, unbindDevice
+from Modules.paramDevice import get_device_config_param
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
@@ -34,9 +35,19 @@ from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
                                              sqn_get_internal_sqn_from_app_sqn)
 
-MAX_ATTR_PER_REQ = 3
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
-MAX_READ_ATTR_PER_REQ = 4
+
+
+def get_max_cfg_rpt_attribute_value( self, nwkid=None):
+    
+    # This is about Read Configuration Reporting from a device
+    if nwkid:  
+        read_configuration_report_chunk = get_device_config_param( self, nwkid, "ConfigurationReportChunk")
+    
+    if read_configuration_report_chunk:
+        return get_device_config_param( self, nwkid, "ConfigurationReportChunk")
+    return self.pluginconf.pluginConf["ConfigureReportingChunk"]
+
 
 class ConfigureReporting:
     def __init__(
@@ -98,25 +109,21 @@ class ConfigureReporting:
             del self.ListOfDevices[nwkid][STORE_CONFIGURE_REPORTING]
         configure_reporting_for_one_device(self, nwkid, False)
 
-    def prepare_and_send_configure_reporting(
-        self, key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure
-    ):
+    def prepare_and_send_configure_reporting( self, key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure ):
 
         # Create the list of Attribute reporting configuration for a specific cluster
         # Finally send the command
         self.logging("Debug", f"------ prepare_and_send_configure_reporting - key: {key} ep: {Ep} cluster: {cluster} Cfg: {cluster_configuration}", nwkid=key)
 
-        maxAttributesPerRequest = MAX_ATTR_PER_REQ
-        if self.pluginconf.pluginConf["breakConfigureReporting"]:
-            maxAttributesPerRequest = 1
+        maxAttributesPerRequest = get_max_cfg_rpt_attribute_value( self, nwkid=key)
 
         attribute_reporting_configuration = []
         for attr in ListOfAttributesToConfigure:
             attrType = cluster_configuration[attr]["DataType"]
-            minInter = cluster_configuration[attr]["MinInterval"]
-            maxInter = cluster_configuration[attr]["MaxInterval"]
-            timeOut = cluster_configuration[attr]["TimeOut"]
-            chgFlag = cluster_configuration[attr]["Change"]
+            #minInter = cluster_configuration[attr]["MinInterval"]
+            #maxInter = cluster_configuration[attr]["MaxInterval"]
+            #timeOut = cluster_configuration[attr]["TimeOut"]
+            #chgFlag = cluster_configuration[attr]["Change"]
 
             if analog_value(int(attrType, 16)):
                 # Analog values: For attributes with 'analog' data type (see 2.6.2), 
@@ -125,10 +132,10 @@ class ConfigureReporting:
                 attribute_reporting_record = {
                     "Attribute": attr,
                     "DataType": attrType,
-                    "minInter": minInter,
-                    "maxInter": maxInter,
-                    "rptChg": chgFlag,
-                    "timeOut": timeOut,
+                    "minInter": cluster_configuration[attr]["MinInterval"],
+                    "maxInter": cluster_configuration[attr]["MaxInterval"],
+                    "rptChg": cluster_configuration[attr]["Change"],
+                    "timeOut": cluster_configuration[attr]["TimeOut"],
                 }
             elif discrete_value(int(attrType, 16)):
                 # Discrete value: For attributes of 'discrete' data type (see 2.6.2),
@@ -136,18 +143,18 @@ class ConfigureReporting:
                 attribute_reporting_record = {
                     "Attribute": attr,
                     "DataType": attrType,
-                    "minInter": minInter,
-                    "maxInter": maxInter,
-                    "timeOut": timeOut,
+                    "minInter": cluster_configuration[attr]["MinInterval"],
+                    "maxInter": cluster_configuration[attr]["MaxInterval"],
+                    "timeOut": cluster_configuration[attr]["TimeOut"],
                 }
             elif composite_value(int(attrType, 16)):
                 # Composite value: assumed "rptChg" is omitted
                 attribute_reporting_record = {
                     "Attribute": attr,
                     "DataType": attrType,
-                    "minInter": minInter,
-                    "maxInter": maxInter,
-                    "timeOut": timeOut,
+                    "minInter": cluster_configuration[attr]["MinInterval"],
+                    "maxInter": cluster_configuration[attr]["MaxInterval"],
+                    "timeOut": cluster_configuration[attr]["TimeOut"],
                 }
             else:
                 self.logging(
@@ -159,31 +166,13 @@ class ConfigureReporting:
             attribute_reporting_configuration.append(attribute_reporting_record)
 
             if len(attribute_reporting_configuration) == maxAttributesPerRequest:
-                self.send_configure_reporting_attributes_set(
-                    key,
-                    ZIGATE_EP,
-                    Ep,
-                    cluster,
-                    direction,
-                    manufacturer_spec,
-                    manufacturer,
-                    attribute_reporting_configuration,
-                )
+                self.send_configure_reporting_attributes_set( key, ZIGATE_EP, Ep, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, )
                 # Reset the Lenght to 0
                 attribute_reporting_configuration = []
 
         # Send remaining records
         if attribute_reporting_configuration:
-            self.send_configure_reporting_attributes_set(
-                key,
-                ZIGATE_EP,
-                Ep,
-                cluster,
-                direction,
-                manufacturer_spec,
-                manufacturer,
-                attribute_reporting_configuration,
-            )
+            self.send_configure_reporting_attributes_set( key, ZIGATE_EP, Ep, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, )
 
     def send_configure_reporting_attributes_set(
         self,
@@ -219,10 +208,13 @@ class ConfigureReporting:
 
     def read_configure_reporting_response(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
         # This is the response receive after a Configuration Reporting request
+        self.logging( "Debug", "read_configure_reporting_response %s %s %s %s %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus))
         
         if MsgAttributeId:
             set_status_datastruct( self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus, )
-            if MsgStatus != "00":
+            if MsgStatus == "00":
+                self.read_report_configure_request( MsgSrcAddr , MsgSrcEp, MsgClusterId, list(get_list_isqn_int_attr_datastruct(self, STORE_CONFIGURE_REPORTING, MsgSrcAddr, MsgSrcEp, MsgClusterId)) )
+            else:        
                 self.logging(
                     "Debug",
                     f"Configure Reporting response - ClusterID: {MsgClusterId}/{MsgAttributeId}, MsgSrcAddr: {MsgSrcAddr}, MsgSrcEp:{MsgSrcEp} , Status: {MsgStatus}",
@@ -365,7 +357,6 @@ class ConfigureReporting:
                     continue
                     # We do not find any atrributes for the cluster !!!
 
-                
         if wip_flag:
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["Retry"] += 1
             self.ListOfDevices[ Nwkid ][STORE_READ_CONFIGURE_REPORTING]["Request"]["TimeStamp"] = time.time()
@@ -374,17 +365,21 @@ class ConfigureReporting:
 
     def read_report_configure_request(self, nwkid, epout, cluster_id, attribute_list, manuf_specific="00", manuf_code="0000"):
 
-        if len( attribute_list ) <= MAX_READ_ATTR_PER_REQ:
-            zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
+        maxAttributesPerRequest = get_max_cfg_rpt_attribute_value( self, nwkid=nwkid)
 
+        if attribute_list and len( attribute_list ) <= maxAttributesPerRequest:
+            zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
+            return
+        
         self.logging("Debug", "read_report_configure_request %s/%s need to break attribute list into chunk %s" %( nwkid, epout, str(attribute_list)))
         idx = 0
         while idx < len(attribute_list):
-            end = idx + MAX_READ_ATTR_PER_REQ
-            if idx + MAX_READ_ATTR_PER_REQ > len(attribute_list):
+            end = idx + maxAttributesPerRequest
+            if idx + maxAttributesPerRequest > len(attribute_list):
                 end = len(attribute_list)
             self.logging("Debug", "      chunk %s" %str( attribute_list[ idx : end ]))
-            zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list[ idx : end ], is_ack_tobe_disabled(self, nwkid),)
+            if attribute_list[ idx : end ]:
+                zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list[ idx : end ], is_ack_tobe_disabled(self, nwkid),)
             idx = end
 
     def read_report_configure_response(self, MsgData, MsgLQI):
@@ -446,6 +441,8 @@ class ConfigureReporting:
             for _cluster in self.ListOfDevices[ Nwkid ]["Ep"][ _ep ]:
                 if _cluster not in configuration_reporting:
                     continue
+                if "Attributes" not in configuration_reporting[ _cluster ]:
+                    continue
 
                 self.logging("Debug", f"---- check_and_redo_configure_reporting_if_needed - NwkId: {Nwkid} {_ep} {_cluster}", nwkid=Nwkid)
                 cluster_configuration = configuration_reporting[ _cluster ]["Attributes"]
@@ -464,11 +461,16 @@ class ConfigureReporting:
                     if "Status" in attribute_current_configuration and attribute_current_configuration["Status"] != "00":
                         if attribute_current_configuration["Status"] == '8b':
                             configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
-                        else:
-                            self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed invalid status {attribute_current_configuration['Status']}", nwkid=Nwkid)
-                            continue
+                            # There is no need to continue as we have requested a Cluster
+                            wip_flap = True
+                            cluster_update = True
+                            break
+ 
+                        self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed invalid status {attribute_current_configuration['Status']}", nwkid=Nwkid)
+                        continue
                         
                     self.logging("Debug", f"------ check_and_redo_configure_reporting_if_needed - {Nwkid} {_cluster} {attribut} Checking {attribute_current_configuration} versus {cluster_configuration[attribut]} " , nwkid=Nwkid)
+                    cluster_update = False
                     for x in ( "Change", "MinInterval", "MaxInterval"):
                         if x not in attribute_current_configuration:
                             continue
@@ -487,7 +489,12 @@ class ConfigureReporting:
                         self.logging( "Status", f" - Attribut {attribut} request to force a Configure Reporting due to field {x} '{attribute_current_configuration[ x ]}' != '{cluster_configuration[ attribut ][ x]}'", nwkid=Nwkid)
                         configure_reporting_for_one_cluster(self, Nwkid, _ep, _cluster, True, cluster_configuration)
                         wip_flap = True
+                        cluster_update = True
                         break   # No need to check for an other difference
+                    if cluster_update:
+                        # We need to move to the next cluster, as we have requested
+                        # a cluster cfg reporting update
+                        break
         return wip_flap
            
 ####
@@ -496,6 +503,11 @@ def is_valid_cluster_attribute( self, Nwkid, _ep, _cluster, attribut):
     
     if Nwkid not in self.ListOfDevices:
         return False
+
+    if _ep in self.ListOfDevices[Nwkid]["Ep"] and _cluster in self.ListOfDevices[Nwkid]["Ep"][ _ep ] and "ClusterType" not in self.ListOfDevices[Nwkid]["Ep"][ _ep ]:
+        # Check if we are expecting 
+        return False
+
     if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[Nwkid]:
         return True
     if "Ep" not in self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]:
@@ -648,11 +660,7 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, clust
             if "ZDeviceID" in cluster_configuration[attr] and (
                 ZDeviceID not in cluster_configuration[attr]["ZDeviceID"] and len(cluster_configuration[attr]["ZDeviceID"]) != 0
             ):
-                self.logging(
-                    "Debug",
-                    f"------> configure_reporting_for_one_cluster - {key}/{Ep} skip Attribute {attr} for Cluster {cluster} due to ZDeviceID {ZDeviceID}",
-                    nwkid=key,
-                )
+                self.logging( "Debug", f"------> configure_reporting_for_one_cluster - {key}/{Ep} skip Attribute {attr} for Cluster {cluster} due to ZDeviceID {ZDeviceID}", nwkid=key, )
                 continue
 
         # Check against Attribute List only if the Model is not defined in the Certified Conf.
@@ -663,43 +671,25 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, clust
             continue
 
         # Check if we have a Manufacturer Specific Cluster/Attribute. If that is the case, we need to send what we have ,
-        # and then pile what we have until we switch back to non manufacturer specific
+        # and then send the Manufacturer attribute, and finaly continue the job
         manufacturer_code = manufacturer_specific_attribute(self, key, cluster, attr, cluster_configuration[attr])
         if manufacturer_code:
             # Send what we have
             if ListOfAttributesToConfigure:
-                self.prepare_and_send_configure_reporting(
-                    key,
-                    Ep,
-                    cluster_configuration,
-                    cluster,
-                    direction,
-                    manufacturer_spec,
-                    manufacturer,
-                    ListOfAttributesToConfigure,
-                )
+                self.prepare_and_send_configure_reporting( key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure, )
 
             self.logging("Debug", f"------> configure_reporting_for_one_cluster Reporting: Manuf Specific Attribute {attr}", nwkid=key)
 
             # Process the Attribute
             ListOfAttributesToConfigure = []
+            ListOfAttributesToConfigure.append(attr)
+            
             manufacturer_spec = "01"
 
-            ListOfAttributesToConfigure.append(attr)
-            self.prepare_and_send_configure_reporting(
-                key,
-                Ep,
-                cluster_configuration,
-                cluster,
-                direction,
-                manufacturer_spec,
-                manufacturer_code,
-                ListOfAttributesToConfigure,
-            )
+            self.prepare_and_send_configure_reporting( key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer_code, ListOfAttributesToConfigure, )
 
             # Look for the next attribute and do not assume it is Manuf Specif
             ListOfAttributesToConfigure = []
-
             manufacturer_spec = "00"
             manufacturer = "0000"
 
@@ -708,16 +698,8 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, clust
         ListOfAttributesToConfigure.append(attr)
         self.logging("Debug", f"------> configure_reporting_for_one_cluster  {key}/{Ep} Cluster {cluster} Adding attr: {attr} ", nwkid=key)
 
-        self.prepare_and_send_configure_reporting(
-            key,
-            Ep,
-            cluster_configuration,
-            cluster,
-            direction,
-            manufacturer_spec,
-            manufacturer,
-            ListOfAttributesToConfigure,
-        )
+    self.logging("Debug", f"------> configure_reporting_for_one_cluster  {key}/{Ep} Cluster {cluster} ready with: {ListOfAttributesToConfigure} ", nwkid=key)
+    self.prepare_and_send_configure_reporting( key, Ep, cluster_configuration, cluster, direction, manufacturer_spec, manufacturer, ListOfAttributesToConfigure, )
 
 
 def do_rebind_if_needed(self, nwkid, Ep, batchMode, cluster):
@@ -767,15 +749,11 @@ def read_report_configure_response_zigpy(self, MsgData, MsgLQI):  # Read Configu
             MinInterval = MsgData[idx:idx + 4]
             idx += 4
             self.logging( "Debug", f" - MinInterval: {MinInterval}  restofdata: {MsgData[idx:]}",nwkid=NwkId )
-            
             MaxInterval = MsgData[idx:idx + 4]
             idx += 4
             self.logging( "Debug", f" - MaxInterval: {MaxInterval}  restofdata: {MsgData[idx:]}",nwkid=NwkId)
             
-            if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
-                pass
-
-            elif DataType in SIZE_DATA_TYPE:
+            if analog_value(int(DataType,16)) and DataType in SIZE_DATA_TYPE:
                 size = SIZE_DATA_TYPE[DataType] * 2
                 Change = MsgData[idx : idx + size]
                 idx += size             
@@ -831,7 +809,13 @@ def read_report_configure_response_zigate(self, MsgData, MsgLQI):  # Read Config
         idx += 4
         self.logging( "Debug", f" - MinInterval: {MinInterval}  restofdata: {MsgData[idx:]}",nwkid=NwkId )
         
-        if composite_value( int(DataType,16) ) or discrete_value(int(DataType, 16)):
+        try:
+            int_datatype = int(DataType,16)
+        except Exception as e:
+            self.logging( "Error", f" - unable to convert datatype {DataType} into int. NwkId: {NwkId} Ep: {Ep} ClusterId: {ClusterId} {MsgData}", nwkid=NwkId)
+            return 
+
+        if composite_value( int_datatype ) or discrete_value( int_datatype ):
             pass
 
         elif DataType in SIZE_DATA_TYPE:

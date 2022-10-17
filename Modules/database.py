@@ -23,6 +23,8 @@ from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
+from Modules.zlinky import update_zlinky_device_model_if_needed
+
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -121,41 +123,6 @@ MANUFACTURER_ATTRIBUTES = (
     )
 
 
-def _copyfile(source, dest, move=True):
-
-    try:
-        import shutil
-
-        if move:
-            shutil.move(source, dest)
-        else:
-            shutil.copy(source, dest)
-    except Exception:
-        with open(source, "r") as src, open(dest, "wt") as dst:
-            for line in src:
-                dst.write(line)
-
-
-def _versionFile(source, nbversion):
-
-    if nbversion == 0:
-        return
-
-    if nbversion == 1:
-        _copyfile(source, source + "-%02d" % 1)
-    else:
-        for version in range(nbversion - 1, 0, -1):
-            _fileversion_n = source + "-%02d" % version
-            if not os.path.isfile(_fileversion_n):
-                continue
-
-            _fileversion_n1 = source + "-%02d" % (version + 1)
-            _copyfile(_fileversion_n, _fileversion_n1)
-
-        # Last one
-        _copyfile(source, source + "-%02d" % 1, move=False)
-
-
 def LoadDeviceList(self):
     # Load DeviceList.txt into ListOfDevices
     #
@@ -194,7 +161,7 @@ def LoadDeviceList(self):
         )
 
     self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : " + _DeviceListFileName)
-    _versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
+    Modules.tools.helper_versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize(_DeviceListFileName)
@@ -224,6 +191,11 @@ def LoadDeviceList(self):
             and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
         ):
             Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
+            
+        if "Model" in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]["Model"] == "ZLinky_TIC":
+            # We need to adjust the Model to the right mode
+            update_zlinky_device_model_if_needed(self, addr)
+
 
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
@@ -918,4 +890,3 @@ def cleanup_table_entries( self):
                         one_more_time = True
                         break
                     idx += 1
-

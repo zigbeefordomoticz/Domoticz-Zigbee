@@ -14,7 +14,7 @@
 			"e001": "",
 			"000a": "",
 			"0019": "",
-			"Type": "Plug/Power/Meter/Voltage/Ampere"
+			"Type": "Plug/Power/Meter/Voltage"
 		},
 		"f2": {
 			"0000": "",
@@ -32,7 +32,7 @@
 					"MinInterval": "0005",
 					"MaxInterval": "012C",
 					"TimeOut": "0000",
-					"Change": "0000000000000001"
+					"Change": "000000000001"
 				}
 			}
 		},
@@ -41,7 +41,7 @@
 				"0505": {
 					"DataType": "21",
 					"MinInterval": "0001",
-					"MaxInterval": "0005",
+					"MaxInterval": "012C",
 					"TimeOut": "0000",
 					"Change": "0001"
 				},
@@ -55,7 +55,7 @@
 				"050b": {
 					"DataType": "29",
 					"MinInterval": "0001",
-					"MaxInterval": "0005",
+					"MaxInterval": "012C",
 					"TimeOut": "0000",
 					"Change": "0001"
 				}
@@ -105,7 +105,7 @@
 	},
 	"Param": {
 		"PowerOnAfterOffOn": 2,
-		"IndicatorMode": 1,
+		"TuyaBackLight": 1,
 		"PowerPollingFreq": 300
 	}
 }

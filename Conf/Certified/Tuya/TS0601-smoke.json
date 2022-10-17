@@ -1,0 +1,21 @@
+{
+    "_comment": "Tuya Smoke Detector",
+    "_version": "0.10",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+                        "0005": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Smoke/Tamper"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+    }
+}

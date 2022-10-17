@@ -22,7 +22,6 @@ from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                    zcl_raw_add_group_membership,
                                    zcl_raw_check_group_member_ship,
                                    zcl_raw_configure_reporting_requestv2,
-                                   zcl_raw_default_response,
                                    zcl_raw_ias_initiate_normal_operation_mode,
                                    zcl_raw_ias_initiate_test_mode,
                                    zcl_raw_ias_wd_command_squawk,
@@ -116,17 +115,22 @@ def zcl_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, directi
             attribute_reporting_configuration,
         ),
     )
-    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        return zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, ackIsDisabled=ackIsDisabled)
-    data = epin + epout + cluster + direction + manufacturer_spec + manufacturer + "%02x" % len(attribute_reporting_configuration)
-    for x in attribute_reporting_configuration:
-        self.log.logging("zclCommand", "Debug", "zcl_configure_reporting_requestv2 record: %s" % str(x))
-        data += direction + x["DataType"] + x["Attribute"] + x["minInter"] + x["maxInter"] + x["timeOut"]
-        if "rptChg" in x:
-            data += x["rptChg"]
-    if ackIsDisabled:
-        return send_zigatecmd_zcl_noack(self, nwkid, "0120", data)
-    return send_zigatecmd_zcl_ack(self, nwkid, "0120", data)
+
+    if (
+        ( "ControllerInRawMode" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["ControllerInRawMode"])
+        and "ZiGateConfigureReporting" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateConfigureReporting"]
+    ):
+        data = epin + epout + cluster + direction + manufacturer_spec + manufacturer + "%02x" % len(attribute_reporting_configuration)
+        for x in attribute_reporting_configuration:
+            self.log.logging("zclCommand", "Debug", "zcl_configure_reporting_requestv2 record: %s" % str(x))
+            data += direction + x["DataType"] + x["Attribute"] + x["minInter"] + x["maxInter"] + x["timeOut"]
+            if "rptChg" in x:
+                data += x["rptChg"]
+        if ackIsDisabled:
+            return send_zigatecmd_zcl_noack(self, nwkid, "0120", data)
+        return send_zigatecmd_zcl_ack(self, nwkid, "0120", data)
+        
+    return zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, ackIsDisabled=ackIsDisabled)
 
 
 def zcl_read_report_config_request(self, nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list, ackIsDisabled=DEFAULT_ACK_MODE):

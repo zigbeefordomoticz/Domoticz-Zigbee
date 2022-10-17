@@ -24,9 +24,6 @@ import Domoticz
 LOG_ERROR_HISTORY = "PluginZigbee_log_error_history.json"
 LOG_FILE = "/PluginZigbee_"
 
-LOG_ERROR_HISTORY = "PluginZigbee_log_error_history.json"
-LOG_FILE = "/PluginZigbee_"
-
 class LoggingManagement:
     def __init__(self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
         self._newError = False
@@ -525,11 +522,16 @@ def zigpy_logging_znp(mode):
         requests_logger.setLevel(logging.DEBUG)
         requests_logger = logging.getLogger("Classes.ZigpyTransport.AppZnp")
         requests_logger.setLevel(logging.DEBUG)
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppGeneric")
+        requests_logger.setLevel(logging.DEBUG)
     else:
         requests_logger = logging.getLogger("zigpy_znp")
         requests_logger.setLevel(logging.WARNING)
         requests_logger = logging.getLogger("Classes.ZigpyTransport.AppZnp")
         requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppGeneric")
+        requests_logger.setLevel(logging.WARNING)
+
 
 def zigpy_logging_ezsp(mode):   
     if mode == "debug":    
@@ -541,7 +543,7 @@ def zigpy_logging_ezsp(mode):
         requests_logger.setLevel(logging.DEBUG)
         requests_logger = logging.getLogger("Classes.ZigpyTransport.AppBellows")
         requests_logger.setLevel(logging.DEBUG)
-        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppBellows")
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppGeneric")
         requests_logger.setLevel(logging.DEBUG)
 
     else:
@@ -553,6 +555,9 @@ def zigpy_logging_ezsp(mode):
         requests_logger.setLevel(logging.WARNING)
         requests_logger = logging.getLogger("Classes.ZigpyTransport.AppBellows")
         requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppGeneric")
+        requests_logger.setLevel(logging.WARNING)
+
 
 def zigpy_logging_zigate(mode):
     if mode == "debug":        
@@ -578,3 +583,6 @@ def zigpy_logging_deconz(mode):
         requests_logger.setLevel(logging.WARNING)
         requests_logger = logging.getLogger("Classes.ZigpyTransport.AppDeconz")
         requests_logger.setLevel(logging.WARNING)
+        requests_logger = logging.getLogger("Classes.ZigpyTransport.AppGeneric")
+        requests_logger.setLevel(logging.WARNING)
+
