@@ -48,7 +48,7 @@ SWITCH_LVL_MATRIX = {
     "Switch": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
     "ThermoOnOff": {0: (0, "Off"), 1: (1, "On"), "ForceUpdate": False},
     "SwitchButton": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": True},
-    #"Motion": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": True},
+    "Motion": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": True},
     "LivoloSWL": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
     "LivoloSWR": {"10": (0, "Off"), "11": (1, "On"), "ForceUpdate": False},
     "INNR_RC110_SCENE": {
