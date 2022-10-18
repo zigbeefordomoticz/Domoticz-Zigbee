@@ -182,7 +182,7 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
     if _ModelName in ("lumi.remote.b686opcn01", "lumi.remote.b486opcn01", "lumi.remote.b286opcn01"):
         # Recompute Data in order to match with a similar content with 0x8085/0x8095
 
-        fcf = MsgPayload[0:2]  # uint8
+        fcf = MsgPayload[:2]  # uint8
         sqn = MsgPayload[2:4]  # uint8
         cmd = MsgPayload[4:6]  # uint8
         data = MsgPayload[6:]  # all the rest
@@ -361,16 +361,12 @@ def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Val
 
 def retreive4Tag(tag, chain):
     c = str.find(chain, tag) + 4
-    if c == 3:
-        return ""
-    return chain[c : (c + 4)]
+    return "" if c == 3 else chain[c : (c + 4)]
 
 
 def retreive8Tag(tag, chain):
     c = str.find(chain, tag) + 4
-    if c == 3:
-        return ""
-    return chain[c : (c + 8)]
+    return "" if c == 3 else chain[c : (c + 8)]
 
 
 def twos_comp(val, bits):
@@ -479,7 +475,7 @@ def readLumiLock(
 
     LUMI_LOCK_KEY = ("1201", "1211")
 
-    lumilockData = MsgClusterData[0:4]
+    lumilockData = MsgClusterData[:4]
 
     if lumilockData in LUMI_LOCK_KEY:
         lumilockData += MsgClusterData[4:6]
@@ -514,13 +510,13 @@ def readXiaomiCluster(
     sLQI = retreive4Tag("0624", MsgClusterData)  # LQI
     sLighLevel = retreive4Tag("0b21", MsgClusterData)  # 16BitUint
 
-    sOnOff = retreive4Tag("6410", MsgClusterData)[0:2]  # Bool
-    sOnOff2 = retreive4Tag("6420", MsgClusterData)[0:2]  # OnOff for Aqara Bulb / Current position lift for lumi.curtain
+    sOnOff = retreive4Tag("6410", MsgClusterData)[:2]
+    sOnOff2 = retreive4Tag("6420", MsgClusterData)[:2]  # OnOff for Aqara Bulb / Current position lift for lumi.curtain
     sTemp = retreive4Tag("6429", MsgClusterData)
     sOnOff3 = retreive4Tag("6510", MsgClusterData)  # On/off lumi.ctrl_ln2 EP 02 (Bool)
     sHumid = retreive4Tag("6521", MsgClusterData)  # 16BitUint
     sHumid2 = retreive4Tag("6529", MsgClusterData)
-    sLevel = retreive4Tag("6520", MsgClusterData)[0:2]  # Dim level for Aqara Bulb
+    sLevel = retreive4Tag("6520", MsgClusterData)[:2]  # Dim level for Aqara Bulb
     sPress = retreive8Tag("662b", MsgClusterData)
 
     sConsumption = retreive8Tag("9539", MsgClusterData)  # Cummulative Consumption
@@ -614,23 +610,13 @@ def readXiaomiCluster(
             store_lumi_attribute(self, MsgSrcAddr, "Lux", value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(value))
         else:
-            self.log.logging(
-                "Lumi",
-                "Debug",
-                "ReadCluster - %s/%s Saddr: %s Light Level: %s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, value),
-                MsgSrcAddr,
-            )
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s Light Level: %s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, value), MsgSrcAddr, )
 
     if sRSSI != "":
         # RSSI = struct.unpack('>H',struct.pack('H',int(sRSSI,16)))[0]
-        RSSI = int(sRSSI[0:2], 16) - 256
+        RSSI = int(sRSSI[:2], 16) - 256
 
-        self.log.logging(
-            "Lumi",
-            "Debug",
-            "ReadCluster - %s/%s Saddr: %s RSSI: %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sRSSI, RSSI),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s RSSI: %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sRSSI, RSSI), MsgSrcAddr, )
         store_lumi_attribute(self, MsgSrcAddr, "RSSI dB", RSSI)
 
     if sLQI != "":
@@ -649,24 +635,14 @@ def readXiaomiCluster(
         and self.ListOfDevices[MsgSrcAddr]["MacCapa"] != "84"
         and self.ListOfDevices[MsgSrcAddr]["PowerSource"] != "Main"
     ):
-        voltage = "%s%s" % (str(sBatteryLvl[2:4]), str(sBatteryLvl[0:2]))
+        voltage = "%s%s" % (str(sBatteryLvl[2:4]), str(sBatteryLvl[:2]))
         voltage = int(voltage, 16)
         ValueBattery = voltage2batteryP(voltage, 3150, 2750)
         self.log.logging(
             "Lumi",
             "Debug",
             "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s MacCapa: %s PowerSource: %s"
-            % (
-                MsgClusterId,
-                MsgAttrID,
-                MsgSrcAddr,
-                ValueBattery,
-                voltage,
-                self.ListOfDevices[MsgSrcAddr]["MacCapa"],
-                self.ListOfDevices[MsgSrcAddr]["PowerSource"],
-            ),
-            MsgSrcAddr,
-        )
+            % ( MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage, self.ListOfDevices[MsgSrcAddr]["MacCapa"], self.ListOfDevices[MsgSrcAddr]["PowerSource"], ), MsgSrcAddr, )
         self.ListOfDevices[MsgSrcAddr]["Battery"] = ValueBattery
         self.ListOfDevices[MsgSrcAddr]["BatteryUpdateTime"] = int(time.time())
         Update_Battery_Device(self, Devices, MsgSrcAddr, ValueBattery)
@@ -677,24 +653,14 @@ def readXiaomiCluster(
         Temp = struct.unpack("h", struct.pack(">H", int(sTemp, 16)))[0]
         if Temp != -10000:
             ValueTemp = round(Temp / 100, 1)
-            self.log.logging(
-                "Lumi",
-                "Debug",
-                "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp),
-                MsgSrcAddr,
-            )
+            self.log.logging( "Lumi", "Debug", "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp), MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", Temp)
 
     if sHumid != "":
         ValueHumid = struct.unpack("H", struct.pack(">H", int(sHumid, 16)))[0]
         ValueHumid = round(ValueHumid / 100, 1)
-        self.log.logging(
-            "Lumi",
-            "Debug",
-            "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid),
-            MsgSrcAddr,
-        )
+        self.log.logging("Lumi","Debug","ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid),MsgSrcAddr,)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0405", ValueHumid)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0405", "0000", ValueHumid)
 
@@ -709,18 +675,12 @@ def readXiaomiCluster(
         )
 
     if sPress != "":
-        Press = "%s%s%s%s" % (str(sPress[6:8]), str(sPress[4:6]), str(sPress[2:4]), str(sPress[0:2]))
+        Press = "%s%s%s%s" % (str(sPress[6:8]), str(sPress[4:6]), str(sPress[2:4]), str(sPress[:2]))
         try:
             ValuePress = round((struct.unpack("i", struct.pack("i", int(Press, 16)))[0]) / 100, 1)
 
         except Exception as e:
-            self.log.logging(
-                "Lumi",
-                "Error",
-                "ReadCluster - 0000/ff01 Saddr: %s Wrong Atmospheric Pressure: orig: %s, convert: %s Error: %s"
-                % (MsgSrcAddr, sPress, Press, e),
-                MsgSrcAddr,
-            )
+            self.log.logging("Lumi","Error","ReadCluster - 0000/ff01 Saddr: %s Wrong Atmospheric Pressure: orig: %s, convert: %s Error: %s"% (MsgSrcAddr, sPress, Press, e),MsgSrcAddr,)
             return
 
         self.log.logging(
@@ -732,42 +692,18 @@ def readXiaomiCluster(
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403", ValuePress)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0403", "0000", sPress)
 
-    if sOnOff != "":
-        if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.sensor_wleak.aq1":
-            self.log.logging(
-                "Lumi",
-                "Debug",
-                " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" % (sOnOff, MsgSrcAddr),
-                MsgSrcAddr,
-            )
-            # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
-            return
-        self.log.logging(
-            "Lumi", "Debug", "ReadCluster - 0000/ff01 Saddr: %s sOnOff: %s" % (MsgSrcAddr, sOnOff), MsgSrcAddr
-        )
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006", sOnOff)
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0006", "0000", sOnOff)
+    if sOnOff != "" and self.ListOfDevices[MsgSrcAddr]["Model"] not in ( "lumi.sensor_wleak.aq1", "lumi.sensor_motion.aq2", ):
+            self.log.logging( "Lumi", "Debug", "ReadCluster - 0000/ff01 Saddr: %s sOnOff: %s" % (MsgSrcAddr, sOnOff), MsgSrcAddr )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006", sOnOff)
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0006", "0000", sOnOff)
 
-    if sOnOff2 != "" and self.ListOfDevices[MsgSrcAddr]["MacCapa"] == "8e":  # Aqara Bulb / Lumi Curtain - Position
-        if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.sensor_wleak.aq1":
-            self.log.logging(
-                "Lumi",
-                "Debug",
-                " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" % (sOnOff, MsgSrcAddr),
-                MsgSrcAddr,
-            )
-            # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
-            return
-        self.log.logging(
-            "Lumi", "Debug", "ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" % (MsgSrcAddr, sOnOff2), MsgSrcAddr
-        )
+    if sOnOff2 != "" and self.ListOfDevices[MsgSrcAddr]["MacCapa"] == "8e" and self.ListOfDevices[MsgSrcAddr]["Model"] not in ("lumi.sensor_wleak.aq1",):
+        self.log.logging( "Lumi", "Debug", "ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" % (MsgSrcAddr, sOnOff2), MsgSrcAddr )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006", sOnOff2)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0006", "0000", sOnOff)
 
     if sLevel != "":
-        self.log.logging(
-            "Lumi", "Debug", "ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" % (MsgSrcAddr, sLevel), MsgSrcAddr
-        )
+        self.log.logging( "Lumi", "Debug", "ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" % (MsgSrcAddr, sLevel), MsgSrcAddr )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0008", sLevel)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0008", "0000", sLevel)
 
