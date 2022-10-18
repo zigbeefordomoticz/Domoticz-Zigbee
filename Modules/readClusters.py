@@ -3512,7 +3512,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster0500 - Security & Safety IAZ Zone - Device: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" % (MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster0500 - Security & Safety IAZ Zone - Device: %s/%s  MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -3536,7 +3536,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster0500 - Device: %s NOT ENROLLED (0x%02d)" % (MsgSrcAddr, int(MsgClusterData, 16)),
+                "ReadCluster0500 - Device: %s/%s NOT ENROLLED (0x%02d)" % (MsgSrcAddr, MsgSrcEp, int(MsgClusterData, 16)),
                 MsgSrcAddr,
             )
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["EnrolledStatus"] = int(MsgClusterData, 16)
@@ -3544,7 +3544,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster0500 - Device: %s ENROLLED (0x%02d)" % (MsgSrcAddr, int(MsgClusterData, 16)),
+                "ReadCluster0500 - Device: %s/%s ENROLLED (0x%02d)" % (MsgSrcAddr, MsgSrcEp, int(MsgClusterData, 16)),
                 MsgSrcAddr,
             )
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["EnrolledStatus"] = int(MsgClusterData, 16)
@@ -3555,7 +3555,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster0500 - Device: %s - ZoneType: %s" % (MsgSrcAddr, ZONE_TYPE[int(MsgClusterData, 16)]),
+                "ReadCluster0500 - Device: %s/%s - ZoneType: %s" % (MsgSrcAddr, MsgSrcEp, ZONE_TYPE[int(MsgClusterData, 16)]),
                 MsgSrcAddr,
             )
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneType"] = int(MsgClusterData, 16)
@@ -3565,7 +3565,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster0500 - Device: %s - Unknown ZoneType: %s" % (MsgSrcAddr, MsgClusterData),
+                "ReadCluster0500 - Device: %s/%s - Unknown ZoneType: %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterData),
                 MsgSrcAddr,
             )
 
