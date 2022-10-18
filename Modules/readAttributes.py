@@ -19,7 +19,7 @@ import Modules.paramDevice
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
                                   send_zigatecmd_zcl_noack)
-from Modules.macPrefix import DEVELCO_PREFIX, casaiaPrefix
+from Modules.macPrefix import DEVELCO_PREFIX, casaiaPrefix, OWON_PREFIX
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
                                        PREFIX_MACADDR_IKEA_TRADFRI,
                                        PREFIX_MACADDR_OPPLE,
@@ -479,6 +479,9 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
 def if_casaia_cms323( ListOfEp, ieee):
     if ieee[: len(casaiaPrefix)] != casaiaPrefix:
         return False
+    if ieee[: len(OWON_PREFIX)] != OWON_PREFIX:
+        return False
+   
     return "01" in ListOfEp and "02" in ListOfEp and "04" in ListOfEp
 
 def add_attributes_from_device_certified_conf(self, key, cluster, listAttributes):
