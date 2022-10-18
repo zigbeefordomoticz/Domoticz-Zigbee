@@ -377,7 +377,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
 
     self.ListOfDevices[NWKID]["PairingInProgress"] = False
 
-    mgmt_rtg(self, NWKID, "BindingTable")
+    
 
 def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
@@ -389,8 +389,8 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     # Bindings ....
     if not delay_binding_and_reporting(self, NWKID):
         binding_needed_clusters_with_zigate(self, NWKID)
-
         reWebBind_Clusters(self, NWKID)
+        mgmt_rtg(self, NWKID, "BindingTable")
 
     # Just after Binding Enable Opple with Magic Word
     if self.ListOfDevices[NWKID]["Model"] in (
@@ -495,7 +495,8 @@ def delay_binding_and_reporting(self, Nwkid):
         return False
     _model = self.ListOfDevices[Nwkid]["Model"]
     if _model in self.DeviceConf and "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
-        self.ListOfDevices[ Nwkid ]["DelayBindingAtPairing"] = ""
+        self.ListOfDevices[ Nwkid ]["DelayBindingAtPairing"] = int(( time.time() + int(self.DeviceConf[_model]["DelayBindingAtPairing"])))
+        
         self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
         return True
     return False

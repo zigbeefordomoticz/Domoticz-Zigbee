@@ -41,7 +41,7 @@
 		"0006",
 		"0008"
 	],
-	"DelayBindingAtPairing": 1,
+	"DelayBindingAtPairing": 120,
 	"ConfigureReporting": {
 		"0008": {
 			"Attributes": {
