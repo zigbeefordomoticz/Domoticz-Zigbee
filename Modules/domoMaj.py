@@ -765,7 +765,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
             
             
-        if ClusterType in ( "Motion", "Door",) and  WidgetType == "Motion":
+        if ClusterType in ( "Motion", "Door",) and WidgetType == "Motion":
             self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NWKID)
             
             nValue = int(value, 16)
