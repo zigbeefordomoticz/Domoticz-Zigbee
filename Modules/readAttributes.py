@@ -153,9 +153,6 @@ def get_max_read_attribute_value( self, nwkid=None):
             elif self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
                 read_configuration_report_chunk = 5
 
-            elif self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_CASAIA:
-                read_configuration_report_chunk = 2
-
     self.log.logging("ReadAttributes", "Log", "get_max_read_attribute_value( %s ) => %s" %( nwkid, read_configuration_report_chunk) , nwkid=nwkid)
 
     return read_configuration_report_chunk or self.pluginconf.pluginConf["ReadAttributeChunk"]
@@ -467,19 +464,22 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
 
     else:
         for epout in ListOfEp:
-            self.log.logging( "ReadAttributes", "Log", "Request Basic  via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes), nwkid=key, )
+            self.log.logging( "ReadAttributes", "Debug", "Request Basic via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes), nwkid=key, )
             if epout == "01" and ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX:
+                self.log.logging( "ReadAttributes", "Debug", "skip ReadAttribute( 0000 ) because DEVELCO_PREFIX")
                 # prevent doing a read attribute on Ep 0x01 for Develco
                 continue
             if if_casaia_cms323( ListOfEp, ieee) and epout != "01":
+                self.log.logging( "ReadAttributes", "Debug", "skip ReadAttribute( 0000 ) because CMS323")
                 # Do only Ep 01
                 continue
             ReadAttributeReq(self, key, ZIGATE_EP, epout, "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
 def if_casaia_cms323( ListOfEp, ieee):
-    if ieee[: len(casaiaPrefix)] != casaiaPrefix:
-        return False
-    if ieee[: len(OWON_PREFIX)] != OWON_PREFIX:
+    if (
+        ieee[: len(casaiaPrefix)] != casaiaPrefix
+        and ieee[: len(OWON_PREFIX)] != OWON_PREFIX
+    ):
         return False
    
     return "01" in ListOfEp and "02" in ListOfEp and "04" in ListOfEp
