@@ -172,7 +172,7 @@ def check_delay_binding( self, NwkId, model ):
             NwkId, model), NwkId, )
         return
 
-    if model not in self.DeviceConf or "DelayBindingAtPairing" not in self.DeviceConf[ model ] or self.DeviceConf[ model ]["DelayBindingAtPairing"] != 1:
+    if model not in self.DeviceConf  or "DelayBindingAtPairing" not in self.DeviceConf[ model ]  or self.DeviceConf[ model ]["DelayBindingAtPairing"] == 0:
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s not applicable" % (
             NwkId), NwkId, )
         return
@@ -580,8 +580,14 @@ def processKnownDevices(self, Devices, NWKID):
     if ( intHB % CHECKING_DELAY_READATTRIBUTE) == 0:
         check_delay_readattributes( self, NWKID )
 
-    if ( intHB == 1 and "DelayBindingAtPairing" in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]["DelayBindingAtPairing"] != "Completed"):   
+    if ( 
+        "DelayBindingAtPairing" in self.ListOfDevices[ NWKID ] 
+        and isinstance(self.ListOfDevices[ NWKID ]["DelayBindingAtPairing"],int )
+        and self.ListOfDevices[ NWKID ]["DelayBindingAtPairing"] > 0
+        and time.time() > self.ListOfDevices[ NWKID ]["DelayBindingAtPairing"]
+    ):   
         # Will check only after a Command has been sent, in order to limit.
+        self.log.logging("Heartbeat", "Log", "check_delay_binding inHB = %s" %intHB ) 
         check_delay_binding( self, NWKID, model )
 
     # Starting this point, it is ony relevant for Main Powered Devices.

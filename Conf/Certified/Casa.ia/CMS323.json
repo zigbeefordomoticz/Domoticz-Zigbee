@@ -34,10 +34,12 @@
 		"0405": [ "0000" ],
 		"0500": [ "0000", "0001", "0002", "0010", "0011" ]
 	},
+    "DelayBindingAtPairing": 40,
 	"VoltageConverter": 10,
     "BatteryDevice": 1,
 	"BatteryPercentageConverter": 2,
 	"Param": {
+        
 		"resetMotiondelay": 0,
         "ConfigurationReportChunk": 4,
         "ReadAttributeChunk": 4    
