@@ -448,12 +448,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
     result = None
-    
-    if "Delay" in data:
-        delay = data["Delay"]
-    else:
-        delay = None
 
+    delay = data["Delay"] if "Delay" in data else None
     self.log.logging(
         "TransportZigpy",
         "Debug",
@@ -511,7 +507,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
             else:
                 await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay)
                 await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
-                
+
         except DeliveryError as e:
             # This could be relevant to APS NACK after retry
             # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
@@ -529,7 +525,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         else:
             await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay )
             await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
-            
+
     if result:
         self.log.logging(
             "TransportZigpy",
@@ -613,6 +609,10 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
     _ieee = str(destination.ieee)
     if not check_transport_readiness:
         return
+    if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in DELAY_FOR_VERY_KEY:
+        # Most likely for the CasaIA devices which seems to have issue
+        self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 6 secondes for CASA.IA Confirm Key")
+        delay = 6
 
     try:
         if delay:
@@ -628,13 +628,9 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                     _nwkid,
                 )
                 return
-
+            
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
             self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
-            if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in DELAY_FOR_VERY_KEY:
-                # Most likely for the CasaIA devices which seems to have issue
-                self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 6 secondes for CASA.IA Confirm Key")
-                await asyncio.sleep( 6 )
 
             # Slow down the through put when too many commands. Try to not overload the coordinators
             multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
@@ -643,7 +639,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
         # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
-        self.log.logging("TransportZigpy", "Debug", "process_raw_command - DeliveryError : %s" % e, _nwkid)
+        self.log.logging("TransportZigpy", "Log", "process_raw_command - DeliveryError : %s" % e, _nwkid)
         msg = "%s" % e
         result = 0xB6
         self._currently_not_reachable.append( _ieee )
@@ -654,13 +650,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
     if result == 0x00 and _ieee in self._currently_not_reachable:
         self._currently_not_reachable.remove( _ieee )
 
-    self.log.logging(
-        "TransportZigpy",
-        "Debug",
-        "ZigyTransport: process_raw_command completed %s NwkId: %s result: %s msg: %s"
-        % (sequence, _nwkid, result, msg),
-        _nwkid,
-    )
+    self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command completed %s NwkId: %s result: %s msg: %s" % (sequence, _nwkid, result, msg), _nwkid, )
 
 @contextlib.asynccontextmanager
 async def _limit_concurrency(self, destination, sequence):
