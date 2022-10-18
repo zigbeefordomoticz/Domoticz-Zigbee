@@ -580,6 +580,9 @@ def processKnownDevices(self, Devices, NWKID):
     if ( intHB % CHECKING_DELAY_READATTRIBUTE) == 0:
         check_delay_readattributes( self, NWKID )
 
+    if ( intHB == 1 and "DelayBindingAtPairing" in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]["DelayBindingAtPairing"] != "Completed"):   
+        # Will check only after a Command has been sent, in order to limit.
+        check_delay_binding( self, NWKID, model )
 
     # Starting this point, it is ony relevant for Main Powered Devices.
     # Some battery based end device with ZigBee 30 use polling and can receive commands.
@@ -589,10 +592,6 @@ def processKnownDevices(self, Devices, NWKID):
 
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
-
-    if ( intHB == 1 and "DelayBindingAtPairing" in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ]["DelayBindingAtPairing"] != "Completed"):   
-        # Will check only after a Command has been sent, in order to limit.
-        check_delay_binding( self, NWKID, model )
 
     if self.pluginconf.pluginConf["forcePollingAfterAction"] and (intHB == 1):  # HB has been reset to 0 as for a Group command
         # intHB is 1 as if it has been reset, we get +1 in ProcessListOfDevices
