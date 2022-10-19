@@ -12,7 +12,7 @@ from Zigbee.zdpCommands import zdp_IEEE_address_request
 
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
-                               UpdateDevice_v2)
+                               UpdateDevice_v2, remove_bad_cluster_type_entry)
 from Modules.tools import zigpy_plugin_sanity_check
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
@@ -36,7 +36,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NWKID, Ep), NWKID)
         return
 
-    if "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] != "inDB":
+    if ( 
+        "Status" in self.ListOfDevices[NWKID] 
+        and self.ListOfDevices[NWKID]["Status"] == "erasePDM" 
+        and "autoRestore" in self.pluginconf.pluginConf 
+        and self.pluginconf.pluginConf["autoRestore"]
+    ):
+        # Most likely we have request a coordinator re-initialisation and the latest backup has been put in place
+        # simply put the device back
+        self.ListOfDevices[NWKID]["Status"] = "inDB"
+        
+    elif "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] != "inDB":
         self.log.logging(
             "Widget",
             "Log",
@@ -99,6 +109,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 break
         if DeviceUnit == 0:
             self.log.logging( "Widget", "Error", "Device %s not found !!!" % WidgetId, NWKID)
+            # House keeping, we need to remove this bad clusterType
+            if remove_bad_cluster_type_entry(self, NWKID, Ep, clusterID, WidgetId ):
+                self.log.logging( "Widget", "Log", "WidgetID %s not found, successfully remove the entry from device" % WidgetId, NWKID)
+            else:
+                self.log.logging( "Widget", "Error", "WidgetID %s not found, unable to remove the entry from device" % WidgetId, NWKID)
             continue
 
         Switchtype = Devices[DeviceUnit].SwitchType
@@ -620,14 +635,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 from Classes.DomoticzDB import DomoticzDB_DeviceStatus
 
                 adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(Devices[DeviceUnit].ID), 1)
+            CurrentnValue = Devices[DeviceUnit].nValue
+            CurrentsValue = Devices[DeviceUnit].sValue
             self.log.logging(
                 "Widget",
                 "Debug",
-                "------> Adj Value : %s from: %s to %s " % (adjvalue, value, (value + adjvalue)),
+                "------> Adj Value : %s from: %s to %s [%s]" % (adjvalue, value, (value + adjvalue), CurrentsValue),
                 NWKID,
             )
-            CurrentnValue = Devices[DeviceUnit].nValue
-            CurrentsValue = Devices[DeviceUnit].sValue
             if CurrentsValue == "":
                 # First time after device creation
                 CurrentsValue = "0;0;0;0;0"
@@ -640,7 +655,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Temp update: %s - %s" % (NewNvalue, NewSvalue))
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum":
+#            elif WidgetType == "Temp+Hum":
+            elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
                 NewNvalue = 0
                 NewSvalue = "%s;%s;%s" % (round(value + adjvalue, 1), SplitData[1], SplitData[2])
                 self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s - %s" % (NewNvalue, NewSvalue))
@@ -664,6 +680,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if CurrentsValue == "":
                 # First time after device creation
                 CurrentsValue = "0;0;0;0;0"
+            elif not ";" in CurrentsValue:
+                CurrentsValue = CurrentsValue + ";0;0;0;0"
             SplitData = CurrentsValue.split(";")
             NewNvalue = 0
             NewSvalue = ""
@@ -681,7 +699,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Humi update: %s - %s" % (NewNvalue, NewSvalue))
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum":  # temp+hum xiaomi
+            elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
                 NewNvalue = 0
                 NewSvalue = "%s;%s;%s" % (SplitData[0], value, humiStatus)
                 self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s - %s" % (NewNvalue, NewSvalue))
@@ -746,13 +764,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             sValue = "%02x" %nValue
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
             
-        if ClusterType == WidgetType == "Motion":
+            
+        if ClusterType in ( "Motion", "Door",) and WidgetType == "Motion":
+            self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NWKID)
+            
             nValue = int(value, 16)
             if nValue == 1:
-                sValue = "On"
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, "On", BatteryLevel, SignalLevel, ForceUpdate_=True)
             else:
-                sValue = "Off"
-            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, "Off", BatteryLevel, SignalLevel, ForceUpdate_=False)
+            continue
 
         if WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff",) and (
             (
@@ -1423,7 +1444,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if WidgetType == "Lux":
                 nValue = int(value)
                 sValue = value
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
 
         # Check if this Device belongs to a Group. In that case update group
         CheckUpdateGroup(self, NWKID, Ep, clusterID)

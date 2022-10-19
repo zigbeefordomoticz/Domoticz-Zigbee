@@ -190,15 +190,16 @@ def zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_s
 
     fcf = "%02x" % cluster_frame
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    payload = fcf
-    if manuf_specific == "01":
-        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_code, 16)))[0]
-    payload += sqn + cmd
-    
-    for attribute in attribute_list:
-        payload += "00" + "%04x" % struct.unpack(">H", struct.pack("H", attribute))[0]
+    if attribute_list:
+        payload = fcf
+        if manuf_specific == "01":
+            payload += "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_code, 16)))[0]
+        payload += sqn + cmd
 
-    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+        for attribute in attribute_list:
+            payload += "00" + "%04x" % struct.unpack(">H", struct.pack("H", attribute))[0]
+
+        raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
     return sqn
 
 # Discover Attributes
@@ -470,7 +471,7 @@ def zcl_raw_ota_query_next_image_response(self, sqn, nwkid, EPIn, EPout, status,
     return sqn
 
 def zcl_raw_ota_image_block_response_success(self, sqn, nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, imagedata ):
-    self.log.logging("zclCommand", "Debug", "zcl_raw_ota_image_block_response_success %s %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize))
+    self.log.logging("zclCommand", "Debug", "zcl_raw_ota_image_block_response_success %s %s %s %s %s %s %s %s %s %s" % (nwkid, EPIn, EPout, status, ManufCode, Imagetype, FileVersion, fileoffset, datasize, len(imagedata)))
     
     # "0502"
     Command = "05"

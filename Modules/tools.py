@@ -1018,6 +1018,15 @@ def checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAtt
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
 
+def checkValidValue(self, MsgSrcAddr, AttType, Data ):
+
+    if int(AttType, 16) == 0xe2:  # UTCTime
+        if Data == "ffffffff":
+            return False
+    if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.airmonitor.acn01":
+        if Data == "8000" or Data == "0000":
+            return False
+    return True
 
 def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 
@@ -1447,7 +1456,7 @@ def is_domoticz_db_available(self):
         return False
 
     if self.DomoticzMajor == 2021 and self.DomoticzMinor < 1:
-       # Domoticz.Log("is_domoticz_db_available: %s due to Minor" % False)
+        # Domoticz.Log("is_domoticz_db_available: %s due to Minor" % False)
         return False
 
     #Domoticz.Log("is_domoticz_db_available: %s" % True)
@@ -1549,9 +1558,14 @@ def night_shift_jobs( self ):
 
 def print_stack( self ):
     
-    import inspect
+    try:
+        import inspect
+    except Exception as e:
+        self.log.logging( "Zigpy", "Error", "Cannot import python module inspect")
+        return
+    
     for x in inspect.stack():
-        self.logging("Debug","[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
+        self.log.logging( "Zigpy", "Error", "[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
 
 
 

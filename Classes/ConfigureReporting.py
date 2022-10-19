@@ -367,7 +367,7 @@ class ConfigureReporting:
 
         maxAttributesPerRequest = get_max_cfg_rpt_attribute_value( self, nwkid=nwkid)
 
-        if len( attribute_list ) <= maxAttributesPerRequest:
+        if attribute_list and len( attribute_list ) <= maxAttributesPerRequest:
             zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list, is_ack_tobe_disabled(self, nwkid),)
             return
         
@@ -378,7 +378,8 @@ class ConfigureReporting:
             if idx + maxAttributesPerRequest > len(attribute_list):
                 end = len(attribute_list)
             self.logging("Debug", "      chunk %s" %str( attribute_list[ idx : end ]))
-            zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list[ idx : end ], is_ack_tobe_disabled(self, nwkid),)
+            if attribute_list[ idx : end ]:
+                zcl_read_report_config_request( self, nwkid, ZIGATE_EP, epout, cluster_id, manuf_specific, manuf_code, attribute_list[ idx : end ], is_ack_tobe_disabled(self, nwkid),)
             idx = end
 
     def read_report_configure_response(self, MsgData, MsgLQI):
@@ -502,6 +503,11 @@ def is_valid_cluster_attribute( self, Nwkid, _ep, _cluster, attribut):
     
     if Nwkid not in self.ListOfDevices:
         return False
+
+    if _ep in self.ListOfDevices[Nwkid]["Ep"] and _cluster in self.ListOfDevices[Nwkid]["Ep"][ _ep ] and "ClusterType" not in self.ListOfDevices[Nwkid]["Ep"][ _ep ]:
+        # Check if we are expecting 
+        return False
+
     if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[Nwkid]:
         return True
     if "Ep" not in self.ListOfDevices[Nwkid][STORE_READ_CONFIGURE_REPORTING]:

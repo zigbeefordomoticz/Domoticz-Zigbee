@@ -1,0 +1,24 @@
+{
+	"_comment": "Tuya Temp/Humi sensor with LCD",
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"0005": "",
+			"0019": "",
+			"Type": "Temp/Humi"
+		}
+	},
+	"Type": "",
+	"ClusterToBind": [ ],
+	"ConfigureReporting": {
+	},
+	"ReadAttributes": {
+		"0000": [ "0004", "0005", "0000", "0001", "0007", "ffe2", "ffe4", "ffdf", "fffe" ],
+		"0019": [],
+		"ef00": []
+	},
+	"Param": {
+	},
+        "BatteryDevice": 1
+}

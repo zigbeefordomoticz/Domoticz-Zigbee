@@ -1,0 +1,22 @@
+{
+    "_comment": "Tuya ZSS-ZK-THL manufactured by Moes",
+	"_version": "0.1",
+    "Ep":{
+        "01":{ "0000":"", "0001":"", "0400":"", "0019": "", "000a": "","Type":"Lux" },
+        "02":{ "0000":"", "0402":"", "0405": "", "Type":"Temp/Humi" }
+    },
+    "Type":"",
+    "ClusterToBind": [ ],
+    "ConfigureReporting":{
+    },
+    "ReadAttributes": {
+	"0000": [  "0004", "0000", "0005", "0001", "0002", "0003", "0007", "fffe"],
+        "0001": [ "0020", "0021"],
+        "0400": [ "0400", "f001"],
+        "0402": [ "0000"],
+        "0405": [ "0000"],
+        "0019": []
+	},
+    "BatteryDevice": 1,
+    "BatteryPercentageConverter": 2
+}

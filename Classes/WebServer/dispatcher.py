@@ -57,6 +57,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "plugin-stat": {"Name": "plugin-stat", "Verbs": {"GET"}, "function": self.rest_plugin_stat},
         "plugin": {"Name": "plugin", "Verbs": {"GET"}, "function": self.rest_PluginEnv},
         "raw-command": {"Name": "raw-command", "Verbs": {"PUT"}, "function": self.rest_raw_command},
+        "raw-zigbee": {"Name": "raw-zigbee", "Verbs": {"PUT"}, "function": self.rest_raw_zigbee},
         "rcv-nw-hrdwr": {"Name": "rcv-nw-hrdwr", "Verbs": {"GET"}, "function": self.rest_rcv_nw_hrdwr},
         "recreate-widgets": {"Name": "recreate-widgets", "Verbs": {"PUT"}, "function": self.rest_recreate_widgets},
         "req-nwk-full": {"Name": "req-nwk-full", "Verbs": {"GET"}, "function": self.rest_req_nwk_full},

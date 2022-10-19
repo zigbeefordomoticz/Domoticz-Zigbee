@@ -84,6 +84,7 @@ DEVICE_SWITCH_MATRIX = {
 ACTIONATORS = [
     "Switch",
     "Plug",
+    "Motion",
     "SwitchAQ2",
     "Smoke",
     "DSwitch",

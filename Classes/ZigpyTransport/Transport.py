@@ -129,4 +129,8 @@ class ZigpyTransport(object):
         # Provide the Load of the Sending Queue
         #for device in list(self._currently_waiting_requests_list):
         #    _queue += self._currently_waiting_requests_list[device]
-        return self.writer_queue.qsize()
+        #return self.writer_queue.qsize()
+        _queue = sum(self._currently_waiting_requests_list[device] + 1 for device in list(self._currently_waiting_requests_list) if self._concurrent_requests_semaphores_list[device].locked())
+        _ret_value = max(_queue - 1, 0) + self.writer_queue.qsize()
+        self.log.logging("Transport", "Debug", "Load: PluginQueue: %3s ZigpyQueue: %3s => %s" %(self.writer_queue.qsize(), _queue, _ret_value ))
+        return _ret_value

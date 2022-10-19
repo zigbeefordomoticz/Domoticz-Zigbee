@@ -15,6 +15,7 @@ import traceback
 from threading import Thread
 from typing import Any, Optional
 
+import zigpy.config
 import zigpy.device
 import zigpy.exceptions
 import zigpy.group
@@ -26,21 +27,18 @@ import zigpy.types as t
 import zigpy.util
 import zigpy.zcl
 import zigpy.zdo
-import zigpy.config
-from Modules.tools import print_stack
-
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_0302_frame_content, build_plugin_8009_frame_content,
     build_plugin_8011_frame_content,
     build_plugin_8043_frame_list_node_descriptor,
     build_plugin_8045_frame_list_controller_ep)
 from Classes.ZigpyTransport.tools import handle_thread_error
-from Modules.macPrefix import DELAY_FOR_VERY_KEY
+from Modules.macPrefix import DELAY_FOR_VERY_KEY, casaiaPrefix_zigpy
+from Modules.tools import print_stack
 from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
                               InvalidResponse)
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
-from Modules.macPrefix import casaiaPrefix_zigpy
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 CREATE_TASK = True
@@ -81,7 +79,7 @@ def zigpy_thread(self):
         "Debug",
         "zigpy_thread -extendedPANID %s %d" % (self.pluginconf.pluginConf["extendedPANID"], extendedPANID),
     )
-
+    
     task = radio_start(self, self.pluginconf, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extendedPANID)
 
     self.zigpy_loop.run_until_complete(task)
@@ -223,13 +221,15 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 
     self.log.logging("TransportZigpy", "Debug", "4- %s" %radiomodule) 
     if self.pluginParameters["Mode3"] == "True":
-        self.log.logging( "TransportZigpy", "Status", "Form a New Network with Channel: %s(0x%02x) ExtendedPanId: 0x%016x" % (set_channel, set_channel, set_extendedPanId), )
+        self.log.logging( "TransportZigpy", "Status", "Coordinator initialisation requested  Channel %s(0x%02x) ExtendedPanId: 0x%016x" % (
+            set_channel, set_channel, set_extendedPanId), )
         new_network = True
     else:
         new_network = False
 
     try:
         await self.app.startup(
+            self.hardwareid,
             pluginconf,
             callBackHandleMessage=self.receiveData,
             callBackUpdDevice=self.ZigpyUpdDevice,
@@ -242,7 +242,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         )
     except Exception as e:
         self.log.logging( "TransportZigpy", "Error", "Error at startup %s" %e)
-        print_stack( self )
+        #print_stack( self )
         
     if new_network:
         # Assume that the new network has been created
@@ -449,10 +449,11 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     addressmode = data["AddressMode"]
     result = None
 
+    delay = data["Delay"] if "Delay" in data else None
     self.log.logging(
         "TransportZigpy",
         "Debug",
-        "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s"
+        "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s, Delay: %s"
         % (
             Function,
             int(NwkId, 16),
@@ -463,6 +464,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
             addressmode,
             not AckIsDisable,
             Sqn,
+            delay,
         ),
     )
 
@@ -501,11 +503,11 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         try:
             if CREATE_TASK:
                 task = asyncio.create_task(
-                    transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
+                    transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay) )
             else:
-                await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )
+                await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay)
                 await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
-                
+
         except DeliveryError as e:
             # This could be relevant to APS NACK after retry
             # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
@@ -519,11 +521,11 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call request destination: %s" % destination)
         if CREATE_TASK:
             task = asyncio.create_task(
-                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, ) )
+                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay) )
         else:
-            await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, )
+            await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay )
             await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
-            
+
     if result:
         self.log.logging(
             "TransportZigpy",
@@ -601,14 +603,20 @@ def check_transport_readiness(self):
     if self._radiomodule == "ezsp":
         return True
         
-async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False ):
+async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False, delay=None ):
     # sourcery skip: replace-interpolation-with-fstring    
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
     if not check_transport_readiness:
         return
+    if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in DELAY_FOR_VERY_KEY:
+        # Most likely for the CasaIA devices which seems to have issue
+        self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 6 secondes for CASA.IA Confirm Key")
+        delay = 6
 
     try:
+        if delay:
+            await asyncio.sleep(delay)
         async with _limit_concurrency(self, destination, sequence):
             self.log.logging( "TransportZigpy", "Debug", "transport_request: _limit_concurrency %s %s" %(destination, sequence))
             if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:
@@ -620,13 +628,9 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                     _nwkid,
                 )
                 return
-
+            
             result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
             self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
-            if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in DELAY_FOR_VERY_KEY:
-                # Most likely for the CasaIA devices which seems to have issue
-                self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 6 secondes for CASA.IA Confirm Key")
-                await asyncio.sleep( 6 )
 
             # Slow down the through put when too many commands. Try to not overload the coordinators
             multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
@@ -635,7 +639,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
         # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
-        self.log.logging("TransportZigpy", "Debug", "process_raw_command - DeliveryError : %s" % e, _nwkid)
+        self.log.logging("TransportZigpy", "Log", "process_raw_command - DeliveryError : %s" % e, _nwkid)
         msg = "%s" % e
         result = 0xB6
         self._currently_not_reachable.append( _ieee )
@@ -646,13 +650,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
     if result == 0x00 and _ieee in self._currently_not_reachable:
         self._currently_not_reachable.remove( _ieee )
 
-    self.log.logging(
-        "TransportZigpy",
-        "Debug",
-        "ZigyTransport: process_raw_command completed %s NwkId: %s result: %s msg: %s"
-        % (sequence, _nwkid, result, msg),
-        _nwkid,
-    )
+    self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command completed %s NwkId: %s result: %s msg: %s" % (sequence, _nwkid, result, msg), _nwkid, )
 
 @contextlib.asynccontextmanager
 async def _limit_concurrency(self, destination, sequence):

@@ -28,7 +28,6 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_WIZER_LEGACY,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.orvibo import OrviboRegistration
-
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
@@ -38,7 +37,7 @@ from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
 from Modules.tools import getListOfEpForCluster, is_fake_ep
-from Modules.tuya import tuya_cmd_ts004F, tuya_registration
+from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
@@ -56,11 +55,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         return
 
     HB_ = int(self.ListOfDevices[NWKID]["Heartbeat"])
-    self.log.logging(
-        "Pairing",
-        "Debug",
-        "processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " % (NWKID, status, RIA, HB_),
-    )
+    self.log.logging( "Pairing", "Debug", "processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " % (NWKID, status, RIA, HB_), )
 
     if status not in ("004d", "0043", "0045", "8045", "8043") and "Model" in self.ListOfDevices[NWKID]:
         return
@@ -250,16 +245,7 @@ def request_next_Ep(self, Nwkid):
 
    
 def interview_timeout(self, Devices, NWKID, RIA, status):
-    self.log.logging(
-        "Pairing",
-        "Debug",
-        "interview_timeout - NWKID: %s, Status: %s, RIA: %s,"
-        % (
-            NWKID,
-            status,
-            RIA,
-        ),
-    )
+    self.log.logging( "Pairing", "Debug", "interview_timeout - NWKID: %s, Status: %s, RIA: %s," % ( NWKID, status, RIA, ), )
 
     Domoticz.Error("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" % (RIA, NWKID))
     self.ListOfDevices[NWKID]["Status"] = "UNKNOW"
@@ -272,16 +258,7 @@ def interview_timeout(self, Devices, NWKID, RIA, status):
 
 
 def interview_state_createDB(self, Devices, NWKID, RIA, status):
-    self.log.logging(
-        "Pairing",
-        "Debug",
-        "interview_state_createDB - NWKID: %s, Status: %s, RIA: %s,"
-        % (
-            NWKID,
-            status,
-            RIA,
-        ),
-    )
+    self.log.logging( "Pairing", "Debug", "interview_state_createDB - NWKID: %s, Status: %s, RIA: %s," % ( NWKID, status, RIA, ), )
     # We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
     if (
         (
@@ -385,11 +362,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
         return
 
     if "ConfigSource" in self.ListOfDevices[NWKID]:
-        self.log.logging(
-            "Pairing",
-            "Debug",
-            "Device: %s - Config Source: %s Ep Details: %s" % (NWKID, self.ListOfDevices[NWKID]["ConfigSource"], str(self.ListOfDevices[NWKID]["Ep"])),
-        )
+        self.log.logging( "Pairing", "Debug", "Device: %s - Config Source: %s Ep Details: %s" % (NWKID, self.ListOfDevices[NWKID]["ConfigSource"], str(self.ListOfDevices[NWKID]["Ep"])), )
 
     # IAS Enrollment if required
     self.iaszonemgt.IAS_device_enrollment(NWKID)
@@ -403,7 +376,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
 
     self.ListOfDevices[NWKID]["PairingInProgress"] = False
 
-    mgmt_rtg(self, NWKID, "BindingTable")
+    
 
 def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
@@ -415,8 +388,8 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     # Bindings ....
     if not delay_binding_and_reporting(self, NWKID):
         binding_needed_clusters_with_zigate(self, NWKID)
-
         reWebBind_Clusters(self, NWKID)
+        mgmt_rtg(self, NWKID, "BindingTable")
 
     # Just after Binding Enable Opple with Magic Word
     if self.ListOfDevices[NWKID]["Model"] in (
@@ -521,7 +494,8 @@ def delay_binding_and_reporting(self, Nwkid):
         return False
     _model = self.ListOfDevices[Nwkid]["Model"]
     if _model in self.DeviceConf and "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
-        self.ListOfDevices[ Nwkid ]["DelayBindingAtPairing"] = ""
+        self.ListOfDevices[ Nwkid ]["DelayBindingAtPairing"] = int(( time.time() + int(self.DeviceConf[_model]["DelayBindingAtPairing"])))
+        
         self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
         return True
     return False
@@ -556,7 +530,7 @@ def device_interview(self, Nwkid):
     for iterReadAttrCluster in get_list_of_clusters_for_device( self, Nwkid):
         # if iterReadAttrCluster == '0000':
         #    reset_cluster_datastruct( self, 'ReadAttributes', NWKID, iterEp, iterReadAttrCluster  )
-        self.log.logging("Pairing", "Debug", "device_interview %s Read Attribute for cluster: %s" %(Nwkid, iterReadAttrCluster ))
+        self.log.logging("Pairing", "Log", "device_interview %s Read Attribute for cluster: %s" %(Nwkid, iterReadAttrCluster ))
         func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
         func(self, Nwkid)
 
@@ -622,20 +596,10 @@ def handle_device_specific_needs(self, Devices, NWKID):
     if self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
-    elif (
-        MsgIEEE[: PREFIX_MAC_LEN]
-        in PREFIX_MACADDR_WIZER_LEGACY
-        and WISER_LEGACY_MODEL_NAME_PREFIX
-        in self.ListOfDevices[NWKID]["Model"]
-    ):
+    elif ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY and WISER_LEGACY_MODEL_NAME_PREFIX in self.ListOfDevices[NWKID]["Model"] ):
         schneider_wiser_registration(self, Devices, NWKID)
 
-    elif self.ListOfDevices[NWKID]["Model"] in (
-        "AC201A",
-        "AC211",
-        "AC221",
-        "CAC221"
-    ):
+    elif self.ListOfDevices[NWKID]["Model"] in ( "AC201A", "AC211", "AC221", "CAC221" ):
         self.log.logging("Pairing", "Debug", "CasaIA registration needed")
         casaia_pairing(self, NWKID)
 
@@ -654,14 +618,12 @@ def handle_device_specific_needs(self, Devices, NWKID):
     elif self.ListOfDevices[NWKID]["Model"] in ("TS004F", "TS004F-_TZ3000_xabckq1v"):
         self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
-            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0000", [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe ], ackIsDisabled=False, checkTime=False, )
-            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
-            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "e001", [ 0xd011 ], ackIsDisabled=False, checkTime=False, )
-            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0001", [ 0x0020, 0x0021 ], ackIsDisabled=False, checkTime=False, )
-            #ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
             ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
 
+    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0222", ):
+        tuya_command_f0( self, NWKID )
+        
     elif self.ListOfDevices[NWKID]["Model"] in (
         "TS0601-Energy",
         "TS0601-switch",
@@ -669,6 +631,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "TS0601-SmartAir",
         "TS130F-_TZ3000_1dd0d5yi",
         "TS130F-_TZ3000_zirycpws",
+        "TS0601-temphumi"
     ):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
         tuya_registration(self, NWKID, device_reset=True)
@@ -691,13 +654,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
 def scan_device_for_group_memebership(self, NWKID):
     for ep in self.ListOfDevices[NWKID]["Ep"]:
         if "0004" in self.ListOfDevices[NWKID]["Ep"][ep] and self.groupmgt:
-            self.groupmgt.ScanDevicesForGroupMemberShip(
-                [
-                    NWKID,
-                ]
-            )
+            self.groupmgt.ScanDevicesForGroupMemberShip( [ NWKID, ] )
             break
-
 
 def request_list_of_attributes(self, NWKID):
     for iterEp in self.ListOfDevices[NWKID]["Ep"]:
