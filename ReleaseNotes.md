@@ -18,7 +18,7 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
-## Oct. 2022 - stable6 - 6.3.002
+## 19 Oct. 2022 - stable6 - 6.3.002
 
 - [Issue] - Improve pairing mecanism for the CMS323
 - [Issue] - Prevent Aqara Motion to report un-expected Off
