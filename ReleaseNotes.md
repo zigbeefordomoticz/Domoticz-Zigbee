@@ -18,6 +18,13 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
+## 19 Oct. 2022 - stable6 - 6.3.002
+
+- [Issue] - Improve pairing mecanism for the CMS323
+- [Issue] - Prevent Aqara Motion to report un-expected Off
+- [Issue] - Provide additional ZLinky translated parameters
+- [Technical] - Implement a solution to delay Binding+ConfigureReporting and give priority to IAS enrollment
+
 ## Oct. 2022 - stable6 - 6.3.001 [Upgrade to 6.3](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/beta6/VERSION-6.3.md )
 
 - [Hardware] - Tuya Smart Temp+Humi Sensor

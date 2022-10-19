@@ -172,7 +172,7 @@ def check_delay_binding( self, NwkId, model ):
             NwkId, model), NwkId, )
         return
 
-    if model not in self.DeviceConf  or "DelayBindingAtPairing" not in self.DeviceConf[ model ]  or self.DeviceConf[ model ]["DelayBindingAtPairing"] == 0:
+    if model not in self.DeviceConf or "DelayBindingAtPairing" not in self.DeviceConf[ model ] or self.DeviceConf[ model ]["DelayBindingAtPairing"] == 0:
         self.log.logging( "Heartbeat", "Debug", "check_delay_binding -  %s not applicable" % (
             NwkId), NwkId, )
         return
