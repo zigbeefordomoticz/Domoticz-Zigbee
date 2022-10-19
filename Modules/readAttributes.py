@@ -153,7 +153,7 @@ def get_max_read_attribute_value( self, nwkid=None):
             elif self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
                 read_configuration_report_chunk = 5
 
-    self.log.logging("ReadAttributes", "Log", "get_max_read_attribute_value( %s ) => %s" %( nwkid, read_configuration_report_chunk) , nwkid=nwkid)
+    self.log.logging("ReadAttributes", "Debug", "get_max_read_attribute_value( %s ) => %s" %( nwkid, read_configuration_report_chunk) , nwkid=nwkid)
 
     return read_configuration_report_chunk or self.pluginconf.pluginConf["ReadAttributeChunk"]
 
