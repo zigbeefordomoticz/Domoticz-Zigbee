@@ -3458,120 +3458,46 @@ def Cluster0406(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     if MsgAttrID == "0000":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - ClusterId=0406 - reception Occupancy Sensor: " + str(MsgClusterData),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - ClusterId=0406 - reception Occupancy Sensor: " + str(MsgClusterData), MsgSrcAddr, )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
     elif MsgAttrID == "0001":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-            MsgSrcAddr,
-        )
+        self.log.logging("Cluster","Debug","ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),MsgSrcAddr,)
         self.log.logging("Cluster", "Debug", "ReadCluster - ClusterId=0406 - Sensor Type: " + str(MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == "0010":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-            MsgSrcAddr,
-        )
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - ClusterId=0406 - Occupied to UnOccupied delay: " + str(MsgClusterData),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - ClusterId=0406 - Occupied to UnOccupied delay: " + str(MsgClusterData), MsgSrcAddr, )
 
     elif MsgAttrID == "0011":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-            MsgSrcAddr,
-        )
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - ClusterId=0406 - UnOccupied to Occupied delay: " + str(MsgClusterData),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - ClusterId=0406 - UnOccupied to Occupied delay: " + str(MsgClusterData), MsgSrcAddr, )
 
     elif MsgAttrID == "0012":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-            MsgSrcAddr,
-        )
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - ClusterId=0406 - UnoccupiedTo OccupiedThreshold: " + str(MsgClusterData),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - ClusterId=0406 - UnoccupiedTo OccupiedThreshold: " + str(MsgClusterData), MsgSrcAddr, )
 
     elif MsgAttrID == "0030":
         self.log.logging("Cluster", "Debug", "ReadCluster - ClusterId=0406 - Attribut 0030: " + str(MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == "0044":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ), MsgSrcAddr, )
 
     elif MsgAttrID == "0043":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ),
-            
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ), MsgSrcAddr, )
         
     elif MsgAttrID == "0042":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ),
-            
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ), MsgSrcAddr, )
 
     elif MsgAttrID == "0041":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ),
-            
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ), MsgSrcAddr, )
 
     elif MsgAttrID == "0040":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ),
-            
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - %s/%s ClusterId=0406 - Attribute %s value: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData ), MsgSrcAddr, )
 
 
     else:
-        self.log.logging(
-            "Cluster",
-            "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Log", "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
 
 
 def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -3586,7 +3512,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     self.log.logging(
         "Cluster",
         "Debug",
-        "ReadCluster0500 - Security & Safety IAZ Zone - Device: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" % (MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+        "ReadCluster0500 - Security & Safety IAZ Zone - Device: %s/%s  MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
 
@@ -3610,7 +3536,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster0500 - Device: %s NOT ENROLLED (0x%02d)" % (MsgSrcAddr, int(MsgClusterData, 16)),
+                "ReadCluster0500 - Device: %s/%s NOT ENROLLED (0x%02d)" % (MsgSrcAddr, MsgSrcEp, int(MsgClusterData, 16)),
                 MsgSrcAddr,
             )
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["EnrolledStatus"] = int(MsgClusterData, 16)
@@ -3618,7 +3544,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster0500 - Device: %s ENROLLED (0x%02d)" % (MsgSrcAddr, int(MsgClusterData, 16)),
+                "ReadCluster0500 - Device: %s/%s ENROLLED (0x%02d)" % (MsgSrcAddr, MsgSrcEp, int(MsgClusterData, 16)),
                 MsgSrcAddr,
             )
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["EnrolledStatus"] = int(MsgClusterData, 16)
@@ -3629,7 +3555,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster0500 - Device: %s - ZoneType: %s" % (MsgSrcAddr, ZONE_TYPE[int(MsgClusterData, 16)]),
+                "ReadCluster0500 - Device: %s/%s - ZoneType: %s" % (MsgSrcAddr, MsgSrcEp, ZONE_TYPE[int(MsgClusterData, 16)]),
                 MsgSrcAddr,
             )
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneType"] = int(MsgClusterData, 16)
@@ -3639,7 +3565,7 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.log.logging(
                 "Cluster",
                 "Debug",
-                "ReadCluster0500 - Device: %s - Unknown ZoneType: %s" % (MsgSrcAddr, MsgClusterData),
+                "ReadCluster0500 - Device: %s/%s - Unknown ZoneType: %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterData),
                 MsgSrcAddr,
             )
 
