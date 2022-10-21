@@ -54,6 +54,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
+        self.log.logging("TransportZigpy", "Log", "deConz Configuration %s" %self.config)
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         await self.load_network_info( load_devices=True )
@@ -87,8 +88,8 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             LOGGER.info("Unknow Zigbee CIE from %s %s" %( deconz_manuf, deconz_model))
             self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
             
-        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+        #if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
+        #    self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
 
     async def shutdown(self) -> None:

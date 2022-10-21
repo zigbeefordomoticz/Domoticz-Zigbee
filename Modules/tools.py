@@ -1018,6 +1018,15 @@ def checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAtt
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
 
+def checkValidValue(self, MsgSrcAddr, AttType, Data ):
+
+    if int(AttType, 16) == 0xe2:  # UTCTime
+        if Data == "ffffffff":
+            return False
+    if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.airmonitor.acn01":
+        if Data == "8000" or Data == "0000":
+            return False
+    return True
 
 def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 

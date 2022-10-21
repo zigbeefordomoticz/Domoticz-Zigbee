@@ -174,10 +174,11 @@ def WidgetForDeviceId(self, NwkId, DeviceId):
     return WidgetType
 
 
-def ResetDevice(self, Devices, ClusterType, HbCount):
+def ResetDevice(self, Devices):
     #
     # Reset all Devices from the ClusterType Motion after 30s
     #
+    self.log.logging( "Widget", "Debug", "ResetDevice")
 
     now = time.time()
     TimedOutMotion = self.pluginconf.pluginConf["resetMotiondelay"]
@@ -194,11 +195,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
         try:
             LUpdate = time.mktime(time.strptime(LUpdate, "%Y-%m-%d %H:%M:%S"))
         except:
-            self.log.logging(
-                "Widget",
-                "Error",
-                "Something wrong to decode Domoticz LastUpdate %s for Unit: %s Ieee: %s" % (LUpdate, unit, Ieee),
-            )
+            self.log.logging( "Widget", "Error", "Something wrong to decode Domoticz LastUpdate %s for Unit: %s Ieee: %s" % (LUpdate, unit, Ieee), )
             continue
 
         # Look for the corresponding Widget
@@ -230,21 +227,11 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
 
         elif TimedOutSwitchButton and WidgetType in SWITCH_LVL_MATRIX:
             if "ForceUpdate" in SWITCH_LVL_MATRIX[WidgetType] and SWITCH_LVL_MATRIX[WidgetType]["ForceUpdate"]:
-                resetSwitchSelectorPushButton(
-                    self,
-                    Devices,
-                    NWKID,
-                    WidgetType,
-                    unit,
-                    SignalLevel,
-                    BatteryLvl,
-                    now,
-                    LUpdate,
-                    TimedOutSwitchButton,
-                )
-
+                resetSwitchSelectorPushButton( self, Devices, NWKID, WidgetType, unit, SignalLevel, BatteryLvl, now, LUpdate, TimedOutSwitchButton, )
+    self.log.logging( "Widget", "Debug", "ResetDevice end")
 
 def resetMotion(self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut):
+    self.log.logging( "Widget", "Debug", "resetMotion %s %s %s" %( NwkId, WidgetType, unit))
     if Devices[unit].nValue == 0 and Devices[unit].sValue == "Off":
         # Nothing to Reset
         return
@@ -257,16 +244,12 @@ def resetMotion(self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl,
 
     if (now - lastupdate) >= TimedOut:  
         Devices[unit].Update(nValue=0, sValue="Off")
-        self.log.logging(
-            "Widget",
-            "Debug",
-            "Last update of the devices %s %s was %s ago" % (unit, WidgetType, (now - lastupdate)),
-            NwkId,
-        )
-        # UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLvl, SignalLevel)
+        self.log.logging( "Widget", "Debug", "Last update of the devices %s %s was %s ago" % (unit, WidgetType, (now - lastupdate)), NwkId, )
 
 
 def resetSwitchSelectorPushButton( self, Devices, NwkId, WidgetType, unit, SignalLevel, BatteryLvl, now, lastupdate, TimedOut ):
+    self.log.logging( "Widget", "Debug", "resetSwitchSelectorPushButton %s %s %s" %( NwkId, WidgetType, unit))
+
     if Devices[unit].nValue == 0:
         return
     if (now - lastupdate) < TimedOut:
@@ -279,12 +262,7 @@ def resetSwitchSelectorPushButton( self, Devices, NwkId, WidgetType, unit, Signa
         sValue = "00"
     Devices[unit].Update(nValue=nValue, sValue=sValue)
 
-    self.log.logging(
-        "Widget",
-        "Debug",
-        "Last update of the devices %s WidgetType: %s was %s ago" % (unit, WidgetType, (now - lastupdate)),
-        NwkId,
-    )
+    self.log.logging( "Widget", "Debug", "Last update of the devices %s WidgetType: %s was %s ago" % (unit, WidgetType, (now - lastupdate)), NwkId, )
     # Domoticz.Log(" Update nValue: %s sValue: %s" %(nValue, sValue))
 
 

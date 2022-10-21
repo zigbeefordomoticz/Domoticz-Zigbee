@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.2">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.4">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -304,7 +304,7 @@ class BasePlugin:
             self.onStop()
             return
 
-        if Parameters["Mode5"] == "" or "http://" not in Parameters["Mode5"]:
+        if Parameters["Mode5"] == "" or "http://" not in Parameters["Mode5"].lower():
             Domoticz.Error("Please cross-check the Domoticz Hardware settingi for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
             self.onStop()
 
@@ -376,7 +376,7 @@ class BasePlugin:
         self.log.logging(
             "Plugin",
             "Status",
-            "Zigate plugin %s-%s started"
+            "Zigbee for Domoticz (z4d) plugin %s-%s started"
             % (self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]),
         )
 
@@ -834,9 +834,7 @@ class BasePlugin:
 
 
     def onCommand(self, Unit, Command, Level, Color):
-        self.log.logging(
-            "Plugin", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color)
-        )
+        self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
@@ -847,25 +845,16 @@ class BasePlugin:
             # if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
             #    # Command belongs to a Zigate group
             if self.log:
-                self.log.logging(
-                    "Plugin",
-                    "Debug",
-                    "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, Devices[Unit].DeviceID),
-                )
+                self.log.logging( "Command", "Debug", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, Devices[Unit].DeviceID), )
             self.groupmgt.processCommand(Unit, Devices[Unit].DeviceID, Command, Level, Color)
 
         elif Devices[Unit].DeviceID.find("Zigate-01-") != -1:
             if self.log:
-                self.log.logging("Plugin", "Debug", "onCommand - Command adminWidget: %s " % Command)
+                self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
             self.adminWidgets.handleCommand(self, Command)
 
         else:
-            self.log.logging(
-                "Plugin",
-                "Error",
-                "onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s"
-                % (Devices[Unit].Name, Unit, Devices[Unit].DeviceID),
-            )
+            self.log.logging( "Command", "Error", "onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" % (Devices[Unit].Name, Unit, Devices[Unit].DeviceID), )
 
     def onDisconnect(self, Connection):
 
@@ -939,6 +928,9 @@ class BasePlugin:
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
 
+        # Reset Motion sensors
+        ResetDevice(self, Devices)
+
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)
         # Group Management
@@ -947,14 +939,12 @@ class BasePlugin:
 
         # Write the ListOfDevice every 5 minutes or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
-            WriteDeviceList(self, ( (5 * 60) // HEARTBEAT) )
-            
+            WriteDeviceList(self, ( (5 * 60) // HEARTBEAT) )  
         else:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
-
-        
+  
         # Update the NetworkDevices attributes if needed , once by day
         build_list_of_device_model(self)
 
@@ -969,9 +959,6 @@ class BasePlugin:
             self.statistics._Load = self.ControllerLink.loadTransmit()
             self.statistics.addPointforTrendStats(self.HeartbeatCount)
             return
-
-        # Reset Motion sensors
-        ResetDevice(self, Devices, "Motion", 5)
 
         # OTA upgrade
         if self.OTA:
@@ -1451,7 +1438,7 @@ def pingZigate(self):
             # self.connectionState = 0
             # self.Ping['TimeStamp'] = int(time.time())
             # self.ControllerLink.re_conn()
-            restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
+            restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 
         elif (self.Ping["Nb Ticks"] % 3) == 0:
             zdp_get_permit_joint_status(self)

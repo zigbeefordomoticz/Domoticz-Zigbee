@@ -59,6 +59,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
+        self.log.logging("TransportZigpy", "Log", "EZSP Configuration %s" %self.config)
+        
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         # await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
@@ -67,18 +69,19 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # Trigger Version payload to plugin
         try:
             brd_manuf, brd_name, version = await self._ezsp.get_board_info()
-            LOGGER.debug("EZSP Radio manufacturer: %s", brd_manuf)
-            LOGGER.debug("EZSP Radio board name: %s", brd_name)
-            LOGGER.debug("EmberZNet version: %s" %version)
-            LOGGER.info("EZSP Configuration %s", self.config)
+            self.log.logging("TransportZigpy", "Debug", "EZSP Radio manufacturer: %s", brd_manuf)
+            self.log.logging("TransportZigpy", "Debug", "EZSP Radio board name: %s", brd_name)
+            self.log.logging("TransportZigpy", "Debug", "EmberZNet version: %s" %version)
+            
             
         except EzspError as exc:
             LOGGER.error("EZSP Radio does not support getMfgToken command: %s" %str(exc))
 
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin(brd_manuf, brd_name, version)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
-        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+        
+        #if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
+        #    self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
 
     async def shutdown(self) -> None:

@@ -18,8 +18,20 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
-## Sept. 2022 - stable6 - 6.3.001
+## 19 Oct. 2022 - stable6 - 6.3.002
 
+- [Issue] - Improve pairing mecanism for the CMS323
+- [Issue] - Prevent Aqara Motion to report un-expected Off
+- [Issue] - Provide additional ZLinky translated parameters
+- [Technical] - Implement a solution to delay Binding+ConfigureReporting and give priority to IAS enrollment
+
+## Oct. 2022 - stable6 - 6.3.001 [Upgrade to 6.3](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/beta6/VERSION-6.3.md )
+
+- [Hardware] - Tuya Smart Temp+Humi Sensor
+- [Tecnical] - OTA for zigpy devices
+- [Technical] - New REST API /raw-zigbee allowing to send zigbee raw commands
+- [Technical] - Enhacement of the WebUI
+- [Technical] - Fix on Motion/Lux devices. Prevent updating Widget when no move.
 - [Hardware] - Integration of Tuya Smoke detector https://zigbee.blakadder.com/Tuya_YG400A.html
 - [Hardware] - Integration of Curtain Module WS-Zigbee-CP03
 - [Hardware] - New Lidl PIR 
