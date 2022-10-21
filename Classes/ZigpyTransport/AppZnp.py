@@ -59,6 +59,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
+        self.log.logging("TransportZigpy", "Log", "ZNP Configuration %s" %self.config)
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         await self.load_network_info( load_devices=True )
