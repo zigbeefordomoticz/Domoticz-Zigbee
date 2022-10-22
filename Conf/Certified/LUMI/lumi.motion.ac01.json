@@ -13,5 +13,8 @@
     "ConfigureReporting": {},
     "ReadAttributes": {
         "0000": [ "0004", "0005" ]
+    },
+    "Param": {
+        "resetMotiondelay": 0
     }
 }
