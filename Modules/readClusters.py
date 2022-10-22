@@ -4891,6 +4891,10 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
+    
+    elif MsgAttrID == "0143":   # Presence Event
+        # enter, leave, left_enter, right_leave, right_enter, left_leave, approach, away.
+        store_lumi_attribute(self, MsgSrcAddr, "Presence_event", MsgClusterData)
         
     elif MsgAttrID == "0144":   # Monitoring mode
         store_lumi_attribute(self, MsgSrcAddr, "Monitoring_mode", MsgClusterData)
@@ -4900,6 +4904,13 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         store_lumi_attribute(self, MsgSrcAddr, "Approching_distance", MsgClusterData)
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Approching distance: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
 
+    elif MsgAttrID == "0151":  # Event in a region
+        # Region Manned (labelled "People exists" on the choose trigger condition selection);
+        # Region Unmanned (also labelled "People exists" on the selection);
+        # Region In;
+        # Region Leave.
+        # 01 In, 02 Leave, 04: Manned, 08 Unmanned
+        store_lumi_attribute(self, MsgSrcAddr, "Event_in_region" , MsgClusterData)
     else:
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Unknown attribute: %s value %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )    
         store_lumi_attribute(self, MsgSrcAddr, MsgAttrID , MsgClusterData)
