@@ -426,10 +426,10 @@ def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, Src
     
     idx = 0
     while idx < len(Data):
-        status = Data[idx:idx+2]
+        status = Data[idx:idx + 2]
         buildPayload += status
         idx += 2
-        direction = Data[idx:idx+2]
+        direction = Data[idx:idx + 2]
         buildPayload += direction
         idx += 2
         attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
@@ -438,7 +438,7 @@ def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, Src
 
         DataType = MinInterval = MaxInterval = Change = None
         if status == "00":
-            DataType = Data[idx:idx+2]
+            DataType = Data[idx:idx + 2]
             buildPayload += DataType
             idx += 2
             MinInterval = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
@@ -639,7 +639,7 @@ def buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
         RequestNodeAddress = decode_endian_data(Data[36:52], "0F")
         
     buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId
-    buildPayload += ImageOffset + ImageVersion + ImageType + ManufCode + MaxDataSize  + Pagesize + ResponseSpacing + FieldControl + RequestNodeAddress
+    buildPayload += ImageOffset + ImageVersion + ImageType + ManufCode + MaxDataSize + Pagesize + ResponseSpacing + FieldControl + RequestNodeAddress
     
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8502 payload: %s" %buildPayload)
     return encapsulate_plugin_frame("8502", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
