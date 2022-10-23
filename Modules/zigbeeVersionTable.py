@@ -12,8 +12,8 @@ FIRMWARE_BRANCH = {
     "30": "Elelabs, ELR02x",
     "31": "Elelabs, ELU01x",
     
-    "98": "Unknown ZNP",
-    "99": "Unknown Silicon Labs"
+    "98": "Unknown Silicon Labs",
+    "99": "Unknown ZNP"
 }
 
 ZNP_MODEL = {
