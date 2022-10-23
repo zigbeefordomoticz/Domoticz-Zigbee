@@ -18,6 +18,10 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
+##    Oct. 2022 - stable6 - 6.3.003
+- [Issue] - drop invalid ieee
+- [Technical] - log zigpy configuration at startup
+
 ## 19 Oct. 2022 - stable6 - 6.3.002
 
 - [Issue] - Improve pairing mecanism for the CMS323

@@ -59,6 +59,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
+        self.log.logging("TransportZigpy", "Log", "EZSP Configuration %s" %self.config)
+        
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         # await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
@@ -67,10 +69,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # Trigger Version payload to plugin
         try:
             brd_manuf, brd_name, version = await self._ezsp.get_board_info()
-            LOGGER.debug("EZSP Radio manufacturer: %s", brd_manuf)
-            LOGGER.debug("EZSP Radio board name: %s", brd_name)
-            LOGGER.debug("EmberZNet version: %s" %version)
-            LOGGER.info("EZSP Configuration %s", self.config)
+            self.log.logging("TransportZigpy", "Status", "EZSP Radio manufacturer: %s" %brd_manuf)
+            self.log.logging("TransportZigpy", "Status", "EZSP Radio board name: %s" %brd_name)
+            self.log.logging("TransportZigpy", "Status", "EmberZNet version: %s" %version)
+            
             
         except EzspError as exc:
             LOGGER.error("EZSP Radio does not support getMfgToken command: %s" %str(exc))

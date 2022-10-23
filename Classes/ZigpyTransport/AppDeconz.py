@@ -54,6 +54,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
+        self.log.logging("TransportZigpy", "Log", "deConz Configuration %s" %self.config)
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         await self.load_network_info( load_devices=True )
@@ -66,8 +67,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         # Trigger Version payload to plugin
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
-        LOGGER.debug("startup in AppDeconz - Model: %s Manuf: %s" %(
-            deconz_model, deconz_manuf))
+        self.log.logging("TransportZigpy", "Status", "deConz Radio manufacturer: %s" %deconz_manuf)
+        self.log.logging("TransportZigpy", "Status", "deConz Radio board model: %s" %deconz_model)
+        self.log.logging("TransportZigpy", "Status", "deConz Radio version: %s" %self.version)
         
         deconz_version = "%08x" %self.version
         deconz_major = deconz_version[:4]

@@ -111,6 +111,11 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
     """
     Called when a device joins or announces itself on the network.
     """
+    if str(ieee) in {"00:00:00:00:00:00:00:00", "ff:ff:ff:ff:ff:ff:ff:ff"}:
+        # invalid ieee, drop
+        LOGGER.debug("ignoring invalid neighbor: %s", ieee)
+        return
+
     ieee = t.EUI64(ieee)
     try:
         dev = self.get_device(ieee)
@@ -125,7 +130,6 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
         dev.nwk = nwk
         _update_nkdids_if_needed(self, ieee, dev.nwk )
         LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
-
 
 def _update_nkdids_if_needed( self, ieee, new_nwkid ):
     _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
