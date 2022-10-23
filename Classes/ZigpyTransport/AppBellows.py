@@ -69,8 +69,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # Trigger Version payload to plugin
         try:
             brd_manuf, brd_name, version = await self._ezsp.get_board_info()
-            self.log.logging("TransportZigpy", "Status", "EZSP Radio manufacturer: %s", brd_manuf)
-            self.log.logging("TransportZigpy", "Status", "EZSP Radio board name: %s", brd_name)
+            self.log.logging("TransportZigpy", "Status", "EZSP Radio manufacturer: %s" %brd_manuf)
+            self.log.logging("TransportZigpy", "Status", "EZSP Radio board name: %s" %brd_name)
             self.log.logging("TransportZigpy", "Status", "EmberZNet version: %s" %version)
             
             
