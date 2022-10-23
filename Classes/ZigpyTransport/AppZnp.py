@@ -69,6 +69,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         # Trigger Version payload to plugin
         znp_model = self.get_device(nwk=t.NWK(0x0000)).model
         znp_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
+        self.log.logging("TransportZigpy", "Status", "ZNP Radio manufacturer: %s" %znp_manuf)
+        self.log.logging("TransportZigpy", "Status", "ZNP Radio board model: %s" %znp_model)
+        self.log.logging("TransportZigpy", "Status", "ZNP Radio version: %s" %self._znp.version)
+
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin( znp_model, znp_manuf)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
         
