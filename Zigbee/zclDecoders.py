@@ -5,6 +5,7 @@
 #
 
 
+from distutils.command.build import build
 import struct
 from os import stat
 
@@ -80,7 +81,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
             "01": "Query Next Image Request",
             "02": "Query Next Image response",
             "03": "Image Block Request",  # 8501
-            "04": "Image Page request",
+            "04": "Image Page request",   # 8502
             "05": "Image Block Response",
             "06": "Upgrade End Request",  # 8503
             "07": "Upgrade End response",
@@ -90,6 +91,11 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         if Command == "03":
             # Image Block request,
             return buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+        
+        if Command == "04":
+            # Image Page request
+            self.log.logging("zclDecoder", "Log", "Image Page request from '%s' for which no tests have been done so far. Please contact us" %SrcNwkId)
+            return buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
             
         if Command == "06":
             return buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
@@ -421,10 +427,10 @@ def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, Src
     
     idx = 0
     while idx < len(Data):
-        status = Data[idx:idx+2]
+        status = Data[idx:idx + 2]
         buildPayload += status
         idx += 2
-        direction = Data[idx:idx+2]
+        direction = Data[idx:idx + 2]
         buildPayload += direction
         idx += 2
         attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
@@ -433,7 +439,7 @@ def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, Src
 
         DataType = MinInterval = MaxInterval = Change = None
         if status == "00":
-            DataType = Data[idx:idx+2]
+            DataType = Data[idx:idx + 2]
             buildPayload += DataType
             idx += 2
             MinInterval = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
@@ -616,6 +622,30 @@ def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 payload: %s" %buildPayload)
     return encapsulate_plugin_frame("8501", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
+def buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
+        '8502', ClusterId, Command, Data, frame))
+
+    FieldControl = decode_endian_data(Data[:2], "20")
+    ManufCode = decode_endian_data(Data[2:6], "21")
+    ImageType = decode_endian_data(Data[6:10], "21")
+    ImageVersion = decode_endian_data(Data[10:18], "23")
+    ImageOffset = decode_endian_data(Data[18:26], "23")
+    MaxDataSize = decode_endian_data(Data[26:28], "20")
+    Pagesize = decode_endian_data(Data[28:32], "21")
+    ResponseSpacing = decode_endian_data(Data[32:36], "21")
+    
+    RequestNodeAddress = ""
+    if len(Data) > 36:
+        RequestNodeAddress = decode_endian_data(Data[36:52], "0F")
+        
+    buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId
+    buildPayload += ImageOffset + ImageVersion + ImageType + ManufCode + MaxDataSize + Pagesize + ResponseSpacing + FieldControl + RequestNodeAddress
+    
+    self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8502 payload: %s" %buildPayload)
+    return encapsulate_plugin_frame("8502", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+    
+    
 def buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
 
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (

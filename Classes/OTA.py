@@ -138,13 +138,13 @@ class OTAManagement(object):
         self.ImageLoaded["LoadedTimeStamp"] = 0
         self.ListInUpdate["Process"] = None
 
-    def ota_request_firmware(self, MsgData):  # OK 13/10
-        # ota_request_firmware(self, Devices, MsgData, MsgLQI):  # OTA image block request
+    def ota_image_block_request(self, MsgData):  # OK 13/10
+        # ota_image_block_request(self, Devices, MsgData, MsgLQI):  # OTA image block request
         # BLOCK_REQUEST  0x8501  ZiGate will receive this command when device asks OTA firmware
-        logging(self, "Debug", "ota_request_firmware - Request Firmware Block (%s) %s" % (len(MsgData), MsgData))
+        logging(self, "Debug", "ota_image_block_request - Request Firmware Block (%s) %s" % (len(MsgData), MsgData))
 
         if len(MsgData) not in ( 60 , 62):
-            logging(self, "Debug", "ota_request_firmware - Incorrect lenght (%s) %s" % (len(MsgData), MsgData))
+            logging(self, "Debug", "ota_image_block_request - Incorrect lenght (%s) %s" % (len(MsgData), MsgData))
             return
         MsgSQN = MsgData[:2]
         MsgEP = MsgData[2:4]
@@ -160,59 +160,83 @@ class OTAManagement(object):
         MsgMaxDataSize = MsgData[58:60]
         intMsgFieldControl = int(MsgData[60:62], 16)
 
-        logging( self, "Debug", "ota_request_firmware - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % (
+        logging( self, "Debug", "ota_image_block_request - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % (
             MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgBlockRequestDelay, 16), int(MsgMaxDataSize, 16), intMsgFieldControl, ),)
 
         if self.ListInUpdate["NwkId"] is None:
-            logging(self, "Debug", "ota_request_firmware - Async request from device: %s." % (MsgSrcAddr))
+            logging(self, "Debug", "ota_image_block_request - Async request from device: %s." % (MsgSrcAddr))
             if not async_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ):
                 logging(
                     self,
                     "Debug",
-                    "ota_request_firmware %s/%s - Async request failed %s " % (MsgSrcAddr, MsgEP, self.ListInUpdate),
+                    "ota_image_block_request %s/%s - Async request failed %s " % (MsgSrcAddr, MsgEP, self.ListInUpdate),
                 )
                 return
 
-        self.ListInUpdate["Retry"] = 0
+        prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN, )
+            
 
-        # Get all block information, and patch if needed ( Legrand )
-        block_request = initialize_block_request( self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN, )
-        if intMsgImageType != block_request["ImageType"]:
-            intMsgImageType = block_request["ImageType"]
 
-        if intMsgImageType not in self.ListOfImages["ImageType"]:
-            # Image Type unknown or not loaded
-            logging( self, "Error", "ota_request_firmware %s/%s - 0x%04x image not found" % (MsgSrcAddr, MsgEP, intMsgImageType), )
+    def ota_image_page_request( self, MsgData ):
+        MsgSQN = MsgData[:2]
+        MsgEP = MsgData[2:4]
+        MsgClusterId = MsgData[4:8]
+        MsgaddrMode = MsgData[8:10]
+        MsgSrcAddr = MsgData[10:14]
+        MsgFileOffset = MsgData[14:22]
+        intMsgImageVersion = int(MsgData[22:30], 16)
+        intMsgImageType = int(MsgData[30:34], 16)
+        intMsgManufCode = int(MsgData[34:38], 16)
+        MsgMaxDataSize = MsgData[38:40]
+        PageSize = MsgData[40:44]
+        ResponseSpacing = MsgData[44:48]
+        FieldControl = MsgData[48:50]
+        intMsgFieldControl = int(FieldControl,16)
+        if len(MsgData) == 64:
+            RequestNodeAddress = MsgData[48:64]
+
+        logging( self, "Debug", "ota_image_page_request - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X MaxSize: %s PageSize: %s ResponseSpacing: %s Control: 0x%02X" % (
+            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgMaxDataSize, 16), int(PageSize,16) , int(ResponseSpacing,16), intMsgFieldControl, ),)
+
+        if self.ListInUpdate["NwkId"] is None:
+            logging(self, "Debug", "ota_image_page_request - Async request from device: %s." % (MsgSrcAddr))
             return
+   
+        # Page Size: The value indicates the number of bytes to be sent by the server before the client sends another Image Page
+        #            Request command. In general, page size value SHALL be larger than the maximum data size value. 
+        # Max data Size: The value indicates the largest possible length of data (in bytes) that the client can receive at once.
+        # Response Spacing: The value indicates how fast the server SHALL send the data (via Image Block Response command) to the client. 
+        # The value is determined by the client. The server SHALL wait at the minimum the (response) spacing value before sending more data to the client. 
+        # The value is in milliseconds.
+        
+        # So we are going to break the pagesize into block of max data size
+        number_blocks = PageSize // MsgMaxDataSize
+        
+        _sqn = int(MsgSQN,16)
+        _file_offset = int(MsgFileOffset,16)
+        for _ in range( number_blocks ):
+            prepare_and_send_block(
+                self, 
+                MsgSrcAddr, 
+                MsgEP, 
+                "%08x" %_file_offset, 
+                intMsgImageVersion, 
+                intMsgImageType, 
+                intMsgManufCode, 
+                ResponseSpacing, 
+                MsgMaxDataSize, 
+                intMsgFieldControl, 
+                "%02x" %_sqn, 
+                disabelACK=True
+            )
+            
+            _file_offset += int(MsgMaxDataSize,16)
+            _sqn += 1
+            if _sqn > 0xff:
+                _sqn = "00"
 
-        if self.ListInUpdate["NwkId"] and intMsgImageType != self.ListInUpdate["intImageType"] and MsgSrcAddr != self.ListInUpdate["NwkId"]:
-            # Request which do not belongs to the current upgrade
-            logging( self, "Error", "ota_request_firmware %s/%s - request update while an other is in progress %s " % (MsgSrcAddr, MsgEP, self.ListInUpdate["NwkId"]), )
-            return
 
-        logging( self, "Debug", "ota_request_firmware - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % ( 
-            int(MsgSQN, 16), MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgBlockRequestDelay, 16), int(MsgMaxDataSize, 16), intMsgFieldControl, ),)
-
-        if self.ListInUpdate["Process"] is None:
-            start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize)
-            self.ListInUpdate["Process"] = "Started"
-        else:
-            self.ListInUpdate["Process"] = "OnGoing"
-
-        display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFileOffset)
-
-        self.ListInUpdate["Status"] = "Block requested"
-        self.ListInUpdate["intFileOffset"] = int(MsgFileOffset, 16)
-        self.ListInUpdate["LastBlockSent"] = time.time()
-
-        # self. ota_management( MsgSrcAddr, MsgEP )
-
-        logging( self, "Debug", "ota_request_firmware - Block Request for %s/%s Image Type: 0x%04X Image Version: %08X Seq: %s Offset: %s Size: %s FieldCtrl: 0x%02X" % ( 
-            MsgSrcAddr, block_request["ReqEp"], block_request["ImageType"], block_request["ImageVersion"], MsgSQN, (block_request["Offset"], 16), int(block_request["MaxDataSize"], 16), block_request["FieldControl"], ),)
-
-        ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request)
-
-    def ota_request_firmware_completed(self, MsgData):
+    def ota_upgrade_end_request(self, MsgData):
         logging(self, "Debug", "Decode8503 - Request Firmware Completed %s/%s" % (MsgData, len(MsgData)))
 
         MsgSQN = MsgData[:2]
@@ -228,15 +252,15 @@ class OTAManagement(object):
             MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
 
         if self.ListInUpdate["NwkId"] is None:
-            logging(self, "Log", "ota_request_firmware_completed - Receive Firmware Completed from %s most likely a duplicated packet as there is nothing in Progress. " % MsgSrcAddr)
+            logging(self, "Log", "ota_upgrade_end_request - Receive Firmware Completed from %s most likely a duplicated packet as there is nothing in Progress. " % MsgSrcAddr)
 
             return
         if self.ListInUpdate["NwkId"] and MsgSrcAddr != self.ListInUpdate["NwkId"]:
-            logging(self, "Error", "ota_request_firmware_completed - OTA upgrade completed - %s not in Upgraded devices" % MsgSrcAddr)
+            logging(self, "Error", "ota_upgrade_end_request - OTA upgrade completed - %s not in Upgraded devices" % MsgSrcAddr)
 
             return
         if "StartTime" not in self.ListInUpdate:
-            logging(self, "Error", "ota_request_firmware_completed - OTA upgrade completed - No Start Time for device: %s" % MsgSrcAddr)
+            logging(self, "Error", "ota_upgrade_end_request - OTA upgrade completed - No Start Time for device: %s" % MsgSrcAddr)
 
             return
         if MsgStatus == "00":
@@ -470,7 +494,7 @@ def ota_load_image_to_zigate(self, image_type, force_version=None):  # OK 13/10
     self.ImageLoaded["LoadedTimeStamp"] = time.time()
 
 
-def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request):  # OK 24/10
+def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request, disabelACK=False):  # OK 24/10
     # 'BLOCK_SEND 	0x0502 	This is used to transfer firmware BLOCKS to device when it sends request 0x8501.'
     #
     # Indicates whether a data block is included in the response:
@@ -519,7 +543,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     logging( self, "Debug", "ota_send_block - Block sent to %s/%s Received yet: %s Sent now: %s" % (dest_addr, dest_ep, _offset, _lenght), )
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         rawdatas = "".join("%02x" % i for i in _raw_ota_data)
-        return zcl_raw_ota_image_block_response_success(self, "%02x" % sequence, dest_addr, ZIGATE_EP, dest_ep, "%02x" % _status, manufacturer_code, image_type, image_version, "%08x" % _offset, "%02x" % _lenght, rawdatas )
+        return zcl_raw_ota_image_block_response_success(self, "%02x" % sequence, dest_addr, ZIGATE_EP, dest_ep, "%02x" % _status, manufacturer_code, image_type, image_version, "%08x" % _offset, "%02x" % _lenght, rawdatas , ackIsDisabled=disabelACK)
 
     self.ControllerLink.sendData("0502", datas, ackIsDisabled=False, NwkId=dest_addr)
 
@@ -958,6 +982,47 @@ def unpack_headers(ota_image):  # OK 13/10
     ]
 
     return dict(zip(header_headers, header_data_compact))
+
+def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN, disabelACK=False):
+    self.ListInUpdate["Retry"] = 0
+
+    # Get all block information, and patch if needed ( Legrand )
+    block_request = initialize_block_request( self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN, )
+    if intMsgImageType != block_request["ImageType"]:
+        intMsgImageType = block_request["ImageType"]
+
+    if intMsgImageType not in self.ListOfImages["ImageType"]:
+        # Image Type unknown or not loaded
+        logging( self, "Error", "ota_image_block_request %s/%s - 0x%04x image not found" % (MsgSrcAddr, MsgEP, intMsgImageType), )
+        return
+
+    if self.ListInUpdate["NwkId"] and intMsgImageType != self.ListInUpdate["intImageType"] and MsgSrcAddr != self.ListInUpdate["NwkId"]:
+        # Request which do not belongs to the current upgrade
+        logging( self, "Error", "ota_image_block_request %s/%s - request update while an other is in progress %s " % (MsgSrcAddr, MsgEP, self.ListInUpdate["NwkId"]), )
+        return
+
+    logging( self, "Debug", "ota_image_block_request - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % ( 
+        int(MsgSQN, 16), MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgBlockRequestDelay, 16), int(MsgMaxDataSize, 16), intMsgFieldControl, ),)
+
+    if self.ListInUpdate["Process"] is None:
+        start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize)
+        self.ListInUpdate["Process"] = "Started"
+    else:
+        self.ListInUpdate["Process"] = "OnGoing"
+
+    display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFileOffset)
+
+    self.ListInUpdate["Status"] = "Block requested"
+    self.ListInUpdate["intFileOffset"] = int(MsgFileOffset, 16)
+    self.ListInUpdate["LastBlockSent"] = time.time()
+
+    # self. ota_management( MsgSrcAddr, MsgEP )
+
+    logging( self, "Debug", "ota_image_block_request - Block Request for %s/%s Image Type: 0x%04X Image Version: %08X Seq: %s Offset: %s Size: %s FieldCtrl: 0x%02X" % ( 
+        MsgSrcAddr, block_request["ReqEp"], block_request["ImageType"], block_request["ImageVersion"], MsgSQN, (block_request["Offset"], 16), int(block_request["MaxDataSize"], 16), block_request["FieldControl"], ),)
+
+    ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request, disabelACK=disabelACK)
+
 
 def initialize_block_request(  # OK 13/10
     self,
