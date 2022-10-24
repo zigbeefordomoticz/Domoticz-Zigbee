@@ -164,6 +164,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
                 conf.CONF_ZNP_CONFIG: {},
                 "topology_scan_enabled": False,
                 }
+            
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
@@ -629,7 +630,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                 )
                 return
             
-            result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply, use_ieee )
+            result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=use_ieee, extended_timeout=False )
             self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
 
             # Slow down the through put when too many commands. Try to not overload the coordinators
