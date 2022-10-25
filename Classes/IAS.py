@@ -259,17 +259,16 @@ class IAS_Zone_Management:
     def IAS_CIE_write_response(self, NwkId, Ep, Status):
         # We are receiving a Write Attribute response
         self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep}  Status: {Status}")
-        if ( 
-            NwkId not in self.ListOfDevices 
-            and "IAS" not in self.ListOfDevices[ NwkId ] 
-            and "Auto-Enrollment" not in self.ListOfDevices[ NwkId ]["IAS"] 
-            and "Ep" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"] 
-            and Ep not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"]
+        if (
+            NwkId not in self.ListOfDevices
+            or "IAS" not in self.ListOfDevices[ NwkId ]
+            or "Auto-Enrollment" not in self.ListOfDevices[ NwkId ]["IAS"]
+            or "Ep" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]
+            or Ep in "Status" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"]
+            or "Status" not in self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]
+            or self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "set IAS CIE Address"
         ):
-            return
-
-        if self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ Ep ]["Status"] != "set IAS CIE Address":
-            self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep}  {self.ListOfDevices[ NwkId ]['IAS']['Auto-Enrollment']['Ep'][ Ep ]['Status']} !=  set IAS CIE Address")
+            self.logging("Debug", f"IAS CIE write Response for {NwkId}/{Ep} but not expected !!")
             return
 
         # We got the confirmation. Now we have to wait for the Enrollment Request
