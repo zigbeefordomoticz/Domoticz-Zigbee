@@ -41,7 +41,7 @@ As for TI coordinator, we rely on [zigpy-bellows](https://github.com/zigpy/bello
 
 ## Documentation
 
-Documentation are available on the [Wiki](https://zigbeefordomoticz.github.io/wiki)
+Documentation in English, French and Dutch (needs updates) are available on the [Wiki](https://zigbeefordomoticz.github.io/wiki)
 
 ## Support
 
