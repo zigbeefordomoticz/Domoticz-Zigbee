@@ -9,9 +9,8 @@
 
 
 
-ZigBeeForDomoticz a plugin for [Domoticz home automation software](https://www.domoticz.com/) to connect Zigbee devices through Zigbee coordinator (ZigBee hubs/gateways/bridges/controllers/adapters/dongles/sticks/keys), like [ZiGate](https://zigate.fr), as well as Texas Instruments CC253x/CC13x2/CC26x2 Zigbee adapters/dongles/sticks/keys like [zzh](https://electrolama.com/projects/zig-a-zig-ah/), as well as Silicon Labs Zigbee adapters/dongles/sticks/keys like [elelabs](https://elelabs.com/)
-
-This plugin is an evolution of the mature Zigate plugin, which will continue to manage and handle Zigate in native mode, while Texas Instruments's will be handle through unified communication libraries from the [zigpy](https://github.com/zigpy/zigpy) project.
+ZigBeeForDomoticz is a plugin for [Domoticz home automation software](https://www.domoticz.com/) to connect Zigbee devices through Zigbee coordinator (ZigBee hubs/gateways/bridges/controllers/adapters/dongles/sticks/keys).
+This plugin is an evolution of the mature Zigate plugin, which will continue to manage and handle ZiGates in native mode, while the others will be handle through unified communication libraries from the [zigpy](https://github.com/zigpy/zigpy) project.
 
 
 ## Documentation - Installation
@@ -29,7 +28,7 @@ Der wiki ist auf [Deutsch](https://zigbeefordomoticz.github.io/wiki/nl-dut/) ver
 
 Since the release of 6th version in april 2022, we opened the plugin to other coordinators than ZiGate's by adding the zigpy protocol.
 
-#### ZiGates
+#### ZiGates Coordinators
 
 The plugin was originally developed for the [ZiGate](https://zigate.fr) Coordinators. They are still working in native mode.
 
@@ -48,7 +47,7 @@ As for TI coordinator, we rely on [zigpy-bellows](https://github.com/zigpy/bello
 A list of certified objetcs is maintained on [https://zigbee.blakadder.com](https://zigbee.blakadder.com/z4d.html). If an object in non-listed, that does not mean that it is not working with the plugin : it can work directly or need an integration to get it full working.
 
 
-## LIMITATIONS
+## Limitations
 
 * Please do consider that the current plugin is limited to create a maximum of 255 "Widgets" (Domoticz devices).  This will still give you the possibility to integrate a large number of Zigbee devices , but not an unlimited number.
 
