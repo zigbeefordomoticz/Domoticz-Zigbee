@@ -14,8 +14,8 @@
 import time
 
 import Domoticz
-import Modules.paramDevice
 
+import Modules.paramDevice
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
                                   send_zigatecmd_zcl_noack)
@@ -25,7 +25,6 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
                                        PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_TUYA,
                                        PREFIX_MACADDR_XIAOMI)
-import Modules.paramDevice
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
                            is_time_to_perform_work, reset_attr_datastruct,
@@ -169,11 +168,11 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufa
             normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, shortlist, manufacturer_spec, manufacturer, ackIsDisabled)
 
 
-def split_list(l, wanted_parts=1):
+def split_list(list_in, wanted_parts=1):
     """
     Split the list of attrributes in wanted part
     """
-    return [l[x : x + wanted_parts] for x in range(0, len(l), wanted_parts)]
+    return [list_in[x : x + wanted_parts] for x in range(0, len(list_in), wanted_parts)]
 
 
 def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled):
@@ -417,7 +416,7 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     self.log.logging("ReadAttributes", "Log", "--> Build list Eps for Cluster Basic %s" %str(ListOfEp), nwkid=key)
 
     # Do we Have Manufacturer
-    if ListOfEp and self.ListOfDevices[key]["Manufacturer"] in [ {}, ""]:
+    if ListOfEp and self.ListOfDevices[key]["Manufacturer Name"] in [ {}, ""]:
         self.log.logging("ReadAttributes", "Log", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
         if 0x0004 not in listAttributes:
             listAttributes.append(0x0004)
@@ -1355,19 +1354,19 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
     # - Les Samedi et Jours fériés ne sont Jamais ''Rouge'' et les Dimanche toujours ''Bleu''.
     # - Une saison tempo est de Septembre à Août. Le 1er Septembre, le compteur de jour restant est remis à 0.
 
-   # Purpose is to retreive the Color
-   WORK_TO_BE_DONE = { 
-        "ff66": [ 
-            0x0001, # Couleur du lendemain
-            0x0217, # STGE
+    # Purpose is to retreive the Color
+    WORK_TO_BE_DONE = { 
+        "ff66": [  
+            0x0001,   # Couleur du lendemain 
+            0x0217,   # STGE 
         ],
-        "0702": [
-            0x0020, # Periode Tarifaire en cours
+        "0702": [ 
+            0x0020,   # Periode Tarifaire en cours 
         ]
-   }
+    }
 
-   EPout = "01"
-   for cluster in WORK_TO_BE_DONE:
+    EPout = "01"
+    for cluster in WORK_TO_BE_DONE:
         self.log.logging("ZLinky", "Log", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
             nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
         ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
