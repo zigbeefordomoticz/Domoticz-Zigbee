@@ -73,7 +73,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             self.log.logging("TransportZigpy", "Status", "EZSP Radio board name: %s" %brd_name)
             self.log.logging("TransportZigpy", "Status", "EmberZNet version: %s" %version)
             
-            
         except EzspError as exc:
             LOGGER.error("EZSP Radio does not support getMfgToken command: %s" %str(exc))
 

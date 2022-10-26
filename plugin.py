@@ -834,9 +834,7 @@ class BasePlugin:
 
 
     def onCommand(self, Unit, Command, Level, Color):
-        self.log.logging(
-            "Plugin", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color)
-        )
+        self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
@@ -847,25 +845,16 @@ class BasePlugin:
             # if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
             #    # Command belongs to a Zigate group
             if self.log:
-                self.log.logging(
-                    "Plugin",
-                    "Debug",
-                    "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, Devices[Unit].DeviceID),
-                )
+                self.log.logging( "Command", "Debug", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, Devices[Unit].DeviceID), )
             self.groupmgt.processCommand(Unit, Devices[Unit].DeviceID, Command, Level, Color)
 
         elif Devices[Unit].DeviceID.find("Zigate-01-") != -1:
             if self.log:
-                self.log.logging("Plugin", "Debug", "onCommand - Command adminWidget: %s " % Command)
+                self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
             self.adminWidgets.handleCommand(self, Command)
 
         else:
-            self.log.logging(
-                "Plugin",
-                "Error",
-                "onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s"
-                % (Devices[Unit].Name, Unit, Devices[Unit].DeviceID),
-            )
+            self.log.logging( "Command", "Error", "onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" % (Devices[Unit].Name, Unit, Devices[Unit].DeviceID), )
 
     def onDisconnect(self, Connection):
 
