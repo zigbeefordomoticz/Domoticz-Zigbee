@@ -1,0 +1,20 @@
+{
+    "_Comment": "Aqara presence detector FP1",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0008": "",
+            "fcc0": "",
+            "Type": "Motion"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0005" ]
+    },
+    "Param": {
+        "resetMotiondelay": 0
+    }
+}
