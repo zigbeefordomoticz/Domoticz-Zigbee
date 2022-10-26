@@ -3,7 +3,6 @@ aiosignal
 aiosqlite>=0.16.0
 async-timeout
 attrs
-charset-normalizer
 click
 click-log>=0.2.1
 crccheck
