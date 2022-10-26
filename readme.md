@@ -7,20 +7,27 @@
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/pipiche "Donate via PayPal")
 [![CodeFactor](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/badge/beta6)](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/overview/beta6)
 
-
-
 ZigBeeForDomoticz is a plugin for [Domoticz home automation software](https://www.domoticz.com/) to connect Zigbee devices through Zigbee coordinator (ZigBee hubs/gateways/bridges/controllers/adapters/dongles/sticks/keys).
 This plugin is an evolution of the mature Zigate plugin, which will continue to manage and handle ZiGates in native mode, while the others will be handle through unified communication libraries from the [zigpy](https://github.com/zigpy/zigpy) project.
 
-
 ## Documentation - Installation
 
-Everything is on our Wiki : https://zigbeefordomoticz.github.io/wiki
+Everything is on our Wiki : <https://zigbeefordomoticz.github.io/wiki>
 
 The wiki is available in [English](https://zigbeefordomoticz.github.io/wiki/en-eng/).
 Le wiki est disposnible en [Français](https://zigbeefordomoticz.github.io/wiki/fr-fr/).
 Der wiki ist auf [Deutsch](https://zigbeefordomoticz.github.io/wiki/nl-dut/) verfügbar.
 
+## Repository structure
+
+### The main branches
+
+* `stable6` branch at `origin`, This is where you should find the most stable environment.
+* `dev`is a parallel branch to `stable6` which is the main branch for the developpement, this is where you can find the latest features , but also potentials bugs.
+
+### Working branches
+
+Branches made out of `develop`are used for paralell development and will be merged back to `dev`when ready.
 
 ## Tested / Certified  hardware ZigBee  
 
@@ -42,10 +49,9 @@ You can also find a list of [Texas Instruments supported adapters](https://www.z
 
 As for TI coordinator, we rely on [zigpy-bellows](https://github.com/zigpy/bellows) for the Silicon Labs compatibility . A list of compatible hardware is available [here](https://github.com/zigpy/bellows#hardware-requirement).
 
-### Objetcts
+### Objects
 
 A list of certified objetcs is maintained on [https://zigbee.blakadder.com](https://zigbee.blakadder.com/z4d.html). If an object in non-listed, that does not mean that it is not working with the plugin : it can work directly or need an integration to get it full working.
-
 
 ## Limitations
 
@@ -53,14 +59,12 @@ A list of certified objetcs is maintained on [https://zigbee.blakadder.com](http
 
 * Note that as with all ZigBee coordinators you will need to add several "ZigBee Router" devices in order to increase the size of your ZigBee network mesh to reach that maximum number of devices, as the Zigbee Coordinator will only support a smaller number of direct connected devices. See documentation for [best practices](https://zigbeefordomoticz.github.io/wiki/en-eng/HowTo_Build-a-ZigBee-network.html).
 
-
 ## Support
 
 Your first place to get support is via the Forums.
 
 * English channel : <https://www.domoticz.com/forum/viewforum.php?f=68>
 * French Channel : <https://easydomoticz.com/forum/viewforum.php?f=28>
-
 
 ## Donations
 
