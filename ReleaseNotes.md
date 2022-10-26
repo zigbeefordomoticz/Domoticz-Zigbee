@@ -18,6 +18,12 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
+## 26 Oct. 2022 - stable6 - 6.3.004
+
+- [Hardware] - Lidl Motion
+- [WebUI] - Frontend to send raw Zigbee commands (in zigpy) for coordinators as TI, SiliconLabs, deConz
+- [Technical] - Update of readme.md to prevent duplicate infos with the Wiki
+
 ##    Oct. 2022 - stable6 - 6.3.003
 - [Issue] - drop invalid ieee
 - [Technical] - log zigpy configuration at startup

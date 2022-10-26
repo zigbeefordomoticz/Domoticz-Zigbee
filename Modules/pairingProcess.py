@@ -156,7 +156,7 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
 
 def interview_state_8043(self, NWKID, RIA, knownModel, status):
     # At that stage, we have at least One Ep Description
-    self.log.logging( "Pairing", "Debug", "interview_state_8043 - NWKID: %s, Status: %s, RIA: %s," % ( NWKID, status, RIA, ), )
+    self.log.logging( "Pairing", "Debug", "interview_state_8043 - NWKID: %s, Status: %s, RIA: %s," % ( NWKID, status, RIA, ),)
 
     self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
 
