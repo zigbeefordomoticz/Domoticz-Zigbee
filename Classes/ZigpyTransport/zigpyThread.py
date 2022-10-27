@@ -133,9 +133,6 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
             config[conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
             
-        if "BellowsSourceRouting" in self.pluginconf.pluginConf:
-            config["source_routing"] = bool( self.pluginconf.pluginConf["BellowsSourceRouting"] )
-            
         self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
     elif radiomodule =="zigate":
@@ -184,6 +181,8 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
             self.log.logging("%s" %traceback.format_exc())
+
+    config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )
 
     if "autoBackup" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoBackup"]:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = True
