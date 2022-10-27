@@ -1490,11 +1490,11 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.50.2",
-        "zigpy_znp": "0.8.2",
-        "zigpy_deconz": "0.18.1",
+        "zigpy": "0.51.3",
+        "zigpy_znp": "0.9.1",
+        "zigpy_deconz": "0.19.0",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.33.1",
+        "zigpy_ezsp": "0.34.2",
         }
 
     flag = True
