@@ -230,6 +230,7 @@ SETTINGS = {
             "debugTransportTcpip": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugTransportSerial": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugTransportZigpy": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "debugTransportError": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugTransportZigpyZigate": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugTransportZigpyZNP": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugTransportZigpydeCONZ": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},

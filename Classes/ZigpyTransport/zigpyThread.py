@@ -639,14 +639,14 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
     except DeliveryError as e:
         # This could be relevant to APS NACK after retry
         # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
-        self.log.logging("TransportZigpy", "Log", "process_raw_command - DeliveryError : %s" % e, _nwkid)
-        self.log.logging("TransportZigpy", "Log", "    destination : %s" % destination, _nwkid)
-        self.log.logging("TransportZigpy", "Log", "    profile     : %4x" % Profile, _nwkid)
-        self.log.logging("TransportZigpy", "Log", "    cluster     : %4x" % Cluster, _nwkid)
-        self.log.logging("TransportZigpy", "Log", "    payload     : %s" % payload, _nwkid)
-        self.log.logging("TransportZigpy", "Log", "    expect_reply: %s" % expect_reply, _nwkid)
-        self.log.logging("TransportZigpy", "Log", "    use_ieee    : %s" % use_ieee, _nwkid)
-        self.log.logging("TransportZigpy", "Log", "    extended_to : %s" % False, _nwkid)
+        self.log.logging("TransportError", "Debug", "process_raw_command - DeliveryError : %s" % e, _nwkid)
+        self.log.logging("TransportError", "Debug", "    destination : %s" % destination, _nwkid)
+        self.log.logging("TransportError", "Debug", "    profile     : %04x" % Profile, _nwkid)
+        self.log.logging("TransportError", "Debug", "    cluster     : %04x" % Cluster, _nwkid)
+        self.log.logging("TransportError", "Debug", "    payload     : %s" % payload, _nwkid)
+        self.log.logging("TransportError", "Debug", "    expect_reply: %s" % expect_reply, _nwkid)
+        self.log.logging("TransportError", "Debug", "    use_ieee    : %s" % use_ieee, _nwkid)
+        self.log.logging("TransportError", "Debug", "    extended_to : %s" % False, _nwkid)
         msg = "%s" % e
         result = 0xB6
         self._currently_not_reachable.append( _ieee )
