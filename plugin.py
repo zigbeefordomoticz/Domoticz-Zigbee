@@ -1490,7 +1490,7 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.51.3",
+        "zigpy": "0.51.4",
         "zigpy_znp": "0.9.1",
         "zigpy_deconz": "0.19.0",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
@@ -1507,8 +1507,8 @@ def check_python_modules_version( self ):
         
         self.log.logging("Plugin", "Debug", "Python module %s loaded with version %s - %s" %( x, self.pythonModuleVersion[ x ], MODULES_VERSION[ x]))   
         if self.pythonModuleVersion[ x ] != MODULES_VERSION[ x]:
-            self.log.logging("Plugin", "Error", "The python module %s loaded in not compatible as we are expecting this level %s" %(
-                x, MODULES_VERSION[ x] ))
+            self.log.logging("Plugin", "Error", "The python module %s version %s loaded is not compatible as we are expecting this level %s" %(
+                x, self.pythonModuleVersion[ x ], MODULES_VERSION[ x] ))
             flag = False
             
     return flag
