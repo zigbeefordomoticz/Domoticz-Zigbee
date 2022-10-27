@@ -255,10 +255,9 @@ def resetSwitchSelectorPushButton( self, Devices, NwkId, WidgetType, unit, Signa
     if (now - lastupdate) < TimedOut:
         return
     # Domoticz.Log("Options: %s" %Devices[unit].Options)
-    LevelOffHidden = Devices[unit].Options["LevelOffHidden"]
     nValue = 0
     sValue = "0"
-    if LevelOffHidden == "false":
+    if "LevelOffHidden" in Devices[unit].Options and Devices[unit].Options["LevelOffHidden"] == "false":
         sValue = "00"
     Devices[unit].Update(nValue=nValue, sValue=sValue)
 
