@@ -45,7 +45,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.callBackBackup = callBackBackup
         self.HardwareID = HardwareID
-        self.znp_config[znp_conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
+        
+        # Pipiche : 24-Oct-2022 Disabling CONF_MAX_CONCURRENT_REQUESTS so the default will be used ( 16 )
+        # self.znp_config[znp_conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         """
         Starts a network, optionally forming one with random settings if necessary.
@@ -131,8 +133,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         src_ep: int,
         dst_ep: int,
         message: bytes,
+        dst_addressing = None,
     ) -> None:
-        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message)
+        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message, dst_addressing =dst_addressing)
 
     async def set_zigpy_tx_power(self, power):
         self.log.logging("TransportZigpy", "Debug", "set_tx_power %s" %power)

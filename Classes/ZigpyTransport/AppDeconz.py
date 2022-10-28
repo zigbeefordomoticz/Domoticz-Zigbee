@@ -269,8 +269,10 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         src_ep: int,
         dst_ep: int,
         message: bytes,
+        * ,
+        dst_addressing = None,
     ) -> None:
-        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message)                
+        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message,dst_addressing =dst_addressing)                
 
     async def set_zigpy_tx_power(self, power):
         pass
