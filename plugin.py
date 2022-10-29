@@ -600,7 +600,7 @@ class BasePlugin:
             
 
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
-            self.log.logging("Plugin", "Debug", "Establish Zigate connection")
+            self.log.logging("Plugin", "Debug", "Establish Zigbee connection")
             self.ControllerLink.open_cie_connection()
 
         # IAS Zone Management
