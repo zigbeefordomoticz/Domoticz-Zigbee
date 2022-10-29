@@ -36,9 +36,10 @@ def handle_zigpy_retreive_last_backup( self ):
 
     with open(_coordinator_backup, "r") as _coordinator:
         self.log.logging("TransportZigpy", "Debug", "Open : " + _coordinator_backup)
-        return json.load(_coordinator)
-
+        try:
+            return json.load(_coordinator)
+        except json.JSONDecodeError:
+            return None
+        except Exception:
+            return None
     return None
-
-
-
