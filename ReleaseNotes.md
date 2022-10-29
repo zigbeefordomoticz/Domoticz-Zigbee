@@ -18,6 +18,10 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
+## 29 Oct. 2022 - stable6 - 6.3.005
+
+- [Issue] - Hot fix to prevent startup to fail, when un-initialized coordinator and an existing backup corrupted.
+
 ## 26 Oct. 2022 - stable6 - 6.3.004
 
 - [Hardware] - Lidl Motion
