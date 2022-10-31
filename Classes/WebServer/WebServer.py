@@ -1182,6 +1182,7 @@ class WebServer(object):
                 return _response
                 
         group_flag = data['GroupAddressFlag']
+        ack_Is_Disabled = not bool(data['AckMode'])
         target_address = data['TargetAddr']
         target_ep = data['TargetEp']
         clusterid = data['ClusterId']
@@ -1189,15 +1190,20 @@ class WebServer(object):
         payload = data['Payload']
         source_ep = data['SourceEp']
         sqn = data['Sqn']
-        ack_mode = data['AckMode']
+        
+
+        self.logging(
+            "Debug",
+            "zigpy_raw_APS_request - %s ==> Profile: %s Cluster: %s TargetNwk: %0s TargetEp: %s SrcEp: %s  payload: %s AckMode: %s"
+            % ( 'rest_raw_zigbee', data['ProfileId'], data['ClusterId'], data['TargetAddr'], data['TargetEp'], data['SourceEp'], data['Payload'], data['AckMode'] )
+        )
 
         if group_flag:
             addresse_mode = 0x01
-        elif ack_mode:
+        elif not ack_Is_Disabled:
             addresse_mode = 0x07
         else:
             addresse_mode = 0x02
-
               
         data = {
             'AddressMode': addresse_mode,
@@ -1213,13 +1219,7 @@ class WebServer(object):
         }
         
         self.logging( "Log","Sending request to coordinator %s" % ( data))
-        self.log.logging(
-            "outRawAPS",
-            "Debug",
-            "zigpy_raw_APS_request - %s ==> Profile: %04x Cluster: %04x TargetNwk: %04x TargetEp: %02x SrcEp: %02x  payload: %s"
-            % ( 'rest_raw_zigbee', data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'], data['payload'])
-        )
-        self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(target_address,16), sqn=int(sqn,16), ackIsDisabled=ack_mode )
+        self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(target_address,16), sqn=int(sqn,16), ackIsDisabled=ack_Is_Disabled )
         return _response
         
     def rest_dev_command(self, verb, data, parameters):
