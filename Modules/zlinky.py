@@ -67,6 +67,7 @@ ZLinky_TIC_COMMAND = {
     "0210": "CCAIN",
     "0211": "CCAIN-1",
     "0212": "SMAXN-1",
+    "0400": "SMAXN-1",
     "0213": "SMAXN2-1",
     "0214": "SMAXN3-1",
     "0215": "MSG1",
@@ -177,7 +178,7 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         
 
 
-def linky_mode( self, nwkid ):
+def linky_mode( self, nwkid , protocol=False):
     
     if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
         return 
@@ -185,8 +186,10 @@ def linky_mode( self, nwkid ):
     if 'PROTOCOL Linky' not in self.ListOfDevices[ nwkid ]['ZLinky']:
         return
     
-    if self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] in ZLINKY_MODE:
+    if self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] in ZLINKY_MODE and not protocol:
         return ZLINKY_MODE[ self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ]["Mode"]
+    elif protocol:
+        return self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky']
 
     return None
 
