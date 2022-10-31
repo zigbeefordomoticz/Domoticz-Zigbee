@@ -1735,7 +1735,7 @@ def _check_plugin_version( self ):
                 log_mode = "Error"
             else:
                 log_mode = "Status"
-            self.log.logging("Plugin", log_mode, "There is a newer plugin version available on gitHub. Current %s Available %s" %(
+            self.log.logging("Plugin", log_mode, "*** A more recent plugin version is waiting for you on gitHub. You are on %s and %s is available !!" %(
                 self.pluginParameters["PluginVersion"], self.pluginParameters["available"]))
             self.pluginParameters["PluginUpdate"] = True
         if checkFirmwareUpdate(
