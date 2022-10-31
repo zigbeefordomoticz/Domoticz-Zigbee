@@ -4422,18 +4422,44 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         elif MsgAttrID == "0a0a":
             store_ZLinky_infos( self, MsgSrcAddr, 'IMAX3', value)            
 
-    elif MsgAttrID == "050d":
+    elif MsgAttrID in ( "050d", "0304",):
         # Max Tri Power reached
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         if value == 0x8000:
             return
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
-            if value == 0x8000:
-                return
+        
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-        store_ZLinky_infos( self, MsgSrcAddr, 'PMAX', value) 
-        store_ZLinky_infos( self, MsgSrcAddr, 'SMAXN', value) 
-        store_ZLinky_infos( self, MsgSrcAddr, 'SMAXN1', value) 
+        
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+            
+            _linkyMode = linky_mode( self, MsgSrcAddr, protocol=True ) 
+            
+            if _linkyMode in ( 0, 2,) and MsgAttrID == "050d":
+                # Historique Tri
+                store_ZLinky_infos( self, MsgSrcAddr, 'PMAX', value) 
+                
+            elif _linkyMode in ( 1, 5, ) and MsgAttrID == "050d":
+                # Historic Mono
+                store_ZLinky_infos( self, MsgSrcAddr, 'SMAXN', value) 
+
+            elif _linkyMode in ( 3, 7, ) and MsgAttrID == "050d":
+                # Standard Tri
+                store_ZLinky_infos( self, MsgSrcAddr, 'SMAXN1', value) 
+                return
+
+            elif _linkyMode in ( 3, 7, ) and MsgAttrID == "0304":
+                # Standard Tri
+                store_ZLinky_infos( self, MsgSrcAddr, 'SMAXN', value)
+
+            else:                
+                self.log.logging( "ZLinky", "Error", "=====> ReadCluster %s - %s/%s Unexpected %s/%s linkyMode: %s" % (
+                    MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value, _linkyMode ), MsgSrcAddr, )
+                return
+
+
+            store_ZLinky_infos( self, MsgSrcAddr, 'PMAX', value) 
+            store_ZLinky_infos( self, MsgSrcAddr, 'SMAXN', value) 
+            store_ZLinky_infos( self, MsgSrcAddr, 'SMAXN1', value) 
 
     elif MsgAttrID == "090d":
         # Max Tri Power reached
@@ -4471,21 +4497,30 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
             self.log.logging( "ZLinky", "Debug", "=====> ReadCluster %s - %s/%s Apparent Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr, )
             
-            tri_phased_mode = False
-            if linky_mode( self, MsgSrcAddr ) in ( 2, 3, 7, ):
-                tri_phased_mode = True
-
-            if tri_phased_mode and  MsgAttrID == "050f":
-                store_ZLinky_infos( self, MsgSrcAddr, 'SINSTS1', value)  
-                return         
+            _linkyMode = linky_mode( self, MsgSrcAddr, protocol=True ) 
             
-            if not tri_phased_mode and MsgAttrID == "050f":
-                store_ZLinky_infos( self, MsgSrcAddr, 'SINSTS1', value)  
-
-            if (( tri_phased_mode and MsgAttrID == "0306") or (not tri_phased_mode and MsgAttrID == "050f" )):
-                # Puissance app. Instantanée soutirée
+            if _linkyMode in ( 0, 2,) and MsgAttrID == "050f":
+                # Historique Tri
+                store_ZLinky_infos( self, MsgSrcAddr, 'PAPP', value) 
+                
+            elif _linkyMode in ( 1, 5, ) and MsgAttrID == "050f":
+                # Historic Mono
                 store_ZLinky_infos( self, MsgSrcAddr, 'SINSTS', value) 
-         
+
+            elif _linkyMode in ( 3, 7, ) and MsgAttrID == "050f":
+                # Standard Tri
+                store_ZLinky_infos( self, MsgSrcAddr, 'SINSTS1', value) 
+                return
+
+            elif _linkyMode in ( 3, 7, ) and MsgAttrID == "0306":
+                # Standard Tri
+                store_ZLinky_infos( self, MsgSrcAddr, 'SINSTS', value)
+
+            else:                
+                self.log.logging( "ZLinky", "Error", "=====> ReadCluster %s - %s/%s Unexpected %s/%s linkyMode: %s" % (
+                    MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value, _linkyMode ), MsgSrcAddr, )
+                return
+                
             tarif_color = None
             if "ZLinky" in self.ListOfDevices[MsgSrcAddr] and "Color" in self.ListOfDevices[MsgSrcAddr]["ZLinky"]:
                 tarif_color = self.ListOfDevices[MsgSrcAddr]["ZLinky"]["Color"]
