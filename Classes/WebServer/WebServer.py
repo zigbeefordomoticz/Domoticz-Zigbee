@@ -1219,7 +1219,7 @@ class WebServer(object):
             "zigpy_raw_APS_request - %s ==> Profile: %04x Cluster: %04x TargetNwk: %04x TargetEp: %02x SrcEp: %02x  payload: %s"
             % ( 'rest_raw_zigbee', data['Profile'], data['Cluster'], data['TargetNwk'], data['TargetEp'], data['SrcEp'], data['payload'])
         )
-        self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(target_address,16), sqn=int(sqn,16), ackIsDisabled=ack_mode )
+        self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(target_address,16), sqn=int(sqn,16), ackIsDisabled=not ack_mode )
         return _response
         
     def rest_dev_command(self, verb, data, parameters):
