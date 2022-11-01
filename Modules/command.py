@@ -273,7 +273,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         # Let's force a refresh of Attribute in the next Heartbeat
         request_read_device_status(self, NWKID)
 
-    if Command == "Off":  # Manage the Off command.
+    if Command in ( "Off", "Close",):  # Manage the Off command.
         # Let's force a refresh of Attribute in the next Heartbeat
         if DeviceType not in ( "CurtainInverted", "Curtain"):
             # Refresh will be done via the Report Attribute
@@ -538,7 +538,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         # Let's force a refresh of Attribute in the next Heartbeat
         request_read_device_status(self, NWKID)
 
-    if Command == "On":  # Manage the On command.
+    if Command in ( "On", "Open", ):  # Manage the On command.
         # Let's force a refresh of Attribute in the next Heartbeat
         request_read_device_status(self, NWKID)
         self.log.logging(
@@ -936,7 +936,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             request_read_device_status(self, NWKID)
             return
 
-
         if DeviceType in ("ThermoMode", ):
             self.log.logging(
                 "Command",
@@ -1007,8 +1006,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             # Let's force a refresh of Attribute in the next Heartbeat
             request_read_device_status(self, NWKID)
             return
-            
-            
+                       
         if DeviceType == "ThermoMode_2":
             self.log.logging(
                 "Command",
@@ -1023,6 +1021,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 self, Devices, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
             )
             return
+
         if DeviceType == "ThermoMode_4":
             self.log.logging(
                 "Command",
@@ -1038,6 +1037,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 tuya_trv_brt100_set_mode(self, NWKID, int(Level / 10) - 1)
                 UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
                 return
+
         if DeviceType in ("ThermoMode_5", "ThermoMode_6"):
             self.log.logging(
                 "Command",
@@ -1058,7 +1058,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 tuya_coil_fan_thermostat(self, NWKID, int(Level / 10) - 1)
                 UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
                 
-
         if DeviceType == "FanControl":
 
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "AC201A":
@@ -1169,7 +1168,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 NWKID,
             )
             actuator_setlevel(self, NWKID, EPout, Level, "WindowCovering")
-            #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
 
         elif DeviceType in ("Venetian", "Vanne", "Curtain",):
             if Level == 0:
@@ -1189,8 +1187,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 # Refresh will be done via the Report Attribute
                 return
 
-            #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
-
         elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
             Level = 100 - Level
             if Level == 0:
@@ -1206,7 +1202,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 NWKID,
             )
             actuator_setlevel(self, NWKID, EPout, Level, "WindowCovering")
-            #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
             
             if DeviceType in ( "CurtainInverted", "Curtain"):
                 # Refresh will be done via the Report Attribute
