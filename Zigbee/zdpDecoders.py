@@ -4,7 +4,6 @@
 # Author: pipiche38
 #
 
-
 import struct
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
