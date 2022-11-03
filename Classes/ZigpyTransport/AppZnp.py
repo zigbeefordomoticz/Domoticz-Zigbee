@@ -102,7 +102,12 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
                     profile=zigpy.profiles.zha.PROFILE_ID,
                     device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
                     device_version=0b0000,
-                    input_clusters=[clusters.general.Basic.cluster_id,],
+                    input_clusters=[clusters.general.Basic.cluster_id,
+                                    clusters.general.PowerConfiguration.cluster_id,
+                                    clusters.general.OnOff.cluster_id,
+                                    clusters.general.LevelControl.cluster_id,
+                                    clusters.hvac.Thermostat.cluster_id,
+                                    ],
                     output_clusters=[],
                 )
             )
@@ -135,9 +140,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         src_ep: int,
         dst_ep: int,
         message: bytes,
-        dst_addressing = None,
+        dst_addressing=None,
     ) -> None:
-        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message, dst_addressing =dst_addressing)
+        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message, dst_addressing=dst_addressing)
 
     async def set_zigpy_tx_power(self, power):
         self.log.logging("TransportZigpy", "Debug", "set_tx_power %s" %power)
@@ -181,8 +186,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     def is_bellows(self):
         return False
+    
     def is_znp(self):
         return True
+    
     def is_deconz(self):
         return False
             
