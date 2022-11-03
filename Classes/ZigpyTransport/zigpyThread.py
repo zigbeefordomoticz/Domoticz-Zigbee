@@ -454,18 +454,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         "TransportZigpy",
         "Debug",
         "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s, Delay: %s"
-        % (
-            Function,
-            int(NwkId, 16),
-            dEp,
-            Cluster,
-            sequence,
-            binascii.hexlify(payload).decode("utf-8"),
-            addressmode,
-            not AckIsDisable,
-            Sqn,
-            delay,
-        ),
+        % ( Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn, delay, ),
     )
 
     if int(NwkId, 16) >= 0xFFFB:  # Broadcast
@@ -486,26 +475,26 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         try:
             destination = self.app.get_device(nwk=t.NWK(int(NwkId, 16)))
         except KeyError:
-            self.log.logging(
-                "TransportZigpy",
-                "Error",
-                "process_raw_command device not found destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s"
+            self.log.logging( "TransportZigpy", "Error", "process_raw_command device not found destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s"
                 % (NwkId, Profile, Cluster, sEp, dEp, sequence, payload),
             )
             return
 
-        self.log.logging(
-            "TransportZigpy",
-            "Debug",
-            "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s"
+        self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s"
             % (destination, Profile, Cluster, sEp, dEp, sequence, payload),
         )
+        
+        # zigpy has inversed the expect_reply strategy. It is now based on
+        # If expect_reply is set to True (this is because the command is expecting a response from that command)
+        # If expect_reply is set to False, then a Ack will be set.
+        # see https://github.com/zigpy/zigpy/pull/1085
+
         try:
             if CREATE_TASK:
                 task = asyncio.create_task(
-                    transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay) )
+                    transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=AckIsDisable, use_ieee=False, delay=delay) )
             else:
-                await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay)
+                await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=AckIsDisable, use_ieee=False, delay=delay)
                 await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
 
         except DeliveryError as e:
@@ -521,9 +510,9 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call request destination: %s" % destination)
         if CREATE_TASK:
             task = asyncio.create_task(
-                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay) )
+                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=AckIsDisable, use_ieee=False, delay=delay) )
         else:
-            await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not AckIsDisable, use_ieee=False, delay=delay )
+            await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=AckIsDisable, use_ieee=False, delay=delay )
             await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
 
     if result:
