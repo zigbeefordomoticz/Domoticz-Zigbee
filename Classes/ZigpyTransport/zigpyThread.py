@@ -158,7 +158,9 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             config = {
                 conf.CONF_DEVICE: {"path": serialPort,}, 
                 conf.CONF_NWK: {},
-                conf.CONF_ZNP_CONFIG: {},
+                conf.CONF_ZNP_CONFIG: { 
+                    "prefer_endpoint_1": False
+                    },
                 "topology_scan_enabled": False,
                 }
             

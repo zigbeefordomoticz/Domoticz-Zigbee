@@ -90,10 +90,12 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
 
     async def register_endpoints(self):
+        self.log.logging("TransportZigpy", "Status", "ZNP Radio register default Ep")
         await super().register_endpoints()  
 
         LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03]  # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
         for controller_ep in LIST_ENDPOINT:
+            self.log.logging("TransportZigpy", "Status", "ZNP Radio register Ep: 0x%02x" %controller_ep)
             await self.add_endpoint(
                 zdo_types.SimpleDescriptor(
                     endpoint=controller_ep,
