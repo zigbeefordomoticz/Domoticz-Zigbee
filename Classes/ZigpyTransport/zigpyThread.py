@@ -620,7 +620,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                 )
                 return
             
-            result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=use_ieee, extended_timeout=False )
+            result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=use_ieee, extended_timeout=True )
             self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
 
             # Slow down the through put when too many commands. Try to not overload the coordinators
