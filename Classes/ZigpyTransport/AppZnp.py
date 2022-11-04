@@ -91,26 +91,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def register_endpoints(self):
         self.log.logging("TransportZigpy", "Status", "ZNP Radio register default Ep")
-        await super().register_endpoints()  
+        await super().register_endpoints()
 
-        LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03]  # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
-        for controller_ep in LIST_ENDPOINT:
-            self.log.logging("TransportZigpy", "Status", "ZNP Radio register Ep: 0x%02x" %controller_ep)
-            await self.add_endpoint(
-                zdo_types.SimpleDescriptor(
-                    endpoint=controller_ep,
-                    profile=zigpy.profiles.zha.PROFILE_ID,
-                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-                    device_version=0b0000,
-                    input_clusters=[clusters.general.Basic.cluster_id,
-                                    clusters.general.PowerConfiguration.cluster_id,
-                                    clusters.general.OnOff.cluster_id,
-                                    clusters.general.LevelControl.cluster_id,
-                                    clusters.hvac.Thermostat.cluster_id,
-                                    ],
-                    output_clusters=[],
-                )
-            )
+        self.log.logging("TransportZigpy", "Status", "ZNP Radio register any additional/specific Ep")
+        await Classes.ZigpyTransport.AppGeneric.register_specific_endpoints(self)
 
     def device_initialized(self, device):
             self.log.logging("TransportZigpy", "Log","device_initialized (0x%04x %s)" %(device.nwk, device.ieee))
@@ -192,8 +176,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     
     def is_deconz(self):
         return False
+
             
-        
+     
 def extract_versioning_for_plugin( znp_model, znp_manuf):
     
     ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"
