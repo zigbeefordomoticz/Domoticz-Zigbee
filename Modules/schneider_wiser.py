@@ -54,7 +54,7 @@ def callbackDeviceAwake_Schneider(self, Devices, NwkId, EndPoint, cluster):
     The function is called after processing the readCluster part
     """
 
-    self.log.logging("Schneider", "Debug2", f"callbackDeviceAwake_Schneider - Nwkid: {NwkId}, EndPoint: {EndPoint} cluster: {cluster}", NwkId)
+    self.log.logging("Schneider", "Debug", f"callbackDeviceAwake_Schneider - Nwkid: {NwkId}, EndPoint: {EndPoint} cluster: {cluster}", NwkId)
 
     if cluster == "0201":
         callbackDeviceAwake_Schneider_SetPoints(self, NwkId, EndPoint, cluster)
@@ -148,6 +148,8 @@ def wiser_thermostat_monitoring_heating_demand(self, Devices):
 
 def callbackDeviceAwake_Schneider_SetPoints(self, NwkId, EndPoint, cluster):
 
+    self.log.logging("Schneider", "Debug", f"callbackDeviceAwake_Schneider_SetPoints - Nwkid: {NwkId}, EndPoint: {EndPoint} cluster: {cluster}", NwkId)
+
     # Schneider Wiser Valve Thermostat is a battery device, which receive commands only when it has sent a Report Attribut
     if "Model" not in self.ListOfDevices[NwkId]:
         return
@@ -161,13 +163,23 @@ def callbackDeviceAwake_Schneider_SetPoints(self, NwkId, EndPoint, cluster):
     if "0012" in self.ListOfDevices[NwkId]["Ep"][EndPoint]["0201"]:
         if "Schneider" not in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]["Schneider"] = {}
-        if "Target SetPoint" in self.ListOfDevices[NwkId]["Schneider"]:
-            if self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"] and self.ListOfDevices[NwkId]["Schneider"][
-                "Target SetPoint"
-            ] != int(self.ListOfDevices[NwkId]["Ep"][EndPoint]["0201"]["0012"]):
-                # Protect against overloading Zigate
-                if now > self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] + 15:
-                    schneider_setpoint(self, NwkId, self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"])
+
+        if "Target SetPoint" not in self.ListOfDevices[NwkId]["Schneider"]:
+            pass
+
+        elif self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"] is None:
+            pass
+
+        elif "TimeStamp SetPoint" in self.ListOfDevices[NwkId]["Schneider"] and self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] is None:
+            schneider_setpoint(self, NwkId, self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"])
+
+        elif (
+                self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"] != int(self.ListOfDevices[NwkId]["Ep"][EndPoint]["0201"]["0012"])
+                and ( now > ( self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] + 15)  )
+            ):
+            self.log.logging("Schneider", "Debug", "callbackDeviceAwake_Schneider_SetPoints -time to send a setpoint command", NwkId)
+            schneider_setpoint(self, NwkId, self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"])
+
     # Manage Zone Mode
     if "e010" in self.ListOfDevices[NwkId]["Ep"][EndPoint]["0201"]:
         if "Target Mode" in self.ListOfDevices[NwkId]["Schneider"]:
@@ -741,7 +753,8 @@ def schneider_setpoint_thermostat(self, key, setpoint):
     attr = "0012"
     NWKID = key
 
-    schneider_find_attribute_and_set(self, NWKID, EPout, ClusterID, attr, setpoint, setpoint)
+    if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] not in ( "EH-ZB-VACT", ):
+        schneider_find_attribute_and_set(self, NWKID, EPout, ClusterID, attr, setpoint, setpoint)
 
     importSchneiderZoning(self)
     schneider_thermostat_check_and_bind(self, NWKID)
@@ -838,7 +851,7 @@ def schneider_setpoint(self, NwkId, setpoint):
 
         elif self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT":
             wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
-            schneider_setpoint_thermostat(self, NwkId, setpoint)
+            #schneider_setpoint_thermostat(self, NwkId, setpoint)
             schneider_setpoint_actuator(self, NwkId, setpoint)
         else:
             wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
