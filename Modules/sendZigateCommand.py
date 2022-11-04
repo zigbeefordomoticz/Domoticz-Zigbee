@@ -299,6 +299,9 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
 
 def device_listening_on_iddle(self, nwkid):
     
+    if nwkid not in self.ListOfDevices:
+        return True
+    
     if "Capability" in self.ListOfDevices[nwkid]:
         if "Reduced-Function Device" in self.ListOfDevices[nwkid]["Capability"]:
             return False
