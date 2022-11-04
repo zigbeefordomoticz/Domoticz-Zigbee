@@ -158,11 +158,11 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             config = {
                 conf.CONF_DEVICE: {"path": serialPort,}, 
                 conf.CONF_NWK: {},
-                conf.CONF_ZNP_CONFIG: { 
-                    "prefer_endpoint_1": False
-                    },
+                conf.CONF_ZNP_CONFIG: { },
                 "topology_scan_enabled": False,
                 }
+            if specific_endpoints(self):
+                config[ conf.CONF_ZNP_CONFIG][ "prefer_endpoint_1" ] = False
             
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
         except Exception as e:
@@ -696,3 +696,20 @@ async def _limit_concurrency(self, destination, sequence):
     finally:
         if was_locked:
             self._currently_waiting_requests_list[_ieee] -= 1
+
+
+def specific_endpoints(self):
+    
+    if "Terncy" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Terncy"]:
+        return True
+    if "Konke" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Konke"]:
+        return True
+    if "Wiser" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Wiser"]:
+        return True
+    if "Orvibo" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Orvibo"]:
+        return True
+    if "Livolo" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Livolo"]:
+        return True
+    if "Wiser2" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Wiser2"]:
+        return True
+    return False
