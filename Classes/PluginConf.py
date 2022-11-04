@@ -579,8 +579,6 @@ def zigpy_setup(self):
                     "hidden": False,
                     "Advanced": True,
                 }
-    if self.pluginConf["enableSchneiderWiser"]:
-        self.pluginConf["Wiser"] =1
                                 
 def setup_folder_parameters(self, homedir):
     for theme in SETTINGS:
