@@ -1755,10 +1755,10 @@ def receiving_heatingdemand_attribute( self, Devices, NwkId, Ep, value, MsgClust
 def receiving_heatingpoint_attribute( self, Devices, NwkId, Ep, ValueTemp, value, ClusterId, AttributeId):
 
     if is_boost_in_progress(self, NwkId):
-        self.log.logging("Schneider", "Log", "receiving_heatingpoint_attribute - boost in progress", NwkId)
+        self.log.logging("Schneider", "Debug", "receiving_heatingpoint_attribute - boost in progress", NwkId)
         return
 
-    self.log.logging("Schneider", "Log", f"receiving_heatingpoint_attribute - ValueTemp: {ValueTemp} -> {int(((ValueTemp * 100) * 2) / 2)}", NwkId)
+    self.log.logging("Schneider", "Debug", f"receiving_heatingpoint_attribute - ValueTemp: {ValueTemp} -> {int(((ValueTemp * 100) * 2) / 2)}", NwkId)
 
     if "Schneider" not in self.ListOfDevices[NwkId]:
         self.log.logging( "Schneider", "Debug", "receiving_heatingpoint_attribute - Updating because Schneider do not exist")
@@ -1801,13 +1801,13 @@ def receiving_heatingpoint_attribute( self, Devices, NwkId, Ep, ValueTemp, value
         # Most likely we have tried to set a new setpoint, but didn't go through
         # It could also happen if the SetPoint has been set manualy.
         # Let's use a time window of 5 minutes, after that, we drop
-        self.log.logging("Schneider", "Log", f"receiving_heatingpoint_attribute - ValueTemp: {int(value)} diff from plugin, so we save it", NwkId)
+        self.log.logging("Schneider", "Debug", f"receiving_heatingpoint_attribute - ValueTemp: {int(value)} diff from plugin, so we save it", NwkId)
         checkAndStoreAttributeValue(self, NwkId, Ep, ClusterId, AttributeId, int(value))
         MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, ValueTemp, Attribute_=AttributeId)
 
 
     # We reach here because most-likely there is a Target SetPoint defined, and the value we receive is not the same.
-    self.log.logging("Schneider", "Log", f"receiving_heatingpoint_attribute - ValueTemp: {int(((ValueTemp * 100) * 2) / 2)} nothing done", NwkId)
+    self.log.logging("Schneider", "Debug", f"receiving_heatingpoint_attribute - ValueTemp: {int(((ValueTemp * 100) * 2) / 2)} nothing done", NwkId)
 
 
 # Wiser New Version

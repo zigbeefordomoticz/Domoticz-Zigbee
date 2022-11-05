@@ -25,7 +25,7 @@ def callbackDeviceAwake(self, Devices, NwkId, endpoint, cluster):
     #
     # and will call the manufacturer specific one if needed and if existing
 
-    self.log.logging( "inRawAPS", "Log", "callbackDeviceAwake -  NwkId %s Ep %s Cluster %s " % (NwkId, endpoint, cluster), NwkId)
+    self.log.logging( "inRawAPS", "Debug", "callbackDeviceAwake -  NwkId %s Ep %s Cluster %s " % (NwkId, endpoint, cluster), NwkId)
 
     if NwkId not in self.ListOfDevices:
         return
