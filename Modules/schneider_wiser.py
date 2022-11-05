@@ -57,7 +57,7 @@ def callbackDeviceAwake_Schneider(self, Devices, NwkId, EndPoint, cluster):
     self.log.logging("Schneider", "Debug", f"callbackDeviceAwake_Schneider - Nwkid: {NwkId}, EndPoint: {EndPoint} cluster: {cluster}", NwkId)
 
     if cluster == "0201":
-        callbackDeviceAwake_Schneider_SetPoints(self, NwkId, EndPoint, cluster)
+        callbackDeviceAwake_Schneider_SetPoints(self, NwkId, EndPoint, cluster, )
 
     if (
         "Model" in self.ListOfDevices[NwkId]
@@ -171,14 +171,14 @@ def callbackDeviceAwake_Schneider_SetPoints(self, NwkId, EndPoint, cluster):
             pass
 
         elif "TimeStamp SetPoint" in self.ListOfDevices[NwkId]["Schneider"] and self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] is None:
-            schneider_setpoint(self, NwkId, self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"])
+            schneider_setpoint(self, NwkId, self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"], call_back=True)
 
         elif (
                 self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"] != int(self.ListOfDevices[NwkId]["Ep"][EndPoint]["0201"]["0012"])
                 and ( now > ( self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] + 15)  )
             ):
             self.log.logging("Schneider", "Debug", "callbackDeviceAwake_Schneider_SetPoints -time to send a setpoint command", NwkId)
-            schneider_setpoint(self, NwkId, self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"])
+            schneider_setpoint(self, NwkId, self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"], call_back=True)
 
     # Manage Zone Mode
     if "e010" in self.ListOfDevices[NwkId]["Ep"][EndPoint]["0201"]:
@@ -833,7 +833,7 @@ def schneider_setpoint_actuator(self, key, setpoint,send_command=True):
     self.ListOfDevices[key]["Heartbeat"] = "0"
 
 
-def schneider_setpoint(self, NwkId, setpoint):
+def schneider_setpoint(self, NwkId, setpoint, call_back=False):
 
     if NwkId not in self.ListOfDevices:
         self.log.logging("Schneider", "Debug", f"schneider_setpoint - unknown NwkId: {NwkId} in ListOfDevices!")
@@ -845,7 +845,7 @@ def schneider_setpoint(self, NwkId, setpoint):
             
             wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
             #schneider_setpoint_thermostat(self, NwkId, setpoint)
-            schneider_setpoint_actuator(self, NwkId, setpoint, send_command=False)
+            schneider_setpoint_actuator(self, NwkId, setpoint, send_command=call_back)
             return
         
         if self.ListOfDevices[NwkId]["Model"] in ("EH-ZB-RTS", "Wiser2-Thermostat", ):
