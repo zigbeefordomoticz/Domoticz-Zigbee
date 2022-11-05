@@ -1747,7 +1747,6 @@ def is_boost_in_progress(self, NwkId):
 def receiving_heatingdemand_attribute( self, Devices, NwkId, Ep, value, MsgClusterId, MsgAttrID):
     
     self.log.logging("Schneider", "Debug", f"receiving_heatingdemand_attribute -- for device {NwkId} / {Ep}")
-
     if is_boost_in_progress(self, NwkId ):
         return
     checkAndStoreAttributeValue(self, NwkId, Ep, MsgClusterId, MsgAttrID, value)
@@ -1756,6 +1755,7 @@ def receiving_heatingdemand_attribute( self, Devices, NwkId, Ep, value, MsgClust
 def receiving_heatingpoint_attribute( self, Devices, NwkId, Ep, ValueTemp, value, ClusterId, AttributeId):
 
     if is_boost_in_progress(self, NwkId):
+        self.log.logging("Schneider", "Log", "receiving_heatingpoint_attribute - boost in progress", NwkId)
         return
 
     self.log.logging("Schneider", "Log", f"receiving_heatingpoint_attribute - ValueTemp: {ValueTemp} -> {int(((ValueTemp * 100) * 2) / 2)}", NwkId)
@@ -1791,11 +1791,11 @@ def receiving_heatingpoint_attribute( self, Devices, NwkId, Ep, ValueTemp, value
         self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] = None
         MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, ValueTemp, Attribute_=AttributeId)
         return
-    
+
     if (
         "Model" in self.ListOfDevices[NwkId] 
         and self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT" 
-        and self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] < (time() + 12 * 60)
+        and ( time() + ( 12 * 60)) < self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"]
     ):
         # We reached here because the Setpoint do not equal to the Setpoint in the plugin
         # Most likely we have tried to set a new setpoint, but didn't go through
@@ -1804,7 +1804,7 @@ def receiving_heatingpoint_attribute( self, Devices, NwkId, Ep, ValueTemp, value
         self.log.logging("Schneider", "Log", f"receiving_heatingpoint_attribute - ValueTemp: {int(value)} diff from plugin, so we save it", NwkId)
         checkAndStoreAttributeValue(self, NwkId, Ep, ClusterId, AttributeId, int(value))
         MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, ValueTemp, Attribute_=AttributeId)
-        
+
 
     # We reach here because most-likely there is a Target SetPoint defined, and the value we receive is not the same.
     self.log.logging("Schneider", "Log", f"receiving_heatingpoint_attribute - ValueTemp: {int(((ValueTemp * 100) * 2) / 2)} nothing done", NwkId)
