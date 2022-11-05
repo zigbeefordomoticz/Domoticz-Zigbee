@@ -841,7 +841,7 @@ def schneider_setpoint(self, NwkId, setpoint, call_back=False):
 
     if "Model" in self.ListOfDevices[NwkId]:
         if self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT":
-            self.log.logging("Schneider", "Debug", f"schneider_setpoint - delayed setpoint {setpoint} for {NwkId} model EH-ZB-VACT")
+            self.log.logging("Schneider", "Debug", f"schneider_setpoint - Call_Back : {call_back} setpoint {setpoint} for {NwkId} model EH-ZB-VACT")
             
             wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
             #schneider_setpoint_thermostat(self, NwkId, setpoint)
@@ -1795,7 +1795,7 @@ def receiving_heatingpoint_attribute( self, Devices, NwkId, Ep, ValueTemp, value
     if (
         "Model" in self.ListOfDevices[NwkId] 
         and self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT" 
-        and ( time() + ( 12 * 60)) < self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"]
+        and ( time() > ( self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] + ( 12 * 60) ))
     ):
         # We reached here because the Setpoint do not equal to the Setpoint in the plugin
         # Most likely we have tried to set a new setpoint, but didn't go through
