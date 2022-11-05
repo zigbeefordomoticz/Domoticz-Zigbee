@@ -11,16 +11,15 @@ from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.tools import Hex_Format
-from Zigbee.zclCommands import (zcl_group_level_move_to_level,
-                                 zcl_group_onoff_off_noeffect,
-                                 zcl_group_onoff_off_witheffect,
-                                 zcl_group_onoff_on,
-                                 zcl_group_window_covering_off,
-                                 zcl_group_window_covering_on,
-                                 zcl_group_window_covering_stop)
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
-
-
+from Zigbee.zclCommands import (zcl_group_level_move_to_level,
+                                zcl_group_move_to_level_with_onoff,
+                                zcl_group_onoff_off_noeffect,
+                                zcl_group_onoff_off_witheffect,
+                                zcl_group_onoff_on,
+                                zcl_group_window_covering_off,
+                                zcl_group_window_covering_on,
+                                zcl_group_window_covering_stop)
 
 WIDGET_STYLE = {
     "Plug": (244, 73, 0),
@@ -591,14 +590,14 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         and self.ListOfGroups[GrpId]["Cluster"] == "0102"
     ):  # Venetian store
         #zigate_cmd = "00FA"
-        if Command == "Off":
+        if Command in ( "Off", "Close", ):
             zigate_param = "00"
             nValue = 0
             sValue = "Off"
             update_device_list_attribute(self, GrpId, "0102", 0)
             zcl_group_window_covering_on(self, GrpId, ZIGATE_EP, EPout)
 
-        if Command == "On":
+        if Command in ( "On", "Open",):
             zigate_param = "01"
             nValue = 1
             sValue = "Off"
@@ -676,7 +675,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             Level = 100
         elif Level < 0:
             Level = 0
-        #OnOff = "01"
+        OnOff = "01"
         # value = int(Level*255//100)
         value = "%02X" % int(Level * 255 // 100)
         #zigate_param = OnOff + value + "0010"
@@ -685,8 +684,10 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         #self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
         update_device_list_attribute(self, GrpId, "0008", value)
         
-        zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0010")
-
+        #zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0010")
+        zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, value, transition="0010")
+        
+        
         #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
         #self.logging("Debug", "Command: %s %s" % (Command, datas))
         #self.ControllerLink.sendData(zigate_cmd, datas, ackIsDisabled=True)
