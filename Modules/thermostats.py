@@ -61,14 +61,10 @@ def thermostat_Setpoint(self, NwkId, setpoint):
             return
         if self.ListOfDevices[NwkId]["Model"] in ("EH-ZB-RTS", "EH-ZB-HACT", "EH-ZB-VACT", "Wiser2-Thermostat", "iTRV"):
             # Schneider
-            self.log.logging(
-                "Thermostats",
-                "Debug",
-                "thermostat_Setpoint - calling Schneider for %s with value %s" % (NwkId, setpoint),
-                nwkid=NwkId,
-            )
+            self.log.logging( "Thermostats", "Debug", "thermostat_Setpoint - calling Schneider for %s with value %s" % (NwkId, setpoint), nwkid=NwkId, )
             schneider_setpoint(self, NwkId, setpoint)
             return
+        
         if self.ListOfDevices[NwkId]["Model"] in (TUYA_eTRV_MODEL):
             # Tuya
             self.log.logging(
