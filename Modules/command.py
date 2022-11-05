@@ -699,13 +699,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         )
 
         if DeviceType == "ThermoSetpoint":
-            self.log.logging(
-                "Command",
-                "Debug",
-                "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
-                % (NWKID, EPout, Unit, DeviceType, Level),
-                NWKID,
-            )
+            self.log.logging( "Command", "Debug", "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (NWKID, EPout, Unit, DeviceType, Level), NWKID, )
             value = int(float(Level) * 100)
             thermostat_Setpoint(self, NWKID, value)
             Level = round(float(Level), 2)
