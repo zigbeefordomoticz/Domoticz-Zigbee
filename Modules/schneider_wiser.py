@@ -775,7 +775,7 @@ def schneider_setpoint_thermostat(self, key, setpoint):
                     schneider_actuator_check_and_bind(self, hact)
                     # ReadAttributeRequest_0201(self,key)
 
-def schneider_setpoint_actuator(self, key, setpoint):
+def schneider_setpoint_actuator(self, key, setpoint,send_command=True):
     """[summary]
         send new setpoint to actuators via an e0 command with the new setpoint value
         it is called
@@ -819,43 +819,46 @@ def schneider_setpoint_actuator(self, key, setpoint):
     if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] == "EH-ZB-HACT":
         schneider_hact_heating_mode(self, key, "setpoint")
 
+    if not send_command:
+        return
+    
     setpoint = "%04X" % setpoint
     zone = "01"
 
     payload = cluster_frame + sqn + cmd + "00" + zone + setpoint[2:4] + setpoint[:2] + "ff"
 
-
-    raw_APS_request(
-        self, key, EPout, "0201", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, key)
-    )
+    raw_APS_request( self, key, EPout, "0201", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, key) )
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]["Heartbeat"] = "0"
     self.ListOfDevices[key]["Heartbeat"] = "0"
-    # ReadAttributeRequest_0201(self,key)
 
 
 def schneider_setpoint(self, NwkId, setpoint):
 
     if NwkId not in self.ListOfDevices:
         self.log.logging("Schneider", "Debug", f"schneider_setpoint - unknown NwkId: {NwkId} in ListOfDevices!")
-
         return
 
     if "Model" in self.ListOfDevices[NwkId]:
-        if self.ListOfDevices[NwkId]["Model"] in ("EH-ZB-RTS", "Wiser2-Thermostat", ):
-            schneider_setpoint_thermostat(self, NwkId, setpoint)
-
-        elif self.ListOfDevices[NwkId]["Model"] in ( "iTRV", ): 
-            cancel_override_attribute( self, NwkId )
-            schneider_setpoint_thermostat(self, NwkId, setpoint)   
-
-        elif self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT":
+        if self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT":
+            self.log.logging("Schneider", "Debug", f"schneider_setpoint - delayed setpoint {setpoint} for {NwkId} model EH-ZB-VACT")
+            
             wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
             #schneider_setpoint_thermostat(self, NwkId, setpoint)
-            schneider_setpoint_actuator(self, NwkId, setpoint)
-        else:
-            wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
-            schneider_setpoint_actuator(self, NwkId, setpoint)
+            schneider_setpoint_actuator(self, NwkId, setpoint, send_command=False)
+            return
+        
+        if self.ListOfDevices[NwkId]["Model"] in ("EH-ZB-RTS", "Wiser2-Thermostat", ):
+            schneider_setpoint_thermostat(self, NwkId, setpoint)
+            return
+        
+        if self.ListOfDevices[NwkId]["Model"] == "iTRV": 
+            cancel_override_attribute( self, NwkId )
+            schneider_setpoint_thermostat(self, NwkId, setpoint)   
+            return
+            
+        wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
+        schneider_setpoint_actuator(self, NwkId, setpoint)
 
 
 def schneider_temp_Setcurrent(self, key, setpoint):
