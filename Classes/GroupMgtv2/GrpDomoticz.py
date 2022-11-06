@@ -707,7 +707,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # First manage level
         if Hue_List["m"] != 9998:
             # In case of m ==3, we will do the Setlevel
-            #OnOff = "01"  # 00 = off, 01 = on
+            OnOff = "01"  # 00 = off, 01 = on
             value = Hex_Format(2, round(1 + Level * 254 / 100))  # To prevent off state
             #zigate_cmd = "0081"
             #zigate_param = OnOff + value + transitionMoveLevel
@@ -717,7 +717,8 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             update_device_list_attribute(self, GrpId, "0008", value)
             #self.ControllerLink.sendData(zigate_cmd, datas, ackIsDisabled=True)
             
-            zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0000")
+            #zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0000")
+            zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, value, transition="0000")
 
         if Hue_List["m"] == 1:
             ww = int(Hue_List["ww"])  # Can be used as level for monochrome white
@@ -760,7 +761,8 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             #    + transitionMoveLevel,
             #    ackIsDisabled=True,
             #)
-            zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", Hex_Format(2, value), transitionMoveLevel)
+            #zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", Hex_Format(2, value), transitionMoveLevel)
+            zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, Hex_Format(2, value), transition=transitionMoveLevel)
 
         # Update Device
         nValue = 1
