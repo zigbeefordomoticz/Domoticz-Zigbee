@@ -611,18 +611,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
         if ClusterType == "Temp" and WidgetType == "Voc" and Attribute_ == "0003":
             # voc for VOC_Sensor from Nexturn is provided via Temp cluster
-            value = "%s" % (round(value, 1))
-            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+            svalue = "%s" % (round(value, 1))
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Temp" and WidgetType == "CH2O" and Attribute_ == "0004":
             # ch2o for Tuya Smart Air fis provided via Temp cluster
-            value = "%s" % (round(value, 2))
-            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+            svalue = "%s" % (round(value, 2))
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Temp" and WidgetType == "CarbonDioxyde" and Attribute_ == "0005":
             # CarbonDioxyde for Tuya Smart Air provided via Temp cluster
-            value = "%s" % (round(value, 1))
-            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+            svalue = "%s" % (round(value, 1))
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Temp" and WidgetType in ("Temp", "Temp+Hum", "Temp+Hum+Baro") and Attribute_ == "":  # temperature
             if check_erratic_value(self, NWKID, "Temp", value, -50, 100):
@@ -680,7 +680,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if CurrentsValue == "":
                 # First time after device creation
                 CurrentsValue = "0;0;0;0;0"
-            elif not ";" in CurrentsValue:
+            elif ";" not in CurrentsValue:
                 CurrentsValue = CurrentsValue + ";0;0;0;0"
             SplitData = CurrentsValue.split(";")
             NewNvalue = 0
@@ -843,8 +843,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 
             elif WidgetType == "DSwitch":
                 # double switch avec EP different
-                value = int(value)
-                if value == 1 or value == 0:
+                _value = int(value)
+                if _value == 1 or _value == 0:
                     if Ep == "01":
                         nValue = 1
                         sValue = "10"
@@ -873,8 +873,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             elif WidgetType == "DButton":
                 # double bouttons avec EP different lumi.sensor_86sw2
-                value = int(value)
-                if value == 1:
+                _value = int(value)
+                if _value == 1:
                     if Ep == "01":
                         nValue = 1
                         sValue = "10"
@@ -892,49 +892,49 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             elif WidgetType == "DButton_3":
                 # double bouttons avec EP different lumi.sensor_86sw2
-                value = int(value)
+                _value = int(value)
                 data = "00"
                 state = "00"
                 if Ep == "01":
-                    if value == 1:
+                    if _value == 1:
                         state = "10"
                         data = "01"
 
-                    elif value == 2:
+                    elif _value == 2:
                         state = "20"
                         data = "02"
 
-                    elif value == 3:
+                    elif _value == 3:
                         state = "30"
                         data = "03"
 
                     UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
                 elif Ep == "02":
-                    if value == 1:
+                    if _value == 1:
                         state = "40"
                         data = "04"
 
-                    elif value == 2:
+                    elif _value == 2:
                         state = "50"
                         data = "05"
 
-                    elif value == 3:
+                    elif _value == 3:
                         state = "60"
                         data = "06"
 
                     UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
                 elif Ep == "03":
-                    if value == 1:
+                    if _value == 1:
                         state = "70"
                         data = "07"
 
-                    elif value == 2:
+                    elif _value == 2:
                         state = "80"
                         data = "08"
 
-                    elif value == 3:
+                    elif _value == 3:
                         state = "90"
                         data = "09"
 
@@ -968,27 +968,27 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, "On", BatteryLevel, SignalLevel)
 
             elif WidgetType in ("VenetianInverted", "Venetian", "WindowCovering", "VanneInverted", "Vanne", "Curtain", "CurtainInverted"):
-                value = int(value, 16)
+                _value = int(value, 16)
                 self.log.logging(
                     "Widget",
                     "Debug",
-                    "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (NWKID, Ep, ClusterType, WidgetType, value),
+                    "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (NWKID, Ep, ClusterType, WidgetType, _value),
                     NWKID,
                 )
                 if WidgetType in ("VenetianInverted", "VanneInverted"):
-                    value = 100 - value
-                    self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NWKID, Ep, value), NWKID)
+                    _value = 100 - _value
+                    self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NWKID, Ep, _value), NWKID)
                 # nValue will depends if we are on % or not
-                if value == 0:
+                if _value == 0:
                     nValue = 0
-                elif value == 100:
+                elif _value == 100:
                     nValue = 1
                 else:
                     if Switchtype in (4, 15):
                         nValue = 17
                     else:
                         nValue = 2
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(_value), BatteryLevel, SignalLevel)
 
             elif (
                 ((ClusterType == "FanControl" and WidgetType == "FanControl") or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00"))
@@ -1025,28 +1025,28 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
         if "WindowCovering" in ClusterType:  # 0x0102
             if WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted"):
-                value = int(value, 16)
+                _value = int(value, 16)
                 self.log.logging(
                     "Widget",
                     "Debug",
-                    "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (NWKID, Ep, ClusterType, WidgetType, value),
+                    "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (NWKID, Ep, ClusterType, WidgetType, _value),
                     NWKID,
                 )
                 if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
-                    value = 100 - value
-                    self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NWKID, Ep, value), NWKID)
+                    _value = 100 - _value
+                    self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NWKID, Ep, _value), NWKID)
                 # nValue will depends if we are on % or not
-                if value == 0:
+                if _value == 0:
                     nValue = 0
-                elif value == 100:
+                elif _value == 100:
                     nValue = 1
                 else:
                     if Switchtype in (4, 15):
                         nValue = 17
                     else:
                         nValue = 2
-                self.log.logging("Widget", "Debug", "------>  %s %s/%s Value: %s:%s" % (WidgetType, NWKID, Ep, nValue, value), NWKID)
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(value), BatteryLevel, SignalLevel)
+                self.log.logging("Widget", "Debug", "------>  %s %s/%s Value: %s:%s" % (WidgetType, NWKID, Ep, nValue, _value), NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(_value), BatteryLevel, SignalLevel)
 
         if "LvlControl" in ClusterType:  # LvlControl ( 0x0008)
             if WidgetType == "LvlControl" or (
