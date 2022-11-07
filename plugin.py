@@ -1492,7 +1492,7 @@ def check_python_modules_version( self ):
     MODULES_VERSION = {
         "zigpy": "0.51.5",
         "zigpy_znp": "0.9.1",
-        "zigpy_deconz": "0.19.0",
+        "zigpy_deconz": "0.19.1",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
         "zigpy_ezsp": "0.34.2",
         }
