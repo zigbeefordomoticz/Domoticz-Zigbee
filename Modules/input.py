@@ -678,6 +678,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     MsgDestPoint = MsgData[12:14]
     MsgSourceAddressMode = MsgData[14:16]
 
+
     # Domoticz.Log("Decode8002 - MsgLogLvl: %s , MsgProfilID: %s, MsgClusterID: %s MsgSourcePoint: %s, MsgDestPoint: %s, MsgSourceAddressMode: %s" \
     #        %(MsgLogLvl, MsgProfilID, MsgClusterID, MsgSourcePoint, MsgDestPoint, MsgSourceAddressMode))
 
