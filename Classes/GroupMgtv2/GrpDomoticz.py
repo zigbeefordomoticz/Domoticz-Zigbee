@@ -619,7 +619,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         return
 
     # Old Fashon
-    if Command == "Off":
+    if Command in ( "Off", "Close", ):
         if self.pluginconf.pluginConf["GrpfadingOff"]:
             if self.pluginconf.pluginConf["GrpfadingOff"] == 1:
                 effect = "0002"  # 50% dim down in 0.8 seconds then fade to off in 12 seconds
@@ -648,7 +648,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         update_device_list_attribute(self, GrpId, "0006", "00")
         update_domoticz_group_device(self, GrpId)
 
-    elif Command == "On":
+    elif Command in ( "On", "Open", ):
         #zigate_cmd = "0092"
         #zigate_param = "01"
         nValue = "1"
@@ -686,8 +686,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         
         #zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0010")
         zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, value, transition="0010")
-        
-        
+
         #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
         #self.logging("Debug", "Command: %s %s" % (Command, datas))
         #self.ControllerLink.sendData(zigate_cmd, datas, ackIsDisabled=True)
