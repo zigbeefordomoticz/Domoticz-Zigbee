@@ -670,22 +670,25 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # Level: % value of move
         # Converted to value , raw value from 0 to 255
         # sValue is just a string of Level
-        zigate_cmd = "0081"
+        
         if Level > 100:
             Level = 100
         elif Level < 0:
             Level = 0
         OnOff = "01"
+        
         # value = int(Level*255//100)
         value = "%02X" % int(Level * 255 // 100)
+        #zigate_cmd = "0081"
         #zigate_param = OnOff + value + "0010"
         #nValue = 1
         #sValue = str(Level)
         #self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
         update_device_list_attribute(self, GrpId, "0008", value)
         
+        transitionMoveLevel = "%04x" % self.pluginconf.pluginConf["GrpmoveToLevel"]
         #zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0010")
-        zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, value, transition="0010")
+        zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, value, transition=transitionMoveLevel, ackIsDisabled=True)
 
         #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
         #self.logging("Debug", "Command: %s %s" % (Command, datas))

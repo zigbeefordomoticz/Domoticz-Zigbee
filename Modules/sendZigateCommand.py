@@ -283,6 +283,7 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
 
     if groupaddrmode:
         data['AddressMode'] = 0x01
+        ackIsDisabled = True
     elif ackIsDisabled:
         data['AddressMode'] = 0x07
     else:
