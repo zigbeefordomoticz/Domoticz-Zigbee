@@ -16,7 +16,8 @@ import os.path
 import time
 
 import Domoticz
-from Modules.tools import getConfigItem, is_domoticz_db_available, is_hex, setConfigItem
+from Modules.tools import (getConfigItem, is_domoticz_db_available, is_hex,
+                           setConfigItem)
 
 SETTINGS = {
     "Services": {
@@ -65,6 +66,7 @@ SETTINGS = {
             "autoRestore": {"type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True,},
                 
             "BackupFullDevices": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False,"ZigpyRadio": "znp" },
+            "ForceAPSAck": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True,  },
             "BellowsNoMoreEndDeviceChildren": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp" },
             "zigpySourceRouting": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
             "forceZigpy_noasyncio": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
