@@ -461,7 +461,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     )
 
     if self.pluginconf.pluginConf["ForceAPSAck"] and AckIsDisable:
-        self.log.logging( "TransportZigpy", "Debug", "process_raw_command: forcing Ack for command: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x Sqn: %s,"
+        self.log.logging( "TransportZigpy", "Debug", 
+                         "process_raw_command: forcing Ack for command: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x"
         % ( Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode,  ),)
         AckIsDisable = False
 
