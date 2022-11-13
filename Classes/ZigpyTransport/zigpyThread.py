@@ -126,8 +126,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             },
             "topology_scan_enabled": False,
             "handle_unknown_devices": True,
-            "source_routing": True         # If enable bellows is doing source routing, if not then it is ezsp taking care 
-                                            # https://github.com/zigpy/bellows/issues/493#issuecomment-1239892344
+            "source_routing": True         # If enable bellows is doing source routing, if not then it is ezsp taking care https://github.com/zigpy/bellows/issues/493#issuecomment-1239892344
             }
         
         if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
@@ -461,9 +460,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     )
 
     if self.pluginconf.pluginConf["ForceAPSAck"] and AckIsDisable:
-        self.log.logging( "TransportZigpy", "Debug", 
-                         "process_raw_command: forcing Ack for command: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x"
-        % ( Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode,  ),)
+        self.log.logging( "TransportZigpy", "Debug", "process_raw_command: forcing Ack for command: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x" % ( 
+            Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode),)
         AckIsDisable = False
 
     if int(NwkId, 16) >= 0xFFFB:  # Broadcast
@@ -484,14 +482,12 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         try:
             destination = self.app.get_device(nwk=t.NWK(int(NwkId, 16)))
         except KeyError:
-            self.log.logging( "TransportZigpy", "Error", "process_raw_command device not found destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s"
-                % (NwkId, Profile, Cluster, sEp, dEp, sequence, payload),
-            )
+            self.log.logging( "TransportZigpy", "Error", "process_raw_command device not found destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" % (
+                NwkId, Profile, Cluster, sEp, dEp, sequence, payload))
             return
 
-        self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s"
-            % (destination, Profile, Cluster, sEp, dEp, sequence, payload),
-        )
+        self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" % (
+            destination, Profile, Cluster, sEp, dEp, sequence, payload))
         
         # zigpy has inversed the expect_reply strategy. It is now based on
         # If expect_reply is set to True (this is because the command is expecting a response from that command)
