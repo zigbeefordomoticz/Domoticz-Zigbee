@@ -187,8 +187,8 @@ class OTAManagement(object):
         intMsgImageVersion = int(MsgData[22:30], 16)
         intMsgImageType = int(MsgData[30:34], 16)
         intMsgManufCode = int(MsgData[34:38], 16)
-        MsgMaxDataSize = MsgData[38:40]
-        PageSize = MsgData[40:44]
+        MsgMaxDataSize = int(MsgData[38:40],16)
+        PageSize = int(MsgData[40:44],16)
         ResponseSpacing = MsgData[44:48]
         FieldControl = MsgData[48:50]
         intMsgFieldControl = int(FieldControl,16)
