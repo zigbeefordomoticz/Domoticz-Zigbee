@@ -585,11 +585,6 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
     # Not sure that Groups are always on EP 01 !!!!!
     EPout = "01"
 
-    GroupLevelWithOnOff = False
-    if ( "GroupLevelWithOnOff" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["GroupLevelWithOnOff"] ):
-        GroupLevelWithOnOff = True
-
-
     if (
         "Cluster" in self.ListOfGroups[GrpId]
         and self.ListOfGroups[GrpId]["Cluster"] == "0102"
@@ -692,11 +687,14 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         update_device_list_attribute(self, GrpId, "0008", value)
         
         transitionMoveLevel = "%04x" % self.pluginconf.pluginConf["GrpmoveToLevel"]
+        GroupLevelWithOnOff = False
+        if (  "GroupLevelWithOnOff" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["GroupLevelWithOnOff"] ):
+            GroupLevelWithOnOff = True
 
         if GroupLevelWithOnOff:
-            zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, transition=transitionMoveLevel)
-        else:
             zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, value, transition=transitionMoveLevel, ackIsDisabled=True)
+        else:
+            zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, transition=transitionMoveLevel)
 
         #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
         #self.logging("Debug", "Command: %s %s" % (Command, datas))
