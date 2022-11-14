@@ -169,7 +169,7 @@ SETTINGS = {
             "GrpmoveToColourTemp": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "GrpmoveToColourRGB": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "GrpmoveToLevel": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
-            "GroupLevelWithOnOff": { "type": "int", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
+            "GroupLevelWithOnOff": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
         },
     },
     # Plugin Transport
