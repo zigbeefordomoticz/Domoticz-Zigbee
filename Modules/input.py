@@ -134,6 +134,7 @@ def ZigateRead(self, Devices, Data):
         "8400": Decode8400,
         "8401": Decode8401,
         "8501": Decode8501,
+        "8502": Decode8502,
         "8503": Decode8503,
         "8701": Decode8701,
         "8806": Decode8806,
