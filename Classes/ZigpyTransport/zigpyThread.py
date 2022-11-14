@@ -448,7 +448,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     payload = bytes.fromhex(data["payload"])
     sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
-    extended_timeout = not data["RxOnIdle"]     # In case the device do not Rx on Idle, then we set extended_timeout to True if Ack expected
+    extended_timeout = not data["RxOnIdle"] if "RxOnIdle" in data else False    # In case the device do not Rx on Idle, then we set extended_timeout to True if Ack expected
     result = None
 
     delay = data["Delay"] if "Delay" in data else None
@@ -459,10 +459,6 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         % ( Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn, delay,extended_timeout ),
     )
 
-    if self.pluginconf.pluginConf["ForceAPSAck"] and AckIsDisable:
-        self.log.logging( "TransportZigpy", "Debug", "process_raw_command: forcing Ack for command: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x" % ( 
-            Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode),)
-        AckIsDisable = False
 
     if int(NwkId, 16) >= 0xFFFB:  # Broadcast
         destination = int(NwkId, 16)
@@ -492,7 +488,15 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         # zigpy has inversed the expect_reply strategy. It is now based on
         # If expect_reply is set to True (this is because the command is expecting a response from that command)
         # If expect_reply is set to False, then a Ack will be set.
+        # End result is
+        # AckIsDisable ( we do not want Ack, so expect_reply to be set to True)
+        # not AckIsDisable ( we want Ack, so expect_reply to be set to False )
+        
         # see https://github.com/zigpy/zigpy/pull/1085
+
+        if self.pluginconf.pluginConf["ForceAPSAck"]:
+            self.log.logging( "TransportZigpy", "Debug", "    Forcing Ack by setting AckIsDisable = False and so expect_reply == False" ) 
+            AckIsDisable = False
 
         try:
             if CREATE_TASK:
@@ -513,6 +517,11 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         # Nwkid is in fact an IEEE
         destination = self.app.get_device(nwk=t.NWK(int(NwkId, 16)))
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call request destination: %s" % destination)
+        
+        if self.pluginconf.pluginConf["ForceAPSAck"]:
+            self.log.logging( "TransportZigpy", "Debug", "    Forcing Ack by setting AckIsDisable = False and so expect_reply == False" ) 
+            AckIsDisable = False
+
         if CREATE_TASK:
             task = asyncio.create_task(
                 transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout) )
