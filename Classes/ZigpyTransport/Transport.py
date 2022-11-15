@@ -145,7 +145,7 @@ def instrument_sendData( self, cmd, datas, sqn, timestamp, highpriority, ackIsDi
     logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigbee-Commands-log-" + "%02d" % self.hardwareid + ".csv"
     header = False
     if not os.path.isfile( logfilename ):
-        header = " Time Stamp | Command | Function | SQN | Priority | ackIsDisabled | WaitForresponseIn | NwkId | Profile | Target NwkId | Target Ep | Src Ep | Cluster | Payload | Addr Mode | rxOnIddle \n"
+        header = " Time Stamp | Command | Function | SQN | Priority | ackIsDisabled | WaitForresponseIn | NwkId | Profile | Target addr | Target Ep | Src Ep | Cluster | Payload | Addr Mode | rxOnIddle \n"
     line = ""
     line += " %s " %timestamp
     line += "| %s " %cmd
@@ -154,12 +154,12 @@ def instrument_sendData( self, cmd, datas, sqn, timestamp, highpriority, ackIsDi
     line += "| %s " %highpriority
     line += "| %s " %ackIsDisabled
     line += "| %s " %waitForResponseIn
-    line += "| %s " %NwkId
-    line += "| %s " %datas["Profile"] if "Profile" in datas else ""
-    line += "| %s " %datas["TargetNwk"] if "TargetNwk" in datas else ""
-    line += "| %s " %datas["TargetEp"] if "TargetEp" in datas else ""
-    line += "| %s " %datas["SrcEp"] if "SrcEp" in datas else ""
-    line += "| %s " %datas["Cluster"] if "Cluster" in datas else ""
+    line += "| 0x%04x " %NwkId if NwkId else ""
+    line += "| 0x%04X " %datas["Profile"] if "Profile" in datas else ""
+    line += "| 0x%X " %datas["TargetNwk"] if "TargetNwk" in datas else ""
+    line += "| 0x%02X " %datas["TargetEp"] if "TargetEp" in datas else ""
+    line += "| 0x%02X " %datas["SrcEp"] if "SrcEp" in datas else ""
+    line += "| 0x%04X " %datas["Cluster"] if "Cluster" in datas else ""
     line += "| %s " %datas["payload"] if "payload" in datas else ""
     line += "| %s " %datas["AddressMode"] if "AddressMode" in datas else ""
     line += "| %s " %datas["RxOnIdle"] if "RxOnIdle" in datas else ""
