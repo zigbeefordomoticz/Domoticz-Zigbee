@@ -1,0 +1,21 @@
+{
+    "_comment": "Orvibo Temp & Humidity Sensor ST30 manufactured by Orvibo",
+    "_version": "0.1",
+    "Ep": {
+        "01": { "0000": "", "0004": "", "0005": "", "0402": "", "Type": "Temp" },
+        "02": { "0004": "", "0005": "", "0405": "", "Type": "Humi" }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0402", "0405" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0005", "0000", "0001", "0003", "0007", "4000" ],
+        "0402": [ "0000" ],
+        "0405": [ "0000" ]
+    },
+    "BatteryDevice": 1,
+    "BatteryPercentageConverter": 2,
+    "Param": {
+        "BindingTableRequest": 0
+    }
+}

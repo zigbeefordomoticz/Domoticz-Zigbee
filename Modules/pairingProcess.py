@@ -583,7 +583,7 @@ def create_group_if_required(self, NWKID):
 
 
 def handle_device_specific_needs(self, Devices, NWKID):
-
+    self.log.logging("Pairing", "Debug", "handle_device_specific_needs for %s" %NWKID)
     # In case of Orvibo Scene controller let's Registration
     if "Manufacturer Name" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Manufacturer Name"] == "欧瑞博":
         OrviboRegistration(self, NWKID)
@@ -597,6 +597,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
     elif ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY and WISER_LEGACY_MODEL_NAME_PREFIX in self.ListOfDevices[NWKID]["Model"] ):
+        self.log.logging("Pairing", "Debug", "Wiser Legacy registration needed for %s" %NWKID)
         schneider_wiser_registration(self, Devices, NWKID)
 
     elif self.ListOfDevices[NWKID]["Model"] in ( "AC201A", "AC211", "AC221", "CAC221" ):

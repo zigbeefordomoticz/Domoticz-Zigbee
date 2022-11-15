@@ -21,7 +21,8 @@ from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.livolo import livolo_bind
 from Modules.manufacturer_code import PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO
 from Modules.pairingProcess import (interview_state_004d,
-                                    zigbee_provision_device)
+                                    zigbee_provision_device,
+                                    handle_device_specific_needs)
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped)
@@ -226,8 +227,12 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
             if self.ListOfDevices[NwkId]["Model"] in ("TS0601-sirene"):
                 tuya_sirene_registration(self, NwkId)
+                
             elif self.ListOfDevices[NwkId]["Model"] in (TUYA_eTRV_MODEL):
                 tuya_eTRV_registration(self, NwkId, False)
+                
+            handle_device_specific_needs(self, Devices, NwkId)
+            
             del self.ListOfDevices[NwkId]["Announced"]
             return
         

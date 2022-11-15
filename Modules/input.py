@@ -134,6 +134,7 @@ def ZigateRead(self, Devices, Data):
         "8400": Decode8400,
         "8401": Decode8401,
         "8501": Decode8501,
+        "8502": Decode8502,
         "8503": Decode8503,
         "8701": Decode8701,
         "8806": Decode8806,
@@ -677,6 +678,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     MsgSourcePoint = MsgData[10:12]
     MsgDestPoint = MsgData[12:14]
     MsgSourceAddressMode = MsgData[14:16]
+
 
     # Domoticz.Log("Decode8002 - MsgLogLvl: %s , MsgProfilID: %s, MsgClusterID: %s MsgSourcePoint: %s, MsgDestPoint: %s, MsgSourceAddressMode: %s" \
     #        %(MsgLogLvl, MsgProfilID, MsgClusterID, MsgSourcePoint, MsgDestPoint, MsgSourceAddressMode))

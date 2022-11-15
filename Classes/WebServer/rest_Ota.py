@@ -361,14 +361,15 @@ def get_device_informations(self, Nwkid):
         swbuild_3 = self.ListOfDevices[Nwkid]["SWBUILD_3"]
     if "SWBUILD_1" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["SWBUILD_1"] != {}:
         swbuild_1 = self.ListOfDevices[Nwkid]["SWBUILD_1"]
-    if "OTA" in self.ListOfDevices[Nwkid]:
+    if "OTA" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["OTA"] not in ( '', {} ):
         prev_ts = 0
 
         for ts in self.ListOfDevices[Nwkid]["OTA"]:
-            if ts > prev_ts:
+            if int(ts) > int(prev_ts):
                 time_update = self.ListOfDevices[Nwkid]["OTA"][ts]["Time"]
                 LastImageVersion = self.ListOfDevices[Nwkid]["OTA"][ts]["Version"]
                 LastImageType = self.ListOfDevices[Nwkid]["OTA"][ts]["Type"]
+                prev_ts = int(ts)
 
     return {
         "Nwkid": Nwkid,

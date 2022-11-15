@@ -25,13 +25,15 @@ def callbackDeviceAwake(self, Devices, NwkId, endpoint, cluster):
     #
     # and will call the manufacturer specific one if needed and if existing
 
+    self.log.logging( "inRawAPS", "Debug", "callbackDeviceAwake -  NwkId %s Ep %s Cluster %s " % (NwkId, endpoint, cluster), NwkId)
+
     if NwkId not in self.ListOfDevices:
         return
 
     # 09/11/2020: Let's check if we are not in pairing mode for this device, or if the Zigate is not overloaded
     if "PairingInProgress" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PairingInProgress"]:
         return
-    if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+    if self.busy or self.ControllerLink.loadTransmit() > 8:
         return
     # Let's check if any WebBind have to be established
 

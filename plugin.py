@@ -1490,11 +1490,11 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.50.2",
-        "zigpy_znp": "0.8.2",
-        "zigpy_deconz": "0.18.1",
+        "zigpy": "0.51.5",
+        "zigpy_znp": "0.9.1",
+        "zigpy_deconz": "0.19.1",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.33.1",
+        "zigpy_ezsp": "0.34.3",
         }
 
     flag = True
@@ -1507,8 +1507,8 @@ def check_python_modules_version( self ):
         
         self.log.logging("Plugin", "Debug", "Python module %s loaded with version %s - %s" %( x, self.pythonModuleVersion[ x ], MODULES_VERSION[ x]))   
         if self.pythonModuleVersion[ x ] != MODULES_VERSION[ x]:
-            self.log.logging("Plugin", "Error", "The python module %s loaded in not compatible as we are expecting this level %s" %(
-                x, MODULES_VERSION[ x] ))
+            self.log.logging("Plugin", "Error", "The python module %s version %s loaded is not compatible as we are expecting this level %s" %(
+                x, self.pythonModuleVersion[ x ], MODULES_VERSION[ x] ))
             flag = False
             
     return flag
@@ -1735,7 +1735,7 @@ def _check_plugin_version( self ):
                 log_mode = "Error"
             else:
                 log_mode = "Status"
-            self.log.logging("Plugin", log_mode, "There is a newer plugin version available on gitHub. Current %s Available %s" %(
+            self.log.logging("Plugin", log_mode, "*** A more recent plugin version is waiting for you on gitHub. You are on %s and %s is available !!" %(
                 self.pluginParameters["PluginVersion"], self.pluginParameters["available"]))
             self.pluginParameters["PluginUpdate"] = True
         if checkFirmwareUpdate(

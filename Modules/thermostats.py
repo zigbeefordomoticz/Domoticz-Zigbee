@@ -61,14 +61,10 @@ def thermostat_Setpoint(self, NwkId, setpoint):
             return
         if self.ListOfDevices[NwkId]["Model"] in ("EH-ZB-RTS", "EH-ZB-HACT", "EH-ZB-VACT", "Wiser2-Thermostat", "iTRV"):
             # Schneider
-            self.log.logging(
-                "Thermostats",
-                "Debug",
-                "thermostat_Setpoint - calling Schneider for %s with value %s" % (NwkId, setpoint),
-                nwkid=NwkId,
-            )
+            self.log.logging( "Thermostats", "Debug", "thermostat_Setpoint - calling Schneider for %s with value %s" % (NwkId, setpoint), nwkid=NwkId, )
             schneider_setpoint(self, NwkId, setpoint)
             return
+        
         if self.ListOfDevices[NwkId]["Model"] in (TUYA_eTRV_MODEL):
             # Tuya
             self.log.logging(
@@ -214,7 +210,7 @@ def thermostat_Calibration(self, NwkId, calibration=None):
     ):
         return
 
-    self.log.logging("Thermostats", "Log", "thermostat_Calibration - Set Thermostat offset on %s off %s" % (NwkId, calibration))
+    self.log.logging("Thermostats", "Debug", "thermostat_Calibration - Set Thermostat offset on %s off %s" % (NwkId, calibration))
 
     self.ListOfDevices[NwkId]["Thermostat"]["Calibration"] = calibration
 
@@ -287,7 +283,7 @@ def thermostat_Mode(self, NwkId, mode):
     if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("TAFFETAS2 D1.00P1.01Z1.00"):
         self.log.logging(
             "Thermostats",
-            "Log",
+            "Debug",
             "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
             % (NwkId, data, cluster_id, attribute, data_type),
             nwkid=NwkId,

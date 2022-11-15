@@ -16,7 +16,8 @@ import os.path
 import time
 
 import Domoticz
-from Modules.tools import getConfigItem, is_domoticz_db_available, is_hex, setConfigItem
+from Modules.tools import (getConfigItem, is_domoticz_db_available, is_hex,
+                           setConfigItem)
 
 SETTINGS = {
     "Services": {
@@ -55,18 +56,19 @@ SETTINGS = {
     "Zigpy": {
         "Order": 4,
         "param": {    
-            "Konke": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
-            "Livolo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
-            "Orvibo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
-            "Terncy": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
-            "Wiser": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
-            "Wiser2": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "deCONZ"},
+            "Konke": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
+            "Livolo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True,},
+            "Orvibo": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True,},
+            "Terncy": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True,},
+            "Wiser": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
+            "Wiser2": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True,},
             "autoBackup": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "autoRestore": {"type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True,},
                 
             "BackupFullDevices": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False,"ZigpyRadio": "znp" },
+            "ForceAPSAck": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "BellowsNoMoreEndDeviceChildren": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp" },
-            "BellowsSourceRouting": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp" },
+            "zigpySourceRouting": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": True, "Advanced": True, },
             "forceZigpy_noasyncio": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
         }
     },
@@ -139,14 +141,20 @@ SETTINGS = {
             "eraseZigatePDM": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, "ZigpyRadio": "" },
             "Certification": { "type": "list", "list": {"CE regulation": "CE", "FCC regulation": "FCC"}, "default": "CE", "current": None, "restart": True, "hidden": False, "Advanced": False, "ZigpyRadio": "" },
             "CertificationCode": { "type": "int", "default": 1, "current": None, "restart": 1, "hidden": True, "Advanced": False, "ZigpyRadio": "" },
-            "channel": { "type": "list",
-                "list": { "default": 0, "11": 11, "12": 12, "13": 13, "14": 14, "15": 15, "16": 16, "17": 17, "18": 18, "19": 19, "20": 20, "21": 21, "22": 22, "23": 23, "24": 24, "25": 25, "26": 26, },
+            "channel": { 
+                "type": "list",
+                "list": { 
+                    "default": 0, 
+                    "11": 11, "12": 12, "13": 13, "14": 14, "15": 15, "16": 16, 
+                    "17": 17, "18": 18, "19": 19, "20": 20, "21": 21, "22": 22, 
+                    "23": 23, "24": 24, "25": 25, "26": 26, 
+                    },
                 "default": "0",
                 "current": None,
                 "restart": 2,
                 "hidden": False,
                 "Advanced": False,
-            },
+                },
             "TXpower_set": { "type": "list", "list": {"0dbM": 0, "-9 dbM": 1, "-20dbM": 2, "-32dbM": 3}, "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
             "extendedPANID": { "type": "hex", "default": 0, "current": None, "restart": 3, "hidden": False, "Advanced": True, },
             "forceClosingAllNodes": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
@@ -161,6 +169,7 @@ SETTINGS = {
             "GrpmoveToColourTemp": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "GrpmoveToColourRGB": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "GrpmoveToLevel": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
+            "GroupLevelWithOnOff": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
         },
     },
     # Plugin Transport
@@ -230,6 +239,7 @@ SETTINGS = {
             "debugTransportTcpip": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugTransportSerial": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugTransportZigpy": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "debugTransportError": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugTransportZigpyZigate": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugTransportZigpyZNP": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugTransportZigpydeCONZ": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
@@ -578,8 +588,6 @@ def zigpy_setup(self):
                     "hidden": False,
                     "Advanced": True,
                 }
-    if self.pluginConf["enableSchneiderWiser"]:
-        self.pluginConf["Wiser"] =1
                                 
 def setup_folder_parameters(self, homedir):
     for theme in SETTINGS:

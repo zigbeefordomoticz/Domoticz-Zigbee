@@ -4,7 +4,6 @@
 # Author: pipiche38
 #
 
-
 import struct
 from Zigbee.encoder_tools import encapsulate_plugin_frame
 
@@ -352,8 +351,11 @@ def buildframe_user_description_response(self, SrcNwkId, SrcEndPoint, ClusterId,
 
 
 def buildframe_unbind_response_command(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_unbind_response_command NOT IMPLEMENTED YET")
-    return frame
+    sqn = Payload[:2]
+    status = Payload[2:4]
+    self.log.logging("zdpDecoder", "Debug", "buildframe_unbind_response_command sqn: %s nwkid: %s Ep: %s Status %s" % (sqn, SrcNwkId, SrcEndPoint, status))
+    buildPayload = sqn + status + "02" + SrcNwkId
+    return encapsulate_plugin_frame("8031", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
 def buildframe_management_nwk_discovery_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):

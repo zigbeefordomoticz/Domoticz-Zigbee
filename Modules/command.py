@@ -273,7 +273,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         # Let's force a refresh of Attribute in the next Heartbeat
         request_read_device_status(self, NWKID)
 
-    if Command == "Off":  # Manage the Off command.
+    if Command in ( "Off", "Close",):  # Manage the Off command.
         # Let's force a refresh of Attribute in the next Heartbeat
         if DeviceType not in ( "CurtainInverted", "Curtain"):
             # Refresh will be done via the Report Attribute
@@ -300,16 +300,16 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             return
 
         if _model_name == "TS0601-Parkside-Watering-Timer":
-            self.log.logging("Command", "Log", "mgtCommand : On for Tuya ParkSide Water Time")
+            self.log.logging("Command", "Debug", "mgtCommand : On for Tuya ParkSide Water Time")
             if (
                 "Param" in self.ListOfDevices[NWKID]
                 and "TimerMode" in self.ListOfDevices[NWKID]["Param"]
                 and self.ListOfDevices[NWKID]["Param"]["TimerMode"]
             ):
-                self.log.logging("Command", "Log", "mgtCommand : Off for Tuya ParkSide Water Time - Timer Mode")
+                self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya ParkSide Water Time - Timer Mode")
                 tuya_watertimer_command(self, NWKID, "00", gang=int(EPout, 16))
             else:
-                self.log.logging("Command", "Log", "mgtCommand : Off for Tuya ParkSide Water Time - OnOff Mode")
+                self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya ParkSide Water Time - OnOff Mode")
                 actuator_off(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -538,7 +538,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         # Let's force a refresh of Attribute in the next Heartbeat
         request_read_device_status(self, NWKID)
 
-    if Command == "On":  # Manage the On command.
+    if Command in ( "On", "Open", ):  # Manage the On command.
         # Let's force a refresh of Attribute in the next Heartbeat
         request_read_device_status(self, NWKID)
         self.log.logging(
@@ -583,10 +583,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 and "TimerMode" in self.ListOfDevices[NWKID]["Param"]
                 and self.ListOfDevices[NWKID]["Param"]["TimerMode"]
             ):
-                self.log.logging("Command", "Log", "mgtCommand : On for Tuya ParkSide Water Time - Timer Mode")
+                self.log.logging("Command", "Debug", "mgtCommand : On for Tuya ParkSide Water Time - Timer Mode")
                 tuya_watertimer_command(self, NWKID, "01", gang=int(EPout, 16))
             else:
-                self.log.logging("Command", "Log", "mgtCommand : On for Tuya ParkSide Water Time - OnOff Mode")
+                self.log.logging("Command", "Debug", "mgtCommand : On for Tuya ParkSide Water Time - OnOff Mode")
                 actuator_on(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
 
@@ -699,13 +699,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         )
 
         if DeviceType == "ThermoSetpoint":
-            self.log.logging(
-                "Command",
-                "Debug",
-                "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
-                % (NWKID, EPout, Unit, DeviceType, Level),
-                NWKID,
-            )
+            self.log.logging( "Command", "Debug", "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (NWKID, EPout, Unit, DeviceType, Level), NWKID, )
             value = int(float(Level) * 100)
             thermostat_Setpoint(self, NWKID, value)
             Level = round(float(Level), 2)
@@ -820,7 +814,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             if Level in CONTRACT_MODE:
                 self.log.logging(
                     "Command",
-                    "Log",
+                    "Debug",
                     "mgtCommand : -----> Contract Power : %s - %s KVA" % (Level, CONTRACT_MODE[Level]),
                     NWKID,
                 )
@@ -914,7 +908,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         if DeviceType in ("ThermoMode_3", ): 
             self.log.logging(
                 "Command",
-                "Log",
+                "Debug",
                 "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
                 % (NWKID, EPout, Unit, DeviceType, Level),
                 NWKID,
@@ -923,7 +917,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             if Level in THERMOSTAT_LEVEL_3_MODE:
                 self.log.logging(
                     "Command",
-                    "Log",
+                    "Debug",
                     " - Set Thermostat Mode to : %s / T2:%s " % (Level, THERMOSTAT_LEVEL_3_MODE[Level]),
                     NWKID,
                 )
@@ -935,7 +929,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             # Let's force a refresh of Attribute in the next Heartbeat
             request_read_device_status(self, NWKID)
             return
-
 
         if DeviceType in ("ThermoMode", ):
             self.log.logging(
@@ -1007,8 +1000,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             # Let's force a refresh of Attribute in the next Heartbeat
             request_read_device_status(self, NWKID)
             return
-            
-            
+                       
         if DeviceType == "ThermoMode_2":
             self.log.logging(
                 "Command",
@@ -1023,25 +1015,27 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 self, Devices, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
             )
             return
+
         if DeviceType == "ThermoMode_4":
             self.log.logging(
                 "Command",
-                "Log",
+                "Debug",
                 "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
                 % (NWKID, EPout, Unit, DeviceType, Level),
                 NWKID,
             )
             
             if "Model" in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ][ "Model" ] == "TS0601-_TZE200_b6wax7g0":
-                self.log.logging("Command", "Log", "ThermoMode_4 - requested Level: %s" % Level, NWKID)
+                self.log.logging("Command", "Debug", "ThermoMode_4 - requested Level: %s" % Level, NWKID)
                 # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday   
                 tuya_trv_brt100_set_mode(self, NWKID, int(Level / 10) - 1)
                 UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
                 return
+
         if DeviceType in ("ThermoMode_5", "ThermoMode_6"):
             self.log.logging(
                 "Command",
-                "Log",
+                "Debug",
                 "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
                 % (NWKID, EPout, Unit, DeviceType, Level),
                 NWKID,
@@ -1058,7 +1052,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 tuya_coil_fan_thermostat(self, NWKID, int(Level / 10) - 1)
                 UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
                 
-
         if DeviceType == "FanControl":
 
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "AC201A":
@@ -1068,7 +1061,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "TS0601-_TZE200_dzuqwsyg":
                 self.log.logging(
                     "Command",
-                    "Log",
+                    "Debug",
                     "mgtCommand : Fan Control: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
                     % (NWKID, EPout, Unit, DeviceType, Level),
                     NWKID,
@@ -1087,7 +1080,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 
                 self.log.logging(
                     "Command",
-                    "Log",
+                    "Debug",
                     "mgtCommand : Fan Control not expected Level : %s EPout: %s Unit: %s DeviceType: %s Level: %s "
                     % (NWKID, EPout, Unit, DeviceType, Level),
                     NWKID,
@@ -1137,7 +1130,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
                 self.log.logging(
                     "Command",
-                    "Log",
+                    "Debug",
                     "mgtCommand : profalux_MoveToLiftAndTilt: %s BSO-Volet Lift: Level:%s Lift: %s"
                     % (NWKID, Level, lift),
                     NWKID,
@@ -1149,7 +1142,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 Tilt = Level - 10
                 self.log.logging(
                     "Command",
-                    "Log",
+                    "Debug",
                     "mgtCommand : profalux_MoveToLiftAndTilt:  %s BSO-Orientation : Level: %s Tilt: %s"
                     % (NWKID, Level, Tilt),
                     NWKID,
@@ -1169,7 +1162,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 NWKID,
             )
             actuator_setlevel(self, NWKID, EPout, Level, "WindowCovering")
-            #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
 
         elif DeviceType in ("Venetian", "Vanne", "Curtain",):
             if Level == 0:
@@ -1189,8 +1181,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 # Refresh will be done via the Report Attribute
                 return
 
-            #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
-
         elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
             Level = 100 - Level
             if Level == 0:
@@ -1206,7 +1196,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 NWKID,
             )
             actuator_setlevel(self, NWKID, EPout, Level, "WindowCovering")
-            #sendZigateCmd(self, "00FA", "02" + NWKID + ZIGATE_EP + EPout + "05" + value)
             
             if DeviceType in ( "CurtainInverted", "Curtain"):
                 # Refresh will be done via the Report Attribute

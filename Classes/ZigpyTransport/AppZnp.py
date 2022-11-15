@@ -45,7 +45,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.callBackBackup = callBackBackup
         self.HardwareID = HardwareID
-        self.znp_config[znp_conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
+        
+        # Pipiche : 24-Oct-2022 Disabling CONF_MAX_CONCURRENT_REQUESTS so the default will be used ( 16 )
+        # self.znp_config[znp_conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 
         """
         Starts a network, optionally forming one with random settings if necessary.
@@ -88,20 +90,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
 
     async def register_endpoints(self):
-        await super().register_endpoints()  
+        self.log.logging("TransportZigpy", "Status", "ZNP Radio register default Ep")
+        await super().register_endpoints()
 
-        LIST_ENDPOINT = [0x0b , 0x0a , 0x6e, 0x15, 0x08, 0x03]  # WISER, ORVIBO , TERNCY, KONKE, LIVOLO, WISER2
-        for controller_ep in LIST_ENDPOINT:
-            await self.add_endpoint(
-                zdo_types.SimpleDescriptor(
-                    endpoint=controller_ep,
-                    profile=zigpy.profiles.zha.PROFILE_ID,
-                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-                    device_version=0b0000,
-                    input_clusters=[clusters.general.Basic.cluster_id,],
-                    output_clusters=[],
-                )
-            )
+        self.log.logging("TransportZigpy", "Status", "ZNP Radio register any additional/specific Ep")
+        await Classes.ZigpyTransport.AppGeneric.register_specific_endpoints(self)
 
     def device_initialized(self, device):
             self.log.logging("TransportZigpy", "Log","device_initialized (0x%04x %s)" %(device.nwk, device.ieee))
@@ -131,8 +124,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         src_ep: int,
         dst_ep: int,
         message: bytes,
+        dst_addressing=None,
     ) -> None:
-        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message)
+        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message, dst_addressing=dst_addressing)
 
     async def set_zigpy_tx_power(self, power):
         self.log.logging("TransportZigpy", "Debug", "set_tx_power %s" %power)
@@ -176,12 +170,15 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     def is_bellows(self):
         return False
+    
     def is_znp(self):
         return True
+    
     def is_deconz(self):
         return False
+
             
-        
+     
 def extract_versioning_for_plugin( znp_model, znp_manuf):
     
     ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"
