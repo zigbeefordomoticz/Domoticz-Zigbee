@@ -18,6 +18,15 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
+## 15 Nov. 2022 - stable6 - 6.3.006
+
+- [Technical] - zigpy upstream merge 
+- [Hardware] - ST30 Temp+Humi by Orvibo
+- [Hardware] - Compatible with ZLinky v11
+- [Hardware] - Wiser legacy VACT fixes
+- [Hardware] - Compatibility with the new Domoticz 2022.2 blinds behaviour
+
+
 ## 29 Oct. 2022 - stable6 - 6.3.005
 
 - [Issue] - Hot fix to prevent startup to fail, when un-initialized coordinator and an existing backup corrupted.
