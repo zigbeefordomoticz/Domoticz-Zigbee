@@ -4,6 +4,7 @@
 #
 
 import json
+import os.path
 import time
 from queue import PriorityQueue, Queue
 from threading import Thread
@@ -99,7 +100,9 @@ class ZigpyTransport(object):
             )
 
         self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
+        
         message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled, "Sqn": sqn}
+        instrument_sendData( self, cmd, datas, sqn, message["TimeStamp"], highpriority, ackIsDisabled, waitForResponseIn, NwkId )
         self.writer_queue.put(str(json.dumps(message)))
 
     def receiveData(self, message):
@@ -134,3 +137,36 @@ class ZigpyTransport(object):
         _ret_value = max(_queue - 1, 0) + self.writer_queue.qsize()
         self.log.logging("Transport", "Debug", "Load: PluginQueue: %3s ZigpyQueue: %3s => %s" %(self.writer_queue.qsize(), _queue, _ret_value ))
         return _ret_value
+
+def instrument_sendData( self, cmd, datas, sqn, timestamp, highpriority, ackIsDisabled, waitForResponseIn, NwkId ):
+
+    if "StructuredLogCommand" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["StructuredLogCommand"]:
+        return
+    logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigbee-Commands-log-" + "%02d" % self.hardwareid + ".csv"
+    header = False
+    if not os.path.isfile( logfilename ):
+        header = " Time Stamp | Command | Function | SQN | Priority | ackIsDisabled | WaitForresponseIn | NwkId | Profile | Target NwkId | Target Ep | Src Ep | Cluster | Payload | Addr Mode | rxOnIddle \n"
+    line = ""
+    line += " %s " %timestamp
+    line += "| %s " %cmd
+    line += "| %s " %datas["Function"] if "Function" in datas else ""
+    line += "| %s " %sqn
+    line += "| %s " %highpriority
+    line += "| %s " %ackIsDisabled
+    line += "| %s " %waitForResponseIn
+    line += "| %s " %NwkId
+    line += "| %s " %datas["Profile"] if "Profile" in datas else ""
+    line += "| %s " %datas["TargetNwk"] if "TargetNwk" in datas else ""
+    line += "| %s " %datas["TargetEp"] if "TargetEp" in datas else ""
+    line += "| %s " %datas["SrcEp"] if "SrcEp" in datas else ""
+    line += "| %s " %datas["Cluster"] if "Cluster" in datas else ""
+    line += "| %s " %datas["payload"] if "payload" in datas else ""
+    line += "| %s " %datas["AddressMode"] if "AddressMode" in datas else ""
+    line += "| %s " %datas["RxOnIdle"] if "RxOnIdle" in datas else ""
+    line += "\n"
+
+    with open(logfilename, "a") as structured_log_command_file_handler:
+        if header:
+            structured_log_command_file_handler.write( header )
+        structured_log_command_file_handler.write( line )
+            
