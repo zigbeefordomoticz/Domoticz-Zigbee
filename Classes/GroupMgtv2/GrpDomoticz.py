@@ -11,16 +11,15 @@ from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.tools import Hex_Format
-from Zigbee.zclCommands import (zcl_group_level_move_to_level,
-                                 zcl_group_onoff_off_noeffect,
-                                 zcl_group_onoff_off_witheffect,
-                                 zcl_group_onoff_on,
-                                 zcl_group_window_covering_off,
-                                 zcl_group_window_covering_on,
-                                 zcl_group_window_covering_stop)
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
-
-
+from Zigbee.zclCommands import (zcl_group_level_move_to_level,
+                                zcl_group_move_to_level_with_onoff,
+                                zcl_group_onoff_off_noeffect,
+                                zcl_group_onoff_off_witheffect,
+                                zcl_group_onoff_on,
+                                zcl_group_window_covering_off,
+                                zcl_group_window_covering_on,
+                                zcl_group_window_covering_stop)
 
 WIDGET_STYLE = {
     "Plug": (244, 73, 0),
@@ -591,14 +590,14 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         and self.ListOfGroups[GrpId]["Cluster"] == "0102"
     ):  # Venetian store
         #zigate_cmd = "00FA"
-        if Command == "Off":
+        if Command in ( "Off", "Close", ):
             zigate_param = "00"
             nValue = 0
             sValue = "Off"
             update_device_list_attribute(self, GrpId, "0102", 0)
             zcl_group_window_covering_on(self, GrpId, ZIGATE_EP, EPout)
 
-        if Command == "On":
+        if Command in ( "On", "Open",):
             zigate_param = "01"
             nValue = 1
             sValue = "Off"
@@ -620,7 +619,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         return
 
     # Old Fashon
-    if Command == "Off":
+    if Command in ( "Off", "Close", ):
         if self.pluginconf.pluginConf["GrpfadingOff"]:
             if self.pluginconf.pluginConf["GrpfadingOff"] == 1:
                 effect = "0002"  # 50% dim down in 0.8 seconds then fade to off in 12 seconds
@@ -649,7 +648,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         update_device_list_attribute(self, GrpId, "0006", "00")
         update_domoticz_group_device(self, GrpId)
 
-    elif Command == "On":
+    elif Command in ( "On", "Open", ):
         #zigate_cmd = "0092"
         #zigate_param = "01"
         nValue = "1"
@@ -671,21 +670,31 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # Level: % value of move
         # Converted to value , raw value from 0 to 255
         # sValue is just a string of Level
-        zigate_cmd = "0081"
+        
         if Level > 100:
             Level = 100
         elif Level < 0:
             Level = 0
-        #OnOff = "01"
+        OnOff = "01"
+        
         # value = int(Level*255//100)
         value = "%02X" % int(Level * 255 // 100)
+        #zigate_cmd = "0081"
         #zigate_param = OnOff + value + "0010"
         #nValue = 1
         #sValue = str(Level)
         #self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
         update_device_list_attribute(self, GrpId, "0008", value)
         
-        zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0010")
+        transitionMoveLevel = "%04x" % self.pluginconf.pluginConf["GrpmoveToLevel"]
+        GroupLevelWithOnOff = False
+        if (  "GroupLevelWithOnOff" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["GroupLevelWithOnOff"] ):
+            GroupLevelWithOnOff = True
+
+        if GroupLevelWithOnOff:
+            zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, value, transition=transitionMoveLevel, ackIsDisabled=True)
+        else:
+            zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, transition=transitionMoveLevel)
 
         #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
         #self.logging("Debug", "Command: %s %s" % (Command, datas))
@@ -706,7 +715,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         # First manage level
         if Hue_List["m"] != 9998:
             # In case of m ==3, we will do the Setlevel
-            #OnOff = "01"  # 00 = off, 01 = on
+            OnOff = "01"  # 00 = off, 01 = on
             value = Hex_Format(2, round(1 + Level * 254 / 100))  # To prevent off state
             #zigate_cmd = "0081"
             #zigate_param = OnOff + value + transitionMoveLevel
@@ -716,7 +725,8 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             update_device_list_attribute(self, GrpId, "0008", value)
             #self.ControllerLink.sendData(zigate_cmd, datas, ackIsDisabled=True)
             
-            zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0000")
+            #zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0000")
+            zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, value, transition="0000")
 
         if Hue_List["m"] == 1:
             ww = int(Hue_List["ww"])  # Can be used as level for monochrome white
@@ -759,7 +769,8 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             #    + transitionMoveLevel,
             #    ackIsDisabled=True,
             #)
-            zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", Hex_Format(2, value), transitionMoveLevel)
+            #zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", Hex_Format(2, value), transitionMoveLevel)
+            zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, Hex_Format(2, value), transition=transitionMoveLevel)
 
         # Update Device
         nValue = 1

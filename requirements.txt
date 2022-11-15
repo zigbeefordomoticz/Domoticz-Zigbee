@@ -12,9 +12,10 @@ crccheck
 frozenlist
 multidict
 pure-pcapy3
-pyserial==3.5
-pyserial-asyncio!=0.5
-pyusb==1.2.1
+pyserial>=3.5
+pyserial-asyncio; platform_system!="Windows"
+pyserial-asyncio!=0.5; platform_system=="Windows"
+pyusb>=1.2.1
 typing-extensions
 voluptuous
 yarl
