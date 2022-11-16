@@ -143,6 +143,8 @@ def instrument_sendData( self, cmd, datas, sqn, timestamp, highpriority, ackIsDi
 
     if "StructuredLogCommand" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["StructuredLogCommand"]:
         return
+    
+    self.log.logging("Transport", "Log",  "_sendData: %s" %datas)
     logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigbee-Commands-log-" + "%02d" % self.hardwareid + ".csv"
     header = False
     if not os.path.isfile( logfilename ):
@@ -150,26 +152,22 @@ def instrument_sendData( self, cmd, datas, sqn, timestamp, highpriority, ackIsDi
     line = ""
     line += " %s " %timestamp
     line += "| %s " %cmd
-    if datas:
+    if datas is not None:
         line += "| %s " %datas["Function"] if "Function" in datas else ""
         line += "| %s " %sqn
         line += "| %s " %highpriority
         line += "| %s " %ackIsDisabled
         line += "| %s " %waitForResponseIn
-        line += "| 0x%04x " %NwkId if NwkId else ""
-        line += "| 0x%04X " %datas["Profile"] if "Profile" in datas else ""
-        line += "| 0x%X " %datas["TargetNwk"] if "TargetNwk" in datas else ""
-        line += "| 0x%02X " %datas["TargetEp"] if "TargetEp" in datas else ""
-        line += "| 0x%02X " %datas["SrcEp"] if "SrcEp" in datas else ""
-        line += "| 0x%04X " %datas["Cluster"] if "Cluster" in datas else ""
-        line += "| %s " %datas["payload"] if "payload" in datas else ""
-        line += "| %s " %datas["AddressMode"] if "AddressMode" in datas else ""
-        line += "| %s " %datas["RxOnIdle"] if "RxOnIdle" in datas else ""
+        line += "| 0x%04x " %(NwkId if NwkId is not None else "")
+        line += "| 0x%04X " %(datas["Profile"] if "Profile" in datas else "")
+        line += "| 0x%X " %(datas["TargetNwk"] if "TargetNwk" in datas else "")
+        line += "| 0x%02X " %(datas["TargetEp"] if "TargetEp" in datas else "")
+        line += "| 0x%02X " %(datas["SrcEp"] if "SrcEp" in datas else "")
+        line += "| 0x%04X " %(datas["Cluster"] if "Cluster" in datas else "")
+        line += "| %s " %(datas["payload"] if "payload" in datas else "")
+        line += "| %s " %(datas["AddressMode"] if "AddressMode" in datas else "")
+        line += "| %s " %(datas["RxOnIdle"] if "RxOnIdle" in datas else "")
         line += "\n"
-    else:
-        line += "| | | | | | | | | | | | | | \n"
-
-
 
     with open(logfilename, "a") as structured_log_command_file_handler:
         if header:
