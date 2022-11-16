@@ -102,8 +102,9 @@ class ZigpyTransport(object):
         self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
         
         message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled, "Sqn": sqn}
-        instrument_sendData( self, cmd, datas, sqn, message["TimeStamp"], highpriority, ackIsDisabled, waitForResponseIn, NwkId )
         self.writer_queue.put(str(json.dumps(message)))
+        instrument_sendData( self, cmd, datas, sqn, message["TimeStamp"], highpriority, ackIsDisabled, waitForResponseIn, NwkId )
+        
 
     def receiveData(self, message):
         self.log.logging("Transport", "Debug", "===> receiveData for Forwarded - Message %s" % (message))
@@ -149,24 +150,28 @@ def instrument_sendData( self, cmd, datas, sqn, timestamp, highpriority, ackIsDi
     line = ""
     line += " %s " %timestamp
     line += "| %s " %cmd
-    line += "| %s " %datas["Function"] if "Function" in datas else ""
-    line += "| %s " %sqn
-    line += "| %s " %highpriority
-    line += "| %s " %ackIsDisabled
-    line += "| %s " %waitForResponseIn
-    line += "| 0x%04x " %NwkId if NwkId else ""
-    line += "| 0x%04X " %datas["Profile"] if "Profile" in datas else ""
-    line += "| 0x%X " %datas["TargetNwk"] if "TargetNwk" in datas else ""
-    line += "| 0x%02X " %datas["TargetEp"] if "TargetEp" in datas else ""
-    line += "| 0x%02X " %datas["SrcEp"] if "SrcEp" in datas else ""
-    line += "| 0x%04X " %datas["Cluster"] if "Cluster" in datas else ""
-    line += "| %s " %datas["payload"] if "payload" in datas else ""
-    line += "| %s " %datas["AddressMode"] if "AddressMode" in datas else ""
-    line += "| %s " %datas["RxOnIdle"] if "RxOnIdle" in datas else ""
-    line += "\n"
+    if datas:
+        line += "| %s " %datas["Function"] if "Function" in datas else ""
+        line += "| %s " %sqn
+        line += "| %s " %highpriority
+        line += "| %s " %ackIsDisabled
+        line += "| %s " %waitForResponseIn
+        line += "| 0x%04x " %NwkId if NwkId else ""
+        line += "| 0x%04X " %datas["Profile"] if "Profile" in datas else ""
+        line += "| 0x%X " %datas["TargetNwk"] if "TargetNwk" in datas else ""
+        line += "| 0x%02X " %datas["TargetEp"] if "TargetEp" in datas else ""
+        line += "| 0x%02X " %datas["SrcEp"] if "SrcEp" in datas else ""
+        line += "| 0x%04X " %datas["Cluster"] if "Cluster" in datas else ""
+        line += "| %s " %datas["payload"] if "payload" in datas else ""
+        line += "| %s " %datas["AddressMode"] if "AddressMode" in datas else ""
+        line += "| %s " %datas["RxOnIdle"] if "RxOnIdle" in datas else ""
+        line += "\n"
+    else:
+        line += "| | | | | | | | | | | | | | \n"
+
+
 
     with open(logfilename, "a") as structured_log_command_file_handler:
         if header:
             structured_log_command_file_handler.write( header )
         structured_log_command_file_handler.write( line )
-            
