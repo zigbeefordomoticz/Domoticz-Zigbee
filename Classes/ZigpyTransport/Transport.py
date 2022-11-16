@@ -143,7 +143,7 @@ def instrument_sendData( self, cmd, datas, sqn, timestamp, highpriority, ackIsDi
 
     if "StructuredLogCommand" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["StructuredLogCommand"]:
         return
-    
+
     self.log.logging("Transport", "Log",  "_sendData: %s" %datas)
     logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigbee-Commands-log-" + "%02d" % self.hardwareid + ".csv"
     header = False
@@ -158,7 +158,7 @@ def instrument_sendData( self, cmd, datas, sqn, timestamp, highpriority, ackIsDi
         line += "| %s " %highpriority
         line += "| %s " %ackIsDisabled
         line += "| %s " %waitForResponseIn
-        line += "| 0x%04x " %(NwkId if NwkId is not None else "")
+        line += "| 0x%04x " %(NwkId) if NwkId is not None else "| None "
         line += "| 0x%04X " %(datas["Profile"] if "Profile" in datas else "")
         line += "| 0x%X " %(datas["TargetNwk"] if "TargetNwk" in datas else "")
         line += "| 0x%02X " %(datas["TargetEp"] if "TargetEp" in datas else "")
