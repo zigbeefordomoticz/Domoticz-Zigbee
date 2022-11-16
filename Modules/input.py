@@ -334,8 +334,8 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
         payload = sqn + status + nwkid + manuf_code16 + max_in_size16 + max_out_size16 + server_mask16 + descriptor_capability8
         payload += mac_capa8 + max_buf_size8 + bitfield16
     self.log.logging("Input", "Debug", "Decode0042 - response payload: %s" %payload)
-    raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigpyzqn=sqn, zigate_ep="00", )
-    
+    raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigate_ep="00", zigpyzqn=sqn,  )
+ 
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 
     MsgSqn = MsgData[:2]
