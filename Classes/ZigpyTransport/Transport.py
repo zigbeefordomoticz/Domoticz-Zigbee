@@ -144,7 +144,6 @@ def instrument_sendData( self, cmd, datas, sqn, timestamp, highpriority, ackIsDi
     if "StructuredLogCommand" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["StructuredLogCommand"]:
         return
 
-    self.log.logging("Transport", "Log",  "_sendData: %s" %datas)
     logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/PluginZigbee-Commands-log-" + "%02d" % self.hardwareid + ".csv"
     header = False
     if not os.path.isfile( logfilename ):
