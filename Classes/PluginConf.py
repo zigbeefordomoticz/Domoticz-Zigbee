@@ -316,7 +316,7 @@ SETTINGS = {
             "rebindLivolo": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": False,},
             "allowAutoPairing": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "disabledDefaultResponseFirmware": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": True,"Advanced": True,},
-            "logUnknownDeviceModel": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},     
+            "logUnknownDeviceModel": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},     
         },
     },
     "Reserved": {
