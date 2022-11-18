@@ -47,8 +47,7 @@ class LoggingManagement:
         start_logging_thread(self)
 
         # Thread log filter configuration
-        self.threadLogConfig = {}
-        self.threadLogConfig["MainThread"] = "Domoticz"
+        self.threadLogConfig = {"MainThread": "Domoticz"}
         self.threadLogConfig["ZigateSerial_%s" % HardwareID] = self.threadLogConfig[
             "ZigateTCPIP_%s" % HardwareID
         ] = self.threadLogConfig["ZigpyCom_%s" % HardwareID] = "Communication"
@@ -277,23 +276,23 @@ def _loggingStatus(self, thread_name, message):
 
 def _loggingLog(self, thread_name, message):
 
-    if not self.pluginconf.pluginConf["enablePluginLogging"]:
-        if self.pluginconf.pluginConf["logThreadName"]:
-            Domoticz.Log(" [%17s] " % thread_name + message)
-        else:
-            Domoticz.Log(message)
-    else:
+    if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info(" [%17s] " % thread_name + message)
+
+    elif self.pluginconf.pluginConf["logThreadName"]:
+        Domoticz.Log(" [%17s] " % thread_name + message)
+    else:
+        Domoticz.Log(message)
 
 
 def _loggingDebug(self, thread_name, message):
-    if not self.pluginconf.pluginConf["enablePluginLogging"]:
-        if self.pluginconf.pluginConf["logThreadName"]:
-            Domoticz.Log(" [%17s] " % thread_name + message)
-        else:
-            Domoticz.Log(message)
-    else:
+    if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.debug(" [%17s] " % thread_name + message)
+
+    elif self.pluginconf.pluginConf["logThreadName"]:
+        Domoticz.Log(" [%17s] " % thread_name + message)
+    else:
+        Domoticz.Log(message)
 
 
 def _logginfilter(self, thread_name, message, nwkid):
@@ -459,9 +458,8 @@ def logging_thread(self):
                 threadFilter = [
                     x for x in self.threadLogConfig if self.pluginconf.pluginConf["debugThread" + self.threadLogConfig[x]] == 1
                 ]
-                if threadFilter:
-                    if thread_name not in threadFilter:
-                        continue
+                if threadFilter and thread_name not in threadFilter:
+                    continue
                 thread_name=thread_name + " " + thread_id
                 pluginConfModule = "debug" + str(module)
                 if pluginConfModule in self.pluginconf.pluginConf:
@@ -480,22 +478,22 @@ def logging_thread(self):
 
 def zigpy_loging_mode(mode):
     _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING
-    # requests_logger = logging.getLogger("zigpy")
-    # requests_logger.setLevel(_set_logging_level)
-    # requests_logger = logging.getLogger("zigpy.zdo")
-    # requests_logger.setLevel(_set_logging_level)
-    # requests_logger = logging.getLogger("zigpy.zcl")
-    # requests_logger.setLevel(_set_logging_level)
-    # requests_logger = logging.getLogger("zigpy.profiles")
-    # requests_logger.setLevel(_set_logging_level)
-    # requests_logger = logging.getLogger("zigpy.quirks")
-    # requests_logger.setLevel(_set_logging_level)
-    # requests_logger = logging.getLogger("zigpy.ota")
-    # requests_logger.setLevel(_set_logging_level)
-    # requests_logger = logging.getLogger("zigpy.appdb_schemas")
-    # requests_logger.setLevel(_set_logging_level)
-    # requests_logger = logging.getLogger("zigpy.backups")
-    # requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("zigpy")
+    requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("zigpy.zdo")
+    requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("zigpy.zcl")
+    requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("zigpy.profiles")
+    requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("zigpy.quirks")
+    requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("zigpy.ota")
+    requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("zigpy.appdb_schemas")
+    requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("zigpy.backups")
+    requests_logger.setLevel(_set_logging_level)
     requests_logger = logging.getLogger("zigpy.device")
     requests_logger.setLevel(_set_logging_level)
     requests_logger = logging.getLogger("zigpy.application")
@@ -516,6 +514,12 @@ def zigpy_logging_znp(mode):
     _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING
     requests_logger = logging.getLogger("zigpy_znp")
     requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("zigpy_znp.zigbee")
+    requests_logger.setLevel(_set_logging_level)    
+    requests_logger = logging.getLogger("zigpy_znp.zigbee.application")
+    requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("zigpy_znp.zigbee.device")
+    requests_logger.setLevel(_set_logging_level)
     requests_logger = logging.getLogger("Classes.ZigpyTransport.AppZnp")
     requests_logger.setLevel(_set_logging_level)
     requests_logger = logging.getLogger("Classes.ZigpyTransport.AppGeneric")
@@ -528,6 +532,11 @@ def zigpy_logging_ezsp(mode):
     requests_logger.setLevel(_set_logging_level)
     requests_logger = logging.getLogger("bellows.zigbee")
     requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("bellows.zigbee.application")
+    requests_logger.setLevel(_set_logging_level)
+    requests_logger = logging.getLogger("bellows.zigbee.device")
+    requests_logger.setLevel(_set_logging_level)
+
     requests_logger = logging.getLogger("bellows.uart")
     requests_logger.setLevel(_set_logging_level)
     requests_logger = logging.getLogger("Classes.ZigpyTransport.AppBellows")
