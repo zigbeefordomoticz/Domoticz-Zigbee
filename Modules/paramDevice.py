@@ -11,7 +11,6 @@
 """
 
 import Domoticz
-
 from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
                                   set_PIROccupiedToUnoccupiedDelay,
@@ -24,7 +23,10 @@ from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
                                      legrand_enable_Led_IfOn_by_nwkid,
                                      legrand_enable_Led_InDark_by_nwkid,
                                      legrand_enable_Led_Shutter_by_nwkid)
-from Modules.lumi import setXiaomiVibrationSensitivity
+from Modules.lumi import (RTCZCGQ11LM_motion_opple_approach_distance,
+                          RTCZCGQ11LM_motion_opple_monitoring_mode,
+                          RTCZCGQ11LM_motion_opple_sensitivity,
+                          setXiaomiVibrationSensitivity)
 from Modules.philips import (philips_led_indication,
                              philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
@@ -250,6 +252,9 @@ DEVICE_PARAMETERS = {
     "SmartRelayStatus02": SmartRelayStatus02,
     "SmartRelayStatus03": SmartRelayStatus03,
     "SmartRelayStatus04": SmartRelayStatus04,
+    "RTCZCGQ11LMMotionSensibility": RTCZCGQ11LM_motion_opple_sensitivity,
+    "RTCZCGQ11LMApproachDistance": RTCZCGQ11LM_motion_opple_approach_distance,
+    "RTCZCGQ11LMMonitoringMode": RTCZCGQ11LM_motion_opple_monitoring_mode,
 }
 
 def sanity_check_of_param(self, NwkId):
@@ -281,4 +286,3 @@ def get_device_config_param( self, NwkId, config_parameter):
     #    NwkId,config_parameter, self.ListOfDevices[NwkId]["Param"][ config_parameter ]))
 
     return self.ListOfDevices[NwkId]["Param"][ config_parameter ]
-        

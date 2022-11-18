@@ -16,6 +16,9 @@
         "fcc0": [ "010c", "0142", "0144", "0146"]
     },
     "Param": {
-        "resetMotiondelay": 0
+        "resetMotiondelay": 0,
+        "RTCZCGQ11LMMotionSensibility": 2,
+        "RTCZCGQ11LMApproachDistance": 1,
+        "RTCZCGQ11LMMonitoringMode": 0
     }
 }

@@ -1595,7 +1595,7 @@ def ReadAttributeRequest_fc00(self, key):
 
 def ReadAttributeRequest_fcc0(self, key):
     # Cluster Aqara/Opple
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_fcc0 - Key: %s " % key, nwkid=key)
+    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_fcc0 - Key: %s " % key, nwkid=key)
     ListOfEp = getListOfEpForCluster(self, key, "fcc0")
 
     for EPout in ListOfEp:

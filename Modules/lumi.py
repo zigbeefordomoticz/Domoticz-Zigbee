@@ -134,7 +134,7 @@ def enable_operation_mode_aqara( self, nwkid):
     cluster_id = "fcc0"
     Hattribute = "0009"
     data_type = "20"
-    Hdata = "01" # Event mode
+    Hdata = "01"   # Event mode
 
     self.log.logging("Lumi", "Log", "Write enable_operation_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
@@ -152,7 +152,7 @@ def enable_click_mode_aqara(self, nwkid):
     cluster_id = "fcc0"
     Hattribute = "0125"
     data_type = "20"
-    Hdata = "02" # Multi-Click
+    Hdata = "02"   # Multi-Click
 
     self.log.logging("Lumi", "Log", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
@@ -160,7 +160,52 @@ def enable_click_mode_aqara(self, nwkid):
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
     
+def RTCZCGQ11LM_motion_opple_sensitivity(self, nwkid, param):
+
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = "fcc0"
+    Hattribute = "010c"
+    data_type = "20"
+    Hdata = "%02x" %param
+
+    self.log.logging("Lumi", "Log", "Write Motion Sensitivity %s -> %s" % (nwkid, param), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
     
+def RTCZCGQ11LM_motion_opple_monitoring_mode(self, nwkid, param):
+
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = "fcc0"
+    Hattribute = "0144"
+    data_type = "20"
+    Hdata = "%02x" %param
+
+    self.log.logging("Lumi", "Log", "Write Motion Monitoring Mode %s -> %s" % (nwkid, param), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+def RTCZCGQ11LM_motion_opple_approach_distance(self, nwkid, param):
+
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = "fcc0"
+    Hattribute = "0146"
+    data_type = "20"
+    Hdata = "%02x" %param
+
+    self.log.logging("Lumi", "Log", "Write Motion Approach Distance %s -> %s" % (nwkid, param), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+       
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
     if srcNWKID not in self.ListOfDevices:
