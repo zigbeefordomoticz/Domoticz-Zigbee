@@ -662,7 +662,7 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
     attribute = "4003"
     data_type = "30"  #
 
-    if model_name in ( "TS0121", "TS0115", "TS011F-multiprise", "TS011F-2Gang-switches", "TS011F-plug" , "TS0004-_TZ3000_excgg5kb", ):
+    if model_name in ( "TS0121", "TS0115", "TS011F-multiprise", "TS011F-2Gang-switches", "TS011F-plug" , "TS011F-din", "TS0004-_TZ3000_excgg5kb", ):
         attribute = "8002"
         if OnOffMode == 0xFF:
             OnOffMode = 0x02

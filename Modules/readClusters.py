@@ -402,11 +402,15 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 # MOES MS-104BZ-1
                 modelName = "TS011F-2Gang-switches"
             elif manufacturer_name in (
-                "_TZ3000_w0qqde0g", "_TZ3000_gjnozsaz", "_TZ3000_zloso4jk",
+                "_TZ3000_w0qqde0g", "_TZ3000_gjnozsaz", "_TZ3000_zloso4jk", 
                 "_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak",
                 "_TZ3000_typdpbpg", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l"
             ):
                 modelName = "TS011F-plug"
+
+            elif manufacturer_name in ( "_TZ3000_qeuvnohg" , ):
+                # ZigBee 16A 1P Rail Din KWh 
+                modelName = "TS011F-din"
 
         elif modelName == "TS0201":
             if manufacturer_name == "_TZ3000_qaaysllp":
@@ -1351,7 +1355,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )       
 
     elif MsgAttrID == "8000":
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] not in ( "TS0004-_TZ3000_excgg5kb", "TS011F-plug", "TS011F", ):
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] not in ( "TS0004-_TZ3000_excgg5kb", "TS011F-plug", "TS011F-din", "TS011F", ):
             self.log.logging(
                 "Cluster",
                 "Log",
@@ -3817,7 +3821,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             store_ZLinky_infos( self, MsgSrcAddr, 'EAST', value)
 
 
-        elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS011F-plug":
+        elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("TS011F-plug", "TS011F-din",):
             conso = value * 10
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, conso)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(conso), Attribute_="0000")
@@ -4384,7 +4388,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
         
-        elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-plug", "SP 120",):
+        elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-din", "TS011F-plug", "SP 120",):
             value /= 1000
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)

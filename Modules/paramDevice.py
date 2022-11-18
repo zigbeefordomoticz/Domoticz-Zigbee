@@ -134,6 +134,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         "TS011F-multiprise",
         "TS011F-2Gang-switches",
         "TS011F-plug",
+        "TS011F-din",
         "TS0004",
         "TS0004-_TZ3000_excgg5kb",
     ):
@@ -281,4 +282,3 @@ def get_device_config_param( self, NwkId, config_parameter):
     #    NwkId,config_parameter, self.ListOfDevices[NwkId]["Param"][ config_parameter ]))
 
     return self.ListOfDevices[NwkId]["Param"][ config_parameter ]
-        
