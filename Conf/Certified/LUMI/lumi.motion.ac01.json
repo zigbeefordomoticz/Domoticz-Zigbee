@@ -12,7 +12,8 @@
     "ClusterToBind": [],
     "ConfigureReporting": {},
     "ReadAttributes": {
-        "0000": [ "0004", "0005" ]
+        "0000": [ "0004", "0005" ],
+        "fcc0": [ "010c", "0142", "0144", "0146"]
     },
     "Param": {
         "resetMotiondelay": 0

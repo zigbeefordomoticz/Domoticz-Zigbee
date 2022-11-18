@@ -130,6 +130,7 @@ ATTRIBUTES = {
     "0b05": [0x0000],  # Tuya
     "e000": [0xd001, 0xd002, 0xd003 ],
     "e001": [0xd010, 0xd011, 0xd030 ],  # Tuya TS004F
+    "fcc0": [ ],                        # Aqara / Opple
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],   # Legrand
@@ -1592,6 +1593,29 @@ def ReadAttributeRequest_e001(self, key):
 def ReadAttributeRequest_fc00(self, key):
     pass
 
+def ReadAttributeRequest_fcc0(self, key):
+    # Cluster Aqara/Opple
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_fcc0 - Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "fcc0")
+
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "fcc0"):
+            if iterAttr not in listAttributes:
+                if iterAttr in ( 0x010c, 0x01,42, 0x0144, 0x0146 ):
+                    read_attribute( self, key,ZIGATE_EP, "01", "fcc0", "00", "01", "115f", 0x01, "%04x" %iterAttr, ackIsDisabled=is_ack_tobe_disabled(self, key), )
+                else:
+                    listAttributes.append(iterAttr)
+
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "Request Aqara/Oplle attributes info via Read Attribute request: " + key + " EPout = " + EPout,
+                nwkid=key,
+            )
+            # ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, manufacturer_spec = '01', manufacturer = '1021', ackIsDisabled = is_ack_tobe_disabled(self, key))
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "fcc0", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_fc01(self, key):
     # Cluster Legrand
@@ -1627,19 +1651,7 @@ def ReadAttributeRequest_fc21(self, key):
 
     if profalux:
         self.log.logging("ReadAttributes", "Debug", "Request Profalux BSO via Read Attribute request: %s" % key, nwkid=key)
-        read_attribute(
-            self,
-            key,
-            ZIGATE_EP,
-            "01",
-            "fc21",
-            "00",
-            "01",
-            "1110",
-            0x01,
-            "0001",
-            ackIsDisabled=is_ack_tobe_disabled(self, key),
-        )
+        read_attribute( self, key, ZIGATE_EP, "01", "fc21", "00", "01", "1110", 0x01, "0001", ackIsDisabled=is_ack_tobe_disabled(self, key), )
 
         # datas = "02" + key + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + '0001'
         # sendZigateCmd(self, "0100", datas )
@@ -1708,6 +1720,7 @@ READ_ATTRIBUTES_REQUEST = {
     "0b05": (ReadAttributeRequest_0b05, "polling0b05"),
     "e000": (ReadAttributeRequest_e000, "polling0b05"),
     "e001": (ReadAttributeRequest_e001, "polling0b05"),
+    "fcc0": (ReadAttributeRequest_fcc0, "pollingfcc0"),
     "fc01": (ReadAttributeRequest_fc01, "pollingfc01"),
     "fc21": (ReadAttributeRequest_fc21, "pollingfc21"),
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),
