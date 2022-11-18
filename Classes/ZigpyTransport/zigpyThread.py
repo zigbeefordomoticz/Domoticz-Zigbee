@@ -124,7 +124,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             conf.CONF_NWK: {},
             conf.CONF_EZSP_CONFIG: {
             },
-            "topology_scan_enabled": False,
+            "topology_scan_enabled": True,
             "handle_unknown_devices": True,
             "source_routing": True         # If enable bellows is doing source routing, if not then it is ezsp taking care https://github.com/zigpy/bellows/issues/493#issuecomment-1239892344
             }
@@ -142,7 +142,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             config = {
                 conf.CONF_DEVICE: {"path": serialPort,}, 
                 conf.CONF_NWK: {},
-                "topology_scan_enabled": False,
+                "topology_scan_enabled": True,
                 }
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
         except Exception as e:
@@ -158,7 +158,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
                 conf.CONF_DEVICE: {"path": serialPort,}, 
                 conf.CONF_NWK: {},
                 conf.CONF_ZNP_CONFIG: { },
-                "topology_scan_enabled": False,
+                "topology_scan_enabled": True,
                 }
             if specific_endpoints(self):
                 config[ conf.CONF_ZNP_CONFIG][ "prefer_endpoint_1" ] = False
@@ -176,7 +176,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             config = {
                 conf.CONF_DEVICE: {"path": serialPort}, 
                 conf.CONF_NWK: {},
-                "topology_scan_enabled": False,
+                "topology_scan_enabled": True,
                 }
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
         except Exception as e:
