@@ -21,7 +21,7 @@ from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
-                          decode_vibrAngle, readLumiLock, readXiaomiCluster)
+                          decode_vibrAngle, readLumiLock, readXiaomiCluster, store_lumi_attribute)
 from Modules.philips import philips_dimmer_switch
 from Modules.schneider_wiser import (receiving_heatingdemand_attribute,
                                      receiving_heatingpoint_attribute)
@@ -4929,16 +4929,41 @@ def Clusterfc21(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
 def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-        MsgSrcAddr,
-    )
+    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (
+        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr,)
     checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     if MsgAttrID == "00f7":
         readXiaomiCluster(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
+
+    elif MsgAttrID == "0142":   # Presence
+        store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
+        self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
+
+    elif MsgAttrID == "0143":   # Presence Event
+        # enter, leave, left_enter, right_leave, right_enter, left_leave, approach, away.
+        store_lumi_attribute(self, MsgSrcAddr, "Presence_event", MsgClusterData)
+
+    elif MsgAttrID == "0144":   # Monitoring mode
+        store_lumi_attribute(self, MsgSrcAddr, "Monitoring_mode", MsgClusterData)
+        self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Monitoring Mode: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+
+    elif MsgAttrID == "0146":   # Approching distance
+        store_lumi_attribute(self, MsgSrcAddr, "Approching_distance", MsgClusterData)
+        self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Approching distance: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+
+    elif MsgAttrID == "0151":  # Event in a region
+        # Region Manned (labelled "People exists" on the choose trigger condition selection);
+        # Region Unmanned (also labelled "People exists" on the selection);
+        # Region In;
+        # Region Leave.
+        # 01 In, 02 Leave, 04: Manned, 08 Unmanned
+        store_lumi_attribute(self, MsgSrcAddr, "Event_in_region" , MsgClusterData)
+    else:
+        self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Unknown attribute: %s value %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )
+        store_lumi_attribute(self, MsgSrcAddr, MsgAttrID , MsgClusterData)
+
 
 
 def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
