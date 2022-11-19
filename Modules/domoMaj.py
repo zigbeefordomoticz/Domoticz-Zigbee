@@ -1074,7 +1074,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     if is_new_blind_behaviour(self) and Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):   # Domoticz new blinds behaviour ( Closed )
                         self.log.logging( "Widget", "Log", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s (new blind behaviour)" % (
                             nValue, sValue, Devices[DeviceUnit].SwitchType), NWKID, )
-                        UpdateDevice_v2(self, Devices, DeviceUnit, 0, "100", BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 1, "100", BatteryLevel, SignalLevel)
  
                     elif Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):  # Blinds
                         self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (0, 0, Devices[DeviceUnit].SwitchType), NWKID, )
