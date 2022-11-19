@@ -546,6 +546,8 @@ def readXiaomiCluster(
 
     # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
     # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
+    
+    # . 0328130521330008213 6010a2100000c2014102001122000 652001 662003 672000 682000 692001 6a2001 6b2003
 
     sBatteryLvl = retreive4Tag("0121", MsgClusterData)  # 16BitUint
     sTemp2 = retreive4Tag("0328", MsgClusterData)  # Device Temperature (int8)
@@ -568,7 +570,36 @@ def readXiaomiCluster(
     sVoltage = retreive8Tag("9639", MsgClusterData)  # Voltage
     sCurrent = retreive8Tag("9739", MsgClusterData)  # Ampere
     sPower = retreive8Tag("9839", MsgClusterData)  # Power Watt
+    
+    # "lumi.motion.ac01"
+    sPresence = retreive8Tag("6520", MsgClusterData)
+    sPresenceEvent = retreive8Tag("6620", MsgClusterData)
+    sMonitoringMode = retreive8Tag("6720", MsgClusterData)
+    sApproachDistance = retreive8Tag("6920", MsgClusterData)
+    
 
+    if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac01":
+        if sPresence != "":
+            store_lumi_attribute(self, MsgSrcAddr, "Presence", sPresence)
+            self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s Presence %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresence, MsgClusterData), MsgSrcAddr, )
+
+            
+        if sPresenceEvent != "":
+            store_lumi_attribute(self, MsgSrcAddr, "PresenceEvent", sPresenceEvent)
+            self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s PresenceEvent %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresenceEvent, MsgClusterData), MsgSrcAddr, )
+            
+            
+        if sMonitoringMode != "":
+            store_lumi_attribute(self, MsgSrcAddr, "MonitoringMode", sMonitoringMode)
+            self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s MonitoringMode %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sMonitoringMode, MsgClusterData), MsgSrcAddr, )
+            
+            
+        if sApproachDistance!= "":
+            store_lumi_attribute(self, MsgSrcAddr, "ApprochingDistance", sApproachDistance)
+            self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s ApprochingDistance %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sApproachDistance, MsgClusterData), MsgSrcAddr, )
+            
+            
+        
     if sCountEvent != "":
         value = int(sCountEvent, 16)
         store_lumi_attribute(self, MsgSrcAddr, "EventCounter", value)
