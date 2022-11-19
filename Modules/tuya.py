@@ -156,6 +156,16 @@ TUYA_eTRV4_MANUFACTURER = (
     "_TZE200_b6wax7g0",  
 )
 
+TUYA_eTRV5_MANUFACTUER = (
+    "_TZE200_7yoranx2",   # MOES TRV TV01 ZTRV-ZX-TV01-MS
+    "_TZE200_e9ba97vf", 
+    "_TZE200_hue3yfsn",   # TV02-ZG
+    "_TZE200_husqqvux", 
+    "_TZE200_kly8gjlz", 
+    "_TZE200_lnbfnyxd", 
+    "_TZE200_mudxchsu", 
+    "_TZE200_kds0pmmv", 
+)
 TUYA_eTRV_MANUFACTURER = (
     "_TYST11_2dpplnsn",
     "_TZE200_wlosfena",
@@ -179,6 +189,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_eTRV2_MANUFACTURER
     + TUYA_eTRV3_MANUFACTURER
     + TUYA_eTRV4_MANUFACTURER
+    + TUYA_eTRV5_MANUFACTUER
     + TUYA_eTRV_MANUFACTURER
     + TUYA_SMARTAIR_MANUFACTURER
     + TUYA_WATER_TIMER

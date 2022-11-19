@@ -28,6 +28,7 @@ TUYA_eTRV_MODEL = (
     "TS0601-eTRV1",
     "TS0601-eTRV2",
     "TS0601-eTRV3",
+    "TS0601-eTRV5",
     "TS0601-_TZE200_b6wax7g0",      # BRT-100  MOES by Tuya
     "TS0601-_TZE200_chyvmhay",      # Lidl Valve
     "TS0601-thermostat",
@@ -67,6 +68,7 @@ eTRV_MODELS = {
     
     # Lidl Valve
     "TS0601-_TZE200_chyvmhay": "TS0601-_TZE200_chyvmhay"
+    
 }
 
 
@@ -676,6 +678,28 @@ eTRV_MATRIX = {
             "TrvSchedule": 0x6D,
         },
     },
+
+    "TS0601-eTRV5": {
+        "FromDevice": {  # https://easydomoticz.com/forum/viewtopic.php?f=28&t=12744
+            0x08: receive_windowdetection,
+            0x10: receive_setpoint,
+            0x18: receive_temperature,
+            0x1B: receive_calibration,
+            0x28: receive_childlock,
+            0x65: receive_boost_time,
+            0x6b: receive_onoff,
+            0x23: receive_battery,
+        },
+        "ToDevice": {
+            "Switch": 0x6b,
+            "SetPoint": 0x10,
+            "ChildLock": 0x28,
+            "WindowDetection": 0x08,
+            "Calibration": 0x1B,
+        },
+    },
+
+
     "TS0601-eTRV": {
         "FromDevice": {
             0x02: receive_setpoint,
