@@ -583,22 +583,17 @@ def readXiaomiCluster(
             store_lumi_attribute(self, MsgSrcAddr, "Presence", sPresence)
             self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s Presence %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresence, MsgClusterData), MsgSrcAddr, )
 
-            
         if sPresenceEvent != "":
             store_lumi_attribute(self, MsgSrcAddr, "PresenceEvent", sPresenceEvent)
             self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s PresenceEvent %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresenceEvent, MsgClusterData), MsgSrcAddr, )
-            
-            
+  
         if sMonitoringMode != "":
             store_lumi_attribute(self, MsgSrcAddr, "MonitoringMode", sMonitoringMode)
             self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s MonitoringMode %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sMonitoringMode, MsgClusterData), MsgSrcAddr, )
-            
-            
+
         if sApproachDistance!= "":
             store_lumi_attribute(self, MsgSrcAddr, "ApprochingDistance", sApproachDistance)
             self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s ApprochingDistance %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sApproachDistance, MsgClusterData), MsgSrcAddr, )
-            
-            
         
     if sCountEvent != "":
         value = int(sCountEvent, 16)
