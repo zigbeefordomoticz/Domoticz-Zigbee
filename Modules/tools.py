@@ -1568,7 +1568,6 @@ def print_stack( self ):
         self.log.logging( "Zigpy", "Error", "[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
 
 
-
 def helper_copyfile(source, dest, move=True):
 
     try:
@@ -1602,3 +1601,13 @@ def helper_versionFile(source, nbversion):
 
         # Last one
         helper_copyfile(source, source + "-%02d" % 1, move=False)
+
+def is_new_blind_behaviour( self ):
+    
+    if self.DomoticzMajor < 2022:
+        return False
+    
+    if self.DomoticzMajor > 2022:
+        return True
+    if self.DomoticzMajor == 2022 and self.DomoticzMinor >= 2:
+        return True

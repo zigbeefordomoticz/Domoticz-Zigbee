@@ -13,7 +13,7 @@ from Zigbee.zdpCommands import zdp_IEEE_address_request
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                UpdateDevice_v2, remove_bad_cluster_type_entry)
-from Modules.tools import zigpy_plugin_sanity_check
+from Modules.tools import zigpy_plugin_sanity_check, is_new_blind_behaviour
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
@@ -600,8 +600,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
                         UpdateDevice_v2(self, Devices, DeviceUnit, 5, "50", BatteryLevel, SignalLevel)
     
-                
-                
 
         if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
@@ -763,8 +761,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             nValue = int( value,16 )
             sValue = "%02x" %nValue
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-            
-            
+        
         if ClusterType in ( "Motion", "Door",) and WidgetType == "Motion":
             self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NWKID)
             
@@ -1049,13 +1046,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(_value), BatteryLevel, SignalLevel)
 
         if "LvlControl" in ClusterType:  # LvlControl ( 0x0008)
-            if WidgetType == "LvlControl" or (
-                WidgetType
-                in (
-                    "BSO-Volet",
-                    "Blind",
-                )
-            ):
+            if WidgetType == "LvlControl" or ( WidgetType in ( "BSO-Volet", "Blind", ) ):
                 # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                 # We might get a Level, but the device is still Off and we shouldn't make it On .
                 nValue = None
@@ -1076,22 +1067,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                             sValue = 0
                         if sValue == 99 and analogValue == 254:
                             sValue = 100
-                self.log.logging(
-                    "Widget",
-                    "Debug",
-                    "------>  LvlControl new sValue: -> %s old nValue/sValue %s:%s" % (sValue, Devices[DeviceUnit].nValue, Devices[DeviceUnit].sValue),
-                    NWKID,
-                )
+                self.log.logging( "Widget", "Debug", "------>  LvlControl new sValue: -> %s old nValue/sValue %s:%s" % (sValue, Devices[DeviceUnit].nValue, Devices[DeviceUnit].sValue), NWKID, )
                 # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
                 if sValue == 0:
                     nValue = 0
-                    if Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (0, 0, Devices[DeviceUnit].SwitchType),
-                            NWKID,
-                        )
+                    if is_new_blind_behaviour(self) and Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):   # Domoticz new blinds behaviour ( Closed )
+                        self.log.logging( "Widget", "Log", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s (new blind behaviour)" % (
+                            nValue, sValue, Devices[DeviceUnit].SwitchType), NWKID, )
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 0, "100", BatteryLevel, SignalLevel)
+ 
+                    elif Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):  # Blinds
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (0, 0, Devices[DeviceUnit].SwitchType), NWKID, )
                         UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
                     else:
                         # if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
@@ -1102,13 +1088,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                             UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
                 elif sValue == 100:
                     nValue = 1
-                    if Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (1, 100, Devices[DeviceUnit].SwitchType),
-                            NWKID,
-                        )
+                    if is_new_blind_behaviour(self) and Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):   # Domoticz new blinds behaviour ( Open )
+                        self.log.logging( "Widget", "Log", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s (new blind behaviour)" % (
+                            nValue, sValue, Devices[DeviceUnit].SwitchType), NWKID, )
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
+
+                    elif Devices[DeviceUnit].SwitchType in (13, 14, 15, 16): # Blinds
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (1, 100, Devices[DeviceUnit].SwitchType), NWKID, )
                         UpdateDevice_v2(self, Devices, DeviceUnit, 1, "100", BatteryLevel, SignalLevel)
 
                     else:
@@ -1119,45 +1105,25 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, "100", BatteryLevel, SignalLevel)
 
                 else:  # sValue != 0 and sValue != 100
-
                     # if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
                     if Devices[DeviceUnit].nValue == 0 and (Devices[DeviceUnit].sValue == "Off" or Devices[DeviceUnit].sValue == str(sValue)):
                         # Do nothing. We receive a ReadAttribute  giving the position of a Off device.
                         pass
-                    elif Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (nValue, sValue, Devices[DeviceUnit].SwitchType),
-                            NWKID,
-                        )
+                    elif is_new_blind_behaviour(self) and Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):   # Domoticz new blinds behaviour ( Open )
+                        self.log.logging( "Widget", "Log", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s (new blind behaviour)" % (
+                            nValue, sValue, Devices[DeviceUnit].SwitchType), NWKID, )
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 2, '%0s' %(int(100 - sValue)), BatteryLevel, SignalLevel)
+
+                    elif Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):  # Blinds
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (nValue, sValue, Devices[DeviceUnit].SwitchType), NWKID, )
                         UpdateDevice_v2(self, Devices, DeviceUnit, 2, str(sValue), BatteryLevel, SignalLevel)
 
                     else:
                         # Just update the Level if Needed
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (nValue, sValue, Devices[DeviceUnit].SwitchType),
-                            NWKID,
-                        )
-                        UpdateDevice_v2(
-                            self,
-                            Devices,
-                            DeviceUnit,
-                            Devices[DeviceUnit].nValue,
-                            str(sValue),
-                            BatteryLevel,
-                            SignalLevel,
-                        )
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (nValue, sValue, Devices[DeviceUnit].SwitchType), NWKID, )
+                        UpdateDevice_v2( self, Devices, DeviceUnit, Devices[DeviceUnit].nValue, str(sValue), BatteryLevel, SignalLevel, )
 
-            elif WidgetType in (
-                "ColorControlRGB",
-                "ColorControlWW",
-                "ColorControlRGBWW",
-                "ColorControlFull",
-                "ColorControl",
-            ):
+            elif WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
                 if Devices[DeviceUnit].nValue != 0 or Devices[DeviceUnit].sValue != "Off":
                     nValue, sValue = getDimmerLevelOfColor(self, value)
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
@@ -1337,13 +1303,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 sValue = "%s" % (10 * nValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in (
-            "ColorControlRGB",
-            "ColorControlWW",
-            "ColorControlRGBWW",
-            "ColorControlFull",
-            "ColorControl",
-        ):
+        if ClusterType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
             # We just manage the update of the Dimmer (Control Level)
             if ClusterType == WidgetType:
                 nValue, sValue = getDimmerLevelOfColor(self, value)
