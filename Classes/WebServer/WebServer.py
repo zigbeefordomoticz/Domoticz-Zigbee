@@ -785,8 +785,7 @@ class WebServer(object):
 
         elif verb == "GET":
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-            
-            
+ 
             if len(self.ControllerData) == 0:
                 _response["Data"] = json.dumps(dummy_zdevice_name(), sort_keys=True)
             else:
@@ -807,11 +806,16 @@ class WebServer(object):
                         "Health",
                         "LQI",
                         "Battery",
+                        "CertifiedDevice"
                     ):
-                        if item in self.ListOfDevices[x]:
-                            if item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, ):
-                                if "IASBattery" in self.ListOfDevices[x]:
-                                    device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
+                        if item == "CertifiedDevice":
+                            if item in self.ListOfDevices[x]:
+                                device[item] = self.ListOfDevices[x][item]
+
+
+                        elif item in self.ListOfDevices[x]:
+                            if item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, ) and "IASBattery" in self.ListOfDevices[x]:
+                                device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
                             elif item == "MacCapa":
                                 device["MacCapa"] = []
                                 mac_capability = int(self.ListOfDevices[x][item], 16)

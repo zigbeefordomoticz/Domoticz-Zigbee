@@ -1010,7 +1010,10 @@ def build_list_of_device_model(self, force=False):
             if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
                 self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
                 if modelname not in self.DeviceConf:
+                    self.ListOfDevices[ x ]["CertifiedDevice"] = False
                     unknown_device_model(self, x, modelname,manufcode, manufname )
+                else:
+                    self.ListOfDevices[ x ]["CertifiedDevice"] = True
 
 
 def get_domoticz_version( self ):
@@ -1064,7 +1067,7 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
     
     if 'Log_UnknowDeviceFlag' in self.ListOfDevices[ NwkId ] and (self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] + ( 24 * 3600)) < time.time() :
         return
-
+    
     device_name = get_device_nickname( self, NwkId=NwkId)
     if device_name is None:
         device_name = ""
