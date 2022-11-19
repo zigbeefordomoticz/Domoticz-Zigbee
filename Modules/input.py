@@ -501,7 +501,7 @@ def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
         idx += 2
         lendata = MsgData[idx : idx + 4]
         idx += 4
-        DataValue = MsgData[idx : idx + int(lendata) * 2]
+        DataValue = MsgData[idx : idx + int(lendata,16) * 2]
 
         self.log.logging(
             "Input",
