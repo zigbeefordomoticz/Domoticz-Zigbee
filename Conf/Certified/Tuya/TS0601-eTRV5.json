@@ -1,34 +1,27 @@
 {
-	"_comment": "Tuya TRV / ZONNSMART",
-	"_version": "0.10",
-	"Ep": {
-		"01": {
-			"0000": "",
-			"0004": "",
-			"0005": "",
-			"ef00": "",
-			"000a": "",
-			"0019": "",
-			"Type": "Temp/ThermoSetpoint/ThermoMode_2/Door/Valve"
-		}
-	},
-	"Type": "",
-	"ClusterToBind": [
-		"0000",
-		"ef00"
-	],
-	"ConfigureReporting": {},
-	"ReadAttributes": {
-		"0000": [
-			"0004",
-			"0000",
-			"0001",
-			"0005",
-			"0007",
-			"fffe"
-		]
-	},
-	"Param": {
-		"ValveDetection": 1
-	}
+    "_comment": "Tuya TRV / ZONNSMART",
+    "_version": "0.10",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Temp/ThermoSetpoint"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ],
+        "0402": []
+    },
+    "Param": {
+        "TuyaTRV5_BoostTime": 0,
+        "TuyaTRV5_ChildLock": 0,
+        "Calibration": 0
+    }
 }

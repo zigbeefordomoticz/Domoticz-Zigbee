@@ -148,6 +148,15 @@ def receive_onoff(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
             checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "On")
             MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 1, Attribute_="6501")  # ThermoOnOff to On
 
+    elif model_target in [ "TS0601-eTRV5", ]:
+        if data == "00":
+            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "Off")
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 1, Attribute_="6501")  # ThermoOnOff ( heating is On)
+        else:
+            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "On")
+            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="6501")  # ThermoOnOff ( heating is Off))
+
+                    
     elif model_target in ["TS0601-_TZE200_dzuqwsyg","TS0601-thermostat-Coil", ]:
         if data == "00":
             MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="6501")  # ThermoOnOff to Off
@@ -681,7 +690,7 @@ eTRV_MATRIX = {
 
     "TS0601-eTRV5": {
         "FromDevice": {  # https://easydomoticz.com/forum/viewtopic.php?f=28&t=12744
-            0x08: receive_windowdetection,
+            0x08: receive_windowdetection,    # window is opened [0] false [1] true
             0x10: receive_setpoint,
             0x18: receive_temperature,
             0x1B: receive_calibration,
@@ -691,11 +700,12 @@ eTRV_MATRIX = {
             0x23: receive_battery,
         },
         "ToDevice": {
-            "Switch": 0x6b,
+            "Switch": 0x6b,                  # On / Off
             "SetPoint": 0x10,
             "ChildLock": 0x28,
             "WindowDetection": 0x08,
             "Calibration": 0x1B,
+            "BoostTime": 0x65, 
         },
     },
     "TS0601-eTRV": {
@@ -1273,6 +1283,8 @@ def tuya_trv_switch_onoff(self, nwkid, onoff):
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_onoff - %s Switch: %s" % (nwkid, onoff))
     if onoff not in (0x00, 0x01):
         return
+    if get_model_name(self, nwkid) == "TS0601-eTRV5":
+        onoff = 0x01 if onoff == 0x00 else 0x00
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "Switch")
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_onoff - %s dp for Switch: %s" % (nwkid, dp))
