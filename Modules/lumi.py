@@ -572,10 +572,10 @@ def readXiaomiCluster(
     sPower = retreive8Tag("9839", MsgClusterData)  # Power Watt
     
     # "lumi.motion.ac01"
-    sPresence = retreive8Tag("6520", MsgClusterData)
-    sPresenceEvent = retreive8Tag("6620", MsgClusterData)
-    sMonitoringMode = retreive8Tag("6720", MsgClusterData)
-    sApproachDistance = retreive8Tag("6920", MsgClusterData)
+    sPresence = retreive4Tag("6520", MsgClusterData)[:2]
+    sPresenceEvent = retreive4Tag("6620", MsgClusterData)[:2]
+    sMonitoringMode = retreive4Tag("6720", MsgClusterData)[:2]
+    sApproachDistance = retreive4Tag("6920", MsgClusterData)[:2]
     
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac01":
