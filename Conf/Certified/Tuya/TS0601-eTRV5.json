@@ -9,7 +9,7 @@
             "ef00": "",
             "000a": "",
             "0019": "",
-            "Type": "Temp/ThermoSetpoint/Door"
+            "Type": "Temp/ThermoSetpoint/Door/ThermoOnOff"
         }
     },
     "Type": "",
