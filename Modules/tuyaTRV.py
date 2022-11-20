@@ -180,7 +180,18 @@ def receive_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID,
     )
     store_tuya_attribute(self, NwkId, "Mode", data)
 
+def receive_frost_protection(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    self.log.logging( "Tuya", "Debug", "receive_frost_protection - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" % (NwkId, srcEp, dp, datatype, data) )
+    store_tuya_attribute(self, NwkId, "FrostProtection", data)
 
+def receive_error_status(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    self.log.logging( "Tuya", "Debug", "receive_error_status - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" % (NwkId, srcEp, dp, datatype, data) )
+    store_tuya_attribute(self, NwkId, "ErrorStatus", data)
+
+def receive_online_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    self.log.logging( "Tuya", "Debug", "receive_online_mode - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" % (NwkId, srcEp, dp, datatype, data) )
+    store_tuya_attribute(self, NwkId, "OnlineMode", data)
+    
 def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Update ThermoMode_2 widget ( 001c)
     self.log.logging(
@@ -697,24 +708,28 @@ eTRV_MATRIX = {
 
     "TS0601-eTRV5": {
         "FromDevice": {  # https://easydomoticz.com/forum/viewtopic.php?f=28&t=12744
+            0x02: receive_preset,             # 0x00: Auto, 0x01: Manual, 0x03: Holiday
             0x08: receive_windowdetection,    # window is opened [0] false [1] true
+            0x0a: receive_frost_protection,  # 0x00:     , 0x01:
             0x10: receive_setpoint,
             0x18: receive_temperature,
-            0x1B: receive_calibration,
-            0x28: receive_childlock,
-            0x65: receive_boost_time,
-            0x6b: receive_onoff,
+            0x1b: receive_calibration,
             0x23: receive_battery,
-            0x02: receive_preset,
+            0x28: receive_childlock,
+            0x2d: receive_error_status,
+            0x65: receive_boost_time,
+            0x6b: receive_onoff,             # 0x00: Heat, 0x01: Off
+            0x73: receive_online_mode,   
         },
         "ToDevice": {
-            "Switch": 0x6b,                  # On / Off
+            "TrvMode": 0x02,                 # 0x00: Auto, 0x01: Manual, 0x03: Holiday
             "SetPoint": 0x10,
-            "ChildLock": 0x28,
             "Calibration": 0x1B,
+            "ChildLock": 0x28,
             "BoostTime": 0x65, 
-            "tuya_switch_online": 0x73,
-            "TrvMode": 0x02
+            "Switch": 0x6b,                  # 0x00: Heat, 0x01: Off
+            "TuyaOneLine": 0x73,
+            
         },
     },
     "TS0601-eTRV": {
@@ -823,7 +838,7 @@ def tuya_eTRV_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNW
 
 def tuya_switch_online(self, nwkid, OnlineOffline):
     self.log.logging("Tuya", "Debug", "tuya_switch_online - %s mode: %s" % (nwkid, OnlineOffline))
-    if OnlineOffline not in (0x00, 0x01, 0x02, ):
+    if OnlineOffline not in (0x00, 0x01, ):
         return
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "OnlineMode")
