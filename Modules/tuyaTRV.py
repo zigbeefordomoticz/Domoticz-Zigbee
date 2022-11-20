@@ -703,7 +703,6 @@ eTRV_MATRIX = {
             "Switch": 0x6b,                  # On / Off
             "SetPoint": 0x10,
             "ChildLock": 0x28,
-            "WindowDetection": 0x08,
             "Calibration": 0x1B,
             "BoostTime": 0x65, 
         },
