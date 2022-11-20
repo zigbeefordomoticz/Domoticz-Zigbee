@@ -63,6 +63,7 @@ eTRV_MODELS = {
     "uhszj9s": "TS0601-eTRV3",
     "TS0601-eTRV3": "TS0601-eTRV3",
     
+    "TS0601-eTRV5": "TS0601-eTRV5",
     # MOES BRT-100
     "TS0601-_TZE200_b6wax7g0": "TS0601-_TZE200_b6wax7g0",
     
@@ -617,8 +618,7 @@ eTRV_MATRIX = {
             "SensorMode": 0x2B,
         },
     },
-    
-    
+  
     # eTRV
     "TS0601-eTRV1": {
         "FromDevice": {  # Confirmed with @d2e2n2o _TYST11_zivfvd7h
@@ -698,8 +698,6 @@ eTRV_MATRIX = {
             "Calibration": 0x1B,
         },
     },
-
-
     "TS0601-eTRV": {
         "FromDevice": {
             0x02: receive_setpoint,
