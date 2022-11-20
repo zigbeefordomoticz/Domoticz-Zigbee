@@ -157,14 +157,16 @@ TUYA_eTRV4_MANUFACTURER = (
 )
 
 TUYA_eTRV5_MANUFACTURER = (
-    "_TZE200_7yoranx2",   # MOES TRV TV01 ZTRV-ZX-TV01-MS
-    "_TZE200_e9ba97vf", 
-    "_TZE200_hue3yfsn",   # TV02-ZG
-    "_TZE200_husqqvux", 
-    "_TZE200_kly8gjlz", 
-    "_TZE200_lnbfnyxd", 
-    "_TZE200_mudxchsu", 
-    "_TZE200_kds0pmmv", 
+    "_TZE200_7yoranx2",   # model: 'TV01-ZB',           vendor: 'Moes'
+    "_TZE200_e9ba97vf",   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_hue3yfsn",   # MODEL : 'TV02-Zigbee',      vendor: 'TuYa'
+    "_TZE200_husqqvux",   # MODEL : 'TSL-TRV-TV01ZG',   vendor: 'Tesla Smart
+    "_TZE200_kly8gjlz",   # 
+    "_TZE200_lnbfnyxd",   # MODEL : 'TSL-TRV-TV01ZG',   vendor: 'Tesla Smart'
+    '_TZE200_kds0pmmv',   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_mudxchsu",   # MODEL : 'TV05-ZG curve',    vendor: 'TuYa'
+    "_TZE200_kds0pmmv",   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_lllliz3p",   # MODEL : 'TV02-Zigbee',      vendor: 'TuYa'
 )
 
 TUYA_eTRV_MANUFACTURER = (

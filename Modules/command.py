@@ -1047,9 +1047,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             elif "Model" in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ][ "Model" ] == "TS0601-eTRV5":
                 # "fr-FR": {"LevelNames": "Arrêt|Auto|Manual|Away"}},
                 # Off: 00 -> 
-                # Auto:10 -> 00
-                # Manual:20 --> 01
-                # Away:30 -> 02
+                # Auto:10 -> 00 [0] Scheduled/auto 
+                # Manual:20 --> 01 [1] manual 
+                # Away:30 -> 02 [2] Holiday
+
                 if Level > 10:
                     _tuya_mode = ( Level - 10 )
                     tuya_trv_mode(self, NWKID, _tuya_mode)
