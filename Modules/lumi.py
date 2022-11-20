@@ -544,6 +544,9 @@ def readXiaomiCluster(
         return
     model = self.ListOfDevices[MsgSrcAddr]["Model"]
 
+    self.log.logging( "Lumi", "Debug", "   readXiaomiCluster %s/%s cluster: %s attribut: %s data: %s" %(
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData), MsgSrcAddr)
+    
     # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
     # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
     
@@ -576,24 +579,35 @@ def readXiaomiCluster(
     sPresenceEvent = retreive4Tag("6620", MsgClusterData)[:2]
     sMonitoringMode = retreive4Tag("6720", MsgClusterData)[:2]
     sApproachDistance = retreive4Tag("6920", MsgClusterData)[:2]
-    
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac01":
         if sPresence != "":
+            _PRESENCE = { 0: 'False', 1: 'True', 0xff: 'Unknow' }
             store_lumi_attribute(self, MsgSrcAddr, "Presence", sPresence)
-            self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s Presence %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresence, MsgClusterData), MsgSrcAddr, )
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s Presence %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresence, MsgClusterData), MsgSrcAddr, )
+            if int(sPresence,16) in _PRESENCE:
+                self.log.logging( "Lumi", "Log", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) presence : %s" %(MsgSrcAddr, MsgSrcEp,_PRESENCE[ int(sPresence,16) ]) )
 
         if sPresenceEvent != "":
+            _PRESENCE_EVENT = { 0: 'Enter', 1: 'Leave', 2: 'Left_enter', 3: 'Right_leave', 4: 'Right_enter',5: 'Left_leave', 6: 'Approach', 7: 'Away', 255: 'Unknown'}
             store_lumi_attribute(self, MsgSrcAddr, "PresenceEvent", sPresenceEvent)
-            self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s PresenceEvent %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresenceEvent, MsgClusterData), MsgSrcAddr, )
-  
-        if sMonitoringMode != "":
-            store_lumi_attribute(self, MsgSrcAddr, "MonitoringMode", sMonitoringMode)
-            self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s MonitoringMode %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sMonitoringMode, MsgClusterData), MsgSrcAddr, )
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s PresenceEvent %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresenceEvent, MsgClusterData), MsgSrcAddr, )
+            if int(sPresenceEvent,16) in _PRESENCE_EVENT:
+                self.log.logging( "Lumi", "Log", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) Present event : %s" %(MsgSrcAddr, MsgSrcEp,_PRESENCE_EVENT[ int(sPresenceEvent,16) ]) )
 
-        if sApproachDistance!= "":
+        if sMonitoringMode != "":
+            _MONITORING_MODE = {0: 'Undirected', 1: 'Left_right'}
+            store_lumi_attribute(self, MsgSrcAddr, "MonitoringMode", sMonitoringMode)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s MonitoringMode %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sMonitoringMode, MsgClusterData), MsgSrcAddr, )
+            if int(sMonitoringMode,16) in _MONITORING_MODE:
+                self.log.logging( "Lumi", "Log", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) Monitoring mode : %s" %(MsgSrcAddr, MsgSrcEp,_MONITORING_MODE[ int(sMonitoringMode,16) ]) )
+
+        if sApproachDistance!= "": 
+            _APPROCHING_DISTANCE = {0: 'Far', 1: 'Medium', 2: 'Near'}
             store_lumi_attribute(self, MsgSrcAddr, "ApprochingDistance", sApproachDistance)
-            self.log.logging( "Lumi", "Log", "ReadCluster - %s/%s Saddr: %s ApprochingDistance %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sApproachDistance, MsgClusterData), MsgSrcAddr, )
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s ApprochingDistance %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sApproachDistance, MsgClusterData), MsgSrcAddr, )
+            if int(sApproachDistance,16) in _APPROCHING_DISTANCE:
+                self.log.logging( "Lumi", "Log", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) Approaching distance : %s" %(MsgSrcAddr, MsgSrcEp,_APPROCHING_DISTANCE[ int(sApproachDistance,16) ]) )
         
     if sCountEvent != "":
         value = int(sCountEvent, 16)
