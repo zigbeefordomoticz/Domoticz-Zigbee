@@ -206,6 +206,14 @@ TUYA_MANUFACTURER_NAME = (
 # Tuya Doc: https://developer.tuya.com/en/docs/iot/access-standard-zigbee?id=Kaiuyf28lqebl
 
 
+# Data Types:
+#   0x00: raw
+#   0x01: bool
+#   0x02: 4 byte value
+#   0x03: string
+#   0x04: enum8 ( 0x00-0xff)
+#   0x05: bitmap ( 1,2, 4 bytes) as bits
+    
 def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     if "Model" not in self.ListOfDevices[nwkid]:
             return

@@ -20,7 +20,7 @@
         "0402": []
     },
     "Param": {
-        "TuyaTRV5Polling": 300,
+        "TuyaTRV5Polling": 0,
         "TuyaTRV5_BoostTime": 0,
         "TuyaTRV5_ChildLock": 0,
         "Calibration": 0
