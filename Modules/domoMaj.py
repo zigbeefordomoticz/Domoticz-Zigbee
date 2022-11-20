@@ -563,12 +563,23 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 4 %s %s:%s" % (value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType in ("ThermoMode_5", "ThermoMode_6",)and Attribute_ == "001c":
+            elif WidgetType in ("ThermoMode_5", "ThermoMode_6",) and Attribute_ == "001c":
                 # Use by Tuya TRV
+                if model_name == "TS0601-eTRV5":
+                    # 0 Auto - Level 10
+                    # 1 Manual - Level 20
+                    # 2 Holiday - Level 30
+                    value = value + 1
                 nValue = value
                 sValue = '%02d' %( nValue * 10)
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+                
+            elif model_name == "TS0601-eTRV5" and WidgetType in ("ThermoMode_5",) and Attribute_ == "6501":   
+                if value == 0:
+                    self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, 0, '00'), NWKID)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 0, '00', BatteryLevel, SignalLevel)
+                            
             elif WidgetType in ("ThermoMode", "ACMode", ) and Attribute_ == "001c":
                 # value seems to come as int or str. To be fixed
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode %s type: %s" % (value, type(value)), NWKID)
@@ -600,8 +611,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
                         UpdateDevice_v2(self, Devices, DeviceUnit, 5, "50", BatteryLevel, SignalLevel)
     
-                
-                
 
         if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster

@@ -9,7 +9,7 @@
             "ef00": "",
             "000a": "",
             "0019": "",
-            "Type": "Temp/ThermoSetpoint/Door/ThermoOnOff"
+            "Type": "Temp/ThermoSetpoint/Door/ThermoMode_5"
         }
     },
     "Type": "",
@@ -20,6 +20,7 @@
         "0402": []
     },
     "Param": {
+        "TuyaTRV5Polling": 300,
         "TuyaTRV5_BoostTime": 0,
         "TuyaTRV5_ChildLock": 0,
         "Calibration": 0

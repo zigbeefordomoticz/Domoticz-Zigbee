@@ -38,7 +38,7 @@ from Modules.tuyaSiren import (tuya_siren2_trigger, tuya_siren_alarm,
                                tuya_siren_humi_alarm, tuya_siren_temp_alarm)
 from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
                              tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
-                             tuya_trv_mode, tuya_trv_onoff)
+                             tuya_trv_mode, tuya_trv_onoff, tuya_trv_switch_onoff)
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
@@ -1002,18 +1002,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             return
                        
         if DeviceType == "ThermoMode_2":
-            self.log.logging(
-                "Command",
-                "Debug",
-                "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
-                % (NWKID, EPout, Unit, DeviceType, Level),
-                NWKID,
-            )
+            self.log.logging( "Command", "Debug", "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (NWKID, EPout, Unit, DeviceType, Level), NWKID, )
             self.log.logging("Command", "Debug", "ThermoMode_2 - requested Level: %s" % Level, NWKID)
             tuya_trv_mode(self, NWKID, Level)
-            UpdateDevice_v2(
-                self, Devices, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
-            )
+            UpdateDevice_v2( self, Devices, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
             return
 
         if DeviceType == "ThermoMode_4":
@@ -1051,6 +1043,20 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
                 tuya_coil_fan_thermostat(self, NWKID, int(Level / 10) - 1)
                 UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+                
+            elif "Model" in self.ListOfDevices[ NWKID ] and self.ListOfDevices[ NWKID ][ "Model" ] == "TS0601-eTRV5":
+                # "fr-FR": {"LevelNames": "Arrêt|Auto|Manual|Away"}},
+                # Off: 00 -> 
+                # Auto:10 -> 00
+                # Manual:20 --> 01
+                # Away:30 -> 02
+                if Level > 10:
+                    _tuya_mode = ( Level - 10 )
+                    tuya_trv_mode(self, NWKID, _tuya_mode)
+                else:
+                    tuya_trv_switch_onoff(self, NWKID, 00 )
+                UpdateDevice_v2( self, Devices, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+                
                 
         if DeviceType == "FanControl":
 
