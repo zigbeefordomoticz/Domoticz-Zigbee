@@ -565,11 +565,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             elif WidgetType in ("ThermoMode_5", "ThermoMode_6",) and Attribute_ == "001c":
                 # Use by Tuya TRV
-                if model_name == "TS0601-eTRV5":
-                    # 0 Auto - Level 10
-                    # 1 Manual - Level 20
-                    # 2 Holiday - Level 30
-                    value = value + 1
                 nValue = value
                 sValue = '%02d' %( nValue * 10)
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, nValue, sValue), NWKID)
