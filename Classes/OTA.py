@@ -196,7 +196,7 @@ class OTAManagement(object):
             RequestNodeAddress = MsgData[48:64]
 
         logging( self, "Debug", "ota_image_page_request - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X MaxSize: %s PageSize: %s ResponseSpacing: %s Control: 0x%02X" % (
-            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgMaxDataSize, 16), int(PageSize,16) , int(ResponseSpacing,16), intMsgFieldControl, ),)
+            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgMaxDataSize, PageSize , int(ResponseSpacing,16), intMsgFieldControl, ),)
 
         if self.ListInUpdate["NwkId"] is None:
             logging(self, "Debug", "ota_image_page_request - Async request from device: %s." % (MsgSrcAddr))
