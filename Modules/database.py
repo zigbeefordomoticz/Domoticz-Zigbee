@@ -339,7 +339,7 @@ def _write_DeviceList_txt(self):
     _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
     try:
         self.log.logging("Database", "Debug", "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
-        with open(_DeviceListFileName, "wt") as file:
+        with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
             for key in self.ListOfDevices:
                 try:
                     file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
