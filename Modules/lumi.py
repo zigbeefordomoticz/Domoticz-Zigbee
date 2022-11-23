@@ -7,7 +7,6 @@
     Module: lumi.py
  
     Description: Lumi specifics handling
-
 """
 import struct
 import time
@@ -582,18 +581,25 @@ def readXiaomiCluster(
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac01":
         if sPresence != "":
-            _PRESENCE = { 0: 'False', 1: 'True', 0xff: 'Unknow' }
+            _PRESENCE = { 0: 'False', 1: 'True' }
             store_lumi_attribute(self, MsgSrcAddr, "Presence", sPresence)
             self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s Presence %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresence, MsgClusterData), MsgSrcAddr, )
             if int(sPresence,16) in _PRESENCE:
                 self.log.logging( "Lumi", "Log", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) presence : %s" %(MsgSrcAddr, MsgSrcEp,_PRESENCE[ int(sPresence,16) ]) )
+                if sTemp2 != "":
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", round(((int(sTemp2,16)/100)-32)/1.8,1))
 
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", sPresence)
+				
         if sPresenceEvent != "":
-            _PRESENCE_EVENT = { 0: 'Enter', 1: 'Leave', 2: 'Left_enter', 3: 'Right_leave', 4: 'Right_enter',5: 'Left_leave', 6: 'Approach', 7: 'Away', 255: 'Unknown'}
+            _PRESENCE_EVENT = { 0: 'Enter', 1: 'Leave', 2: 'Left_enter', 3: 'Right_leave', 4: 'Right_enter',5: 'Left_leave', 6: 'Approach', 7: 'Away' }
             store_lumi_attribute(self, MsgSrcAddr, "PresenceEvent", sPresenceEvent)
             self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s PresenceEvent %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresenceEvent, MsgClusterData), MsgSrcAddr, )
             if int(sPresenceEvent,16) in _PRESENCE_EVENT:
+                #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "000c", int(sPresenceEvent,16))
+                #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", sPresence)
                 self.log.logging( "Lumi", "Log", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) Present event : %s" %(MsgSrcAddr, MsgSrcEp,_PRESENCE_EVENT[ int(sPresenceEvent,16) ]) )
+
 
         if sMonitoringMode != "":
             _MONITORING_MODE = {0: 'Undirected', 1: 'Left_right'}
