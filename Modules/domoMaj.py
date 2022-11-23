@@ -410,6 +410,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         if "Analog" in ClusterType and model_name not in (
             "lumi.sensor_cube.aqgl01",
             "lumi.sensor_cube",
+			"Motionac01",
         ):  # Analog Value from Analog Input cluster
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
@@ -775,7 +776,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, "Off", BatteryLevel, SignalLevel, ForceUpdate_=False)
             continue
 
-        if WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff",) and (
+        if WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff", "Motionac01") and (
             (
                 ClusterType
                 in (
@@ -1350,7 +1351,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
         if ("XCube" in ClusterType) or ("Analog" in ClusterType and model_name in ("lumi.sensor_cube.aqgl01", "lumi.sensor_cube")):  # XCube Aqara or Xcube
-            if WidgetType == "Aqara":
+            if WidgetType == "Aqara" :
                 self.log.logging(
                     "Widget",
                     "Debug",
@@ -1424,6 +1425,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     state = "90"
                     data = "09"
                     UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+					
+        if  ClusterType == "Analog" and WidgetType == "Motionac01" and Ep == "01":  # Motionac01
+            if value <= 7:
+                nValue= value + 1
+                sValue = str(nValue * 10)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue,  sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Orientation" in ClusterType:
             # Xiaomi Vibration
