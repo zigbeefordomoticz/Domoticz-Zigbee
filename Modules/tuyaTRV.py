@@ -1320,8 +1320,6 @@ def tuya_trv_switch_onoff(self, nwkid, onoff):
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_onoff - %s Switch: %s" % (nwkid, onoff))
     if onoff not in (0x00, 0x01):
         return
-    if get_model_name(self, nwkid) == "TS0601-eTRV5":
-        onoff = 0x01 if onoff == 0x00 else 0x00
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "Switch")
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_onoff - %s dp for Switch: %s" % (nwkid, dp))
