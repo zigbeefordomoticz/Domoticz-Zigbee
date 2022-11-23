@@ -878,9 +878,10 @@ class WebServer(object):
 
         elif verb == "PUT":
             _response["Data"] = None
-            data = data.decode("utf8")
             self.logging("Debug", "Data: %s" % data)
-            data = eval(data)
+            #data = data.decode("utf8")
+            #data = eval(data)
+            data = json.loads( data.decode("utf8") )
             for x in data:
                 if "ZDeviceName" in x and "IEEE" in x:
                     for dev in self.ListOfDevices:
