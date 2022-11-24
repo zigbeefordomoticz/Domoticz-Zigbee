@@ -410,7 +410,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         if "Analog" in ClusterType and model_name not in (
             "lumi.sensor_cube.aqgl01",
             "lumi.sensor_cube",
-			"Motionac01",
+			"lumi.motion.ac01",
         ):  # Analog Value from Analog Input cluster
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
