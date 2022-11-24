@@ -212,7 +212,7 @@ def receive_error_status(self, Devices, model_target, NwkId, srcEp, ClusterID, d
 
 def receive_online_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     self.log.logging( "Tuya", "Debug", "receive_online_mode - Nwkid: %s/%s Dp: %s DataType: %s Mode: %s" % (NwkId, srcEp, dp, datatype, data) )
-    store_tuya_attribute(self, NwkId, "OnlineMode", data)
+    store_tuya_attribute(self, NwkId, "TuyaOneLine", data)
     
 def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # Update ThermoMode_2 widget ( 001c)
@@ -868,7 +868,7 @@ def tuya_switch_online(self, nwkid, OnlineOffline):
     if OnlineOffline not in (0x00, 0x01, ):
         return
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
-    dp = get_datapoint_command(self, nwkid, "OnlineMode")
+    dp = get_datapoint_command(self, nwkid, "TuyaOneLine")
     self.log.logging("Tuya", "Debug", "tuya_switch_online - %s dp for mode: %s" % (nwkid, dp))
     if dp:
         action = "%02x01" % dp

@@ -18,8 +18,9 @@
     "ReadAttributes": {
         "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
     },
+    "PollingEnabled": 1,
     "Param": {
-        "TuyaTRV5Polling": 0,
+        "TuyaTRV5Polling": 300,
         "TuyaTRV5_BoostTime": 0,
         "TuyaTRV5_ChildLock": 0,
         "Calibration": 0
