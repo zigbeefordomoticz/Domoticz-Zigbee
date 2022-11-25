@@ -4944,7 +4944,8 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "0143":   # Presence Event
         # enter, leave, left_enter, right_leave, right_enter, left_leave, approach, away.
         store_lumi_attribute(self, MsgSrcAddr, "Presence_event", MsgClusterData)
-
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "000c", int(MsgClusterData,16))
+        
     elif MsgAttrID == "0144":   # Monitoring mode
         store_lumi_attribute(self, MsgSrcAddr, "Monitoring_mode", MsgClusterData)
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Monitoring Mode: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )

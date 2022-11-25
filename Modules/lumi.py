@@ -574,12 +574,28 @@ def readXiaomiCluster(
     sPower = retreive8Tag("9839", MsgClusterData)  # Power Watt
     
     # "lumi.motion.ac01"
+    # 0328180521010008213/ 6010a2100000c2014102001122000 652001/ 662003/ 672000/ 682000/ 692001/ 6a2001/ 6b2003
     sPresence = retreive4Tag("6520", MsgClusterData)[:2]
-    sPresenceEvent = retreive4Tag("6620", MsgClusterData)[:2]
+    sSensibility = retreive4Tag("6620", MsgClusterData)[:2]
     sMonitoringMode = retreive4Tag("6720", MsgClusterData)[:2]
+    s68 = retreive4Tag("6820", MsgClusterData)[:2]
     sApproachDistance = retreive4Tag("6920", MsgClusterData)[:2]
+    s6a = retreive4Tag("6a20", MsgClusterData)[:2]
+    s6b = retreive4Tag("6b20", MsgClusterData)[:2]
+
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac01":
+        if s68 != "":
+            store_lumi_attribute(self, MsgSrcAddr, "s68", sPresence)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s s68 %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, s68, int(s68,16)), MsgSrcAddr, )
+        if s6a != "":
+            store_lumi_attribute(self, MsgSrcAddr, "s6a", sPresence)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s s6a %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, s68, int(s68,16)), MsgSrcAddr, )
+   
+        if s6b != "":    
+            store_lumi_attribute(self, MsgSrcAddr, "s6b", sPresence)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s s6b %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, s68, int(s68,16)), MsgSrcAddr, )
+   
         if sPresence != "":
             _PRESENCE = { 0: 'False', 1: 'True' }
             store_lumi_attribute(self, MsgSrcAddr, "Presence", sPresence)
@@ -587,15 +603,10 @@ def readXiaomiCluster(
             if int(sPresence,16) in _PRESENCE:
                 self.log.logging( "Lumi", "Log", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) presence : %s" %(MsgSrcAddr, MsgSrcEp,_PRESENCE[ int(sPresence,16) ]) )
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", sPresence)
-				
-        if sPresenceEvent != "":
-            _PRESENCE_EVENT = { 0: 'Enter', 1: 'Leave', 2: 'Left_enter', 3: 'Right_leave', 4: 'Right_enter',5: 'Left_leave', 6: 'Approach', 7: 'Away' }
-            store_lumi_attribute(self, MsgSrcAddr, "PresenceEvent", sPresenceEvent)
-            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s PresenceEvent %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresenceEvent, MsgClusterData), MsgSrcAddr, )
-            if int(sPresenceEvent,16) in _PRESENCE_EVENT:
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "000c", int(sPresenceEvent,16))
-                self.log.logging( "Lumi", "Log", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) Present event : %s" %(MsgSrcAddr, MsgSrcEp,_PRESENCE_EVENT[ int(sPresenceEvent,16) ]) )
 
+        if sSensibility != "":
+            store_lumi_attribute(self, MsgSrcAddr, "Sensibility", sSensibility)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sSensibility %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sSensibility, MsgClusterData), MsgSrcAddr, )
 
         if sMonitoringMode != "":
             _MONITORING_MODE = {0: 'Undirected', 1: 'Left_right'}
