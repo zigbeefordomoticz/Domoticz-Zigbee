@@ -183,6 +183,12 @@ def receive_ecosetpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, ds
     self.log.logging("Tuya", "Debug", "receive_ecosetpoint - Nwkid: %s/%s EcoSetpoint: %s for model taget: %s" % (NwkId, srcEp, ecosetpoint, model_target))
     store_tuya_attribute(self, NwkId, "EcoSetPoint", data)
 
+def receive_opened_window_temp(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    opened_window_temp = int(data, 16) / 10
+    self.log.logging("Tuya", "Debug", "receive_opened_window_temp - Nwkid: %s/%s OpenedWindowTemp: %s for model taget: %s" % (NwkId, srcEp, opened_window_temp, model_target))
+    store_tuya_attribute(self, NwkId, "OpenedWindowTemp", data)
+
+    
 def receive_confortetpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     confortsetpoint = int(data, 16) / 10
     self.log.logging("Tuya", "Debug", "receive_confortetpoint - Nwkid: %s/%s ConfortSetpoint: %s for model taget: %s" % (NwkId, srcEp, confortsetpoint, model_target))
@@ -526,9 +532,56 @@ def decode_schedule_day(dp, data):
 
     return return_value
 
-    # 00246a00001f7f24/00d2/48/00d2/54/00d2/66/00d2/9000aa9000b/49000b/49000b/49000b/49000b4
+    #    status = MsgPayload[6:8]  # uint8
+    #    transid = MsgPayload[8:10]  # uint8
+    #    dp = int(MsgPayload[10:12], 16)
+    #    datatype = int(MsgPayload[12:14], 16)
+    #    fn = MsgPayload[14:16]
+    #    len_data = MsgPayload[16:18]
+    #    data = MsgPayload[18:]
+    #    self.log.logging(
+    #1 .                      1234567890123456789012345678901234567890123456789012345678901234567890
+    # 00/24/6a/00/00/1f/ .   7f24/00d24800d2/5400d266/00d2/9000aa/9000b/49000b/49000b/49000b/49000b4
+    # 00/41/6a/00/00/1f/ .   7f24/0064480064/54009666/00c8/9000fa/9000b/49000b/49000b/49000b/49000b4
+    # 00/2d/6a/00/00/1f/ .   1024/005a48008c/5400be66/00c8/9000fa/9000b/49000b/49000b/49000b/49000b4
+    #04906a00001f0124003248012c54012c66012c9000329000b49000b49000b49000b49000b4
+    #                              Temp
+    # 04/5f/6a/00/00/1f/ .   01/24/ 0032 /48 0064/ 54 0096 / 66 00c89/  00 0fa9/  00 0b49/ 00 0b49/ 00 0b49/ 000b4/  90  00b4/ - Monday 01
+    # 04/75/6a/00/00/1f/ .   02/24/ 0032 /48 0064/ 54 0096 / 66 00c89/  00 10e9/  00 0b49/ 00 0b49/ 00 0b49/ 000b4/  90  00b4/ - Tues
+    # 04/71/6a/00/00/1f/ .   04/24/ 0032 /48 0064/ 54 0096 / 66 00c89/  00 11d9/  00 0b49/ 00 0b49/ 00 0b49/ 000b4/  90  00b4/ - Wed
+    # 04/67/6a/00/00/1f/     08/24/ 0032 /48 0064/ 54 0096 / 66 00c89/  00 0fa9/  00 0b49/ 00 0b49/ 00 0b49/ 000b4/  90  00b4/ - Thursday
+    # 04/7a/6a/00/00/1f/ .   10/24/ 0032 /48 0064/ 54 0096 / 66 00c89/  00 0ff9/  00 0b49/ 00 0b49/ 00 0b49/ 000b4/  90  00b4/ - Friday
+    # 04/69/6a/00/00/1f/     20/24/ 0032 /48 0064/ 54 0096 / 66 00c89/  00 0fa9/  00 0b49/ 00 0b49/ 00 0b49/ 000b4/  90  00b4/ - Saturday
+    # 04/66/6a/00/00/1f/     40/24/ 0032 /48 0064/ 54 0096 / 66 00c89/  00 0fa9/  00 0b49/ 00 0b49/ 00 0b49/ 000b4/  90  00b4/ - Sunday
+    #                               300°
+    # 04/81/6a/00/00/1f/ .   1f/24/ 012c /48012c54012c66012c90012c9000b49000b49000b49000b49000b4 - Mon - Fri
+    # 04/85/6a/00/00/1f/ .   20/24/ 0032 /4800325400326600329000329000b49000b49000b49000b49000b4 - Sat
+    # 04/8c/6a/00/00/1f/ .   40/24/ 012c /48012c54012c66012c90012c9000b49000b49000b49000b49000b4 - Sun
+    #                              
+    # 04/93/6a/00/00/1f/ .   7f/24/ 012c /48012c54012c66012c90012c9000b49000b49000b49000b49000b4 Mon - Sun 30
+    #                               130°
+    # 04/9a/6a/00/00/1f/ .   7f/24/ 0082 /4800825400826600829000829000b49000b49000b49000b49000b4 Mon - Sun 13
+
+    # 04/9d/6a/00/00/1f/ .   7f/07/ 0082/ 48/ 0082/ 54/ 0082 6600829000829000b49000b49000b49000b49000b4 00:00 - 01:10 13°
+    # 04/a1/6a/00/00/1f/ .   7f/07/ 0082/ 36/ 0032/ 54/ 0082 6600829000829000b49000b49000b49000b49000b4 01:10-09:00 5°
     
-    
+    # Slot
+    # 00:00 - 01:10 5° -> 70
+    # 01:10 - 09:00 6  -> +490
+    # 09:00 - 14:00 7
+    # 14:00 - 17:00 8 
+    # 17:00 - 19:00 9
+    # 19:00 - 23:00 10
+    # 23:00 - 23:30 11
+    # 23:30 - 23:40 12
+    # 23:40 - 23:50 13
+    # 23:50 - 24:00 14
+    #                                                                                                 13.0°   14.0 °
+    # 04/ba/6a/00/00/1f/ .   7f/07 0032/ 36 003c 54 0046 66 0050  72 005a 8a 0064 8d 006e 8e 0078  8f 0082/ 90 008c
+    # EVery day
+    # 
+    # Mon-Fri Sat Sun
+    # Mon-Sun
 def receive_brt100_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday
     BRT_MODE = {
@@ -740,10 +793,12 @@ eTRV_MATRIX = {
             0x28: receive_childlock,          # 0x00: Child Lock disabled    , 0x01: Child Lock enabled
             0x2d: receive_error_status,
             0x65: receive_boost_time,         # Boost
-            0x6b: receive_onoff,              # 0x00: Heat, 0x01: Off
-            0x73: receive_online_mode,
+            0x66: receive_opened_window_temp,
             0x68: receive_confortetpoint,
             0x69: receive_ecosetpoint,
+            
+            0x6b: receive_onoff,              # 0x00: Heat, 0x01: Off
+            0x73: receive_online_mode,
             
             
         },
@@ -755,6 +810,10 @@ eTRV_MATRIX = {
             "BoostTime": 0x65, 
             "Switch": 0x6b,                  # 0x00: Heat, 0x01: Off
             "TuyaOneLine": 0x73,
+            "OpenedWindowTemp": 0x66,
+            "ConfortSetPoint": 0x68,
+            "EcoSetPoint": 0x69
+            
             
         },
     },
@@ -1260,6 +1319,53 @@ def tuya_trv_mode(self, nwkid, mode):
     else:
         tuya_trv_switch_mode(self, nwkid, mode)
 
+
+def tuya_trv_set_confort_temperature(self, nwkid, temperature):
+    # 00/34/68/02/0004000000fa - 25°
+    temperature = round((temperature * 10),0)
+    self.log.logging("Tuya", "Debug", "tuya_trv_set_confort_temperature - %s ConfortSetPoint: %x" % (nwkid, temperature), nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    dp = get_datapoint_command(self, nwkid, "ConfortSetPoint")
+    self.log.logging("Tuya", "Debug", "tuya_trv_set_confort_temperature - %s dp for ConfortSetPoint: %x" % (nwkid, dp), nwkid)
+    if dp:
+        EPout = "01"
+        cluster_frame = "11"
+        cmd = "00"  # Command
+        action = "%02x02" % dp  # Mode
+        data = "%08x" % (temperature)
+        tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+    
+    
+def tuya_trv_set_eco_temperature(self, nwkid, temperature):
+    # 00/35/69/02/0004/00000064 - 10°
+    # 00/39/69/02/0004/000000f0 - 24°
+    temperature = round((temperature * 10),0)
+    self.log.logging("Tuya", "Debug", "tuya_trv_set_eco_temperature - %s EcoSetPoint: %x" % (nwkid, temperature), nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    dp = get_datapoint_command(self, nwkid, "EcoSetPoint")
+    self.log.logging("Tuya", "Debug", "tuya_trv_set_eco_temperature - %s dp for EcoSetPoint: %x" % (nwkid, dp), nwkid)
+    if dp:
+        EPout = "01"
+        cluster_frame = "11"
+        cmd = "00"  # Command
+        action = "%02x02" % dp  # Mode
+        data = "%08x" % (temperature)
+        tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+    
+
+def tuya_trv_set_opened_window_temp(self, nwkid, temperature):
+    temperature = round((temperature * 10),0)
+    self.log.logging("Tuya", "Debug", "tuya_trv_set_opened_window_temp - %s Manual On/Off: %x" % (nwkid, temperature), nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    dp = get_datapoint_command(self, nwkid, "OpenedWindowTemp")
+    self.log.logging("Tuya", "Debug", "tuya_trv_set_opened_window_temp - %s dp for ManualMode: %x" % (nwkid, dp), nwkid)
+    if dp:
+        EPout = "01"
+        cluster_frame = "11"
+        cmd = "00"  # Command
+        action = "%02x02" % dp  # Mode
+        data = "%08x" % (temperature)
+        tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_trv_switch_manual(self, nwkid, offon):
     self.log.logging("Tuya", "Debug", "tuya_trv_switch_manual - %s Manual On/Off: %x" % (nwkid, offon), nwkid)

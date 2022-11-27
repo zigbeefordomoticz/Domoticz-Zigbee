@@ -11,7 +11,6 @@
 """
 
 import Domoticz
-
 from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
                                   set_PIROccupiedToUnoccupiedDelay,
@@ -48,8 +47,11 @@ from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
                                tuya_siren2_alarm_volume)
 from Modules.tuyaTRV import (tuya_trv_boost_time, tuya_trv_calibration,
                              tuya_trv_child_lock, tuya_trv_eco_temp,
+                             tuya_trv_set_confort_temperature,
+                             tuya_trv_set_eco_temperature,
                              tuya_trv_set_max_setpoint,
                              tuya_trv_set_min_setpoint,
+                             tuya_trv_set_opened_window_temp,
                              tuya_trv_thermostat_sensor_mode,
                              tuya_trv_window_detection)
 
@@ -234,6 +236,9 @@ DEVICE_PARAMETERS = {
     "BRT100WindowsDetection": tuya_trv_window_detection,
     "BRT100ChildLock": tuya_trv_child_lock,
     "TuyaTRV5_ChildLock": tuya_trv_child_lock,
+    "TuyaTRV5_EcoTemp": tuya_trv_set_eco_temperature,
+    "TuyaTRV5_ConfortTemp": tuya_trv_set_confort_temperature,
+    "TuyaTRV5_OpenedWindowTemp": tuya_trv_set_opened_window_temp,
     "BRT100BoostDuration": tuya_trv_boost_time,
     "TuyaTRV5_BoostTime": tuya_trv_boost_time,
     "BRT100Calibration": tuya_trv_calibration,
