@@ -154,6 +154,9 @@ def receive_onoff(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
         if data == "01":  # Heating Stop is On -> the valve will be closed
             checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "Off")
             MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 0, Attribute_="6501")
+        else:
+            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", "On")
+            
                     
     elif model_target in ["TS0601-_TZE200_dzuqwsyg","TS0601-thermostat-Coil", ]:
         if data == "00":
@@ -243,9 +246,11 @@ def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
             
         elif get_model_name(self, NwkId) in ( "TS0601-eTRV5", ):
             # Mode Auto
-            self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Auto" % (NwkId, srcEp))
-            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 1, Attribute_="001c")
-            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "Auto")
+            if get_tuya_attribute(self, NwkId, "Switch") != '01':
+                # Switch is not Off
+                self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Auto" % (NwkId, srcEp))
+                MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 1, Attribute_="001c")
+                checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "Auto")
             
         else:
             # Offline
@@ -255,9 +260,11 @@ def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
 
     elif data == "01":
         if get_model_name(self, NwkId) in ( "TS0601-eTRV5", ):
-            self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Auto" % (NwkId, srcEp))
-            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 2, Attribute_="001c")
-            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "Manual")
+            if get_tuya_attribute(self, NwkId, "Switch") != '01':
+                # Switch is not Off
+                self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Auto" % (NwkId, srcEp))
+                MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 2, Attribute_="001c")
+                checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "Manual")
 
         else:
             self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Auto" % (NwkId, srcEp))
@@ -266,9 +273,11 @@ def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
 
     elif data == "02":
         if get_model_name(self, NwkId) in ( "TS0601-eTRV5", ):
-            self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Holiday" % (NwkId, srcEp))
-            MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 3, Attribute_="001c")
-            checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "Holiday")
+            if get_tuya_attribute(self, NwkId, "Switch") != '01':
+                # Switch is not Off
+                self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Holiday" % (NwkId, srcEp))
+                MajDomoDevice(self, Devices, NwkId, srcEp, "0201", 3, Attribute_="001c")
+                checkAndStoreAttributeValue(self, NwkId, "01", "0201", "001c", "Holiday")
 
         else:
             self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Manual" % (NwkId, srcEp))
