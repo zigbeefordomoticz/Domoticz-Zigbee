@@ -115,7 +115,7 @@ def receive_setpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNW
 
     setpoint = int(data, 16)
     self.log.logging("Tuya", "Debug", "receive_setpoint - Nwkid: %s/%s Setpoint: %s for model taget: %s" % (NwkId, srcEp, setpoint, model_target))
-    if model_target in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-_TZE200_dzuqwsyg", "TS0601-thermostat-Coil"] :
+    if model_target in [ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-_TZE200_dzuqwsyg", "TS0601-thermostat-Coil"] :
         setpoint = int(data, 16)
     elif model_target in [ "TS0601-_TZE200_chyvmhay", ]:
         setpoint = int(data,16) / 2
@@ -181,6 +181,11 @@ def receive_onoff(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID
     else:
         checkAndStoreAttributeValue(self, NwkId, "01", "0201", "6501", data)
 
+def receive_holiday_setpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    holiday_setpoint = int(data, 16) / 10
+    self.log.logging("Tuya", "Debug", "holiday_setpoint - Nwkid: %s/%s Holiday Setpoint: %s for model taget: %s" % (NwkId, srcEp, holiday_setpoint, model_target))
+    store_tuya_attribute(self, NwkId, "HolidaySetPoint", data)
+    
 def receive_ecosetpoint(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     ecosetpoint = int(data, 16) / 10
     self.log.logging("Tuya", "Debug", "receive_ecosetpoint - Nwkid: %s/%s EcoSetpoint: %s for model taget: %s" % (NwkId, srcEp, ecosetpoint, model_target))
@@ -797,6 +802,7 @@ eTRV_MATRIX = {
             0x0a: receive_frost_protection,   # 0x00: Frost protection disabled    , 0x01: Frost Protection enabled
             0x10: receive_setpoint,
             0x18: receive_temperature,
+            0x20: receive_holiday_setpoint,
             0x1b: receive_calibration,
             0x23: receive_battery,
             0x28: receive_childlock,          # 0x00: Child Lock disabled    , 0x01: Child Lock enabled
@@ -805,9 +811,9 @@ eTRV_MATRIX = {
             0x66: receive_opened_window_temp,
             0x68: receive_confortetpoint,
             0x69: receive_ecosetpoint,
-            
             0x6b: receive_onoff,              # 0x00: Heat, 0x01: Off
             0x73: receive_online_mode,
+            
             
             
         },
@@ -821,7 +827,8 @@ eTRV_MATRIX = {
             "TuyaOneLine": 0x73,
             "OpenedWindowTemp": 0x66,
             "ConfortSetPoint": 0x68,
-            "EcoSetPoint": 0x69
+            "EcoSetPoint": 0x69,
+            "HolidaySetPoint": 0x20
             
             
         },
@@ -1170,24 +1177,26 @@ def tuya_set_calibration_if_needed(self, NwkId):
 
     if target_calibration is None:
         target_calibration = 0
-
-    if target_calibration < -7 or target_calibration > 7:
-        self.log.logging(
-            "Tuya",
-            "Error",
-            "thermostat_Calibration - Wrong Calibration offset on %s off %s" % (NwkId, target_calibration),
-        )
+        
+    if target_calibration < -5 or target_calibration > 5:
+        self.log.logging( "Tuya", "Error", "thermostat_Calibration - Wrong Calibration offset on %s off %s" % (
+            NwkId, target_calibration), )
         target_calibration = 0
+        
+    if get_model_name(self, NwkId) in ( "TS0601-eTRV5", ):
+        self.log.logging( "Tuya", "Debug", "thermostat_Calibration - correct to deci-degree %s" % (
+            target_calibration), )
+        target_calibration = int( target_calibration * 10)
 
     if target_calibration < 0:
         # in two’s complement form
-        target_calibration = abs(int(hex(-target_calibration - pow(2, 32)), 16))
-        self.log.logging(
-            "Tuya",
-            "Debug",
-            "thermostat_Calibration - 2 complement form of Calibration offset on %s off %s"
-            % (NwkId, target_calibration),
-        )
+        self.log.logging( "Tuya", "Debug", "thermostat_Calibration - 2 complements of %s" % (
+            target_calibration), )
+
+        target_calibration = ( 0xffffffff + target_calibration +1 )
+        #target_calibration = abs(int(hex(-target_calibration - pow(2, 32)), 16))
+        self.log.logging( "Tuya", "Debug", "thermostat_Calibration - 2 complement is %08x" % (
+            target_calibration), )
 
     if "Tuya" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Tuya"] = {}
@@ -1199,14 +1208,16 @@ def tuya_set_calibration_if_needed(self, NwkId):
     if target_calibration == int(self.ListOfDevices[NwkId]["Tuya"]["Calibration"], 16):
         return
 
-    self.log.logging(
-        "Tuya",
-        "Debug",
-        "thermostat_Calibration - Set Thermostat offset on %s off %s/%08x"
-        % (NwkId, target_calibration, target_calibration),
-    )
+    self.log.logging( "Tuya", "Debug", "thermostat_Calibration - Set Thermostat offset on %s off %s/%08x" % (
+        NwkId, target_calibration, target_calibration), )
     tuya_trv_calibration(self, NwkId, target_calibration)
 
+    # Calibration -5° for eTRV5: 
+    # 00/09/1b/02/0004/ffffffce -5°
+    # 00/0c/1b/02/0004/ffffffd3 -4.5°
+    # 00/0e/1b/02/0004/ffffffff - 0.1
+    # 00/11/1b/02/0004/00000001 + 0.1
+    
 def tuya_trv_calibration(self, nwkid, calibration):
     # 000d
     # Command: 69
@@ -1214,6 +1225,7 @@ def tuya_trv_calibration(self, nwkid, calibration):
     # 00
     # Len: 04
     # Data: 00000000
+        
     self.log.logging("Tuya", "Debug", "tuya_trv_calibration - %s Calibration: %s" % (nwkid, calibration))
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "Calibration")
@@ -1225,7 +1237,8 @@ def tuya_trv_calibration(self, nwkid, calibration):
         cluster_frame = "11"
         cmd = "00"  # Command
         if calibration < 0:
-            calibration = abs(int(hex(-calibration - pow(2, 32)), 16))
+            calibration = ( 0xffffffff - calibration + 1 )
+            #calibration = abs(int(hex(-calibration - pow(2, 32)), 16))
         data = "%08x" % calibration
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
@@ -1265,13 +1278,13 @@ def tuya_setpoint(self, nwkid, setpoint_value):
     dp = get_datapoint_command(self, nwkid, "SetPoint")
     self.log.logging("Tuya", "Debug", "tuya_setpoint - %s dp %s for SetPoint: %s" % (nwkid, dp, setpoint_value))
     if dp:
-        if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0",]:
+        if model_name in [ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0",]:
             tuya_trv_brt100_set_mode(self, nwkid, 0x01)   # Force to be in Manual
 
         action = "%02x02" % dp
         # In Domoticz Setpoint is in ° , In Modules/command.py we multiplied by 100 (as this is the Zigbee standard).
         # Looks like in the Tuya 0xef00 cluster it is only expressed in 10th of degree
-        if model_name in[ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-thermostat-Coil"]:
+        if model_name in [ "TS0601-thermostat","TS0601-_TZE200_b6wax7g0", "TS0601-thermostat-Coil"]:
             # Setpoint is defined in ° and not centidegree
             setpoint_value = setpoint_value // 100
             
@@ -1332,7 +1345,7 @@ def tuya_trv_mode(self, nwkid, mode):
 def tuya_trv_set_confort_temperature(self, nwkid, temperature):
     # 00/34/68/02/0004000000fa - 25°
     temperature = round((temperature * 10),0)
-    self.log.logging("Tuya", "Debug", "tuya_trv_set_confort_temperature - %s ConfortSetPoint: %x" % (nwkid, temperature), nwkid)
+    self.log.logging("Tuya", "Debug", "tuya_trv_set_confort_temperature - %s ConfortSetPoint: %s" % (nwkid, temperature), nwkid)
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "ConfortSetPoint")
     self.log.logging("Tuya", "Debug", "tuya_trv_set_confort_temperature - %s dp for ConfortSetPoint: %x" % (nwkid, dp), nwkid)
@@ -1341,15 +1354,29 @@ def tuya_trv_set_confort_temperature(self, nwkid, temperature):
         cluster_frame = "11"
         cmd = "00"  # Command
         action = "%02x02" % dp  # Mode
-        data = "%08x" % (temperature)
+        data = "%08x" % int(temperature)
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
     
-    
+def tuya_trv_holiday_setpoint(self, nwkid, temperature):
+
+    temperature = round((temperature * 10),0)
+    self.log.logging("Tuya", "Debug", "tuya_trv_holiday_setpoint - %s HolidaySetPoint: %s" % (nwkid, temperature), nwkid)
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    dp = get_datapoint_command(self, nwkid, "HolidaySetPoint")
+    self.log.logging("Tuya", "Debug", "tuya_trv_holiday_setpoint - %s dp for HolidaySetPoint: %x" % (nwkid, dp), nwkid)
+    if dp:
+        EPout = "01"
+        cluster_frame = "11"
+        cmd = "00"  # Command
+        action = "%02x02" % dp  # Mode
+        data = "%08x" % int(temperature)
+        tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+     
 def tuya_trv_set_eco_temperature(self, nwkid, temperature):
     # 00/35/69/02/0004/00000064 - 10°
     # 00/39/69/02/0004/000000f0 - 24°
     temperature = round((temperature * 10),0)
-    self.log.logging("Tuya", "Debug", "tuya_trv_set_eco_temperature - %s EcoSetPoint: %x" % (nwkid, temperature), nwkid)
+    self.log.logging("Tuya", "Debug", "tuya_trv_set_eco_temperature - %s EcoSetPoint: %s" % (nwkid, temperature), nwkid)
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "EcoSetPoint")
     self.log.logging("Tuya", "Debug", "tuya_trv_set_eco_temperature - %s dp for EcoSetPoint: %x" % (nwkid, dp), nwkid)
@@ -1358,13 +1385,13 @@ def tuya_trv_set_eco_temperature(self, nwkid, temperature):
         cluster_frame = "11"
         cmd = "00"  # Command
         action = "%02x02" % dp  # Mode
-        data = "%08x" % (temperature)
+        data = "%08x" % int(temperature)
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
     
 
 def tuya_trv_set_opened_window_temp(self, nwkid, temperature):
     temperature = round((temperature * 10),0)
-    self.log.logging("Tuya", "Debug", "tuya_trv_set_opened_window_temp - %s Manual On/Off: %x" % (nwkid, temperature), nwkid)
+    self.log.logging("Tuya", "Debug", "tuya_trv_set_opened_window_temp - %s Manual On/Off: %s" % (nwkid, temperature), nwkid)
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "OpenedWindowTemp")
     self.log.logging("Tuya", "Debug", "tuya_trv_set_opened_window_temp - %s dp for ManualMode: %x" % (nwkid, dp), nwkid)
@@ -1373,7 +1400,7 @@ def tuya_trv_set_opened_window_temp(self, nwkid, temperature):
         cluster_frame = "11"
         cmd = "00"  # Command
         action = "%02x02" % dp  # Mode
-        data = "%08x" % (temperature)
+        data = "%08x" % int(temperature)
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 def tuya_trv_switch_manual(self, nwkid, offon):
