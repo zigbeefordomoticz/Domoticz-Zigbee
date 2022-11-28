@@ -12,6 +12,8 @@
 # https://github.com/zigpy/zha-device-handlers/issues/357
 
 import Domoticz
+import binascii
+from datetime import datetime,timedelta
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
@@ -596,6 +598,32 @@ def decode_schedule_day(dp, data):
     # 
     # Mon-Fri Sat Sun
     # Mon-Sun
+
+def receive_holiday_program( self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    # 323032323031303130313031323032323132303130303030
+    # 2022/01/01/01:01/2022/12/01/00:00
+    # Convert to string
+    _holiday_schedule = []
+    data = binascii.unhexlify(data).decode("utf-8")
+    idx = 0
+    for _time in range(1):
+        _prefix = 'start' if _time == 0 else 'stop'
+        _holiday_schedule.append( 
+            { 
+                _prefix + '_year' : data[idx:idx +4],
+                _prefix + '_month' : data[idx + 5:idx + 6],
+                _prefix + '_day'   : data[idx + 6:idx + 8],
+                _prefix + '_hour'  : data[idx + 8:idx + 10],
+                _prefix + '_min'   : data[idx + 10:idx + 12],
+            }
+        )
+        idx + 12
+        
+    self.log.logging( "Tuya", "Debug", "receive_holiday_program - Nwkid: %s/%s : %s : %s" % (NwkId, srcEp, data, _holiday_schedule) )
+    store_tuya_attribute(self, NwkId, "Holiday_Program", _holiday_schedule )
+        
+
+    
 def receive_brt100_mode(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday
     BRT_MODE = {
@@ -795,6 +823,7 @@ eTRV_MATRIX = {
         },
     },
 
+    
     "TS0601-eTRV5": {
         "FromDevice": {  # https://easydomoticz.com/forum/viewtopic.php?f=28&t=12744
             0x02: receive_preset,             # 0x00: Auto, 0x01: Manual, 0x03: Holiday
@@ -802,7 +831,7 @@ eTRV_MATRIX = {
             0x0a: receive_frost_protection,   # 0x00: Frost protection disabled    , 0x01: Frost Protection enabled
             0x10: receive_setpoint,
             0x18: receive_temperature,
-            0x20: receive_holiday_setpoint,
+            0x20: receive_holiday_setpoint,   # 00/0c/20/02/0004/0000012c
             0x1b: receive_calibration,
             0x23: receive_battery,
             0x28: receive_childlock,          # 0x00: Child Lock disabled    , 0x01: Child Lock enabled
@@ -813,7 +842,7 @@ eTRV_MATRIX = {
             0x69: receive_ecosetpoint,
             0x6b: receive_onoff,              # 0x00: Heat, 0x01: Off
             0x73: receive_online_mode,
-            
+            0x2e: receive_holiday_program,                   
             
             
         },
@@ -828,9 +857,8 @@ eTRV_MATRIX = {
             "OpenedWindowTemp": 0x66,
             "ConfortSetPoint": 0x68,
             "EcoSetPoint": 0x69,
-            "HolidaySetPoint": 0x20
-            
-            
+            "HolidaySetPoint": 0x20,
+            "HolidayProgram": 0x2e
         },
     },
     "TS0601-eTRV": {
@@ -1311,6 +1339,19 @@ def tuya_trv_onoff(self, nwkid, onoff):
         # We force the eTRV to switch to Manual mode
         tuya_trv_switch_mode(self, nwkid, 20)
 
+def tuya_holiday_schedule( self, nwkid, program):
+    self.log.logging("Tuya", "Debug", "tuya_holiday_schedule - %s program: %s" % (nwkid, program))
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    dp = get_datapoint_command(self, nwkid, "HolidayProgram")
+    self.log.logging("Tuya", "Debug", "tuya_holiday_schedule - %s dp for HolidayProgram: %s" % (nwkid, dp))
+    if dp:
+        action = "%02x03" % dp
+        # determine which Endpoint
+        EPout = "01"
+        cluster_frame = "11"
+        cmd = "00"  # Command
+        tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, program)
+    
 def tuya_trv_mode(self, nwkid, mode):
     self.log.logging("Tuya", "Debug", "tuya_trv_mode - %s tuya_trv_mode: %s" % (nwkid, mode), nwkid)
     # Mode = 0  => Off
@@ -1323,6 +1364,13 @@ def tuya_trv_mode(self, nwkid, mode):
         elif get_tuya_attribute(self, nwkid, "Switch") == "00":
             # If eTRV is Off, then let's switch it on
             tuya_trv_switch_onoff(self, nwkid, 0x01)
+            
+    elif get_model_name(self, nwkid) in ( "TS0601-eTRV5",) and mode in ( 20, 30):
+        # We switch to Holiday mode, let's send a fake Program which start now, for 1 year
+        start_time = datetime.now().strftime("%Y%m%d%H00")
+        end_time = ( datetime.strptime(start_time,"%Y%m%d%H00") + timedelta(days=365) ).strftime("%Y%m%d%H00")
+        self.log.logging("Tuya", "Debug", "tuya_trv_mode - %s Holiday program start: %s end: %s" % (nwkid, start_time, end_time), nwkid)
+        tuya_holiday_schedule(self, nwkid, start_time + end_time)
 
     if get_model_name(self, nwkid) in ("TS0601-thermostat", "TS0601-thermostat-Coil"):
         if mode == 10:
