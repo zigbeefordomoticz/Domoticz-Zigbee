@@ -21,11 +21,11 @@
     "PollingEnabled": 1,
     "Param": {
         "TuyaTRV5Polling": 300,
-        "TuyaTRV5_BoostTime": 0,
         "TuyaTRV5_ChildLock": 0,
         "TuyaTRV5_EcoTemp": 19,
         "TuyaTRV5_ConfortTemp": 21,
         "TuyaTRV5_OpenedWindowTemp": 10,
+        "TuyaTRV5_HolidaySetPoint": 17,
         "Calibration": 0
     }
 }
