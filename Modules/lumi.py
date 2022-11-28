@@ -7,7 +7,6 @@
     Module: lumi.py
  
     Description: Lumi specifics handling
-
 """
 import struct
 import time
@@ -134,9 +133,9 @@ def enable_operation_mode_aqara( self, nwkid):
     cluster_id = "fcc0"
     Hattribute = "0009"
     data_type = "20"
-    Hdata = "01" # Event mode
+    Hdata = "01"   # Event mode
 
-    self.log.logging("Lumi", "Log", "Write enable_operation_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
+    self.log.logging("Lumi", "Debug", "Write enable_operation_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
         self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
@@ -152,15 +151,60 @@ def enable_click_mode_aqara(self, nwkid):
     cluster_id = "fcc0"
     Hattribute = "0125"
     data_type = "20"
-    Hdata = "02" # Multi-Click
+    Hdata = "02"   # Multi-Click
 
-    self.log.logging("Lumi", "Log", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
+    self.log.logging("Lumi", "Debug", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
         self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
     
+def RTCZCGQ11LM_motion_opple_sensitivity(self, nwkid, param):
+
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = "fcc0"
+    Hattribute = "010c"
+    data_type = "20"
+    Hdata = "%02x" %param
+
+    self.log.logging("Lumi", "Debug", "Write Motion Sensitivity %s -> %s" % (nwkid, param), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
     
+def RTCZCGQ11LM_motion_opple_monitoring_mode(self, nwkid, param):
+
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = "fcc0"
+    Hattribute = "0144"
+    data_type = "20"
+    Hdata = "%02x" %param
+
+    self.log.logging("Lumi", "Debug", "Write Motion Monitoring Mode %s -> %s" % (nwkid, param), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+def RTCZCGQ11LM_motion_opple_approach_distance(self, nwkid, param):
+
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = "fcc0"
+    Hattribute = "0146"
+    data_type = "20"
+    Hdata = "%02x" %param
+
+    self.log.logging("Lumi", "Debug", "Write Motion Approach Distance %s -> %s" % (nwkid, param), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+       
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
     if srcNWKID not in self.ListOfDevices:
@@ -203,7 +247,7 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
 
             self.log.logging(
                 "Lumi",
-                "Log",
+                "Debug",
                 "lumiReadRawAPS - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s"
                 % (srcNWKID, srcEp, ClusterID, cmd, data),
             )
@@ -482,7 +526,7 @@ def readLumiLock(
 
     self.log.logging(
         "Lumi",
-        "Log",
+        "Debug",
         "ReadCluster - %s/%s  LUMI LOCK %s lumilockData: %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterData, lumilockData),
     )
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "LumiLock", lumilockData)
@@ -499,8 +543,13 @@ def readXiaomiCluster(
         return
     model = self.ListOfDevices[MsgSrcAddr]["Model"]
 
+    self.log.logging( "Lumi", "Debug", "   readXiaomiCluster %s/%s cluster: %s attribut: %s data: %s" %(
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData), MsgSrcAddr)
+    
     # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
     # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
+    
+    # . 0328130521330008213 6010a2100000c2014102001122000 652001 662003 672000 682000 692001 6a2001 6b2003
 
     sBatteryLvl = retreive4Tag("0121", MsgClusterData)  # 16BitUint
     sTemp2 = retreive4Tag("0328", MsgClusterData)  # Device Temperature (int8)
@@ -523,7 +572,56 @@ def readXiaomiCluster(
     sVoltage = retreive8Tag("9639", MsgClusterData)  # Voltage
     sCurrent = retreive8Tag("9739", MsgClusterData)  # Ampere
     sPower = retreive8Tag("9839", MsgClusterData)  # Power Watt
+    
+    # "lumi.motion.ac01"
+    # 0328180521010008213/ 6010a2100000c2014102001122000 652001/ 662003/ 672000/ 682000/ 692001/ 6a2001/ 6b2003
+    sPresence = retreive4Tag("6520", MsgClusterData)[:2]
+    sSensibility = retreive4Tag("6620", MsgClusterData)[:2]
+    sMonitoringMode = retreive4Tag("6720", MsgClusterData)[:2]
+    s68 = retreive4Tag("6820", MsgClusterData)[:2]
+    sApproachDistance = retreive4Tag("6920", MsgClusterData)[:2]
+    s6a = retreive4Tag("6a20", MsgClusterData)[:2]
+    s6b = retreive4Tag("6b20", MsgClusterData)[:2]
 
+
+    if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac01":
+        if s68 != "":
+            store_lumi_attribute(self, MsgSrcAddr, "s68", sPresence)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s s68 %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, s68, int(s68,16)), MsgSrcAddr, )
+        if s6a != "":
+            store_lumi_attribute(self, MsgSrcAddr, "s6a", sPresence)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s s6a %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, s68, int(s68,16)), MsgSrcAddr, )
+   
+        if s6b != "":    
+            store_lumi_attribute(self, MsgSrcAddr, "s6b", sPresence)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s s6b %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, s68, int(s68,16)), MsgSrcAddr, )
+   
+        if sPresence != "":
+            _PRESENCE = { 0: 'False', 1: 'True' }
+            store_lumi_attribute(self, MsgSrcAddr, "Presence", sPresence)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s Presence %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPresence, MsgClusterData), MsgSrcAddr, )
+            if int(sPresence,16) in _PRESENCE:
+                self.log.logging( "Lumi", "Debug", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) presence : %s" %(MsgSrcAddr, MsgSrcEp,_PRESENCE[ int(sPresence,16) ]) )
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", sPresence)
+
+        if sSensibility != "":
+            store_lumi_attribute(self, MsgSrcAddr, "Sensibility", sSensibility)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sSensibility %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sSensibility, MsgClusterData), MsgSrcAddr, )
+
+        if sMonitoringMode != "":
+            _MONITORING_MODE = {0: 'Undirected', 1: 'Left_right'}
+            store_lumi_attribute(self, MsgSrcAddr, "MonitoringMode", sMonitoringMode)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s MonitoringMode %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sMonitoringMode, MsgClusterData), MsgSrcAddr, )
+            if int(sMonitoringMode,16) in _MONITORING_MODE:
+                self.log.logging( "Lumi", "Debug", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) Monitoring mode : %s" %(MsgSrcAddr, MsgSrcEp,_MONITORING_MODE[ int(sMonitoringMode,16) ]) )
+
+        if sApproachDistance!= "": 
+            _APPROCHING_DISTANCE = {0: 'Far', 1: 'Medium', 2: 'Near'}
+            store_lumi_attribute(self, MsgSrcAddr, "ApprochingDistance", sApproachDistance)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s ApprochingDistance %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sApproachDistance, MsgClusterData), MsgSrcAddr, )
+            if int(sApproachDistance,16) in _APPROCHING_DISTANCE:
+                self.log.logging( "Lumi", "Debug", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) Approaching distance : %s" %(MsgSrcAddr, MsgSrcEp,_APPROCHING_DISTANCE[ int(sApproachDistance,16) ]) )
+        
     if sCountEvent != "":
         value = int(sCountEvent, 16)
         store_lumi_attribute(self, MsgSrcAddr, "EventCounter", value)
