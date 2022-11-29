@@ -808,9 +808,8 @@ class WebServer(object):
                         "Battery",
                         "CertifiedDevice"
                     ):
-                        if item == "CertifiedDevice":
-                            if item in self.ListOfDevices[x]:
-                                device[item] = self.ListOfDevices[x][item]
+                        if item == "CertifiedDevice" and "CertifiedDevice" in self.ListOfDevices[x]:
+                            device[item] = self.ListOfDevices[x][item]
 
 
                         elif item in self.ListOfDevices[x]:

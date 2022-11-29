@@ -985,10 +985,18 @@ def build_list_of_device_model(self, force=False):
     
     if not force and ( self.internalHB % (23 * 3600 // HEARTBEAT) != 0):
         return
-    
+
     self.pluginParameters["NetworkDevices"] = {}
     for x in self.ListOfDevices:
+        if x == "0000":
+            continue
+
         manufcode = manufname = modelname = None
+        if "Model" in self.ListOfDevices[x]:
+            modelname = self.ListOfDevices[x]["Model"]
+
+        self.ListOfDevices[ x ]["CertifiedDevice"] = modelname in self.DeviceConf
+
         if "Manufacturer" in self.ListOfDevices[x]:
             manufcode = self.ListOfDevices[x]["Manufacturer"]
             if manufcode in ( "", {}):
@@ -1003,13 +1011,7 @@ def build_list_of_device_model(self, force=False):
             if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
                 self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
 
-        if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] in self.DeviceConf:
-            self.ListOfDevices[ x ]["CertifiedDevice"] = True
-        else:
-            self.ListOfDevices[ x ]["CertifiedDevice"] = False
-
-        if manufcode and manufname and "Model" in self.ListOfDevices[x]:
-            modelname = self.ListOfDevices[x]["Model"]
+        if manufcode and manufname and modelname:
             if modelname in ( "", {} ):
                 continue
             if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
