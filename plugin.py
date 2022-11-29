@@ -1076,16 +1076,14 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
     if device_name is None:
         device_name = ""
 
-    self.log.logging("Plugin", "Status", "We have detected a working device %s (%s) Model: %s not certified on the plugin. " %(
-        get_device_nickname( self, NwkId=NwkId),
-        NwkId,
-        Model,
-    ))
-    self.log.logging("Plugin", "Status", " --- can you to create an Issue https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=Device+Integration&template=certified-device-model.md&title=%5BModel+Certification%5D")
-    self.log.logging("Plugin", "Status", " --- Provide as much inputs as you can but at least Product and Brand name, URL of a web site where you did the purchase" )
-    self.log.logging("Plugin", "Status", " -------------------- Please copy-paste the here after information -------------------- ")
-    self.log.logging("Plugin", "Status", "%s" %(json.dumps(self.ListOfDevices[ NwkId ], sort_keys=False)))
-    self.log.logging("Plugin", "Status", " -------------------- End of Copy-Paste -------------------- ")
+    self.log.logging("Plugin", "Status", "We have detected a working device %s (%s) Model: %s not optimized with the plugin. " %( 
+        get_device_nickname( self, NwkId=NwkId), NwkId, Model, ))
+    self.log.logging("Plugin", "Status", "")
+    self.log.logging("Plugin", "Status", " --- Please follow the link https://zigbeefordomoticz.github.io/wiki/en-eng/Problem_Dealing-with-none-optimized-device.html")         
+    self.log.logging("Plugin", "Status", " --- Provide as much inputs as you can - at least Product and Brand name -, URL of a web site where you did the purchase" )
+    self.log.logging("Plugin", "Status", " --- By doing that you will make your device and the plugin more efficient, and you will participate into the improvement of the plugin capabilities")
+    self.log.logging("Plugin", "Status", " --- Thanks the Zigbee for Domoticz plugin team")
+    self.log.logging("Plugin", "Status", "")
     
     self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
         
