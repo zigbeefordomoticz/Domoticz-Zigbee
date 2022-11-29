@@ -1003,6 +1003,11 @@ def build_list_of_device_model(self, force=False):
             if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
                 self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
 
+        if modelname in self.DeviceConf:
+            self.ListOfDevices[ x ]["CertifiedDevice"] = True
+        else:
+            self.ListOfDevices[ x ]["CertifiedDevice"] = False
+
         if manufcode and manufname and "Model" in self.ListOfDevices[x]:
             modelname = self.ListOfDevices[x]["Model"]
             if modelname in ( "", {} ):
@@ -1010,10 +1015,7 @@ def build_list_of_device_model(self, force=False):
             if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
                 self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
                 if modelname not in self.DeviceConf:
-                    self.ListOfDevices[ x ]["CertifiedDevice"] = False
                     unknown_device_model(self, x, modelname,manufcode, manufname )
-                else:
-                    self.ListOfDevices[ x ]["CertifiedDevice"] = True
 
 
 def get_domoticz_version( self ):
