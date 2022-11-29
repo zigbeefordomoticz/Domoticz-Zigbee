@@ -1003,7 +1003,7 @@ def build_list_of_device_model(self, force=False):
             if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
                 self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
 
-        if modelname in self.DeviceConf:
+        if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] in self.DeviceConf:
             self.ListOfDevices[ x ]["CertifiedDevice"] = True
         else:
             self.ListOfDevices[ x ]["CertifiedDevice"] = False
