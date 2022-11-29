@@ -587,7 +587,7 @@ SWITCH_LVL_MATRIX = {
         "70": (7, "70"), #Approach
         "80": (8, "80"), #Away
         "ForceUpdate": True,
-        "LevelNames": "Off|Enter|Leave|left_enter|Right_leave|Right_enter|Left_leave|Approach|Away",
+        "LevelNames": "Off|Enter|Leave|Left_enter|Right_leave|Right_enter|Left_leave|Approach|Away",
         
         
     },
