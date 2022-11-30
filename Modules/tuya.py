@@ -160,6 +160,19 @@ TUYA_eTRV4_MANUFACTURER = (
     "_TZE200_b6wax7g0",  
 )
 
+TUYA_eTRV5_MANUFACTURER = (
+    "_TZE200_7yoranx2",   # model: 'TV01-ZB',           vendor: 'Moes'
+    "_TZE200_e9ba97vf",   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_hue3yfsn",   # MODEL : 'TV02-Zigbee',      vendor: 'TuYa'
+    "_TZE200_husqqvux",   # MODEL : 'TSL-TRV-TV01ZG',   vendor: 'Tesla Smart
+    "_TZE200_kly8gjlz",   # 
+    "_TZE200_lnbfnyxd",   # MODEL : 'TSL-TRV-TV01ZG',   vendor: 'Tesla Smart'
+    '_TZE200_kds0pmmv',   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_mudxchsu",   # MODEL : 'TV05-ZG curve',    vendor: 'TuYa'
+    "_TZE200_kds0pmmv",   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_lllliz3p",   # MODEL : 'TV02-Zigbee',      vendor: 'TuYa'
+)
+
 TUYA_eTRV_MANUFACTURER = (
     "_TYST11_2dpplnsn",
     "_TZE200_wlosfena",
@@ -183,6 +196,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_eTRV2_MANUFACTURER
     + TUYA_eTRV3_MANUFACTURER
     + TUYA_eTRV4_MANUFACTURER
+    + TUYA_eTRV5_MANUFACTURER
     + TUYA_eTRV_MANUFACTURER
     + TUYA_SMARTAIR_MANUFACTURER
     + TUYA_WATER_TIMER
@@ -196,6 +210,14 @@ TUYA_MANUFACTURER_NAME = (
 # Tuya Doc: https://developer.tuya.com/en/docs/iot/access-standard-zigbee?id=Kaiuyf28lqebl
 
 
+# Data Types:
+#   0x00: raw
+#   0x01: bool
+#   0x02: 4 byte value
+#   0x03: string
+#   0x04: enum8 ( 0x00-0xff)
+#   0x05: bitmap ( 1,2, 4 bytes) as bits
+    
 def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     if "Model" not in self.ListOfDevices[nwkid]:
             return

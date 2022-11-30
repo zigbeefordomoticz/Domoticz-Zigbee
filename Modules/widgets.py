@@ -358,7 +358,7 @@ SWITCH_LVL_MATRIX = {
         0: (0, "Off"),  # 
         1: (1, "10"),   # Auto
         2: (2, "20"),   # Manual
-        3: (3, "20"),   # Away
+        3: (3, "30"),   # Away
         "ForceUpdate": True,
         "LevelNames": "Off|Auto|Manual|Away",
         "Language": {
