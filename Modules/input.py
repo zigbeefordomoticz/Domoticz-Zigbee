@@ -334,7 +334,7 @@ def Decode0042(self, Devices, MsgData, MsgLQI):  # Node_Desc_req
         payload = sqn + status + nwkid + manuf_code16 + max_in_size16 + max_out_size16 + server_mask16 + descriptor_capability8
         payload += mac_capa8 + max_buf_size8 + bitfield16
     self.log.logging("Input", "Debug", "Decode0042 - response payload: %s" %payload)
-    raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigate_ep="00", zigpyzqn=sqn,  )
+    raw_APS_request( self, srcNwkId, "00", Cluster, "0000", payload, zigate_ep="00", zigpyzqn=sqn,)
  
 def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 
@@ -1083,10 +1083,8 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         and not self.startZigateNeeded
         and str(int(Channel, 16)) != self.pluginconf.pluginConf["channel"]
     ):
-        self.log.logging("Input", "Status",
-            "Updating Channel in Plugin Configuration from: %s to: %s"
-            % (self.pluginconf.pluginConf["channel"], int(Channel, 16))
-        )
+        self.log.logging("Input", "Status", "Updating Channel in Plugin Configuration from: %s to: %s" % (
+            self.pluginconf.pluginConf["channel"], int(Channel, 16)))
         self.pluginconf.pluginConf["channel"] = str(int(Channel, 16))
         self.pluginconf.write_Settings()
 
@@ -1935,9 +1933,8 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
         lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
 
     # We reach here because the MsgIEE is not in self.IEEE2NWK  !!!!   
-    self.log.logging( "Input", "Error",
-            "Decode 8040 - Receive an IEEE: %s with a NwkId: %s, seems not known by the plugin" % (MsgIEEE, MsgShortAddress),)
-
+    self.log.logging( "Input", "Error", "Decode 8040 - Receive an IEEE: %s with a NwkId: %s, seems not known by the plugin" % (
+        MsgIEEE, MsgShortAddress),)
 
 
 def Network_Address_response_request_next_index(self, nwkid, ieee, index, ActualDevicesListed):
@@ -1952,8 +1949,8 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     MsgIEEE = MsgData[4:20]
 
     if MsgDataStatus != "00":
-        self.log.logging( "Input", "Debug",
-            "Decode8041 - Reception of IEEE Address response for %s with status %s" %(MsgIEEE, MsgDataStatus))
+        self.log.logging( "Input", "Debug", "Decode8041 - Reception of IEEE Address response for %s with status %s" %(
+            MsgIEEE, MsgDataStatus))
         return
 
     MsgShortAddress = MsgData[20:24]
@@ -1965,15 +1962,8 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         MsgDeviceList = MsgData[28:]
 
     if extendedResponse:
-        self.log.logging( "Input", "Debug",
-            "Decode8041 - IEEE Address response, Sequence number: " + MsgSequenceNumber
-            + " Status: " + DisplayStatusCode(MsgDataStatus)
-            + " IEEE: " + MsgIEEE
-            + " Short Address: " + MsgShortAddress
-            + " number of associated devices: " + MsgNumAssocDevices
-            + " Start Index: " + MsgStartIndex
-            + " Device List: " + MsgDeviceList,
-        )
+        self.log.logging( "Input", "Debug", "Decode8041 - IEEE Address response, Sequence number: %s Status: %s IEEE: %s  NwkId: %s nbAssociated Devices: %s StartIdx: %s DeviceList: %s" %(
+            MsgSequenceNumber, DisplayStatusCode(MsgDataStatus), MsgIEEE, MsgShortAddress, MsgNumAssocDevices, MsgStartIndex, MsgDeviceList))
 
     if MsgShortAddress == "0000" and self.ControllerIEEE and MsgIEEE != self.ControllerIEEE:
         self.log.logging( "Input", "Error", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s something wrong !!!" % (MsgIEEE, MsgShortAddress) )
@@ -1998,8 +1988,8 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
     if MsgIEEE in self.IEEE2NWK:
         # Looks like the device was known with a different NwkId
         # hoping that we can reconnect to an existing Device
-        self.log.logging( "Input", "Debug",
-            "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),)
+        self.log.logging( "Input", "Debug", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (
+            MsgIEEE, MsgShortAddress),)
         if self.pluginconf.pluginConf["reconnectonIEEEaddr"] and not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
             self.log.logging("Input", "Log", "Decode 8041 - Not able to reconnect (unknown device) %s %s" %(MsgIEEE, MsgShortAddress),)
             return
@@ -2010,8 +2000,8 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         return
     
     # We reach here because the MsgIEE is not in self.IEEE2NWK  !!!!   
-    self.log.logging( "Input", "Error",
-            "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, seems not known by the plugin" % (MsgIEEE, MsgShortAddress),)
+    self.log.logging( "Input", "Error", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, seems not known by the plugin" % (
+        MsgIEEE, MsgShortAddress),)
  
     
 
@@ -2603,27 +2593,17 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
         # Will set to Leave in order to protect Domoticz Widget, Just need to make sure that we can reconnect at a point of time
         self.ListOfDevices[sAddr]["Status"] = "Leave"
         self.ListOfDevices[sAddr]["Heartbeat"] = 0
-        self.log.logging("Input", "Error",
-            "Receiving a leave from %s/%s while device is %s status"
-            % (sAddr, MsgExtAddress, self.ListOfDevices[sAddr]["Status"])
-        )
+        self.log.logging("Input", "Error", "Receiving a leave from %s/%s while device is %s status" % (
+            sAddr, MsgExtAddress, self.ListOfDevices[sAddr]["Status"]))
 
     zdevname = ""
     if sAddr in self.ListOfDevices and "ZDeviceName" in self.ListOfDevices[sAddr]:
         zdevname = self.ListOfDevices[sAddr]["ZDeviceName"]
-    self.log.logging(
-        "Input",
-        "Status",
-        "%s (%s/%s) send a Leave indication and will be outside of the network. LQI: %s"
-        % (zdevname, sAddr, MsgExtAddress, int(MsgLQI, 16)),
-    )
+    self.log.logging( "Input", "Status", "%s (%s/%s) send a Leave indication and will be outside of the network. LQI: %s" % (
+        zdevname, sAddr, MsgExtAddress, int(MsgLQI, 16)), )
 
-    self.log.logging(
-        "Input",
-        "Debug",
-        "Leave indication from IEEE: %s , Status: %s " % (MsgExtAddress, MsgDataStatus),
-        sAddr,
-    )
+    self.log.logging( "Input", "Debug", "Leave indication from IEEE: %s , Status: %s " % (
+        MsgExtAddress, MsgDataStatus), sAddr, )
     updLQI(self, sAddr, MsgLQI)
 
 
@@ -3723,19 +3703,19 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     )
     value = MsgZoneStatus[2:4]
 
-    if self.ListOfDevices[MsgSrcAddr]["Model"] in (
-        "3AFE14010402000D", "3AFE28010402000D",
-        "MOSZB-140",
-        "TY0202", "TS0202","TS0202-_TZ3210_jijr1sss", "VMS_ADUROLIGH"
-    ):  # Konke Motion Sensor, Devlco/Frient Motion
+    if (
+        "ClusterType" in self.ListOfDevices[MsgSrcAddr]
+        and "Motion" in self.ListOfDevices[MsgSrcAddr]["ClusterType"]
+        and self.ListOfDevices[MsgSrcAddr]["Model"] in (
+            "3AFE14010402000D", "3AFE28010402000D",     # Konke Motion
+            "MOSZB-140",                                # Frient Motion
+            "TY0202", "TS0202","TS0202-_TZ3210_jijr1sss",  # Tuya Motion
+            "VMS_ADUROLIGH"                             # Aduro Motion
+            )                           
+    ):   # In case this is a Motion , let use the Motion Cluster to send the notification
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
         
-    elif self.ListOfDevices[MsgSrcAddr]["Model"] in (
-        "lumi.sensor_magnet",
-        "lumi.sensor_magnet.aq2",
-        "lumi.sensor_magnet.acn001",
-        "lumi.magnet.acn001",
-    ):  # Xiaomi Door sensor
+    elif self.ListOfDevices[MsgSrcAddr]["Model"] in ( "lumi.sensor_magnet", "lumi.sensor_magnet.aq2", "lumi.sensor_magnet.acn001", "lumi.magnet.acn001", ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
         
     elif Model not in ("RC-EF-3.0", "RC-EM"):
@@ -3752,12 +3732,8 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
 
     if battery:
         # Battery Warning
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8401 Low Battery or defective battery: Device: %s %s/%s" % (MsgSrcAddr, battdef, battery),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Input", "Log", "Decode8401 Low Battery or defective battery: Device: %s %s/%s" % (
+            MsgSrcAddr, battdef, battery), MsgSrcAddr, )
         self.ListOfDevices[MsgSrcAddr]["IASBattery"] = 5
     else:
         # Battery Ok
