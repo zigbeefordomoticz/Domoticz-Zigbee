@@ -606,12 +606,12 @@ def receive_holiday_program( self, Devices, model_target, NwkId, srcEp, ClusterI
     _holiday_schedule = []
     data = binascii.unhexlify(data).decode("utf-8")
     idx = 0
-    for _time in range(1):
+    for _time in range(2):
         _prefix = 'start' if _time == 0 else 'stop'
         _holiday_schedule.append( 
             { 
                 _prefix + '_year' : data[idx:idx +4],
-                _prefix + '_month' : data[idx + 5:idx + 6],
+                _prefix + '_month' : data[idx + 4:idx + 6],
                 _prefix + '_day'   : data[idx + 6:idx + 8],
                 _prefix + '_hour'  : data[idx + 8:idx + 10],
                 _prefix + '_min'   : data[idx + 10:idx + 12],
@@ -1343,6 +1343,7 @@ def tuya_holiday_schedule( self, nwkid, program):
     self.log.logging("Tuya", "Debug", "tuya_holiday_schedule - %s program: %s" % (nwkid, program))
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     dp = get_datapoint_command(self, nwkid, "HolidayProgram")
+
     self.log.logging("Tuya", "Debug", "tuya_holiday_schedule - %s dp for HolidayProgram: %s" % (nwkid, dp))
     if dp:
         action = "%02x03" % dp
@@ -1350,7 +1351,7 @@ def tuya_holiday_schedule( self, nwkid, program):
         EPout = "01"
         cluster_frame = "11"
         cmd = "00"  # Command
-        tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, program)
+        tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, program.encode("utf-8").hex())
     
 def tuya_trv_mode(self, nwkid, mode):
     self.log.logging("Tuya", "Debug", "tuya_trv_mode - %s tuya_trv_mode: %s" % (nwkid, mode), nwkid)
@@ -1367,10 +1368,11 @@ def tuya_trv_mode(self, nwkid, mode):
             
     elif get_model_name(self, nwkid) in ( "TS0601-eTRV5",) and mode in ( 20, 30):
         # We switch to Holiday mode, let's send a fake Program which start now, for 1 year
-        start_time = datetime.now().strftime("%Y%m%d%H00")
-        end_time = ( datetime.strptime(start_time,"%Y%m%d%H00") + timedelta(days=365) ).strftime("%Y%m%d%H00")
-        self.log.logging("Tuya", "Debug", "tuya_trv_mode - %s Holiday program start: %s end: %s" % (nwkid, start_time, end_time), nwkid)
-        tuya_holiday_schedule(self, nwkid, start_time + end_time)
+        _now = datetime.now()
+        _end = _now + timedelta(days=365)
+        self.log.logging("Tuya", "Debug", "tuya_trv_mode - %s Holiday program start: %s end: %s" % (
+            nwkid, _now.strftime("%Y%m%d%H00"), _end.strftime("%Y%m%d%H00")), nwkid)
+        tuya_holiday_schedule(self, nwkid, _now.strftime("%Y%m%d%H00") + _end.strftime("%Y%m%d%H00"))
 
     if get_model_name(self, nwkid) in ("TS0601-thermostat", "TS0601-thermostat-Coil"):
         if mode == 10:
