@@ -126,7 +126,7 @@ from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (chk_and_update_IEEE_NWKID,
                            how_many_devices, lookupForIEEE, night_shift_jobs,
-                           removeDeviceInList, unknown_device_model)
+                           removeDeviceInList, build_list_of_device_model)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -981,43 +981,6 @@ def networksize_update(self):
     self.pluginParameters["NetworkSize"] = "Total: %s | Routers: %s | End Devices: %s" %(
         routers + enddevices, routers, enddevices)
 
-def build_list_of_device_model(self, force=False):
-    
-    if not force and ( self.internalHB % (23 * 3600 // HEARTBEAT) != 0):
-        return
-
-    self.pluginParameters["NetworkDevices"] = {}
-    for x in self.ListOfDevices:
-        if x == "0000":
-            continue
-
-        manufcode = manufname = modelname = None
-        if "Model" in self.ListOfDevices[x]:
-            modelname = self.ListOfDevices[x]["Model"]
-
-        self.ListOfDevices[ x ]["CertifiedDevice"] = modelname in self.DeviceConf
-
-        if "Manufacturer" in self.ListOfDevices[x]:
-            manufcode = self.ListOfDevices[x]["Manufacturer"]
-            if manufcode in ( "", {}):
-                continue
-            if manufcode not in self.pluginParameters["NetworkDevices"]:
-                self.pluginParameters["NetworkDevices"][ manufcode ] = {}
-
-        if manufcode and "Manufacturer Name" in self.ListOfDevices[x]:
-            manufname = self.ListOfDevices[x]["Manufacturer Name"]
-            if manufname in ( "", {} ):
-                manufname = "unknow"
-            if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
-                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
-
-        if manufcode and manufname and modelname:
-            if modelname in ( "", {} ):
-                continue
-            if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
-                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
-                if modelname not in self.DeviceConf:
-                    unknown_device_model(self, x, modelname,manufcode, manufname )
 
 
 def get_domoticz_version( self ):

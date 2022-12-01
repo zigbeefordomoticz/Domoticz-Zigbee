@@ -13,10 +13,6 @@
 import time
 
 import Domoticz
-from Zigbee.zdpCommands import (zdp_active_endpoint_request,
-                                zdp_node_descriptor_request,
-                                zdp_simple_descriptor_request)
-
 from Modules.basicOutputs import getListofAttribute, identifyEffect
 from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice
 from Modules.casaia import casaia_pairing
@@ -36,13 +32,17 @@ from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
-from Modules.tools import getListOfEpForCluster, is_fake_ep
+from Modules.tools import (build_list_of_device_model, getListOfEpForCluster,
+                           is_fake_ep)
 from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
 from Modules.zb_tables_management import mgmt_rtg
 from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
+from Zigbee.zdpCommands import (zdp_active_endpoint_request,
+                                zdp_node_descriptor_request,
+                                zdp_simple_descriptor_request)
 
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
@@ -429,6 +429,9 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
     # 5- Device Specifics
     handle_device_specific_needs(self, Devices, NWKID)
+    
+    # 6- Updating the Certified devices list
+    build_list_of_device_model(self, force=True)
 
 
 def binding_needed_clusters_with_zigate(self, NWKID):
