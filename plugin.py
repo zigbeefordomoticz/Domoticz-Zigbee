@@ -124,9 +124,9 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import (chk_and_update_IEEE_NWKID, get_device_nickname,
+from Modules.tools import (chk_and_update_IEEE_NWKID,
                            how_many_devices, lookupForIEEE, night_shift_jobs,
-                           removeDeviceInList)
+                           removeDeviceInList, build_list_of_device_model)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -981,43 +981,6 @@ def networksize_update(self):
     self.pluginParameters["NetworkSize"] = "Total: %s | Routers: %s | End Devices: %s" %(
         routers + enddevices, routers, enddevices)
 
-def build_list_of_device_model(self, force=False):
-    
-    if not force and ( self.internalHB % (23 * 3600 // HEARTBEAT) != 0):
-        return
-
-    self.pluginParameters["NetworkDevices"] = {}
-    for x in self.ListOfDevices:
-        if x == "0000":
-            continue
-
-        manufcode = manufname = modelname = None
-        if "Model" in self.ListOfDevices[x]:
-            modelname = self.ListOfDevices[x]["Model"]
-
-        self.ListOfDevices[ x ]["CertifiedDevice"] = modelname in self.DeviceConf
-
-        if "Manufacturer" in self.ListOfDevices[x]:
-            manufcode = self.ListOfDevices[x]["Manufacturer"]
-            if manufcode in ( "", {}):
-                continue
-            if manufcode not in self.pluginParameters["NetworkDevices"]:
-                self.pluginParameters["NetworkDevices"][ manufcode ] = {}
-
-        if manufcode and "Manufacturer Name" in self.ListOfDevices[x]:
-            manufname = self.ListOfDevices[x]["Manufacturer Name"]
-            if manufname in ( "", {} ):
-                manufname = "unknow"
-            if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
-                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
-
-        if manufcode and manufname and modelname:
-            if modelname in ( "", {} ):
-                continue
-            if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
-                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
-                if modelname not in self.DeviceConf:
-                    unknown_device_model(self, x, modelname,manufcode, manufname )
 
 
 def get_domoticz_version( self ):
@@ -1061,31 +1024,6 @@ def get_domoticz_version( self ):
     return True
 
 
-def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
-    
-    self.log.logging("Plugin", "Debug", "unknown_device_model NwkId: %s Model: %s ManufCode: %s ManufName: %s" %(
-        NwkId, Model, ManufCode, ManufName))
-    
-    if 'logUnknownDeviceModel' not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["logUnknownDeviceModel"]:
-        return
-    
-    if 'Log_UnknowDeviceFlag' in self.ListOfDevices[ NwkId ] and (self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] + ( 24 * 3600)) < time.time() :
-        return
-    
-    device_name = get_device_nickname( self, NwkId=NwkId)
-    if device_name is None:
-        device_name = ""
-
-    self.log.logging("Plugin", "Status", "We have detected a working device %s (%s) Model: %s not optimized with the plugin. " %( 
-        get_device_nickname( self, NwkId=NwkId), NwkId, Model, ))
-    self.log.logging("Plugin", "Status", "")
-    self.log.logging("Plugin", "Status", " --- Please follow the link https://zigbeefordomoticz.github.io/wiki/en-eng/Problem_Dealing-with-none-optimized-device.html")         
-    self.log.logging("Plugin", "Status", " --- Provide as much inputs as you can - at least Product and Brand name -, URL of a web site where you did the purchase" )
-    self.log.logging("Plugin", "Status", " --- By doing that you will make your device and the plugin more efficient, and you will participate into the improvement of the plugin capabilities")
-    self.log.logging("Plugin", "Status", " --- Thanks the Zigbee for Domoticz plugin team")
-    self.log.logging("Plugin", "Status", "")
-    
-    self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
         
 
 def decodeConnection(connection):

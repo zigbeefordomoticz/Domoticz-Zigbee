@@ -124,7 +124,10 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
     if "Manufacturer" not in self.ListOfDevices[nwkid]:
         return
 
-    if self.ListOfDevices[nwkid]["Manufacturer"] == "100b":  # Philips
+    if (
+        self.ListOfDevices[nwkid]["Manufacturer"] == "100b"  # Philips
+        or model == "FNB56-ZCW25FB2.1"
+    ):
         if not _check_attribute_exist( self, nwkid, "0b", "0006", "4003"):
             return
 
