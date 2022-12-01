@@ -640,7 +640,8 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
         self.log.logging("TransportError", "Debug", "    extended_to : %s" % extended_timeout, _nwkid)
         msg = "%s" % e
         result = 0xB6
-        self._currently_not_reachable.append( _ieee )
+        if _ieee not in self._currently_not_reachable:
+            self._currently_not_reachable.append( _ieee )
 
     if not ack_is_disable:
         push_APS_ACK_NACKto_plugin(self, _nwkid, result, destination.lqi)
