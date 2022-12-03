@@ -1128,15 +1128,22 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     self.ControllerData["Extended PANID"] = extPanID
     self.pluginParameters["CoordinatorIEEE"] = extaddr
     
-def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
+def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Firmware Version
     MsgLen = len(MsgData)
     self.FirmwareBranch = MsgData[:2] 
-    if len(MsgData) > 8:
-        self.FirmwareMajorVersion = MsgData[2:6]
-        self.FirmwareVersion = MsgData[6:10]
-    else:
+    if len(MsgData) == 8:
+        # Zigate Firmware
         self.FirmwareMajorVersion = MsgData[2:4]
         self.FirmwareVersion = MsgData[4:8]
+    else:
+        # Zigpy 20/21/1217/20211217
+        self.log.logging("Input", "Log", "Decode8010 %s" %MsgData)
+        self.FirmwareMajorVersion = MsgData[0:2]
+        FirmwareMinorVersion = MsgData[4:8]
+        self.FirmwareVersion = MsgData[8:]
+        self.log.logging("Input", "Log", "Decode8010 Major: %s Minor: %s Full: %s" %(
+            self.FirmwareMajorVersion, FirmwareMinorVersion, self.FirmwareVersion ))
+
 
         
     if '0000' not in self.ListOfDevices:
@@ -1179,10 +1186,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
         elif int(self.FirmwareBranch) >= 20:
             # Zigpy-Znp
             self.log.logging("Input", "Status", "%s" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
-            # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
             self.ListOfDevices[ '0000' ]['Model'] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
             self.pluginParameters["CoordinatorModel"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
-            self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
+            self.pluginParameters["CoordinatorFirmwareVersion"] = self.FirmwareVersion
 
         # Zigate Native version
         elif self.FirmwareMajorVersion == "03":

@@ -97,9 +97,8 @@ def build_plugin_8009_frame_content(self, radiomodule):
     return encapsulate_plugin_frame("8009", frame_payload, "00")
 
 
-def build_plugin_8010_frame_content(Branch, Major, Version):
-    # Version
-    return encapsulate_plugin_frame("8010", Branch + Major + Version, "00")
+def build_plugin_8010_frame_content(Branch, Major, Version, full_version):
+    return encapsulate_plugin_frame("8010", Branch + Major + Version + full_version, "00")
 
 
 def build_plugin_8011_frame_content(self, nwkid, status, lqi):
