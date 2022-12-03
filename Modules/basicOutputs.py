@@ -756,25 +756,10 @@ def disable_firmware_default_response(self, mode="00"):
     #sendZigateCmd(self, "0003", mode)
 
 
-def do_Many_To_One_RouteRequest(self):
-
-    bCacheRoute = "00"  # FALSE do not store routes
-    u8Radius = "00"  # Maximum number of hops of route discovery message
-
-    if self.ZiGateModel == 2 and int(self.FirmwareMajorVersion, 16) >= 5 and int(self.FirmwareVersion, 16) >= 0x0320:
-        #sendZigateCmd(self, "004F", bCacheRoute + u8Radius)
-        zdp_many_to_one_route_request(self, bCacheRoute, u8Radius)
-        self.log.logging("BasicOutput", "Log", "do_Many_To_One_RouteRequest call !")
-
-
 def mgt_routing_req(self, nwkid, start_index="00"):
 
     self.log.logging("BasicOutput", "Debug", "mgt_routing_req - %s" % nwkid)
 
-    #if not (
-    #    self.ZiGateModel == 2 and int(self.FirmwareMajorVersion, 16) >= 5 and int(self.FirmwareVersion, 16) >= 0x0320
-    #):
-    #    return
     self.log.logging("BasicOutput", "Debug", "mgt_routing_req - %s" % nwkid)
     if "RoutingTable" not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]["RoutingTable"] = {'Devices': []}
@@ -783,11 +768,6 @@ def mgt_routing_req(self, nwkid, start_index="00"):
     zdp_management_routing_table_request(self, nwkid, payload)
 
 def mgt_binding_table_req( self, nwkid, start_index="00"):
-
-    #if not (
-    #    self.ZiGateModel == 2 and int(self.FirmwareMajorVersion, 16) >= 5 and int(self.FirmwareVersion, 16) >= 0x0320
-    #):
-    #    return
 
     self.log.logging("BasicOutput", "Debug", "mgt_binding_table_req - %s" % nwkid)
 
