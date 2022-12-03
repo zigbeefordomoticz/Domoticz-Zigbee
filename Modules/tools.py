@@ -1654,17 +1654,20 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
     if 'Log_UnknowDeviceFlag' in self.ListOfDevices[ NwkId ] and (self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] + ( 24 * 3600)) < time.time() :
         return
     
+    if 'Status' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]['Status'] == 'notDB':
+        return
+           
     device_name = get_device_nickname( self, NwkId=NwkId)
     if device_name is None:
         device_name = ""
 
-    self.log.logging("Plugin", "Status", "We have detected a working device %s (%s) Model: %s not optimized with the plugin. " %( 
+    self.log.logging("Plugin", "Log", "We have detected a working device %s (%s) Model: %s not optimized with the plugin. " %( 
         get_device_nickname( self, NwkId=NwkId), NwkId, Model, ))
-    self.log.logging("Plugin", "Status", "")
-    self.log.logging("Plugin", "Status", " --- Please follow the link https://zigbeefordomoticz.github.io/wiki/en-eng/Problem_Dealing-with-none-optimized-device.html")         
-    self.log.logging("Plugin", "Status", " --- Provide as much inputs as you can - at least Product and Brand name -, URL of a web site where you did the purchase" )
-    self.log.logging("Plugin", "Status", " --- By doing that you will make your device and the plugin more efficient, and you will participate into the improvement of the plugin capabilities")
-    self.log.logging("Plugin", "Status", " --- Thanks the Zigbee for Domoticz plugin team")
-    self.log.logging("Plugin", "Status", "")
+    self.log.logging("Plugin", "Log", "")
+    self.log.logging("Plugin", "Log", " --- Please follow the link https://zigbeefordomoticz.github.io/wiki/en-eng/Problem_Dealing-with-none-optimized-device.html")         
+    self.log.logging("Plugin", "Log", " --- Provide as much inputs as you can - at least Product and Brand name -, URL of a web site where you did the purchase" )
+    self.log.logging("Plugin", "Log", " --- By doing that you will make your device and the plugin more efficient, and you will participate into the improvement of the plugin capabilities")
+    self.log.logging("Plugin", "Log", " --- Thanks the Zigbee for Domoticz plugin team")
+    self.log.logging("Plugin", "Log", "")
     
     self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
