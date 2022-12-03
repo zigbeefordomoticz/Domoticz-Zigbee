@@ -18,6 +18,14 @@ def rest_logErrorHistory(self, verb, data, parameters):
                 Domoticz.Error("rest_logErrorHistory - Exception %s while saving: %s" % (e, str(self.log.LogErrorHistory)))
     return _response
 
+def rest_logErrorHistoryClear(self, verb, data, parameters):
+
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+    if verb == "GET":
+        self.logging("Status", "Erase Log History")
+        self.log.loggingClearErrorHistory()
+    return _response
 
 def rest_logPlugin(self, verb, data, parameters):
     
