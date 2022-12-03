@@ -945,9 +945,6 @@ class BasePlugin:
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
   
-        # Update the NetworkDevices attributes if needed , once by day
-        build_list_of_device_model(self)
-
         _trigger_coordinator_backup( self )
 
         if self.CommiSSionning:
