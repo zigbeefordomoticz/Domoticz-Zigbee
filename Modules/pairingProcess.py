@@ -431,7 +431,9 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     handle_device_specific_needs(self, Devices, NWKID)
     
     # 6- Updating the Certified devices list
-    build_list_of_device_model(self, force=True)
+    if 'ConfigSource' in self.ListOfDevices[NWKID]:
+        self.ListOfDevices[ NWKID ]["CertifiedDevice"] = (self.ListOfDevices[NWKID]['ConfigSource'] == "DeviceConf")
+
 
 
 def binding_needed_clusters_with_zigate(self, NWKID):

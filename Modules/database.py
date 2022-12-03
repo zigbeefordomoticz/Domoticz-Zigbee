@@ -109,7 +109,8 @@ BUILD_ATTRIBUTES = (
     "Health",
     "IASBattery",
     "Operating Time",
-    "DelayBindingAtPairing"
+    "DelayBindingAtPairing",
+    "CertifiedDevice"
 )
 
 MANUFACTURER_ATTRIBUTES = (
