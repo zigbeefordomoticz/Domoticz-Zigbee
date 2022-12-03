@@ -18,7 +18,7 @@ from Classes.WebServer.tools import MAX_KB_TO_SEND, DumpHTTPResponseToLog
 
 def onMessage(self, Connection, Data):
 
-    self.logging("Log", "WebServer onMessage : %s" % Data)
+    self.logging("Debug", "WebServer onMessage : %s" % Data)
     # DumpHTTPResponseToLog(Data)
 
     headerCode = "200 OK"
@@ -35,14 +35,14 @@ def onMessage(self, Connection, Data):
         headerCode = "400 Bad Request"
 
     parsed_url = urlparse(Data["URL"])
-    self.logging("Log", "URL: %s , Path: %s" % (Data["URL"], parsed_url.path))
+    self.logging("Debug", "URL: %s , Path: %s" % (Data["URL"], parsed_url.path))
     if Data["URL"][0] == "/":
         parsed_query = Data["URL"][1:].split("/")
 
     else:
         parsed_query = Data["URL"].split("/")
 
-    self.logging("Log", "parsed_query: %s" % (str(parsed_query)))
+    self.logging("Debug", "parsed_query: %s" % (str(parsed_query)))
 
     # Any Cookie ?
     cookie = None
@@ -96,7 +96,7 @@ def onMessage(self, Connection, Data):
     else:
         _response["Headers"]["Cache-Control"] = "private"
 
-    self.logging("Log", "Opening: %s" % webFilename)
+    self.logging("Debug", "Opening: %s" % webFilename)
 
     currentVersionOnServer = os.path.getmtime(webFilename)
     _lastmodified = strftime("%a, %d %m %y %H:%M:%S GMT", gmtime(currentVersionOnServer))
