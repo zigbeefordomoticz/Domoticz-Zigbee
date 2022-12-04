@@ -1708,8 +1708,8 @@ def _coordinator_ready( self ):
         or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP) 
     ):
         debuging_information(self, "Log")
-        self.log.logging("Plugin", "Error", "[   ] Stopping the plugin and lease do check the Coordinator connectivity.")
-        restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
+        # (#1371) we cannot stop the plugin as it will disable the hardware and generate side effect. So we will try for ever
+        restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 
     if (self.internalHB % 10) == 0:
         self.log.logging( "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready) )
