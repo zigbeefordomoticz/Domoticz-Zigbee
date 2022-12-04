@@ -27,6 +27,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
     """
 
     # Sanity Checks
+    if self.CommiSSionning and NWKID not in self.ListOfDevices:
+        return
+    
     if NWKID not in self.ListOfDevices:
         self.log.logging("Widget", "Error", "MajDomoDevice - %s not known" % NWKID, NWKID)
         zigpy_plugin_sanity_check(self, NWKID)
@@ -53,7 +56,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             "MajDomoDevice NwkId: %s status: %s not inDB request IEEE for possible reconnection" % (NWKID, self.ListOfDevices[NWKID]["Status"]),
             NWKID,
         )
-        if not self.CommiSSionning and not zigpy_plugin_sanity_check(self, NWKID):
+        if not zigpy_plugin_sanity_check(self, NWKID):
             zdp_IEEE_address_request(self, NWKID, NWKID, u8RequestType="00", u8StartIndex="00")
         return
 
