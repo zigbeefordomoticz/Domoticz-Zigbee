@@ -36,13 +36,14 @@ from Modules.tools import (build_list_of_device_model, getListOfEpForCluster,
                            is_fake_ep)
 from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
-from Modules.tuyaTools import tuya_TS0121_registration, CLUSTER_TO_TYPE
+from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
 from Modules.zb_tables_management import mgmt_rtg
 from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 from Zigbee.zdpCommands import (zdp_active_endpoint_request,
                                 zdp_node_descriptor_request,
                                 zdp_simple_descriptor_request)
+from Modules.domoTools import CLUSTER_TO_TYPE
 
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
@@ -102,7 +103,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
     #    # We have to request the node_descriptor
     #    return
 
-    if status != "CreateDB" and RIA > 4 and do_we_have_key_clusters( self, NWKID ):
+    if status != "CreateDB" and RIA == 4 and do_we_have_key_clusters( self, NWKID ):
         # Looks like we are ready to give up, but as we have cluster which translate into Widget, let's move
         status = "CreateDB"
         
@@ -128,10 +129,12 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
 
 def do_we_have_key_clusters( self, NWKID ):
     # We will just check if we have at least One cluster for whcih a Widget would be created
-    
-    for x in self.ListOfDevices[NWKID]['Ep']:
-        for y in self.ListOfDevices[NWKID]['Ep'][ x ]:
-            if self.ListOfDevices[NWKID]['Ep'][ x ][ y ] in CLUSTER_TO_TYPE:
+    if "Ep" not in self.ListOfDevices[NWKID]:
+        return False
+    for ep in list(self.ListOfDevices[NWKID]['Ep']):
+        for cluster in list(self.ListOfDevices[NWKID]['Ep'][ ep ]):
+            self.log.logging("Pairing", "Log", " . Checking %s on ep %s" %( cluster, ep))
+            if cluster in CLUSTER_TO_TYPE:
                 return True
     return False
     

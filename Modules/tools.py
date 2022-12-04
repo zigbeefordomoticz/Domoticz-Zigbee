@@ -1665,8 +1665,6 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
         get_device_nickname( self, NwkId=NwkId), NwkId, Model, ))
     self.log.logging("Plugin", "Log", "")
     self.log.logging("Plugin", "Log", " --- Please follow the link https://zigbeefordomoticz.github.io/wiki/en-eng/Problem_Dealing-with-none-optimized-device.html")         
-    self.log.logging("Plugin", "Log", " --- Provide as much inputs as you can - at least Product and Brand name -, URL of a web site where you did the purchase" )
-    self.log.logging("Plugin", "Log", " --- By doing that you will make your device and the plugin more efficient, and you will participate into the improvement of the plugin capabilities")
     self.log.logging("Plugin", "Log", " --- Thanks the Zigbee for Domoticz plugin team")
     self.log.logging("Plugin", "Log", "")
     
