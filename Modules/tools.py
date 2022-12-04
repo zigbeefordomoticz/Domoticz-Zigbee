@@ -264,10 +264,9 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
         return True
 
     if new_NwkId == "0000" or old_NwkId == "0000":
-        self.log.logging("Input", "Error", 
-            "reconnectNWkDevice - cannot play with NwkId of Controller %s %s %s"
-            % (new_NwkId, old_NwkId, IEEE)
-        )
+        self.log.logging("Input", "Error", "reconnectNWkDevice - Something strange NwkId of Controller new: %s old: %s ieee: %s !!!" % (
+            new_NwkId, old_NwkId, IEEE))
+        print_stack( self )
         return False
     self.ListOfDevices[new_NwkId] = dict(self.ListOfDevices[old_NwkId])
     self.IEEE2NWK[IEEE] = new_NwkId
