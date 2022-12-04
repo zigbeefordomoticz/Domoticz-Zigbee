@@ -43,6 +43,7 @@ from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 from Zigbee.zdpCommands import (zdp_active_endpoint_request,
                                 zdp_node_descriptor_request,
                                 zdp_simple_descriptor_request)
+from Modules.domoTools import CLUSTER_TO_TYPE
 
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
@@ -102,6 +103,10 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
     #    # We have to request the node_descriptor
     #    return
 
+    if status != "CreateDB" and RIA == 4 and do_we_have_key_clusters( self, NWKID ):
+        # Looks like we are ready to give up, but as we have cluster which translate into Widget, let's move
+        status = "CreateDB"
+        
     if status in ("CreateDB", "8043"):
         # We do a request_node_description in case of unknown.
         request_node_descriptor(self, NWKID, RIA=None, status=None)
@@ -116,13 +121,24 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
             # We will re-request EndPoint List ( 0x0043)
             interview_state_8045(self, NWKID, RIA, status)
 
-        elif RIA > 4 and status not in ("UNKNOW", "inDB"):  # We have done several retry
+        elif RIA > 5 and status not in ("UNKNOW", "inDB"):  # We have done several retry
             status = interview_timeout(self, Devices, NWKID, RIA, status)
 
         else:
             self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
 
-
+def do_we_have_key_clusters( self, NWKID ):
+    # We will just check if we have at least One cluster for whcih a Widget would be created
+    if "Ep" not in self.ListOfDevices[NWKID]:
+        return False
+    for ep in list(self.ListOfDevices[NWKID]['Ep']):
+        for cluster in list(self.ListOfDevices[NWKID]['Ep'][ ep ]):
+            self.log.logging("Pairing", "Log", " . Checking %s on ep %s" %( cluster, ep))
+            if cluster in CLUSTER_TO_TYPE:
+                return True
+    return False
+    
+    
 def interview_state_004d(self, NWKID, RIA=None, status=None):
     self.log.logging(
         "Pairing",
