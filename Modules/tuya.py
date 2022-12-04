@@ -351,7 +351,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     cmd = MsgPayload[4:6]  # uint8
 
     # Send a Default Response ( why might check the FCF eventually )
-    if self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
+    if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
         tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
 
     # https://developer.tuya.com/en/docs/iot/tuuya-zigbee-door-lock-docking-access-standard?id=K9ik5898uzqrk

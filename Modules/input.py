@@ -1128,15 +1128,22 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     self.ControllerData["Extended PANID"] = extPanID
     self.pluginParameters["CoordinatorIEEE"] = extaddr
     
-def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
+def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Firmware Version
     MsgLen = len(MsgData)
     self.FirmwareBranch = MsgData[:2] 
-    if len(MsgData) > 8:
-        self.FirmwareMajorVersion = MsgData[2:6]
-        self.FirmwareVersion = MsgData[6:10]
-    else:
+    if len(MsgData) == 8:
+        # Zigate Firmware
         self.FirmwareMajorVersion = MsgData[2:4]
         self.FirmwareVersion = MsgData[4:8]
+    else:
+        # Zigpy 20/21/1217/20211217
+        self.log.logging("Input", "Log", "Decode8010 %s" %MsgData)
+        self.FirmwareMajorVersion = MsgData[0:2]
+        FirmwareMinorVersion = MsgData[4:8]
+        self.FirmwareVersion = MsgData[8:]
+        self.log.logging("Input", "Log", "Decode8010 Major: %s Minor: %s Full: %s" %(
+            self.FirmwareMajorVersion, FirmwareMinorVersion, self.FirmwareVersion ))
+
 
         
     if '0000' not in self.ListOfDevices:
@@ -1179,10 +1186,9 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Version list
         elif int(self.FirmwareBranch) >= 20:
             # Zigpy-Znp
             self.log.logging("Input", "Status", "%s" %FIRMWARE_BRANCH[ self.FirmwareBranch ])
-            # the Build date is coded into "20" + "%02d" %int(FirmwareMajorVersion,16) + "%04d" %int(FirmwareVersion,16)
             self.ListOfDevices[ '0000' ]['Model'] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
             self.pluginParameters["CoordinatorModel"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
-            self.pluginParameters["CoordinatorFirmwareVersion"] = "%04x" %( int(self.FirmwareVersion,16))
+            self.pluginParameters["CoordinatorFirmwareVersion"] = self.FirmwareVersion
 
         # Zigate Native version
         elif self.FirmwareMajorVersion == "03":
@@ -3220,7 +3226,7 @@ def Decode8110(self, Devices, MsgData, MsgLQI):
     if len(MsgData) != 24:
         MsgAttrStatus = MsgData[12:14]
         MsgAttrID = None
-    elif int(self.FirmwareVersion, 16) < int("31d", 16):
+    elif self.zigbee_communication == "native" and int(self.FirmwareVersion, 16) < int("31d", 16):
         MsgAttrID = MsgData[12:16]
         MsgAttrStatus = MsgData[16:18]
     else:
@@ -3229,72 +3235,26 @@ def Decode8110(self, Devices, MsgData, MsgLQI):
         MsgAttrStatus = MsgData[14:16]
         MsgAttrID = None
 
-    Decode8110_raw(
-        self,
-        Devices,
-        MsgSQN,
-        MsgSrcAddr,
-        MsgSrcEp,
-        MsgClusterId,
-        MsgAttrStatus,
-        MsgAttrID,
-        MsgLQI,
-    )
+    Decode8110_raw( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrStatus, MsgAttrID, MsgLQI, )
 
 
-def Decode8110_raw(
-    self,
-    Devices,
-    MsgSQN,
-    MsgSrcAddr,
-    MsgSrcEp,
-    MsgClusterId,
-    MsgAttrStatus,
-    MsgAttrID,
-    MsgLQI,
-):  # Write Attribute response
+def Decode8110_raw( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrStatus, MsgAttrID, MsgLQI, ):  # Write Attribute response
 
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
-    self.log.logging(
-        "Input",
-        "Debug",
-        "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s MsgAttrID: %s Status: %s"
-        % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus),
-        MsgSrcAddr,
-    )
+    self.log.logging( "Input", "Debug", "Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s MsgAttrID: %s Status: %s" % (
+        MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus), MsgSrcAddr, )
 
     timeStamped(self, MsgSrcAddr, 0x8110)
     updSQN(self, MsgSrcAddr, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
-    if self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16) and MsgAttrID:
-        set_status_datastruct(
-            self,
-            "WriteAttributes",
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            MsgAttrStatus,
-        )
-        set_request_phase_datastruct(
-            self,
-            "WriteAttributes",
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            "fullfilled",
-        )
+    if (self.zigbee_communication != "native" or (self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int("31d", 16))) and MsgAttrID:
+        set_status_datastruct( self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, )
+        set_request_phase_datastruct( self, "WriteAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, "fullfilled", )
         if MsgAttrStatus != "00":
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8110 - Write Attribute Respons response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s"
-                % (MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, MsgAttrStatus),
-                MsgSrcAddr,
-            )
+            self.log.logging( "Input", "Log", "Decode8110 - Write Attribute Respons response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s" % (
+                MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, MsgAttrStatus), MsgSrcAddr, )
         return
 
     # We got a global status for all attributes requested in this command

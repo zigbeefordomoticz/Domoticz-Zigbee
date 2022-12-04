@@ -254,8 +254,7 @@ class WebServer(object):
 
                 elif 30 <= int(self.ControllerData["Branch Version"]) < 40:   
                     # Silicon Labs
-                    coordinator_infos["Display Firmware Version"] = "Ezsp - %s.%s" %(
-                        self.ControllerData["Major Version"] , self.ControllerData["Minor Version"] )
+                    coordinator_infos["Display Firmware Version"] = "Ezsp - %s" %(self.ControllerData["Minor Version"] )
                 else:
                     coordinator_infos["Display Firmware Version"] = "UNK - %s" % self.ControllerData["Minor Version"] 
                 _response["Data"] = json.dumps(coordinator_infos, sort_keys=True)
