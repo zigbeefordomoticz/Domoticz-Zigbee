@@ -650,6 +650,34 @@ def GetType(self, Addr, Ep):
 
     return Type
 
+CLUSTER_TO_TYPE = {
+    "0001": "Voltage", 
+    "0006": "Switch", 
+    "0008": "LvlControl", 
+    "0009": "Alarm", 
+    "000c": "Analog", 
+    "0101": "DoorLock", 
+    "0102": "WindowCovering", 
+    "0201": "Temp/ThermoSetpoint/ThermoMode/Valve", 
+    "0202": "FanControl", 
+    "0300": "ColorControl", 
+    "0400": "Lux", 
+    "0402": "Temp", 
+    "0403": "Baro", 
+    "0405": "Humi", "0406": "Motion", 
+    "0702": "Power/Meter", 
+    "0500": "Door", 
+    "0502": "AlarmWD", 
+    "0b04": "Power/Meter/Ampere", 
+    "fc00": "LvlControl", 
+    "fc21": "BSO-Orientation", 
+    "rmt1": "Ikea_Round_5b", 
+    "LumiLock": "LumiLock", 
+    "Strenght": "Strenght",
+    "Orientation": "Orientation", 
+    "fc40": "ThermoMode", 
+    "ff66": "DEMAIN"
+}
 
 def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", ModelName=""):
 
@@ -660,108 +688,20 @@ def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", 
         % (cluster, ProfileID_, ZDeviceID_, create_),
     )
 
-    TypeFromCluster = ""
-    if ProfileID_ == "c05e" and ZDeviceID_ == "0830":
-        TypeFromCluster = "Ikea_Round_5b"
+    if ProfileID_ == "c05e":
+        if ZDeviceID_ == "0830":
+            return "Ikea_Round_5b"
 
-    elif ProfileID_ == "c05e" and ZDeviceID_ == "0820":
-        TypeFromCluster = "Ikea_Round_OnOff"
+        if ZDeviceID_ == "0820":
+            return "Ikea_Round_OnOff"
 
-    elif cluster == "0001":
-        TypeFromCluster = "Voltage"
+    if cluster == "000c" and ModelName in ("lumi.sensor_cube.aqgl01", "lumi.sensor_cube",) and not create_:
+        return "XCube"
 
-    elif cluster == "0006":
-        TypeFromCluster = "Switch"
+    if cluster == "0012" and not create_:
+        return "XCube"
 
-    elif cluster == "0008":
-        TypeFromCluster = "LvlControl"
-
-    elif cluster == "0009":
-        TypeFromCluster = "Alarm"
-
-    elif cluster == "000c":
-        if ModelName in (
-            "lumi.sensor_cube.aqgl01",
-            "lumi.sensor_cube",
-        ):
-            if not create_:
-                TypeFromCluster = "XCube"
-        else:
-            TypeFromCluster = "Analog"
-
-    elif cluster == "0012" and not create_:
-        TypeFromCluster = "XCube"
-
-    elif cluster == "0101":
-        TypeFromCluster = "DoorLock"
-
-    elif cluster == "0102":
-        TypeFromCluster = "WindowCovering"
-
-    elif cluster == "0201":
-        TypeFromCluster = "Temp/ThermoSetpoint/ThermoMode/Valve"
-
-    elif cluster == "0202":
-        TypeFromCluster = "FanControl"
-
-    elif cluster == "0300":
-        TypeFromCluster = "ColorControl"
-
-    elif cluster == "0400":
-        TypeFromCluster = "Lux"
-
-    elif cluster == "0402":
-        TypeFromCluster = "Temp"
-
-    elif cluster == "0403":
-        TypeFromCluster = "Baro"
-
-    elif cluster == "0405":
-        TypeFromCluster = "Humi"
-
-    elif cluster == "0406":
-        TypeFromCluster = "Motion"
-
-    elif cluster == "0702":
-        TypeFromCluster = "Power/Meter"
-
-    elif cluster == "0500":
-        TypeFromCluster = "Door"
-
-    elif cluster == "0502":
-        TypeFromCluster = "AlarmWD"
-
-    elif cluster == "0b04":
-        TypeFromCluster = "Power/Meter/Ampere"
-
-    elif cluster == "fc00":
-        TypeFromCluster = "LvlControl"  # RWL01 - Hue remote
-
-    # Propriatory cluster 0xfc21 Profalux PFX
-    elif cluster == "fc21":
-        TypeFromCluster = "BSO-Orientation"
-
-    # Propriatory Cluster. Plugin Cluster
-    elif cluster == "rmt1":
-        TypeFromCluster = "Ikea_Round_5b"
-
-    elif cluster == "LumiLock":
-        TypeFromCluster = "LumiLock"
-
-    # Xiaomi Strenght for Vibration
-    elif cluster == "Strenght":
-        TypeFromCluster = "Strenght"
-    # Xiaomi Orientation for Vibration
-    elif cluster == "Orientation":
-        TypeFromCluster = "Orientation"
-
-    elif cluster == "fc40":  # FIP Legrand
-        TypeFromCluster = "ThermoMode"
-
-    elif cluster == "ff66":
-        TypeFromCluster = "DEMAIN"
-
-    return TypeFromCluster
+    return CLUSTER_TO_TYPE[ cluster ] if cluster in CLUSTER_TO_TYPE else ""
 
 
 def subtypeRGB_FromProfile_Device_IDs_onEp2(EndPoints_V2):

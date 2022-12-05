@@ -13,6 +13,8 @@ import Classes.ZigpyTransport.AppGeneric
 import zigpy.config as zigpy_conf
 import zigpy.device
 from bellows.exception import EzspError
+from Classes.ZigpyTransport.firmwareversionHelper import \
+    bellows_extract_versioning_for_plugin
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8010_frame_content, build_plugin_8015_frame_content)
 from Modules.zigbeeVersionTable import ZNP_MODEL
@@ -76,8 +78,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         except EzspError as exc:
             LOGGER.error("EZSP Radio does not support getMfgToken command: %s" %str(exc))
 
-        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin(brd_manuf, brd_name, version)
-        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
+        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = bellows_extract_versioning_for_plugin(self, brd_manuf, brd_name, version)
+        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion,version))
         
         #if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
         #    self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
@@ -118,9 +120,9 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
         * ,
-        dst_addressing = None,
-    ) -> None:
-        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message, dst_addressing =dst_addressing)
+        dst_addressing=None,
+    )->None:
+        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message, dst_addressing=dst_addressing)
 
     async def set_zigpy_tx_power(self, power):
         # EmberConfigTxPowerMode - EZSP_CONFIG_TX_POWER_MODE in EzspConfigId
@@ -172,24 +174,9 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
     def is_bellows(self):
         return True
+    
     def is_znp(self):
         return False
+    
     def is_deconz(self):
         return False
-    
-def extract_versioning_for_plugin( brd_manuf, brd_name, version):
-    FirmwareBranch = "98"   # Not found in the Table.
-    if brd_manuf == 'Elelabs':
-        if 'ELU01' in brd_name:
-            FirmwareBranch = "31"
-        elif 'ELR02' in brd_name:
-            FirmwareBranch = "30" 
-            
-    # 6.10.3.0 build 297    
-    FirmwareMajorVersion = (version[: 2])
-    FirmwareMajorVersion = "%02d" %int(FirmwareMajorVersion.replace('.',''))
-    FirmwareVersion = version[ 2:8]
-    FirmwareVersion = FirmwareVersion.replace(' ','')
-    FirmwareVersion = "%04d" %int(FirmwareVersion.replace('.',''))
-        
-    return FirmwareBranch, FirmwareMajorVersion, FirmwareVersion

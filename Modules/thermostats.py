@@ -116,10 +116,10 @@ def thermostat_Setpoint(self, NwkId, setpoint):
 
     Hdata = "%04x" % setpoint
 
-    if self.ZiGateModel == 2 and int(self.FirmwareVersion, 16) < 0x0320:
+    if self.zigbee_communication == "native" and self.ZiGateModel == 2 and int(self.FirmwareVersion, 16) < 0x0320:
         # Bug on ZiGate V2 - firmware 0x320 fix it
         Domoticz.Log("---Zigate Model: %s  Version: %s" % (self.ZiGateModel, self.FirmwareVersion))
-        Hdata = Hdata[2:4] + Hdata[0:2]
+        Hdata = Hdata[2:4] + Hdata[:2]
         Domoticz.Log("Patch Hdata  %s" % Hdata)
 
     EPout = "01"

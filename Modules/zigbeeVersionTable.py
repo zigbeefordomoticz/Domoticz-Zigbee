@@ -12,6 +12,7 @@ FIRMWARE_BRANCH = {
     "30": "Elelabs, ELR02x",
     "31": "Elelabs, ELU01x",
     
+    "97": "Unknown deConz",
     "98": "Unknown Silicon Labs",
     "99": "Unknown ZNP"
 }
@@ -34,17 +35,15 @@ def set_display_firmware_version( self ):
 
     elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
         # ZNP
-        self.pluginParameters["DisplayFirmwareVersion"] = "Znp - (....%s)" % self.ControllerData["Minor Version"] 
+        self.pluginParameters["DisplayFirmwareVersion"] = "Znp - %s" % self.ControllerData["Minor Version"] 
 
     elif 30 <= int(self.ControllerData["Branch Version"]) < 40:   
         # Silicon Labs
-        self.pluginParameters["DisplayFirmwareVersion"] = "Ezsp - %s.%s" %(
-            self.ControllerData["Major Version"] , self.ControllerData["Minor Version"] )
+        self.pluginParameters["DisplayFirmwareVersion"] = "Ezsp - %s" %self.ControllerData["Minor Version"]
         
     elif 40 <= int(self.ControllerData["Branch Version"]) < 50:
         # deCONZ
-        self.pluginParameters["DisplayFirmwareVersion"] = "deCONZ - %s%s" %(
-            self.ControllerData["Major Version"] , self.ControllerData["Minor Version"] )
+        self.pluginParameters["DisplayFirmwareVersion"] = "deCONZ - %s" %self.ControllerData["Minor Version"]
 
     else:
         self.pluginParameters["DisplayFirmwareVersion"] = "UNK - %s" % self.ControllerData["Minor Version"] 

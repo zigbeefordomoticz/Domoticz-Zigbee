@@ -264,11 +264,10 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
         return True
 
     if new_NwkId == "0000" or old_NwkId == "0000":
-        self.log.logging("Input", "Error", 
-            "reconnectNWkDevice - cannot play with NwkId of Controller %s %s %s"
-            % (new_NwkId, old_NwkId, IEEE)
-        )
+        self.log.logging("Input", "Log", "reconnectNWkDevice - Looks like we have an IEEE matching a Coordinator nwkid , this is not possible by definition New: %s Old: %s IEEE: %s !!!" % (
+            new_NwkId, old_NwkId, IEEE))
         return False
+    
     self.ListOfDevices[new_NwkId] = dict(self.ListOfDevices[old_NwkId])
     self.IEEE2NWK[IEEE] = new_NwkId
 
@@ -1665,8 +1664,6 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
         get_device_nickname( self, NwkId=NwkId), NwkId, Model, ))
     self.log.logging("Plugin", "Log", "")
     self.log.logging("Plugin", "Log", " --- Please follow the link https://zigbeefordomoticz.github.io/wiki/en-eng/Problem_Dealing-with-none-optimized-device.html")         
-    self.log.logging("Plugin", "Log", " --- Provide as much inputs as you can - at least Product and Brand name -, URL of a web site where you did the purchase" )
-    self.log.logging("Plugin", "Log", " --- By doing that you will make your device and the plugin more efficient, and you will participate into the improvement of the plugin capabilities")
     self.log.logging("Plugin", "Log", " --- Thanks the Zigbee for Domoticz plugin team")
     self.log.logging("Plugin", "Log", "")
     

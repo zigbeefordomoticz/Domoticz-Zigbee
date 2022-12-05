@@ -55,14 +55,11 @@ def onMessage(self, Connection, Data):
     if headerCode != "200 OK":
         self.sendResponse(Connection, {"Status": headerCode})
         return
-    
+
     url = Data["URL"]
-    if len(parsed_query) >= 3 and parsed_query[0] == "rest-z4d" or parsed_query[0] == "rest-zigate":
-        self.logging(
-            "Debug",
-            "Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s"
-            % (parsed_query[1], Data["Verb"], parsed_query[2], parsed_query[3:]),
-        )
+    if len(parsed_query) >= 3 and parsed_query[0] in ["rest-z4d", "rest-zigate"]:
+        self.logging( "Debug", "Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" % (
+            parsed_query[1], Data["Verb"], parsed_query[2], parsed_query[3:]), )
         if parsed_query[0] == "rest-z4d" or parsed_query[0] == "rest-zigate" and parsed_query[1] == "1":
             # API Version 1
             self.do_rest(Connection, Data["Verb"], Data["Data"], parsed_query[1], parsed_query[2], parsed_query[3:])
@@ -71,10 +68,16 @@ def onMessage(self, Connection, Data):
             headerCode = "400 Bad Request"
             self.sendResponse(Connection, {"Status": headerCode})
         return
+    
+    elif parsed_query[0] == 'download':
+        # we have to serve a file for download purposes, let's remove '/download' to get the filename to access
+        webFilename = parsed_url.path[len('/download'):]
 
-    # Finaly we simply has to serve a File.
-    webFilename = self.homedirectory + "www" + url
-    self.logging("Debug", "webFilename: %s" % webFilename)
+    else:
+        # Finaly we simply has to serve a File.
+        webFilename = self.homedirectory + "www" + url
+        self.logging("Debug", "webFilename: %s" % webFilename)
+        
     if not os.path.isfile(webFilename):
         webFilename = self.homedirectory + "www" + "/z4d/index.html"
         self.logging("Debug", "Redirecting to /z4d/index.html")
@@ -106,7 +109,7 @@ def onMessage(self, Connection, Data):
     # Can we use Cache if exists
     if get_from_cache_if_available( self, Connection, webFilename, Data, _lastmodified, _response):
         return
-    
+
     if "Ranges" in Data["Headers"]:
         get__range_and_send(self,Connection, webFilename, Data, _response )
     else:
