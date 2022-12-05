@@ -360,11 +360,10 @@ async def worker_loop(self):
                     "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s" % (t_elapse, data),
                 )
 
-    self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s" %len(self._concurrent_requests_semaphores_list))
-
-    if self._concurrent_requests_semaphores_list:
-        for x in self._concurrent_requests_semaphores_list:
-            self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)
+    #self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s" %len(self._concurrent_requests_semaphores_list))
+    #if self._concurrent_requests_semaphores_list:
+    #    for x in self._concurrent_requests_semaphores_list:
+    #        self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)
 
 async def get_next_command(self):
     try:

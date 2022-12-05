@@ -55,8 +55,6 @@ class ZigpyTransport(object):
         self._currently_waiting_requests_list = {}  
         self._currently_not_reachable = []
         
-        self.log.logging("Transport", "Log", "ZigpyTransport __init__")
-        
         # Initialise SQN Management
         sqn_init_stack(self)
 
