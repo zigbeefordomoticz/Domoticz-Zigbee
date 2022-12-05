@@ -81,10 +81,11 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
 
     if command not in REST_COMMANDS:
         self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
-        if verb not in REST_COMMANDS[command]["Verbs"]:
-            self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
+    
+    elif verb not in REST_COMMANDS[command]["Verbs"]:
+        self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
 
-    if command in REST_COMMANDS and verb in REST_COMMANDS[command]["Verbs"]:
+    elif command in REST_COMMANDS and verb in REST_COMMANDS[command]["Verbs"]:
         self.logging("Debug", "do_rest - Verb: %s, Command: %s, Param: %s found ready to execute" % (verb, command, parameters))
         HTTPresponse = setupHeadersResponse()
         if self.pluginconf.pluginConf["enableKeepalive"]:
