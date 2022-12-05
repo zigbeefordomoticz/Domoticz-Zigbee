@@ -72,6 +72,7 @@ class WebServer(object):
     from Classes.WebServer.rest_PluginUpgrade import rest_plugin_upgrade
     from Classes.WebServer.rest_CfgReporting import rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config
     from Classes.WebServer.rest_ZLinky import rest_zlinky
+    from Classes.WebServer.rest_logging import rest_logPlugin, rest_logErrorHistory, rest_logErrorHistoryClear
 
     hearbeats = 0
 
@@ -1405,29 +1406,6 @@ class WebServer(object):
                     zigate_set_mode(self, int(mode) )
                     #send_zigate_mode(self, int(mode))
                     _response["Data"] = {"ZiGate mode: %s requested" % mode}
-        return _response
-
-    def rest_logErrorHistory(self, verb, data, parameters):
-
-        _response = prepResponseMessage(self, setupHeadersResponse())
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-
-        if verb == "GET":
-            if self.log.LogErrorHistory:
-                try:
-                    _response["Data"] = json.dumps(self.log.LogErrorHistory, sort_keys=False)
-                    self.log.reset_new_error()
-                except Exception as e:
-                    Domoticz.Error("rest_logErrorHistory - Exception %s while saving: %s" % (e, str(self.log.LogErrorHistory)))
-        return _response
-
-    def rest_logErrorHistoryClear(self, verb, data, parameters):
-
-        _response = prepResponseMessage(self, setupHeadersResponse())
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        if verb == "GET":
-            self.logging("Status", "Erase Log History")
-            self.log.loggingClearErrorHistory()
         return _response
 
     def rest_battery_state(self, verb, data, parameters):
