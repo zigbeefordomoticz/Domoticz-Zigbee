@@ -233,7 +233,7 @@ class OTAManagement(object):
             _file_offset += MsgMaxDataSize
             _sqn += 1
             if _sqn > 0xff:
-                _sqn = "00"
+                _sqn = 0
 
 
     def ota_upgrade_end_request(self, MsgData):
