@@ -34,7 +34,7 @@ def rest_logPlugin(self, verb, data, parameters):
 
     if not self.pluginconf.pluginConf["enablePluginLogging"]:
         # No log file
-        self.logging("Error", "rest_logPlugin: Plugin Logging not enabled !!")
+        self.logging("Log", "rest_logPlugin: Plugin Logging not enabled !!")
         return _response
 
     if verb != "GET":
@@ -51,6 +51,6 @@ def rest_logPlugin(self, verb, data, parameters):
         'URL': '/download' + full_logfilename
     })
     
-    self.logging("Log", "rest_logPlugin: %s" %(_response["Data"]))
+    self.logging("Debug", "rest_logPlugin: %s" %(_response["Data"]))
 
     return _response
