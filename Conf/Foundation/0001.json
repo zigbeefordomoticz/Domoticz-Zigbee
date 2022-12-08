@@ -16,6 +16,7 @@
             "Name": "MainsFrequency" ,
             "DataType": "20",
             "Range": [ "00", "ff" ],
+            "SpecialValues": { "00": "frequency that is too low to be measured.", "fe": "frequency that is too high to be measured", "ff": "frequency could not be measured" },
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
@@ -39,7 +40,6 @@
             "Default": "0",
             "Mandatory": false,
             "action": [ "checkstore"]
-
         },
         "0012": {
             "Name": "MainsVoltageMaxThreshold",
@@ -49,7 +49,6 @@
             "Default": "ffff",
             "Mandatory": false,
             "action": [ "checkstore"]
-
         },
         "0013": {
             "Name": "MainsVoltageDwellTripPoint",
@@ -70,12 +69,12 @@
             "dzClusterType": "Voltage",
             "eval": "round(int(value) / 10, 1)",
             "action": [ "checkstore", "majdomodevice"]
-
         },
         "0021": { 
             "Name": "BatteryPercentageRemaining",
             "DataType": "20" ,
             "Range": [ "00", "ff" ] ,
+            "SpecialValues": { "ff": "invalid or unknown reading"},
             "Acc": "RP" ,
             "Default": "0",
             "Mandatory": false,
