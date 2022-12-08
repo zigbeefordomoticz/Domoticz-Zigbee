@@ -1,0 +1,18 @@
+{
+	"Cluster": "0001",
+	"Attributes": {
+        "0000": { "Name": "Voltage" },
+        "0001": { "Name": "MAINS FREQUENCY" },
+        "0002": { "Name": "MAINS ALARM MASK" },
+        "0007": { "Name": "Power Source" },
+        "0010": { "Name": "Voltage" },
+        "0020": { "Name": "Battery Voltage" },
+        "0021": { "Name": "Battery %" },
+        "0031": { "Name": "Battery Size" },
+        "0033": { "Name": "Battery Quantity" },
+        "0035": { "Name": "Battery Alarm Mask" },
+        "0036": { "Name": "Minimum Threshold" },
+        "003e": { "Name": "BatteryAlarmState" },
+        "fffd": { "Name": "Cluster Version" }
+    }
+}
