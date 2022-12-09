@@ -1,0 +1,38 @@
+{
+	"_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1350",
+	"Ep":{
+	       "01":{
+		       "0000":"",
+		       "0003":"",
+		       "0004":"",
+		       "0005":"",
+		       "0006":"",
+		       "0008":"",
+		       "0019":"",
+		       "0300":"",
+		       "1000":"",
+		       "100f": "",
+		       "Type":"ColorControl"
+	       },
+	       "f2": {
+		       "Type": ""
+	       }
+	},
+	"Type":"",
+	"ClusterToBind": [ ],
+	"ConfigureReporting": {
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007", "000a", "4000" ],
+		"0001": [],
+		"0006": [ "0000", "4000", "4001", "4002", "4003" ],
+		"0008": [ "0000" ],
+		"0300": [ "0003", "0004", "0007", "0008" ]
+	},
+	"Param": {
+		"moveToHueSatu": 0,
+		"moveToColourTemp": 0,
+		"moveToColourRGB": 0,
+		"moveToLevel": 0	
+	}
+}

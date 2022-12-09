@@ -145,15 +145,32 @@ TUYA_eTRV1_MANUFACTURER = (
 TUYA_eTRV2_MANUFACTURER = (
     "_TZE200_ckud7u2l",
     "_TYST11_ckud7u2l",
-
 )
 TUYA_eTRV3_MANUFACTURER = (
     "_TZE200_c88teujp",
     "_TYST11_KGbxAXL2",
     "_TYST11_zuhszj9s",
+    "_TZE200_azqp6ssj",
+    "_TZE200_yw7cahqs",
+    "_TZE200_9gvruqf5",
+    "_TZE200_zuhszj9s",
+    "_TZE200_2ekuz3dz",
 )
 TUYA_eTRV4_MANUFACTURER = (
     "_TZE200_b6wax7g0",  
+)
+
+TUYA_eTRV5_MANUFACTURER = (
+    "_TZE200_7yoranx2",   # model: 'TV01-ZB',           vendor: 'Moes'
+    "_TZE200_e9ba97vf",   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_hue3yfsn",   # MODEL : 'TV02-Zigbee',      vendor: 'TuYa'
+    "_TZE200_husqqvux",   # MODEL : 'TSL-TRV-TV01ZG',   vendor: 'Tesla Smart
+    "_TZE200_kly8gjlz",   # 
+    "_TZE200_lnbfnyxd",   # MODEL : 'TSL-TRV-TV01ZG',   vendor: 'Tesla Smart'
+    '_TZE200_kds0pmmv',   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_mudxchsu",   # MODEL : 'TV05-ZG curve',    vendor: 'TuYa'
+    "_TZE200_kds0pmmv",   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_lllliz3p",   # MODEL : 'TV02-Zigbee',      vendor: 'TuYa'
 )
 
 TUYA_eTRV_MANUFACTURER = (
@@ -179,6 +196,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_eTRV2_MANUFACTURER
     + TUYA_eTRV3_MANUFACTURER
     + TUYA_eTRV4_MANUFACTURER
+    + TUYA_eTRV5_MANUFACTURER
     + TUYA_eTRV_MANUFACTURER
     + TUYA_SMARTAIR_MANUFACTURER
     + TUYA_WATER_TIMER
@@ -192,6 +210,14 @@ TUYA_MANUFACTURER_NAME = (
 # Tuya Doc: https://developer.tuya.com/en/docs/iot/access-standard-zigbee?id=Kaiuyf28lqebl
 
 
+# Data Types:
+#   0x00: raw
+#   0x01: bool
+#   0x02: 4 byte value
+#   0x03: string
+#   0x04: enum8 ( 0x00-0xff)
+#   0x05: bitmap ( 1,2, 4 bytes) as bits
+    
 def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     if "Model" not in self.ListOfDevices[nwkid]:
             return
@@ -325,7 +351,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     cmd = MsgPayload[4:6]  # uint8
 
     # Send a Default Response ( why might check the FCF eventually )
-    if self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
+    if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
         tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
 
     # https://developer.tuya.com/en/docs/iot/tuuya-zigbee-door-lock-docking-access-standard?id=K9ik5898uzqrk

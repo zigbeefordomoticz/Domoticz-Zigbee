@@ -176,7 +176,7 @@ def callbackDeviceAwake_Schneider_SetPoints(self, NwkId, EndPoint, cluster):
         elif (
                 self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"] != int(self.ListOfDevices[NwkId]["Ep"][EndPoint]["0201"]["0012"])
                 and ( now > ( self.ListOfDevices[NwkId]["Schneider"]["TimeStamp SetPoint"] + 15)  )
-            ):
+        ):
             self.log.logging("Schneider", "Debug", "callbackDeviceAwake_Schneider_SetPoints -time to send a setpoint command", NwkId)
             schneider_setpoint(self, NwkId, self.ListOfDevices[NwkId]["Schneider"]["Target SetPoint"], call_back=True)
 
@@ -1325,7 +1325,7 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
                 nbAttribute += 1
                 Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx: idx + 4], 16)))[0]
                 idx += 4
-                if self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x031C:
+                if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x031C:
                     wiser_unsupported_attribute(self, srcNWKID, srcEp, Sqn, ClusterID, Attribute)
                 else:
                     self.log.logging("Schneider", "Debug", f"Schneider cmd 0x00 [{Sqn}] Read Attribute Request on Src: {srcNWKID}/{srcEp} for {ClusterID}/{Attribute} Dst: {dstNWKID}/{dstEP}", srcNWKID)

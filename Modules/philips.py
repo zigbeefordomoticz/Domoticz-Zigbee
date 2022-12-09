@@ -134,7 +134,7 @@ def philips_set_poweron_after_offon_device(self, mode, nwkid):
 
     if "Manufacturer" not in self.ListOfDevices[nwkid]:
         return
-    if self.ListOfDevices[nwkid]["Manufacturer"] != "100b":
+    if self.ListOfDevices[nwkid]["Manufacturer"] not in ("100b", "117e"):
         return
     # We have a Philips device
     if "0b" not in self.ListOfDevices[nwkid]["Ep"]:

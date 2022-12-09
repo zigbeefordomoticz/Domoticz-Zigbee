@@ -358,7 +358,7 @@ SWITCH_LVL_MATRIX = {
         0: (0, "Off"),  # 
         1: (1, "10"),   # Auto
         2: (2, "20"),   # Manual
-        3: (3, "20"),   # Away
+        3: (3, "30"),   # Away
         "ForceUpdate": True,
         "LevelNames": "Off|Auto|Manual|Away",
         "Language": {
@@ -575,5 +575,20 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"},
             "es-ES": {"LevelNames": "Off|Frío||Calefacción|Deshumidificador|Ventilador"}
             },
+    },
+	"Motionac01": {
+        "0": (0, "00"),  #Off
+        "10": (1, "10"), #Enter
+        "20": (2, "20"), #Leave
+        "30": (3, "30"), #Left_enter
+        "40": (4, "40"), #Right_leave
+        "50": (5, "50"), #Right_enter
+        "60": (6, "60"), #Left_leave
+        "70": (7, "70"), #Approach
+        "80": (8, "80"), #Away
+        "ForceUpdate": True,
+        "LevelNames": "Off|Enter|Leave|Left_enter|Right_leave|Right_enter|Left_leave|Approach|Away",
+        
+        
     },
 }

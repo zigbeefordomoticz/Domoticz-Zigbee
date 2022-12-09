@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.3">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.4">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -124,9 +124,9 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import (chk_and_update_IEEE_NWKID, get_device_nickname,
+from Modules.tools import (chk_and_update_IEEE_NWKID,
                            how_many_devices, lookupForIEEE, night_shift_jobs,
-                           removeDeviceInList)
+                           removeDeviceInList, build_list_of_device_model)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -945,9 +945,6 @@ class BasePlugin:
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
   
-        # Update the NetworkDevices attributes if needed , once by day
-        build_list_of_device_model(self)
-
         _trigger_coordinator_backup( self )
 
         if self.CommiSSionning:
@@ -981,36 +978,6 @@ def networksize_update(self):
     self.pluginParameters["NetworkSize"] = "Total: %s | Routers: %s | End Devices: %s" %(
         routers + enddevices, routers, enddevices)
 
-def build_list_of_device_model(self, force=False):
-    
-    if not force and ( self.internalHB % (23 * 3600 // HEARTBEAT) != 0):
-        return
-    
-    self.pluginParameters["NetworkDevices"] = {}
-    for x in self.ListOfDevices:
-        manufcode = manufname = modelname = None
-        if "Manufacturer" in self.ListOfDevices[x]:
-            manufcode = self.ListOfDevices[x]["Manufacturer"]
-            if manufcode in ( "", {}):
-                continue
-            if manufcode not in self.pluginParameters["NetworkDevices"]:
-                self.pluginParameters["NetworkDevices"][ manufcode ] = {}
-
-        if manufcode and "Manufacturer Name" in self.ListOfDevices[x]:
-            manufname = self.ListOfDevices[x]["Manufacturer Name"]
-            if manufname in ( "", {} ):
-                manufname = "unknow"
-            if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
-                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
-
-        if manufcode and manufname and "Model" in self.ListOfDevices[x]:
-            modelname = self.ListOfDevices[x]["Model"]
-            if modelname in ( "", {} ):
-                continue
-            if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
-                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
-                if modelname not in self.DeviceConf:
-                    unknown_device_model(self, x, modelname,manufcode, manufname )
 
 
 def get_domoticz_version( self ):
@@ -1054,31 +1021,6 @@ def get_domoticz_version( self ):
     return True
 
 
-def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
-    
-    if 'logUnknownDeviceModel' in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["logUnknownDeviceModel"]:
-        return
-    if 'Log_UnknowDeviceFlag' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] + ( 24 * 3600) < time.time():
-        return
-
-    device_name = get_device_nickname( self, NwkId=NwkId)
-    if device_name is None:
-        device_name = ""
-
-    self.log.logging("Plugin", "Status", "We have detected a working device %s (%s) Model: %s not certified on the plugin. " %(
-        get_device_nickname( self, NwkId=NwkId),
-        NwkId,
-        Model,
-    ))
-    self.log.logging("Plugin", "Status", "--- can you to create an Issue https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=Device+Integration&template=certified-device-model.md&title=%5BModel+Certification%5D")
-    self. log.logging("Plugin", "Status", "--- Provide as much inputs as you can but at least Product and Brand name, URL of a web site where you did the purchase" )
-    self. log.logging("Plugin", "Status", "-------------------- Please copy-paste the here after information -------------------- ")
-
-    self. log.logging("Plugin", "Status", "%s" %(json.dumps(self.ListOfDevices[ NwkId ], sort_keys=False)))
-    
-    self. log.logging("Plugin", "Status", "-------------------- End of Copy-Paste -------------------- ")
-    
-    self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
         
 
 def decodeConnection(connection):
@@ -1766,8 +1708,8 @@ def _coordinator_ready( self ):
         or ( self.transport != "ZigpyZNP" and self.internalHB > STARTUP_TIMEOUT_DELAY_FOR_STOP) 
     ):
         debuging_information(self, "Log")
-        self.log.logging("Plugin", "Error", "[   ] Stopping the plugin and lease do check the Coordinator connectivity.")
-        restartPluginViaDomoticzJsonApi(self, stop=True, url_base_api=Parameters["Mode5"])
+        # (#1371) we cannot stop the plugin as it will disable the hardware and generate side effect. So we will try for ever
+        restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 
     if (self.internalHB % 10) == 0:
         self.log.logging( "Plugin", "Debug", "[%s] PDMready: %s requesting Get version" % (self.internalHB, self.PDMready) )

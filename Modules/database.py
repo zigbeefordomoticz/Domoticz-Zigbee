@@ -109,7 +109,8 @@ BUILD_ATTRIBUTES = (
     "Health",
     "IASBattery",
     "Operating Time",
-    "DelayBindingAtPairing"
+    "DelayBindingAtPairing",
+    "CertifiedDevice"
 )
 
 MANUFACTURER_ATTRIBUTES = (
@@ -339,15 +340,30 @@ def _write_DeviceList_txt(self):
     _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
     try:
         self.log.logging("Database", "Debug", "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
-        with open(_DeviceListFileName, "wt") as file:
+        with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
             for key in self.ListOfDevices:
                 try:
                     file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
+                    
+                except UnicodeEncodeError:
+                    self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( key, self.ListOfDevices[key]))
+                    continue
+
+                except ValueError:
+                    self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( key, self.ListOfDevices[key]))
+                    continue
+                
                 except IOError:
-                    Domoticz.Error("Error while writing to plugin Database %s" % _DeviceListFileName)
+                    self.log.logging( "Database", "Error", "IOError while writing to plugin Database %s" % _DeviceListFileName)
+                    continue
+
         self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
+        
+    except FileNotFoundError:
+        self.log.logging( "Database", "Error", "WriteDeviceList - File not found >%s<" %_DeviceListFileName)
+        
     except IOError:
-        Domoticz.Error("Error while Writing plugin Database %s" % _DeviceListFileName)
+        self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
 
 
 def _write_DeviceList_json(self):

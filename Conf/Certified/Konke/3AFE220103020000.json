@@ -1,0 +1,29 @@
+{
+	"_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1351",
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0001": "",
+			"0003": "",
+			"0402": "",
+			"0405": "",
+			"Type": "Temp/Humi"
+		}
+	},
+	"Type": "",
+	"NickName": "Konke_Weather",
+	"ClusterToBind": [ "0001", "0402", "0405" ],
+	"ConfigureReporting": {
+		"0001": { "Attributes": { "0020": { "DataType": "20", "MinInterval": "0E10", "MaxInterval": "6460", "TimeOut": "0FFF", "Change": "01" } } },
+		"0402": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0014" } } },
+		"0405": { "Attributes": { "0000": { "DataType": "21", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0032" } }
+		}
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "000a" ],
+		"0001": [ "0020" ], 
+		"0402": [ "0000" ],
+		"0405": [ "0000" ]
+	},
+	"BatteryDevice": 1
+}

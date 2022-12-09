@@ -305,12 +305,11 @@ def legrand_fc01(self, nwkid, command, OnOff):
 
     if command == "EnableLedInDark" and command in LEGRAND_CLUSTER_FC01[self.ListOfDevices[nwkid]["Model"]]:
         if (
-            self.FirmwareVersion
-            and self.FirmwareVersion.lower() <= "031c"
+            is_zigate_bellow_or_equal_31c(self)
             and time() < self.ListOfDevices[nwkid]["Legrand"]["EnableLedInDark"] + LEGRAND_REFRESH_TIME
         ):
             return
-        if self.FirmwareVersion and self.FirmwareVersion.lower() <= "031c":
+        if is_zigate_bellow_or_equal_31c(self):
             self.ListOfDevices[nwkid]["Legrand"]["EnableLedInDark"] = int(time())
         data_type = "10"  # Bool
         Hdata = "%02x" % OnOff
@@ -323,12 +322,11 @@ def legrand_fc01(self, nwkid, command, OnOff):
 
     elif command == "EnableLedShutter" and command in LEGRAND_CLUSTER_FC01[self.ListOfDevices[nwkid]["Model"]]:
         if (
-            self.FirmwareVersion
-            and self.FirmwareVersion.lower() <= "031c"
+            is_zigate_bellow_or_equal_31c(self)
             and time() < self.ListOfDevices[nwkid]["Legrand"]["EnableLedShutter"] + LEGRAND_REFRESH_TIME
         ):
             return
-        if self.FirmwareVersion and self.FirmwareVersion.lower() <= "031c":
+        if is_zigate_bellow_or_equal_31c(self):
             self.ListOfDevices[nwkid]["Legrand"]["EnableLedShutter"] = int(time())
         data_type = "10"  # Bool
         Hdata = "%02x" % OnOff
@@ -341,12 +339,11 @@ def legrand_fc01(self, nwkid, command, OnOff):
 
     elif command == "EnableDimmer" and command in LEGRAND_CLUSTER_FC01[self.ListOfDevices[nwkid]["Model"]]:
         if (
-            self.FirmwareVersion
-            and self.FirmwareVersion.lower() <= "031c"
+            is_zigate_bellow_or_equal_31c(self)
             and time() < self.ListOfDevices[nwkid]["Legrand"]["EnableDimmer"] + LEGRAND_REFRESH_TIME
         ):
             return
-        if self.FirmwareVersion and self.FirmwareVersion.lower() <= "031c":
+        if is_zigate_bellow_or_equal_31c(self):
             self.ListOfDevices[nwkid]["Legrand"]["EnableDimmer"] = int(time())
         data_type = "09"  # 16-bit Data
         if OnOff == 1:
@@ -364,12 +361,11 @@ def legrand_fc01(self, nwkid, command, OnOff):
 
     elif command == "EnableLedIfOn" and command in LEGRAND_CLUSTER_FC01[self.ListOfDevices[nwkid]["Model"]]:
         if (
-            self.FirmwareVersion
-            and self.FirmwareVersion.lower() <= "031c"
+            is_zigate_bellow_or_equal_31c(self)
             and time() < self.ListOfDevices[nwkid]["Legrand"]["EnableLedIfOn"] + LEGRAND_REFRESH_TIME
         ):
             return
-        if self.FirmwareVersion and self.FirmwareVersion.lower() <= "031c":
+        if is_zigate_bellow_or_equal_31c(self):
             self.ListOfDevices[nwkid]["Legrand"]["EnableLedIfOn"] = int(time())
         data_type = "10"  # Bool
         Hdata = "%02x" % OnOff
@@ -529,7 +525,7 @@ def legrand_Dimmer_by_nwkid(self, NwkId, OnOff):
     if "Legrand" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Legrand"] = {}
 
-    if int(self.FirmwareVersion, 16) >= 0x31D:
+    if is_zigate_above_or_equal_31d(self):
         if (
             "EnableDimmer" in self.ListOfDevices[NwkId]["Legrand"]
             and self.ListOfDevices[NwkId]["Legrand"]["EnableDimmer"] == OnOff
@@ -574,7 +570,7 @@ def legrand_enable_Led_IfOn_by_nwkid(self, NwkId, OnOff):
     ):
         return
 
-    if int(self.FirmwareVersion, 16) >= 0x31D:
+    if is_zigate_above_or_equal_31d(self):
         if (
             "EnableLedIfOn" in self.ListOfDevices[NwkId]["Legrand"]
             and self.ListOfDevices[NwkId]["Legrand"]["EnableLedIfOn"] == OnOff
@@ -608,7 +604,7 @@ def legrand_enable_Led_Shutter_by_nwkid(self, NwkId, OnOff):
     if self.ListOfDevices[NwkId]["Model"] not in ("Shutter switch with neutral"):
         return
 
-    if int(self.FirmwareVersion, 16) >= 0x31D:
+    if is_zigate_above_or_equal_31d(self):
         if (
             "EnableLedShutter" in self.ListOfDevices[NwkId]["Legrand"]
             and self.ListOfDevices[NwkId]["Legrand"]["EnableLedShutter"] == OnOff
@@ -649,7 +645,7 @@ def legrand_enable_Led_InDark_by_nwkid(self, NwkId, OnOff):
     ):
         return
 
-    if int(self.FirmwareVersion, 16) >= 0x31D:
+    if is_zigate_above_or_equal_31d(self):
         if (
             "EnableLedInDark" in self.ListOfDevices[NwkId]["Legrand"]
             and self.ListOfDevices[NwkId]["Legrand"]["EnableLedInDark"] == OnOff
@@ -859,3 +855,14 @@ def legrand_motion_8085(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCmd, u
         % (MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, up_down, step_size, transition),
         MsgSrcAddr,
     )
+
+
+
+def is_zigate_above_or_equal_31d(self):
+    return self.zigbee_communication != "native" or (self.FirmwareVersion and int(self.FirmwareVersion, 16) >= 0x31D)
+
+def is_zigate_below_31d(self): 
+    return self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x31D
+
+def is_zigate_bellow_or_equal_31c(self): 
+    return self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x31C

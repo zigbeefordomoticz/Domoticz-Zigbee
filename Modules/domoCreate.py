@@ -406,8 +406,13 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." % (t), NWKID)
 
             # 4 Selector , OffHidden, Style 0 (command)
-            if t in ("DSwitch", "blindIKEA", "ThermoMode_5", "ThermoMode_6"):
+            if t in ("DSwitch", "blindIKEA", "ThermoMode_6"):
                 Options = createSwitchSelector(self, 4, DeviceType=t, OffHidden=True, SelectorStyle=0)
+                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DSwitch..." % (t), NWKID)
+
+            if t in ("ThermoMode_5", ):
+                Options = createSwitchSelector(self, 4, DeviceType=t, OffHidden=False, SelectorStyle=0)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DSwitch..." % (t), NWKID)
 
@@ -443,11 +448,12 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoMode" % (t), NWKID)
-
+				
             if t in ("ACMode",):
                 Options = createSwitchSelector(self, 5, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACMode" % (t), NWKID)
+				
             if t in ("CAC221ACMode",):
                 Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
@@ -505,6 +511,14 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = createSwitchSelector(self, 7, DeviceType=t, OffHidden=True, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FIP" % (t), NWKID)
+				
+            # 8 Selectors, Style 0, OffShowen, SelectorStyle 1
+            if t in ("Motionac01",):
+                Options = createSwitchSelector(self, 9, DeviceType=t, OffHidden=False, SelectorStyle=1)
+                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Motionac01" % (t), NWKID)
+				
+
 
             # 10 Selectors, Style 1, OffHidden
             if t in ("DButton_3",):
@@ -749,7 +763,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Domoticz.Error("Domoticz widget creation failed. %s" % (str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(ID)] = "Text"
-
+					
+					
+	
+				
             if t == "Strength":
                 # Vibration strength
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=31)
