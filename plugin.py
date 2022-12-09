@@ -119,14 +119,15 @@ from Modules.database import (LoadDeviceList, WriteDeviceList,
                               importDeviceConfV2)
 from Modules.domoCreate import how_many_slot_available
 from Modules.domoTools import ResetDevice
+from Modules.foundationClusters import load_foundation_cluster
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import (chk_and_update_IEEE_NWKID,
-                           how_many_devices, lookupForIEEE, night_shift_jobs,
-                           removeDeviceInList, build_list_of_device_model)
+from Modules.tools import (build_list_of_device_model,
+                           chk_and_update_IEEE_NWKID, how_many_devices,
+                           lookupForIEEE, night_shift_jobs, removeDeviceInList)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -169,6 +170,7 @@ class BasePlugin:
         self.IEEE2NWK = {}
         self.ControllerData = {}
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
+        self.FoundationClusters = {}
 
         # Objects from Classe
         self.configureReporting = None
@@ -416,7 +418,9 @@ class BasePlugin:
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Plugin Database: %s" % self.DeviceListName)
 
-
+        # Import Foundation Cluster definition
+        load_foundation_cluster(self)
+        
         # Import Certified Device Configuration
         importDeviceConfV2(self)
 

@@ -1,7 +1,10 @@
 {
-    "Cluster": "0001",
+    "ClusterId": "0001",
+    "Version": "1",
+    "Enabled": true,
     "Attributes": {
         "0000": { 
+            "Enabled": true,
             "Name": "MainsVoltage",
             "DataType": "21" ,
             "Range": [ "0000", "ffff" ] ,
@@ -13,6 +16,7 @@
             "action": [ "checkstore", "majdomodevice"]
         },
         "0001": { 
+            "Enabled": true,
             "Name": "MainsFrequency" ,
             "DataType": "20",
             "Range": [ "00", "ff" ],
@@ -24,6 +28,7 @@
 
         },
         "0010": { 
+            "Enabled": true,
             "Name": "MainsAlarmMask" ,
             "DataType": "18",
             "Range": [ "0000", "00xx" ],
@@ -33,6 +38,7 @@
             "action": [ "checkstore"]
         },
         "0011": {
+            "Enabled": true,
             "Name": "MainsVoltageMinThreshold",
             "DataType": "21" ,
             "Range": [ "0000", "ffff" ] ,
@@ -42,6 +48,7 @@
             "action": [ "checkstore"]
         },
         "0012": {
+            "Enabled": true,
             "Name": "MainsVoltageMaxThreshold",
             "DataType": "21" ,
             "Range": [ "0000", "ffff" ] ,
@@ -51,6 +58,7 @@
             "action": [ "checkstore"]
         },
         "0013": {
+            "Enabled": true,
             "Name": "MainsVoltageDwellTripPoint",
             "DataType": "21" ,
             "Range": [ "0000", "ffff" ] ,
@@ -60,6 +68,7 @@
             "action": [ "checkstore"]
         },
         "0020": { 
+            "Enabled": true,
             "Name": "BatteryVoltage",
             "DataType": "20" ,
             "Range": [ "00", "ff" ] ,
@@ -71,6 +80,7 @@
             "action": [ "checkstore", "majdomodevice"]
         },
         "0021": { 
+            "Enabled": true,
             "Name": "BatteryPercentageRemaining",
             "DataType": "20" ,
             "Range": [ "00", "ff" ] ,

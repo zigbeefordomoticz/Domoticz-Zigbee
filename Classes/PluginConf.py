@@ -220,7 +220,7 @@ SETTINGS = {
             "NXPExtendedErrorCode": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugInput": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugDeviceAnnoucement": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
-
+            "debugFoundationCluster": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugBasicOutput": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugBinding": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugConfigureReporting": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
@@ -284,6 +284,7 @@ SETTINGS = {
             "debugThreadWriter": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugThreadCommunication": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugZLinky": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            
         },
     },
     # Others
