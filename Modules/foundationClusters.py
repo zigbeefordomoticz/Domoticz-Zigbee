@@ -187,6 +187,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     _eval_formula = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "eval" )
     _action_list = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "action" )
     _eval_inputs = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID,  "evalInputs")
+    _force_value = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID,  "overwrite")
 
     self.log.logging("FoundationCluster", "Debug", " . Name:    %s" %_name )
     self.log.logging("FoundationCluster", "Debug", " . DT:      %s versus received %s" %( _datatype, MsgAttType ))
@@ -195,7 +196,10 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     self.log.logging("FoundationCluster", "Debug", " . actions  %s" %( _action_list ))
     self.log.logging("FoundationCluster", "Debug", " . special values %s" %( _special_values ))
 
-    value = _decode_attribute_data( _datatype, MsgClusterData)
+    if _force_value != "":
+        value = _force_value
+    else:
+        value = _decode_attribute_data( _datatype, MsgClusterData)
     self.log.logging("FoundationCluster", "Debug", " . decode value: %s -> %s" %( MsgClusterData, value))
 
     evaluation_result = value
@@ -216,8 +220,8 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
                 _eval_formula = _update_eval_formula( self, _eval_formula, x, "custom_variable[ %s ]" % idx)
                 self.log.logging("FoundationCluster", "Debug", " . Updated formula: %s" %_eval_formula)
 
-    for x in custom_variable:
-        self.log.logging("FoundationCluster", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]))
+        for x in custom_variable:
+            self.log.logging("FoundationCluster", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]))
         
     if _eval_formula != "":
         evaluation_result = eval( _eval_formula )
