@@ -1,5 +1,6 @@
 {
     "ClusterId": "0001",
+    "Description": "Power",
     "Version": "1",
     "Enabled": true,
     "Attributes": {

@@ -19,6 +19,8 @@ import Domoticz
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice
+from Modules.foundationClusters import (is_cluster_foundation_config_available,
+                                        process_cluster_attribute_response)
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster,
                           store_lumi_attribute)
@@ -38,7 +40,7 @@ from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_THERMOSTAT_MANUFACTURER, TUYA_TS0601_MODEL_NAME,
                           TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
                           TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER,
-                          TUYA_eTRV4_MANUFACTURER, TUYA_eTRV5_MANUFACTURER )
+                          TUYA_eTRV4_MANUFACTURER, TUYA_eTRV5_MANUFACTURER)
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
@@ -48,6 +50,7 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
+
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -139,33 +142,11 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
 
 def storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus):
-
-    # i_sqnFromMessage = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
-    # i_sqn_expected = get_isqn_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
-
-    # if MsgType == '8100' and i_sqn_expected and i_sqnFromMessage and i_sqn_expected != i_sqnFromMessage:
-    #     Domoticz.Log("+++ SQN Missmatch in ReadCluster %s/%s %s %s i_sqn: %s e_sqn: %s i_esqn: %s "
-    #         %( MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, i_sqn_expected, MsgSQN, i_sqnFromMessage ))
-
     set_status_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
     set_timestamp_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, int(time()))
 
 
-def ReadCluster(
-    self,
-    Devices,
-    MsgType,
-    MsgSQN,
-    MsgSrcAddr,
-    MsgSrcEp,
-    MsgClusterId,
-    MsgAttrID,
-    MsgAttrStatus,
-    MsgAttType,
-    MsgAttSize,
-    MsgClusterData,
-    Source=None,
-):
+def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source=None, ):
 
     if MsgSrcAddr not in self.ListOfDevices:
         _context = {
@@ -180,102 +161,28 @@ def ReadCluster(
         return
 
     if not DeviceExist(self, Devices, MsgSrcAddr):
-        # Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
-        # Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
+        # We cannot process a none existing device.
         return
 
-    # Can we receive a Custer while the Device is not yet in the ListOfDevices ??????
-    # This looks not possible to me !!!!!!!
-    # This could be in the case of Xiaomi sending Cluster 0x0000 before anything is done on the plugin.
-    # I would consider this doesn't make sense, and we should simply return a warning, that we receive a message from an unknown device !
-    if "Ep" not in self.ListOfDevices[MsgSrcAddr]:
-        return
-    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Ep"]:
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] = {}
-    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId] = {}
-
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster - %s - %s/%s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),
-        MsgSrcAddr,
-    )
+    self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s" % (
+        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData), MsgSrcAddr, )
 
     storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
 
     if MsgAttrStatus != "00" and MsgClusterId != "0500":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" % (MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID),
-            nwkid=MsgSrcAddr,
-        )
+        # We receive a Read Attribute response or a Report with a status error.
+        self.log.logging( "Cluster", "Debug", "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" % (
+            MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID), nwkid=MsgSrcAddr, )
         self.statistics._clusterKO += 1
         return
 
-    DECODE_CLUSTER = {
-        "0000": Cluster0000,
-        "0001": Cluster0001,
-        "0002": Cluster0002,
-        "0003": Cluster0003,
-        "0005": Cluster0005,
-        "0006": Cluster0006,
-        "0008": Cluster0008,
-        "0009": Cluster0009,
-        "0012": Cluster0012,
-        "0019": Cluster0019,
-        "000c": Cluster000c,
-        "0100": Cluster0100,
-        "0101": Cluster0101,
-        "0102": Cluster0102,
-        "0201": Cluster0201,
-        "0202": Cluster0202,
-        "0204": Cluster0204,
-        "0300": Cluster0300,
-        "0301": Cluster0301,
-        "0400": Cluster0400,
-        "0402": Cluster0402,
-        "0403": Cluster0403,
-        "0405": Cluster0405,
-        "0406": Cluster0406,
-        "0500": Cluster0500,
-        "0502": Cluster0502,
-        "0702": Cluster0702,
-        "0b01": Cluster0b01,
-        "0b04": Cluster0b04,
-        "0b05": Cluster0b05,
-        "fe03": Clusterfe03,
-        "fc00": Clusterfc00,
-        "000f": Cluster000f,
-        "e000": Clustere000,
-        "e001": Clustere001,
-        "e002": Clustere002,
-        "fc01": Clusterfc01,
-        "fc03": Clusterfc03,
-        "fc21": Clusterfc21,
-        "fcc0": Clusterfcc0,
-        "fc40": Clusterfc40,
-        "ff66": Clusterff66,
-    }
-
-    if MsgClusterId in DECODE_CLUSTER:
+    if is_cluster_foundation_config_available( self, MsgClusterId, attribute=MsgAttrID):
+        process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
+    
+    elif MsgClusterId in DECODE_CLUSTER:
         _func = DECODE_CLUSTER[MsgClusterId]
-        _func(
-            self,
-            Devices,
-            MsgSQN,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            MsgAttType,
-            MsgAttSize,
-            MsgClusterData,
-            Source,
-        )
+        _func( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
     else:
-
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         _context = {
             "MsgClusterId": str(MsgClusterId),
@@ -285,13 +192,7 @@ def ReadCluster(
             "MsgAttSize": str(MsgAttSize),
             "MsgClusterData": str(MsgClusterData),
         }
-        self.log.logging(
-            "Cluster",
-            "Error",
-            "ReadCluster - Error/unknow Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr),
-            MsgSrcAddr,
-            _context,
-        )
+        self.log.logging( "Cluster", "Error", "ReadCluster - Error/unknow Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr), MsgSrcAddr, _context, )
 
 
 def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -5130,3 +5031,52 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
         update_zlinky_device_model_if_needed( self, MsgSrcAddr )
+
+
+
+
+
+DECODE_CLUSTER = {
+    "0000": Cluster0000,
+    "0001": Cluster0001,
+    "0002": Cluster0002,
+    "0003": Cluster0003,
+    "0005": Cluster0005,
+    "0006": Cluster0006,
+    "0008": Cluster0008,
+    "0009": Cluster0009,
+    "0012": Cluster0012,
+    "0019": Cluster0019,
+    "000c": Cluster000c,
+    "0100": Cluster0100,
+    "0101": Cluster0101,
+    "0102": Cluster0102,
+    "0201": Cluster0201,
+    "0202": Cluster0202,
+    "0204": Cluster0204,
+    "0300": Cluster0300,
+    "0301": Cluster0301,
+    "0400": Cluster0400,
+    "0402": Cluster0402,
+    "0403": Cluster0403,
+    "0405": Cluster0405,
+    "0406": Cluster0406,
+    "0500": Cluster0500,
+    "0502": Cluster0502,
+    "0702": Cluster0702,
+    "0b01": Cluster0b01,
+    "0b04": Cluster0b04,
+    "0b05": Cluster0b05,
+    "fe03": Clusterfe03,
+    "fc00": Clusterfc00,
+    "000f": Cluster000f,
+    "e000": Clustere000,
+    "e001": Clustere001,
+    "e002": Clustere002,
+    "fc01": Clusterfc01,
+    "fc03": Clusterfc03,
+    "fc21": Clusterfc21,
+    "fcc0": Clusterfcc0,
+    "fc40": Clusterfc40,
+    "ff66": Clusterff66,
+}
