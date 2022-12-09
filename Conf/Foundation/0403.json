@@ -1,0 +1,115 @@
+{
+    "ClusterId": "0403",
+    "Description": "Pressure Measurement",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "MeasuredValue",
+            "DataType": "29" ,
+            "Range": [ "954d", "7fff"] ,
+            "SpecialValues": { "0800": "Pressure measurement is unknown" },
+            "Acc": "RP" ,
+            "Default": "8000",
+            "Mandatory": true,
+            "dzClusterType": "Baro",
+            "eval": "round(int(value) / 10, 1)",
+            "action": [ "checkstore", "majdomodevice"]
+        },
+        "0001": { 
+            "Enabled": true,
+            "Name": "MinMeasuredValue" ,
+            "DataType": "29",
+            "Range": [ "8001", "7ffe" ],
+            "SpecialValues": { "0800": "Pressure measurement is unknown" },
+            "Acc": "R",
+            "Default": "8000",
+            "eval": "round(int(value) / 10, 1)",
+            "Mandatory": true,
+            "action": [ "checkstore"]
+
+        },
+        "0002": { 
+            "Enabled": true,
+            "Name": "MaxMeasuredValue" ,
+            "DataType": "29",
+            "Range": [ "8002", "7ffe" ],
+            "SpecialValues": { "00": "frequency that is too low to be measured.", "fe": "frequency that is too high to be measured", "ff": "frequency could not be measured" },
+            "Acc": "R",
+            "Default": "8000",
+            "eval": "round(int(value) / 10, 1)",
+            "Mandatory": true,
+            "action": [ "checkstore"]
+
+        },
+        "0003": { 
+            "Enabled": true,
+            "Name": "Tolerance" ,
+            "DataType": "21",
+            "Range": [ "0000", "0800" ],
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+        "0010": { 
+            "Enabled": true,
+            "Name": "ScaledValue",
+            "DataType": "29" ,
+            "Range": [ "954d", "7fff"] ,
+            "SpecialValues": { "0800": "Pressure measurement is unknown" },
+            "Acc": "R" ,
+            "Default": "",
+            "Mandatory": false,
+            "dzClusterType": "Baro",
+            "infosForEval": {"scale": { "Cluster": "0402", "Attribute": "0014"}},
+            "eval": "round(int(value) * pow( 10, scale), 1)",
+            "action": [ "checkstore", "majdomodevice"]
+        },
+        "0011": { 
+            "Enabled": true,
+            "Name": "MinScaledValue",
+            "DataType": "29" ,
+            "Range": [ "8001", "7fff"] ,
+            "Acc": "R" ,
+            "Default": "",
+            "Mandatory": false,
+            "eval": "round(int(value) / 100, 1)",
+            "action": [ "checkstore"]
+        },
+        "0012": { 
+            "Enabled": true,
+            "Name": "MaxScaledValue",
+            "DataType": "29" ,
+            "Range": [ "8002", "7fff"] ,
+            "Acc": "R" ,
+            "Default": "",
+            "Mandatory": false,
+            "eval": "round(int(value) / 100, 1)",
+            "action": [ "checkstore"]
+        },
+        "0013": { 
+            "Enabled": true,
+            "Name": "ScaledTolerance",
+            "DataType": "21" ,
+            "Range": [ "0000", "0800"] ,
+            "Acc": "R" ,
+            "Default": "",
+            "Mandatory": false,
+            "eval": "round(int(value) / 100, 1)",
+            "action": [ "checkstore"]
+        },
+        "0014": { 
+            "Enabled": true,
+            "Name": "Scale",
+            "DataType": "28" ,
+            "Range": [ "81", "7f"] ,
+            "Acc": "R" ,
+            "Default": "",
+            "Mandatory": false,
+            "eval": "",
+            "action": [ "checkstore"]
+        }
+    }
+}
