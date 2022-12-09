@@ -116,8 +116,34 @@ def _check_range( value, _range):
     
     if int( _range[0],15) > int(_range[1],16):
         return int( _range[0],15) >= value >= int(_range[1],16)
-        
 
+def _get_model_name( self, nwkid):
+
+    if "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( '', {}):
+        return self.ListOfDevices[ nwkid ]["Model"]
+    return None
+
+def _cluster_foundation_attribute_retreival( self, cluster, attribute, parameter ):
+    self.log.logging("FoundationCluster", "Debug", " . _cluster_foundation_attribute_retreival %s %s %s" %( cluster, attribute, parameter))
+    if (
+        attribute in self.FoundationClusters[ cluster ]["Attributes"] 
+        and parameter in self.FoundationClusters[ cluster ]["Attributes"][ attribute ]
+    ):
+        return self.FoundationClusters[ cluster ]["Attributes"][ attribute ][ parameter ]
+    return ""
+
+def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter ):
+    self.log.logging("FoundationCluster", "Debug", " . _cluster_specific_attribute_retreival %s %s %s %s %s" %( model, ep, cluster, attribute, parameter))
+    if (
+        attribute in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"] 
+        and parameter in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ]
+    ):
+        return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ][ parameter ]
+    return ""
+
+def _update_eval_formula( self, formula, input_variable, variable_name):
+    self.log.logging("FoundationCluster", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
+    return formula.replace( input_variable, variable_name )
 
 def load_foundation_cluster(self):
 
@@ -149,12 +175,31 @@ def load_foundation_cluster(self):
             "Attributes": dict( cluster_definition[ "Attributes" ] )
         }
         self.log.logging("FoundationCluster", "Status", " .  Foundation Cluster %s - %s version %s loaded" %( 
-            cluster_definition[ "ClusterId"], cluster_definition["Description"], cluster_definition[ "Version" ],  ))
+            cluster_definition[ "ClusterId"], cluster_definition["Description"], cluster_definition[ "Version" ],))
 
     self.log.logging("FoundationCluster", "Debug", "--> Foundation Clusters loaded: %s" % self.FoundationClusters.keys())
+
+def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
+    if model not in self.DeviceConf:
+        return False
+    if 'Ep' not in self.DeviceConf[ model ]:
+        return False
+    if ep not in self.DeviceConf[ model ]['Ep']:
+        return False
+    if cluster not in self.DeviceConf[ model ]['Ep'][ ep ]:
+        return False
+    if self.DeviceConf[ model ]['Ep'][ ep ][ cluster ] in ( '', {} ):
+        return False
+    if "Attributes" not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]:
+        return False
+    if attribute not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"]:
+        return False
+    self.log.logging("FoundationCluster", "Debug", "is_cluster_specific_config %s/%s and definition %s" %( 
+        cluster, attribute, self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ] ))
+
+    return True
     
 def is_cluster_foundation_config_available( self, cluster, attribute=None):
-    
     if cluster not in self.FoundationClusters:
         return False
     if (
@@ -169,25 +214,26 @@ def is_cluster_foundation_config_available( self, cluster, attribute=None):
     
     return True
 
-def cluster_foundation_attribute_retreival( self, cluster, attribute, parameter ):
-    
-    if parameter in self.FoundationClusters[ cluster ]["Attributes"][ attribute ]:
-        return self.FoundationClusters[ cluster ]["Attributes"][ attribute ][ parameter ]
-    return ""
+def cluster_attribute_retreival(self, ep, cluster, attribute, parameter, model=None):
+    if model and is_cluster_specific_config(self, model, ep, cluster, attribute=attribute):
+        return _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter )
+    return _cluster_foundation_attribute_retreival( self, cluster, attribute, parameter )
+
 
 def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
     
     self.log.logging("FoundationCluster", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source))
 
-    _name = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "Name" )
-    _datatype = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "DataType" )
-    _range = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "Range" )
-    _special_values = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "SpecialValues")
-    _eval_formula = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "eval" )
-    _action_list = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "action" )
-    _eval_inputs = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID,  "evalInputs")
-    _force_value = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID,  "overwrite")
+    device_model = _get_model_name( self, MsgSrcAddr)
+    _name = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Name", model=device_model)
+    _datatype = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DataType", model=device_model)
+    _range = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Range", model=device_model )
+    _special_values = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecialValues", model=device_model)
+    _eval_formula = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "eval", model=device_model )
+    _action_list = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "action", model=device_model )
+    _eval_inputs = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "evalInputs", model=device_model)
+    _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "overwrite", model=device_model)
 
     self.log.logging("FoundationCluster", "Debug", " . Name:    %s" %_name )
     self.log.logging("FoundationCluster", "Debug", " . DT:      %s versus received %s" %( _datatype, MsgAttType ))
@@ -202,6 +248,19 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         value = _decode_attribute_data( _datatype, MsgClusterData)
     self.log.logging("FoundationCluster", "Debug", " . decode value: %s -> %s" %( MsgClusterData, value))
 
+    if _eval_formula != "":
+        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, value, _eval_inputs, _eval_formula)
+    
+    for data_action in _action_list:
+        if data_action == "checkstore":
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+
+        elif data_action == "majdomodevice":
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
+
+
+def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula):
+
     evaluation_result = value
 
     custom_variable = {}
@@ -210,7 +269,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             if "Cluster" in _eval_inputs[x] and "Attribute" in _eval_inputs[x]:
                 cluster = _eval_inputs[x][ "Cluster" ]
                 attribute = _eval_inputs[x][ "Attribute" ]
-                custom_value = getAttributeValue(self, MsgSrcAddr, MsgSrcEp, cluster, attribute)
+                custom_value = getAttributeValue(self, nwkid, ep, cluster, attribute)
                 self.log.logging("FoundationCluster", "Debug", " . %s/%s = %s" %( cluster, attribute, custom_value ))
                 if custom_value is None:
                     self.log.logging("FoundationCluster", "Error", "process_cluster_attribute_response - unable to found Input variable: %s Cluster: %s Attribute: %s" %(
@@ -226,17 +285,4 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     if _eval_formula != "":
         evaluation_result = eval( _eval_formula )
     self.log.logging("FoundationCluster", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
-    value = evaluation_result
-
-    for data_action in _action_list:
-        if data_action == "checkstore":
-            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-
-        elif data_action == "majdomodevice":
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
-
-
-def _update_eval_formula( self, formula, input_variable, variable_name):
-    self.log.logging("FoundationCluster", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
-    return formula.replace( input_variable, variable_name )
-    
+    return evaluation_result

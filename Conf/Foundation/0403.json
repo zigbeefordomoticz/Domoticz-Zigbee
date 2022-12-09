@@ -109,7 +109,6 @@
             "Default": "",
             "Mandatory": false,
             "eval": "",
-            "overwrite": 0,
             "action": [ "checkstore"]
         }
     }
