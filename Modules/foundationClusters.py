@@ -6,7 +6,7 @@ import struct
 import binascii
 from Modules.domoMaj import MajDomoDevice
 from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
-                           checkAttribute, checkValidValue,
+                           checkAttribute, checkValidValue, getAttributeValue,
                            get_deviceconf_parameter_value, getEPforClusterType,
                            is_hex, set_status_datastruct,
                            set_timestamp_datastruct)
@@ -141,13 +141,15 @@ def load_foundation_cluster(self):
             continue
         if cluster_definition[ "ClusterId"] in self.FoundationClusters:
             continue
+        if "Description" not in cluster_definition:
+            continue
         
         self.FoundationClusters[ cluster_definition[ "ClusterId"] ] = {
             "Version": cluster_definition[ "Version" ],
             "Attributes": dict( cluster_definition[ "Attributes" ] )
         }
-        self.log.logging("FoundationCluster", "Status", " .  Foundation Cluster %s version %s loaded" %( 
-            cluster_definition[ "ClusterId"], cluster_definition[ "Version" ]))
+        self.log.logging("FoundationCluster", "Status", " .  Foundation Cluster %s - %s version %s loaded" %( 
+            cluster_definition[ "ClusterId"], cluster_definition["Description"], cluster_definition[ "Version" ],  ))
 
     self.log.logging("FoundationCluster", "Debug", "--> Foundation Clusters loaded: %s" % self.FoundationClusters.keys())
     
@@ -176,36 +178,61 @@ def cluster_foundation_attribute_retreival( self, cluster, attribute, parameter 
 def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
     
     self.log.logging("FoundationCluster", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
-        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source)
-    )
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source))
 
     _name = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "Name" )
     _datatype = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "DataType" )
     _range = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "Range" )
     _special_values = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "SpecialValues")
-    _eval_formula = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "eval" ) 
-    _action_list = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "action" ) 
- 
-    
+    _eval_formula = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "eval" )
+    _action_list = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID, "action" )
+    _eval_inputs = cluster_foundation_attribute_retreival( self, MsgClusterId, MsgAttrID,  "evalInputs")
+
     self.log.logging("FoundationCluster", "Debug", " . Name:    %s" %_name )
     self.log.logging("FoundationCluster", "Debug", " . DT:      %s versus received %s" %( _datatype, MsgAttType ))
     self.log.logging("FoundationCluster", "Debug", " . range    %s" %( _range ))
     self.log.logging("FoundationCluster", "Debug", " . formula  %s" %( _eval_formula ))
     self.log.logging("FoundationCluster", "Debug", " . actions  %s" %( _action_list ))
     self.log.logging("FoundationCluster", "Debug", " . special values %s" %( _special_values ))
-    
+
     value = _decode_attribute_data( _datatype, MsgClusterData)
     self.log.logging("FoundationCluster", "Debug", " . decode value: %s -> %s" %( MsgClusterData, value))
-    
+
     evaluation_result = value
+
+    custom_variable = {}
+    if _eval_inputs != "":
+        for idx, x in enumerate(_eval_inputs):
+            if "Cluster" in _eval_inputs[x] and "Attribute" in _eval_inputs[x]:
+                cluster = _eval_inputs[x][ "Cluster" ]
+                attribute = _eval_inputs[x][ "Attribute" ]
+                custom_value = getAttributeValue(self, MsgSrcAddr, MsgSrcEp, cluster, attribute)
+                self.log.logging("FoundationCluster", "Debug", " . %s/%s = %s" %( cluster, attribute, custom_value ))
+                if custom_value is None:
+                    self.log.logging("FoundationCluster", "Error", "process_cluster_attribute_response - unable to found Input variable: %s Cluster: %s Attribute: %s" %(
+                        x, cluster, attribute))
+                    continue
+                custom_variable[ idx ] = custom_value
+                _eval_formula = _update_eval_formula( self, _eval_formula, x, "custom_variable[ %s ]" % idx)
+                self.log.logging("FoundationCluster", "Debug", " . Updated formula: %s" %_eval_formula)
+
+    for x in custom_variable:
+        self.log.logging("FoundationCluster", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]))
+        
     if _eval_formula != "":
         evaluation_result = eval( _eval_formula )
     self.log.logging("FoundationCluster", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
     value = evaluation_result
-    
+
     for data_action in _action_list:
         if data_action == "checkstore":
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-            
+
         elif data_action == "majdomodevice":
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
+
+
+def _update_eval_formula( self, formula, input_variable, variable_name):
+    self.log.logging("FoundationCluster", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
+    return formula.replace( input_variable, variable_name )
+    

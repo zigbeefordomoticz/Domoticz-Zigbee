@@ -63,7 +63,7 @@
             "Default": "",
             "Mandatory": false,
             "dzClusterType": "Baro",
-            "infosForEval": {"scale": { "Cluster": "0402", "Attribute": "0014"}},
+            "evalInputs": {"scale": { "Cluster": "0403", "Attribute": "0014"}},
             "eval": "round(int(value) * pow( 10, scale), 1)",
             "action": [ "checkstore", "majdomodevice"]
         },
