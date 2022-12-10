@@ -260,7 +260,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         
     if _ranges is not None:
         checking_ranges = _check_range( self, value, _datatype, _ranges, )
-        if checking_ranges is not None and  checking_ranges:
+        if checking_ranges is not None and not checking_ranges:
             self.log.logging("FoundationCluster", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
             
     if _eval_formula is not None:
