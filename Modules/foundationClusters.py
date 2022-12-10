@@ -1,16 +1,12 @@
 
+import binascii
 import json
+import struct
 from os import listdir
 from os.path import isdir, isfile, join
-import struct
-import binascii
-from Modules.domoMaj import MajDomoDevice
-from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
-                           checkAttribute, checkValidValue, getAttributeValue,
-                           get_deviceconf_parameter_value, getEPforClusterType,
-                           is_hex, set_status_datastruct,
-                           set_timestamp_datastruct)
 
+from Modules.domoMaj import MajDomoDevice
+from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
 
 ACTIONS_TO_FUNCTIONS = {
     "checkstore": checkAndStoreAttributeValue,
@@ -107,15 +103,24 @@ def _decode_caracter_string(attribute_value, handleErrors):
         decode = ""
     return decode
 
-def _check_range( value, _range):
+def _check_range( self, value, datatype, _range):
+    self.log.logging("FoundationCluster", "Debug", " . _check_range %s %s %s" %(value, datatype, _range))
     
     if len(_range) != 2:
+        self.log.logging("FoundationCluster", "Error", " . Incorrect range %s" %str(_range))
         return None
-    if int( _range[0],15) < int(_range[1],16):
-        return int( _range[0],15) <= value <= int(_range[1],16)
     
-    if int( _range[0],15) > int(_range[1],16):
-        return int( _range[0],15) >= value >= int(_range[1],16)
+    _range1 = _decode_attribute_data( datatype, _range[0])
+    _range2 = _decode_attribute_data( datatype, _range[1])
+    
+    self.log.logging("FoundationCluster", "Debug", " . _check_range range1: %s" %(_range1))
+    self.log.logging("FoundationCluster", "Debug", " . _check_range range2: %s" %(_range2))
+    
+    if _range1 < _range2:
+        return _range1 <= value <= _range2
+    
+    if _range1 > _range2:
+        return _range1 >= value >= _range2
 
 def _get_model_name( self, nwkid):
 
@@ -130,7 +135,7 @@ def _cluster_foundation_attribute_retreival( self, cluster, attribute, parameter
         and parameter in self.FoundationClusters[ cluster ]["Attributes"][ attribute ]
     ):
         return self.FoundationClusters[ cluster ]["Attributes"][ attribute ][ parameter ]
-    return ""
+    return None
 
 def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter ):
     self.log.logging("FoundationCluster", "Debug", " . _cluster_specific_attribute_retreival %s %s %s %s %s" %( model, ep, cluster, attribute, parameter))
@@ -139,7 +144,7 @@ def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, 
         and parameter in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ]
     ):
         return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ][ parameter ]
-    return ""
+    return None
 
 def _update_eval_formula( self, formula, input_variable, variable_name):
     self.log.logging("FoundationCluster", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
@@ -228,7 +233,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     device_model = _get_model_name( self, MsgSrcAddr)
     _name = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Name", model=device_model)
     _datatype = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DataType", model=device_model)
-    _range = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Range", model=device_model )
+    _ranges = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Range", model=device_model )
     _special_values = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecialValues", model=device_model)
     _eval_formula = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "eval", model=device_model )
     _action_list = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "action", model=device_model )
@@ -237,18 +242,28 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
 
     self.log.logging("FoundationCluster", "Debug", " . Name:    %s" %_name )
     self.log.logging("FoundationCluster", "Debug", " . DT:      %s versus received %s" %( _datatype, MsgAttType ))
-    self.log.logging("FoundationCluster", "Debug", " . range    %s" %( _range ))
+    self.log.logging("FoundationCluster", "Debug", " . ranges   %s" %( _ranges ))
     self.log.logging("FoundationCluster", "Debug", " . formula  %s" %( _eval_formula ))
     self.log.logging("FoundationCluster", "Debug", " . actions  %s" %( _action_list ))
     self.log.logging("FoundationCluster", "Debug", " . special values %s" %( _special_values ))
 
-    if _force_value != "":
+    
+    value = _decode_attribute_data( _datatype, MsgClusterData)
+    
+    if _force_value is not None:
         value = _force_value
-    else:
-        value = _decode_attribute_data( _datatype, MsgClusterData)
+        
     self.log.logging("FoundationCluster", "Debug", " . decode value: %s -> %s" %( MsgClusterData, value))
 
-    if _eval_formula != "":
+    if _special_values is not None:
+        check_special_values( self, value, _datatype, _special_values )
+        
+    if _ranges is not None:
+        checking_ranges = _check_range( self, value, _datatype, _ranges, )
+        if checking_ranges is not None and  checking_ranges:
+            self.log.logging("FoundationCluster", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
+            
+    if _eval_formula is not None:
         value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, value, _eval_inputs, _eval_formula)
     
     for data_action in _action_list:
@@ -259,12 +274,20 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
 
 
+def check_special_values( self, value, data_type, _special_values ):
+    flag = False
+    for x in _special_values:
+        if value == _decode_attribute_data( data_type, x):
+            self.log.logging("FoundationCluster", "Log", " . found %s as %s" %( value, _special_values[ x ] ))
+            flag = True
+    return flag
+        
+        
 def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula):
 
     evaluation_result = value
-
     custom_variable = {}
-    if _eval_inputs != "":
+    if _eval_inputs is not None:
         for idx, x in enumerate(_eval_inputs):
             if "Cluster" in _eval_inputs[x] and "Attribute" in _eval_inputs[x]:
                 cluster = _eval_inputs[x][ "Cluster" ]
@@ -282,7 +305,7 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
         for x in custom_variable:
             self.log.logging("FoundationCluster", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]))
         
-    if _eval_formula != "":
+    if _eval_formula is not None and _eval_formula != "":
         evaluation_result = eval( _eval_formula )
     self.log.logging("FoundationCluster", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
     return evaluation_result

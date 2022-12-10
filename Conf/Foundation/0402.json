@@ -1,4 +1,4 @@
-{
+{ 
     "ClusterId": "0402",
     "Description": "Temperature Measurement",
     "Version": "1",
@@ -8,7 +8,7 @@
             "Enabled": true,
             "Name": "MeasuredValue",
             "DataType": "29" ,
-            "Range": [ "954d", "7fff"] ,
+            "Range": [ "954d", "7fff"],
             "SpecialValues": { "0800": "temperature measurement is unknown" },
             "Acc": "RP" ,
             "Default": "",

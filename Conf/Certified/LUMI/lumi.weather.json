@@ -6,9 +6,9 @@
 			"0402": "",
 			"0403": {
                 "Attributes": {
-                    "0000": { "Enabled": true,"Name": "MeasuredValue","DataType": "29" ,"dzClusterType": "Baro","eval": "","action": [ "checkstore"]},
-                    "0010": { "Enabled": true,"Name": "ScaledValue","DataType": "29" ,"eval": "value","action": [ "checkstore", "majdomodevice"]},
-                    "0014": {  "Enabled": true, "Name": "Scale", "DataType": "28" , "eval": "", "action": [ "checkstore"] }
+                    "0000": { "Enabled": true, "Name": "Aqara MeasuredValue","DataType": "29" , "dzClusterType": "Baro","action": [ "checkstore"]},
+                    "0010": { "Enabled": true, "Name": "Aqara ScaledValue",  "DataType": "29" , "eval": "value",        "action": [ "checkstore", "majdomodevice"]},
+                    "0014": { "Enabled": true, "Name": "Aqara Scale",        "DataType": "28" ,                         "action": [ "checkstore"] }
                 }
             },
 			"0405": "",
@@ -20,10 +20,7 @@
 	"ClusterToBind": [],
 	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [
-			"0004",
-			"0005"
-		],
+		"0000": [ "0004", "0005" ],
 		"0402": [],
 		"0403": [],
 		"0405": []
