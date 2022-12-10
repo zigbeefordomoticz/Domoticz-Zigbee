@@ -150,38 +150,33 @@ def _update_eval_formula( self, formula, input_variable, variable_name):
     self.log.logging("FoundationCluster", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
     return formula.replace( input_variable, variable_name )
 
+# methods used outside
+
 def load_foundation_cluster(self):
-
     foundation_cluster_path = self.pluginconf.pluginConf["pluginConfig"] + "Foundation"
-
     if not isdir(foundation_cluster_path):
         return
 
     foundation_cluster_definition = [f for f in listdir(foundation_cluster_path) if isfile(join(foundation_cluster_path, f))]
-
-    for cluster_definition in foundation_cluster_definition:
+    for cluster_definition in sorted(foundation_cluster_definition):
         cluster_filename = str(foundation_cluster_path + "/" + cluster_definition)
         cluster_definition = _read_foundation_cluster( self, cluster_filename )
-        
-        if cluster_definition is None:
-            continue
-        
-        if "ClusterId" not in cluster_definition:
-            continue
-        if "Enabled" not in cluster_definition or not cluster_definition["Enabled"]:
-            continue
-        if cluster_definition[ "ClusterId"] in self.FoundationClusters:
-            continue
-        if "Description" not in cluster_definition:
+
+        if (
+            cluster_definition is None
+            or "ClusterId" not in cluster_definition
+            or "Enabled" not in cluster_definition or not cluster_definition["Enabled"]
+            or cluster_definition[ "ClusterId"] in self.FoundationClusters
+            or "Description" not in cluster_definition
+        ):
             continue
         
         self.FoundationClusters[ cluster_definition[ "ClusterId"] ] = {
             "Version": cluster_definition[ "Version" ],
             "Attributes": dict( cluster_definition[ "Attributes" ] )
         }
-        self.log.logging("FoundationCluster", "Status", " .  Foundation Cluster %s - %s version %s loaded" %( 
+        self.log.logging("FoundationCluster", "Status", " - Foundation Cluster %s - %s version %s loaded" %( 
             cluster_definition[ "ClusterId"], cluster_definition["Description"], cluster_definition[ "Version" ],))
-
     self.log.logging("FoundationCluster", "Debug", "--> Foundation Clusters loaded: %s" % self.FoundationClusters.keys())
 
 def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
@@ -224,7 +219,6 @@ def cluster_attribute_retreival(self, ep, cluster, attribute, parameter, model=N
         return _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter )
     return _cluster_foundation_attribute_retreival( self, cluster, attribute, parameter )
 
-
 def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
     
     self.log.logging("FoundationCluster", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
@@ -239,22 +233,12 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     _action_list = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "action", model=device_model )
     _eval_inputs = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "evalInputs", model=device_model)
     _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "overwrite", model=device_model)
-
-    self.log.logging("FoundationCluster", "Debug", " . Name:    %s" %_name )
-    self.log.logging("FoundationCluster", "Debug", " . DT:      %s versus received %s" %( _datatype, MsgAttType ))
-    self.log.logging("FoundationCluster", "Debug", " . ranges   %s" %( _ranges ))
-    self.log.logging("FoundationCluster", "Debug", " . formula  %s" %( _eval_formula ))
-    self.log.logging("FoundationCluster", "Debug", " . actions  %s" %( _action_list ))
-    self.log.logging("FoundationCluster", "Debug", " . special values %s" %( _special_values ))
-
-    
+    _majdomo_formater = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "majdomoformat", model=device_model)
     value = _decode_attribute_data( _datatype, MsgClusterData)
     
     if _force_value is not None:
         value = _force_value
         
-    self.log.logging("FoundationCluster", "Debug", " . decode value: %s -> %s" %( MsgClusterData, value))
-
     if _special_values is not None:
         check_special_values( self, value, _datatype, _special_values )
         
@@ -265,13 +249,19 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             
     if _eval_formula is not None:
         value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, value, _eval_inputs, _eval_formula)
+
+    formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, _ranges, _special_values, _eval_formula, _action_list, _eval_inputs, _force_value, value)
     
     for data_action in _action_list:
         if data_action == "checkstore":
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
         elif data_action == "majdomodevice":
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
+            if _majdomo_formater and _majdomo_formater == "str":
+                majValue = str( value )
+            else:
+                majValue = value
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, majValue )
 
 
 def check_special_values( self, value, data_type, _special_values ):
@@ -309,3 +299,8 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
         evaluation_result = eval( _eval_formula )
     self.log.logging("FoundationCluster", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
     return evaluation_result
+
+
+def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, device_model, attr_name, exp_dt, _ranges, _special_values, eval_formula, action_list, eval_inputs, force_value, value):
+    self.log.logging( "FoundationCluster",  "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s" %(
+        nwkid, ep, cluster, attribute, attr_name,  dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, value ))        
