@@ -3160,96 +3160,6 @@ def Cluster0301(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-
-def Cluster0402(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
-    # Temperature Measurement Cluster
-    # The possible values are used as follows:
-    #   0x0000 to 0x7FFF represent positive temperatures from 0°C to 327.67ºC
-    #   0x8000 indicates that the temperature measurement is invalid
-    #   0x8001 to 0x954C are unused values
-    #   0x954D to 0xFFFF represent negative temperatures from -273.15°C to -1°C
-
-    # For VOC_Sensor from Nexturn, it uses Cluster 0x0402 to provide, Humidity, CO2 and VOC infos.
-    #     Temperature: 0x0000
-    #     Humidity: 0x0001
-    #     Carbon Dioxide: 0x0002
-    #     VOC (Volatile Organic Compounds): 0x0003
-
-    if MsgAttrID == "0000" and MsgClusterData != "":
-        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        # Store value in int centi-degre
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-
-        if 0x7FFF < value < 0x954D or value == 0x8000:
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "readCluster - %s - %s/%s Invalid Temperature Measurement: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
-                MsgSrcAddr,
-            )
-            return
-
-        value = round(value / 100, 1)
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "readCluster - %s - %s/%s Temperature Measurement: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
-            MsgSrcAddr,
-        )
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
-
-    elif MsgAttrID == "0001":
-        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "readCluster - %s - %s/%s Attribute 0x0001: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
-            MsgSrcAddr,
-        )
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "VOC_Sensor":
-            # Humidity
-            # Domoticz.Log("Update VOC Sensor Humidity: %s" %value)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0405", round(value / 100), Attribute_=MsgAttrID)
-
-    elif MsgAttrID == "0002":
-        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "readCluster - %s - %s/%s Attribute 0x0002: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
-            MsgSrcAddr,
-        )
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "VOC_Sensor":
-            # ECO2
-            # Domoticz.Log("Update VOC Sensor ECO2: %s" %value)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID)
-
-    elif MsgAttrID == "0003":
-        value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "readCluster - %s - %s/%s Attribute 0x0003: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value),
-            MsgSrcAddr,
-        )
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "VOC_Sensor":
-            # VOC
-            # Domoticz.Log("Update VOC Sensor VOC: %s" %value)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID)
-
-    else:
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-            MsgSrcAddr,
-        )
-
-
 def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     """
@@ -4895,7 +4805,7 @@ DECODE_CLUSTER = {
     "0300": Cluster0300,
     "0301": Cluster0301,
     #"0400": Cluster0400,
-    "0402": Cluster0402,
+    #"0402": Cluster0402,
     #"0403": Cluster0403,
     #"0405": Cluster0405,
     #"0406": Cluster0406,
