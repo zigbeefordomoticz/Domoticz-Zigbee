@@ -119,7 +119,7 @@ from Modules.database import (LoadDeviceList, WriteDeviceList,
                               importDeviceConfV2)
 from Modules.domoCreate import how_many_slot_available
 from Modules.domoTools import ResetDevice
-from Modules.foundationClusters import load_foundation_cluster
+from Modules.readZclClusters import load_zcl_cluster
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
@@ -170,7 +170,7 @@ class BasePlugin:
         self.IEEE2NWK = {}
         self.ControllerData = {}
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
-        self.FoundationClusters = {}
+        self.readZclClusters = {}
 
         # Objects from Classe
         self.configureReporting = None
@@ -418,8 +418,8 @@ class BasePlugin:
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Plugin Database: %s" % self.DeviceListName)
 
-        # Import Foundation Cluster definition
-        load_foundation_cluster(self)
+        # Import Zcl Cluster definitions
+        load_zcl_cluster(self)
         
         # Import Certified Device Configuration
         importDeviceConfV2(self)

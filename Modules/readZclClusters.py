@@ -13,16 +13,16 @@ ACTIONS_TO_FUNCTIONS = {
     "majdomodevice": MajDomoDevice
 }
 
-def _read_foundation_cluster( self, cluster_filename ):
+def _read_zcl_cluster( self, cluster_filename ):
     with open(cluster_filename, "rt") as handle:
         try:
             return json.load(handle)
         except ValueError as e:
-            self.log.logging("FoundationCluster", "Error", "--> JSON FoundationCluster: %s load failed with error: %s" % (cluster_filename, str(e)))
+            self.log.logging("readZclClusters", "Error", "--> JSON readZclClusters: %s load failed with error: %s" % (cluster_filename, str(e)))
 
             return None
         except Exception as e:
-            self.log.logging("FoundationCluster", "Error", "--> JSON FoundationCluster: %s load general error: %s" % (cluster_filename, str(e)))
+            self.log.logging("readZclClusters", "Error", "--> JSON readZclClusters: %s load general error: %s" % (cluster_filename, str(e)))
             return None
     return None
 
@@ -104,17 +104,17 @@ def _decode_caracter_string(attribute_value, handleErrors):
     return decode
 
 def _check_range( self, value, datatype, _range):
-    self.log.logging("FoundationCluster", "Debug", " . _check_range %s %s %s" %(value, datatype, _range))
+    self.log.logging("readZclClusters", "Debug", " . _check_range %s %s %s" %(value, datatype, _range))
     
     if len(_range) != 2:
-        self.log.logging("FoundationCluster", "Error", " . Incorrect range %s" %str(_range))
+        self.log.logging("readZclClusters", "Error", " . Incorrect range %s" %str(_range))
         return None
     
     _range1 = _decode_attribute_data( datatype, _range[0])
     _range2 = _decode_attribute_data( datatype, _range[1])
     
-    self.log.logging("FoundationCluster", "Debug", " . _check_range range1: %s" %(_range1))
-    self.log.logging("FoundationCluster", "Debug", " . _check_range range2: %s" %(_range2))
+    self.log.logging("readZclClusters", "Debug", " . _check_range range1: %s" %(_range1))
+    self.log.logging("readZclClusters", "Debug", " . _check_range range2: %s" %(_range2))
     
     if _range1 < _range2:
         return _range1 <= value <= _range2
@@ -128,17 +128,17 @@ def _get_model_name( self, nwkid):
         return self.ListOfDevices[ nwkid ]["Model"]
     return None
 
-def _cluster_foundation_attribute_retreival( self, cluster, attribute, parameter ):
-    self.log.logging("FoundationCluster", "Debug", " . _cluster_foundation_attribute_retreival %s %s %s" %( cluster, attribute, parameter))
+def _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter ):
+    self.log.logging("readZclClusters", "Debug", " . _cluster_zcl_attribute_retreival %s %s %s" %( cluster, attribute, parameter))
     if (
-        attribute in self.FoundationClusters[ cluster ]["Attributes"] 
-        and parameter in self.FoundationClusters[ cluster ]["Attributes"][ attribute ]
+        attribute in self.readZclClusters[ cluster ]["Attributes"] 
+        and parameter in self.readZclClusters[ cluster ]["Attributes"][ attribute ]
     ):
-        return self.FoundationClusters[ cluster ]["Attributes"][ attribute ][ parameter ]
+        return self.readZclClusters[ cluster ]["Attributes"][ attribute ][ parameter ]
     return None
 
 def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter ):
-    self.log.logging("FoundationCluster", "Debug", " . _cluster_specific_attribute_retreival %s %s %s %s %s" %( model, ep, cluster, attribute, parameter))
+    self.log.logging("readZclClusters", "Debug", " . _cluster_specific_attribute_retreival %s %s %s %s %s" %( model, ep, cluster, attribute, parameter))
     if (
         attribute in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"] 
         and parameter in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ]
@@ -147,37 +147,37 @@ def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, 
     return None
 
 def _update_eval_formula( self, formula, input_variable, variable_name):
-    self.log.logging("FoundationCluster", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
+    self.log.logging("readZclClusters", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
     return formula.replace( input_variable, variable_name )
 
 # methods used outside
 
-def load_foundation_cluster(self):
-    foundation_cluster_path = self.pluginconf.pluginConf["pluginConfig"] + "Foundation"
-    if not isdir(foundation_cluster_path):
+def load_zcl_cluster(self):
+    zcl_cluster_path = self.pluginconf.pluginConf["pluginConfig"] + "ZclDefinitions"
+    if not isdir(zcl_cluster_path):
         return
 
-    foundation_cluster_definition = [f for f in listdir(foundation_cluster_path) if isfile(join(foundation_cluster_path, f))]
-    for cluster_definition in sorted(foundation_cluster_definition):
-        cluster_filename = str(foundation_cluster_path + "/" + cluster_definition)
-        cluster_definition = _read_foundation_cluster( self, cluster_filename )
+    zcl_cluster_definition = [f for f in listdir(zcl_cluster_path) if isfile(join(zcl_cluster_path, f))]
+    for cluster_definition in sorted(zcl_cluster_definition):
+        cluster_filename = str(zcl_cluster_path + "/" + cluster_definition)
+        cluster_definition = _read_zcl_cluster( self, cluster_filename )
 
         if (
             cluster_definition is None
             or "ClusterId" not in cluster_definition
             or "Enabled" not in cluster_definition or not cluster_definition["Enabled"]
-            or cluster_definition[ "ClusterId"] in self.FoundationClusters
+            or cluster_definition[ "ClusterId"] in self.readZclClusters
             or "Description" not in cluster_definition
         ):
             continue
         
-        self.FoundationClusters[ cluster_definition[ "ClusterId"] ] = {
+        self.readZclClusters[ cluster_definition[ "ClusterId"] ] = {
             "Version": cluster_definition[ "Version" ],
             "Attributes": dict( cluster_definition[ "Attributes" ] )
         }
-        self.log.logging("FoundationCluster", "Status", " - Foundation Cluster %s - %s version %s loaded" %( 
+        self.log.logging("readZclClusters", "Status", " - ZCL Cluster %s - %s (v%s) loaded" %( 
             cluster_definition[ "ClusterId"], cluster_definition["Description"], cluster_definition[ "Version" ],))
-    self.log.logging("FoundationCluster", "Debug", "--> Foundation Clusters loaded: %s" % self.FoundationClusters.keys())
+    self.log.logging("readZclClusters", "Debug", "--> Zcl Clusters definition: %s" % self.readZclClusters.keys())
 
 def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
     if model not in self.DeviceConf:
@@ -194,34 +194,34 @@ def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
         return False
     if attribute not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"]:
         return False
-    self.log.logging("FoundationCluster", "Debug", "is_cluster_specific_config %s/%s and definition %s" %( 
+    self.log.logging("readZclClusters", "Debug", "is_cluster_specific_config %s/%s and definition %s" %( 
         cluster, attribute, self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ] ))
 
     return True
     
-def is_cluster_foundation_config_available( self, cluster, attribute=None):
-    if cluster not in self.FoundationClusters:
+def is_cluster_zcl_config_available( self, cluster, attribute=None):
+    if cluster not in self.readZclClusters:
         return False
     if (
         attribute is None 
-        or attribute not in self.FoundationClusters[ cluster ]["Attributes"] 
-        or "Enabled" not in self.FoundationClusters[ cluster ]["Attributes"][ attribute ]
-        or not self.FoundationClusters[ cluster ]["Attributes"][ attribute ]["Enabled"]
+        or attribute not in self.readZclClusters[ cluster ]["Attributes"] 
+        or "Enabled" not in self.readZclClusters[ cluster ]["Attributes"][ attribute ]
+        or not self.readZclClusters[ cluster ]["Attributes"][ attribute ]["Enabled"]
     ):
         return False
-    self.log.logging("FoundationCluster", "Debug", "is_cluster_foundation_config_available %s/%s and definition %s" %( 
-        cluster, attribute, self.FoundationClusters[ cluster ]["Attributes"][ attribute ] ))
+    self.log.logging("readZclClusters", "Debug", "is_cluster_zcl_config_available %s/%s and definition %s" %( 
+        cluster, attribute, self.readZclClusters[ cluster ]["Attributes"][ attribute ] ))
     
     return True
 
 def cluster_attribute_retreival(self, ep, cluster, attribute, parameter, model=None):
     if model and is_cluster_specific_config(self, model, ep, cluster, attribute=attribute):
         return _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter )
-    return _cluster_foundation_attribute_retreival( self, cluster, attribute, parameter )
+    return _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter )
 
 def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
     
-    self.log.logging("FoundationCluster", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
+    self.log.logging("readZclClusters", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source))
 
     device_model = _get_model_name( self, MsgSrcAddr)
@@ -245,7 +245,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     if _ranges is not None:
         checking_ranges = _check_range( self, value, _datatype, _ranges, )
         if checking_ranges is not None and not checking_ranges:
-            self.log.logging("FoundationCluster", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
+            self.log.logging("readZclClusters", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
             
     if _eval_formula is not None:
         value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, value, _eval_inputs, _eval_formula)
@@ -268,7 +268,7 @@ def check_special_values( self, value, data_type, _special_values ):
     flag = False
     for x in _special_values:
         if value == _decode_attribute_data( data_type, x):
-            self.log.logging("FoundationCluster", "Log", " . found %s as %s" %( value, _special_values[ x ] ))
+            self.log.logging("readZclClusters", "Log", " . found %s as %s" %( value, _special_values[ x ] ))
             flag = True
     return flag
         
@@ -283,24 +283,24 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
                 cluster = _eval_inputs[x][ "Cluster" ]
                 attribute = _eval_inputs[x][ "Attribute" ]
                 custom_value = getAttributeValue(self, nwkid, ep, cluster, attribute)
-                self.log.logging("FoundationCluster", "Debug", " . %s/%s = %s" %( cluster, attribute, custom_value ))
+                self.log.logging("readZclClusters", "Debug", " . %s/%s = %s" %( cluster, attribute, custom_value ))
                 if custom_value is None:
-                    self.log.logging("FoundationCluster", "Error", "process_cluster_attribute_response - unable to found Input variable: %s Cluster: %s Attribute: %s" %(
+                    self.log.logging("readZclClusters", "Error", "process_cluster_attribute_response - unable to found Input variable: %s Cluster: %s Attribute: %s" %(
                         x, cluster, attribute))
                     continue
                 custom_variable[ idx ] = custom_value
                 _eval_formula = _update_eval_formula( self, _eval_formula, x, "custom_variable[ %s ]" % idx)
-                self.log.logging("FoundationCluster", "Debug", " . Updated formula: %s" %_eval_formula)
+                self.log.logging("readZclClusters", "Debug", " . Updated formula: %s" %_eval_formula)
 
         for x in custom_variable:
-            self.log.logging("FoundationCluster", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]))
+            self.log.logging("readZclClusters", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]))
         
     if _eval_formula is not None and _eval_formula != "":
         evaluation_result = eval( _eval_formula )
-    self.log.logging("FoundationCluster", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
+    self.log.logging("readZclClusters", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
     return evaluation_result
 
 
 def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, device_model, attr_name, exp_dt, _ranges, _special_values, eval_formula, action_list, eval_inputs, force_value, value):
-    self.log.logging( "FoundationCluster",  "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s" %(
-        nwkid, ep, cluster, attribute, attr_name,  dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, value ))        
+    self.log.logging( "readZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s" %(
+        nwkid, ep, cluster, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, value ))        
