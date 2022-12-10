@@ -1,0 +1,131 @@
+{ 
+    "ClusterId": "0406",
+    "Description": "Occupancy Sensing",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "Occupancy",
+            "DataType": "18" ,
+            "Acc": "RP" ,
+            "Default": "",
+            "Mandatory": true,
+            "dzClusterType": "Motion",
+            "eval": "value & 0b0001",
+            "action": [ "checkstore", "majdomodevice"],
+            "majdomoformat": "str"
+        },
+        "0001": { 
+            "Enabled": true,
+            "Name": "OccupancySensorType" ,
+            "DataType": "30",
+            "Acc": "R",
+            "Default": "",
+            "valueList": { "00": "PIR", "01": "Ultrasonic", "02": "PIR and ultrasonic", "03": "Physical contact"},
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+        "0002": { 
+            "Enabled": true,
+            "Name": "OccupancySensorTypeBitmap" ,
+            "DataType": "18",
+            "Acc": "R",
+            "Default": "",
+            "valueList": { "01": "PIR", "02": "Ultrasonic", "04": "Physical contact"},
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+        "0010": { 
+            "Enabled": true,
+            "Name": "PIROccupiedToUnoccupiedDelay" ,
+            "DataType": "21",
+            "Range": [ "0000", "fffe" ],
+            "Acc": "RW",
+            "Default": "00",
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+        "0011": { 
+            "Enabled": true,
+            "Name": "PIRUnoccupiedToOccupiedDelay" ,
+            "DataType": "21",
+            "Range": [ "0000", "fffe" ],
+            "Acc": "RW",
+            "Default": "00",
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+        "0012": { 
+            "Enabled": true,
+            "Name": "PIRUnoccupiedToOccupiedThreshold" ,
+            "DataType": "20",
+            "Range": [ "00", "fe" ],
+            "Acc": "RW",
+            "Default": "01",
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+        "0020": { 
+            "Enabled": true,
+            "Name": "UltrasonicOccupiedToUnoccupiedDelay" ,
+            "DataType": "21",
+            "Range": [ "0000", "fffe" ],
+            "Acc": "RW",
+            "Default": "00",
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+        "0022": { 
+            "Enabled": true,
+            "Name": "UltrasonicUnoccupiedToOccupiedDelay" ,
+            "DataType": "21",
+            "Range": [ "0000", "fffe" ],
+            "Acc": "RW",
+            "Default": "00",
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+        "0023": { 
+            "Enabled": true,
+            "Name": "UltrasonicUnoccupiedToOccupiedThreshold" ,
+            "DataType": "20",
+            "Range": [ "00", "ff" ],
+            "Acc": "RW",
+            "Default": "01",
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+
+        "0030": { 
+            "Enabled": true,
+            "Name": "" ,
+            "DataType": "21",
+            "Range": [ "0000", "fffe" ],
+            "Acc": "R",
+            "Default": "0000",
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+        "0032": { 
+            "Enabled": true,
+            "Name": "" ,
+            "DataType": "21",
+            "Range": [ "0000", "fffe" ],
+            "Acc": "R",
+            "Default": "0000",
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        },
+        "0033": { 
+            "Enabled": true,
+            "Name": "" ,
+            "DataType": "20",
+            "Range": [ "00", "ff" ],
+            "Acc": "R",
+            "Default": "01",
+            "Mandatory": false,
+            "action": [ "checkstore"]
+        }
+    }
+}
