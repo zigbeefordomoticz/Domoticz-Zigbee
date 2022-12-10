@@ -1,7 +1,11 @@
 {
 	"Ep": {
 		"01": {
-			"0400": "",
+			"0400": {
+                "Attributes": {
+                    "0000": {
+                        "Enabled": true, "Name": "Aqara MeasuredValue", "DataType": "21" , "dzClusterType": "Lux", "eval": "value", "action": [ "checkstore", "majdomodevice"] } } },
+
 			"0406": "",
 			"Type": "Motion/Lux"
 		}
@@ -10,10 +14,7 @@
 	"ClusterToBind": [],
 	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [
-			"0004",
-			"0005"
-		],
+		"0000": [ "0004", "0005" ],
 		"0400": [],
 		"0406": []
 	}
