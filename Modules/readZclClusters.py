@@ -232,10 +232,6 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     _eval_formula = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "eval", model=device_model )
     _action_list = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "action", model=device_model )
     _eval_inputs = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "evalInputs", model=device_model)
-    _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "overwrite", model=device_model)
-    _majdomo_formater = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "majdomoformat", model=device_model)
-    _majdomo_cluster = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "majdomoCluster", model=device_model)
-    _majdomo_attribute = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "majdomoAttribute", model=device_model)
     
     value = _decode_attribute_data( MsgAttType, MsgClusterData)
     
@@ -243,6 +239,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         self.log.logging("readZclClusters", "Error", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ))
         
+    _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "overwrite", model=device_model)
     if _force_value is not None:
         value = _force_value
         
@@ -264,21 +261,24 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
         elif data_action == "majdomodevice":
-            majValue = value
-            if _majdomo_formater and _majdomo_formater == "str":
-                majValue = str( value )
-                
-            majCluster = MsgClusterId
-            if _majdomo_cluster is not None:
-                majCluster = _majdomo_cluster
-                
-            majAttribute = ""
-            if _majdomo_attribute is not None:
-                majAttribute = _majdomo_attribute
+            action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )
+            
+def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
+
     
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, majCluster, majValue, Attribute_=majAttribute)
+    _majdomo_formater = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "majdomoformat", model=device_model)
+    majValue = value
+    if _majdomo_formater and _majdomo_formater == "str":
+        majValue = str( value )
+    
+    _majdomo_cluster = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "majdomoCluster", model=device_model)
+    majCluster = _majdomo_cluster if _majdomo_cluster is not None else ""
 
-
+    _majdomo_attribute = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "majdomoAttribute", model=device_model)
+    majAttribute = _majdomo_attribute if _majdomo_attribute is not None else ""
+    
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, majCluster, majValue, Attribute_=majAttribute)
+    
 
 def check_special_values( self, value, data_type, _special_values ):
     flag = False
