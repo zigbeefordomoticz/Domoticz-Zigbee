@@ -6,13 +6,10 @@
                     "0000": {
                         "Enabled": true, 
                         "Name": "Aqara MeasuredValue", 
-                        "DataType": "21" ,
-                        "dzClusterType": "Lux", 
-                        "eval": "value", 
-                        "function": "lumi_lux",
-                        "action": [ "checkstore", "majdomodevice"] 
-                        } } },
-
+                        "DataType": "21" , 
+                        "dzClusterType": "Lux",
+                        "eval": "value",
+                        "action": [ "checkstore", "majdomodevice"] } } },
 			"0406": "",
 			"Type": "Motion/Lux"
 		}
