@@ -4,7 +4,7 @@
 			"0000": "",
 			"0003": "",
 			"0006": "",
-			"0008": "",
+			"0008": { "Attributes": {"0000": { "Enabled": true, "Name": "Livolo CurrentLevel","action": [ "checkstore"]}}},
 			"Type": "LivoloSWL/LivoloSWR"
 		}
 	},
