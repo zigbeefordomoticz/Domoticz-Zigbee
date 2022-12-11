@@ -13,35 +13,35 @@
 		},
 		"02": {
 			"0005": "",
-			"0010": "",
-			"0006": "",
+			"0010": "", 
+			"0006": { "Attributes": {"0000": { "Enabled": true, "Name": "Aqara OnOff", "dzClusterType": "Switch","action": [ "checkstore", "majdomodevice"]}}},
 			"0004": "",
 			"Type": "Switch"
 		},
 		"03": {
 			"0010": "",
-			"0006": "",
+			"0006": { "Attributes": {"0000": { "Enabled": true, "Name": "Aqara OnOff", "dzClusterType": "Switch","action": [ "checkstore"]}}},
 			"0004": "",
 			"0005": "",
 			"Type": ""
 		},
 		"04": {
-			"0006": "",
+			"0006": { "Attributes": {"0000": { "Enabled": true, "Name": "Aqara OnOff", "dzClusterType": "Switch","action": [ "checkstore"]}}},
 			"0012": "",
 			"Type": ""
 		},
 		"05": {
-			"0006": "",
+			"0006": { "Attributes": {"0000": { "Enabled": true, "Name": "Aqara OnOff", "dzClusterType": "Switch","action": [ "checkstore"]}}},
 			"0012": "",
 			"Type": ""
 		},
 		"06": {
-			"0006": "",
+			"0006": { "Attributes": {"0000": { "Enabled": true, "Name": "Aqara OnOff", "dzClusterType": "Switch","action": [ "checkstore"]}}},
 			"0012": "",
 			"Type": ""
 		},
 		"08": {
-			"000c": "",
+			"000c": { "Attributes": {"0000": { "Enabled": true, "Name": "Aqara OnOff", "dzClusterType": "Switch","action": [ "checkstore"]}}},
 			"Type": ""
 		}
 	},
@@ -49,13 +49,8 @@
 	"ClusterToBind": [],
 	"ConfigureReporting": {},
 	"ReadAttributes": {
-		"0000": [
-			"0004",
-			"0005"
-		],
-		"0006": [
-			"0000"
-		],
+		"0000": [ "0004", "0005" ],
+		"0006": [ "0000" ],
 		"000c": [],
 		"0012": []
 	}

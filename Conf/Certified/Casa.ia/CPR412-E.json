@@ -5,7 +5,7 @@
 			"0003": "",
 			"0004": "",
 			"0005": "",
-			"0006": "",
+			"0006": { "Attributes": {"0000": { "Enabled": true, "Name": "CPR412-E OnOff", "MajDomoDeviceValidValues": "value != '00' and value != '01'", "dzClusterType": "Switch","action": [ "checkstore", "majdomodevice"]}}},
 			"0008": "",
 			"Type": "VenetianInverted"
 		}
