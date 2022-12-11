@@ -6,7 +6,15 @@
 			"0003":"",
 			"0004":"",
 			"0005":"",
-			"0006":"",
+			"0006": {
+                "Attributes": {
+                    "0000": {
+                        "Enabled": true, 
+                        "Name": "Konke Switch", 
+                        "dzClusterType": "Switch", 
+                        "function": "konke_onoff",
+                        "action": [ "checkstore", "majdomodevice"] 
+                        } } },
 			"Type":"SwitchAQ2"}
 	},
 	"Type":"",
