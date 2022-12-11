@@ -13,9 +13,9 @@
             "Acc": "RP" ,
             "Default": "",
             "Mandatory": true,
-            "dzClusterType": "Temp",
-            "eval": "round(int(value) / 100, 1)",
-            "action": [ "checkstore", "majdomodevice"]
+            "DomoClusterType": "Temp",
+            "EvalExp": "round(int(value) / 100, 1)",
+            "action": [ "check_store_value", "upd_domo_device"]
         },
         "0001": { 
             "Enabled": true,
@@ -25,9 +25,9 @@
             "SpecialValues": { "0800": "tempHumidityerature measurement is unknown" },
             "Acc": "R",
             "Default": "",
-            "eval": "round(int(value) / 100, 1)",
+            "EvalExp": "round(int(value) / 100, 1)",
             "Mandatory": true,
-            "action": [ "checkstore"]
+            "action": [ "check_store_value"]
 
         },
         "0002": { 
@@ -38,9 +38,9 @@
             "SpecialValues": { "00": "frequency that is too low to be measured.", "fe": "frequency that is too high to be measured", "ff": "frequency could not be measured" },
             "Acc": "R",
             "Default": "",
-            "eval": "round(int(value) / 100, 1)",
+            "EvalExp": "round(int(value) / 100, 1)",
             "Mandatory": true,
-            "action": [ "checkstore"]
+            "action": [ "check_store_value"]
 
         },
         "0003": { 
@@ -51,7 +51,7 @@
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "action": [ "check_store_value"]
         }
     }
 }

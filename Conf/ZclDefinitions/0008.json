@@ -12,9 +12,9 @@
             "Acc": "RPS" ,
             "Default": "ff",
             "Mandatory": true,
-            "dzClusterType": "LvlControl",
-            "eval": "",
-            "action": [ "checkstore", "majdomodevice"]
+            "DomoClusterType": "LvlControl",
+            "EvalExp": "",
+            "ActionList": [ "checkstore", "majdomodevice"]
         },
         "0001": { 
             "Enabled": true,
@@ -24,8 +24,8 @@
             "Acc": "R" ,
             "Default": "0",
             "Mandatory": false,
-            "eval": "",
-            "action": [ "checkstore"]
+            "EvalExp": "",
+            "ActionList": [ "checkstore"]
         },
         "00010": { 
             "Enabled": true,
@@ -35,8 +35,8 @@
             "Acc": "RW" ,
             "Default": "0",
             "Mandatory": false,
-            "eval": "",
-            "action": [ "checkstore"]
+            "EvalExp": "",
+            "ActionList": [ "checkstore"]
         },
         "00011": { 
             "Enabled": true,
@@ -46,8 +46,8 @@
             "Acc": "RW" ,
             "Default": "ff",
             "Mandatory": false,
-            "eval": "",
-            "action": [ "checkstore"]
+            "EvalExp": "",
+            "ActionList": [ "checkstore"]
         },
         "4000": { 
             "Enabled": true,
@@ -57,8 +57,8 @@
             "Acc": "RW" ,
             "Default": "ff",
             "Mandatory": false,
-            "eval": "",
-            "action": [ "checkstore"]
+            "EvalExp": "",
+            "ActionList": [ "checkstore"]
         }
     }
 }

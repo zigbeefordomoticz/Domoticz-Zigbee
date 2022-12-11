@@ -6,9 +6,9 @@
             "0000": "",
             "0001": {
                 "Attributes": {
-                    "0001": { "Enabled": true, "Name": "VOC Sensor Humidity","DataType": "29" , "dzClusterType": "Humi","eval": "round(value / 100)","action": [ "checkstore", "majdomodevice"], "majdomoCluster": "0405","majdomoAttribute": "0001"},
-                    "0002": { "Enabled": true, "Name": "VOC Sensor ECO2", "DataType": "29" , "dzClusterType": "AirQuality", "action": [ "checkstore", "majdomodevice"], "majdomoAttribute": "0002"},
-                    "0003": { "Enabled": true, "Name": "VOC Sensor VOC", "DataType": "29" , "dzClusterType": "Voc", "action": [ "checkstore", "majdomodevice"], "majdomoAttribute": "0003"}
+                    "0001": { "Enabled": true, "Name": "VOC Sensor Humidity","DataType": "29" , "DomoClusterType": "Humi","EvalExp": "round(value / 100)","ActionList": [ "check_store_value", "upd_domo_device"], "UpdDomoDeviceWithCluster": "0405","UpdDomoDeviceWithAttibute": "0001"},
+                    "0002": { "Enabled": true, "Name": "VOC Sensor ECO2", "DataType": "29" , "DomoClusterType": "AirQuality", "ActionList": [ "check_store_value", "upd_domo_device"], "UpdDomoDeviceWithAttibute": "0002"},
+                    "0003": { "Enabled": true, "Name": "VOC Sensor VOC", "DataType": "29" , "DomoClusterType": "Voc", "ActionList": [ "check_store_value", "upd_domo_device"], "UpdDomoDeviceWithAttibute": "0003"}
                 }
             },
             "0201": "",

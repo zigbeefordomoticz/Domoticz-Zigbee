@@ -11,8 +11,8 @@
             "Acc": "RPS" ,
             "Default": "0",
             "Mandatory": true,
-            "dzClusterType": "Switch",
-            "action": [ "checkstore", "majdomodevice"]
+            "DomoClusterType": "Switch",
+            "ActionList": [ "checkstore", "majdomodevice"]
         },
         "4000": { 
             "Enabled": true,
@@ -21,7 +21,7 @@
             "Acc": "R" ,
             "Default": "1",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "ActionList": [ "checkstore"]
         },
         "4001": { 
             "Enabled": true,
@@ -30,7 +30,7 @@
             "Acc": "RW" ,
             "Default": "0",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "ActionList": [ "checkstore"]
         },
         "4002": { 
             "Enabled": true,
@@ -39,7 +39,7 @@
             "Acc": "RW" ,
             "Default": "0",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "ActionList": [ "checkstore"]
         },
         "4003": { 
             "Enabled": true,
@@ -48,7 +48,7 @@
             "Acc": "RW" ,
             "Default": "0",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "ActionList": [ "checkstore"]
         }
     }
 }

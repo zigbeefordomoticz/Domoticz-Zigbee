@@ -12,9 +12,9 @@
             "Acc": "R" ,
             "Default": "",
             "Mandatory": false,
-            "dzClusterType": "Voltage",
-            "eval": "round(int(value) / 10, 1)",
-            "action": [ "checkstore", "majdomodevice"]
+            "DomoClusterType": "Voltage",
+            "EvalExp": "round(int(value) / 10, 1)",
+            "ActionList": [ "check_store_value", "upd_domo_device"]
         },
         "0001": { 
             "Enabled": true,
@@ -25,7 +25,7 @@
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
 
         },
         "0010": { 
@@ -36,7 +36,7 @@
             "Acc": "RW",
             "Default": "0",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0011": {
             "Enabled": true,
@@ -46,7 +46,7 @@
             "Acc": "RW" ,
             "Default": "0",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0012": {
             "Enabled": true,
@@ -56,7 +56,7 @@
             "Acc": "RW" ,
             "Default": "ffff",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0013": {
             "Enabled": true,
@@ -66,7 +66,7 @@
             "Acc": "RW" ,
             "Default": "0",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0020": { 
             "Enabled": true,
@@ -76,9 +76,9 @@
             "Acc": "R" ,
             "Default": "",
             "Mandatory": false,
-            "dzClusterType": "Voltage",
-            "eval": "round(int(value) / 10, 1)",
-            "action": [ "checkstore", "majdomodevice"]
+            "DomoClusterType": "Voltage",
+            "EvalExp": "round(int(value) / 10, 1)",
+            "ActionList": [ "check_store_value", "upd_domo_device"]
         },
         "0021": { 
             "Enabled": true,
@@ -89,7 +89,7 @@
             "Acc": "RP" ,
             "Default": "0",
             "Mandatory": false,
-            "action": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         }
     }
 }
