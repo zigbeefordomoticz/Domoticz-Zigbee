@@ -176,7 +176,7 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
         self.statistics._clusterKO += 1
         return
 
-    if is_cluster_zcl_config_available( self, MsgClusterId, attribute=MsgAttrID):
+    if self.pluginconf.pluginConf["readZclClusters"] and is_cluster_zcl_config_available( self, MsgClusterId, attribute=MsgAttrID):
         process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
     
     elif MsgClusterId in DECODE_CLUSTER:
@@ -3159,7 +3159,7 @@ def Cluster0301(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
-idef Cluster0400(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+def Cluster0400(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # (Measurement: LUX)
     #  Lux=10^((y-1)/10000)
 
@@ -5055,11 +5055,11 @@ DECODE_CLUSTER = {
     "0204": Cluster0204,
     "0300": Cluster0300,
     "0301": Cluster0301,
-    #"0400": Cluster0400,
-    #"0402": Cluster0402,
-    #"0403": Cluster0403,
-    #"0405": Cluster0405,
-    #"0406": Cluster0406,
+    "0400": Cluster0400,
+    "0402": Cluster0402,
+    "0403": Cluster0403,
+    "0405": Cluster0405,
+    "0406": Cluster0406,
     "0500": Cluster0500,
     "0502": Cluster0502,
     "0702": Cluster0702,
