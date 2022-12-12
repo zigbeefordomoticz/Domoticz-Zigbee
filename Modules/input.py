@@ -3657,7 +3657,8 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
             "3AFE14010402000D", "3AFE28010402000D",     # Konke Motion
             "MOSZB-140",                                # Frient Motion
             "TY0202", "TS0202","TS0202-_TZ3210_jijr1sss",  # Tuya Motion
-            "VMS_ADUROLIGH"                             # Aduro Motion
+            "VMS_ADUROLIGH",                            # Aduro Motion
+            "LDSENK10",                                 # Adeo Motion
             )                           
     ):   # In case this is a Motion , let use the Motion Cluster to send the notification
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
