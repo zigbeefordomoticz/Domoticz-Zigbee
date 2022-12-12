@@ -20,6 +20,7 @@ Release Numbering
 
 ##   Dec. 2022 - stable6 - 6.3.008
 
+- [Hardware] - Motion Sensor Adeo LDSENK10
 - [WebUI] - Report on dashboard Optimised object configuration
 - [Technical] - Better reporting of the TI, SiliconLabs, deConz firmware version
 - [Hardware] - Additional lumi definition ( plug, motion, )
