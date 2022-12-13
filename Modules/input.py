@@ -19,9 +19,6 @@ import Domoticz
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                              sqn_get_internal_sqn_from_app_sqn,
                                              sqn_get_internal_sqn_from_aps_sqn)
-from Zigbee.decode8002 import decode8002_and_process
-from Zigbee.zdpCommands import zdp_NWK_address_request
-
 from Modules.basicInputs import read_attribute_response
 from Modules.basicOutputs import (getListofAttribute, send_default_response,
                                   setTimeServer)
@@ -44,6 +41,7 @@ from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.pairingProcess import interview_state_8045, request_next_Ep
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.readClusters import ReadCluster
 from Modules.schneider_wiser import wiser_read_attribute_request
@@ -67,7 +65,8 @@ from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import (FIRMWARE_BRANCH,
                                         set_display_firmware_version)
-from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
+from Zigbee.decode8002 import decode8002_and_process
+from Zigbee.zdpCommands import zdp_NWK_address_request
 
 
 def ZigateRead(self, Devices, Data):
