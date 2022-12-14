@@ -315,11 +315,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
-        if _model_name == 'FB56-ZCW08KU1.1':
-            actuator_setlevel(self, NWKID, EPout, 0, "Light", "0000", withOnOff=True )
-            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-            return
-            
         if DeviceType == "SwitchAlarm" and _model_name == "TS0601-_TZE200_t1blo2bj":
             tuya_siren2_trigger(self, NWKID, '00')
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -588,11 +583,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 self.log.logging("Command", "Debug", "mgtCommand : On for Tuya ParkSide Water Time - OnOff Mode")
                 actuator_on(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "01")
-
-        if _model_name == 'FB56-ZCW08KU1.1':
-            actuator_setlevel(self, NWKID, EPout, 100, "Light", "0000", withOnOff=True )
-            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-            return
 
         if _model_name in ("TS0601-Energy",):
             tuya_energy_onoff(self, NWKID, "01")
