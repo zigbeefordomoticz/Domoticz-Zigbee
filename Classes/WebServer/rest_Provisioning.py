@@ -9,15 +9,14 @@ from time import time
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
+from Modules.basicOutputs import (ZigatePermitToJoin, setExtendedPANID,
+                                  start_Zigate, zigateBlueLed)
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
                                        send_zigatecmd_zcl_noack)
-
-from Modules.basicOutputs import (ZigatePermitToJoin,
-                                  setExtendedPANID,
-                                  start_Zigate, zigateBlueLed)
-from Modules.zigateConsts import (PROFILE_ID, ZCL_CLUSTERS_LIST,
-                                  ZHA_DEVICES, ZLL_DEVICES)
+from Modules.zigateConsts import (PROFILE_ID, ZCL_CLUSTERS_LIST, ZHA_DEVICES,
+                                  ZLL_DEVICES)
 
 
 def rest_new_hrdwr(self, verb, data, parameters):
@@ -264,6 +263,27 @@ def rest_full_reprovisionning(self, verb, data, parameters):
             return _response
         _response["Data"] = {"NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))}
 
+    if "Bind" in self.ListOfDevices[nwkid]:
+            del self.ListOfDevices[nwkid]["Bind"]
+    if STORE_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
+        del self.ListOfDevices[nwkid][STORE_CONFIGURE_REPORTING]
+    if "ReadAttributes" in self.ListOfDevices[nwkid]:
+        del self.ListOfDevices[nwkid]["ReadAttributes"]
+    if "Neighbours" in self.ListOfDevices[nwkid]:
+        del self.ListOfDevices[nwkid]["Neighbours"]
+    if "IAS" in self.ListOfDevices[nwkid]:
+        del self.ListOfDevices[nwkid]["IAS"]
+        for x in self.ListOfDevices[nwkid]["Ep"]:
+            if "0500" in self.ListOfDevices[nwkid]["Ep"][ x ]:
+                del self.ListOfDevices[nwkid]["Ep"][ x ]["0500"]
+                self.ListOfDevices[nwkid]["Ep"][ x ]["0500"] = {}
+            if "0502" in self.ListOfDevices[nwkid]["Ep"][ x ]:
+                del self.ListOfDevices[nwkid]["Ep"][ x ]["0502"]
+                self.ListOfDevices[nwkid]["Ep"][ x ]["0502"] = {}
+
+    if "WriteAttributes" in self.ListOfDevices[nwkid]:
+        del self.ListOfDevices[nwkid]["WriteAttributes"]
+    
     self.ListOfDevices[nwkid]["Status"] = "provREQ"
 
     return _response

@@ -19,9 +19,6 @@ import Domoticz
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                              sqn_get_internal_sqn_from_app_sqn,
                                              sqn_get_internal_sqn_from_aps_sqn)
-from Zigbee.decode8002 import decode8002_and_process
-from Zigbee.zdpCommands import zdp_NWK_address_request
-
 from Modules.basicInputs import read_attribute_response
 from Modules.basicOutputs import (getListofAttribute, send_default_response,
                                   setTimeServer)
@@ -44,6 +41,7 @@ from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.pairingProcess import interview_state_8045, request_next_Ep
+from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.readClusters import ReadCluster
 from Modules.schneider_wiser import wiser_read_attribute_request
@@ -67,6 +65,8 @@ from Modules.zigbeeController import (initLODZigate, receiveZigateEpDescriptor,
                                       receiveZigateEpList)
 from Modules.zigbeeVersionTable import (FIRMWARE_BRANCH,
                                         set_display_firmware_version)
+from Zigbee.decode8002 import decode8002_and_process
+from Zigbee.zdpCommands import zdp_NWK_address_request
 
 
 def ZigateRead(self, Devices, Data):
@@ -2592,12 +2592,42 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
     zdevname = ""
     if sAddr in self.ListOfDevices and "ZDeviceName" in self.ListOfDevices[sAddr]:
         zdevname = self.ListOfDevices[sAddr]["ZDeviceName"]
-    self.log.logging( "Input", "Status", "%s (%s/%s) send a Leave indication and will be outside of the network. LQI: %s" % (
+
+    self.log.logging( "Input", "Status", "%s (%s/%s) sent a Leave indication and will be outside of the network. LQI: %s" % (
         zdevname, sAddr, MsgExtAddress, int(MsgLQI, 16)), )
 
+    device_reset( self, sAddr )
+    self.log.logging( "Input", "Status", "%s (%s/%s) cleanup key plugin data informations" % (
+        zdevname, sAddr, MsgExtAddress), )
+    
     self.log.logging( "Input", "Debug", "Leave indication from IEEE: %s , Status: %s " % (
         MsgExtAddress, MsgDataStatus), sAddr, )
     updLQI(self, sAddr, MsgLQI)
+
+def device_reset( self, NwkId ):
+    if NwkId not in self.ListOfDevices:
+        return
+    
+    if "Bind" in self.ListOfDevices[NwkId]:
+            del self.ListOfDevices[NwkId]["Bind"]
+    if STORE_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
+        del self.ListOfDevices[NwkId][STORE_CONFIGURE_REPORTING]
+    if "ReadAttributes" in self.ListOfDevices[NwkId]:
+        del self.ListOfDevices[NwkId]["ReadAttributes"]
+    if "Neighbours" in self.ListOfDevices[NwkId]:
+        del self.ListOfDevices[NwkId]["Neighbours"]
+    if "IAS" in self.ListOfDevices[NwkId]:
+        del self.ListOfDevices[NwkId]["IAS"]
+        for x in self.ListOfDevices[NwkId]["Ep"]:
+            if "0500" in self.ListOfDevices[NwkId]["Ep"][ x ]:
+                del self.ListOfDevices[NwkId]["Ep"][ x ]["0500"]
+                self.ListOfDevices[NwkId]["Ep"][ x ]["0500"] = {}
+            if "0502" in self.ListOfDevices[NwkId]["Ep"][ x ]:
+                del self.ListOfDevices[NwkId]["Ep"][ x ]["0502"]
+                self.ListOfDevices[NwkId]["Ep"][ x ]["0502"] = {}
+
+    if "WriteAttributes" in self.ListOfDevices[NwkId]:
+        del self.ListOfDevices[NwkId]["WriteAttributes"]
 
 
 def Decode8049(self, Devices, MsgData, MsgLQI):  # E_SL_MSG_PERMIT_JOINING_RESPONSE
