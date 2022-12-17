@@ -18,6 +18,23 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6
 
+##   Dec. 2022 - stable6 - 6.3.008
+
+- [Hardware] - Motion Sensor Adeo LDSENK10
+- [WebUI] - Report on dashboard Optimised object configuration
+- [Technical] - Better reporting of the TI, SiliconLabs, deConz firmware version
+- [Hardware] - Additional lumi definition ( plug, motion, )
+- [Technical] - Support of Page Block request for OTA upgrade
+- [WebUI] - Provide facility to download the plugin log file
+- [Hardware] - Additional SonOff dongle in router mode.
+- [Technical] - Improve Group Blinds management
+- [Hardware] - Support of Aqara Motion P1
+
+
+## 2 Dec. 2022 - stable6 - 6.3.007
+
+- [Issue] - Fixing the way to handle APS NACK so devices which are away from the network are correctly handled
+
 ## 15 Nov. 2022 - stable6 - 6.3.006
 
 - [Technical] - zigpy upstream merge 

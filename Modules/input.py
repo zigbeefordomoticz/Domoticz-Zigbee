@@ -2592,6 +2592,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
     zdevname = ""
     if sAddr in self.ListOfDevices and "ZDeviceName" in self.ListOfDevices[sAddr]:
         zdevname = self.ListOfDevices[sAddr]["ZDeviceName"]
+
     self.log.logging( "Input", "Status", "%s (%s/%s) sent a Leave indication and will be outside of the network. LQI: %s" % (
         zdevname, sAddr, MsgExtAddress, int(MsgLQI, 16)), )
 
