@@ -2604,6 +2604,9 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
     updLQI(self, sAddr, MsgLQI)
 
 def device_reset( self, NwkId ):
+    if NwkId not in self.ListOfDevices:
+        return
+    
     if "Bind" in self.ListOfDevices[NwkId]:
             del self.ListOfDevices[NwkId]["Bind"]
     if STORE_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
