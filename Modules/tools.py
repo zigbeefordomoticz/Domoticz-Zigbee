@@ -187,8 +187,8 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
                 return found
             # We are in situation where we found the device in ListOfDevices but not in IEEE2NWK.
             # this is not expected
-            self.log.logging("Input", "Error", "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s"
-                % (found, lookupNwkId, lookupIEEE, ieee_from_nwkid))
+            self.log.logging("Input", "Error", "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s" % (
+                found, lookupNwkId, lookupIEEE, ieee_from_nwkid))
             return found
 
         # We found IEEE, let's get the Short Address
@@ -204,9 +204,8 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             # in ListOfDevices !!
             # Let's cleanup
             del self.IEEE2NWK[lookupIEEE]
-            self.log.logging("Input", "Error",
-                "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)"
-                % (exitsingNwkId, lookupIEEE, lookupNwkId))
+            self.log.logging("Input", "Error", "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)" % (
+                exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
         if 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
@@ -218,9 +217,8 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             del self.IEEE2NWK[ lookupIEEE ]
             # Delete the all Data Structure
             del self.ListOfDevices[ exitsingNwkId ]
-            self.log.logging("Input", "Error", 
-                "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)"
-                % (exitsingNwkId, lookupIEEE, lookupNwkId))
+            self.log.logging("Input", "Error", "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)" % (
+                exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
         if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOW", ):
@@ -233,9 +231,8 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             del self.IEEE2NWK[lookupIEEE]
             # Delete the all Data Structure
             del self.ListOfDevices[exitsingNwkId]
-            self.log.logging("Input", "Status",
-                "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !"
-                % (lookupIEEE, exitsingNwkId, lookupNwkId))
+            self.log.logging("Input", "Status", "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !" % (
+                lookupIEEE, exitsingNwkId, lookupNwkId))
             return False
 
         # At that stage, we have found an entry for the IEEE, but doesn't match
@@ -276,10 +273,8 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
 
     # MostLikely exitsingKey(the old NetworkID) is not needed any more
     if removeNwkInList(self, old_NwkId) is None:
-        self.log.logging("Input", "Error", 
-            "reconnectNWkDevice - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s"
-            % (new_NwkId, old_NwkId, IEEE)
-        )
+        self.log.logging("Input", "Error", "reconnectNWkDevice - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s" % (
+            new_NwkId, old_NwkId, IEEE))
 
     if self.groupmgt:
         # We should check if this belongs to a group
@@ -289,10 +284,8 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     if self.ListOfDevices[new_NwkId]["Status"] in ( "Leave", ):
         self.ListOfDevices[new_NwkId]["Status"] = "inDB"
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
-        self.log.logging("Input", "Status", 
-            "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s"
-            % (self.ListOfDevices[new_NwkId]["Status"], new_NwkId)
-        )
+        self.log.logging("Input", "Status", "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s" % (
+            self.ListOfDevices[new_NwkId]["Status"], new_NwkId))
 
     # We will also reset ReadAttributes
     if self.pluginconf.pluginConf["enableReadAttributes"]:
@@ -942,9 +935,8 @@ def zigpy_plugin_sanity_check(self, nwkid):
     if self.IEEE2NWK[ ieee ] == nwkid:
         if "Status" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Status"] in ( 'Leave', ):
             # the device is alive and ieee/nwkid is correct
-            self.log.logging("Input", "Status", 
-                "zigpy_plugin_sanity_check - Update Status from %s to 'inDB' for NetworkID : %s"
-                % (self.ListOfDevices[nwkid]["Status"], nwkid), nwkid)
+            self.log.logging("Input", "Status", "zigpy_plugin_sanity_check - Update Status from %s to 'inDB' for NetworkID : %s" % (
+                self.ListOfDevices[nwkid]["Status"], nwkid), nwkid)
             self.ListOfDevices[ nwkid ]["Status"] = 'inDB'
             self.ListOfDevices[nwkid]["Heartbeat"] = "0"
         return True
