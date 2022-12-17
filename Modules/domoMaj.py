@@ -410,11 +410,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Thermostat Setpoint: %s %s" % (0, setpoint), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
-        if "Analog" in ClusterType and model_name not in (
-            "lumi.sensor_cube.aqgl01",
-            "lumi.sensor_cube",
-			"lumi.motion.ac01",
-        ):  # Analog Value from Analog Input cluster
+        if "Analog" in ClusterType and model_name not in ( "lumi.sensor_cube.aqgl01", "lumi.sensor_cube", "lumi.motion.ac01",):
+            # Analog Value from Analog Input cluster
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
         if "Valve" in ClusterType:  # Valve Position
@@ -1432,12 +1429,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     state = "90"
                     data = "09"
                     UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-					
-        if  ClusterType == "Analog" and WidgetType == "Motionac01" and Ep == "01":  # Motionac01
+
+        if ClusterType == "Analog" and WidgetType == "Motionac01" and Ep == "01":  # Motionac01
             if value <= 7:
                 nValue= value + 1
                 sValue = str(nValue * 10)
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue,  sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Orientation" in ClusterType:
             # Xiaomi Vibration

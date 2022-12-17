@@ -59,31 +59,3 @@ def setPowerOn_OnOff(self, key, OnOffMode=0xFF):
                 ackIsDisabled=is_ack_tobe_disabled(self, key),
             )
             ReadAttributeRequest_0006_400x(self, key)
-
-        # if '0008' in self.ListOfDevices[key]['Ep'][tmpEp]:
-        #    EPout=tmpEp
-        #    cluster_id = "0008"
-        #    attribute = "4000"
-        #    data_type = "20" #
-        #    data = "ff"
-        #    if OnOffMode in POWERON_MODE:
-        #        data = "%02x" %OnOffMode
-        #    else:
-        #        data = "%02x" %0xff
-        #        data = "%02x" %0xff
-        #    self.log.logging( "Output", 'Log', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
-        #    retreive_ListOfAttributesByCluster( self, key, EPout, '0008')
-
-        # if '0300' in self.ListOfDevices[key]['Ep'][tmpEp]:
-        #    EPout=tmpEp
-        #    cluster_id = "0300"
-        #    attribute = "4010"
-        #    data_type = "21" #
-        ##    data = "ffff"
-        #    if OnOffMode in POWERON_MODE:
-        #        data = "%04x" %OnOffMode
-        #    else:
-        #        data = "%04x" %0xffff
-        #        data = "%02x" %0xff
-        #    self.log.logging( "Output", 'Log', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
-        #    retreive_ListOfAttributesByCluster( self, key, EPout, '0300')
