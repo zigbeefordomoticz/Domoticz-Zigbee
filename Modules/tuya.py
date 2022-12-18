@@ -69,7 +69,10 @@ TUYA_SIREN_MODEL = (
     "0yu2xgi",
 )
 
-TUYA_DIMMER_MANUFACTURER = ("_TZE200_dfxkcots",)
+TUYA_DIMMER_MANUFACTURER = (
+    "_TZE200_dfxkcots", 
+    "_TZE200_e3oitdyu"
+    )
 TUYA_SWITCH_MANUFACTURER = (
     "_TZE200_7tdtqgwv",
     "_TZE200_oisqyl4o",
