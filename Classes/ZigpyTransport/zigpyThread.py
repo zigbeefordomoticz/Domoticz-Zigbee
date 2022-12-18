@@ -461,14 +461,14 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         destination = int(NwkId, 16)
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call broadcast destination: %s" % NwkId)
         result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x0, sequence, payload, )
-        await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
+        await asyncio.sleep( 2 * WAITING_TIME_BETWEEN_COMMANDS)
 
     elif addressmode == 0x01:
         # Group Mode
         destination = int(NwkId, 16)
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call mrequest destination: %s" % destination)
         result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
-        await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
+        await asyncio.sleep( 2 * WAITING_TIME_BETWEEN_COMMANDS)
 
     elif addressmode in (0x02, 0x07):
         # Short is a str
