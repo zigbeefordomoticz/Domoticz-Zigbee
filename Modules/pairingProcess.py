@@ -651,6 +651,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "TS0601-switch",
         "TS0601-2Gangs-switch",
         "TS0601-SmartAir",
+        "TS130F-_TZ3000_femsaaua",
+        "TS130F-_TZ3000_8kzqqzu4",
         "TS130F-_TZ3000_1dd0d5yi",
         "TS130F-_TZ3000_zirycpws",
         "TS0601-temphumi"
