@@ -30,15 +30,16 @@ from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
                            get_deviceconf_parameter_value, getEPforClusterType,
                            is_hex, set_status_datastruct,
                            set_timestamp_datastruct)
-from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
-                          TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER, TUYA_2GANGS_DIMMER_MANUFACTURER,
+from Modules.tuya import (TUYA_2GANGS_DIMMER_MANUFACTURER,
+                          TUYA_2GANGS_SWITCH_MANUFACTURER,
+                          TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER,
                           TUYA_ENERGY_MANUFACTURER, TUYA_SIREN_MANUFACTURER,
                           TUYA_SMARTAIR_MANUFACTURER, TUYA_SMOKE_MANUFACTURER,
                           TUYA_SWITCH_MANUFACTURER, TUYA_TEMP_HUMI,
                           TUYA_THERMOSTAT_MANUFACTURER, TUYA_TS0601_MODEL_NAME,
                           TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
                           TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER,
-                          TUYA_eTRV4_MANUFACTURER, TUYA_eTRV5_MANUFACTURER )
+                          TUYA_eTRV4_MANUFACTURER, TUYA_eTRV5_MANUFACTURER)
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
