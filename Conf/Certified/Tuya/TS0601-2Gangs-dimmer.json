@@ -1,0 +1,25 @@
+{
+    "_comment": "Tuya Smart Dimmer Switch",
+    "_version": "0.10",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "LvlControl"
+        },
+        "02": {
+            "0004": "",
+            "0005": "",
+            "Type": "LvlControl"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007" ]
+    }
+}
