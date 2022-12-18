@@ -31,7 +31,7 @@ from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
                            is_hex, set_status_datastruct,
                            set_timestamp_datastruct)
 from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
-                          TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER,
+                          TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER, TUYA_2GANGS_DIMMER_MANUFACTURER,
                           TUYA_ENERGY_MANUFACTURER, TUYA_SIREN_MANUFACTURER,
                           TUYA_SMARTAIR_MANUFACTURER, TUYA_SMOKE_MANUFACTURER,
                           TUYA_SWITCH_MANUFACTURER, TUYA_TEMP_HUMI,
@@ -462,6 +462,10 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name in TUYA_DIMMER_MANUFACTURER:  # Dimmer
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Dimmer" % (MsgSrcAddr, MsgSrcEp))
                 modelName += "-dimmer"
+                
+            elif manufacturer_name in TUYA_2GANGS_DIMMER_MANUFACTURER:  # 2 Gangs dimmer
+                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to 2 Gangs Dimmer" % (MsgSrcAddr, MsgSrcEp))
+                modelName += "-2Gangs-dimmer"
 
             elif manufacturer_name in TUYA_SWITCH_MANUFACTURER:  # Switch
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Switch" % (MsgSrcAddr, MsgSrcEp))

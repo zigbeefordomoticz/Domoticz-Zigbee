@@ -73,6 +73,10 @@ TUYA_DIMMER_MANUFACTURER = (
     "_TZE200_dfxkcots", 
     "_TZE200_e3oitdyu"
     )
+
+TUYA_2GANGS_DIMMER_MANUFACTURER = (
+    "_TZE200_e3oitdyu",
+)
 TUYA_SWITCH_MANUFACTURER = (
     "_TZE200_7tdtqgwv",
     "_TZE200_oisqyl4o",
@@ -479,7 +483,7 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName in ( "TS0601-_TZE200_t1blo2bj", ):
         tuya_siren2_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
-    elif _ModelName == "TS0601-dimmer":
+    elif _ModelName in ( "TS0601-dimmer", "TS0601-2Gangs-dimmer"):
         tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName == "TS0601-Energy":
