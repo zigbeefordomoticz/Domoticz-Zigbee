@@ -551,7 +551,7 @@ def device_interview(self, Nwkid):
     for iterReadAttrCluster in get_list_of_clusters_for_device( self, Nwkid):
         # if iterReadAttrCluster == '0000':
         #    reset_cluster_datastruct( self, 'ReadAttributes', NWKID, iterEp, iterReadAttrCluster  )
-        self.log.logging("Pairing", "Log", "device_interview %s Read Attribute for cluster: %s" %(Nwkid, iterReadAttrCluster ))
+        self.log.logging("Pairing", "Debug", "device_interview %s Read Attribute for cluster: %s" %(Nwkid, iterReadAttrCluster ))
         func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
         func(self, Nwkid)
 
