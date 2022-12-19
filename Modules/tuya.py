@@ -956,22 +956,21 @@ def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     # Switch Off:   01     00        01     01      01      00    01   00
     # Dim Up  :     01     00        01     01      01      00    01   01
 
-    if dp == 0x01:  # Switch On/Off
-        MajDomoDevice(self, Devices, NwkId, srcEp, "0006", data)
+    if dp in ( 0x01, 0x07):  # Switch On/Off
+        ep = srcEp if dp == 0x01 else "02"
+        MajDomoDevice(self, Devices, NwkId, ep, "0006", data)
         self.log.logging("Tuya", "Debug", "tuya_dimmer_response - Nwkid: %s/%s On/Off %s" % (NwkId, srcEp, data), NwkId)
 
     elif dp == 0x02:  # Dim Down/Up
+        ep = srcEp if dp == 0x02 else "02"
         # As MajDomoDevice expect a value between 0 and 255, and Tuya dimmer is on a scale from 0 - 1000.
         analogValue = int(data, 16) / 10  # This give from 1 to 100
         level = int((analogValue * 255) / 100)
 
-        self.log.logging(
-            "Tuya",
-            "Debug",
-            "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" % (NwkId, srcEp, int(data, 16), level),
-            NwkId,
-        )
-        MajDomoDevice(self, Devices, NwkId, srcEp, "0008", "%02x" % level)
+        self.log.logging( "Tuya", "Debug", "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" % (
+            NwkId, srcEp, int(data, 16), level), NwkId, )
+        MajDomoDevice(self, Devices, NwkId, ep, "0008", "%02x" % level)
+        
     else:
         attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
         store_tuya_attribute(self, NwkId, attribute_name, data)
@@ -985,7 +984,7 @@ def tuya_dimmer_onoff(self, NwkId, srcEp, OnOff):
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
-    action = "0101"
+    action = "0101" if srcEp == "01" else "0701"
     data = OnOff
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
@@ -999,7 +998,7 @@ def tuya_dimmer_dimmer(self, NwkId, srcEp, percent):
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
-    action = "0202"
+    action = "0202" if srcEp == "01" else "0802"
     data = "%08x" % level
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
@@ -1007,12 +1006,8 @@ def tuya_dimmer_dimmer(self, NwkId, srcEp, percent):
 # Tuya Smart Cover Switch
 def tuya_window_cover_calibration(self, nwkid, duration):
     # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
-    self.log.logging(
-        "Tuya",
-        "Debug",
-        "tuya_window_cover_calibration - Nwkid: %s Calibration %s" % (nwkid, duration),
-        nwkid,
-    )
+    self.log.logging( "Tuya", "Debug", "tuya_window_cover_calibration - Nwkid: %s Calibration %s" % (
+        nwkid, duration), nwkid, )
 
     self.log.logging( "Tuya", "Debug", "tuya_window_cover_calibration - duration %s" % ( duration), nwkid, )
     write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
@@ -1023,27 +1018,18 @@ def tuya_window_cover_motor_reversal(self, nwkid, mode):
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off / Default
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
     if int(mode) in {0, 1}:
-        write_attribute(
-            self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False
-        )
+        write_attribute( self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False )
 
 def tuya_curtain_mode(self, nwkid, mode):
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 0 (0x00) | Kick Back
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 1 (0x01) | Seesaw
     if int(mode) in {0, 1}:
-        write_attribute(
-            self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" % int(mode), ackIsDisabled=False
-        )
+        write_attribute( self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" % int(mode), ackIsDisabled=False )
 
 def tuya_backlight_command(self, nwkid, mode):
     if int(mode) in {0, 1, 2}:
-        backlist_attribute = ( 
-            "5000" if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS130F-_TZ3000_1dd0d5yi",) 
-            else "8001" )
-
-        write_attribute(
-            self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", backlist_attribute, "30", "%02x" % int(mode), ackIsDisabled=False
-        )
+        backlist_attribute = ( "5000" if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS130F-_TZ3000_1dd0d5yi",) else "8001"  )
+        write_attribute( self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", backlist_attribute, "30", "%02x" % int(mode), ackIsDisabled=False )
 
 
 def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
