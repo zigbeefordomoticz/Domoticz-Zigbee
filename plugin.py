@@ -124,9 +124,9 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import (chk_and_update_IEEE_NWKID,
-                           how_many_devices, lookupForIEEE, night_shift_jobs,
-                           removeDeviceInList, build_list_of_device_model)
+from Modules.tools import (build_list_of_device_model,
+                           chk_and_update_IEEE_NWKID, how_many_devices,
+                           lookupForIEEE, night_shift_jobs, removeDeviceInList)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
