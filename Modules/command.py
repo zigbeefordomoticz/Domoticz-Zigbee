@@ -421,11 +421,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             )
             return
 
-        if DeviceType == "LvlControl" and _model_name == "TS0601-dimmer":
+        if DeviceType == "LvlControl" and _model_name in ("TS0601-dimmer", "TS0601-2Gangs-dimmer"):
             tuya_dimmer_onoff(self, NWKID, EPout, "00")
-            UpdateDevice_v2(
-                self, Devices, Unit, 0, Devices[Unit].sValue, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
-            )
+            UpdateDevice_v2( self, Devices, Unit, 0, Devices[Unit].sValue, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
             return
 
         if DeviceType == "LvlControl" and _model_name == "TS0601-curtain":
@@ -543,11 +541,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             NWKID,
         )
 
-        if _model_name in (
-            "TS0601-switch",
-            "TS0601-2Gangs-switch",
-            "TS0601-2Gangs-switch",
-        ):
+        if _model_name in ( "TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", ):
             self.log.logging("Command", "Debug", "mgtCommand : On for Tuya Switches Gang/EPout: %s" % EPout)
 
             tuya_switch_command(self, NWKID, "01", gang=int(EPout, 16))
@@ -609,7 +603,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.ListOfDevices[NWKID]["Heartbeat"] = 0
             return
 
-        if DeviceType == "LvlControl" and _model_name == "TS0601-dimmer":
+        if DeviceType == "LvlControl" and _model_name in ("TS0601-dimmer", "TS0601-2Gangs-dimmer"):
             tuya_dimmer_onoff(self, NWKID, EPout, "01")
             UpdateDevice_v2( self, Devices, Unit, 1, Devices[Unit].sValue, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
@@ -1244,7 +1238,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             elif Level == 30:  # Toggle
                 actuators(self, NWKID, EPout, "Toggle", "Switch")
 
-        elif _model_name == "TS0601-dimmer":
+        elif _model_name in ("TS0601-dimmer", "TS0601-2Gangs-dimmer"):
             if Devices[Unit].nValue == 0:
                 tuya_dimmer_onoff(self, NWKID, EPout, "01")
             Level = max(Level, 1)

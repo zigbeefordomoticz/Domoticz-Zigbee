@@ -124,9 +124,9 @@ from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
-from Modules.tools import (chk_and_update_IEEE_NWKID,
-                           how_many_devices, lookupForIEEE, night_shift_jobs,
-                           removeDeviceInList, build_list_of_device_model)
+from Modules.tools import (build_list_of_device_model,
+                           chk_and_update_IEEE_NWKID, how_many_devices,
+                           lookupForIEEE, night_shift_jobs, removeDeviceInList)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -834,6 +834,14 @@ class BasePlugin:
 
 
     def onCommand(self, Unit, Command, Level, Color):
+        if (
+            not self.VersionNewFashion
+            or self.pluginconf is None
+            or not self.log
+        ):
+            # Not yet ready
+            return
+
         self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
         # Let's check if this is End Node, or Group related.
@@ -844,13 +852,11 @@ class BasePlugin:
         elif self.groupmgt:
             # if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
             #    # Command belongs to a Zigate group
-            if self.log:
-                self.log.logging( "Command", "Debug", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, Devices[Unit].DeviceID), )
+            self.log.logging( "Command", "Debug", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, Devices[Unit].DeviceID), )
             self.groupmgt.processCommand(Unit, Devices[Unit].DeviceID, Command, Level, Color)
 
         elif Devices[Unit].DeviceID.find("Zigate-01-") != -1:
-            if self.log:
-                self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
+            self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
             self.adminWidgets.handleCommand(self, Command)
 
         else:
