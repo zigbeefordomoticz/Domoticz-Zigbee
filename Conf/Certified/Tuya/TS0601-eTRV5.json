@@ -1,0 +1,31 @@
+{
+    "_comment": "Tuya TRV / ZONNSMART",
+    "_version": "0.10",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Temp/ThermoSetpoint/Door/ThermoMode_5"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+    },
+    "PollingEnabled": 1,
+    "Param": {
+        "TuyaTRV5Polling": 300,
+        "TuyaTRV5_ChildLock": 0,
+        "TuyaTRV5_EcoTemp": 19,
+        "TuyaTRV5_ConfortTemp": 21,
+        "TuyaTRV5_OpenedWindowTemp": 10,
+        "TuyaTRV5_HolidaySetPoint": 17,
+        "Calibration": 0
+    }
+}

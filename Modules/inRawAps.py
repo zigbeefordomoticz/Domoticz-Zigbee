@@ -63,14 +63,8 @@ def inRawAps(
     """
 
     if srcnwkid not in self.ListOfDevices:
-        self.log.logging(
-            "inRawAPS",
-            "Error",
-            "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s not found in ListOfDevices !!"
-                % (srcnwkid, srcep, cluster, ManufacturerCode, Command, Data),
-            srcnwkid,
-        )
-
+        self.log.logging( "inRawAPS", "Error", "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s not found in ListOfDevices !!" % (
+            srcnwkid, srcep, cluster, ManufacturerCode, Command, Data), srcnwkid, )
         return
 
     self.log.logging(

@@ -420,10 +420,16 @@ def update_domoticz_group_device(self, GroupId):
 
     elif sValue is None:
         if nValue == 0:
-            sValue = "Off"
+            if self.Devices[unit].SwitchType not in (13, 14, 15, 16):
+                sValue = "Close"
+            else:
+                sValue = "Off"
 
         else:
-            sValue = "On"
+            if self.Devices[unit].SwitchType not in (13, 14, 15, 16):
+                sValue = "Open"
+            else:
+                sValue = "On"
 
     self.logging(
         "Debug",

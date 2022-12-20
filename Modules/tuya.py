@@ -69,7 +69,13 @@ TUYA_SIREN_MODEL = (
     "0yu2xgi",
 )
 
-TUYA_DIMMER_MANUFACTURER = ("_TZE200_dfxkcots",)
+TUYA_DIMMER_MANUFACTURER = (
+    "_TZE200_dfxkcots", 
+    )
+
+TUYA_2GANGS_DIMMER_MANUFACTURER = (
+    "_TZE200_e3oitdyu",
+)
 TUYA_SWITCH_MANUFACTURER = (
     "_TZE200_7tdtqgwv",
     "_TZE200_oisqyl4o",
@@ -145,15 +151,32 @@ TUYA_eTRV1_MANUFACTURER = (
 TUYA_eTRV2_MANUFACTURER = (
     "_TZE200_ckud7u2l",
     "_TYST11_ckud7u2l",
-
 )
 TUYA_eTRV3_MANUFACTURER = (
     "_TZE200_c88teujp",
     "_TYST11_KGbxAXL2",
     "_TYST11_zuhszj9s",
+    "_TZE200_azqp6ssj",
+    "_TZE200_yw7cahqs",
+    "_TZE200_9gvruqf5",
+    "_TZE200_zuhszj9s",
+    "_TZE200_2ekuz3dz",
 )
 TUYA_eTRV4_MANUFACTURER = (
     "_TZE200_b6wax7g0",  
+)
+
+TUYA_eTRV5_MANUFACTURER = (
+    "_TZE200_7yoranx2",   # model: 'TV01-ZB',           vendor: 'Moes'
+    "_TZE200_e9ba97vf",   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_hue3yfsn",   # MODEL : 'TV02-Zigbee',      vendor: 'TuYa'
+    "_TZE200_husqqvux",   # MODEL : 'TSL-TRV-TV01ZG',   vendor: 'Tesla Smart
+    "_TZE200_kly8gjlz",   # 
+    "_TZE200_lnbfnyxd",   # MODEL : 'TSL-TRV-TV01ZG',   vendor: 'Tesla Smart'
+    '_TZE200_kds0pmmv',   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_mudxchsu",   # MODEL : 'TV05-ZG curve',    vendor: 'TuYa'
+    "_TZE200_kds0pmmv",   # MODEL : 'TV01-ZB',          vendor: 'Moes'
+    "_TZE200_lllliz3p",   # MODEL : 'TV02-Zigbee',      vendor: 'TuYa'
 )
 
 TUYA_eTRV_MANUFACTURER = (
@@ -179,6 +202,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_eTRV2_MANUFACTURER
     + TUYA_eTRV3_MANUFACTURER
     + TUYA_eTRV4_MANUFACTURER
+    + TUYA_eTRV5_MANUFACTURER
     + TUYA_eTRV_MANUFACTURER
     + TUYA_SMARTAIR_MANUFACTURER
     + TUYA_WATER_TIMER
@@ -192,6 +216,14 @@ TUYA_MANUFACTURER_NAME = (
 # Tuya Doc: https://developer.tuya.com/en/docs/iot/access-standard-zigbee?id=Kaiuyf28lqebl
 
 
+# Data Types:
+#   0x00: raw
+#   0x01: bool
+#   0x02: 4 byte value
+#   0x03: string
+#   0x04: enum8 ( 0x00-0xff)
+#   0x05: bitmap ( 1,2, 4 bytes) as bits
+    
 def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     if "Model" not in self.ListOfDevices[nwkid]:
             return
@@ -325,7 +357,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     cmd = MsgPayload[4:6]  # uint8
 
     # Send a Default Response ( why might check the FCF eventually )
-    if self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
+    if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
         tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
 
     # https://developer.tuya.com/en/docs/iot/tuuya-zigbee-door-lock-docking-access-standard?id=K9ik5898uzqrk
@@ -450,7 +482,7 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
     elif _ModelName in ( "TS0601-_TZE200_t1blo2bj", ):
         tuya_siren2_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
-    elif _ModelName == "TS0601-dimmer":
+    elif _ModelName in ( "TS0601-dimmer", "TS0601-2Gangs-dimmer"):
         tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
 
     elif _ModelName == "TS0601-Energy":
@@ -924,22 +956,21 @@ def tuya_dimmer_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     # Switch Off:   01     00        01     01      01      00    01   00
     # Dim Up  :     01     00        01     01      01      00    01   01
 
-    if dp == 0x01:  # Switch On/Off
-        MajDomoDevice(self, Devices, NwkId, srcEp, "0006", data)
+    if dp in ( 0x01, 0x07):  # Switch On/Off
+        ep = srcEp if dp == 0x01 else "02"
+        MajDomoDevice(self, Devices, NwkId, ep, "0006", data)
         self.log.logging("Tuya", "Debug", "tuya_dimmer_response - Nwkid: %s/%s On/Off %s" % (NwkId, srcEp, data), NwkId)
 
     elif dp == 0x02:  # Dim Down/Up
+        ep = srcEp if dp == 0x02 else "02"
         # As MajDomoDevice expect a value between 0 and 255, and Tuya dimmer is on a scale from 0 - 1000.
         analogValue = int(data, 16) / 10  # This give from 1 to 100
         level = int((analogValue * 255) / 100)
 
-        self.log.logging(
-            "Tuya",
-            "Debug",
-            "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" % (NwkId, srcEp, int(data, 16), level),
-            NwkId,
-        )
-        MajDomoDevice(self, Devices, NwkId, srcEp, "0008", "%02x" % level)
+        self.log.logging( "Tuya", "Debug", "tuya_dimmer_response - Nwkid: %s/%s Dim up/dow %s %s" % (
+            NwkId, srcEp, int(data, 16), level), NwkId, )
+        MajDomoDevice(self, Devices, NwkId, ep, "0008", "%02x" % level)
+        
     else:
         attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
         store_tuya_attribute(self, NwkId, attribute_name, data)
@@ -953,7 +984,7 @@ def tuya_dimmer_onoff(self, NwkId, srcEp, OnOff):
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
-    action = "0101"
+    action = "0101" if srcEp == "01" else "0701"
     data = OnOff
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
@@ -967,7 +998,7 @@ def tuya_dimmer_dimmer(self, NwkId, srcEp, percent):
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
     cmd = "00"  # Command
-    action = "0202"
+    action = "0202" if srcEp == "01" else "0802"
     data = "%08x" % level
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
@@ -975,12 +1006,8 @@ def tuya_dimmer_dimmer(self, NwkId, srcEp, percent):
 # Tuya Smart Cover Switch
 def tuya_window_cover_calibration(self, nwkid, duration):
     # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
-    self.log.logging(
-        "Tuya",
-        "Debug",
-        "tuya_window_cover_calibration - Nwkid: %s Calibration %s" % (nwkid, duration),
-        nwkid,
-    )
+    self.log.logging( "Tuya", "Debug", "tuya_window_cover_calibration - Nwkid: %s Calibration %s" % (
+        nwkid, duration), nwkid, )
 
     self.log.logging( "Tuya", "Debug", "tuya_window_cover_calibration - duration %s" % ( duration), nwkid, )
     write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
@@ -991,27 +1018,18 @@ def tuya_window_cover_motor_reversal(self, nwkid, mode):
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off / Default
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
     if int(mode) in {0, 1}:
-        write_attribute(
-            self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False
-        )
+        write_attribute( self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False )
 
 def tuya_curtain_mode(self, nwkid, mode):
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 0 (0x00) | Kick Back
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 1 (0x01) | Seesaw
     if int(mode) in {0, 1}:
-        write_attribute(
-            self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" % int(mode), ackIsDisabled=False
-        )
+        write_attribute( self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" % int(mode), ackIsDisabled=False )
 
 def tuya_backlight_command(self, nwkid, mode):
     if int(mode) in {0, 1, 2}:
-        backlist_attribute = ( 
-            "5000" if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS130F-_TZ3000_1dd0d5yi",) 
-            else "8001" )
-
-        write_attribute(
-            self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", backlist_attribute, "30", "%02x" % int(mode), ackIsDisabled=False
-        )
+        backlist_attribute = ( "5000" if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS130F-_TZ3000_1dd0d5yi",) else "8001"  )
+        write_attribute( self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", backlist_attribute, "30", "%02x" % int(mode), ackIsDisabled=False )
 
 
 def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):

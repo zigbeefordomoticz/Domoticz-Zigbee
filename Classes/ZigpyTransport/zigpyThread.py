@@ -360,11 +360,10 @@ async def worker_loop(self):
                     "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s" % (t_elapse, data),
                 )
 
-    self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s" %len(self._concurrent_requests_semaphores_list))
-
-    if self._concurrent_requests_semaphores_list:
-        for x in self._concurrent_requests_semaphores_list:
-            self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)
+    #self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s" %len(self._concurrent_requests_semaphores_list))
+    #if self._concurrent_requests_semaphores_list:
+    #    for x in self._concurrent_requests_semaphores_list:
+    #        self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)
 
 async def get_next_command(self):
     try:
@@ -462,14 +461,14 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         destination = int(NwkId, 16)
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call broadcast destination: %s" % NwkId)
         result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x0, sequence, payload, )
-        await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
+        await asyncio.sleep( 2 * WAITING_TIME_BETWEEN_COMMANDS)
 
     elif addressmode == 0x01:
         # Group Mode
         destination = int(NwkId, 16)
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call mrequest destination: %s" % destination)
         result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
-        await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
+        await asyncio.sleep( 2 * WAITING_TIME_BETWEEN_COMMANDS)
 
     elif addressmode in (0x02, 0x07):
         # Short is a str

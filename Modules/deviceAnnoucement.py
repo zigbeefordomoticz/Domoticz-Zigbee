@@ -421,4 +421,3 @@ def enforce_configure_reporting( self, NwkId):
     self.log.logging("DeviceAnnoucement", "Log", "Forcing a check of configure reporting after Device Annoucement on Main Powered device %s" %NwkId)
     if self.configureReporting:
         self.configureReporting.check_configuration_reporting_for_device( NwkId, force=True)
-

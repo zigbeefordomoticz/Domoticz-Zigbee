@@ -1,0 +1,24 @@
+{
+    "_description": "_Heiman Combustible Gas Sensor",
+    "_blakkader": "https://zigbee.blakadder.com/Heiman_HS1CG.html",
+    "_version": "0.1",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "0500": "",
+            "Type": "Smoke"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000", "0500" ],
+    "ConfigureReporting": {
+    },
+    "ReadAttributes": {
+        "0000": [ "0004", "0005" ],
+        "0001": [ "0020", "0021" ],
+        "0500": [ "0000", "0001", "0002", "0010", "0011" ],
+        "0019": []
+    },
+    "BatteryDevice": 1
+}

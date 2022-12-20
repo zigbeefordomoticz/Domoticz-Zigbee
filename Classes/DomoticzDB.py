@@ -42,17 +42,30 @@ def extract_username_password( self, url_base_api ):
     items = url_base_api.split('@')
     if len(items) != 2:
         return None, None, None
+    
     self.logging("Debug", f'Extract username/password {url_base_api} ==> {items} ')
     host_port = items[1]
-    items[0] = items[0][:4].lower() + items[0][4:]
-    item1 = items[0].replace('http://','')
-    usernamepassword = item1.split(':')
-    if len(usernamepassword) != 2:
+    if items[0].find("https") == 0:
+        items[0] = items[0][:5].lower() + items[0][5:]
+        item1 = items[0].replace('https://','')
+        usernamepassword = item1.split(':')
+        if len(usernamepassword) == 2:
+            username, password = usernamepassword
+            return username, password, host_port
         self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ==> {item1} ==> {usernamepassword}')
-        return None, None, None
+            
+    elif items[0].find("http") == 0:
+        items[0] = items[0][:4].lower() + items[0][4:]
+        item1 = items[0].replace('http://','')
+        usernamepassword = item1.split(':')
+        if len(usernamepassword) == 2:
+            username, password = usernamepassword
+            return username, password, host_port
+        self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ==> {item1} ==> {usernamepassword}')
+
+    self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ')
+    return None, None, None
         
-    username, password = usernamepassword
-    return username, password, host_port
 
 def open_and_read( self, url ):
     
@@ -84,8 +97,8 @@ def domoticz_request( self, url):
     self.logging("Debug",'domoticz request url: %s' %url)
     try:
         request = urllib.request.Request(url)
-    except urllib.error.URLError:
-        self.logging("Error", "domoticz_request - wrong URL to get access to Domoticz JSON/API: %s" %url)
+    except urllib.error.URLError as e:
+        self.logging("Error", "Request to %s rejected. Error: %s" %(url, e))
         return None
     
     self.logging("Debug",'domoticz request result: %s' %request)
@@ -95,8 +108,8 @@ def domoticz_request( self, url):
     self.logging("Debug",'domoticz request open url')
     try:
         response = urllib.request.urlopen(request)
-    except urllib.error.URLError:
-        self.logging("Error", "domoticz_request - wrong URL toget access to Domoticz JSON/API: %s" %url)
+    except urllib.error.URLError as e:
+        self.logging("Error", "Urlopen to %s rejected. Error: %s" %(url, e))
         return None
     
     return response.read()

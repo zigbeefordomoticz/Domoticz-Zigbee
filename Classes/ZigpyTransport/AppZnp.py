@@ -15,6 +15,8 @@ import zigpy_znp.commands.util
 import zigpy_znp.config as znp_conf
 import zigpy_znp.types as t
 import zigpy_znp.zigbee.application
+from Classes.ZigpyTransport.firmwareversionHelper import \
+    znp_extract_versioning_for_plugin
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8010_frame_content, build_plugin_8015_frame_content)
 from Modules.zigbeeVersionTable import ZNP_MODEL
@@ -75,12 +77,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.log.logging("TransportZigpy", "Status", "ZNP Radio board model: %s" %znp_model)
         self.log.logging("TransportZigpy", "Status", "ZNP Radio version: %s" %self._znp.version)
 
-        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = extract_versioning_for_plugin( znp_model, znp_manuf)
-        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion))
+        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion, build = znp_extract_versioning_for_plugin( self, znp_model, znp_manuf)
+        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion, build ))
         
-        #if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-        #    self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
-
 
     async def shutdown(self) -> None:
         """Shutdown controller."""
@@ -179,15 +178,3 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
             
      
-def extract_versioning_for_plugin( znp_model, znp_manuf):
-    
-    ZNP_330 = "CC1352/CC2652, Z-Stack 3.30+"
-    ZNP_30X = "CC2531, Z-Stack 3.0.x"
-
-    FirmwareBranch = next((ZNP_MODEL[x] for x in ZNP_MODEL if znp_model[: len(x)] == x), "99")
-
-    year = znp_model[ znp_model.find("build") + 6 : -5 ]
-    FirmwareMajorVersion = "%02d" %int(znp_model[ znp_model.find("build") + 8 : -5 ])
-    FirmwareVersion = "%04d" %int(znp_model[ znp_model.find("build") + 10: -1])
-
-    return FirmwareBranch, FirmwareMajorVersion, FirmwareVersion

@@ -18,6 +18,7 @@ import Domoticz
 
 from Modules.database import WriteDeviceList
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
+from Modules.zigateConsts import HEARTBEAT
 
 
 def is_hex(s):
@@ -186,8 +187,8 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
                 return found
             # We are in situation where we found the device in ListOfDevices but not in IEEE2NWK.
             # this is not expected
-            self.log.logging("Input", "Error", "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s"
-                % (found, lookupNwkId, lookupIEEE, ieee_from_nwkid))
+            self.log.logging("Input", "Error", "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s" % (
+                found, lookupNwkId, lookupIEEE, ieee_from_nwkid))
             return found
 
         # We found IEEE, let's get the Short Address
@@ -203,9 +204,8 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             # in ListOfDevices !!
             # Let's cleanup
             del self.IEEE2NWK[lookupIEEE]
-            self.log.logging("Input", "Error",
-                "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)"
-                % (exitsingNwkId, lookupIEEE, lookupNwkId))
+            self.log.logging("Input", "Error", "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)" % (
+                exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
         if 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
@@ -217,9 +217,8 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             del self.IEEE2NWK[ lookupIEEE ]
             # Delete the all Data Structure
             del self.ListOfDevices[ exitsingNwkId ]
-            self.log.logging("Input", "Error", 
-                "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)"
-                % (exitsingNwkId, lookupIEEE, lookupNwkId))
+            self.log.logging("Input", "Error", "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)" % (
+                exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
         if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOW", ):
@@ -232,9 +231,8 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             del self.IEEE2NWK[lookupIEEE]
             # Delete the all Data Structure
             del self.ListOfDevices[exitsingNwkId]
-            self.log.logging("Input", "Status",
-                "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !"
-                % (lookupIEEE, exitsingNwkId, lookupNwkId))
+            self.log.logging("Input", "Status", "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !" % (
+                lookupIEEE, exitsingNwkId, lookupNwkId))
             return False
 
         # At that stage, we have found an entry for the IEEE, but doesn't match
@@ -263,11 +261,10 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
         return True
 
     if new_NwkId == "0000" or old_NwkId == "0000":
-        self.log.logging("Input", "Error", 
-            "reconnectNWkDevice - cannot play with NwkId of Controller %s %s %s"
-            % (new_NwkId, old_NwkId, IEEE)
-        )
+        self.log.logging("Input", "Log", "reconnectNWkDevice - Looks like we have an IEEE matching a Coordinator nwkid , this is not possible by definition New: %s Old: %s IEEE: %s !!!" % (
+            new_NwkId, old_NwkId, IEEE))
         return False
+    
     self.ListOfDevices[new_NwkId] = dict(self.ListOfDevices[old_NwkId])
     self.IEEE2NWK[IEEE] = new_NwkId
 
@@ -276,10 +273,8 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
 
     # MostLikely exitsingKey(the old NetworkID) is not needed any more
     if removeNwkInList(self, old_NwkId) is None:
-        self.log.logging("Input", "Error", 
-            "reconnectNWkDevice - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s"
-            % (new_NwkId, old_NwkId, IEEE)
-        )
+        self.log.logging("Input", "Error", "reconnectNWkDevice - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s" % (
+            new_NwkId, old_NwkId, IEEE))
 
     if self.groupmgt:
         # We should check if this belongs to a group
@@ -289,10 +284,8 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     if self.ListOfDevices[new_NwkId]["Status"] in ( "Leave", ):
         self.ListOfDevices[new_NwkId]["Status"] = "inDB"
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
-        self.log.logging("Input", "Status", 
-            "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s"
-            % (self.ListOfDevices[new_NwkId]["Status"], new_NwkId)
-        )
+        self.log.logging("Input", "Status", "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s" % (
+            self.ListOfDevices[new_NwkId]["Status"], new_NwkId))
 
     # We will also reset ReadAttributes
     if self.pluginconf.pluginConf["enableReadAttributes"]:
@@ -942,9 +935,8 @@ def zigpy_plugin_sanity_check(self, nwkid):
     if self.IEEE2NWK[ ieee ] == nwkid:
         if "Status" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Status"] in ( 'Leave', ):
             # the device is alive and ieee/nwkid is correct
-            self.log.logging("Input", "Status", 
-                "zigpy_plugin_sanity_check - Update Status from %s to 'inDB' for NetworkID : %s"
-                % (self.ListOfDevices[nwkid]["Status"], nwkid), nwkid)
+            self.log.logging("Input", "Status", "zigpy_plugin_sanity_check - Update Status from %s to 'inDB' for NetworkID : %s" % (
+                self.ListOfDevices[nwkid]["Status"], nwkid), nwkid)
             self.ListOfDevices[ nwkid ]["Status"] = 'inDB'
             self.ListOfDevices[nwkid]["Heartbeat"] = "0"
         return True
@@ -1602,3 +1594,69 @@ def helper_versionFile(source, nbversion):
 
         # Last one
         helper_copyfile(source, source + "-%02d" % 1, move=False)
+
+def build_list_of_device_model(self, force=False):
+    
+    if not force and ( self.internalHB % (23 * 3600 // HEARTBEAT) != 0):
+        return
+
+    self.pluginParameters["NetworkDevices"] = {}
+    for x in self.ListOfDevices:
+        if x == "0000":
+            continue
+
+        manufcode = manufname = modelname = None
+        if "Model" in self.ListOfDevices[x]:
+            modelname = self.ListOfDevices[x]["Model"]
+
+        self.ListOfDevices[ x ]["CertifiedDevice"] = modelname in self.DeviceConf
+
+        if "Manufacturer" in self.ListOfDevices[x]:
+            manufcode = self.ListOfDevices[x]["Manufacturer"]
+            if manufcode in ( "", {}):
+                continue
+            if manufcode not in self.pluginParameters["NetworkDevices"]:
+                self.pluginParameters["NetworkDevices"][ manufcode ] = {}
+
+        if manufcode and "Manufacturer Name" in self.ListOfDevices[x]:
+            manufname = self.ListOfDevices[x]["Manufacturer Name"]
+            if manufname in ( "", {} ):
+                manufname = "unknow"
+            if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
+                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
+
+        if manufcode and manufname and modelname:
+            if modelname in ( "", {} ):
+                continue
+            if modelname not in self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ]:
+                self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ].append( modelname )
+                if modelname not in self.DeviceConf:
+                    unknown_device_model(self, x, modelname,manufcode, manufname )
+
+
+def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
+    
+    self.log.logging("Plugin", "Debug", "unknown_device_model NwkId: %s Model: %s ManufCode: %s ManufName: %s" %(
+        NwkId, Model, ManufCode, ManufName))
+    
+    if 'logUnknownDeviceModel' not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["logUnknownDeviceModel"]:
+        return
+    
+    if 'Log_UnknowDeviceFlag' in self.ListOfDevices[ NwkId ] and (self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] + ( 24 * 3600)) < time.time() :
+        return
+    
+    if 'Status' in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]['Status'] == 'notDB':
+        return
+           
+    device_name = get_device_nickname( self, NwkId=NwkId)
+    if device_name is None:
+        device_name = ""
+
+    self.log.logging("Plugin", "Log", "We have detected a working device %s (%s) Model: %s not optimized with the plugin. " %( 
+        get_device_nickname( self, NwkId=NwkId), NwkId, Model, ))
+    self.log.logging("Plugin", "Log", "")
+    self.log.logging("Plugin", "Log", " --- Please follow the link https://zigbeefordomoticz.github.io/wiki/en-eng/Problem_Dealing-with-none-optimized-device.html")         
+    self.log.logging("Plugin", "Log", " --- Thanks the Zigbee for Domoticz plugin team")
+    self.log.logging("Plugin", "Log", "")
+    
+    self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()

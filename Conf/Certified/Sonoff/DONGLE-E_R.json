@@ -1,0 +1,21 @@
+{
+    "_comment": "Sonoff Router Firmware for Dongle",
+    "_version": "1.0",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "Type": ""
+        },
+        "02": {
+            "0000": "",
+            "Type": ""
+        }
+    },
+    "CreateWidgetDomoticz": false,
+    "Type": "",
+    "ClusterToBind": [ ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0005" ]
+    }
+}
