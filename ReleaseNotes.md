@@ -20,19 +20,36 @@ Release Numbering
 
 ## Dec. 2022 - stable6 - 6.3.008
 
-- [Technical] - improve handling of device leaving the netwokr
 - [Hardware] - NOUS A1Z plug
 - [Hardware] - Schneider Outlet 2 Gangs
 - [Hardware] - Loratap Shutter switch
-- [Hardware] - Motion Sensor Adeo LDSENK10
-- [WebUI] - Report on dashboard Optimised object configuration
-- [Technical] - Better reporting of the TI, SiliconLabs, deConz firmware version
+- [Hardware] - ADEO LEXMAN motion sensor
+- [Hardware] - Bitron Alarm 90201021A
+- [Hardware] - LEXMAN LXEK-7 Led
+- [Hardware] - Heiman GASSensor-EF-3.0
+- [Hardware] - Konke Temp/Humi sensor 3AFE220103020000
+- [Hardware] - Home Base L&S Emotion. Thanks to @d2en2o
 - [Hardware] - Additional lumi definition ( plug, motion, )
-- [Technical] - Support of Page Block request for OTA upgrade
-- [WebUI] - Provide facility to download the plugin log file
-- [Hardware] - Additional SonOff dongle in router mode.
-- [Technical] - Improve Group Blinds management
 - [Hardware] - Support of Aqara Motion P1
+- [Hardware] - Additional SonOff dongle in router mode.
+- [Hardware] - Aduro Smart Dimmable Plug
+- [Hardware] - Eco Dimmer switch
+- [Hardware] - MOES Smart Curtain Switch Module
+
+- [WebUI] - Report on dashboard Optimised object configuration
+- [WebUI] - Provide facility to download the plugin log file
+
+- [Technical] - improve handling of device leaving the netwokr
+- [Technical] - Better reporting of the TI, SiliconLabs, deConz firmware version
+- [Technical] - Support of Page Block request for OTA upgrade
+- [Technical] - Improve Group Blinds management
+- [Technical] - Support https for the URL base API
+- [Technical] - Improve debugging of zigpy layers
+- [Technical] - Support OTA Block request. Thanks to @deufo testing and fixing
+- [Technical] - REST API /plugin-log to retreive the current plugin log (if used)
+- [Technical] - improve the WebUI reset device for further provisionning
+- [Technical] - Better management of non-zigate related firmware version. Properly display
+- [Technical] - Structured Log for SendData ( "StructuredLogCommand" parameter to be manualy entered in the Conf file). The file itself is not managed.
 
 ## 2 Dec. 2022 - stable6 - 6.3.007
 
