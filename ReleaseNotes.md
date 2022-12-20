@@ -18,7 +18,7 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-## Dec. 2022 - stable6 - 6.3.008
+## 20 Dec. 2022 - stable6 - 6.3.008
 
 - [Hardware] - NOUS A1Z plug
 - [Hardware] - Schneider Outlet 2 Gangs
