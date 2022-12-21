@@ -371,6 +371,7 @@ SETTINGS = {
             "pollingfc01": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingfc21": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingfc40": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "pollingfc7d": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "EnableLedIfOn": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": False,},
             "EnableLedInDark": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": False,},
             "EnableLedShutter": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": False,},

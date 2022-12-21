@@ -556,7 +556,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType="Air Quality")
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Air Quality" % (t), NWKID)
 
-            if t in ("Voc",):
+            if t in ("Voc", "PM25"):
                 Options = "1;ppm"
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType="Custom")
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in VOC" % (t), NWKID)

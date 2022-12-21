@@ -180,3 +180,51 @@ def ikea_motion_sensor_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCm
             "Decode8095 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % ( MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
         )
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
+
+def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, Data):
+    
+    self.log.logging( "Input", "Log", "ikea_air_purifier_cluster %s/%s %s %s %s" % ( NwkId, Ep, ClusterId, AttributeId, Data), )
+
+    if ClusterId != "fc7d":
+        return
+    
+    if AttributeId == "0001":
+        # Replace Filter
+        self.log.logging( "Input", "Log", " -- Replace Filter: %s" % ( Data), )
+        
+    elif AttributeId == "0002":
+        # Filter Life time
+        self.log.logging( "Input", "Log", " -- Filter Life time: %s" % ( Data), )
+        
+    elif AttributeId == "0003":
+        # Led Indication
+        self.log.logging( "Input", "Log", " --  Led Indication: %s" % ( Data), )
+        
+    elif AttributeId == "0004":
+        # PM25
+        self.log.logging( "Input", "Log", " --  PM25: %s" % ( Data), )
+        
+    elif AttributeId == "0005":
+        # Locked
+        self.log.logging( "Input", "Log", " --  Locked: %s" % ( Data), )
+        
+    elif AttributeId == "0006":
+        # Mode
+        # 1 auto
+        # 10 speed 1
+        # 20 speed 2
+        # 30 speed 3
+        # 40 speed 4
+        # else speed 5
+        self.log.logging( "Input", "Log", " --  Mode: %s" % ( Data), )
+        
+    elif AttributeId == "0007":
+        # Fan Speed        
+        self.log.logging( "Input", "Log", " --  Fan Speed: %s" % ( Data), )
+
+    elif AttributeId == "0008":
+        # Device runtime
+        self.log.logging( "Input", "Log", " --  Device runtime: %s" % ( Data), )
+    
+        
