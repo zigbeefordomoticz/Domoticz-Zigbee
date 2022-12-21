@@ -1,6 +1,6 @@
 # Release Notes
 
-Please use the Wiki <https://github.com/pipiche38/Domoticz-Zigate-Wiki> and feel free to contribute.
+Please use the Wiki <https://zigbeefordomoticz.github.io/wiki/en-eng/> and feel free to contribute.
 And if you have any questions, problem please use first the Domoticz forum.
 
 - French channel : <https://easydomoticz.com/forum/viewtopic.php?f=8&t=7099>
@@ -11,25 +11,45 @@ If you want to contribue , please let us know , we are looking for help in vario
 - certifying new ZigBee devices
 - improving the plugin
 - increasing the level of documentation for end user
-- imporving the plugin WebUI
+- improving the plugin WebUI
 
 Release Numbering
 
 - Odd numbers --> Stable/6
-- Even numbers  --> Beta/6
+- Even numbers  --> Beta/6 (dev branch)
 
-##   Dec. 2022 - stable6 - 6.3.008
+## 20 Dec. 2022 - stable6 - 6.3.008
 
-- [Hardware] - Motion Sensor Adeo LDSENK10
-- [WebUI] - Report on dashboard Optimised object configuration
-- [Technical] - Better reporting of the TI, SiliconLabs, deConz firmware version
+- [Hardware] - NOUS A1Z plug
+- [Hardware] - Schneider Outlet 2 Gangs
+- [Hardware] - Loratap Shutter switch
+- [Hardware] - ADEO LEXMAN motion sensor
+- [Hardware] - Bitron Alarm 90201021A
+- [Hardware] - LEXMAN LXEK-7 Led
+- [Hardware] - Heiman GASSensor-EF-3.0
+- [Hardware] - Konke Temp/Humi sensor 3AFE220103020000
+- [Hardware] - Home Base L&S Emotion. Thanks to @d2en2o
 - [Hardware] - Additional lumi definition ( plug, motion, )
-- [Technical] - Support of Page Block request for OTA upgrade
-- [WebUI] - Provide facility to download the plugin log file
-- [Hardware] - Additional SonOff dongle in router mode.
-- [Technical] - Improve Group Blinds management
 - [Hardware] - Support of Aqara Motion P1
+- [Hardware] - Additional SonOff dongle in router mode.
+- [Hardware] - Aduro Smart Dimmable Plug
+- [Hardware] - Eco Dimmer switch
+- [Hardware] - MOES Smart Curtain Switch Module
 
+- [WebUI] - Report on dashboard Optimised object configuration
+- [WebUI] - Provide facility to download the plugin log file
+
+- [Technical] - improve handling of device leaving the netwokr
+- [Technical] - Better reporting of the TI, SiliconLabs, deConz firmware version
+- [Technical] - Support of Page Block request for OTA upgrade
+- [Technical] - Improve Group Blinds management
+- [Technical] - Support https for the URL base API
+- [Technical] - Improve debugging of zigpy layers
+- [Technical] - Support OTA Block request. Thanks to @deufo testing and fixing
+- [Technical] - REST API /plugin-log to retreive the current plugin log (if used)
+- [Technical] - improve the WebUI reset device for further provisionning
+- [Technical] - Better management of non-zigate related firmware version. Properly display
+- [Technical] - Structured Log for SendData ( "StructuredLogCommand" parameter to be manualy entered in the Conf file). The file itself is not managed.
 
 ## 2 Dec. 2022 - stable6 - 6.3.007
 
@@ -37,12 +57,11 @@ Release Numbering
 
 ## 15 Nov. 2022 - stable6 - 6.3.006
 
-- [Technical] - zigpy upstream merge 
+- [Technical] - zigpy upstream merge
 - [Hardware] - ST30 Temp+Humi by Orvibo
 - [Hardware] - Compatible with ZLinky v11
 - [Hardware] - Wiser legacy VACT fixes
 - [Hardware] - Compatibility with the new Domoticz 2022.2 blinds behaviour
-
 
 ## 29 Oct. 2022 - stable6 - 6.3.005
 
@@ -54,13 +73,15 @@ Release Numbering
 - [WebUI] - Frontend to send raw Zigbee commands (in zigpy) for coordinators as TI, SiliconLabs, deConz
 - [Technical] - Update of readme.md to prevent duplicate infos with the Wiki
 
-##    Oct. 2022 - stable6 - 6.3.003
+## Oct. 2022 - stable6 - 6.3.003
+
 - [Issue] - drop invalid ieee
 - [Technical] - log zigpy configuration at startup
 
 ## 19 Oct. 2022 - stable6 - 6.3.002
 
 - [Issue] - Improve pairing mecanism for the CMS323
+
 - [Issue] - Prevent Aqara Motion to report un-expected Off
 - [Issue] - Provide additional ZLinky translated parameters
 - [Technical] - Implement a solution to delay Binding+ConfigureReporting and give priority to IAS enrollment
@@ -72,9 +93,9 @@ Release Numbering
 - [Technical] - New REST API /raw-zigbee allowing to send zigbee raw commands
 - [Technical] - Enhacement of the WebUI
 - [Technical] - Fix on Motion/Lux devices. Prevent updating Widget when no move.
-- [Hardware] - Integration of Tuya Smoke detector https://zigbee.blakadder.com/Tuya_YG400A.html
+- [Hardware] - Integration of Tuya Smoke detector <https://zigbee.blakadder.com/Tuya_YG400A.html>
 - [Hardware] - Integration of Curtain Module WS-Zigbee-CP03
-- [Hardware] - New Lidl PIR 
+- [Hardware] - New Lidl PIR
 - [Hardware] - Certification of HUE Ensis lights
 - [Technical] - Automatic coordinator backup/restore for non-Zigate coordinators
 - [Technical] - Support of device Over-The-Air firmware upgrade for non-Zigate coordinators
@@ -230,10 +251,6 @@ Release Numbering
 
 - [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
 
-## 25 October 2021 - 5.1.12
-
-- [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
-
 ## 24 October 2021 - 5.1.11
 
 - [Technical] - After a Power Off/On make sure to retreive the current status of Switches, Plug, Led and Level Control
@@ -326,7 +343,7 @@ Release Numbering
 - [Hardware] - Add Lora Tap Switch
 - [Hardware] - Add Tuya eTRV
 
-#### end of Domoticz 4.xxxx support. For above version it is required to have a minimum of 2020.1
+**end of Domoticz 4.xxxx support. For above version it is required to have a minimum of 2020.1
 
 ## 23 Feb. 2021   - 4.11.17
 
@@ -374,7 +391,7 @@ Release Numbering
 - [Hardware] - INNR SP 120 Plug ( Instant Power, Voltage, Current reporting)
 - [Hardware] - Schneider 1 Gang Shutter
 
-# 15 Oct.   2020  - 4.11.7
+## 15 Oct.   2020  - 4.11.7
 
 - [Hardware] - Various fixed for Heiman remote device.
 
@@ -789,4 +806,3 @@ Mainly a technical version in order to split the code in pieces.
 
 ## 8 September 2018 - 2.4.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/2.4.0>
 
-Thanks to : zaraki673, pipiche38, badz, smanar, thiklop, dennoo, lboue, cldfr, sbhc68
