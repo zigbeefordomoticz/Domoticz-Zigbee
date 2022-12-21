@@ -608,6 +608,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         UpdateDevice_v2(self, Devices, DeviceUnit, 5, "50", BatteryLevel, SignalLevel)
     
 
+        if ClusterType == "PM25" and WidgetType == "PM25":
+            nvalue = round(value, 0)
+            svalue = "%s" % (nvalue)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
+
         if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
             nvalue = round(value, 0)

@@ -203,7 +203,9 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
         
     elif AttributeId == "0004":
         # PM25
-        self.log.logging( "Input", "Log", " --  PM25: %s" % ( Data), )
+        value = int( Data, 16)
+        self.log.logging( "Input", "Log", " --  PM25: %s --> %s" % ( Data, value), )
+        MajDomoDevice(self, Devices, NwkId, Ep, "042a", "01", value)
         
     elif AttributeId == "0005":
         # Locked
