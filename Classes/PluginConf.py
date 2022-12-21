@@ -220,7 +220,7 @@ SETTINGS = {
             "NXPExtendedErrorCode": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugInput": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugDeviceAnnoucement": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
-
+            "debugreadZclClusters": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugBasicOutput": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugBinding": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugConfigureReporting": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
@@ -284,6 +284,7 @@ SETTINGS = {
             "debugThreadWriter": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugThreadCommunication": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "debugZLinky": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            
         },
     },
     # Others
@@ -302,6 +303,7 @@ SETTINGS = {
     "Experimental": {
         "Order": 16,
         "param": {
+            "readZclClusters": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "PluginLogMode": {"type": "list","list": { "system defaut": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},"default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "reconnectonIEEEaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "reconnectonNWKaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
