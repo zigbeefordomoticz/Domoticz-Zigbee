@@ -904,12 +904,7 @@ def manufacturer_specific_attribute(self, key, cluster, attr, cfg_attribute):
 
     # Return False if the attribute is not a manuf specific, otherwise return the Manufacturer code
     if "ManufSpecific" in cfg_attribute:
-        self.logging(
-            "Log",
-            f'manufacturer_specific_attribute - NwkId: {key} found attribute: {attr} Manuf Specific, return ManufCode: {cfg_attribute["ManufSpecific"]}',
-            nwkid=key
-        )
-
+        self.logging( "Debug", f'manufacturer_specific_attribute - NwkId: {key} found attribute: {attr} Manuf Specific, return ManufCode: {cfg_attribute["ManufSpecific"]}', nwkid=key )
         return cfg_attribute["ManufSpecific"]
 
     if (

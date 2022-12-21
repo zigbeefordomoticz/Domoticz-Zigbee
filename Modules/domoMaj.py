@@ -613,6 +613,34 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             svalue = "%s" % (nvalue)
             UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
 
+        if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
+            nValue = 0
+            text = "%s %% left" %( value )
+            # This is Alarm for Air Purifier
+            if value == 0:
+                # Red
+                nValue = 4
+            elif 0 < value < 10:
+                # Orange
+                nValue = 3
+            elif 10 < value < 30:
+                # Yellow
+                nValue = 2
+            elif 30 < value < 100:
+                # Green
+                nValue = 1
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, text, BatteryLevel, SignalLevel)
+    
+        if Attribute_ == "0007" and ClusterType == "FanControl" and WidgetType == "FanSpeed":
+            nValue = 1
+            sValue = "10"
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, text, BatteryLevel, SignalLevel)
+        
+        if Attribute_ == "0006" and ClusterType == "FanControl" and WidgetType == "AirPurifierMode":
+            nValue = value
+            sValue = "%s" %(10 * nValue)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, text, BatteryLevel, SignalLevel)
+        
         if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
             nvalue = round(value, 0)

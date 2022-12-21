@@ -12,7 +12,7 @@
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate
-from Modules.tools import updSQN, extract_info_from_8085
+from Modules.tools import updSQN, extract_info_from_8085, get_cluster_attribute_value
 
 
 def ikea_openclose_remote(self, Devices, NwkId, Ep, command, Data, Sqn):
@@ -192,6 +192,7 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
     if AttributeId == "0001":
         # Replace Filter
         self.log.logging( "Input", "Log", " -- Replace Filter: %s" % ( Data), )
+        MajDomoDevice(self, Devices, NwkId, Ep, "0009", 0)
         
     elif AttributeId == "0002":
         # Filter Life time
@@ -204,29 +205,37 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
     elif AttributeId == "0004":
         # PM25
         value = int( Data, 16)
-        self.log.logging( "Input", "Log", " --  PM25: %s --> %s" % ( Data, value), )
-        MajDomoDevice(self, Devices, NwkId, Ep, "042a", "01", value)
+        if value != 0xffff:
+            self.log.logging( "Input", "Log", " --  PM25: %s --> %s" % ( Data, value), )
+            MajDomoDevice(self, Devices, NwkId, Ep, "042a", value)
         
     elif AttributeId == "0005":
         # Locked
         self.log.logging( "Input", "Log", " --  Locked: %s" % ( Data), )
         
     elif AttributeId == "0006":
-        # Mode
-        # 1 auto
-        # 10 speed 1
-        # 20 speed 2
-        # 30 speed 3
-        # 40 speed 4
-        # else speed 5
         self.log.logging( "Input", "Log", " --  Mode: %s" % ( Data), )
-        
+        mode = int( Data, 16 )
+        if mode == 0:
+            # Switch Off
+            MajDomoDevice(self, Devices, NwkId, Ep, "0202", 0, Attribute_="0006", )
+            MajDomoDevice(self, Devices, NwkId, Ep, "0202", 0, Attribute_="0007", )
+        elif mode == 1:
+            MajDomoDevice(self, Devices, NwkId, Ep, "0202", 1, Attribute_="0006", )
+            
     elif AttributeId == "0007":
-        # Fan Speed        
-        self.log.logging( "Input", "Log", " --  Fan Speed: %s" % ( Data), )
+        # Fan Speed
+        fan_speed = int(Data,16)
+        self.log.logging( "Input", "Log", " --  Fan Speed: %s => %s" % ( Data, fan_speed), )
+        MajDomoDevice(self, Devices, NwkId, Ep, "0202", fan_speed, Attribute_="0007", ) 
 
     elif AttributeId == "0008":
         # Device runtime
+        runtime = int(Data,16)
+        lifetime = get_cluster_attribute_value( self, NwkId, Ep, ClusterId, "0002")
+        if lifetime is not None:
+            percentage = runtime // lifetime 
+            MajDomoDevice(self, Devices, NwkId, Ep, "0009", int( percentage))
         self.log.logging( "Input", "Log", " --  Device runtime: %s" % ( Data), )
     
         
