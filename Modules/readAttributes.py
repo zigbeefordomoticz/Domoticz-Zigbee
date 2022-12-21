@@ -1629,15 +1629,13 @@ def ReadAttributeRequest_ff66(self, key):
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_fc7d(self, key):
-    # Cluster ZLinky
-
+    # Cluster IKEA
     self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_fc7d - Key: %s " % key, nwkid=key)
     EPout = "01"
     listAttributes = retreive_ListOfAttributesByCluster(self, key, EPout, "fc7d")
     self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_fc7d - Key: %s request %s" % (
         key, listAttributes), nwkid=key)
-
-    ReadAttributeReq(self, key, ZIGATE_EP, EPout, "fc7d", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, "fc7d", listAttributes,  manufacturer_spec="01", manufacturer="117c", ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 READ_ATTRIBUTES_REQUEST = {
