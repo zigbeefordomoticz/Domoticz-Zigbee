@@ -1,23 +1,23 @@
 {
-    "Ep": {
-        "06": {
-            "0000": "",
-            "0003": "",
-            "0006": "",
-            "0008": { "Attributes": {"0000": { "Enabled": true, "Name": "Livolo CurrentLevel","ActionList": [ "check_store_value"]}}},
-            "Type": "LivoloSWL/LivoloSWR"
-        }
-    },
-    "Type": "",
-    "ClusterToBind": [],
-    "ConfigureReporting": {},
-    "ReadAttributes": {
-        "0000": [
-            "0004",
-            "0005"
-        ],
-        "0001": [],
-        "0006": [],
-        "0008": []
-    }
+	"Ep": {
+		"06": {
+			"0000": "",
+			"0003": "",
+			"0006": "",
+			"0008": "",
+			"Type": "LivoloSWL/LivoloSWR"
+		}
+	},
+	"Type": "",
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0005"
+		],
+		"0001": [],
+		"0006": [],
+		"0008": []
+	}
 }
