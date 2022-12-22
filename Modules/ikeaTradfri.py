@@ -265,17 +265,7 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
             
     elif AttributeId == "0007":
         # Fan Speed should vary from 1 to 50
-        fan_speed = int(Data,16) 
-        if fan_speed <= 10:
-            fan_speed = 10
-        elif fan_speed <= 20:
-            fan_speed = 20
-        elif fan_speed <= 30:
-            fan_speed = 30
-        elif fan_speed <= 40:
-            fan_speed = 40
-        else:
-            fan_speed = 50
+        fan_speed = convert_fan_speed_into_level( int(Data,16)  )
         
         self.log.logging( "Input", "Log", " --  Fan Speed: %s => %s" % ( Data, fan_speed), )
         MajDomoDevice(self, Devices, NwkId, Ep, "0202", fan_speed, Attribute_="0007", ) 
@@ -290,4 +280,14 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
             MajDomoDevice(self, Devices, NwkId, Ep, "0009", int( percentage))
         self.log.logging( "Input", "Log", " --  Device runtime: %s" % ( Data), )
     
-        
+
+def convert_fan_speed_into_level( fan_speed ):
+    if fan_speed <= 10:
+        return 10
+    if fan_speed <= 20:
+        return 20
+    if fan_speed <= 30:
+        return 30
+    if fan_speed <= 40:
+        return 40
+    return 50
