@@ -24,8 +24,6 @@ from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster,
                           store_lumi_attribute)
 from Modules.philips import philips_dimmer_switch
-from Modules.readZclClusters import (is_cluster_zcl_config_available,
-                                     process_cluster_attribute_response)
 from Modules.schneider_wiser import (receiving_heatingdemand_attribute,
                                      receiving_heatingpoint_attribute)
 from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,

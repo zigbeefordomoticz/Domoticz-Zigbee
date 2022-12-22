@@ -13,6 +13,8 @@
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate
 from Modules.tools import updSQN, extract_info_from_8085, get_cluster_attribute_value
+from Modules.basicOutputs import write_attribute
+from Modules.zigateConsts import ZIGATE_EP
 
 
 def ikea_openclose_remote(self, Devices, NwkId, Ep, command, Data, Sqn):
@@ -181,7 +183,26 @@ def ikea_motion_sensor_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCm
         )
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
+def ikea_air_purifier_mode( self, NwkId, Ep, mode ):
+    # Cluster 0xfc7d
+    # Attribute 0x0006
+    if mode not in ( 0x00, 0x01 ):
+        return
+    write_attribute(
+        self, 
+        NwkId, 
+        ZIGATE_EP,
+        Ep, 
+        'fc7d', 
+        '117c', 
+        '01', 
+        '0006', 
+        '20', 
+        '%02x' %mode, 
+        ackIsDisabled=False
+    )
 
+    
 def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, Data):
     
     self.log.logging( "Input", "Log", "ikea_air_purifier_cluster %s/%s %s %s %s" % ( NwkId, Ep, ClusterId, AttributeId, Data), )
