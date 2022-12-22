@@ -1,0 +1,55 @@
+{
+    "_comment": "ADEO LEXMAN Smart Plug 16A",
+    "_blakkader": "https://zigbee.blakadder.com/ADEO_LDSENK02F.html",
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1394",
+    "_version": "1.0",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0006": "",
+            "0702": "",
+            "0b04": "",
+            "fc82": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Plug/Power/Meter/Ampere"
+        },
+        "f2": {
+            "Type": ""
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0006", "0702", "0b04" ],
+    "ConfigureReporting": {
+        "0006": { 
+            "Attributes": { 
+                "0000": { "DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "01" } 
+                }
+            },
+        "0702": { 
+            "Attributes": { 
+                "0000": { "DataType": "25", "MinInterval": "0005", "MaxInterval": "fffe", "TimeOut": "0FFF", "Change": "000000000000000a" }, 
+                "0400": { "DataType": "2a", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "00000a" } 
+                }
+            },
+        "0b04": {
+            "Attributes": {
+                "0505": { "DataType": "21", "MinInterval": "0005", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
+                "0508": { "DataType": "21", "MinInterval": "0005", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
+                "050b": { "DataType": "29", "MinInterval": "0005", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }
+                }
+            }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "000a", "4000" ],
+        "0006": [ "0000", "4001", "4002"],
+        "0702": [ "0000", "0200", "0301", "0302", "0303", "0306", "0400" ],
+        "0b04": [ "050b", "0505", "0508" ],
+        "0019": []
+    },
+    "Param": {
+    }
+}
