@@ -1,32 +1,53 @@
 {
-    "Comment": "Air Quality (CO2), VOC, Temp and Humidity sensors using the 0x0402 cluster",
-    "Version": "1.0",
-    "Ep": {
-        "01": {
-            "0000": "",
-            "0001": {
-                "Attributes": {
-                    "0001": { "Enabled": true, "Name": "VOC Sensor Humidity","DataType": "29" , "DomoClusterType": "Humi","EvalExp": "round(value / 100)","ActionList": [ "check_store_value", "upd_domo_device"], "UpdDomoDeviceWithCluster": "0405","UpdDomoDeviceWithAttibute": "0001"},
-                    "0002": { "Enabled": true, "Name": "VOC Sensor ECO2", "DataType": "29" , "DomoClusterType": "AirQuality", "ActionList": [ "check_store_value", "upd_domo_device"], "UpdDomoDeviceWithAttibute": "0002"},
-                    "0003": { "Enabled": true, "Name": "VOC Sensor VOC", "DataType": "29" , "DomoClusterType": "Voc", "ActionList": [ "check_store_value", "upd_domo_device"], "UpdDomoDeviceWithAttibute": "0003"}
-                }
-            },
-            "0201": "",
-            "0402": "",
-            "0405": "",
-            "Type": "Temp/Humi/AirQuality/Voc"
-        }
-    },
-    "Type": "",
-    "ClusterToBind": [ "0000", "0001", "0003", "0402" ],
-    "ConfigureReporting": {
-        "0001": { "Attributes": { "0021": { "DataType": "20", "MinInterval": "012C", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "01" } } }
-    },
-    "ReadAttributes": {
-        "0000": ["0000","0004","0005"],
-        "0001": [ "0021" ],
-        "0201": [],
-        "0402": [ "0000", "0001", "0002", "0003" ],
-        "0405": []
-    }
+	"Comment": "Air Quality (CO2), VOC, Temp and Humidity sensors using the 0x0402 cluster",
+	"Version": "1.0",
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0001": "",
+			"0003": "",
+			"0201": "",
+			"0402": "",
+			"0405": "",
+			"Type": "Temp/Humi/AirQuality/Voc"
+		}
+	},
+	"Type": "",
+	"ClusterToBind": [
+		"0000",
+		"0001",
+		"0003",
+		"0402"
+	],
+	"ConfigureReporting": {
+		"0001": {
+			"Attributes": {
+				"0021": {
+					"DataType": "20",
+					"MinInterval": "012C",
+					"MaxInterval": "012C",
+					"TimeOut": "0FFF",
+					"Change": "01"
+				}
+			}
+		}
+	},
+	"ReadAttributes": {
+		"0000": [
+			"0000",
+			"0004",
+			"0005"
+		],
+		"0001": [
+			"0021"
+		],
+		"0201": [],
+		"0402": [
+			"0000",
+			"0001",
+			"0002",
+			"0003"
+		],
+		"0405": []
+	}
 }
