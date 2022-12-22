@@ -508,15 +508,24 @@ SWITCH_LVL_MATRIX = {
     "AirPurifierMode": {
         "00": (0, "00"),  # Off
         "01": (1, "10"),  # Auto
+        "ForceUpdate": True,
+        "LevelNames": "Off|Auto",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Auto"}},
     },
     "FanSpeed": {
-        "00", (0, "00"),  # Off
-        "10", (1, "10"),  #
-        "20", (2, "20"),  #
-        "30", (3, "30"),  #
-        "40", (4, "40"),  #
-        "50", (5, "50"),  #
+        "00": (0, "00"),  # Off
+        "10": (1, "10"),  # Speed 1
+        "20": (2, "20"),  # Speed 2
+        "30": (3, "30"),  # Speed 3
+        "40": (4, "40"),  # Speed 4
+        "50": (5, "50"),  # Speed 5
+        "ForceUpdate": True,
+        "LevelNames": "Off|Speed1|Speed2|Speed3|Speed4|Speed5",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Vitesse1|Vitesse2|Vitesse3|Vitesse4|Vitesse5"}},
     },
+    
     "FanControl": {
         "00": (0, "00"),  # Off
         "05": (1, "10"),  # Auto

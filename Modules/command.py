@@ -415,8 +415,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             casaia_system_mode(self, NWKID, "Off")
             return
 
-        if DeviceType == "FanMode" and _model_name in ('STARKVIND Air purifier', ):
-            ikea_air_purifier_mode( self, NWKID, EPout, int(Level) // 10 )
+        if DeviceType == "AirPurifierMode" and _model_name in ('STARKVIND Air purifier', ):
+            ikea_air_purifier_mode( self, NWKID, EPout, 0 )
             
         if ( DeviceType == "ACSwing" and "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "AC201A" ):
             casaia_swing_OnOff(self, NWKID, "00")
@@ -586,6 +586,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             tuya_energy_onoff(self, NWKID, "01")
             # UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
+
+        if DeviceType == "AirPurifierMode" and _model_name in ('STARKVIND Air purifier', ):
+            ikea_air_purifier_mode( self, NWKID, EPout, 1 )
 
         if DeviceType == "LivoloSWL":
             livolo_OnOff(self, NWKID, EPout, "Left", "On")
