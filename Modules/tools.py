@@ -1101,7 +1101,7 @@ def build_fcf(frame_type, manuf_spec, direction, disabled_default):
 
 def get_cluster_attribute_value( self, key, endpoint, clusterId, AttributeId):
     if (
-        key not in self.ListOfDevice
+        key not in self.ListOfDevices
         or "Ep" not in self.ListOfDevices[key]
         or endpoint not in self.ListOfDevices[key]["Ep"]
         or clusterId not in self.ListOfDevices[key]["Ep"][ endpoint ]

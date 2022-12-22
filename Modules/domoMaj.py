@@ -610,36 +610,36 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
         if ClusterType == "PM25" and WidgetType == "PM25":
             nvalue = round(value, 0)
-            svalue = "%s" % (nvalue)
+            svalue = "%s" % (nvalue,)
             UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
             nValue = 0
-            text = "%s %% left" %( value )
+            sValue = "%s %% used" %( value, )
             # This is Alarm for Air Purifier
-            if value == 0:
+            if value >= 100:
                 # Red
                 nValue = 4
-            elif 0 < value < 10:
+            elif value >= 90:
                 # Orange
                 nValue = 3
-            elif 10 < value < 30:
+            elif value >= 70:
                 # Yellow
                 nValue = 2
-            elif 30 < value < 100:
+            else:
                 # Green
                 nValue = 1
-            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, text, BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
     
         if Attribute_ == "0007" and ClusterType == "FanControl" and WidgetType == "FanSpeed":
-            nValue = 1
-            sValue = "10"
-            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, text, BatteryLevel, SignalLevel)
+            nValue = value
+            sValue = "%s" % (value,)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
         
         if Attribute_ == "0006" and ClusterType == "FanControl" and WidgetType == "AirPurifierMode":
             nValue = value
-            sValue = "%s" %(10 * nValue)
-            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, text, BatteryLevel, SignalLevel)
+            sValue = "%s" %(10 * value,)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
         
         if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster

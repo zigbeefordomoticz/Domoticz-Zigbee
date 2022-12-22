@@ -234,6 +234,7 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
         runtime = int(Data,16)
         lifetime = get_cluster_attribute_value( self, NwkId, Ep, ClusterId, "0002")
         if lifetime is not None:
+            lifetime = int(Data,16)
             percentage = runtime // lifetime 
             MajDomoDevice(self, Devices, NwkId, Ep, "0009", int( percentage))
         self.log.logging( "Input", "Log", " --  Device runtime: %s" % ( Data), )
