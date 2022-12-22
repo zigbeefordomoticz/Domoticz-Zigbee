@@ -232,7 +232,8 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
     if AttributeId == "0001":
         # Replace Filter
         self.log.logging( "Input", "Log", " -- Replace Filter: %s" % ( Data), )
-        MajDomoDevice(self, Devices, NwkId, Ep, "0009", 0)
+        # Let send Alarm with 100% usage
+        MajDomoDevice(self, Devices, NwkId, Ep, "0009", 100)
         
     elif AttributeId == "0002":
         # Filter Life time
