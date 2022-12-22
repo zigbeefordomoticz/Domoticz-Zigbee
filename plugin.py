@@ -592,7 +592,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
 
             if Parameters["Mode2"] == "Socket":
-                SerialPort = "socket://" + Parameters["IP"]
+                SerialPort = "socket://" + Parameters["IP"] + ':' + Parameters["Port"]
                 self.transport += "Socket"
             else:
                 SerialPort = Parameters["SerialPort"]
