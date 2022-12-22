@@ -202,6 +202,25 @@ def ikea_air_purifier_mode( self, NwkId, Ep, mode ):
         ackIsDisabled=False
     )
 
+def ikea_air_purifier_fan_speed( self, NwkId, Ep, fan_speed):
+    # Cluster 0xfc7d
+    # Attribute 0x0006
+    if fan_speed not in ( 10,20,30,40,50):
+        return
+    write_attribute(
+        self, 
+        NwkId, 
+        ZIGATE_EP,
+        Ep, 
+        'fc7d', 
+        '117c', 
+        '01', 
+        '0006', 
+        '20', 
+        '%02x' %fan_speed, 
+        ackIsDisabled=False
+    )
+   
     
 def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, Data):
     
@@ -245,8 +264,19 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
             MajDomoDevice(self, Devices, NwkId, Ep, "0202", 1, Attribute_="0006", )
             
     elif AttributeId == "0007":
-        # Fan Speed
-        fan_speed = int(Data,16)
+        # Fan Speed should vary from 1 to 50
+        fan_speed = int(Data,16) 
+        if fan_speed <= 10:
+            fan_speed = 10
+        elif fan_speed <= 20:
+            fan_speed = 20
+        elif fan_speed <= 30:
+            fan_speed = 30
+        elif fan_speed <= 40:
+            fan_speed = 40
+        else:
+            fan_speed = 50
+        
         self.log.logging( "Input", "Log", " --  Fan Speed: %s => %s" % ( Data, fan_speed), )
         MajDomoDevice(self, Devices, NwkId, Ep, "0202", fan_speed, Attribute_="0007", ) 
 

@@ -394,10 +394,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACSwing" % (t), NWKID)           
 
             # 2 Selectors, Style 0
-            if t in ( "AirPurifierAlarm", ):
-                Options = createSwitchSelector(self, 2, DeviceType=t, SelectorStyle=0)
+            if t in ( "AirPurifierMode", ):
+                Options = createSwitchSelector(self, 3, DeviceType=t, SelectorStyle=0)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AirPurifier" % (t), NWKID)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AirPurifierMode" % (t), NWKID)
 
             # 3 Selectors, Style 0
             if t in ("Toggle", "ThermoMode_2"):

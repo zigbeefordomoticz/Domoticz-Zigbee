@@ -19,7 +19,7 @@ from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, UpdateDevice_v2)
 from Modules.fanControl import change_fan_mode
-from Modules.ikeaTradfri import ikea_air_purifier_mode
+from Modules.ikeaTradfri import ikea_air_purifier_mode, ikea_air_purifier_fan_speed
 from Modules.legrand_netatmo import cable_connected_mode, legrand_fc40
 from Modules.livolo import livolo_OnOff
 from Modules.profalux import profalux_MoveToLiftAndTilt, profalux_stop
@@ -1053,7 +1053,15 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 UpdateDevice_v2( self, Devices, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
                 return
                 
-                
+        if DeviceType == "AirPurifierMode" and _model_name in ('STARKVIND Air purifier', ):
+            if Level == "10":
+                ikea_air_purifier_mode( self, NWKID, EPout, 1 )
+            elif Level == "20":
+                ikea_air_purifier_fan_speed( self, NWKID, EPout, 30)
+           
+        if DeviceType == "FanSpeed" and _model_name in ('STARKVIND Air purifier', ): 
+            ikea_air_purifier_fan_speed( self, NWKID, EPout, int(Level))
+            
         if DeviceType == "FanControl":
 
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "AC201A":
