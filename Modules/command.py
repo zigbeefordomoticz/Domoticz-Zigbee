@@ -11,7 +11,6 @@
 """
 
 import Domoticz
-
 from Modules.actuators import (actuator_off, actuator_on, actuator_setcolor,
                                actuator_setlevel, actuator_stop, actuators)
 from Modules.casaia import (casaia_ac201_fan_control, casaia_setpoint,
@@ -20,6 +19,7 @@ from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, UpdateDevice_v2)
 from Modules.fanControl import change_fan_mode
+from Modules.ikeaTradfri import ikea_air_purifier_mode
 from Modules.legrand_netatmo import cable_connected_mode, legrand_fc40
 from Modules.livolo import livolo_OnOff
 from Modules.profalux import profalux_MoveToLiftAndTilt, profalux_stop
@@ -38,11 +38,11 @@ from Modules.tuyaSiren import (tuya_siren2_trigger, tuya_siren_alarm,
                                tuya_siren_humi_alarm, tuya_siren_temp_alarm)
 from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
                              tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
-                             tuya_trv_mode, tuya_trv_onoff, tuya_trv_switch_onoff)
+                             tuya_trv_mode, tuya_trv_onoff,
+                             tuya_trv_switch_onoff)
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
-from Modules.ikeaTradfri import ikea_air_purifier_mode
 
 
 def debugDevices(self, Devices, Unit):
@@ -119,6 +119,8 @@ ACTIONATORS = [
     "ThermoMode_5",
     "ThermoMode_6",
     "ThermoModeEHZBRTS",
+    "AirPurifierMode",
+    "FanSpeed",
     "FanControl",
     "PAC-SWITCH",
     "ACMode_2",
