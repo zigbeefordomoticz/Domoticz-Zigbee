@@ -1455,3 +1455,28 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
 def tuya_smart_door_lock(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+
+    if dp == 8:
+        store_tuya_attribute(self, NwkId, "Open Or Close-%s" %(datatype), data)
+    elif dp == 9:
+        store_tuya_attribute(self, NwkId, "Alarm-%s" %(datatype), data)
+    elif dp == 10:
+        # %
+        store_tuya_attribute(self, NwkId, "Battery-%s" %(datatype), data)
+        Update_Battery_Device(self, Devices, NwkId, int(data, 16))
+    elif dp == 12:
+        store_tuya_attribute(self, NwkId, "Reverse Lock-%s" %(datatype), data)
+    elif dp == 14:
+        store_tuya_attribute(self, NwkId, "Doorbell-%s" %(datatype), data)
+    elif dp == 16:
+        store_tuya_attribute(self, NwkId, "SwitchDirection-%s" %(datatype), data)
+    elif dp == 19:
+        store_tuya_attribute(self, NwkId, "AutoLockTime-%s" %(datatype), data)
+    elif dp == 38:
+        store_tuya_attribute(self, NwkId, "Unlocked-%s" %(datatype), data)
+    elif dp == 40:
+        store_tuya_attribute(self, NwkId, "App Unlock Without Password-%s" %(datatype), data)
+    elif dp == 41:
+        store_tuya_attribute(self, NwkId, "App Unlock-%s" %(datatype), data)
+    elif dp == 101:
+        store_tuya_attribute(self, NwkId, "Auxiliary opening/locking-%s" %(datatype), data)
