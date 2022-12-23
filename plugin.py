@@ -28,12 +28,13 @@
             </options>
         </param>
         <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">
-            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
+            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet) or Socket. In case of Socket use the IP to put the remote ip</description>
             <options>
                 <option label="USB"   value="USB" />
                 <option label="DIN"   value="DIN" />
                 <option label="PI"    value="PI" />
                 <option label="TCPIP" value="Wifi"/>
+                <option label="Socket" value="Socket"/>
                 <option label="None"  value="None"/>
             </options>
         </param>
@@ -593,7 +594,16 @@ class BasePlugin:
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
+
+            if Parameters["Mode2"] == "Socket":
+                SerialPort = "socket://" + Parameters["IP"] + ':' + Parameters["Port"]
+                self.transport += "Socket"
+            else:
+                SerialPort = Parameters["SerialPort"]
+
+            SerialPort = Parameters["SerialPort"]
+            
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort)  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
           
@@ -838,6 +848,14 @@ class BasePlugin:
 
 
     def onCommand(self, Unit, Command, Level, Color):
+        if (
+            not self.VersionNewFashion
+            or self.pluginconf is None
+            or not self.log
+        ):
+            # Not yet ready
+            return
+
         self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
         # Let's check if this is End Node, or Group related.
@@ -848,13 +866,11 @@ class BasePlugin:
         elif self.groupmgt:
             # if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
             #    # Command belongs to a Zigate group
-            if self.log:
-                self.log.logging( "Command", "Debug", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, Devices[Unit].DeviceID), )
+            self.log.logging( "Command", "Debug", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, Devices[Unit].DeviceID), )
             self.groupmgt.processCommand(Unit, Devices[Unit].DeviceID, Command, Level, Color)
 
         elif Devices[Unit].DeviceID.find("Zigate-01-") != -1:
-            if self.log:
-                self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
+            self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
             self.adminWidgets.handleCommand(self, Command)
 
         else:

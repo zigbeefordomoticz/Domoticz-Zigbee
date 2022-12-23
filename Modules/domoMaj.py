@@ -410,11 +410,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Thermostat Setpoint: %s %s" % (0, setpoint), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
-        if "Analog" in ClusterType and model_name not in (
-            "lumi.sensor_cube.aqgl01",
-            "lumi.sensor_cube",
-			"lumi.motion.ac01",
-        ):  # Analog Value from Analog Input cluster
+        if "Analog" in ClusterType and model_name not in ( "lumi.sensor_cube.aqgl01", "lumi.sensor_cube", "lumi.motion.ac01",):
+            # Analog Value from Analog Input cluster
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
         if "Valve" in ClusterType:  # Valve Position
@@ -610,6 +607,39 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
                         UpdateDevice_v2(self, Devices, DeviceUnit, 5, "50", BatteryLevel, SignalLevel)
     
+
+        if ClusterType == "PM25" and WidgetType == "PM25":
+            nvalue = round(value, 0)
+            svalue = "%s" % (nvalue,)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
+
+        if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
+            nValue = 0
+            sValue = "%s %% used" %( value, )
+            # This is Alarm for Air Purifier
+            if value >= 100:
+                # Red
+                nValue = 4
+            elif value >= 90:
+                # Orange
+                nValue = 3
+            elif value >= 70:
+                # Yellow
+                nValue = 2
+            else:
+                # Green
+                nValue = 1
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+            
+        if Attribute_ == "0006" and ClusterType == "FanControl" and WidgetType == "AirPurifierMode":
+            nValue = value
+            sValue = "%s" %(10 * value,)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+    
+        if Attribute_ == "0007" and ClusterType == "FanControl" and WidgetType == "FanSpeed":
+            nValue = round(value, 1)
+            sValue = str(nValue)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
@@ -1432,12 +1462,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     state = "90"
                     data = "09"
                     UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-					
-        if  ClusterType == "Analog" and WidgetType == "Motionac01" and Ep == "01":  # Motionac01
+
+        if ClusterType == "Analog" and WidgetType == "Motionac01" and Ep == "01":  # Motionac01
             if value <= 7:
                 nValue= value + 1
                 sValue = str(nValue * 10)
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue,  sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Orientation" in ClusterType:
             # Xiaomi Vibration

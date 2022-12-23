@@ -551,7 +551,7 @@ def device_interview(self, Nwkid):
     for iterReadAttrCluster in get_list_of_clusters_for_device( self, Nwkid):
         # if iterReadAttrCluster == '0000':
         #    reset_cluster_datastruct( self, 'ReadAttributes', NWKID, iterEp, iterReadAttrCluster  )
-        self.log.logging("Pairing", "Log", "device_interview %s Read Attribute for cluster: %s" %(Nwkid, iterReadAttrCluster ))
+        self.log.logging("Pairing", "Debug", "device_interview %s Read Attribute for cluster: %s" %(Nwkid, iterReadAttrCluster ))
         func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
         func(self, Nwkid)
 
@@ -651,6 +651,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "TS0601-switch",
         "TS0601-2Gangs-switch",
         "TS0601-SmartAir",
+        "TS130F-_TZ3000_femsaaua",
+        "TS130F-_TZ3000_8kzqqzu4",
         "TS130F-_TZ3000_1dd0d5yi",
         "TS130F-_TZ3000_zirycpws",
         "TS0601-temphumi"

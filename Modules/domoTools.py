@@ -153,7 +153,6 @@ def get_battery_level(self, NwkID):
     return 255
     
     
-
 def WidgetForDeviceId(self, NwkId, DeviceId):
 
     WidgetType = ""
@@ -181,9 +180,10 @@ def ResetDevice(self, Devices):
     self.log.logging( "Widget", "Debug", "ResetDevice")
 
     now = time.time()
-    TimedOutMotion = self.pluginconf.pluginConf["resetMotiondelay"]
-    TimedOutSwitchButton = self.pluginconf.pluginConf["resetSwitchSelectorPushButton"]
+    
     for unit in list(Devices):
+        TimedOutMotion = self.pluginconf.pluginConf["resetMotiondelay"]
+        TimedOutSwitchButton = self.pluginconf.pluginConf["resetSwitchSelectorPushButton"]
         if unit not in Devices:
             continue
         Ieee = Devices[unit].DeviceID
@@ -194,7 +194,7 @@ def ResetDevice(self, Devices):
         LUpdate = Devices[unit].LastUpdate
         try:
             LUpdate = time.mktime(time.strptime(LUpdate, "%Y-%m-%d %H:%M:%S"))
-        except:
+        except Exception as e:
             self.log.logging( "Widget", "Error", "Something wrong to decode Domoticz LastUpdate %s for Unit: %s Ieee: %s" % (LUpdate, unit, Ieee), )
             continue
 
@@ -664,7 +664,9 @@ CLUSTER_TO_TYPE = {
     "0400": "Lux", 
     "0402": "Temp", 
     "0403": "Baro", 
-    "0405": "Humi", "0406": "Motion", 
+    "0405": "Humi", 
+    "0406": "Motion",
+    "042a": "PM25", 
     "0702": "Power/Meter", 
     "0500": "Door", 
     "0502": "AlarmWD", 

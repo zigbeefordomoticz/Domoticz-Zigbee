@@ -505,6 +505,20 @@ SWITCH_LVL_MATRIX = {
         "Language": {
             "fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}},
     },
+    "AirPurifierMode": {
+        "00": (0, "00"),  # Off
+        "01": (1, "10"),  # Auto
+        "02": (2, "20"),  # Speed 1
+        "03": (2, "30"),  # Speed 2
+        "04": (2, "40"),  # Speed 3
+        "05": (2, "50"),  # Speed 4
+        "06": (2, "60"),  # Speed 5
+        "ForceUpdate": True,
+        "LevelNames": "Off|Auto|Spd1|Spd2|Spd3|Spd4|Spd5",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Vit1|Vit2|Vit3|Vit4|V5"}},
+    },
+    
     "FanControl": {
         "00": (0, "00"),  # Off
         "05": (1, "10"),  # Auto
@@ -576,19 +590,17 @@ SWITCH_LVL_MATRIX = {
             "es-ES": {"LevelNames": "Off|Frío||Calefacción|Deshumidificador|Ventilador"}
             },
     },
-	"Motionac01": {
-        "0": (0, "00"),  #Off
-        "10": (1, "10"), #Enter
-        "20": (2, "20"), #Leave
-        "30": (3, "30"), #Left_enter
-        "40": (4, "40"), #Right_leave
-        "50": (5, "50"), #Right_enter
-        "60": (6, "60"), #Left_leave
-        "70": (7, "70"), #Approach
-        "80": (8, "80"), #Away
+    "Motionac01": {
+        "0": (0, "00"),   # Off
+        "10": (1, "10"),  # Enter
+        "20": (2, "20"),  # Leave
+        "30": (3, "30"),  # Left_enter
+        "40": (4, "40"),  # Right_leave
+        "50": (5, "50"),  # Right_enter
+        "60": (6, "60"),  # Left_leave
+        "70": (7, "70"),  # Approach
+        "80": (8, "80"),  # Away
         "ForceUpdate": True,
         "LevelNames": "Off|Enter|Leave|Left_enter|Right_leave|Right_enter|Left_leave|Approach|Away",
-        
-        
     },
 }

@@ -33,7 +33,7 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_a
     url_infos = {
         "type": "command",
         "param": "updatehardware",
-        "htype": "94", # Python Plugin Framework
+        "htype": "94",   # Python Plugin Framework
         "idx": self.pluginParameters["HardwareID"],
         "name": self.pluginParameters["Name"],
         "address": self.pluginParameters["Address"],

@@ -11,7 +11,6 @@
 """
 
 import Domoticz
-
 from Modules.actuators import (actuator_off, actuator_on, actuator_setcolor,
                                actuator_setlevel, actuator_stop, actuators)
 from Modules.casaia import (casaia_ac201_fan_control, casaia_setpoint,
@@ -20,6 +19,7 @@ from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, UpdateDevice_v2)
 from Modules.fanControl import change_fan_mode
+from Modules.ikeaTradfri import ikea_air_purifier_mode
 from Modules.legrand_netatmo import cable_connected_mode, legrand_fc40
 from Modules.livolo import livolo_OnOff
 from Modules.profalux import profalux_MoveToLiftAndTilt, profalux_stop
@@ -38,7 +38,8 @@ from Modules.tuyaSiren import (tuya_siren2_trigger, tuya_siren_alarm,
                                tuya_siren_humi_alarm, tuya_siren_temp_alarm)
 from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
                              tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
-                             tuya_trv_mode, tuya_trv_onoff, tuya_trv_switch_onoff)
+                             tuya_trv_mode, tuya_trv_onoff,
+                             tuya_trv_switch_onoff)
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
@@ -118,6 +119,8 @@ ACTIONATORS = [
     "ThermoMode_5",
     "ThermoMode_6",
     "ThermoModeEHZBRTS",
+    "AirPurifierMode",
+    "FanSpeed",
     "FanControl",
     "PAC-SWITCH",
     "ACMode_2",
@@ -414,6 +417,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             casaia_system_mode(self, NWKID, "Off")
             return
 
+        if DeviceType == "AirPurifierMode" and _model_name in ('STARKVIND Air purifier', ):
+            ikea_air_purifier_mode( self, NWKID, EPout, 0 )
+            
         if ( DeviceType == "ACSwing" and "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "AC201A" ):
             casaia_swing_OnOff(self, NWKID, "00")
             UpdateDevice_v2(
@@ -421,11 +427,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             )
             return
 
-        if DeviceType == "LvlControl" and _model_name == "TS0601-dimmer":
+        if DeviceType == "LvlControl" and _model_name in ("TS0601-dimmer", "TS0601-2Gangs-dimmer"):
             tuya_dimmer_onoff(self, NWKID, EPout, "00")
-            UpdateDevice_v2(
-                self, Devices, Unit, 0, Devices[Unit].sValue, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
-            )
+            UpdateDevice_v2( self, Devices, Unit, 0, Devices[Unit].sValue, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
             return
 
         if DeviceType == "LvlControl" and _model_name == "TS0601-curtain":
@@ -464,7 +468,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412", "CPR412-E"):
                 actuator_off(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
-            elif DeviceType in ("Vanne", "Curtain",) or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",):
+            elif DeviceType in ("Vanne", "Curtain",) or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F", ):
                 actuator_off(self, NWKID, EPout, "WindowCovering")
                 
             if DeviceType in ( "CurtainInverted", "Curtain"):
@@ -543,11 +547,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             NWKID,
         )
 
-        if _model_name in (
-            "TS0601-switch",
-            "TS0601-2Gangs-switch",
-            "TS0601-2Gangs-switch",
-        ):
+        if _model_name in ( "TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", ):
             self.log.logging("Command", "Debug", "mgtCommand : On for Tuya Switches Gang/EPout: %s" % EPout)
 
             tuya_switch_command(self, NWKID, "01", gang=int(EPout, 16))
@@ -589,6 +589,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             # UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
+        if DeviceType == "AirPurifierMode" and _model_name in ('STARKVIND Air purifier', ):
+            ikea_air_purifier_mode( self, NWKID, EPout, 1 )
+
         if DeviceType == "LivoloSWL":
             livolo_OnOff(self, NWKID, EPout, "Left", "On")
             UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -609,7 +612,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.ListOfDevices[NWKID]["Heartbeat"] = 0
             return
 
-        if DeviceType == "LvlControl" and _model_name == "TS0601-dimmer":
+        if DeviceType == "LvlControl" and _model_name in ("TS0601-dimmer", "TS0601-2Gangs-dimmer"):
             tuya_dimmer_onoff(self, NWKID, EPout, "01")
             UpdateDevice_v2( self, Devices, Unit, 1, Devices[Unit].sValue, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
@@ -1050,7 +1053,15 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 UpdateDevice_v2( self, Devices, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
                 return
                 
-                
+        if DeviceType == "AirPurifierMode" and _model_name in ('STARKVIND Air purifier', ):
+            self.log.logging( "Command", "Debug", "   Air Purifier Mode: %s" % ( Level ), NWKID,)
+            
+            if Level == 10:
+                ikea_air_purifier_mode( self, NWKID, EPout, 1 )
+            elif Level in ( 20, 30, 40, 50, 60):
+                mode = Level - 10
+                ikea_air_purifier_mode( self, NWKID, EPout, mode)
+           
         if DeviceType == "FanControl":
 
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "AC201A":
@@ -1244,7 +1255,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             elif Level == 30:  # Toggle
                 actuators(self, NWKID, EPout, "Toggle", "Switch")
 
-        elif _model_name == "TS0601-dimmer":
+        elif _model_name in ("TS0601-dimmer", "TS0601-2Gangs-dimmer"):
             if Devices[Unit].nValue == 0:
                 tuya_dimmer_onoff(self, NWKID, EPout, "01")
             Level = max(Level, 1)
