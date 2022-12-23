@@ -28,7 +28,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         LOGGER.debug("new")
 
-
     async def _load_db(self) -> None:
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
 
@@ -37,7 +36,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
         LOGGER.info("EZSP Configuration: %s", self.config)
 
-    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackGetDeviceInfos= None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
@@ -45,6 +44,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
         self.callBackGetDevice = callBackGetDevice
+        self.callBackGetDeviceInfos= callBackGetDeviceInfos,
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackBackup = callBackBackup
         self.HardwareID = HardwareID
@@ -63,6 +63,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         self.log.logging("TransportZigpy", "Log", "EZSP Configuration %s" %self.config)
         
+        
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         # await self.load_network_info( load_devices=False )   # load_devices shows nothing for now
@@ -80,11 +81,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion = bellows_extract_versioning_for_plugin(self, brd_manuf, brd_name, version)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion,version))
+
+        if bool( self.pluginconf.pluginConf["zigpySourceRouting"] ):
+            self.topology.start_periodic_scans( period = self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD])
         
-        #if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-        #    self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
-
-
     async def shutdown(self) -> None:
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:

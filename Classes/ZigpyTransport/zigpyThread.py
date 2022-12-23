@@ -123,9 +123,8 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             conf.CONF_NWK: {},
             conf.CONF_EZSP_CONFIG: {
             },
-            "topology_scan_enabled": True,
+            "topology_scan_enabled": False,
             "handle_unknown_devices": True,
-            "source_routing": True         # If enable bellows is doing source routing, if not then it is ezsp taking care https://github.com/zigpy/bellows/issues/493#issuecomment-1239892344
             }
         
         if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
@@ -141,7 +140,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             config = {
                 conf.CONF_DEVICE: {"path": serialPort,}, 
                 conf.CONF_NWK: {},
-                "topology_scan_enabled": True,
+                "topology_scan_enabled": False,
                 }
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
         except Exception as e:
@@ -157,7 +156,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
                 conf.CONF_DEVICE: {"path": serialPort,}, 
                 conf.CONF_NWK: {},
                 conf.CONF_ZNP_CONFIG: { },
-                "topology_scan_enabled": True,
+                "topology_scan_enabled": False,
                 }
             if specific_endpoints(self):
                 config[ conf.CONF_ZNP_CONFIG][ "prefer_endpoint_1" ] = False
@@ -175,14 +174,17 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             config = {
                 conf.CONF_DEVICE: {"path": serialPort}, 
                 conf.CONF_NWK: {},
-                "topology_scan_enabled": True,
+                "topology_scan_enabled": False,
                 }
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
         except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
             self.log.logging("%s" %traceback.format_exc())
 
-    config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )
+    if bool( self.pluginconf.pluginConf["zigpySourceRouting"] ):
+        config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = True
+        config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 60
+        config[zigpy.config.CONF_SOURCE_ROUTING] = True
 
     if "autoBackup" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoBackup"]:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = True
@@ -234,6 +236,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             callBackHandleMessage=self.receiveData,
             callBackUpdDevice=self.ZigpyUpdDevice,
             callBackGetDevice=self.ZigpyGetDevice,
+            callBackGetDeviceInfos=self.ZigpyGetDeviceInfos,
             callBackBackup=self.ZigpyBackupAvailable,
             auto_form=True,
             force_form=new_network,

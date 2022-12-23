@@ -77,6 +77,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         
         self.callBackFunction(build_plugin_8010_frame_content( branch, "00", "0000", version))
 
+        if bool( self.pluginconf.pluginConf["zigpySourceRouting"] ):
+            self.topology.start_periodic_scans( period = self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD])
+
 
     async def shutdown(self) -> None:
         """Shutdown controller."""

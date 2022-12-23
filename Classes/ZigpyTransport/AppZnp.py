@@ -79,6 +79,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         FirmwareBranch, FirmwareMajorVersion, FirmwareVersion, build = znp_extract_versioning_for_plugin( self, znp_model, znp_manuf)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion, build ))
+
+        if bool( self.pluginconf.pluginConf["zigpySourceRouting"] ):
+            self.topology.start_periodic_scans( period = self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD])
         
 
     async def shutdown(self) -> None:

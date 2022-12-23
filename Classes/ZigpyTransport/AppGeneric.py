@@ -31,6 +31,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     """
     Starts the network on a connected radio, optionally forming one with random
     settings if necessary.
+    
     """
     self.log.logging("TransportZigpy", "Debug", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
 
@@ -78,6 +79,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
     await self.start_network()
     
+    
 
 def get_device(self, ieee=None, nwk=None):
     # LOGGER.debug("get_device nwk %s ieee %s" % (nwk, ieee))
@@ -91,6 +93,8 @@ def get_device(self, ieee=None, nwk=None):
         # We might have to check that the plugin and zigpy Dbs are in sync
         # Let's check if the tupple (dev.ieee, dev.nwk ) are aligned with plugin Db
         _update_nkdids_if_needed(self, dev.ieee, dev.nwk )
+        #_update_device_infos_if_needed( self, dev)
+
     except KeyError:
         # Not found in zigpy Db, let see if we can get it into the Plugin Db
         if self.callBackGetDevice:
@@ -99,11 +103,12 @@ def get_device(self, ieee=None, nwk=None):
             if ieee is not None:
                 ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
             zfd_dev = self.callBackGetDevice(ieee, nwk)
-            if zfd_dev is not None:
+            if zfd_dev is not None and len(zfd_dev) == 2:
                 (nwk, ieee) = zfd_dev
                 dev = self.add_device(t.EUI64(t.uint64_t(ieee).serialize()),nwk)
 
     if dev is not None:
+
         return dev
 
     LOGGER.debug("AppZnp get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
@@ -137,6 +142,21 @@ def _update_nkdids_if_needed( self, ieee, new_nwkid ):
     _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
     _nwk = new_nwkid.serialize()[::-1].hex()
     self.callBackUpdDevice(_ieee, _nwk)
+
+def _update_device_infos_if_needed( self, dev):
+    self.log.logging("TransportZigpy", "Log", "_update_device_infos_if_needed - %s" %str( dev ))
+    
+    _nwk = dev.nwk 
+    self.log.logging("TransportZigpy", "Log", "_update_device_infos_if_needed - _nwk: %s" %str( _nwk ))
+    _nwk = _nwk.serialize()[::-1].hex()
+    self.log.logging("TransportZigpy", "Log", "_update_device_infos_if_needed - _nwk: %s" %str( _nwk ))
+    
+    dev_infos = self.callBackGetDeviceInfos( _nwk )
+    if dev_infos:
+        if 'model' in dev_infos and dev_infos['model'] != dev.model():
+            dev.model( dev_infos['model'] )
+        if 'manufacturer' in dev_infos and dev_infos['manufacturer'] != dev.manufacturer():
+            dev.manufacturer( dev_infos['manufacturer'] )
 
 def get_device_ieee(self, nwk):
     # Call from the plugin to retreive the ieee

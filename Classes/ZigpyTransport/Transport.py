@@ -21,13 +21,14 @@ from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
 
 
 class ZigpyTransport(object):
-    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_backup_available, log, statistics, hardwareid, radiomodule, serialPort):
+    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_get_device_infos, zigpy_backup_available, log, statistics, hardwareid, radiomodule, serialPort):
         self.zigbee_communication = "zigpy"
         self.pluginParameters = pluginParameters
         self.pluginconf = pluginconf
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
         self.ZigpyUpdDevice = zigpy_upd_device
         self.ZigpyGetDevice = zigpy_get_device
+        self.ZigpyGetDeviceInfos = zigpy_get_device_infos
         self.ZigpyBackupAvailable = zigpy_backup_available
         self.log = log
         self.statistics = statistics
