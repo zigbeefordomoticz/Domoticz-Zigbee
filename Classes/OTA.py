@@ -1399,12 +1399,12 @@ def _load_json_from_url( self, url ):
             elif isinstance(e.reason, socket.timeout):
                 reason = f'HTTPError socket.timeout {e.reason} - {e}'
             else:
-                reason = f'unknow {e.reason} - {e}'
+                reason = f'unknown {e.reason} - {e}'
         except urllib.error.URLError as e:
             if isinstance(e.reason, socket.timeout):
                 reason = f'URLError socket.timeout {e.reason} - {e}'
             else:
-                reason = f'unknow {e.reason} - {e}'
+                reason = f'unknown {e.reason} - {e}'
         except socket.timeout as e:
             reason = f'socket.timeout {e}'
 

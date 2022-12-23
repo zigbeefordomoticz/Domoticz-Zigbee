@@ -221,12 +221,12 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
                 exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
-        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOW", ):
+        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOWN", "UNKNOW", ):
             # We are in the discovery/provisioning process,
             # and the device got a new Short Id
-            # we need to restart from the begiging and remove all existing datastructutre.
+            # we need to restart from the beginning and remove all existing datastructures.
             # In case we receive asynchronously messages (which should be possible), they must be
-            # droped in the corresponding Decodexxx function
+            # dropped in the corresponding Decodexxx function
             # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
             del self.IEEE2NWK[lookupIEEE]
             # Delete the all Data Structure
@@ -1621,7 +1621,7 @@ def build_list_of_device_model(self, force=False):
         if manufcode and "Manufacturer Name" in self.ListOfDevices[x]:
             manufname = self.ListOfDevices[x]["Manufacturer Name"]
             if manufname in ( "", {} ):
-                manufname = "unknow"
+                manufname = "unknown"
             if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
                 self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
 
