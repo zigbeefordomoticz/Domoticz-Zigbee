@@ -9,19 +9,6 @@ import json
 import Domoticz
 from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
 
-# from Classes.WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
-# from Classes.WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
-# from Classes.WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
-# from Classes.WebServer.rest_Groups import (
-#    rest_zGroup,
-#    rest_rescan_group,
-#    rest_zGroup_lst_avlble_dev,
-#    rest_scan_devices_for_group,
-#
-# )
-# from Classes.WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr, rest_full_reprovisionning
-
-
 def do_rest(self, Connection, verb, data, version, command, parameters):
 
     REST_COMMANDS = {
@@ -52,6 +39,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "ota-firmware-update": { "Name": "ota-firmware-update", "Verbs": {"PUT"}, "function": self.rest_ota_firmware_update },
         "permit-to-join": {"Name": "permit-to-join", "Verbs": {"GET", "PUT"}, "function": self.rest_PermitToJoin},
         "plugin-health": {"Name": "plugin-health", "Verbs": {"GET"}, "function": self.rest_plugin_health},
+        "plugin-log": {"Name": "plugin-log", "Verbs": {"GET"}, "function": self.rest_logPlugin},
         "plugin-upgrade": {"Name": "plugin-upgrade", "Verbs": {"GET"}, "function": self.rest_plugin_upgrade},
         "plugin-restart": {"Name": "plugin-restart", "Verbs": {"GET"}, "function": self.rest_plugin_restart},
         "plugin-stat": {"Name": "plugin-stat", "Verbs": {"GET"}, "function": self.rest_plugin_stat},
@@ -93,10 +81,11 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
 
     if command not in REST_COMMANDS:
         self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
-        if verb not in REST_COMMANDS[command]["Verbs"]:
-            self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
+    
+    elif verb not in REST_COMMANDS[command]["Verbs"]:
+        self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
 
-    if command in REST_COMMANDS and verb in REST_COMMANDS[command]["Verbs"]:
+    elif command in REST_COMMANDS and verb in REST_COMMANDS[command]["Verbs"]:
         self.logging("Debug", "do_rest - Verb: %s, Command: %s, Param: %s found ready to execute" % (verb, command, parameters))
         HTTPresponse = setupHeadersResponse()
         if self.pluginconf.pluginConf["enableKeepalive"]:

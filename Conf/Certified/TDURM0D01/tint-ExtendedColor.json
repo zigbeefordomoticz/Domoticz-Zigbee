@@ -30,7 +30,6 @@
 		"0300": [ "0003", "0004", "0007", "0008" ]
 	},
 	"Param": {
-		"fadingOff": 0,  
 		"moveToHueSatu": 0,
 		"moveToColourTemp": 0,
 		"moveToColourRGB": 0,

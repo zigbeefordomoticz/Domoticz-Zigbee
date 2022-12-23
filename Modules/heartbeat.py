@@ -51,6 +51,8 @@ from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
                            is_time_to_perform_work, mainPoweredDevice,
                            night_shift_jobs, removeNwkInList)
 from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
+from Modules.tuyaTRV import tuya_switch_online
+
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 # Read Attribute trigger: Every 10"
@@ -138,6 +140,9 @@ def ManufSpecOnOffPolling(self, NwkId):
     ReadAttributeRequest_0006_0000(self, NwkId)
     ReadAttributeRequest_0008_0000(self, NwkId)
 
+def tuya_trv5_polling(self, NwkId):
+    tuya_switch_online(self, NwkId, 0x01)
+    
 def check_delay_readattributes( self, NwkId ):
     
     if 'DelayReadAttributes' not in self.ListOfDevices[ NwkId ]:
@@ -203,6 +208,7 @@ def check_delay_binding( self, NwkId, model ):
 def pollingManufSpecificDevices(self, NwkId, HB):
 
     FUNC_MANUF = {
+        "TuyaTRV5Polling": tuya_trv5_polling,
         "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,
         "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,
         "PollingCusterff66": ReadAttributeRequest_ff66,

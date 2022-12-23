@@ -156,12 +156,12 @@ class OTAManagement(object):
         intMsgImageVersion = int(MsgData[38:46], 16)
         intMsgImageType = int(MsgData[46:50], 16)
         intMsgManufCode = int(MsgData[50:54], 16)
-        MsgBlockRequestDelay = MsgData[54:58]
-        MsgMaxDataSize = MsgData[58:60]
+        MsgBlockRequestDelay = int(MsgData[54:58], 16)
+        MsgMaxDataSize = int(MsgData[58:60], 16)
         intMsgFieldControl = int(MsgData[60:62], 16)
 
         logging( self, "Debug", "ota_image_block_request - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % (
-            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgBlockRequestDelay, 16), int(MsgMaxDataSize, 16), intMsgFieldControl, ),)
+            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ),)
 
         if self.ListInUpdate["NwkId"] is None:
             logging(self, "Debug", "ota_image_block_request - Async request from device: %s." % (MsgSrcAddr))
@@ -196,7 +196,7 @@ class OTAManagement(object):
             RequestNodeAddress = MsgData[48:64]
 
         logging( self, "Debug", "ota_image_page_request - Request Firmware %s/%s Offset: %s Version: 0x%08x Type: 0x%04X Manuf: 0x%04X MaxSize: %s PageSize: %s ResponseSpacing: %s Control: 0x%02X" % (
-            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgMaxDataSize, 16), int(PageSize,16) , int(ResponseSpacing,16), intMsgFieldControl, ),)
+            MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgMaxDataSize, PageSize , int(ResponseSpacing,16), intMsgFieldControl, ),)
 
         if self.ListInUpdate["NwkId"] is None:
             logging(self, "Debug", "ota_image_page_request - Async request from device: %s." % (MsgSrcAddr))
@@ -230,10 +230,10 @@ class OTAManagement(object):
                 disabelACK=True
             )
             
-            _file_offset += int(MsgMaxDataSize,16)
+            _file_offset += MsgMaxDataSize
             _sqn += 1
             if _sqn > 0xff:
-                _sqn = "00"
+                _sqn = 0
 
 
     def ota_upgrade_end_request(self, MsgData):
@@ -520,7 +520,7 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     manufacturer_code = "%04x" % self.ListInUpdate["intManufCode"]
 
     # Build the data block to be send based on the request
-    _lenght = int(block_request["MaxDataSize"], 16)
+    _lenght = block_request["MaxDataSize"]
     _raw_ota_data = self.ListInUpdate["OtaImage"][_offset : _offset + _lenght]
     if len(_raw_ota_data) != _lenght:
         logging( self, "Log", "ota_send_block - we reached the end of the image !! %s against %s" %(len(_raw_ota_data), _lenght ))
@@ -1002,7 +1002,7 @@ def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVe
         return
 
     logging( self, "Debug", "ota_image_block_request - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X" % ( 
-        int(MsgSQN, 16), MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, int(MsgBlockRequestDelay, 16), int(MsgMaxDataSize, 16), intMsgFieldControl, ),)
+        int(MsgSQN, 16), MsgSrcAddr, MsgEP, int(MsgFileOffset, 16), intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ),)
 
     if self.ListInUpdate["Process"] is None:
         start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize)
@@ -1019,7 +1019,7 @@ def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVe
     # self. ota_management( MsgSrcAddr, MsgEP )
 
     logging( self, "Debug", "ota_image_block_request - Block Request for %s/%s Image Type: 0x%04X Image Version: %08X Seq: %s Offset: %s Size: %s FieldCtrl: 0x%02X" % ( 
-        MsgSrcAddr, block_request["ReqEp"], block_request["ImageType"], block_request["ImageVersion"], MsgSQN, (block_request["Offset"], 16), int(block_request["MaxDataSize"], 16), block_request["FieldControl"], ),)
+        MsgSrcAddr, block_request["ReqEp"], block_request["ImageType"], block_request["ImageVersion"], MsgSQN, block_request["Offset"], block_request["MaxDataSize"], block_request["FieldControl"], ),)
 
     ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request, disabelACK=disabelACK)
 
@@ -1044,8 +1044,8 @@ def initialize_block_request(  # OK 13/10
         # For the time been , we are forcing a response with a Block
         intMsgImageType = self.ListInUpdate["intImageType"]
         intMsgManufCode = 0x1021
-        MsgBlockRequestDelay = "ffff"
-        MsgMaxDataSize = "40"
+        MsgBlockRequestDelay = 0xffff
+        MsgMaxDataSize = 40
         intMsgFieldControl = 0x00
         logging(
             self,
@@ -1059,8 +1059,8 @@ def initialize_block_request(  # OK 13/10
                 intMsgImageVersion,
                 intMsgImageType,
                 intMsgManufCode,
-                int(MsgBlockRequestDelay, 16),
-                int(MsgMaxDataSize, 16),
+                MsgBlockRequestDelay,
+                MsgMaxDataSize,
                 intMsgFieldControl,
             ),
         )
@@ -1312,7 +1312,7 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
 
     _name = next((self.Devices[x].Name for x in self.Devices if self.Devices[x].DeviceID == _ieee), None)
 
-    _durhh, _durmm, _durss = convertTime(self.ListInUpdate["intSize"] // int(MsgMaxDataSize, 16))
+    _durhh, _durmm, _durss = convertTime(self.ListInUpdate["intSize"] // MsgMaxDataSize)
     _textmsg = "Firmware update started for Device: %s with %s - Estimated Time: %s H %s min %s sec " % (
         _name,
         self.ListInUpdate["FileName"],
@@ -1399,12 +1399,12 @@ def _load_json_from_url( self, url ):
             elif isinstance(e.reason, socket.timeout):
                 reason = f'HTTPError socket.timeout {e.reason} - {e}'
             else:
-                reason = f'unknow {e.reason} - {e}'
+                reason = f'unknown {e.reason} - {e}'
         except urllib.error.URLError as e:
             if isinstance(e.reason, socket.timeout):
                 reason = f'URLError socket.timeout {e.reason} - {e}'
             else:
-                reason = f'unknow {e.reason} - {e}'
+                reason = f'unknown {e.reason} - {e}'
         except socket.timeout as e:
             reason = f'socket.timeout {e}'
 

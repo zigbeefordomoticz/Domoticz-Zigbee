@@ -12,7 +12,9 @@
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate
-from Modules.tools import updSQN, extract_info_from_8085
+from Modules.tools import updSQN, extract_info_from_8085, get_cluster_attribute_value
+from Modules.basicOutputs import write_attribute
+from Modules.zigateConsts import ZIGATE_EP
 
 
 def ikea_openclose_remote(self, Devices, NwkId, Ep, command, Data, Sqn):
@@ -180,3 +182,82 @@ def ikea_motion_sensor_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCm
             "Decode8095 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % ( MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_),
         )
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
+
+def ikea_air_purifier_mode( self, NwkId, Ep, mode ):
+    # Cluster 0xfc7d
+    # Attribute 0x0006
+    self.log.logging( "Input", "Log", "ikea_air_purifier_mode %s/%s mode: %s" % (
+        NwkId, Ep, mode), NwkId, )
+
+    if mode not in ( 0, 1, 10, 20, 30, 40, 50 ):
+        return
+    write_attribute( self, NwkId, ZIGATE_EP, Ep, 'fc7d', '117c', '01', '0006', '20', '%02x' %mode, ackIsDisabled=False )
+    
+def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, Data):
+    
+    self.log.logging( "Input", "Log", "ikea_air_purifier_cluster %s/%s %s %s %s" % ( NwkId, Ep, ClusterId, AttributeId, Data), )
+
+    if ClusterId != "fc7d":
+        return
+    
+    if AttributeId == "0001":
+        # Replace Filter
+        self.log.logging( "Input", "Log", " -- Replace Filter: %s" % ( Data), )
+        # Let send Alarm with 100% usage
+        if int(Data,16) == 0x01:
+            MajDomoDevice(self, Devices, NwkId, Ep, "0009", 100)
+        
+    elif AttributeId == "0002":
+        # Filter Life time
+        self.log.logging( "Input", "Log", " -- Filter Life time: %s" % ( Data), )
+        
+    elif AttributeId == "0003":
+        # Led Indication
+        self.log.logging( "Input", "Log", " --  Led Indication: %s" % ( Data), )
+        
+    elif AttributeId == "0004":
+        # PM25
+        value = int( Data, 16)
+        if value != 0xffff:
+            self.log.logging( "Input", "Log", " --  PM25: %s --> %s" % ( Data, value), )
+            MajDomoDevice(self, Devices, NwkId, Ep, "042a", value)
+        
+    elif AttributeId == "0005":
+        # Locked
+        self.log.logging( "Input", "Log", " --  Locked: %s" % ( Data), )
+        
+    elif AttributeId == "0006":
+        self.log.logging( "Input", "Log", " --  Mode: %s" % ( Data), )
+        mode = int( Data, 16 )
+        if mode == 0:
+            # Switch Off
+            MajDomoDevice(self, Devices, NwkId, Ep, "0202", 0, Attribute_="0006", )
+            MajDomoDevice(self, Devices, NwkId, Ep, "0202", 0, Attribute_="0007", )
+        elif mode == 1:
+            MajDomoDevice(self, Devices, NwkId, Ep, "0202", 1, Attribute_="0006", )
+        elif 10 <= mode <= 50:
+            level = int((( mode // 10 ) ) + 1)
+            MajDomoDevice(self, Devices, NwkId, Ep, "0202", level, Attribute_="0006", )
+
+    elif AttributeId == "0007":
+        # Fan Speed should vary from 1 to 50
+        fan_speed = convert_fan_speed_into_level( int(Data,16)  )
+        
+        self.log.logging( "Input", "Log", " --  Fan Speed: %s => %s" % ( Data, fan_speed), )
+        MajDomoDevice(self, Devices, NwkId, Ep, "0202", fan_speed, Attribute_="0007", ) 
+
+    elif AttributeId == "0008":
+        # Device runtime
+        runtime = int(Data,16)
+        lifetime = get_cluster_attribute_value( self, NwkId, Ep, ClusterId, "0002")
+        if lifetime is not None:
+            lifetime = int(Data,16)
+            percentage = runtime // lifetime 
+            MajDomoDevice(self, Devices, NwkId, Ep, "0009", int( percentage))
+        self.log.logging( "Input", "Log", " --  Device runtime: %s" % ( Data), )
+    
+
+def convert_fan_speed_into_level( fan_speed ):
+    
+    return round( ((fan_speed * 100 ) / 50 ), 1 )
+    

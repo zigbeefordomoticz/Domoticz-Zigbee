@@ -17,6 +17,7 @@ import zigpy_deconz
 import zigpy_deconz.zigbee.application
 from Classes.ZigpyTransport.plugin_encoders import \
     build_plugin_8010_frame_content
+from Classes.ZigpyTransport.firmwareversionHelper import deconz_extract_versioning_for_plugin
 
 LOGGER = logging.getLogger(__name__)
 
@@ -69,28 +70,12 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
         self.log.logging("TransportZigpy", "Status", "deConz Radio manufacturer: %s" %deconz_manuf)
         self.log.logging("TransportZigpy", "Status", "deConz Radio board model: %s" %deconz_model)
-        self.log.logging("TransportZigpy", "Status", "deConz Radio version: %s" %self.version)
+        self.log.logging("TransportZigpy", "Status", "deConz Radio version: 0x%x" %self.version)
         
-        deconz_version = "%08x" %self.version
-        deconz_major = deconz_version[:4]
-        deconz_minor = deconz_version[4:8]
-        LOGGER.debug("startup in AppDeconz - build 8010 %s %08x %s" %(
-            deconz_version, self.version, deconz_major + deconz_minor))
         
-        if deconz_model == "ConBee II":
-            self.callBackFunction(build_plugin_8010_frame_content("40", deconz_major, deconz_minor))
-        elif deconz_model == "RaspBee II":
-            self.callBackFunction(build_plugin_8010_frame_content("41", deconz_major, deconz_minor))
-        elif deconz_model == "RaspBee":
-            self.callBackFunction(build_plugin_8010_frame_content("42", deconz_major, deconz_minor))
-        elif deconz_model == "ConBee":
-            self.callBackFunction(build_plugin_8010_frame_content("43", deconz_major, deconz_minor))
-        else:
-            LOGGER.info("Unknow Zigbee CIE from %s %s" %( deconz_manuf, deconz_model))
-            self.callBackFunction(build_plugin_8010_frame_content("99", deconz_major, deconz_minor))
-            
-        #if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-        #    self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+        branch, version = deconz_extract_versioning_for_plugin( self, deconz_model, deconz_manuf, self.version)
+        
+        self.callBackFunction(build_plugin_8010_frame_content( branch, "00", "0000", version))
 
 
     async def shutdown(self) -> None:
@@ -165,9 +150,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         dst_ep: int,
         message: bytes,
         * ,
-        dst_addressing = None,
+        dst_addressing=None,
     ) -> None:
-        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message,dst_addressing =dst_addressing)                
+        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message,dst_addressing=dst_addressing)                
 
     async def set_zigpy_tx_power(self, power):
         pass
@@ -213,7 +198,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
     def is_bellows(self):
         return False
+    
     def is_znp(self):
         return False
+    
     def is_deconz(self):
         return True

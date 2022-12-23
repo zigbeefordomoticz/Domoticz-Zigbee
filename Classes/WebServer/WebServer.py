@@ -72,6 +72,7 @@ class WebServer(object):
     from Classes.WebServer.rest_PluginUpgrade import rest_plugin_upgrade
     from Classes.WebServer.rest_CfgReporting import rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config
     from Classes.WebServer.rest_ZLinky import rest_zlinky
+    from Classes.WebServer.rest_logging import rest_logPlugin, rest_logErrorHistory, rest_logErrorHistoryClear
 
     hearbeats = 0
 
@@ -254,8 +255,7 @@ class WebServer(object):
 
                 elif 30 <= int(self.ControllerData["Branch Version"]) < 40:   
                     # Silicon Labs
-                    coordinator_infos["Display Firmware Version"] = "Ezsp - %s.%s" %(
-                        self.ControllerData["Major Version"] , self.ControllerData["Minor Version"] )
+                    coordinator_infos["Display Firmware Version"] = "Ezsp - %s" %(self.ControllerData["Minor Version"] )
                 else:
                     coordinator_infos["Display Firmware Version"] = "UNK - %s" % self.ControllerData["Minor Version"] 
                 _response["Data"] = json.dumps(coordinator_infos, sort_keys=True)
@@ -785,8 +785,7 @@ class WebServer(object):
 
         elif verb == "GET":
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-            
-            
+ 
             if len(self.ControllerData) == 0:
                 _response["Data"] = json.dumps(dummy_zdevice_name(), sort_keys=True)
             else:
@@ -807,11 +806,15 @@ class WebServer(object):
                         "Health",
                         "LQI",
                         "Battery",
+                        "CertifiedDevice"
                     ):
-                        if item in self.ListOfDevices[x]:
-                            if item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, ):
-                                if "IASBattery" in self.ListOfDevices[x]:
-                                    device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
+                        if item == "CertifiedDevice" and "CertifiedDevice" in self.ListOfDevices[x]:
+                            device[item] = self.ListOfDevices[x][item]
+
+
+                        elif item in self.ListOfDevices[x]:
+                            if item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, ) and "IASBattery" in self.ListOfDevices[x]:
+                                device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
                             elif item == "MacCapa":
                                 device["MacCapa"] = []
                                 mac_capability = int(self.ListOfDevices[x][item], 16)
@@ -874,9 +877,10 @@ class WebServer(object):
 
         elif verb == "PUT":
             _response["Data"] = None
-            data = data.decode("utf8")
             self.logging("Debug", "Data: %s" % data)
-            data = eval(data)
+            #data = data.decode("utf8")
+            #data = eval(data)
+            data = json.loads( data.decode("utf8") )
             for x in data:
                 if "ZDeviceName" in x and "IEEE" in x:
                     for dev in self.ListOfDevices:
@@ -1402,29 +1406,6 @@ class WebServer(object):
                     zigate_set_mode(self, int(mode) )
                     #send_zigate_mode(self, int(mode))
                     _response["Data"] = {"ZiGate mode: %s requested" % mode}
-        return _response
-
-    def rest_logErrorHistory(self, verb, data, parameters):
-
-        _response = prepResponseMessage(self, setupHeadersResponse())
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-
-        if verb == "GET":
-            if self.log.LogErrorHistory:
-                try:
-                    _response["Data"] = json.dumps(self.log.LogErrorHistory, sort_keys=False)
-                    self.log.reset_new_error()
-                except Exception as e:
-                    Domoticz.Error("rest_logErrorHistory - Exception %s while saving: %s" % (e, str(self.log.LogErrorHistory)))
-        return _response
-
-    def rest_logErrorHistoryClear(self, verb, data, parameters):
-
-        _response = prepResponseMessage(self, setupHeadersResponse())
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        if verb == "GET":
-            self.logging("Status", "Erase Log History")
-            self.log.loggingClearErrorHistory()
         return _response
 
     def rest_battery_state(self, verb, data, parameters):

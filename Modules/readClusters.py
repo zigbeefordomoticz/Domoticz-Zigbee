@@ -16,12 +16,13 @@ import struct
 from time import time
 
 import Domoticz
-
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice
+from Modules.ikeaTradfri import ikea_air_purifier_cluster
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
-                          decode_vibrAngle, readLumiLock, readXiaomiCluster, store_lumi_attribute)
+                          decode_vibrAngle, readLumiLock, readXiaomiCluster,
+                          store_lumi_attribute)
 from Modules.philips import philips_dimmer_switch
 from Modules.schneider_wiser import (receiving_heatingdemand_attribute,
                                      receiving_heatingpoint_attribute)
@@ -30,7 +31,8 @@ from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
                            get_deviceconf_parameter_value, getEPforClusterType,
                            is_hex, set_status_datastruct,
                            set_timestamp_datastruct)
-from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
+from Modules.tuya import (TUYA_2GANGS_DIMMER_MANUFACTURER,
+                          TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER,
                           TUYA_ENERGY_MANUFACTURER, TUYA_SIREN_MANUFACTURER,
                           TUYA_SMARTAIR_MANUFACTURER, TUYA_SMOKE_MANUFACTURER,
@@ -38,16 +40,16 @@ from Modules.tuya import (TUYA_2GANGS_SWITCH_MANUFACTURER,
                           TUYA_THERMOSTAT_MANUFACTURER, TUYA_TS0601_MODEL_NAME,
                           TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
                           TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER,
-                          TUYA_eTRV4_MANUFACTURER)
+                          TUYA_eTRV4_MANUFACTURER, TUYA_eTRV5_MANUFACTURER)
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
 from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
-                            convert_kva_to_ampere, decode_STEG,
+                            convert_kva_to_ampere, decode_STEG, linky_mode,
                             store_ZLinky_infos,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
-                            zlinky_totalisateur, linky_mode)
+                            zlinky_totalisateur)
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -214,51 +216,6 @@ def ReadCluster(
         self.statistics._clusterKO += 1
         return
 
-    DECODE_CLUSTER = {
-        "0000": Cluster0000,
-        "0001": Cluster0001,
-        "0002": Cluster0002,
-        "0003": Cluster0003,
-        "0005": Cluster0005,
-        "0006": Cluster0006,
-        "0008": Cluster0008,
-        "0009": Cluster0009,
-        "0012": Cluster0012,
-        "0019": Cluster0019,
-        "000c": Cluster000c,
-        "0100": Cluster0100,
-        "0101": Cluster0101,
-        "0102": Cluster0102,
-        "0201": Cluster0201,
-        "0202": Cluster0202,
-        "0204": Cluster0204,
-        "0300": Cluster0300,
-        "0301": Cluster0301,
-        "0400": Cluster0400,
-        "0402": Cluster0402,
-        "0403": Cluster0403,
-        "0405": Cluster0405,
-        "0406": Cluster0406,
-        "0500": Cluster0500,
-        "0502": Cluster0502,
-        "0702": Cluster0702,
-        "0b01": Cluster0b01,
-        "0b04": Cluster0b04,
-        "0b05": Cluster0b05,
-        "fe03": Clusterfe03,
-        "fc00": Clusterfc00,
-        "000f": Cluster000f,
-        "e000": Clustere000,
-        "e001": Clustere001,
-        "e002": Clustere002,
-        "fc01": Clusterfc01,
-        "fc03": Clusterfc03,
-        "fc21": Clusterfc21,
-        "fcc0": Clusterfcc0,
-        "fc40": Clusterfc40,
-        "ff66": Clusterff66,
-    }
-
     if MsgClusterId in DECODE_CLUSTER:
         _func = DECODE_CLUSTER[MsgClusterId]
         _func(
@@ -288,7 +245,7 @@ def ReadCluster(
         self.log.logging(
             "Cluster",
             "Error",
-            "ReadCluster - Error/unknow Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr),
+            "ReadCluster - Error/unknown Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr),
             MsgSrcAddr,
             _context,
         )
@@ -404,7 +361,8 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name in (
                 "_TZ3000_w0qqde0g", "_TZ3000_gjnozsaz", "_TZ3000_zloso4jk", 
                 "_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak",
-                "_TZ3000_typdpbpg", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l"
+                "_TZ3000_typdpbpg", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l",
+                "_TZ3000_2putqrmw", 
             ):
                 modelName = "TS011F-plug"
 
@@ -461,6 +419,10 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name in TUYA_DIMMER_MANUFACTURER:  # Dimmer
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Dimmer" % (MsgSrcAddr, MsgSrcEp))
                 modelName += "-dimmer"
+                
+            elif manufacturer_name in TUYA_2GANGS_DIMMER_MANUFACTURER:  # 2 Gangs dimmer
+                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to 2 Gangs Dimmer" % (MsgSrcAddr, MsgSrcEp))
+                modelName += "-2Gangs-dimmer"
 
             elif manufacturer_name in TUYA_SWITCH_MANUFACTURER:  # Switch
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Switch" % (MsgSrcAddr, MsgSrcEp))
@@ -490,6 +452,10 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif manufacturer_name in TUYA_eTRV3_MANUFACTURER:  # eTRV
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV3" % (MsgSrcAddr, MsgSrcEp))
                 modelName += "-eTRV3"
+
+            elif manufacturer_name in TUYA_eTRV5_MANUFACTURER:  # eTRV
+                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV4" % (MsgSrcAddr, MsgSrcEp))
+                modelName += "-eTRV5"
 
             elif manufacturer_name in TUYA_eTRV4_MANUFACTURER:  # eTRV
                 self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV3" % (MsgSrcAddr, MsgSrcEp))
@@ -1365,7 +1331,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
-    elif MsgAttrID == "8001" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS130F-_TZ3000_zirycpws":
+    elif MsgAttrID == "8001" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS130F-_TZ3000_zirycpws", "TS130F-_TZ3000_8kzqqzu4", "TS130F-_TZ3000_femsaaua",) :
         # Curtain Mode
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
         self.log.logging(
@@ -2439,7 +2405,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-    elif MsgAttrID == "f002" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS130F-_TZ3000_zirycpws":
+    elif MsgAttrID == "f002" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS130F-_TZ3000_zirycpws", "TS130F-_TZ3000_8kzqqzu4", "TS130F-_TZ3000_femsaaua",):
         self.log.logging(
             "Cluster",
             "Debug",
@@ -2447,7 +2413,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-    elif MsgAttrID == "f003" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS130F-_TZ3000_zirycpws":
+    elif MsgAttrID == "f003" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS130F-_TZ3000_zirycpws", "TS130F-_TZ3000_8kzqqzu4", "TS130F-_TZ3000_femsaaua",):
         self.log.logging(
             "Cluster",
             "Debug",
@@ -3747,18 +3713,19 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
 
     conso = raw_value  # Raw value
-    if MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
+    if "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET2", "SOCKETOUTLET2", ):
+        value = round(conso / 10, 3)
+
+    elif MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
         diviser = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0302"]
         value = round(conso / (diviser / 1000), 3)
         self.log.logging("Cluster", "Debug", "compute_conso - %s Power %s, div: %s --> %s Watts" % (MsgAttrID, conso, diviser, value))
+
     elif MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0301" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
         multiplier = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0301"]
         value = round(conso * multiplier, 3)
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "compute_conso - %s Power %s, multiply: %s --> %s Watts" % (MsgAttrID, conso, multiplier, value),
-        )
+        self.log.logging( "Cluster", "Debug", "compute_conso - %s Power %s, multiply: %s --> %s Watts" % (
+            MsgAttrID, conso, multiplier, value), )
     else:
         # Old fashion
         value = round(conso / 10, 3)
@@ -3904,7 +3871,6 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if value == "":
             return
 
-        
         self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Value: %s Conso: %s " % (MsgClusterData, value), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         zlinky_totalisateur(self, MsgSrcAddr, MsgAttrID, value)
@@ -4375,12 +4341,11 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "0508":  # RMSCurrent
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster %s - %s/%s %s Current L1 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value),
-            MsgSrcAddr,
-        )
+        if value == 0xFFFF:
+            return
+
+        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L1 %s" % (
+            MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr, )
 
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS0121":
             value /= 100
@@ -4388,7 +4353,10 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
         
-        elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-din", "TS011F-plug", "SP 120",):
+        elif (
+            "Model" in self.ListOfDevices[MsgSrcAddr] 
+            and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-din", "TS011F-plug", "SP 120", "SPLZB-131", "4512737", "SOCKETOUTLET1", "SOCKETOUTLET2")
+        ):
             value /= 1000
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
@@ -4930,6 +4898,17 @@ def Clusterfc21(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
+def Clusterfc57(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (
+        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr,)
+    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+
+def Clusterfc7d(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (
+        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr,)
+
+    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+    ikea_air_purifier_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
 def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
@@ -4948,7 +4927,8 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "0143":   # Presence Event
         # enter, leave, left_enter, right_leave, right_enter, left_leave, approach, away.
         store_lumi_attribute(self, MsgSrcAddr, "Presence_event", MsgClusterData)
-
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "000c", int(MsgClusterData,16))
+        
     elif MsgAttrID == "0144":   # Monitoring mode
         store_lumi_attribute(self, MsgSrcAddr, "Monitoring_mode", MsgClusterData)
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Monitoring Mode: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
@@ -4967,7 +4947,6 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     else:
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Unknown attribute: %s value %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )
         store_lumi_attribute(self, MsgSrcAddr, MsgAttrID , MsgClusterData)
-
 
 
 def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -5125,3 +5104,49 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
         update_zlinky_device_model_if_needed( self, MsgSrcAddr )
+
+DECODE_CLUSTER = {
+    "0000": Cluster0000,
+    "0001": Cluster0001,
+    "0002": Cluster0002,
+    "0003": Cluster0003,
+    "0005": Cluster0005,
+    "0006": Cluster0006,
+    "0008": Cluster0008,
+    "0009": Cluster0009,
+    "0012": Cluster0012,
+    "0019": Cluster0019,
+    "000c": Cluster000c,
+    "0100": Cluster0100,
+    "0101": Cluster0101,
+    "0102": Cluster0102,
+    "0201": Cluster0201,
+    "0202": Cluster0202,
+    "0204": Cluster0204,
+    "0300": Cluster0300,
+    "0301": Cluster0301,
+    "0400": Cluster0400,
+    "0402": Cluster0402,
+    "0403": Cluster0403,
+    "0405": Cluster0405,
+    "0406": Cluster0406,
+    "0500": Cluster0500,
+    "0502": Cluster0502,
+    "0702": Cluster0702,
+    "0b01": Cluster0b01,
+    "0b04": Cluster0b04,
+    "0b05": Cluster0b05,
+    "fe03": Clusterfe03,
+    "fc00": Clusterfc00,
+    "000f": Cluster000f,
+    "e000": Clustere000,
+    "e001": Clustere001,
+    "e002": Clustere002,
+    "fc01": Clusterfc01,
+    "fc03": Clusterfc03,
+    "fc7d": Clusterfc7d,
+    "fc21": Clusterfc21,
+    "fcc0": Clusterfcc0,
+    "fc40": Clusterfc40,
+    "ff66": Clusterff66,
+}

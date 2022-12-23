@@ -35,22 +35,7 @@ from Modules.zigateConsts import ZIGATE_EP
 from Modules.zlinky import get_OPTARIF
 
 ATTRIBUTES = {
-    "0000": [
-        0x0004,
-        0x0005,
-        0x0000,
-        0x0001,
-        0x0002,
-        0x0003,
-        0x0006,
-        0x0007,
-        0x000A,
-        0x000F,
-        0x0010,
-        0x0015,
-        0x4000,
-        0xF000,
-    ],
+    "0000": [ 0x0004, 0x0005, 0x0000, 0x0001, 0x0002, 0x0003, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000, 0xF000, ],
     "0001": [0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0033, 0x0035],
     "0002": [0x000, 0x0001, 0x0002, 0x0003, 0x0010, 0x0011, 0x0012, 0x0013, 0x0014],
     "0003": [0x0000],
@@ -63,51 +48,8 @@ ATTRIBUTES = {
     "0019": [0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009, 0x000A],
     "0020": [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006],
     "0100": [0x0000, 0x0001, 0x0002, 0x0010, 0x0011],
-    "0101": [
-        0x0000,
-        0x0001,
-        0x0002,
-        0x0010,
-        0x0011,
-        0x0012,
-        0x0013,
-        0x0014,
-        0x0015,
-        0x0016,
-        0x0017,
-        0x0018,
-        0x0019,
-        0x0020,
-        0x0023,
-        0x0025,
-        0x0026,
-        0x0027,
-        0x0028,
-        0x0030,
-        0x0032,
-        0x0034,
-        0x0040,
-        0x0042,
-        0x0043,
-        0xFFFD,
-    ],
-    "0102": [
-        0x0000,
-        0x0001,
-        0x0002,
-        0x0003,
-        0x0004,
-        0x0007,
-        0x0008,
-        0x0009,
-        0x000A,
-        0x000B,
-        0x0010,
-        0x0011,
-        0x0014,
-        0x0017,
-        0xFFFD,
-    ],
+    "0101": [0x0000,0x0001,0x0002,0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,0x0018,0x0019,0x0020,0x0023,0x0025,0x0026,0x0027,0x0028,0x0030,0x0032,0x0034,0x0040,0x0042,0x0043,0xFFFD,],
+    "0102": [0x0000,0x0001,0x0002,0x0003,0x0004,0x0007,0x0008,0x0009,0x000A,0x000B,0x0010,0x0011,0x0014,0x0017,0xFFFD,],
     "0201": [0x0000, 0x0008, 0x0010, 0x0011, 0x0012, 0x0014, 0x0015, 0x0016, 0x001B, 0x001C, 0x001F, 0xFD00],
     "0202": [0x0000, 0x0001],
     "0204": [0x0000, 0x0001, 0x0002],
@@ -122,17 +64,16 @@ ATTRIBUTES = {
     "0702": [0x0000, 0x0017, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
     "000f": [0x0000, 0x0051, 0x0055, 0x006F, 0xFFFD],
     "0b01": [0x000D],
-    "0b04": [
-        0x050B,
-        0x0505,
-        0x0508,
-    ],
+    "0b04": [0x050B,0x0505,0x0508,],
     "0b05": [0x0000],  # Tuya
     "e000": [0xd001, 0xd002, 0xd003 ],
     "e001": [0xd010, 0xd011, 0xd030 ],  # Tuya TS004F
+    "fcc0": [ ],                        # Aqara / Opple
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],   # Legrand
+    "fc57": [ ],  # Ikea STARKVIND
+    "fc7d": [ 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008],   # Ikea STARKVIND
     "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
 }
 
@@ -1592,6 +1533,29 @@ def ReadAttributeRequest_e001(self, key):
 def ReadAttributeRequest_fc00(self, key):
     pass
 
+def ReadAttributeRequest_fcc0(self, key):
+    # Cluster Aqara/Opple
+    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_fcc0 - Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "fcc0")
+
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "fcc0"):
+            if iterAttr not in listAttributes:
+                if iterAttr in ( 0x010c, 0x01,42, 0x0144, 0x0146 ):
+                    read_attribute( self, key,ZIGATE_EP, "01", "fcc0", "00", "01", "115f", 0x01, "%04x" %iterAttr, ackIsDisabled=is_ack_tobe_disabled(self, key), )
+                else:
+                    listAttributes.append(iterAttr)
+
+        if listAttributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                "Request Aqara/Oplle attributes info via Read Attribute request: " + key + " EPout = " + EPout,
+                nwkid=key,
+            )
+            # ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes, manufacturer_spec = '01', manufacturer = '1021', ackIsDisabled = is_ack_tobe_disabled(self, key))
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "fcc0", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_fc01(self, key):
     # Cluster Legrand
@@ -1627,19 +1591,7 @@ def ReadAttributeRequest_fc21(self, key):
 
     if profalux:
         self.log.logging("ReadAttributes", "Debug", "Request Profalux BSO via Read Attribute request: %s" % key, nwkid=key)
-        read_attribute(
-            self,
-            key,
-            ZIGATE_EP,
-            "01",
-            "fc21",
-            "00",
-            "01",
-            "1110",
-            0x01,
-            "0001",
-            ackIsDisabled=is_ack_tobe_disabled(self, key),
-        )
+        read_attribute( self, key, ZIGATE_EP, "01", "fc21", "00", "01", "1110", 0x01, "0001", ackIsDisabled=is_ack_tobe_disabled(self, key), )
 
         # datas = "02" + key + ZIGATE_EP + '01' + 'fc21' + '00' + '01' + '1110' + '01' + '0001'
         # sendZigateCmd(self, "0100", datas )
@@ -1676,6 +1628,15 @@ def ReadAttributeRequest_ff66(self, key):
 
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+def ReadAttributeRequest_fc7d(self, key):
+    # Cluster IKEA
+    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_fc7d - Key: %s " % key, nwkid=key)
+    EPout = "01"
+    listAttributes = retreive_ListOfAttributesByCluster(self, key, EPout, "fc7d")
+    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_fc7d - Key: %s request %s" % (
+        key, listAttributes), nwkid=key)
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, "fc7d", listAttributes, manufacturer_spec="01", manufacturer="117c", ackIsDisabled=is_ack_tobe_disabled(self, key))
+
 
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
@@ -1708,8 +1669,10 @@ READ_ATTRIBUTES_REQUEST = {
     "0b05": (ReadAttributeRequest_0b05, "polling0b05"),
     "e000": (ReadAttributeRequest_e000, "polling0b05"),
     "e001": (ReadAttributeRequest_e001, "polling0b05"),
+    "fcc0": (ReadAttributeRequest_fcc0, "pollingfcc0"),
     "fc01": (ReadAttributeRequest_fc01, "pollingfc01"),
     "fc21": (ReadAttributeRequest_fc21, "pollingfc21"),
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),
+    "fc7d": (ReadAttributeRequest_fc7d, "pollingfc7d"),
     "ff66": (ReadAttributeRequest_ff66, "pollingff66"),
 }

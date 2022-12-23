@@ -11,7 +11,6 @@
 """
 
 import Domoticz
-
 from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
                                   set_PIROccupiedToUnoccupiedDelay,
@@ -24,7 +23,10 @@ from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
                                      legrand_enable_Led_IfOn_by_nwkid,
                                      legrand_enable_Led_InDark_by_nwkid,
                                      legrand_enable_Led_Shutter_by_nwkid)
-from Modules.lumi import setXiaomiVibrationSensitivity
+from Modules.lumi import (RTCZCGQ11LM_motion_opple_approach_distance,
+                          RTCZCGQ11LM_motion_opple_monitoring_mode,
+                          RTCZCGQ11LM_motion_opple_sensitivity,
+                          setXiaomiVibrationSensitivity)
 from Modules.philips import (philips_led_indication,
                              philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
@@ -48,10 +50,13 @@ from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
                                tuya_siren2_alarm_volume)
 from Modules.tuyaTRV import (tuya_trv_boost_time, tuya_trv_calibration,
                              tuya_trv_child_lock, tuya_trv_eco_temp,
+                             tuya_trv_set_confort_temperature,
+                             tuya_trv_set_eco_temperature,
                              tuya_trv_set_max_setpoint,
                              tuya_trv_set_min_setpoint,
+                             tuya_trv_set_opened_window_temp,
                              tuya_trv_thermostat_sensor_mode,
-                             tuya_trv_window_detection)
+                             tuya_trv_window_detection, tuya_trv_holiday_setpoint)
 
 
 def Ballast_max_level(self, nwkid, max_level):
@@ -119,7 +124,10 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
     if "Manufacturer" not in self.ListOfDevices[nwkid]:
         return
 
-    if self.ListOfDevices[nwkid]["Manufacturer"] == "100b":  # Philips
+    if (
+        self.ListOfDevices[nwkid]["Manufacturer"] == "100b"  # Philips
+        or model == "FNB56-ZCW25FB2.1"
+    ):
         if not _check_attribute_exist( self, nwkid, "0b", "0006", "4003"):
             return
 
@@ -233,7 +241,14 @@ DEVICE_PARAMETERS = {
     "vibrationAqarasensitivity": setXiaomiVibrationSensitivity,
     "BRT100WindowsDetection": tuya_trv_window_detection,
     "BRT100ChildLock": tuya_trv_child_lock,
+    "TuyaTRV5_ChildLock": tuya_trv_child_lock,
+    "TuyaTRV5_EcoTemp": tuya_trv_set_eco_temperature,
+    "TuyaTRV5_ConfortTemp": tuya_trv_set_confort_temperature,
+    "TuyaTRV5_OpenedWindowTemp": tuya_trv_set_opened_window_temp,
     "BRT100BoostDuration": tuya_trv_boost_time,
+    "TuyaTRV5_BoostTime": tuya_trv_boost_time,
+    "TuyaTRV5_Calibration": tuya_trv_calibration,
+    "TuyaTRV5_HolidaySetPoint": tuya_trv_holiday_setpoint,
     "BRT100Calibration": tuya_trv_calibration,
     "BRT100SetpointEco": tuya_trv_eco_temp,
     "BRT100MaxSetpoint": tuya_trv_set_max_setpoint,
@@ -251,6 +266,9 @@ DEVICE_PARAMETERS = {
     "SmartRelayStatus02": SmartRelayStatus02,
     "SmartRelayStatus03": SmartRelayStatus03,
     "SmartRelayStatus04": SmartRelayStatus04,
+    "RTCZCGQ11LMMotionSensibility": RTCZCGQ11LM_motion_opple_sensitivity,
+    "RTCZCGQ11LMApproachDistance": RTCZCGQ11LM_motion_opple_approach_distance,
+    "RTCZCGQ11LMMonitoringMode": RTCZCGQ11LM_motion_opple_monitoring_mode,
 }
 
 def sanity_check_of_param(self, NwkId):

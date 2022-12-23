@@ -134,7 +134,7 @@ def philips_set_poweron_after_offon_device(self, mode, nwkid):
 
     if "Manufacturer" not in self.ListOfDevices[nwkid]:
         return
-    if self.ListOfDevices[nwkid]["Manufacturer"] != "100b":
+    if self.ListOfDevices[nwkid]["Manufacturer"] not in ("100b", "117e"):
         return
     # We have a Philips device
     if "0b" not in self.ListOfDevices[nwkid]["Ep"]:
@@ -163,7 +163,7 @@ def zigpy_philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterI
     #           xxxx -> Manuf code
    
     MsgAttrID = "%04x" %struct.unpack("H", struct.pack(">H", int( MsgPayload[10:14], 16)))[0] 
-    MsgClusterData = MsgPayload[14+2:]
+    MsgClusterData = MsgPayload[14 + 2:]
     philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
 def philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData):

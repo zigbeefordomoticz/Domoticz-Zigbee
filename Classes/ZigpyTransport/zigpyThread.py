@@ -41,7 +41,6 @@ from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
 
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
-CREATE_TASK = True
 WAITING_TIME_BETWEEN_COMMANDS = 0.250
 
 def start_zigpy_thread(self):
@@ -361,11 +360,10 @@ async def worker_loop(self):
                     "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s" % (t_elapse, data),
                 )
 
-    self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s" %len(self._concurrent_requests_semaphores_list))
-
-    if self._concurrent_requests_semaphores_list:
-        for x in self._concurrent_requests_semaphores_list:
-            self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)
+    #self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s" %len(self._concurrent_requests_semaphores_list))
+    #if self._concurrent_requests_semaphores_list:
+    #    for x in self._concurrent_requests_semaphores_list:
+    #        self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)
 
 async def get_next_command(self):
     try:
@@ -459,19 +457,18 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         % ( Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn, delay,extended_timeout ),
     )
 
-
     if int(NwkId, 16) >= 0xFFFB:  # Broadcast
         destination = int(NwkId, 16)
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call broadcast destination: %s" % NwkId)
         result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x0, sequence, payload, )
-        await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
+        await asyncio.sleep( 2 * WAITING_TIME_BETWEEN_COMMANDS)
 
     elif addressmode == 0x01:
         # Group Mode
         destination = int(NwkId, 16)
         self.log.logging("TransportZigpy", "Debug", "process_raw_command  call mrequest destination: %s" % destination)
         result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
-        await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
+        await asyncio.sleep( 2 * WAITING_TIME_BETWEEN_COMMANDS)
 
     elif addressmode in (0x02, 0x07):
         # Short is a str
@@ -484,27 +481,14 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
         self.log.logging( "TransportZigpy", "Debug", "process_raw_command  call request destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" % (
             destination, Profile, Cluster, sEp, dEp, sequence, payload))
-        
-        # zigpy has inversed the expect_reply strategy. It is now based on
-        # If expect_reply is set to True (this is because the command is expecting a response from that command)
-        # If expect_reply is set to False, then a Ack will be set.
-        # End result is
-        # AckIsDisable ( we do not want Ack, so expect_reply to be set to True)
-        # not AckIsDisable ( we want Ack, so expect_reply to be set to False )
-        
-        # see https://github.com/zigpy/zigpy/pull/1085
 
         if self.pluginconf.pluginConf["ForceAPSAck"]:
-            self.log.logging( "TransportZigpy", "Debug", "    Forcing Ack by setting AckIsDisable = False and so expect_reply == False" ) 
+            self.log.logging( "TransportZigpy", "Debug", "    Forcing Ack by setting AckIsDisable = False and so ack_is_disable == False" ) 
             AckIsDisable = False
 
         try:
-            if CREATE_TASK:
-                task = asyncio.create_task(
-                    transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout) )
-            else:
-                await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout)
-                await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
+            task = asyncio.create_task(
+                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout) )
 
         except DeliveryError as e:
             # This could be relevant to APS NACK after retry
@@ -522,12 +506,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
             self.log.logging( "TransportZigpy", "Debug", "    Forcing Ack by setting AckIsDisable = False and so expect_reply == False" ) 
             AckIsDisable = False
 
-        if CREATE_TASK:
-            task = asyncio.create_task(
-                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout) )
-        else:
-            await transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout )
-            await asyncio.sleep( WAITING_TIME_BETWEEN_COMMANDS)
+        task = asyncio.create_task(
+            transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout) )
 
     if result:
         self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination, result, msg), )
@@ -539,6 +519,7 @@ def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
     if nwkid == "0000":
         # No Ack/Nack for Controller
         return
+    
     if not isinstance(result, int):
         result = int(result.serialize().hex(), 16)
 
@@ -602,8 +583,18 @@ def check_transport_readiness(self):
     if self._radiomodule == "ezsp":
         return True
         
-async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=True, use_ieee=False, delay=None, extended_timeout=False ):
-    # sourcery skip: replace-interpolation-with-fstring    
+async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False ):
+    # sourcery skip: replace-interpolation-with-fstring   
+    
+    # see https://github.com/zigpy/zigpy/pull/1085
+    # zigpy has inversed the expect_reply strategy. It is now based on
+    # If expect_reply is set to True (this is because the command is expecting a response from that command)
+    # If expect_reply is set to False, then a Ack will be set.
+    # End result is
+    # AckIsDisable ( we do not want Ack, so expect_reply to be set to True)
+    # not AckIsDisable ( we want Ack, so expect_reply to be set to False )
+
+ 
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
     if not check_transport_readiness:
@@ -628,7 +619,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                 )
                 return
             
-            result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=use_ieee, extended_timeout=extended_timeout )
+            result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout )
             self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
 
             # Slow down the through put when too many commands. Try to not overload the coordinators
@@ -643,14 +634,15 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
         self.log.logging("TransportError", "Debug", "    profile     : %04x" % Profile, _nwkid)
         self.log.logging("TransportError", "Debug", "    cluster     : %04x" % Cluster, _nwkid)
         self.log.logging("TransportError", "Debug", "    payload     : %s" % payload, _nwkid)
-        self.log.logging("TransportError", "Debug", "    expect_reply: %s" % expect_reply, _nwkid)
+        self.log.logging("TransportError", "Debug", "    expect_reply: %s" % ack_is_disable, _nwkid)
         self.log.logging("TransportError", "Debug", "    use_ieee    : %s" % use_ieee, _nwkid)
         self.log.logging("TransportError", "Debug", "    extended_to : %s" % extended_timeout, _nwkid)
         msg = "%s" % e
         result = 0xB6
-        self._currently_not_reachable.append( _ieee )
+        if _ieee not in self._currently_not_reachable:
+            self._currently_not_reachable.append( _ieee )
 
-    if expect_reply:
+    if not ack_is_disable:
         push_APS_ACK_NACKto_plugin(self, _nwkid, result, destination.lqi)
 
     if result == 0x00 and _ieee in self._currently_not_reachable:
