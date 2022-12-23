@@ -186,41 +186,12 @@ def ikea_motion_sensor_8095(self, Devices, MsgSrcAddr,MsgEP, MsgClusterId, MsgCm
 def ikea_air_purifier_mode( self, NwkId, Ep, mode ):
     # Cluster 0xfc7d
     # Attribute 0x0006
-    if mode not in ( 0x00, 0x01 ):
-        return
-    write_attribute(
-        self, 
-        NwkId, 
-        ZIGATE_EP,
-        Ep, 
-        'fc7d', 
-        '117c', 
-        '01', 
-        '0006', 
-        '20', 
-        '%02x' %mode, 
-        ackIsDisabled=False
-    )
+    self.log.logging( "Input", "Log", "ikea_air_purifier_mode %s/%s mode: %s" % (
+        NwkId, Ep, mode), NwkId, )
 
-def ikea_air_purifier_fan_speed( self, NwkId, Ep, fan_speed):
-    # Cluster 0xfc7d
-    # Attribute 0x0006
-    if fan_speed not in ( 10,20,30,40,50):
+    if mode not in ( 0, 1, 10, 20, 30, 40, 50 ):
         return
-    write_attribute(
-        self, 
-        NwkId, 
-        ZIGATE_EP,
-        Ep, 
-        'fc7d', 
-        '117c', 
-        '01', 
-        '0006', 
-        '20', 
-        '%02x' %fan_speed, 
-        ackIsDisabled=False
-    )
-   
+    write_attribute( self,  NwkId,  ZIGATE_EP, Ep,  'fc7d',  '117c',  '01',  '0006',  '20',  '%02x' %mode,  ackIsDisabled=False )
     
 def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, Data):
     
@@ -263,7 +234,10 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
             MajDomoDevice(self, Devices, NwkId, Ep, "0202", 0, Attribute_="0007", )
         elif mode == 1:
             MajDomoDevice(self, Devices, NwkId, Ep, "0202", 1, Attribute_="0006", )
-            
+        elif 10 <= mode <= 50:
+            level = (( mode // 10 ) * 10 ) + 10
+            MajDomoDevice(self, Devices, NwkId, Ep, "0202", level, Attribute_="0006", )
+
     elif AttributeId == "0007":
         # Fan Speed should vary from 1 to 50
         fan_speed = convert_fan_speed_into_level( int(Data,16)  )
@@ -283,12 +257,6 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
     
 
 def convert_fan_speed_into_level( fan_speed ):
-    if fan_speed <= 10:
-        return 10
-    if fan_speed <= 20:
-        return 20
-    if fan_speed <= 30:
-        return 30
-    if fan_speed <= 40:
-        return 40
-    return 50
+    
+    return round( ((fan_speed * 100 ) / 50 ), 1 )
+    

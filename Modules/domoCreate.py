@@ -383,7 +383,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=0, Image=13)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch Alarm" % (t), NWKID)
                 
-            if t in ("FanControl", "FanSpeed"):  # 6
+            if t in ("FanControl", ):  # 6
                 Options = createSwitchSelector(self, 6, DeviceType=t, OffHidden=False, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options, Image=7)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl/FanSpeed" % (t), NWKID)
@@ -395,7 +395,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             # 2 Selectors, Style 0
             if t in ( "AirPurifierMode", ):
-                Options = createSwitchSelector(self, 3, DeviceType=t, SelectorStyle=0)
+                Options = createSwitchSelector(self, 7, DeviceType=t, SelectorStyle=0)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AirPurifierMode" % (t), NWKID)
 
@@ -613,9 +613,9 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=22, Switchtype_=0)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Alarm" % (t), NWKID)
 
-            if t == "Valve":
+            if t in ("Valve", "FanSpeed", ):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=6, Switchtype_=0)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Valve" % (t), NWKID)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Valve/FanSpeed" % (t), NWKID)
 
             if t in ("ThermoSetpoint", "TempSetCurrent"):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=242, Subtype_=1)
