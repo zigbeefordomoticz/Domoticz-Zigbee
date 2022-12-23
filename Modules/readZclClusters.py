@@ -284,16 +284,23 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )
             
 def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
-
+    self.log.logging( "readZclClusters", "Debug", "action_majdomodevice - %s/%s %s %s %s %s" %(
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ))    
     _majdomo_formater = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DomoDeviceFormat", model=device_model)
+    self.log.logging( "readZclClusters", "Debug", "     _majdomo_formater: %s" %_majdomo_formater)
+    
     majValue = value
     if _majdomo_formater and _majdomo_formater == "str":
         majValue = str( value )
     
     _majdomo_cluster = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithCluster", model=device_model)
-    majCluster = _majdomo_cluster if _majdomo_cluster is not None else ""
+    self.log.logging( "readZclClusters", "Debug", "     _majdomo_cluster: %s" %_majdomo_cluster)
+    
+    majCluster = _majdomo_cluster if _majdomo_cluster is not None else MsgClusterId
 
     _majdomo_attribute = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithAttibute", model=device_model)
+    self.log.logging( "readZclClusters", "Debug", "     _majdomo_attribute: %s" %_majdomo_attribute)
+    
     majAttribute = _majdomo_attribute if _majdomo_attribute is not None else ""
     
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, majCluster, majValue, Attribute_=majAttribute)

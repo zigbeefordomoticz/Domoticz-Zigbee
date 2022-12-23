@@ -14,7 +14,7 @@
             "Mandatory": true,
             "DomoClusterType": "LvlControl",
             "EvalExp": "",
-            "ActionList": [ "checkstore", "majdomodevice"]
+            "ActionList": [ "check_store_value", "upd_domo_device"]
         },
         "0001": { 
             "Enabled": true,
@@ -25,7 +25,7 @@
             "Default": "0",
             "Mandatory": false,
             "EvalExp": "",
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "00010": { 
             "Enabled": true,
@@ -36,7 +36,7 @@
             "Default": "0",
             "Mandatory": false,
             "EvalExp": "",
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "00011": { 
             "Enabled": true,
@@ -47,7 +47,7 @@
             "Default": "ff",
             "Mandatory": false,
             "EvalExp": "",
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "4000": { 
             "Enabled": true,
@@ -58,7 +58,7 @@
             "Default": "ff",
             "Mandatory": false,
             "EvalExp": "",
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         }
     }
 }

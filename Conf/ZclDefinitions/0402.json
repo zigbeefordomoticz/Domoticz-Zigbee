@@ -15,7 +15,7 @@
             "Mandatory": true,
             "DomoClusterType": "Temp",
             "EvalExp": "round(int(value) / 100, 1)",
-            "ActionList": [ "checkstore", "majdomodevice"]
+            "ActionList": [ "check_store_value", "upd_domo_device"]
         },
         "0001": { 
             "Enabled": true,
@@ -27,7 +27,7 @@
             "Default": "",
             "EvalExp": "round(int(value) / 100, 1)",
             "Mandatory": true,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
 
         },
         "0002": { 
@@ -40,7 +40,7 @@
             "Default": "",
             "EvalExp": "round(int(value) / 100, 1)",
             "Mandatory": true,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
 
         },
         "0003": { 
@@ -51,7 +51,7 @@
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         }
     }
 }

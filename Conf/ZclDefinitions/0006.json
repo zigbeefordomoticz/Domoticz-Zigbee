@@ -12,7 +12,7 @@
             "Default": "0",
             "Mandatory": true,
             "DomoClusterType": "Switch",
-            "ActionList": [ "checkstore", "majdomodevice"]
+            "ActionList": [ "check_store_value", "upd_domo_device"]
         },
         "4000": { 
             "Enabled": true,
@@ -21,7 +21,7 @@
             "Acc": "R" ,
             "Default": "1",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "4001": { 
             "Enabled": true,
@@ -30,7 +30,7 @@
             "Acc": "RW" ,
             "Default": "0",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "4002": { 
             "Enabled": true,
@@ -39,7 +39,7 @@
             "Acc": "RW" ,
             "Default": "0",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "4003": { 
             "Enabled": true,
@@ -48,7 +48,7 @@
             "Acc": "RW" ,
             "Default": "0",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         }
     }
 }

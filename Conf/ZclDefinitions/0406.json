@@ -13,7 +13,7 @@
             "Mandatory": true,
             "DomoClusterType": "Motion",
             "EvalExp": "value & 0b0001",
-            "ActionList": [ "checkstore", "majdomodevice"],
+            "ActionList": [ "check_store_value", "upd_domo_device"],
             "DomoDeviceFormat": "str"
         },
         "0001": { 
@@ -24,7 +24,7 @@
             "Default": "",
             "DecodedValueList": { "00": "PIR", "01": "Ultrasonic", "02": "PIR and ultrasonic", "03": "Physical contact"},
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0002": { 
             "Enabled": true,
@@ -34,7 +34,7 @@
             "Default": "",
             "DecodedValueList": { "01": "PIR", "02": "Ultrasonic", "04": "Physical contact"},
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0010": { 
             "Enabled": true,
@@ -44,7 +44,7 @@
             "Acc": "RW",
             "Default": "00",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0011": { 
             "Enabled": true,
@@ -54,7 +54,7 @@
             "Acc": "RW",
             "Default": "00",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0012": { 
             "Enabled": true,
@@ -64,7 +64,7 @@
             "Acc": "RW",
             "Default": "01",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0020": { 
             "Enabled": true,
@@ -74,7 +74,7 @@
             "Acc": "RW",
             "Default": "00",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0022": { 
             "Enabled": true,
@@ -84,7 +84,7 @@
             "Acc": "RW",
             "Default": "00",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0023": { 
             "Enabled": true,
@@ -94,7 +94,7 @@
             "Acc": "RW",
             "Default": "01",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
 
         "0030": { 
@@ -105,7 +105,7 @@
             "Acc": "R",
             "Default": "0000",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0032": { 
             "Enabled": true,
@@ -115,7 +115,7 @@
             "Acc": "R",
             "Default": "0000",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         },
         "0033": { 
             "Enabled": true,
@@ -125,7 +125,7 @@
             "Acc": "R",
             "Default": "01",
             "Mandatory": false,
-            "ActionList": [ "checkstore"]
+            "ActionList": [ "check_store_value"]
         }
     }
 }
