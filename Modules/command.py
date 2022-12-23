@@ -1058,7 +1058,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             
             if Level == 10:
                 ikea_air_purifier_mode( self, NWKID, EPout, 1 )
-            elif Level == ( 20, 30, 40, 50, 60):
+            elif Level in ( 20, 30, 40, 50, 60):
                 mode = Level - 10
                 ikea_air_purifier_mode( self, NWKID, EPout, mode)
            
