@@ -1099,6 +1099,17 @@ def build_fcf(frame_type, manuf_spec, direction, disabled_default):
     #    frame_type, manuf_spec, direction, disabled_default, fcf, bin(fcf)))
     return "%02x" % fcf
 
+def get_cluster_attribute_value( self, key, endpoint, clusterId, AttributeId):
+    if (
+        key not in self.ListOfDevices
+        or "Ep" not in self.ListOfDevices[key]
+        or endpoint not in self.ListOfDevices[key]["Ep"]
+        or clusterId not in self.ListOfDevices[key]["Ep"][ endpoint ]
+        or AttributeId not in self.ListOfDevices[key]["Ep"][ endpoint ][ clusterId ]
+    ):
+        return None
+    return self.ListOfDevices[key]["Ep"][ endpoint ][ clusterId ][ AttributeId]
+
 
 # Functions to manage Device Attributes infos ( ConfigureReporting)
 def check_datastruct(self, DeviceAttribute, key, endpoint, clusterId):

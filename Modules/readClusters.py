@@ -19,6 +19,7 @@ import Domoticz
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice
+from Modules.ikeaTradfri import ikea_air_purifier_cluster
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster,
                           store_lumi_attribute)
@@ -214,51 +215,6 @@ def ReadCluster(
         )
         self.statistics._clusterKO += 1
         return
-
-    DECODE_CLUSTER = {
-        "0000": Cluster0000,
-        "0001": Cluster0001,
-        "0002": Cluster0002,
-        "0003": Cluster0003,
-        "0005": Cluster0005,
-        "0006": Cluster0006,
-        "0008": Cluster0008,
-        "0009": Cluster0009,
-        "0012": Cluster0012,
-        "0019": Cluster0019,
-        "000c": Cluster000c,
-        "0100": Cluster0100,
-        "0101": Cluster0101,
-        "0102": Cluster0102,
-        "0201": Cluster0201,
-        "0202": Cluster0202,
-        "0204": Cluster0204,
-        "0300": Cluster0300,
-        "0301": Cluster0301,
-        "0400": Cluster0400,
-        "0402": Cluster0402,
-        "0403": Cluster0403,
-        "0405": Cluster0405,
-        "0406": Cluster0406,
-        "0500": Cluster0500,
-        "0502": Cluster0502,
-        "0702": Cluster0702,
-        "0b01": Cluster0b01,
-        "0b04": Cluster0b04,
-        "0b05": Cluster0b05,
-        "fe03": Clusterfe03,
-        "fc00": Clusterfc00,
-        "000f": Cluster000f,
-        "e000": Clustere000,
-        "e001": Clustere001,
-        "e002": Clustere002,
-        "fc01": Clusterfc01,
-        "fc03": Clusterfc03,
-        "fc21": Clusterfc21,
-        "fcc0": Clusterfcc0,
-        "fc40": Clusterfc40,
-        "ff66": Clusterff66,
-    }
 
     if MsgClusterId in DECODE_CLUSTER:
         _func = DECODE_CLUSTER[MsgClusterId]
@@ -4942,6 +4898,17 @@ def Clusterfc21(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
+def Clusterfc57(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (
+        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr,)
+    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+
+def Clusterfc7d(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
+    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (
+        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr,)
+
+    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+    ikea_air_purifier_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
 def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
@@ -4980,7 +4947,6 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     else:
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Unknown attribute: %s value %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )
         store_lumi_attribute(self, MsgSrcAddr, MsgAttrID , MsgClusterData)
-
 
 
 def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -5138,3 +5104,49 @@ def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
         update_zlinky_device_model_if_needed( self, MsgSrcAddr )
+
+DECODE_CLUSTER = {
+    "0000": Cluster0000,
+    "0001": Cluster0001,
+    "0002": Cluster0002,
+    "0003": Cluster0003,
+    "0005": Cluster0005,
+    "0006": Cluster0006,
+    "0008": Cluster0008,
+    "0009": Cluster0009,
+    "0012": Cluster0012,
+    "0019": Cluster0019,
+    "000c": Cluster000c,
+    "0100": Cluster0100,
+    "0101": Cluster0101,
+    "0102": Cluster0102,
+    "0201": Cluster0201,
+    "0202": Cluster0202,
+    "0204": Cluster0204,
+    "0300": Cluster0300,
+    "0301": Cluster0301,
+    "0400": Cluster0400,
+    "0402": Cluster0402,
+    "0403": Cluster0403,
+    "0405": Cluster0405,
+    "0406": Cluster0406,
+    "0500": Cluster0500,
+    "0502": Cluster0502,
+    "0702": Cluster0702,
+    "0b01": Cluster0b01,
+    "0b04": Cluster0b04,
+    "0b05": Cluster0b05,
+    "fe03": Clusterfe03,
+    "fc00": Clusterfc00,
+    "000f": Cluster000f,
+    "e000": Clustere000,
+    "e001": Clustere001,
+    "e002": Clustere002,
+    "fc01": Clusterfc01,
+    "fc03": Clusterfc03,
+    "fc7d": Clusterfc7d,
+    "fc21": Clusterfc21,
+    "fcc0": Clusterfcc0,
+    "fc40": Clusterfc40,
+    "ff66": Clusterff66,
+}
