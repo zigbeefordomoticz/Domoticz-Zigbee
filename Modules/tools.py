@@ -170,13 +170,13 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
 
     found = False
     # 1- Check if found in ListOfDevices
-    #   Verify that Status is not 'UNKNOWN' otherwise condider not found
+    #   Verify that Status is not 'UNKNOW' otherwise condider not found
     if lookupNwkId in self.ListOfDevices and "Status" in self.ListOfDevices[lookupNwkId]:
         if "IEEE" in self.ListOfDevices[lookupNwkId]:
             ieee_from_nwkid = self.ListOfDevices[lookupNwkId]["IEEE"]
 
         # Found, let's check the Status
-        if self.ListOfDevices[lookupNwkId]["Status"] != "UNKNOWN":
+        if self.ListOfDevices[lookupNwkId]["Status"] != "UNKNOW":
             found = True
 
     # 2- We might have found it with the lookupNwkId

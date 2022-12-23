@@ -40,8 +40,8 @@ def pluzzyDecode8102(
         Domoticz.Error("Pluzzy-Decode8102 - Unknown Device %s" % MsgSrcAddr)
         return
 
-    if self.ListOfDevices[MsgSrcAddr]["Status"] == "UNKNOWN":
-        Domoticz.Error("Pluzzy-Decode8102 - Device %s in UNKNOWN state" % MsgSrcAddr)
+    if self.ListOfDevices[MsgSrcAddr]["Status"] == "UNKNOW":
+        Domoticz.Error("Pluzzy-Decode8102 - Device %s in UNKNOW state" % MsgSrcAddr)
         return
 
     if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] != {}:
