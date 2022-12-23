@@ -19,7 +19,7 @@ from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, UpdateDevice_v2)
 from Modules.fanControl import change_fan_mode
-from Modules.ikeaTradfri import ikea_air_purifier_mode, ikea_air_purifier_fan_speed
+from Modules.ikeaTradfri import ikea_air_purifier_mode
 from Modules.legrand_netatmo import cable_connected_mode, legrand_fc40
 from Modules.livolo import livolo_OnOff
 from Modules.profalux import profalux_MoveToLiftAndTilt, profalux_stop
