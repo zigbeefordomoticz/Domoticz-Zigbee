@@ -243,7 +243,7 @@ def receive_preset(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKI
             self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to Hold" % (NwkId, srcEp))
             
         else:
-            self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to unknow" % (NwkId, srcEp))
+            self.log.logging("Tuya", "Debug", "receive_preset - Nwkid: %s/%s Mode to unknown" % (NwkId, srcEp))
             
     elif data == "00":
         if get_model_name(self, NwkId) in ( "TS0601-eTRV3", ):

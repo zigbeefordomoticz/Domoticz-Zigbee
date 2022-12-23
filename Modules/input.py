@@ -3337,7 +3337,7 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
     MsgSQN = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("Decode8120 - receiving Configure reporting response from unknow  %s" % MsgSrcAddr)
+        Domoticz.Error("Decode8120 - receiving Configure reporting response from unknown %s" % MsgSrcAddr)
         zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
 
@@ -3782,7 +3782,7 @@ def Decode8401_PST03Av225(self, Devices, MsgSrcAddr, MsgEp, Model, MsgZoneStatus
         self.log.logging(
             "Input",
             "Debug",
-            "Decode8401 - PST03A-v2.2.5, unknow EndPoint: " + MsgEp,
+            "Decode8401 - PST03A-v2.2.5, unknown EndPoint: " + MsgEp,
             MsgSrcAddr,
         )
     return

@@ -289,7 +289,7 @@ def ReadCluster(
         self.log.logging(
             "Cluster",
             "Error",
-            "ReadCluster - Error/unknow Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr),
+            "ReadCluster - Error/unknown Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr),
             MsgSrcAddr,
             _context,
         )
