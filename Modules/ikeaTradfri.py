@@ -235,7 +235,7 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
         elif mode == 1:
             MajDomoDevice(self, Devices, NwkId, Ep, "0202", 1, Attribute_="0006", )
         elif 10 <= mode <= 50:
-            level = (( mode // 10 ) * 10 ) + 10
+            level = int((( mode // 10 ) ) + 1)
             MajDomoDevice(self, Devices, NwkId, Ep, "0202", level, Attribute_="0006", )
 
     elif AttributeId == "0007":
