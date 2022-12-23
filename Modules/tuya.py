@@ -44,6 +44,10 @@ TUYA_MANUF_CODE = "1002"
 TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l" )
 TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4", "_TZ3000_tk3s5tyg")
 
+# Tuya Smart Lock
+# TY0A01
+TUYA_SMART_DOOR_LOCK_MODEL = ( "TY0A01", )
+TUYA_SMART_DOOR_LOCK_MANUF = ( "_TYST12_qcdc4vui", )
 
 # TS0601
 TUYA_WATER_TIMER = ("_TZE200_htnnfasr", "_TZE200_akjefhj5", "_TZE200_81isopgh",)
@@ -210,6 +214,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_GARAGE_DOOR
     + TUYA_SMOKE_MANUFACTURER
     + TUYA_TEMP_HUMI
+    + TUYA_SMART_DOOR_LOCK_MANUF
 )
 
 
@@ -451,6 +456,9 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
         NwkId,
     )
 
+    if _ModelName in TUYA_SMART_DOOR_LOCK_MODEL:
+        tuya_smart_door_lock(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        
     if _ModelName in ( "TS0202-_TZ3210_jijr1sss",):
         tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
         
@@ -1442,3 +1450,8 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
     else:
         self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+        
+        
+def tuya_smart_door_lock(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    
+    store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
