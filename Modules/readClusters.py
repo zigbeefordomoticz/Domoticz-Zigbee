@@ -4385,12 +4385,11 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "0508":  # RMSCurrent
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster %s - %s/%s %s Current L1 %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value),
-            MsgSrcAddr,
-        )
+        if value == 0xFFFF:
+            return
+
+        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L1 %s" % (
+            MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr, )
 
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS0121":
             value /= 100
@@ -4398,7 +4397,10 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
         
-        elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-din", "TS011F-plug", "SP 120", ):
+        elif (
+            "Model" in self.ListOfDevices[MsgSrcAddr] 
+            and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-din", "TS011F-plug", "SP 120", "SPLZB-131 ")
+        ):
             value /= 1000
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
