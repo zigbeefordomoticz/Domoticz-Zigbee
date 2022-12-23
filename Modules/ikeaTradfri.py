@@ -191,7 +191,7 @@ def ikea_air_purifier_mode( self, NwkId, Ep, mode ):
 
     if mode not in ( 0, 1, 10, 20, 30, 40, 50 ):
         return
-    write_attribute( self, NwkId, ZIGATE_EP, Ep, 'fc7d',  '117c', '01', '0006', '20', '%02x' %mode, ackIsDisabled=False )
+    write_attribute( self, NwkId, ZIGATE_EP, Ep, 'fc7d', '117c', '01', '0006', '20', '%02x' %mode, ackIsDisabled=False )
     
 def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, Data):
     
