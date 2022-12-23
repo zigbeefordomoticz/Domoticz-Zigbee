@@ -3713,8 +3713,11 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
 
     conso = raw_value  # Raw value
-    if "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET2", "SOCKETOUTLET2", ):
+    if "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET2",  ):
         value = round(conso / 10, 3)
+        
+    elif "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET1", ):
+        value = round(conso / 1000, 3)
 
     elif MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
         diviser = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0302"]
