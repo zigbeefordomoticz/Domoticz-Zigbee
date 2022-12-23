@@ -1054,6 +1054,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 return
                 
         if DeviceType == "AirPurifierMode" and _model_name in ('STARKVIND Air purifier', ):
+            self.log.logging( "Command", "Debug", "   Air Purifier Mode: %s" % ( Level ), NWKID,)
+            
             if Level == "10":
                 ikea_air_purifier_mode( self, NWKID, EPout, 1 )
             elif Level == ( "20", "30", "40", "50", "60"):
