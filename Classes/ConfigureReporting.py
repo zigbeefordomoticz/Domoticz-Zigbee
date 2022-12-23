@@ -907,41 +907,6 @@ def manufacturer_specific_attribute(self, key, cluster, attr, cfg_attribute):
         self.logging( "Debug", f'manufacturer_specific_attribute - NwkId: {key} found attribute: {attr} Manuf Specific, return ManufCode: {cfg_attribute["ManufSpecific"]}', nwkid=key )
         return cfg_attribute["ManufSpecific"]
 
-    if (
-        attr
-        in (
-            "4000",
-            "4012",
-        )
-        and cluster == "0201"
-        and "Model" in self.ListOfDevices[key]
-        and self.ListOfDevices[key]["Model"] in ("eT093WRO", "eTRV0100")
-    ):
-        return "1246"
-
-    if (
-        attr in ("fd00",)
-        and cluster == "0201"
-        and "Model" in self.ListOfDevices[key]
-        and self.ListOfDevices[key]["Model"] in ("AC221", "AC211")
-    ):
-        return "113c"
-
-    if cluster == "fc21" and "Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "1110":
-        return "1110"
-
-    if (
-        attr
-        in (
-            "0030",
-            "0031",
-        )
-        and cluster == "0406"
-        and "Manufacturer" in self.ListOfDevices[key]
-        and self.ListOfDevices[key]["Manufacturer"] == "100b"
-    ):
-        return "100b"
-
 
 def store_read_configure_reporting_record( self, NwkId, Ep, ClusterId, status, attribute, DataType, MinInterval, MaxInterval, Change, timeout ):
     
