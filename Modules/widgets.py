@@ -514,9 +514,9 @@ SWITCH_LVL_MATRIX = {
         "05": (2, "50"),  # Speed 4
         "06": (2, "60"),  # Speed 5
         "ForceUpdate": True,
-        "LevelNames": "Off|Auto|Speed1|Speed2|Speed3|Speed4|Speed5",
+        "LevelNames": "Off|Auto|Spd1|Spd2|Spd3|Spd4|Spd5",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Vitesse1|Vitesse2|Vitesse3|Vitesse4|Vitesse5"}},
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Vit1|Vit2|Vit3|Vit4|V5"}},
     },
     
     "FanControl": {
