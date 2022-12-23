@@ -3713,7 +3713,7 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
 
     conso = raw_value  # Raw value
-    if "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET2",):
+    if "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET2", "SOCKETOUTLET2", ):
         value = round(conso / 10, 3)
 
     elif MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
@@ -4355,7 +4355,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         
         elif (
             "Model" in self.ListOfDevices[MsgSrcAddr] 
-            and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-din", "TS011F-plug", "SP 120", "SPLZB-131 ")
+            and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-din", "TS011F-plug", "SP 120", "SPLZB-131", "4512737", "SOCKETOUTLET1", "SOCKETOUTLET2")
         ):
             value /= 1000
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
