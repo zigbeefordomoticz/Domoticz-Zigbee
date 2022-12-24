@@ -21,6 +21,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
 from zigpy.backups import NetworkBackup
+from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         _retreived_backup = _retreive_backup( self )
         if _retreived_backup:
             LOGGER.info("Last backup retreived: %s" % zigpy.backups.NetworkBackup( _retreived_backup ))
-            self.backups.add_backup( backup = NetworkBackup.from_dict( _retreived_backup ))
+            self.backups.add_backup( backup=NetworkBackup.from_dict( _retreived_backup ))
 
     if force_form:
 
@@ -170,9 +171,11 @@ def handle_message(
     src_ep: int,
     dst_ep: int,
     message: bytes,
-    dst_addressing = None,
+    dst_addressing=None,
 ) -> None:
 
+
+    write_capture_rx_frames( self, sender, profile, cluster, src_ep, dst_ep, message, binascii.hexlify(message).decode("utf-8"), dst_addressing)
 
     if sender.nwk == 0x0000:
         self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
