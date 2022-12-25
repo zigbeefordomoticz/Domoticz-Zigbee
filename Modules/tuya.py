@@ -58,7 +58,11 @@ TUYA_SMARTAIR_MANUFACTURER = (
     "_TZE200_yvx5lh6k",
 )
 
-TUYA_TEMP_HUMI = ( "_TZE200_bjawzodf", "_TZE200_bq5c8xfe", )
+TUYA_TEMP_HUMI = ( 
+    "_TZE200_bjawzodf", 
+    "_TZE200_bq5c8xfe", 
+    "_TZE200_qoy0ekbd" 
+)
 
 TUYA_SIREN_MANUFACTURER = (
     "_TZE200_d0yu2xgi",
