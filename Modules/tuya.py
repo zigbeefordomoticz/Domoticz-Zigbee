@@ -1462,7 +1462,7 @@ def hack_ts0601(self, nwkid):
         return
     model_name = self.ListOfDevices[ nwkid ][ 'Model' ] 
 
-    if 'Manufacturer Name' not in  self.ListOfDevices[ nwkid ]:
+    if 'Manufacturer Name' not in self.ListOfDevices[ nwkid ]:
         # This is not expected, log Error
         self.log.logging("Tuya", "Error", "We have detected a miss configuration, please contact us with the here after information")
         self.log.logging("Tuya", "Error", "    - Device " %nwkid )
