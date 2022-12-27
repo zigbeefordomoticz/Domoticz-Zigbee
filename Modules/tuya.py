@@ -1432,9 +1432,9 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", int(data, 16))
        
     elif dp == 0x02:   # Humi
-        if ( 
-            'Manufacturer' in self.ListOfDevices[ NwkId ] 
-            and self.ListOfDevices[ NwkId ][ 'Manufacturer' ] not in ( '_TZE200_qoy0ekbd',)
+        if (
+            'Manufacturer Name' in self.ListOfDevices[ NwkId ]
+            and self.ListOfDevices[ NwkId ][ 'Manufacturer Name' ] not in ( '_TZE200_qoy0ekbd',)
         ):
             humi = int(data, 16) // 10
         store_tuya_attribute(self, NwkId, "Humi", humi)
