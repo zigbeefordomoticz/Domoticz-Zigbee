@@ -24,6 +24,7 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.zlinky import update_zlinky_device_model_if_needed
+from Modules.tuya import hack_ts0601
 
 
 CIE_ATTRIBUTES = {
@@ -174,6 +175,9 @@ def LoadDeviceList(self):
         fixing_consumption_lumi(self, addr)
         fixing_iSQN_None(self, addr)
 
+        # Fixing TS0601 which has been removed.
+        hack_ts0601(self, addr)
+        
         # Check if 566 fixs are needed
         if self.pluginconf.pluginConf["Bug566"] and "Model" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["Model"] == "TRADFRI control outlet":
             fixing_Issue566(self, addr)
@@ -207,7 +211,7 @@ def LoadDeviceList(self):
         self.pluginconf.write_Settings()
 
     load_new_param_definition(self)
-
+    
     return res
 
 
