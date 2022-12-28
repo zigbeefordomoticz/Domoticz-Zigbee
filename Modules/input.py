@@ -2574,7 +2574,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
         self.log.logging(
             "Input",
             "Log",
-            "Removing this not completly provisionned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress),
+            "Removing this not completly provisioned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress),
         )
 
     elif self.ListOfDevices[sAddr]["Status"] == "Leave":
