@@ -505,7 +505,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Very bad hack, but Owon use the same model name for 2 devices!
             modelName = "THS317"
 
-        # Here the Device is not yet provisionned
+        # Here the Device is not yet provisioned
         if "Model" not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]["Model"] = {}
 
@@ -519,7 +519,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if modelName == "":
             return
 
-        # Check if we have already provisionned this Device. If yes, then we drop this message
+        # Check if we have already provisioned this Device. If yes, then we drop this message
         if "Ep" in self.ListOfDevices[MsgSrcAddr]:
             for iterEp in list(self.ListOfDevices[MsgSrcAddr]["Ep"]):
                 if "ClusterType" in list(self.ListOfDevices[MsgSrcAddr]["Ep"][iterEp]):
