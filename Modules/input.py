@@ -2046,6 +2046,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
 
     updLQI(self, addr, MsgLQI)
 
+    self.ListOfDevices[addr]["_rawNodeDescriptor"] = MsgData[8:]
     self.ListOfDevices[addr]["Max Buffer Size"] = max_buffer
     self.ListOfDevices[addr]["Max Rx"] = max_rx
     self.ListOfDevices[addr]["Max Tx"] = max_tx

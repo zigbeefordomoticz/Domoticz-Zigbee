@@ -84,6 +84,14 @@ MANDATORY_ATTRIBUTES = (
     "ZDeviceID",
     "ZDeviceName",
     "Param",
+    "_rawNodeDescriptor",
+    "Max Buffer Size",
+    "Max Rx",
+    "Max Tx",
+    "macapa",
+    "bitfield",
+    "server_mask",
+    "descriptor_capability",
 )
 
 # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
