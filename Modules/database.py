@@ -17,14 +17,12 @@ import time
 from typing import Dict
 
 import Domoticz
-
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.zlinky import update_zlinky_device_model_if_needed
-
 
 CIE_ATTRIBUTES = {
     "Version", 
