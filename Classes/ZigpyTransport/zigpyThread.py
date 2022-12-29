@@ -40,6 +40,8 @@ from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
 
+MAX_ATTEMPS_REQUEST = 3
+WAITING_TIME_BETWEEN_ATTEMPS = 1
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 WAITING_TIME_BETWEEN_COMMANDS = 0.250
 
@@ -605,43 +607,54 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
         self.log.logging( "TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 6 secondes for CASA.IA Confirm Key")
         delay = 6
 
-    try:
-        if delay:
-            await asyncio.sleep(delay)
-        async with _limit_concurrency(self, destination, sequence):
-            self.log.logging( "TransportZigpy", "Debug", "transport_request: _limit_concurrency %s %s" %(destination, sequence))
-            if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:
-                self.log.logging(
-                    "TransportZigpy",
-                    "Debug",
-                    "ZigyTransport: process_raw_command Request %s skipped NwkId: %s not reachable - %s %s %s" % (
-                        sequence, _nwkid, _ieee, str(self._currently_not_reachable),self._currently_waiting_requests_list[_ieee] ),
-                    _nwkid,
-                )
-                return
-            
-            result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout )
-            self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s)" %( _ieee, Profile, type(Profile), Cluster, type(Cluster)))
+    if delay:
+        self.log.logging( "TransportZigpy", "Debug", "transport_request: delay for %s seconds" % delay)
+        await asyncio.sleep(delay)
+        
+    async with _limit_concurrency(self, destination, sequence):
 
+        self.log.logging( "TransportZigpy", "Debug", "transport_request: _limit_concurrency %s %s" %(destination, sequence))
+        if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:
+            self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command Request %s skipped NwkId: %s not reachable - %s %s %s" % (
+                sequence, _nwkid, _ieee, str(self._currently_not_reachable),self._currently_waiting_requests_list[_ieee] ), _nwkid, )
+            return
+
+        max_retry = MAX_ATTEMPS_REQUEST if self.pluginconf.pluginConf["PluginRetrys"] else 1
+
+        self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s) - Max Attemps: %s" %( 
+            _ieee, Profile, type(Profile), Cluster, type(Cluster), max_retry))
+
+        for attempt in range(max_retry):  
+            try:   
+                result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout )
+
+            except DeliveryError as e:
+                # This could be relevant to APS NACK after retry
+                # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
+                if attempt == max_retry - 1:
+                    self.log.logging("TransportError", "Debug", "| %s | %s | %04x | %04x | %s | %s | %s | %s" %( 
+                        e, destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout), _nwkid )
+                msg = str(e)
+                try:
+                    s1 =  msg.split(':')
+                    s2 = s1[len(s1)-1].split('>')
+                    result = int( s2[0] )
+                except Exception  as f:
+                    result = 0xB6
+                    
+                if _ieee not in self._currently_not_reachable:
+                    self._currently_not_reachable.append( _ieee )
+            
+            if result == 0x00:
+                break
+                 
+            self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s) RETRY: %s due to %s/%s" %( 
+                _ieee, Profile, type(Profile), Cluster, type(Cluster), (attempt + 1), result, msg))
+            await asyncio.sleep( WAITING_TIME_BETWEEN_ATTEMPS )
+            
             # Slow down the through put when too many commands. Try to not overload the coordinators
             multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
             await asyncio.sleep( multi * WAITING_TIME_BETWEEN_COMMANDS)
-
-    except DeliveryError as e:
-        # This could be relevant to APS NACK after retry
-        # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
-        self.log.logging("TransportError", "Debug", "process_raw_command - DeliveryError : %s" % e, _nwkid)
-        self.log.logging("TransportError", "Debug", "    destination : %s" % destination, _nwkid)
-        self.log.logging("TransportError", "Debug", "    profile     : %04x" % Profile, _nwkid)
-        self.log.logging("TransportError", "Debug", "    cluster     : %04x" % Cluster, _nwkid)
-        self.log.logging("TransportError", "Debug", "    payload     : %s" % payload, _nwkid)
-        self.log.logging("TransportError", "Debug", "    expect_reply: %s" % ack_is_disable, _nwkid)
-        self.log.logging("TransportError", "Debug", "    use_ieee    : %s" % use_ieee, _nwkid)
-        self.log.logging("TransportError", "Debug", "    extended_to : %s" % extended_timeout, _nwkid)
-        msg = "%s" % e
-        result = 0xB6
-        if _ieee not in self._currently_not_reachable:
-            self._currently_not_reachable.append( _ieee )
 
     if not ack_is_disable:
         push_APS_ACK_NACKto_plugin(self, _nwkid, result, destination.lqi)
