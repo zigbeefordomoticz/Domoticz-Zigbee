@@ -636,10 +636,10 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                         e, destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout), _nwkid )
                 msg = str(e)
                 try:
-                    s1 =  msg.split(':')
+                    s1 = msg.split(':')
                     s2 = s1[len(s1)-1].split('>')
                     result = int( s2[0] )
-                except Exception  as f:
+                except Exception as f:
                     result = 0xB6
                     
                 if _ieee not in self._currently_not_reachable:
