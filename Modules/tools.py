@@ -1404,7 +1404,7 @@ def setConfigItem(Key=None, Attribute="", Value=None):
 
 def getConfigItem(Key=None, Attribute="", Default=None):
     
-    Domoticz.Log("Loading %s - %s into Domoticz sqlite Db" %( Key, Attribute))
+    Domoticz.Log("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
     
     if Default is None:
         Default = {}
