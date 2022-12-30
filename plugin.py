@@ -842,9 +842,9 @@ class BasePlugin:
         if nwkid not in self.ListOfDevices:
             return {}
         infos = {}
-        if  "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( "", {} ):
+        if "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( "", {} ):
             infos['model'] = self.ListOfDevices[ nwkid ]["Model"]
-        if  "Manufacturer" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Manufacturer"] not in ( "", {} ):
+        if "Manufacturer" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Manufacturer"] not in ( "", {} ):
             infos['manufacture'] = self.ListOfDevices[ nwkid ]["Manufacturer"]
 
         return infos
