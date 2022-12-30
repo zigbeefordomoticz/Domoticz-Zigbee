@@ -640,7 +640,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
         self.log.logging("TransportError", "Debug", "    extended_to : %s" % extended_timeout, _nwkid)
         self.log.logging("TransportError", "Debug", "    %s (%s)" %( e.status, type(e.status)), _nwkid)
         self.log.logging("TransportError", "Debug", "    0x%02x" %( int(e.status)), _nwkid)
-
+        msg = str(e)
         try:
             result = int(e.status)
         except Exception as _:
