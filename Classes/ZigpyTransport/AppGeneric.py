@@ -362,8 +362,6 @@ async def register_specific_endpoints(self):
         )
 
 
-
-
 def _retreive_backup( self ):
     from Modules.zigpyBackup import handle_zigpy_retreive_last_backup
     

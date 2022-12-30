@@ -333,13 +333,16 @@ async def worker_loop(self):
 
         except CommandNotRecognized as e:
             log_exception(self, "CommandNotRecognized", e, data["cmd"], data["datas"])
+            
+        except ValueError as e:
+            log_exception(self, "ValueError", e, data["cmd"], data["datas"])
 
         except InvalidResponse as e:
             log_exception(self, "InvalidResponse", e, data["cmd"], data["datas"])
 
         except InvalidCommandResponse as e:
             log_exception(self, "InvalidCommandResponse", e, data["cmd"], data["datas"])
-
+            
         except asyncio.TimeoutError as e:
             log_exception(self, "asyncio.TimeoutError", e, data["cmd"], data["datas"])
 
