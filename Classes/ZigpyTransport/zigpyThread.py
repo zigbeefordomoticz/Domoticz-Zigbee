@@ -638,8 +638,14 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
         self.log.logging("TransportError", "Debug", "    expect_reply: %s" % ack_is_disable, _nwkid)
         self.log.logging("TransportError", "Debug", "    use_ieee    : %s" % use_ieee, _nwkid)
         self.log.logging("TransportError", "Debug", "    extended_to : %s" % extended_timeout, _nwkid)
-        msg = "%s" % e
-        result = 0xB6
+        self.log.logging("TransportError", "Debug", "    %s (%s)" %( e.status, type(e.status)), _nwkid)
+        self.log.logging("TransportError", "Debug", "    0x%02x" %( int(e.status)), _nwkid)
+
+        try:
+            result = int(e.status)
+        except Exception as _:
+            result = 0xB6
+            
         if _ieee not in self._currently_not_reachable:
             self._currently_not_reachable.append( _ieee )
 
