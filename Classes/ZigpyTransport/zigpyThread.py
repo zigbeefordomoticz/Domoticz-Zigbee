@@ -450,7 +450,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     payload = bytes.fromhex(data["payload"])
     sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
-    extended_timeout = not data["RxOnIdle"] if "RxOnIdle" in data else False    # In case the device do not Rx on Idle, then we set extended_timeout to True if Ack expected
+    #extended_timeout = not data["RxOnIdle"] if "RxOnIdle" in data else False    # In case the device do not Rx on Idle, then we set extended_timeout to True if Ack expected
+    extended_timeout = False
     result = None
 
     delay = data["Delay"] if "Delay" in data else None
