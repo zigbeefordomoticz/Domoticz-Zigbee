@@ -41,7 +41,7 @@ from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
 
 MAX_ATTEMPS_REQUEST = 3
-WAITING_TIME_BETWEEN_ATTEMPS = 1
+WAITING_TIME_BETWEEN_ATTEMPS = 0.250
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 WAITING_TIME_BETWEEN_COMMANDS = 0.250
 
