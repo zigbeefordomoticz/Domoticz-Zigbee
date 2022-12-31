@@ -649,8 +649,8 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
             if result == 0x00:
                 break
                  
-            self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s) RETRY: %s due to %s/%s" %( 
-                _ieee, Profile, type(Profile), Cluster, type(Cluster), (attempt + 1), result, msg))
+            self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s) RETRY: %s due to %s" %( 
+                _ieee, Profile, type(Profile), Cluster, type(Cluster), (attempt + 1), result,))
             await asyncio.sleep( WAITING_TIME_BETWEEN_ATTEMPS )
             
             # Slow down the through put when too many commands. Try to not overload the coordinators
@@ -663,7 +663,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
     if result == 0x00 and _ieee in self._currently_not_reachable:
         self._currently_not_reachable.remove( _ieee )
 
-    self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command completed %s NwkId: %s result: %s msg: %s" % (sequence, _nwkid, result, msg), _nwkid, )
+    self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command completed %s NwkId: %s result: %s" % (sequence, _nwkid, result), _nwkid, )
 
 @contextlib.asynccontextmanager
 async def _limit_concurrency(self, destination, sequence):
