@@ -46,12 +46,12 @@ SETTINGS = {
             "TradfriKelvinStep": { "type": "int", "default": 51, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
         },
     },
-    "DomoticzEnvironment": {
-        "Order": 3,
-        "param": {
-            "port": { "type": "str", "default": "8080", "current": None, "restart": 0, "hidden": False, "Advanced": False, }
-        },
-    },
+    #"DomoticzEnvironment": {
+    #    "Order": 3,
+    #    "param": {
+    #        "port": { "type": "str", "default": "8080", "current": None, "restart": 0, "hidden": False, "Advanced": False, }
+    #    },
+    #},
     # Zigpy related parameters ( not applicable for ZiGate native)
     "Zigpy": {
         "Order": 4,

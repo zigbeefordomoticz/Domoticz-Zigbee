@@ -281,7 +281,7 @@ class WebServer(object):
             dzenv = {}
             # dzenv['proto'] = self.pluginconf.pluginConf['proto']
             # dzenv['host'] = self.pluginconf.pluginConf['host']
-            dzenv["port"] = self.pluginconf.pluginConf["port"]
+            # dzenv["port"] = self.pluginconf.pluginConf["port"]
 
             dzenv["WebUserName"] = self.WebUsername
             dzenv["WebPassword"] = self.WebPassword
