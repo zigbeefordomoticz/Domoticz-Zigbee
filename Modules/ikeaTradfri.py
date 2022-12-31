@@ -247,14 +247,14 @@ def ikea_air_purifier_cluster(self, Devices, NwkId, Ep, ClusterId, AttributeId, 
         MajDomoDevice(self, Devices, NwkId, Ep, "0202", fan_speed, Attribute_="0007", ) 
 
     elif AttributeId == "0008":
-        # Device runtime
+        # Filter runtime
         runtime = int(Data,16)
         lifetime = get_cluster_attribute_value( self, NwkId, Ep, ClusterId, "0002")
         if lifetime is not None:
-            lifetime = int(Data,16)
-            percentage = runtime // lifetime 
-            MajDomoDevice(self, Devices, NwkId, Ep, "0009", int( percentage))
-        self.log.logging( "Input", "Log", " --  Device runtime: %s" % ( Data), )
+            lifetime = int(lifetime,16)
+            percentage = 100 * runtime // lifetime
+            MajDomoDevice(self, Devices, NwkId, Ep, "0009", int(percentage))
+        self.log.logging( "Input", "Log", " --  Filter runtime: %s / %s" % ( runtime, lifetime), )
     
 
 def convert_fan_speed_into_level( fan_speed ):

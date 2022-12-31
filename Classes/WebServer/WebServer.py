@@ -1204,7 +1204,7 @@ class WebServer(object):
 
         if group_flag:
             addresse_mode = 0x01
-        elif not ack_Is_Disabled:
+        elif ack_Is_Disabled:
             addresse_mode = 0x07
         else:
             addresse_mode = 0x02
