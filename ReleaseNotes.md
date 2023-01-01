@@ -805,4 +805,3 @@ Mainly a technical version in order to split the code in pieces.
 - Bug fixing
 
 ## 8 September 2018 - 2.4.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/2.4.0>
-

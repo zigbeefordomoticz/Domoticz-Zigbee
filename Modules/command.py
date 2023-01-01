@@ -40,6 +40,7 @@ from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
                              tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
                              tuya_trv_mode, tuya_trv_onoff,
                              tuya_trv_switch_onoff)
+
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
@@ -419,7 +420,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         if DeviceType == "AirPurifierMode" and _model_name in ('STARKVIND Air purifier', ):
             ikea_air_purifier_mode( self, NWKID, EPout, 0 )
-            
+
         if ( DeviceType == "ACSwing" and "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "AC201A" ):
             casaia_swing_OnOff(self, NWKID, "00")
             UpdateDevice_v2(
