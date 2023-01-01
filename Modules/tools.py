@@ -170,13 +170,13 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
 
     found = False
     # 1- Check if found in ListOfDevices
-    #   Verify that Status is not 'UNKNOWN' otherwise condider not found
+    #   Verify that Status is not 'UNKNOW' otherwise condider not found
     if lookupNwkId in self.ListOfDevices and "Status" in self.ListOfDevices[lookupNwkId]:
         if "IEEE" in self.ListOfDevices[lookupNwkId]:
             ieee_from_nwkid = self.ListOfDevices[lookupNwkId]["IEEE"]
 
         # Found, let's check the Status
-        if self.ListOfDevices[lookupNwkId]["Status"] != "UNKNOWN":
+        if self.ListOfDevices[lookupNwkId]["Status"] != "UNKNOW":
             found = True
 
     # 2- We might have found it with the lookupNwkId
@@ -221,12 +221,12 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
                 exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
-        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOW", ):
+        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOWN", "UNKNOW", ):
             # We are in the discovery/provisioning process,
             # and the device got a new Short Id
-            # we need to restart from the begiging and remove all existing datastructutre.
+            # we need to restart from the beginning and remove all existing datastructures.
             # In case we receive asynchronously messages (which should be possible), they must be
-            # droped in the corresponding Decodexxx function
+            # dropped in the corresponding Decodexxx function
             # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
             del self.IEEE2NWK[lookupIEEE]
             # Delete the all Data Structure
@@ -1099,6 +1099,17 @@ def build_fcf(frame_type, manuf_spec, direction, disabled_default):
     #    frame_type, manuf_spec, direction, disabled_default, fcf, bin(fcf)))
     return "%02x" % fcf
 
+def get_cluster_attribute_value( self, key, endpoint, clusterId, AttributeId):
+    if (
+        key not in self.ListOfDevices
+        or "Ep" not in self.ListOfDevices[key]
+        or endpoint not in self.ListOfDevices[key]["Ep"]
+        or clusterId not in self.ListOfDevices[key]["Ep"][ endpoint ]
+        or AttributeId not in self.ListOfDevices[key]["Ep"][ endpoint ][ clusterId ]
+    ):
+        return None
+    return self.ListOfDevices[key]["Ep"][ endpoint ][ clusterId ][ AttributeId]
+
 
 # Functions to manage Device Attributes infos ( ConfigureReporting)
 def check_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
@@ -1393,7 +1404,7 @@ def setConfigItem(Key=None, Attribute="", Value=None):
 
 def getConfigItem(Key=None, Attribute="", Default=None):
     
-    Domoticz.Log("Loading %s - %s into Domoticz sqlite Db" %( Key, Attribute))
+    Domoticz.Log("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
     
     if Default is None:
         Default = {}
@@ -1621,7 +1632,8 @@ def build_list_of_device_model(self, force=False):
         if manufcode and "Manufacturer Name" in self.ListOfDevices[x]:
             manufname = self.ListOfDevices[x]["Manufacturer Name"]
             if manufname in ( "", {} ):
-                manufname = "unknow"
+                manufname = "unknown"
+                
             if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
                 self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
 

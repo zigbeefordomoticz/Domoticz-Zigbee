@@ -2046,6 +2046,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
 
     updLQI(self, addr, MsgLQI)
 
+    self.ListOfDevices[addr]["_rawNodeDescriptor"] = MsgData[8:]
     self.ListOfDevices[addr]["Max Buffer Size"] = max_buffer
     self.ListOfDevices[addr]["Max Rx"] = max_rx
     self.ListOfDevices[addr]["Max Tx"] = max_tx
@@ -2574,7 +2575,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
         self.log.logging(
             "Input",
             "Log",
-            "Removing this not completly provisionned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress),
+            "Removing this not completly provisioned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress),
         )
 
     elif self.ListOfDevices[sAddr]["Status"] == "Leave":
@@ -3337,7 +3338,7 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
     MsgSQN = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("Decode8120 - receiving Configure reporting response from unknow  %s" % MsgSrcAddr)
+        Domoticz.Error("Decode8120 - receiving Configure reporting response from unknown %s" % MsgSrcAddr)
         zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
 
@@ -3782,7 +3783,7 @@ def Decode8401_PST03Av225(self, Devices, MsgSrcAddr, MsgEp, Model, MsgZoneStatus
         self.log.logging(
             "Input",
             "Debug",
-            "Decode8401 - PST03A-v2.2.5, unknow EndPoint: " + MsgEp,
+            "Decode8401 - PST03A-v2.2.5, unknown EndPoint: " + MsgEp,
             MsgSrcAddr,
         )
     return

@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.3">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.4">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -28,12 +28,13 @@
             </options>
         </param>
         <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">
-            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
+            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet) or Socket. In case of Socket use the IP to put the remote ip</description>
             <options>
                 <option label="USB"   value="USB" />
                 <option label="DIN"   value="DIN" />
                 <option label="PI"    value="PI" />
                 <option label="TCPIP" value="Wifi"/>
+                <option label="Socket" value="Socket"/>
                 <option label="None"  value="None"/>
             </options>
         </param>
@@ -589,7 +590,16 @@ class BasePlugin:
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
+
+            if Parameters["Mode2"] == "Socket":
+                SerialPort = "socket://" + Parameters["IP"] + ':' + Parameters["Port"]
+                self.transport += "Socket"
+            else:
+                SerialPort = Parameters["SerialPort"]
+
+            SerialPort = Parameters["SerialPort"]
+            
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort)  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
           

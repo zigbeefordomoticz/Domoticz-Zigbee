@@ -505,6 +505,20 @@ SWITCH_LVL_MATRIX = {
         "Language": {
             "fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}},
     },
+    "AirPurifierMode": {
+        "00": (0, "00"),  # Off
+        "01": (1, "10"),  # Auto
+        "02": (2, "20"),  # Speed 1
+        "03": (2, "30"),  # Speed 2
+        "04": (2, "40"),  # Speed 3
+        "05": (2, "50"),  # Speed 4
+        "06": (2, "60"),  # Speed 5
+        "ForceUpdate": True,
+        "LevelNames": "Off|Auto|Spd1|Spd2|Spd3|Spd4|Spd5",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Auto|Vit1|Vit2|Vit3|Vit4|V5"}},
+    },
+    
     "FanControl": {
         "00": (0, "00"),  # Off
         "05": (1, "10"),  # Auto
