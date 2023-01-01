@@ -202,6 +202,16 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         "--------->2   EPOut: %s DeviceType: %s WidgetID: %s" % (EPout, DeviceType, DeviceTypeWidgetId),
         NWKID,
     )
+
+    if (
+        NWKID in self.ListOfDevices
+        and "Health" in self.ListOfDevices[NWKID] 
+        and self.ListOfDevices[NWKID]["Health"] == "Disabled"
+    ):
+        self.log.logging("Command", "Error", "You tried to action a disabled device: %s/%s" % (Devices[Unit].Name, NWKID), NWKID)
+        return
+
+
     # Sanity Check
     forceUpdateDev = False
     if DeviceType in SWITCH_LVL_MATRIX and "ForceUpdate" in SWITCH_LVL_MATRIX[DeviceType]:

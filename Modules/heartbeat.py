@@ -321,6 +321,14 @@ def checkHealth(self, NwkId):
     # Checking current state of the this Nwk
     if "Health" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Health"] = ""
+        
+    if "Param" in self.ListOfDevices[NwkId] and "Disabled" in self.ListOfDevices[NwkId]["Param"]:
+        if self.ListOfDevices[NwkId]["Param"]["Disabled"]:
+            self.ListOfDevices[NwkId]["Health"] = "Disabled"
+            return False
+        else:
+            self.ListOfDevices[NwkId]["Health"] = ""
+            
 
     if "Stamp" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Stamp"] = {'LastPing': 0, 'LastSeen': 0}
@@ -353,9 +361,7 @@ def checkHealth(self, NwkId):
         self.ListOfDevices[NwkId]["Health"] = "Not seen last 24hours"
 
     # If device flag as Not Reachable, don't do anything
-    return (
-        "Health" not in self.ListOfDevices[NwkId]
-        or self.ListOfDevices[NwkId]["Health"] != "Not Reachable")
+    return ( "Health" not in self.ListOfDevices[NwkId] or self.ListOfDevices[NwkId]["Health"] != "Not Reachable")
 
 
 def pingRetryDueToBadHealth(self, NwkId):
