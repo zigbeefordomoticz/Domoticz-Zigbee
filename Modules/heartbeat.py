@@ -321,15 +321,7 @@ def checkHealth(self, NwkId):
     # Checking current state of the this Nwk
     if "Health" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Health"] = ""
-        
-    if "Param" in self.ListOfDevices[NwkId] and "Disabled" in self.ListOfDevices[NwkId]["Param"]:
-        if self.ListOfDevices[NwkId]["Param"]["Disabled"]:
-            self.ListOfDevices[NwkId]["Health"] = "Disabled"
-            return False
-        else:
-            self.ListOfDevices[NwkId]["Health"] = ""
-            
-
+                    
     if "Stamp" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Stamp"] = {'LastPing': 0, 'LastSeen': 0}
         self.ListOfDevices[NwkId]["Health"] = "unknown"
@@ -818,6 +810,13 @@ def processListOfDevices(self, Devices):
             self.log.logging("Heartbeat", "Debug", "Bad devices detected (empty one), remove it, adr:" + str(NWKID), NWKID)
             entriesToBeRemoved.append(NWKID)
             continue
+
+        if "Param" in self.ListOfDevices[NWKID] and "Disabled" in self.ListOfDevices[NWKID]["Param"]:
+            if self.ListOfDevices[NWKID]["Param"]["Disabled"]:
+                self.ListOfDevices[NWKID]["Health"] = "Disabled"
+                continue
+            else:
+                self.ListOfDevices[NWKID]["Health"] = ""
 
         status = self.ListOfDevices[NWKID]["Status"]
         if self.ListOfDevices[NWKID]["RIA"] not in ( "", {}):
