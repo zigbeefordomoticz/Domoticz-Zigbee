@@ -25,6 +25,8 @@ Release Numbering
 - [Hardware] - ADEO LEXMAN Smart Plug 16A
 
 - [Technical] - Improvment of storing Node Descriptor
+- [Technical] - zigpy version from 23 Dec. 2022
+
 
 ## 20 Dec. 2022 - stable6 - 6.3.008
 
