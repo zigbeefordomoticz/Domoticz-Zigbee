@@ -27,6 +27,7 @@ Release Numbering
 - [Technical] - Improvment of storing Node Descriptor
 - [Technical] - zigpy version from 23 Dec. 2022
 
+
 ## 20 Dec. 2022 - stable6 - 6.3.008
 
 - [Hardware] - NOUS A1Z plug
