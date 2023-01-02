@@ -367,9 +367,9 @@ def LQIreq(self, nwkid="0000"):
         nwkid != "0000"
         and nwkid in self.ListOfDevices
         and "Health" in self.ListOfDevices[nwkid]
-        and self.ListOfDevices[nwkid]["Health"] == "Not Reachable"
+        and self.ListOfDevices[nwkid]["Health"] in ( "Not Reachable", "Disabled", )
     ):
-        self.logging("Debug", "LQIreq - skiping device %s which is Not Reachable" % nwkid)
+        self.logging("Debug", "LQIreq - skiping device %s which is Not Reachable or Disabled" % nwkid)
         self.Neighbours[nwkid]["Status"] = "NotReachable"
         return
 

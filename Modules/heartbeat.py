@@ -321,7 +321,10 @@ def checkHealth(self, NwkId):
     # Checking current state of the this Nwk
     if "Health" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Health"] = ""
-                    
+        
+    if self.ListOfDevices[NwkId]["Health"] == "Disabled":
+        return False
+                 
     if "Stamp" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Stamp"] = {'LastPing': 0, 'LastSeen': 0}
         self.ListOfDevices[NwkId]["Health"] = "unknown"
@@ -812,12 +815,16 @@ def processListOfDevices(self, Devices):
             continue
 
         if "Param" in self.ListOfDevices[NWKID] and "Disabled" in self.ListOfDevices[NWKID]["Param"]:
-            if self.ListOfDevices[NWKID]["Param"]["Disabled"]:
-                self.ListOfDevices[NWKID]["Health"] = "Disabled"
+            if self.ListOfDevices[NWKID]["Param"]["Disabled"] and self.ListOfDevices[NWKID]["Health"] == "Disabled":
                 continue
-            else:
+            
+            if not self.ListOfDevices[NWKID]["Param"]["Disabled"] and self.ListOfDevices[NWKID]["Health"] == "Disabled":
+                # Looks like it was disabled and it is not any more. 
+                # We need to refresh it
                 self.ListOfDevices[NWKID]["Health"] = ""
-
+                del self.ListOfDevices[NWKID]["Stamp"]
+                self.ListOfDevices[NWKID]["RIA"] = "0"
+                
         status = self.ListOfDevices[NWKID]["Status"]
         if self.ListOfDevices[NWKID]["RIA"] not in ( "", {}):
             RIA = int(self.ListOfDevices[NWKID]["RIA"])

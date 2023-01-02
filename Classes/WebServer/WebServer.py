@@ -884,20 +884,33 @@ class WebServer(object):
             for x in data:
                 if "ZDeviceName" in x and "IEEE" in x:
                     for dev in self.ListOfDevices:
-                        if self.ListOfDevices[dev]["IEEE"] == x["IEEE"]:
-                            if self.ListOfDevices[dev]["ZDeviceName"] != x["ZDeviceName"]:
-                                self.ListOfDevices[dev]["ZDeviceName"] = x["ZDeviceName"]
-                                self.logging(
-                                    "Debug",
-                                    "Updating ZDeviceName to %s for IEEE: %s NWKID: %s" % (self.ListOfDevices[dev]["ZDeviceName"], self.ListOfDevices[dev]["IEEE"], dev),
-                                )
-                            if "Param" not in self.ListOfDevices[dev] or self.ListOfDevices[dev]["Param"] != x["Param"]:
-                                self.ListOfDevices[dev]["Param"] = check_device_param(self, dev, x["Param"])
-                                self.logging(
-                                    "Debug",
-                                    "Updating Param to %s for IEEE: %s NWKID: %s" % (self.ListOfDevices[dev]["Param"], self.ListOfDevices[dev]["IEEE"], dev),
-                                )
-                                self.ListOfDevices[dev]["CheckParam"] = True
+                        if self.ListOfDevices[dev]["IEEE"] != x["IEEE"]:
+                            continue
+                        
+                        if self.ListOfDevices[dev]["ZDeviceName"] != x["ZDeviceName"]:
+                            self.ListOfDevices[dev]["ZDeviceName"] = x["ZDeviceName"]
+                            self.logging( "Debug", "Updating ZDeviceName to %s for IEEE: %s NWKID: %s" % (
+                                self.ListOfDevices[dev]["ZDeviceName"], self.ListOfDevices[dev]["IEEE"], dev), )
+                        
+                        if "Param" in self.ListOfDevices[dev] and self.ListOfDevices[dev]["Param"] == x["Param"]:
+                            continue
+                        
+                        _new_param = check_device_param(self, dev, x["Param"])
+                        if (
+                            "Disabled" in _new_param 
+                            and "Disabled" in self.ListOfDevices[dev]["Param"]
+                            and self.ListOfDevices[dev]["Param"]["Disabled"] != _new_param["Disabled"]
+                        ):
+                            if _new_param["Disabled"]:
+                                self.ListOfDevices[dev]["Health"] = "Disabled"
+                            else:
+                                self.ListOfDevices[dev]["Health"] = ""
+                                
+                        self.ListOfDevices[dev]["Param"] = _new_param
+                        
+                        self.logging( "Debug", "Updating Param to %s for IEEE: %s NWKID: %s" % (
+                            self.ListOfDevices[dev]["Param"], self.ListOfDevices[dev]["IEEE"], dev), )
+                        self.ListOfDevices[dev]["CheckParam"] = True
                 else:
                     Domoticz.Error("wrong data received: %s" % data)
 
