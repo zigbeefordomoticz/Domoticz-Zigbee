@@ -186,6 +186,16 @@ def ReadCluster(
         # Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
         return
 
+    if (
+        MsgSrcAddr in self.ListOfDevices
+        and "Health" in self.ListOfDevices[MsgSrcAddr] 
+        and self.ListOfDevices[MsgSrcAddr]["Health"] == "Disabled"
+    ):
+        # If the device has been disabled, just drop the message
+        self.log.logging("Command", "Debug", "disabled device: %s/%s droping message " % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr)
+        
+        return
+    
     # Can we receive a Custer while the Device is not yet in the ListOfDevices ??????
     # This looks not possible to me !!!!!!!
     # This could be in the case of Xiaomi sending Cluster 0x0000 before anything is done on the plugin.
@@ -3713,7 +3723,6 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
 
     conso = raw_value  # Raw value
-
     if "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET2", ):
         value = round(conso / 10, 3)
         
