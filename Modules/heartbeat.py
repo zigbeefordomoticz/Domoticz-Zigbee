@@ -708,24 +708,16 @@ def processKnownDevices(self, Devices, NWKID):
         mgtm_binding(self, NWKID, "BindingTable")
 
     # If corresponding Attributes not present, let's do a Request Node Description
-    if night_shift_jobs( self ) and not enabledEndDevicePolling and intHB != 0 and ((intHB % NODE_DESCRIPTOR_REFRESH) == 0):
-        req_node_descriptor = False
+    if night_shift_jobs( self ) and _mainPowered and intHB != 0 and ((intHB % NODE_DESCRIPTOR_REFRESH) == 0):
         if (
-            "Manufacturer" not in self.ListOfDevices[NWKID]
+            "Manufacturer" not in self.ListOfDevices[NWKID] 
+            or self.ListOfDevices[NWKID]["Manufacturer"] in ( "", {} )
             or "DeviceType" not in self.ListOfDevices[NWKID]
             or "LogicalType" not in self.ListOfDevices[NWKID]
             or "PowerSource" not in self.ListOfDevices[NWKID]
             or "ReceiveOnIdle" not in self.ListOfDevices[NWKID]
+            or "_rawNodeDescriptor" not in self.ListOfDevices[NWKID]
         ):
-            req_node_descriptor = True
-        if (
-            "Manufacturer" in self.ListOfDevices[NWKID]
-            and self.ListOfDevices[NWKID]["Manufacturer"] == ""
-        ):
-            req_node_descriptor = True
-
-        if ( req_node_descriptor and night_shift_jobs( self ) ):
-            
             if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
                 #sendZigateCmd(self, "0042", str(NWKID), ackIsDisabled=True)  # Request a Node Descriptor
                 zdp_node_descriptor_request(self, NWKID)

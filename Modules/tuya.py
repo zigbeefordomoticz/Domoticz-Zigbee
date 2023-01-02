@@ -6,7 +6,8 @@
 """
     Module: tuya.py
 
-    Description: Tuya specific
+    Descripti
+    on: Tuya specific
 
 """
 
@@ -62,7 +63,11 @@ TUYA_SMARTAIR_MANUFACTURER = (
     "_TZE200_yvx5lh6k",
 )
 
-TUYA_TEMP_HUMI = ( "_TZE200_bjawzodf", "_TZE200_bq5c8xfe", )
+TUYA_TEMP_HUMI = ( 
+    "_TZE200_bjawzodf", 
+    "_TZE200_bq5c8xfe", 
+    "_TZE200_qoy0ekbd" 
+)
 
 TUYA_SIREN_MANUFACTURER = (
     "_TZE200_d0yu2xgi",
@@ -1435,10 +1440,14 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", int(data, 16))
        
     elif dp == 0x02:   # Humi
-        humi = int(data, 16) // 10
+        if (
+            'Manufacturer Name' in self.ListOfDevices[ NwkId ]
+            and self.ListOfDevices[ NwkId ][ 'Manufacturer Name' ] not in ( '_TZE200_qoy0ekbd',)
+        ):
+            humi = int(data, 16) // 10
         store_tuya_attribute(self, NwkId, "Humi", humi)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0405", humi)
-        store_tuya_attribute(self, NwkId, "Humi", data)
+        checkAndStoreAttributeValue(self, NwkId, "01", "0405", "0000", humi)
         
     elif dp == 0x04:   # Battery ????
         store_tuya_attribute(self, NwkId, "Battery", data)

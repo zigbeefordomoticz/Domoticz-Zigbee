@@ -1263,7 +1263,7 @@ def display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFil
     _completion = round(((int(MsgFileOffset, 16) / _size) * 100), 1)
 
     if (_completion % 5) == 0:
-        logging(self, "Status", "Firmware transfert for %s/%s - Progress: %4s %%" % (MsgSrcAddr, MsgEP, _completion))
+        logging(self, "Status", "Firmware transfer for %s/%s - Progress: %4s %%" % (MsgSrcAddr, MsgEP, _completion))
         if "Firmware Update" not in self.PluginHealth:
             self.PluginHealth["Firmware Update"] = {}
 

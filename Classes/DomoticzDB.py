@@ -226,7 +226,11 @@ class DomoticzDB_Hardware:
 
     def get_loglevel_value(self):
         # sourcery skip: replace-interpolation-with-fstring
-        if self.hardware and ("%s" %self.HardwareID) in self.hardware: 
+        if (
+            self.hardware 
+            and ("%s" %self.HardwareID) in self.hardware
+            and 'LogLevel' in self.hardware[ '%s' %self.HardwareID ]
+        ): 
             self.logging("Debug", "get_loglevel_value %s " %(self.hardware[ '%s' %self.HardwareID ]['LogLevel']))
             return self.hardware[ '%s' %self.HardwareID ]['LogLevel']
         return 7
