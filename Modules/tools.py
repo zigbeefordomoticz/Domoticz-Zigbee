@@ -1404,7 +1404,7 @@ def setConfigItem(Key=None, Attribute="", Value=None):
 
 def getConfigItem(Key=None, Attribute="", Default=None):
     
-    Domoticz.Log("Loading %s - %s into Domoticz sqlite Db" %( Key, Attribute))
+    Domoticz.Log("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
     
     if Default is None:
         Default = {}
@@ -1633,6 +1633,7 @@ def build_list_of_device_model(self, force=False):
             manufname = self.ListOfDevices[x]["Manufacturer Name"]
             if manufname in ( "", {} ):
                 manufname = "unknown"
+                
             if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
                 self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
 

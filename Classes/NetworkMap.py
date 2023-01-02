@@ -176,8 +176,10 @@ def _initNeighboursTableEntry(self, nwkid):
     if self.pluginconf.pluginConf["TopologyV2"]:
         mgmt_rtg(self, nwkid, "RoutingTable")
         if "IEEE" in self.ListOfDevices[ nwkid ]:
-            zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
-
+            if "Capability" in self.ListOfDevices[ nwkid ] and "Full-Function Device" in self.ListOfDevices[ nwkid ]["Capability"]:
+                zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
+            else:
+                zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="00")
 
 def is_a_router(self, nwkid):
     if nwkid == "0000":
