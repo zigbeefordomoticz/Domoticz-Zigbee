@@ -1099,6 +1099,17 @@ def build_fcf(frame_type, manuf_spec, direction, disabled_default):
     #    frame_type, manuf_spec, direction, disabled_default, fcf, bin(fcf)))
     return "%02x" % fcf
 
+def get_cluster_attribute_value( self, key, endpoint, clusterId, AttributeId):
+    if (
+        key not in self.ListOfDevices
+        or "Ep" not in self.ListOfDevices[key]
+        or endpoint not in self.ListOfDevices[key]["Ep"]
+        or clusterId not in self.ListOfDevices[key]["Ep"][ endpoint ]
+        or AttributeId not in self.ListOfDevices[key]["Ep"][ endpoint ][ clusterId ]
+    ):
+        return None
+    return self.ListOfDevices[key]["Ep"][ endpoint ][ clusterId ][ AttributeId]
+
 
 # Functions to manage Device Attributes infos ( ConfigureReporting)
 def check_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
@@ -1393,7 +1404,7 @@ def setConfigItem(Key=None, Attribute="", Value=None):
 
 def getConfigItem(Key=None, Attribute="", Default=None):
     
-    Domoticz.Log("Loading %s - %s into Domoticz sqlite Db" %( Key, Attribute))
+    Domoticz.Log("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
     
     if Default is None:
         Default = {}
@@ -1622,6 +1633,7 @@ def build_list_of_device_model(self, force=False):
             manufname = self.ListOfDevices[x]["Manufacturer Name"]
             if manufname in ( "", {} ):
                 manufname = "unknown"
+                
             if manufname not in self.pluginParameters["NetworkDevices"][ manufcode ]:
                 self.pluginParameters["NetworkDevices"][ manufcode ][ manufname ] = []
 

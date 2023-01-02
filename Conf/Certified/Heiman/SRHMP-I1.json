@@ -1,0 +1,101 @@
+{
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0001": "",
+			"0003": "",
+			"0004": "",
+			"0009": "",
+			"0019": "",
+			"0500": "",
+			"0502": "",
+			"Type": "AlarmWD"
+		}
+	},
+	"Type": "",
+	"ClusterToBind": [
+		"0001",
+		"0500",
+		"0502"
+	],
+	"ConfigureReporting": {
+		"0001": {
+			"Attributes": {
+				"0020": {
+					"DataType": "20",
+					"MinInterval": "012C",
+					"MaxInterval": "A8C0",
+					"TimeOut": "0000",
+					"Change": "01"
+				}
+			}
+		},
+		"0500": {
+			"Attributes": {
+				"0000": {
+					"DataType": "30",
+					"MinInterval": "003C",
+					"MaxInterval": "0384",
+					"TimeOut": "0000",
+					"Change": "01"
+				},
+				"0001": {
+					"DataType": "31",
+					"MinInterval": "003C",
+					"MaxInterval": "0384",
+					"TimeOut": "0000",
+					"Change": "0001"
+				},
+				"0002": {
+					"DataType": "19",
+					"MinInterval": "003C",
+					"MaxInterval": "0384",
+					"TimeOut": "0000",
+					"Change": "0001"
+				}
+			}
+		},
+		"0502": {
+			"Attributes": {
+				"0000": {
+					"DataType": "21",
+					"MinInterval": "003C",
+					"MaxInterval": "0384",
+					"TimeOut": "0000",
+					"Change": "0001"
+				}
+			}
+		}
+	},
+	"ReadAttributes": {
+		"0000": [
+			"0000",
+			"0001",
+			"0002",
+			"0003",
+			"0004",
+			"0005",
+			"0006",
+			"0007"
+		],
+		"0001": [
+			"0020",
+			"0021"
+		],
+		"0500": [
+			"0000",
+			"0001",
+			"0002",
+			"0010",
+			"0011"
+		],
+		"0502": [
+			"0000"
+		]
+	},
+	"BatteryDevice": 1,
+	"BatteryPercentageConverter": 2,
+	"Param": {
+		"alarmDuration": 0
+	}
+}

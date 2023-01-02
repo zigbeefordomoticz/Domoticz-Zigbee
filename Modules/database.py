@@ -17,14 +17,12 @@ import time
 from typing import Dict
 
 import Domoticz
-
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.zlinky import update_zlinky_device_model_if_needed
-
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -84,6 +82,14 @@ MANDATORY_ATTRIBUTES = (
     "ZDeviceID",
     "ZDeviceName",
     "Param",
+    "_rawNodeDescriptor",
+    "Max Buffer Size",
+    "Max Rx",
+    "Max Tx",
+    "macapa",
+    "bitfield",
+    "server_mask",
+    "descriptor_capability",
 )
 
 # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.

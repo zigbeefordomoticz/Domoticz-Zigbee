@@ -28,6 +28,7 @@ from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
 from Modules.tuya import tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
+from Zigbee.zdpCommands import zdp_node_descriptor_request
 
 DELAY_BETWEEN_2_DEVICEANNOUCEMENT = 20
 
@@ -193,6 +194,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         if mainPoweredDevice(self, NwkId):
             enforce_configure_reporting( self, NwkId)
             read_attributes_if_needed( self, NwkId)
+            zdp_node_descriptor_request(self, NwkId)
 
         if reseted_device:
             self.log.logging("DeviceAnnoucement", "Debug", "--> Device reset, redoing provisioning", NwkId)
@@ -219,6 +221,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
                 enforce_configure_reporting( self, NwkId)
             restart_plugin_reset_ModuleIRCode(self, NwkId)
             read_attributes_if_needed( self, NwkId)
+            zdp_node_descriptor_request(self, NwkId)
 
             if reseted_device:
                 # IAS Enrollment if required
