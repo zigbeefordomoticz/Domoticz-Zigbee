@@ -18,6 +18,14 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+##    Jan. 2023 - stable6 - 6.3.009
+
+- [Hardware] - Managing Power state for TS0001 smart relay
+- [Hardware] - Integrating Ikea Air Purifier (@rhuijben)
+- [Hardware] - ADEO LEXMAN Smart Plug 16A
+
+- [Technical] - Improvment of storing Node Descriptor
+
 ## 20 Dec. 2022 - stable6 - 6.3.008
 
 - [Hardware] - NOUS A1Z plug
