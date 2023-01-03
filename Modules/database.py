@@ -181,7 +181,11 @@ def LoadDeviceList(self):
         fixing_iSQN_None(self, addr)
 
         # Check if 566 fixs are needed
-        if self.pluginconf.pluginConf["Bug566"] and "Model" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["Model"] == "TRADFRI control outlet":
+        if (
+            self.pluginconf.pluginConf["Bug566"] 
+            and "Model" in self.ListOfDevices[addr] 
+            and self.ListOfDevices[addr]["Model"] == "TRADFRI control outlet"
+        ):
             fixing_Issue566(self, addr)
 
         if self.pluginconf.pluginConf["resetReadAttributes"]:
@@ -198,11 +202,17 @@ def LoadDeviceList(self):
             and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
         ):
             Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
+
+        if (
+            "Param" in self.ListOfDevices[addr] 
+            and "Disabled" in self.ListOfDevices[addr]["Param"] 
+            and self.ListOfDevices[addr]["Param"][ "Disabled" ]
+        ):
+            self.ListOfDevices[addr]["Health"] = "Disabled"
             
         if "Model" in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]["Model"] == "ZLinky_TIC":
             # We need to adjust the Model to the right mode
             update_zlinky_device_model_if_needed(self, addr)
-
 
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
@@ -764,6 +774,9 @@ def load_new_param_definition(self):
             #     if self.DeviceConf[ model_name ]['Param'][ param ] != self.pluginconf.pluginConf[ param ]:
             #         self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ param ]
 
+            if param == "Disabled" and "Disabled" in self.ListOfDevices[key]["Param"] and self.ListOfDevices[key]["Param"][ "Disabled" ]:
+                self.ListOfDevices[key]["Health"] = "Disabled"
+                
             if param in ("PowerOnAfterOffOn"):
                 if "Manufacturer" not in self.ListOfDevices[key]:
                     return

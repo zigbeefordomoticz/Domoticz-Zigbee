@@ -35,6 +35,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         zigpy_plugin_sanity_check(self, NWKID)
         return
 
+    if ( "Health" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Health"] == "Disabled" ):
+        # If the device has been disabled, just drop the message
+        self.log.logging("Widget", "Debug", "MajDomoDevice - disabled device: %s/%s droping message " % (NWKID, Ep), NWKID)
+        return
+
     if Ep not in self.ListOfDevices[NWKID]["Ep"]:
         self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NWKID, Ep), NWKID)
         return
@@ -59,6 +64,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         if not zigpy_plugin_sanity_check(self, NWKID):
             zdp_IEEE_address_request(self, NWKID, NWKID, u8RequestType="00", u8StartIndex="00")
         return
+
 
     if "IEEE" not in self.ListOfDevices[NWKID]:
         self.log.logging("Widget", "Error", "MajDomoDevice - no IEEE for %s" % NWKID, NWKID)

@@ -1283,13 +1283,8 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     if MsgStatus == "00":
         timeStamped(self, MsgSrcAddr, 0x8011)
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-        if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] != "Live":
-            self.log.logging(
-                "Input",
-                "Log",
-                "Receive an APS Ack from %s, let's put the device back to Live" % MsgSrcAddr,
-                MsgSrcAddr,
-            )
+        if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Live", "Disabled"):
+            self.log.logging( "Input", "Log", "Receive an APS Ack from %s, let's put the device back to Live" % MsgSrcAddr, MsgSrcAddr, )
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
         return
 
@@ -1310,6 +1305,10 @@ def set_health_state(self, MsgSrcAddr, ClusterId, Status):
 
     if "Health" not in self.ListOfDevices[MsgSrcAddr]:
         return
+    if self.ListOfDevices[MsgSrcAddr]["Health"] == "Disabled":
+        # If the device has been disabled, just drop the message
+        return
+
     if self.ListOfDevices[MsgSrcAddr]["Health"] != "Not Reachable":
         self.ListOfDevices[MsgSrcAddr]["Health"] = "Not Reachable"
 
@@ -3138,7 +3137,7 @@ def read_report_attributes(
             MsgSrcAddr,
         )
 
-        if "Health" in self.ListOfDevices[MsgSrcAddr]:
+        if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Disabled",):
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
 
         updSQN(self, MsgSrcAddr, str(MsgSQN))
@@ -3597,7 +3596,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
     
-    if "Health" in self.ListOfDevices[MsgSrcAddr]:
+    if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Disabled",):
         self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
 
     timeStamped(self, MsgSrcAddr, 0x8401)
