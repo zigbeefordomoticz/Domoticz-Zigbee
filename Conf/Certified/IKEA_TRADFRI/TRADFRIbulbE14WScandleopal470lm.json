@@ -1,4 +1,6 @@
 {
+    "_blakadder": "https://zigbee.blakadder.com/Ikea_LED1949C5.html",
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1416",
     "Ep": {
         "01":{
             "0000":"",
