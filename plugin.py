@@ -305,8 +305,12 @@ class BasePlugin:
             self.onStop()
             return
 
-        if Parameters["Mode5"] == "" or "http://" not in Parameters["Mode5"].lower():
-            Domoticz.Error("Please cross-check the Domoticz Hardware settingi for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
+        if (
+            Parameters["Mode5"] == "" 
+            or "http://" not in Parameters["Mode5"].lower() 
+            or "https://" not in Parameters["Mode5"].lower()
+        ):
+            Domoticz.Error("Please cross-check the Domoticz Hardware setting for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
             self.onStop()
 
         # Set plugin heartbeat to 1s
