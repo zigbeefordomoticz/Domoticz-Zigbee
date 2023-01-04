@@ -1470,7 +1470,7 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     if dp == 0x01:
         # Occupancy
         store_tuya_attribute(self, NwkId, "Occupancy", data)
-        MajDomoDevice(self, Devices, NwkId, srcEp, "0406", (int(data, 16) ))
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0406", data )
         checkAndStoreAttributeValue(self, NwkId, "01", "0406", "0000", data)
 
     elif dp == 0x04:
