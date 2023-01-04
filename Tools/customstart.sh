@@ -16,5 +16,8 @@ if test -d /opt/domoticz/userdata/plugins/Domoticz-Zigbee; then
 else
     cd /opt/domoticz/userdata/plugins
     git clone https://github.com/zigbeefordomoticz/Domoticz-Zigbee.git
+    cd Domoticz-Zigbee
+    git config --add submodule.recurse true
+    git submodule update --init --recursive
     pip3 install -r /opt/domoticz/userdata/plugins/Domoticz-Zigbee/requirements.txt
 fi
