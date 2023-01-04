@@ -23,7 +23,6 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.zlinky import update_zlinky_device_model_if_needed
-from Modules.profalux import profalux_fix_remote_device_model
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -927,3 +926,24 @@ def cleanup_table_entries( self):
                         one_more_time = True
                         break
                     idx += 1
+                    
+def profalux_fix_remote_device_model(self):
+    
+    for x in self.ListOfDevices:
+        
+        if 'ZDeviceID' not in self.ListOfDevices[ x ] or self.ListOfDevices[ x ]['ZDeviceID'] != '0201':
+            continue
+        if "Manufacturer" not in self.ListOfDevices[ x ]:
+            continue
+        if self.ListOfDevices[ x ]["Manufacturer"] != "1110":
+            continue
+        if self.ListOfDevices[ x ]["Manufacturer Name"] != "Profalux":
+            self.ListOfDevices[ x ]["Manufacturer Name"] = "Profalux"
+        if "MacCapa" not in self.ListOfDevices[x]:
+            continue
+        if self.ListOfDevices[x]["MacCapa"] != "80":
+            continue
+        if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
+            self.log.logging( "Profalux", "Status", "++++++ Model Name for %s forced to : %s" % (
+                x, self.ListOfDevices[x]["Model"],), x)
+            self.ListOfDevices[x]["Model"] = "Telecommande-Profalux"
