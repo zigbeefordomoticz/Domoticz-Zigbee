@@ -36,7 +36,7 @@ from Modules.tuya import (TUYA_2GANGS_DIMMER_MANUFACTURER,
                           TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER,
                           TUYA_ENERGY_MANUFACTURER, TUYA_SIREN_MANUFACTURER,
                           TUYA_SMARTAIR_MANUFACTURER, TUYA_SMOKE_MANUFACTURER,
-                          TUYA_SWITCH_MANUFACTURER, TUYA_TEMP_HUMI,
+                          TUYA_SWITCH_MANUFACTURER, TUYA_TEMP_HUMI, TUYA_MOTION,
                           TUYA_THERMOSTAT_MANUFACTURER, TUYA_TS0601_MODEL_NAME,
                           TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
                           TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER,
@@ -422,8 +422,11 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 
             if manufacturer_name in TUYA_TEMP_HUMI:  # Temp/Humi Sensor
                 modelName += "-temphumi"
+                
+            elif manufacturer_name in TUYA_MOTION:
+                modelName += "-motion"
 
-            if manufacturer_name in TUYA_SMOKE_MANUFACTURER:  # Smoke detector
+            elif manufacturer_name in TUYA_SMOKE_MANUFACTURER:  # Smoke detector
                 modelName += "-smoke"
 
             elif manufacturer_name in TUYA_DIMMER_MANUFACTURER:  # Dimmer
