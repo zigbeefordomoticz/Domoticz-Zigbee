@@ -321,7 +321,10 @@ def checkHealth(self, NwkId):
     # Checking current state of the this Nwk
     if "Health" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Health"] = ""
-
+        
+    if self.ListOfDevices[NwkId]["Health"] == "Disabled":
+        return False
+                 
     if "Stamp" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Stamp"] = {'LastPing': 0, 'LastSeen': 0}
         self.ListOfDevices[NwkId]["Health"] = "unknown"
@@ -353,9 +356,7 @@ def checkHealth(self, NwkId):
         self.ListOfDevices[NwkId]["Health"] = "Not seen last 24hours"
 
     # If device flag as Not Reachable, don't do anything
-    return (
-        "Health" not in self.ListOfDevices[NwkId]
-        or self.ListOfDevices[NwkId]["Health"] != "Not Reachable")
+    return ( "Health" not in self.ListOfDevices[NwkId] or self.ListOfDevices[NwkId]["Health"] != "Not Reachable")
 
 
 def pingRetryDueToBadHealth(self, NwkId):
@@ -708,24 +709,16 @@ def processKnownDevices(self, Devices, NWKID):
         mgtm_binding(self, NWKID, "BindingTable")
 
     # If corresponding Attributes not present, let's do a Request Node Description
-    if night_shift_jobs( self ) and not enabledEndDevicePolling and intHB != 0 and ((intHB % NODE_DESCRIPTOR_REFRESH) == 0):
-        req_node_descriptor = False
+    if night_shift_jobs( self ) and _mainPowered and intHB != 0 and ((intHB % NODE_DESCRIPTOR_REFRESH) == 0):
         if (
-            "Manufacturer" not in self.ListOfDevices[NWKID]
+            "Manufacturer" not in self.ListOfDevices[NWKID] 
+            or self.ListOfDevices[NWKID]["Manufacturer"] in ( "", {} )
             or "DeviceType" not in self.ListOfDevices[NWKID]
             or "LogicalType" not in self.ListOfDevices[NWKID]
             or "PowerSource" not in self.ListOfDevices[NWKID]
             or "ReceiveOnIdle" not in self.ListOfDevices[NWKID]
+            or "_rawNodeDescriptor" not in self.ListOfDevices[NWKID]
         ):
-            req_node_descriptor = True
-        if (
-            "Manufacturer" in self.ListOfDevices[NWKID]
-            and self.ListOfDevices[NWKID]["Manufacturer"] == ""
-        ):
-            req_node_descriptor = True
-
-        if ( req_node_descriptor and night_shift_jobs( self ) ):
-            
             if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
                 #sendZigateCmd(self, "0042", str(NWKID), ackIsDisabled=True)  # Request a Node Descriptor
                 zdp_node_descriptor_request(self, NWKID)
@@ -813,6 +806,17 @@ def processListOfDevices(self, Devices):
             entriesToBeRemoved.append(NWKID)
             continue
 
+        if "Param" in self.ListOfDevices[NWKID] and "Disabled" in self.ListOfDevices[NWKID]["Param"]:
+            if self.ListOfDevices[NWKID]["Param"]["Disabled"] and self.ListOfDevices[NWKID]["Health"] == "Disabled":
+                continue
+            
+            if not self.ListOfDevices[NWKID]["Param"]["Disabled"] and self.ListOfDevices[NWKID]["Health"] == "Disabled":
+                # Looks like it was disabled and it is not any more. 
+                # We need to refresh it
+                self.ListOfDevices[NWKID]["Health"] = ""
+                del self.ListOfDevices[NWKID]["Stamp"]
+                self.ListOfDevices[NWKID]["RIA"] = "0"
+                
         status = self.ListOfDevices[NWKID]["Status"]
         if self.ListOfDevices[NWKID]["RIA"] not in ( "", {}):
             RIA = int(self.ListOfDevices[NWKID]["RIA"])

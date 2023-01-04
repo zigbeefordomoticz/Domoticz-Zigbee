@@ -59,6 +59,12 @@ TUYA_SMARTAIR_MANUFACTURER = (
     "_TZE200_yvx5lh6k",
 )
 
+TUYA_MOTION = (
+    "_TZE200_bh3n6gk8",
+    '_TZE200_3towulqd', 
+    '_TZE200_1ibpyhdc'
+)
+
 TUYA_TEMP_HUMI = ( 
     "_TZE200_bjawzodf", 
     "_TZE200_bq5c8xfe", 
@@ -191,7 +197,7 @@ TUYA_eTRV_MANUFACTURER = (
     "_TZE200_qc4fpmcn",
 )
 
-TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL + TUYA_SMOKE_MANUFACTURER + TUYA_TEMP_HUMI
+TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL + TUYA_SMOKE_MANUFACTURER + TUYA_TEMP_HUMI + TUYA_MOTION
 TUYA_MANUFACTURER_NAME = (
     TUYA_ENERGY_MANUFACTURER
     + TS011F_MANUF_NAME
@@ -215,6 +221,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_GARAGE_DOOR
     + TUYA_SMOKE_MANUFACTURER
     + TUYA_TEMP_HUMI
+    + TUYA_MOTION
 )
 
 
@@ -498,6 +505,10 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
 
     elif _ModelName == "TS0601-temphumi":
         tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+ 
+    elif _ModelName == "TS0601-motion":
+        tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        
         
     else:
         attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
@@ -1452,6 +1463,7 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
         
+
 def hack_ts0601(self, nwkid):
     # Purpose is to rename the Model name of potential working TS0601 as a Thermostat
     
@@ -1515,3 +1527,40 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
 
     if self.ListOfDevices[ nwkid ][ 'Model' ] != modelName:
         self.ListOfDevices[ nwkid ][ 'Model' ] = modelName
+
+def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    
+    self.log.logging("Tuya", "Log", "tuya_motion_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+
+    if dp == 0x01:
+        # Occupancy
+        store_tuya_attribute(self, NwkId, "Occupancy", data)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0406", data )
+        checkAndStoreAttributeValue(self, NwkId, "01", "0406", "0000", data)
+
+    elif dp == 0x04:
+        # Battery
+        store_tuya_attribute(self, NwkId, "Battery", data)
+        checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", int(data, 16))
+        self.ListOfDevices[NwkId]["Battery"] = int(data, 16)
+        Update_Battery_Device(self, Devices, NwkId, int(data, 16))
+        store_tuya_attribute(self, NwkId, "BatteryStatus", data)
+  
+    elif dp == 0x09:
+        # Sensitivity
+        store_tuya_attribute(self, NwkId, "Sensitivity", data)
+        
+    elif dp == 0x0a:
+        # Keep tim
+        store_tuya_attribute(self, NwkId, "KeepTime", data)
+        
+    elif dp == 0x0c:
+        # Illuminance
+        store_tuya_attribute(self, NwkId, "Illuminance", data)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0400", (int(data, 16)) )
+        checkAndStoreAttributeValue(self, NwkId, "01", "0400", "0000", int(data, 16))
+   
+    else:
+        self.log.logging("Tuya", "Log", "tuya_motion_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+

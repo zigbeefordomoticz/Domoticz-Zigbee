@@ -17,7 +17,6 @@ import time
 from typing import Dict
 
 import Domoticz
-
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
@@ -25,7 +24,6 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.zlinky import update_zlinky_device_model_if_needed
 from Modules.tuya import hack_ts0601
-
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -85,6 +83,14 @@ MANDATORY_ATTRIBUTES = (
     "ZDeviceID",
     "ZDeviceName",
     "Param",
+    "_rawNodeDescriptor",
+    "Max Buffer Size",
+    "Max Rx",
+    "Max Tx",
+    "macapa",
+    "bitfield",
+    "server_mask",
+    "descriptor_capability",
 )
 
 # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
@@ -179,7 +185,11 @@ def LoadDeviceList(self):
         hack_ts0601(self, addr)
         
         # Check if 566 fixs are needed
-        if self.pluginconf.pluginConf["Bug566"] and "Model" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["Model"] == "TRADFRI control outlet":
+        if (
+            self.pluginconf.pluginConf["Bug566"] 
+            and "Model" in self.ListOfDevices[addr] 
+            and self.ListOfDevices[addr]["Model"] == "TRADFRI control outlet"
+        ):
             fixing_Issue566(self, addr)
 
         if self.pluginconf.pluginConf["resetReadAttributes"]:
@@ -196,11 +206,17 @@ def LoadDeviceList(self):
             and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
         ):
             Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
+
+        if (
+            "Param" in self.ListOfDevices[addr] 
+            and "Disabled" in self.ListOfDevices[addr]["Param"] 
+            and self.ListOfDevices[addr]["Param"][ "Disabled" ]
+        ):
+            self.ListOfDevices[addr]["Health"] = "Disabled"
             
         if "Model" in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]["Model"] == "ZLinky_TIC":
             # We need to adjust the Model to the right mode
             update_zlinky_device_model_if_needed(self, addr)
-
 
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
@@ -649,6 +665,7 @@ def CheckDeviceList(self, key, val):
                 key,
             )
 
+    profalux_fix_remote_device_model(self)
     check_and_update_manufcode(self)
     check_and_update_ForceAckCommands(self)
 
@@ -762,6 +779,9 @@ def load_new_param_definition(self):
             #     if self.DeviceConf[ model_name ]['Param'][ param ] != self.pluginconf.pluginConf[ param ]:
             #         self.ListOfDevices[ key ]['Param'][ param ] = self.pluginconf.pluginConf[ param ]
 
+            if param == "Disabled" and "Disabled" in self.ListOfDevices[key]["Param"] and self.ListOfDevices[key]["Param"][ "Disabled" ]:
+                self.ListOfDevices[key]["Health"] = "Disabled"
+                
             if param in ("PowerOnAfterOffOn"):
                 if "Manufacturer" not in self.ListOfDevices[key]:
                     return
@@ -910,3 +930,24 @@ def cleanup_table_entries( self):
                         one_more_time = True
                         break
                     idx += 1
+                    
+def profalux_fix_remote_device_model(self):
+    
+    for x in self.ListOfDevices:
+        
+        if 'ZDeviceID' not in self.ListOfDevices[ x ] or self.ListOfDevices[ x ]['ZDeviceID'] != '0201':
+            continue
+        if "Manufacturer" not in self.ListOfDevices[ x ]:
+            continue
+        if self.ListOfDevices[ x ]["Manufacturer"] != "1110":
+            continue
+        if self.ListOfDevices[ x ]["Manufacturer Name"] != "Profalux":
+            self.ListOfDevices[ x ]["Manufacturer Name"] = "Profalux"
+        if "MacCapa" not in self.ListOfDevices[x]:
+            continue
+        if self.ListOfDevices[x]["MacCapa"] != "80":
+            continue
+        if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
+            self.log.logging( "Profalux", "Status", "++++++ Model Name for %s forced to : %s" % (
+                x, self.ListOfDevices[x]["Model"],), x)
+            self.ListOfDevices[x]["Model"] = "Telecommande-Profalux"

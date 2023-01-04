@@ -1283,13 +1283,8 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     if MsgStatus == "00":
         timeStamped(self, MsgSrcAddr, 0x8011)
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-        if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] != "Live":
-            self.log.logging(
-                "Input",
-                "Log",
-                "Receive an APS Ack from %s, let's put the device back to Live" % MsgSrcAddr,
-                MsgSrcAddr,
-            )
+        if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Live", "Disabled"):
+            self.log.logging( "Input", "Log", "Receive an APS Ack from %s, let's put the device back to Live" % MsgSrcAddr, MsgSrcAddr, )
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
         return
 
@@ -1310,6 +1305,10 @@ def set_health_state(self, MsgSrcAddr, ClusterId, Status):
 
     if "Health" not in self.ListOfDevices[MsgSrcAddr]:
         return
+    if self.ListOfDevices[MsgSrcAddr]["Health"] == "Disabled":
+        # If the device has been disabled, just drop the message
+        return
+
     if self.ListOfDevices[MsgSrcAddr]["Health"] != "Not Reachable":
         self.ListOfDevices[MsgSrcAddr]["Health"] = "Not Reachable"
 
@@ -2046,6 +2045,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
 
     updLQI(self, addr, MsgLQI)
 
+    self.ListOfDevices[addr]["_rawNodeDescriptor"] = MsgData[8:]
     self.ListOfDevices[addr]["Max Buffer Size"] = max_buffer
     self.ListOfDevices[addr]["Max Rx"] = max_rx
     self.ListOfDevices[addr]["Max Tx"] = max_tx
@@ -2574,7 +2574,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
         self.log.logging(
             "Input",
             "Log",
-            "Removing this not completly provisionned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress),
+            "Removing this not completly provisioned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress),
         )
 
     elif self.ListOfDevices[sAddr]["Status"] == "Leave":
@@ -3137,7 +3137,7 @@ def read_report_attributes(
             MsgSrcAddr,
         )
 
-        if "Health" in self.ListOfDevices[MsgSrcAddr]:
+        if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Disabled",):
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
 
         updSQN(self, MsgSrcAddr, str(MsgSQN))
@@ -3596,7 +3596,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
     
-    if "Health" in self.ListOfDevices[MsgSrcAddr]:
+    if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Disabled",):
         self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
 
     timeStamped(self, MsgSrcAddr, 0x8401)

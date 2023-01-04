@@ -176,6 +176,3 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     
     def is_deconz(self):
         return False
-
-            
-     

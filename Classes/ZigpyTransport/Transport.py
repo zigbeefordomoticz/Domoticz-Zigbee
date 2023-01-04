@@ -145,4 +145,3 @@ class ZigpyTransport(object):
         _ret_value = max(_queue - 1, 0) + self.writer_queue.qsize()
         self.log.logging("Transport", "Debug", "Load: PluginQueue: %3s ZigpyQueue: %3s => %s" %(self.writer_queue.qsize(), _queue, _ret_value ))
         return _ret_value
-  

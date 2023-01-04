@@ -142,6 +142,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         "TS011F-multiprise",
         "TS011F-2Gang-switches",
         "TS011F-plug",
+        "TS0001",
         "TS011F-din",
         "TS0004",
         "TS0004-_TZ3000_excgg5kb",

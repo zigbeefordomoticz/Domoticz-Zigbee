@@ -14,20 +14,20 @@
 from time import time
 
 import Domoticz
-
 from Modules.casaia import restart_plugin_reset_ModuleIRCode
 from Modules.domoTools import lastSeenUpdate
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.livolo import livolo_bind
 from Modules.manufacturer_code import PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO
-from Modules.pairingProcess import (interview_state_004d,
-                                    zigbee_provision_device,
-                                    handle_device_specific_needs)
+from Modules.pairingProcess import (handle_device_specific_needs,
+                                    interview_state_004d,
+                                    zigbee_provision_device)
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped)
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
+from Zigbee.zdpCommands import zdp_node_descriptor_request
 
 DELAY_BETWEEN_2_DEVICEANNOUCEMENT = 20
 
@@ -193,6 +193,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         if mainPoweredDevice(self, NwkId):
             enforce_configure_reporting( self, NwkId)
             read_attributes_if_needed( self, NwkId)
+            zdp_node_descriptor_request(self, NwkId)
 
         if reseted_device:
             self.log.logging("DeviceAnnoucement", "Debug", "--> Device reset, redoing provisioning", NwkId)
@@ -219,6 +220,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
                 enforce_configure_reporting( self, NwkId)
             restart_plugin_reset_ModuleIRCode(self, NwkId)
             read_attributes_if_needed( self, NwkId)
+            zdp_node_descriptor_request(self, NwkId)
 
             if reseted_device:
                 # IAS Enrollment if required

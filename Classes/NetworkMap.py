@@ -176,8 +176,10 @@ def _initNeighboursTableEntry(self, nwkid):
     if self.pluginconf.pluginConf["TopologyV2"]:
         mgmt_rtg(self, nwkid, "RoutingTable")
         if "IEEE" in self.ListOfDevices[ nwkid ]:
-            zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
-
+            if "Capability" in self.ListOfDevices[ nwkid ] and "Full-Function Device" in self.ListOfDevices[ nwkid ]["Capability"]:
+                zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="01")
+            else:
+                zdp_NWK_address_request(self, nwkid, self.ListOfDevices[ nwkid ]['IEEE'], u8RequestType="00")
 
 def is_a_router(self, nwkid):
     if nwkid == "0000":
@@ -367,9 +369,9 @@ def LQIreq(self, nwkid="0000"):
         nwkid != "0000"
         and nwkid in self.ListOfDevices
         and "Health" in self.ListOfDevices[nwkid]
-        and self.ListOfDevices[nwkid]["Health"] == "Not Reachable"
+        and self.ListOfDevices[nwkid]["Health"] in ( "Not Reachable", "Disabled", )
     ):
-        self.logging("Debug", "LQIreq - skiping device %s which is Not Reachable" % nwkid)
+        self.logging("Debug", "LQIreq - skiping device %s which is Not Reachable or Disabled" % nwkid)
         self.Neighbours[nwkid]["Status"] = "NotReachable"
         return
 
