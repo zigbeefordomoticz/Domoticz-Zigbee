@@ -1563,4 +1563,3 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     else:
         self.log.logging("Tuya", "Log", "tuya_motion_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
-
