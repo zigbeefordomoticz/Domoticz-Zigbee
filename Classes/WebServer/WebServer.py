@@ -896,16 +896,12 @@ class WebServer(object):
                             continue
                         
                         _new_param = check_device_param(self, dev, x["Param"])
-                        if (
-                            "Disabled" in _new_param 
-                            and "Disabled" in self.ListOfDevices[dev]["Param"]
-                            and self.ListOfDevices[dev]["Param"]["Disabled"] != _new_param["Disabled"]
-                        ):
+                        if "Disabled" in _new_param:
                             if _new_param["Disabled"]:
                                 self.ListOfDevices[dev]["Health"] = "Disabled"
                             else:
                                 self.ListOfDevices[dev]["Health"] = ""
-                                
+
                         self.ListOfDevices[dev]["Param"] = _new_param
                         
                         self.logging( "Debug", "Updating Param to %s for IEEE: %s NWKID: %s" % (
