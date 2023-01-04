@@ -59,11 +59,11 @@ TUYA_SMARTAIR_MANUFACTURER = (
     "_TZE200_yvx5lh6k",
 )
 
-TUYA_MOTION = {
+TUYA_MOTION = (
     "_TZE200_bh3n6gk8",
     '_TZE200_3towulqd', 
     '_TZE200_1ibpyhdc'
-}
+)
 
 TUYA_TEMP_HUMI = ( 
     "_TZE200_bjawzodf", 
