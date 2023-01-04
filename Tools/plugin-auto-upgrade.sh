@@ -17,7 +17,7 @@ echo ""
 git pull --recurse-submodules
 ret="$?"
 if [ "$ret" != "0" ] ; then
-    echo "Problem while running command 'git pull --recurse-submodules'."
+    echo "ERROR while running command 'git pull --recurse-submodules'."
     echo "Git Status: $(git status)"
     exit -1
 fi
@@ -27,7 +27,7 @@ echo ""
 sudo python3 -m pip --no-input install -r requirements.txt
 ret="$?"
 if [ "$ret" != "0" ] ; then
-    echo "Problem while running command 'sudo python3 -m pip --no-input install -r requirements.txt'."
+    echo "ERROR while running command 'sudo python3 -m pip --no-input install -r requirements.txt'."
     echo "Is sudo available for this user without password ?"
     exit -2
 fi
