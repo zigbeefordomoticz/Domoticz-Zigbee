@@ -11,11 +11,10 @@
             "0008": "",
             "1000": "",
             "0019": "",
-            "Type": "LvlControl"
+            "Type": "Switch"
         }
     },
     "Type": "",
-    "NickName": "",
     "ClusterToBind": [ "0006", "0008" ],
     "ConfigureReporting": {
         "0006": { "Attributes": { "0000": { "DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "01" } } }
@@ -27,7 +26,5 @@
         "0019": []
     },
     "Param": {
-        "fadingOff": 0,
-        "moveToLevel": 0
     }
 }
