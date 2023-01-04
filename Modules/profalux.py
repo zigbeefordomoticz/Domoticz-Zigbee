@@ -18,6 +18,28 @@ from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import get_and_inc_ZCL_SQN
 from Modules.zigateConsts import ZIGATE_EP
 
+def profalux_fix_remote_device_model(self):
+    
+    for x in self.ListOfDevices:
+        
+        if 'ZDeviceID' not in self.ListOfDevices[ x ] or self.ListOfDevices[ x ]['ZDeviceID'] != '0201':
+            continue
+        if "Manufacturer" not in self.ListOfDevices[ x ]:
+            continue
+        if self.ListOfDevices[ x ]["Manufacturer"] != "1110":
+            continue
+        if self.ListOfDevices[ x ]["Manufacturer Name"] != "Profalux":
+            self.ListOfDevices[ x ]["Manufacturer Name"] = "Profalux"
+        if "MacCapa" not in self.ListOfDevices[x]:
+            continue
+        if self.ListOfDevices[x]["MacCapa"] != "80":
+            continue
+        if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
+            self.log.logging( "Profalux", "Status", "++++++ Model Name for %s forced to : %s" % (
+                x, self.ListOfDevices[x]["Model"],), x)
+            self.ListOfDevices[x]["Model"] = "Telecommande-Profalux"
+
+        
 
 def profalux_fake_deviceModel(self, nwkid):
 

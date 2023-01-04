@@ -23,6 +23,7 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.zlinky import update_zlinky_device_model_if_needed
+from Modules.profalux import profalux_fix_remote_device_model
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -661,6 +662,7 @@ def CheckDeviceList(self, key, val):
                 key,
             )
 
+    profalux_fix_remote_device_model(self)
     check_and_update_manufcode(self)
     check_and_update_ForceAckCommands(self)
 
