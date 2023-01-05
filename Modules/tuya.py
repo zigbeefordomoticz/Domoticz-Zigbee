@@ -1486,7 +1486,7 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         store_tuya_attribute(self, NwkId, "Sensitivity", data)
         
     elif dp == 0x0a:
-        # Keep tim
+        # Keep time
         store_tuya_attribute(self, NwkId, "KeepTime", data)
         
     elif dp == 0x0c:
