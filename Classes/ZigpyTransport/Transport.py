@@ -98,7 +98,7 @@ class ZigpyTransport(object):
         if _queue > self.statistics._MaxLoad:
             self.statistics._MaxLoad = _queue
 
-        if self.pluginconf.pluginConf["debugzigateCmd"]:
+        if self.pluginconf.pluginConf["coordinatorCmd"]:
             self.log.logging(
                 "Transport",
                 "Log",

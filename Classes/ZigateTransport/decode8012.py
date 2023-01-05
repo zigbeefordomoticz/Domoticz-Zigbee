@@ -48,7 +48,7 @@ def decode8012_8702(self, decoded_frame):
 
     if isqn is None:
         # self.logging_8012( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s" %(MsgAddr, MsgSQN))
-        if self.pluginconf.pluginConf["debugzigateCmd"]:
+        if self.pluginconf.pluginConf["coordinatorCmd"]:
             self.logging_8012(
                 "Log",
                 "Transport - [%s] - Async %s Sqn: %s Addr: %s nPdu: %s aPdu: %s"
@@ -58,7 +58,7 @@ def decode8012_8702(self, decoded_frame):
 
     if isqn not in self.ListOfCommands:
         # self.logging_8012( 'Debug', "decode8012_8702 - 0x8012 not for us Nwkid: %s eSqn: %s " %(MsgAddr, MsgSQN))
-        if self.pluginconf.pluginConf["debugzigateCmd"]:
+        if self.pluginconf.pluginConf["coordinatorCmd"]:
             self.logging_8012(
                 "Log",
                 "Transport - [%s] - Async %s Sqn: %s Addr: %s nPdu: %s aPdu: %s"

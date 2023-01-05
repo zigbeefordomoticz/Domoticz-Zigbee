@@ -301,7 +301,7 @@ def _logginfilter(self, thread_name, message, nwkid):
         _loggingDebug(self, thread_name, message)
     elif nwkid:
         nwkid = nwkid.lower()
-        _debugMatchId = self.pluginconf.pluginConf["debugMatchId"].lower().split(",")
+        _debugMatchId = self.pluginconf.pluginConf["MatchingNwkId"].lower().strip().split(",")
         if ("ffff" in _debugMatchId) or (nwkid in _debugMatchId) or (nwkid == "ffff"):
             _loggingDebug(self, thread_name, message)
 
@@ -456,12 +456,12 @@ def logging_thread(self):
             elif logType == "Debug":
                 # thread filter
                 threadFilter = [
-                    x for x in self.threadLogConfig if self.pluginconf.pluginConf["debugThread" + self.threadLogConfig[x]] == 1
+                    x for x in self.threadLogConfig if self.pluginconf.pluginConf["Thread" + self.threadLogConfig[x]] == 1
                 ]
                 if threadFilter and thread_name not in threadFilter:
                     continue
                 thread_name=thread_name + " " + thread_id
-                pluginConfModule = "debug" + str(module)
+                pluginConfModule = str(module)
                 if pluginConfModule in self.pluginconf.pluginConf:
                     if self.pluginconf.pluginConf[pluginConfModule]:
                         _logginfilter(self, thread_name, message, nwkid)
