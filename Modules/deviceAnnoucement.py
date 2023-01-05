@@ -26,7 +26,8 @@ from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped)
 from Modules.tuyaSiren import tuya_sirene_registration
-from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
+from Modules.tuyaTRV import tuya_eTRV_registration
+from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Zigbee.zdpCommands import zdp_node_descriptor_request
 
 DELAY_BETWEEN_2_DEVICEANNOUCEMENT = 20

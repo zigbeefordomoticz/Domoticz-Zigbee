@@ -15,7 +15,8 @@ from Modules.orvibo import orviboReadRawAPS
 from Modules.philips import philipsReadRawAPS
 from Modules.pollControl import receive_poll_cluster
 from Modules.schneider_wiser import schneiderReadRawAPS
-from Modules.tuya import TUYA_MANUFACTURER_NAME, tuyaReadRawAPS
+from Modules.tuya import tuyaReadRawAPS
+from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
 
 # Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {

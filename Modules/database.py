@@ -22,8 +22,13 @@ from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
+from Modules.tuyaConst import (TUYA_THERMOSTAT_MANUFACTURER,
+                               TUYA_eTRV1_MANUFACTURER,
+                               TUYA_eTRV2_MANUFACTURER,
+                               TUYA_eTRV3_MANUFACTURER,
+                               TUYA_eTRV4_MANUFACTURER,
+                               TUYA_eTRV5_MANUFACTURER, TUYA_eTRV_MANUFACTURER)
 from Modules.zlinky import update_zlinky_device_model_if_needed
-from Modules.tuya import hack_ts0601
 
 CIE_ATTRIBUTES = {
     "Version", 
@@ -951,3 +956,67 @@ def profalux_fix_remote_device_model(self):
             self.log.logging( "Profalux", "Status", "++++++ Model Name for %s forced to : %s" % (
                 x, self.ListOfDevices[x]["Model"],), x)
             self.ListOfDevices[x]["Model"] = "Telecommande-Profalux"
+
+def hack_ts0601(self, nwkid):
+    # Purpose is to rename the Model name of potential working TS0601 as a Thermostat
+    
+    if (
+        'Model' not in self.ListOfDevices[ nwkid ] 
+        or self.ListOfDevices[ nwkid ][ 'Model' ] != 'TS0601'
+    ):
+        return
+    model_name = self.ListOfDevices[ nwkid ][ 'Model' ] 
+
+    if 'Manufacturer Name' not in self.ListOfDevices[ nwkid ]:
+        # This is not expected, log Error
+        self.log.logging("Tuya", "Error", "We have detected a miss configuration, please contact us with the here after information")
+        self.log.logging("Tuya", "Error", "    - Device " %nwkid )
+        self.log.logging("Tuya", "Error", "    - Model  " %self.ListOfDevices[ nwkid ][ 'Model' ] )
+        return
+    manuf_name = self.ListOfDevices[ nwkid ]['Manufacturer Name']
+    
+    if manuf_name in ( TUYA_eTRV1_MANUFACTURER + TUYA_eTRV2_MANUFACTURER + TUYA_eTRV3_MANUFACTURER + TUYA_eTRV4_MANUFACTURER + TUYA_eTRV5_MANUFACTURER + TUYA_eTRV_MANUFACTURER):
+        hack_ts0601_rename_model( self, nwkid, model_name, manuf_name)
+        return
+        
+    # Looks like we have a TS0601 with an unknown Manufacturer Name !!!
+    self.log.logging("Tuya", "Error", "This device is not correctly configured, please contact us with the here after information")
+    self.log.logging("Tuya", "Error", "    - Device        " %nwkid )
+    self.log.logging("Tuya", "Error", "    - Model         " %self.ListOfDevices[ nwkid ][ 'Model' ] )
+    self.log.logging("Tuya", "Error", "    - Manufacturer  " %self.ListOfDevices[ nwkid ][ 'Manufacturer Name' ] )
+            
+        
+
+def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
+
+    if manufacturer_name in TUYA_THERMOSTAT_MANUFACTURER:  # Thermostat
+        # Thermostat BTH-002 (to be confirmed   ) and WZB-TRVL ( @d2n2e2o) and Thermostat Essentials Premium ( to be confirmed )
+        self.log.logging("Tuya", "Status", "ReadCluster - %s force to Thermostat" % (nwkid,))
+        modelName += "-thermostat"
+
+    elif manufacturer_name in TUYA_eTRV1_MANUFACTURER:  # eTRV
+        self.log.logging("Tuya", "Status", "ReadCluster - %s force to eTRV" % (nwkid,))
+        modelName += "-eTRV"
+    
+    elif manufacturer_name in TUYA_eTRV1_MANUFACTURER:  # eTRV
+        self.log.logging("Tuya", "Status", "ReadCluster - %s force to eTRV1" % (nwkid,))
+        modelName += "-eTRV1"
+
+    elif manufacturer_name in TUYA_eTRV2_MANUFACTURER:  # eTRV
+        self.log.logging("Tuya", "Status", "ReadCluster - %s force to eTRV2" % (nwkid,))
+        modelName += "-eTRV2"
+
+    elif manufacturer_name in TUYA_eTRV3_MANUFACTURER:  # eTRV
+        self.log.logging("Tuya", "Status", "ReadCluster - %s force to eTRV3" % (nwkid,))
+        modelName += "-eTRV3"
+
+    elif manufacturer_name in TUYA_eTRV4_MANUFACTURER:  # eTRV
+        self.log.logging("Tuya", "Status", "ReadCluster - %s force to eTRV3" % (nwkid,))
+        modelName += "-_TZE200_b6wax7g0"
+
+    elif manufacturer_name in TUYA_eTRV5_MANUFACTURER:  # eTRV
+        self.log.logging("Tuya", "Status", "ReadCluster - %s  force to eTRV4" % (nwkid,))
+        modelName += "-eTRV5"
+
+    if self.ListOfDevices[ nwkid ][ 'Model' ] != modelName:
+        self.ListOfDevices[ nwkid ][ 'Model' ] = modelName

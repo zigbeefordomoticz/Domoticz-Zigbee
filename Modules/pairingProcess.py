@@ -37,7 +37,8 @@ from Modules.tools import (build_list_of_device_model, getListOfEpForCluster,
 from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
-from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
+from Modules.tuyaTRV import tuya_eTRV_registration
+from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.zb_tables_management import mgmt_rtg
 from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 from Zigbee.zdpCommands import (zdp_active_endpoint_request,
