@@ -12,12 +12,12 @@ fi
 
 
 if test -d /opt/domoticz/userdata/plugins/Domoticz-Zigbee; then
-    pip3  --ignore-requires-python -r /opt/domoticz/userdata/plugins/Domoticz-Zigbee/requirements.txt
+    pip3 install --ignore-requires-python -r /opt/domoticz/userdata/plugins/Domoticz-Zigbee/requirements.txt
 else
     cd /opt/domoticz/userdata/plugins
     git clone https://github.com/zigbeefordomoticz/Domoticz-Zigbee.git
     cd Domoticz-Zigbee
     git config --add submodule.recurse true
     git submodule update --init --recursive
-    pip3  --ignore-requires-python -r /opt/domoticz/userdata/plugins/Domoticz-Zigbee/requirements.txt
+    pip3 install --ignore-requires-python -r /opt/domoticz/userdata/plugins/Domoticz-Zigbee/requirements.txt
 fi
