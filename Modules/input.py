@@ -570,7 +570,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             npdu = MsgData[12:14]
             apdu = MsgData[14:16]
 
-    if self.pluginconf.pluginConf["debugzigateCmd"]:
+    if self.pluginconf.pluginConf["coordinatorCmd"]:
         i_sqn = None
         if PacketType in ("0100", "0120", "0110"):
             i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, sqn_app, TYPE_APP_ZCL)
@@ -1263,7 +1263,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     updLQI(self, MsgSrcAddr, MsgLQI)
     _powered = mainPoweredDevice(self, MsgSrcAddr)
 
-    if self.pluginconf.pluginConf["debugzigateCmd"]:
+    if self.pluginconf.pluginConf["coordinatorCmd"]:
         if MsgSEQ:
             self.log.logging(
                 "Input",
@@ -3182,8 +3182,8 @@ def isZDeviceName(self, MsgSrcAddr):
 
 def debug_LQI(self, MsgSrcAddr, MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcEp):
     if (
-        self.pluginconf.pluginConf["debugLQI"]
-        and self.ListOfDevices[MsgSrcAddr]["LQI"] <= self.pluginconf.pluginConf["debugLQI"]
+        self.pluginconf.pluginConf["LQIthreshold"]
+        and self.ListOfDevices[MsgSrcAddr]["LQI"] <= self.pluginconf.pluginConf["LQIthreshold"]
     ):
         if isZDeviceName(self, MsgSrcAddr):
             self.log.logging(

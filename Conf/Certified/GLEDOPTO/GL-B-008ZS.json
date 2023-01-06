@@ -1,0 +1,37 @@
+{
+    "_blakadder": "https://zigbee.blakadder.com/Gledopto_GL-B-008ZS.html",
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1426",
+    "Ep": {
+        "0b": {
+            "0000": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0006": "",
+            "0008": "",
+            "0300": "",
+            "Type": "ColorControlRGBWW"
+        },
+        "0d": {
+            "1000": "",
+            "Type": ""
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "4000" ],
+        "0006": [ "0000", "4001", "4002" ],
+        "0008": [ "0000"],
+        "0300": [ "0000", "0001", "0003", "004", "0007", "0008", "400a" ]
+    },
+    "Param": {
+        "OnOffPollingFreq": 300,
+        "fadingOff": 0,
+        "moveToHueSatu": 0,
+        "moveToColourTemp": 0,
+        "moveToColourRGB": 0,
+        "moveToLevel": 0
+    }
+}
