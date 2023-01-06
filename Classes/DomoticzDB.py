@@ -143,7 +143,7 @@ def domoticz_base_url(self):
         url = f"{proto}://{host_port}/json.htm?"
     else:
         url = self.api_base_url + '/json.htm?'
-    self.logging("Log", "url: %s" %url)
+    self.logging("Debug", "url: %s" %url)
     self.url_ready = url
     return url      
 
