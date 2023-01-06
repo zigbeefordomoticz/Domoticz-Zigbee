@@ -45,26 +45,29 @@ def extract_username_password( self, url_base_api ):
     
     self.logging("Debug", f'Extract username/password {url_base_api} ==> {items} ')
     host_port = items[1]
+    proto = None
     if items[0].find("https") == 0:
+        proto = 'https'
         items[0] = items[0][:5].lower() + items[0][5:]
         item1 = items[0].replace('https://','')
         usernamepassword = item1.split(':')
         if len(usernamepassword) == 2:
             username, password = usernamepassword
-            return username, password, host_port
+            return username, password, host_port, proto
         self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ==> {item1} ==> {usernamepassword}')
             
     elif items[0].find("http") == 0:
+        proto = 'http'
         items[0] = items[0][:4].lower() + items[0][4:]
         item1 = items[0].replace('http://','')
         usernamepassword = item1.split(':')
         if len(usernamepassword) == 2:
             username, password = usernamepassword
-            return username, password, host_port
+            return username, password, host_port, proto
         self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ==> {item1} ==> {usernamepassword}')
 
     self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ')
-    return None, None, None
+    return None, None, None, None
         
 
 def open_and_read( self, url ):
@@ -120,7 +123,8 @@ def domoticz_base_url(self):
         self.logging( "Debug", "domoticz_base_url - API URL ready %s Basic Authentication: %s" %(self.url_ready, self.authentication_str))
         return self.url_ready
     
-    username, password, host_port = extract_username_password( self, self.api_base_url )
+    username, password, host_port, proto = extract_username_password( self, self.api_base_url )
+    
     self.logging("Debug",'Username: %s' %username)
     self.logging("Debug",'Password: %s' %password)
     self.logging("Debug",'Host+port: %s' %host_port)
@@ -131,11 +135,12 @@ def domoticz_base_url(self):
         return None
         
     # Check that last char is not a / , if the case then remove it 
+    # https://www.domoticz.com/wiki/Security / https://username:password@IP:PORT/json.htm 
     if self.api_base_url[-1] == '/':
         self.api_base_url = self.api_base_url[:-1]
     if username and password and host_port:
         self.authentication_str = base64.encodebytes(('%s:%s' %(username, password)).encode()).decode().replace('\n','')
-        url = 'http://' + host_port + '/json.htm?' + 'username=%s&password=%s&' %(username, password)
+        url = f"{proto}://{host_port}/json.htm?"
     else:
         url = self.api_base_url + '/json.htm?'
     self.logging("Debug", "url: %s" %url)
