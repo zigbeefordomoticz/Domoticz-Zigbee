@@ -23,12 +23,7 @@ from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 from Modules.pluginModels import check_found_plugin_model
-from Modules.tuyaConst import (TUYA_THERMOSTAT_MANUFACTURER,
-                               TUYA_eTRV1_MANUFACTURER,
-                               TUYA_eTRV2_MANUFACTURER,
-                               TUYA_eTRV3_MANUFACTURER,
-                               TUYA_eTRV4_MANUFACTURER,
-                               TUYA_eTRV5_MANUFACTURER, TUYA_eTRV_MANUFACTURER)
+from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
 from Modules.zlinky import update_zlinky_device_model_if_needed
 
 CIE_ATTRIBUTES = {
@@ -973,7 +968,7 @@ def hack_ts0601(self, nwkid):
         return
     manuf_name = self.ListOfDevices[ nwkid ]['Manufacturer Name']
     
-    if manuf_name in ( TUYA_eTRV1_MANUFACTURER + TUYA_eTRV2_MANUFACTURER + TUYA_eTRV3_MANUFACTURER + TUYA_eTRV4_MANUFACTURER + TUYA_eTRV5_MANUFACTURER + TUYA_eTRV_MANUFACTURER):
+    if manuf_name in TUYA_MANUFACTURER_NAME:
         hack_ts0601_rename_model( self, nwkid, model_name, manuf_name)
         return
     hack_ts0601_error(self, nwkid, model_name, manufacturer=manuf_name)
@@ -982,9 +977,9 @@ def hack_ts0601(self, nwkid):
 def hack_ts0601_error(self, nwkid, model, manufacturer=None):
     # Looks like we have a TS0601 and something wrong !!!
     self.log.logging("Tuya", "Error", "This device is not correctly configured, please contact us with the here after information")
-    self.log.logging("Tuya", "Error", "    - Device        " %nwkid )
-    self.log.logging("Tuya", "Error", "    - Model         " %model )
-    self.log.logging("Tuya", "Error", "    - Manufacturer  " %manufacturer )
+    self.log.logging("Tuya", "Error", "    - Device        %s" %nwkid )
+    self.log.logging("Tuya", "Error", "    - Model         %s" %model )
+    self.log.logging("Tuya", "Error", "    - Manufacturer  %s" %manufacturer )
             
 
 def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
