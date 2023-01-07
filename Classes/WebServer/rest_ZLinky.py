@@ -163,7 +163,7 @@ def rest_zlinky(self, verb, data, parameters):
     self.logging("Debug", "rest_zlinky - Read to send  %s " % (zlinky))  
 
     if verb == "GET" and len(parameters) == 0:
-        if len(self.ControllerData) == 0:
+        if self.fake_mode():
             _response["Data"] = json.dumps(fake_zlinky_histo_mono(), sort_keys=True)
             return _response
 

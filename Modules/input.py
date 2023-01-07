@@ -1060,14 +1060,14 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
 
     if self.ControllerIEEE != extaddr:
         # In order to update the first time
-        self.adminWidgets.updateNotificationWidget(Devices, "Zigate IEEE: %s" % extaddr)
+        self.adminWidgets.updateNotificationWidget(Devices, "Coordinator IEEE: %s" % extaddr)
 
     self.pluginParameters["CoordinatorIEEE"] = extaddr
     self.ControllerIEEE = extaddr
     self.ControllerNWKID = addr
 
     if self.ControllerNWKID != "0000":
-        self.log.logging("Input", "Error", "Zigate not correctly initialized")
+        self.log.logging("Input", "Error", "Coordinator not correctly initialized")
         return
 
     # At that stage IEEE is set to 0x0000 which is correct for the Coordinator
@@ -1075,7 +1075,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         initLODZigate(self, addr, extaddr)
 
     if self.currentChannel != int(Channel, 16):
-        self.adminWidgets.updateNotificationWidget(Devices, "Zigate Channel: %s" % str(int(Channel, 16)))
+        self.adminWidgets.updateNotificationWidget(Devices, "Coordinator Channel: %s" % str(int(Channel, 16)))
 
     # Let's check if this is a first initialisation, and then we need to update the Channel setting
     if (
@@ -1503,9 +1503,9 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
         self.log.logging(
             "Input",
             "Status",
-            "Start Network: Node is on network. ZiGate is already in network so network is already formed",
+            "Start Network: Node is on network. Coordinator is already in network so network is already formed",
         )
-        Status = "Start Network: Node is on network. ZiGate is already in network so network is already formed"
+        Status = "Start Network: Node is on network. Coordinator is already in network so network is already formed"
     elif MsgDataStatus == "06":
         self.log.logging(
             "Input",
@@ -1565,7 +1565,7 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
         self.log.logging(
             "Input",
             "Status",
-            "Zigate details IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s"
+            "Coordinator details IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s"
             % (
                 MsgExtendedAddress,
                 MsgShortAddress,
@@ -1576,7 +1576,7 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
         )
     else:
         Domoticz.Error(
-            "Zigate initialisation failed IEEE: %s, Nwkid: %s, Channel: %s"
+            "Coordinator initialisation failed IEEE: %s, Nwkid: %s, Channel: %s"
             % (MsgExtendedAddress, MsgShortAddress, MsgChannel)
         )
 
