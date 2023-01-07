@@ -109,7 +109,7 @@ def rest_netTopologie(self, verb, data, parameters):
     if verb == "GET":
         if len(parameters) == 0:
             # Send list of Time Stamps
-            if len(self.ControllerData) == 0:
+            if self.fake_mode():
                 _timestamps_lst = [1643561599, 1643564628]
                 
             elif self.pluginconf.pluginConf["TopologyV2"]:
@@ -122,7 +122,7 @@ def rest_netTopologie(self, verb, data, parameters):
                 timestamp = parameters[0]
                 _response["Data"] = json.dumps(collect_routing_table(self,timestamp ), sort_keys=True)
 
-            elif len(self.ControllerData) == 0:
+            elif self.fake_mode():
                 _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
             else:
                 timestamp = parameters[0]

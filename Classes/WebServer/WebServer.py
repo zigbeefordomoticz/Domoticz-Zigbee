@@ -97,6 +97,7 @@ class WebServer(object):
         PluginHealth,
         httpPort,
         log,
+        transport
     ):
         self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
@@ -122,6 +123,7 @@ class WebServer(object):
         self.networkmap = None
         self.networkenergy = None
         self.configureReporting = None
+        self.transport = transport
 
         self.permitTojoin = permitTojoin
 
@@ -144,6 +146,11 @@ class WebServer(object):
         self.FirmwareVersion = None
         # Start the WebServer
         self.startWebServer()
+
+    def fake_mode(self):
+        return (
+            len(self.ControllerData) == 0 or self.ControllerLink is None
+        ) and self.transport == "None"
 
     def update_firmware(self, firmwareversion):
         self.FirmwareVersion = firmwareversion
@@ -787,7 +794,7 @@ class WebServer(object):
         elif verb == "GET":
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
  
-            if len(self.ControllerData) == 0:
+            if self.fake_mode():
                 _response["Data"] = json.dumps(dummy_zdevice_name(), sort_keys=True)
             else:
                 device_lst = []
@@ -1496,3 +1503,5 @@ def decode_device_param(self, nwkid, param):
         self.logging( "Error", "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for >%s< - %s.\n Make sure to use JSON syntax" % (
             _device_name, nwkid, param, e), )
     return {}
+
+
