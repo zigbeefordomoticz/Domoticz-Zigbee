@@ -1351,6 +1351,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.PluginHealth,
         webserver_port,
         self.log,
+        self.transport
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
