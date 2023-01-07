@@ -16,14 +16,13 @@ import os.path
 import time
 from typing import Dict
 
-from pluginModels import check_found_plugin_model
-
 import Domoticz
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
+from Modules.pluginModels import check_found_plugin_model
 from Modules.tuyaConst import (TUYA_THERMOSTAT_MANUFACTURER,
                                TUYA_eTRV1_MANUFACTURER,
                                TUYA_eTRV2_MANUFACTURER,
@@ -962,10 +961,7 @@ def profalux_fix_remote_device_model(self):
 def hack_ts0601(self, nwkid):
     # Purpose is to rename the Model name of potential working TS0601 as a Thermostat
     
-    if (
-        'Model' not in self.ListOfDevices[ nwkid ] 
-        or self.ListOfDevices[ nwkid ][ 'Model' ] != 'TS0601'
-    ):
+    if ( 'Model' not in self.ListOfDevices[ nwkid ] or self.ListOfDevices[ nwkid ][ 'Model' ] != 'TS0601' ):
         return
     
     # This is a TS0601 based Model
@@ -973,27 +969,28 @@ def hack_ts0601(self, nwkid):
 
     if 'Manufacturer Name' not in self.ListOfDevices[ nwkid ]:
         # This is not expected, log Error
-        self.log.logging("Tuya", "Error", "We have detected a miss configuration, please contact us with the here after information")
-        self.log.logging("Tuya", "Error", "    - Device " %nwkid )
-        self.log.logging("Tuya", "Error", "    - Model  " %self.ListOfDevices[ nwkid ][ 'Model' ] )
+        hack_ts0601_error(self, nwkid, model_name)
         return
     manuf_name = self.ListOfDevices[ nwkid ]['Manufacturer Name']
     
     if manuf_name in ( TUYA_eTRV1_MANUFACTURER + TUYA_eTRV2_MANUFACTURER + TUYA_eTRV3_MANUFACTURER + TUYA_eTRV4_MANUFACTURER + TUYA_eTRV5_MANUFACTURER + TUYA_eTRV_MANUFACTURER):
         hack_ts0601_rename_model( self, nwkid, model_name, manuf_name)
         return
+    hack_ts0601_error(self, nwkid, model_name, manufacturer=manuf_name)
+    
         
-    # Looks like we have a TS0601 with an unknown Manufacturer Name !!!
+def hack_ts0601_error(self, nwkid, model, manufacturer=None):
+    # Looks like we have a TS0601 and something wrong !!!
     self.log.logging("Tuya", "Error", "This device is not correctly configured, please contact us with the here after information")
     self.log.logging("Tuya", "Error", "    - Device        " %nwkid )
-    self.log.logging("Tuya", "Error", "    - Model         " %self.ListOfDevices[ nwkid ][ 'Model' ] )
-    self.log.logging("Tuya", "Error", "    - Manufacturer  " %self.ListOfDevices[ nwkid ][ 'Manufacturer Name' ] )
+    self.log.logging("Tuya", "Error", "    - Model         " %model )
+    self.log.logging("Tuya", "Error", "    - Manufacturer  " %manufacturer )
             
-        
 
 def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
 
     suggested_model = check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=None, device_id=None )
     
     if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
+        self.log.logging("Tuya", "Status", "Adjusting Model name from %s to %s" %( modelName, suggested_model))
         self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model
