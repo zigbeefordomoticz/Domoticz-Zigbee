@@ -201,4 +201,3 @@ PLUGIN_MODELS_MATRIX = [
         "PluginModelName": "TS0601-Parkside-Watering-Timer",},
 
 ]
-    

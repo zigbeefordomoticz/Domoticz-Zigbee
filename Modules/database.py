@@ -16,6 +16,8 @@ import os.path
 import time
 from typing import Dict
 
+from pluginModels import check_found_plugin_model
+
 import Domoticz
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
@@ -965,6 +967,8 @@ def hack_ts0601(self, nwkid):
         or self.ListOfDevices[ nwkid ][ 'Model' ] != 'TS0601'
     ):
         return
+    
+    # This is a TS0601 based Model
     model_name = self.ListOfDevices[ nwkid ][ 'Model' ] 
 
     if 'Manufacturer Name' not in self.ListOfDevices[ nwkid ]:
@@ -989,34 +993,7 @@ def hack_ts0601(self, nwkid):
 
 def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
 
-    if manufacturer_name in TUYA_THERMOSTAT_MANUFACTURER:  # Thermostat
-        # Thermostat BTH-002 (to be confirmed   ) and WZB-TRVL ( @d2n2e2o) and Thermostat Essentials Premium ( to be confirmed )
-        self.log.logging("Tuya", "Status", "ReadCluster - %s force to Thermostat" % (nwkid,))
-        modelName += "-thermostat"
-
-    elif manufacturer_name in TUYA_eTRV1_MANUFACTURER:  # eTRV
-        self.log.logging("Tuya", "Status", "ReadCluster - %s force to eTRV" % (nwkid,))
-        modelName += "-eTRV"
+    suggested_model = check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=None, device_id=None )
     
-    elif manufacturer_name in TUYA_eTRV1_MANUFACTURER:  # eTRV
-        self.log.logging("Tuya", "Status", "ReadCluster - %s force to eTRV1" % (nwkid,))
-        modelName += "-eTRV1"
-
-    elif manufacturer_name in TUYA_eTRV2_MANUFACTURER:  # eTRV
-        self.log.logging("Tuya", "Status", "ReadCluster - %s force to eTRV2" % (nwkid,))
-        modelName += "-eTRV2"
-
-    elif manufacturer_name in TUYA_eTRV3_MANUFACTURER:  # eTRV
-        self.log.logging("Tuya", "Status", "ReadCluster - %s force to eTRV3" % (nwkid,))
-        modelName += "-eTRV3"
-
-    elif manufacturer_name in TUYA_eTRV4_MANUFACTURER:  # eTRV
-        self.log.logging("Tuya", "Status", "ReadCluster - %s force to eTRV3" % (nwkid,))
-        modelName += "-_TZE200_b6wax7g0"
-
-    elif manufacturer_name in TUYA_eTRV5_MANUFACTURER:  # eTRV
-        self.log.logging("Tuya", "Status", "ReadCluster - %s  force to eTRV4" % (nwkid,))
-        modelName += "-eTRV5"
-
-    if self.ListOfDevices[ nwkid ][ 'Model' ] != modelName:
-        self.ListOfDevices[ nwkid ][ 'Model' ] = modelName
+    if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
+        self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model
