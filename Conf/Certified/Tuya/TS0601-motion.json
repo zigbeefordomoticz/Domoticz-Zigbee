@@ -19,7 +19,7 @@
     },
     "Param": {
         "ZG204Z_MotionSensivity": 2,
-        "ZG204Z_MotionOccupancyTime": 1
+        "ZG204Z_MotionOccupancyTime": 0
     },
     "BatteryDevice": 1
 }
