@@ -93,22 +93,22 @@ class LoggingManagement:
         zigpy_logging_ezsp("warning")
         zigpy_logging_znp("warning")
 
-        if "debugZigpy" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpy"]:
+        if "Zigpy" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Zigpy"]:
             zigpy_loging_mode("debug")
         
-        if "debugZigpyZNP" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpyZNP"]:
+        if "ZigpyZNP" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZigpyZNP"]:
             # Debug ZNP
             zigpy_logging_znp("debug")
 
-        if "debugZigpyEZSP" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpyEZSP"]:
+        if "ZigpyEZSP" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZigpyEZSP"]:
             # Debug Bellows/Ezsp
             zigpy_logging_ezsp("debug")
 
-        if "debugZigpyZigate" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpyZigate"]:
+        if "ZigpyZigate" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZigpyZigate"]:
             # Debug Zigate
             zigpy_logging_zigate("debug")
             
-        if "debugZigpydeCONZ" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpydeCONZ"]:
+        if "ZigpydeCONZ" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZigpydeCONZ"]:
             # Debug deConz
             zigpy_logging_deconz("debug")
 
@@ -219,8 +219,8 @@ class LoggingManagement:
 
     def logging(self, module, logType, message, nwkid=None, context=None):
         if (
-            "debugTransportZigpyZNP" in self.pluginconf.pluginConf
-            and self.pluginconf.pluginConf["debugTransportZigpyZNP"]
+            "TransportZigpyZNP" in self.pluginconf.pluginConf
+            and self.pluginconf.pluginConf["TransportZigpyZNP"]
         ):
             if not self.zigpy_log_znp:
                 self.zigpy_log_znp = True
@@ -230,8 +230,8 @@ class LoggingManagement:
             self.zigpy_login()
 
         if (
-            "debugTransportZigpyZigate" in self.pluginconf.pluginConf
-            and self.pluginconf.pluginConf["debugTransportZigpyZigate"]
+            "TransportZigpyZigate" in self.pluginconf.pluginConf
+            and self.pluginconf.pluginConf["TransportZigpyZigate"]
         ):
             if not self.zigpy_log_zigate:
                 self.zigpy_log_zigate = True

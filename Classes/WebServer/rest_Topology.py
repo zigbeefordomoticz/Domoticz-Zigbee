@@ -118,12 +118,14 @@ def rest_netTopologie(self, verb, data, parameters):
             _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
         elif len(parameters) == 1:
-            if self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
+
+            if self.fake_mode():
+                _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
+                
+            elif self.pluginconf.pluginConf["TopologyV2"]:
                 timestamp = parameters[0]
                 _response["Data"] = json.dumps(collect_routing_table(self,timestamp ), sort_keys=True)
 
-            elif self.fake_mode():
-                _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
             else:
                 timestamp = parameters[0]
                 if timestamp in _topo:

@@ -1290,11 +1290,11 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         store_tuya_attribute(self, NwkId, "BatteryStatus", data)
   
     elif dp == 0x09:
-        # Sensitivity
+        # Sensitivity - {'0': 'low', '1': 'medium', '2': 'high'}
         store_tuya_attribute(self, NwkId, "Sensitivity", data)
         
     elif dp == 0x0a:
-        # Keep time
+        # Keep time - {'0': '10', '1': '30', '2': '60', '3': '120'}
         store_tuya_attribute(self, NwkId, "KeepTime", data)
         
     elif dp == 0x0c:
@@ -1306,3 +1306,35 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     else:
         self.log.logging("Tuya", "Log", "tuya_motion_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+
+def tuya_motion_zg204l_sensitivity(self, nwkid, sensitivity):
+    # {'low': 0, 'medium': 1, 'high': 2}
+    self.log.logging("Tuya", "Debug", "tuya_motion_zg204l_keeptime - %s mode: %s" % (nwkid, sensitivity))
+    if sensitivity not in (0x00, 0x01, 0x02):
+        return
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+
+    action = "%02x04" % 0x09
+    # determine which Endpoint
+    EPout = "01"
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    data = "%02x" % sensitivity
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+    
+def tuya_motion_zg204l_keeptime(self, nwkid, keep_time):
+    # {'10': 0, '30': 1, '60': 2, '120': 3}
+    self.log.logging("Tuya", "Debug", "tuya_motion_zg204l_keeptime - %s mode: %s" % (nwkid, keep_time))
+    if keep_time not in (0x00, 0x01, 0x02, 0x03 ):
+        return
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+
+    action = "%02x04" % 0x0a
+    # determine which Endpoint
+    EPout = "01"
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    data = "%02x" % keep_time
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+    

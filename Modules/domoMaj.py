@@ -62,7 +62,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             NWKID,
         )
         if not zigpy_plugin_sanity_check(self, NWKID):
-            zdp_IEEE_address_request(self, NWKID, NWKID, u8RequestType="00", u8StartIndex="00")
+            # Broadcast to 0xfffd: macRxOnWhenIdle = TRUE
+            zdp_IEEE_address_request(self, 'fffd', NWKID, u8RequestType="00", u8StartIndex="00")
         return
 
 

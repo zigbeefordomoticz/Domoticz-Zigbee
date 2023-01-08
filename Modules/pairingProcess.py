@@ -32,7 +32,7 @@ from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
-from Modules.tools import (build_list_of_device_model, getListOfEpForCluster,
+from Modules.tools import ( getListOfEpForCluster,
                            is_fake_ep)
 from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration
 from Modules.tuyaSiren import tuya_sirene_registration
@@ -295,13 +295,9 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
         and "CreateWidgetDomoticz"
         in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]
-        and not self.DeviceConf[self.ListOfDevices[NWKID]["Model"]][
-            "CreateWidgetDomoticz"
-        ]
+        and not self.DeviceConf[self.ListOfDevices[NWKID]["Model"]][ "CreateWidgetDomoticz" ]
     ):
-        self.ListOfDevices[NWKID]["Status"] = "notDB"
-        self.ListOfDevices[NWKID]["PairingInProgress"] = False
-        self.CommiSSionning = False
+        create_device_without_Domoticz_Widgets( self, NWKID)
         return
 
     # Let's check if we have a profalux device, and if that is a remote. In such case, just drop this
@@ -310,9 +306,7 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"
         and self.ListOfDevices[NWKID]["ZDeviceID"] == "0201"
     ):  # Remote
-        self.ListOfDevices[NWKID]["Status"] = "notDB"
-        self.ListOfDevices[NWKID]["PairingInProgress"] = False
-        self.CommiSSionning = False
+        create_device_without_Domoticz_Widgets( self, NWKID)
         return
 
     # Check once more if we have received the Model Name
@@ -345,7 +339,12 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         full_provision_device(self, Devices, NWKID, RIA, status)
         return
 
-
+def create_device_without_Domoticz_Widgets( self, Nwkid):
+        self.ListOfDevices[Nwkid]["Status"] = "notDB"
+        self.ListOfDevices[Nwkid]["PairingInProgress"] = False
+        self.CommiSSionning = False
+        self.ListOfDevices[ Nwkid ]["CertifiedDevice"] = self.ListOfDevices[Nwkid]["Model"] in self.DeviceConf
+   
 def full_provision_device(self, Devices, NWKID, RIA, status):
 
     self.log.logging(
@@ -397,7 +396,8 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
 
 def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
-    if self.ListOfDevices[NWKID]["Model"] in ("TS004F",):
+    modelName = self.ListOfDevices[NWKID]["Model"] if "Model" in self.ListOfDevices[NWKID] else ""
+    if modelName in ("TS004F",):
         self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
@@ -409,7 +409,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
         mgmt_rtg(self, NWKID, "BindingTable")
 
     # Just after Binding Enable Opple with Magic Word
-    if self.ListOfDevices[NWKID]["Model"] in (
+    if modelName in (
         "lumi.remote.b686opcn01",
         "lumi.remote.b486opcn01",
         "lumi.remote.b286opcn01",
@@ -448,8 +448,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     handle_device_specific_needs(self, Devices, NWKID)
     
     # 6- Updating the Certified devices list
-    if 'ConfigSource' in self.ListOfDevices[NWKID]:
-        self.ListOfDevices[ NWKID ]["CertifiedDevice"] = (self.ListOfDevices[NWKID]['ConfigSource'] == "DeviceConf")
+    self.ListOfDevices[ NWKID ]["CertifiedDevice"] = modelName in self.DeviceConf
 
 
 
