@@ -1,0 +1,23 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1434",
+    "_Comment": "2 channels relay ",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0006": "",
+            "Type": "Switch"
+        },
+        "02": {
+            "0000": "",
+            "0006": "",
+            "Type": "Switch"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0006" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0000", "0003", "0004", "0005", "0006", "0007", "0010", "4000" ],
+        "0006": [ "0000", "4001", "4002" ]
+    }
+}
