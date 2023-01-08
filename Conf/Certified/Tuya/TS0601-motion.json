@@ -17,6 +17,9 @@
         "0019": [],
         "ef00": []
     },
-    "Param": {},
+    "Param": {
+        "ZG204Z_MotionSensivity": 2,
+        "ZG204Z_MotionOccupancyTime": 1
+    },
     "BatteryDevice": 1
 }
