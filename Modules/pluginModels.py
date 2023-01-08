@@ -14,6 +14,7 @@ from Modules.tuyaConst import (TUYA_2GANGS_DIMMER_MANUFACTURER,
                                TUYA_eTRV2_MANUFACTURER,
                                TUYA_eTRV3_MANUFACTURER,
                                TUYA_eTRV4_MANUFACTURER,
+                               TUYA_GARAGE_DOOR,
                                TUYA_eTRV5_MANUFACTURER)
 
 def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_code=None, device_id=None):
@@ -199,5 +200,23 @@ PLUGIN_MODELS_MATRIX = [
         "Manufacturer": TUYA_WATER_TIMER, 
         "ManufId": [],
         "PluginModelName": "TS0601-Parkside-Watering-Timer",},
+    
+    # Garage Door
+    { "Model": ["TS0601",], 
+        "Manufacturer": TUYA_GARAGE_DOOR, 
+        "ManufId": [],
+        "PluginModelName": "TS0601-_TZE200_nklqjk62",},
+
+    { "Model": ["TS0601",],
+        "Manufacturer": [ "_TZE200_chyvmhay",],
+        "ManufId": [],
+        "PluginModelName": "TS0601-_TZE200_nklqjk62",},
+
+    # Thermostat with Cooling
+    { "Model": ["TS0601",],  
+        "Manufacturer": [ "_TZE200_dzuqwsyg",],
+        "ManufId": [],
+        "PluginModelName": "TS0601-_TZE200_dzuqwsyg",},
+
 
 ]
