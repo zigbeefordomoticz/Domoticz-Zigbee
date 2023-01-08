@@ -406,6 +406,9 @@ def timedOutDevice(self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
         if "IEEE" not in self.ListOfDevices[NwkId]:
             return
         _IEEE = self.ListOfDevices[NwkId]["IEEE"]
+        if self.ListOfDevices[NwkId]["Health"] == "Disabled":
+            return
+        
         self.ListOfDevices[NwkId]["Health"] = "TimedOut" if MarkTimedOut else "Live"
         for x in list(Devices):
             if Devices[x].DeviceID != _IEEE:
@@ -421,15 +424,14 @@ def timedOutDevice(self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
                     NwkId,
                 )
 
-            else:
-                if MarkTimedOut:
-                    timeout_widget(self, Devices, x, 1)
-                    self.log.logging(
-                        "Widget",
-                        "Debug",
-                        "timedOutDevice unit %s nwkid: %s " % (Devices[x].Name, NwkId),
-                        NwkId,
-                    )
+            elif MarkTimedOut:
+                timeout_widget(self, Devices, x, 1)
+                self.log.logging(
+                    "Widget",
+                    "Debug",
+                    "timedOutDevice unit %s nwkid: %s " % (Devices[x].Name, NwkId),
+                    NwkId,
+                )
 
 
 def timeout_widget(self, Devices, unit, timeout_value):
@@ -500,7 +502,8 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
         if "ErrorManagement" in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]["ErrorManagement"] = 0
 
-        self.ListOfDevices[NwkId]["Health"] = "Live"
+        if self.ListOfDevices[NwkId]["Health"] not in ( "Disabled", ):
+            self.ListOfDevices[NwkId]["Health"] = "Live"
 
         # if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
         #    #self.log.logging( "Widget", "Debug", "Too early for a new update of lastSeenUpdate %s" %NwkId, NwkId)

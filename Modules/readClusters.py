@@ -37,7 +37,7 @@ from Modules.tuya import (TUYA_2GANGS_DIMMER_MANUFACTURER,
                           TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER,
                           TUYA_ENERGY_MANUFACTURER, TUYA_SIREN_MANUFACTURER,
                           TUYA_SMARTAIR_MANUFACTURER, TUYA_SMOKE_MANUFACTURER,
-                          TUYA_SWITCH_MANUFACTURER, TUYA_TEMP_HUMI,
+                          TUYA_SWITCH_MANUFACTURER, TUYA_TEMP_HUMI, TUYA_MOTION,
                           TUYA_THERMOSTAT_MANUFACTURER, TUYA_TS0601_MODEL_NAME,
                           TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
                           TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER,
@@ -165,8 +165,33 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
         # We cannot process a none existing device.
         return
 
-    self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s" % (
-        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData), MsgSrcAddr, )
+    if (
+        MsgSrcAddr in self.ListOfDevices
+        and "Health" in self.ListOfDevices[MsgSrcAddr] 
+        and self.ListOfDevices[MsgSrcAddr]["Health"] == "Disabled"
+    ):
+        # If the device has been disabled, just drop the message
+        self.log.logging("Command", "Debug", "disabled device: %s/%s droping message " % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr)
+        
+        return
+    
+    # Can we receive a Custer while the Device is not yet in the ListOfDevices ??????
+    # This looks not possible to me !!!!!!!
+    # This could be in the case of Xiaomi sending Cluster 0x0000 before anything is done on the plugin.
+    # I would consider this doesn't make sense, and we should simply return a warning, that we receive a message from an unknown device !
+    if "Ep" not in self.ListOfDevices[MsgSrcAddr]:
+        return
+    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Ep"]:
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] = {}
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId] = {}
+
+    self.log.logging(
+        "Cluster",
+        "Debug",
+        "ReadCluster - %s - %s/%s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),
+        MsgSrcAddr,
+    )
 
     storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
 
@@ -358,8 +383,11 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 
             if manufacturer_name in TUYA_TEMP_HUMI:  # Temp/Humi Sensor
                 modelName += "-temphumi"
+                
+            elif manufacturer_name in TUYA_MOTION:
+                modelName += "-motion"
 
-            if manufacturer_name in TUYA_SMOKE_MANUFACTURER:  # Smoke detector
+            elif manufacturer_name in TUYA_SMOKE_MANUFACTURER:  # Smoke detector
                 modelName += "-smoke"
 
             elif manufacturer_name in TUYA_DIMMER_MANUFACTURER:  # Dimmer
@@ -451,7 +479,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Very bad hack, but Owon use the same model name for 2 devices!
             modelName = "THS317"
 
-        # Here the Device is not yet provisionned
+        # Here the Device is not yet provisioned
         if "Model" not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]["Model"] = {}
 
@@ -465,7 +493,7 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if modelName == "":
             return
 
-        # Check if we have already provisionned this Device. If yes, then we drop this message
+        # Check if we have already provisioned this Device. If yes, then we drop this message
         if "Ep" in self.ListOfDevices[MsgSrcAddr]:
             for iterEp in list(self.ListOfDevices[MsgSrcAddr]["Ep"]):
                 if "ClusterType" in list(self.ListOfDevices[MsgSrcAddr]["Ep"][iterEp]):
@@ -3657,8 +3685,11 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
 
     conso = raw_value  # Raw value
-    if "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET2",):
+    if "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET2", ):
         value = round(conso / 10, 3)
+        
+    elif "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET1", ):
+        value = round(conso / 1000, 3)
 
     elif MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
         diviser = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0302"]
@@ -4299,7 +4330,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         
         elif (
             "Model" in self.ListOfDevices[MsgSrcAddr] 
-            and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-din", "TS011F-plug", "SP 120", "SPLZB-131 ")
+            and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-din", "TS011F-plug", "SP 120", "SPLZB-131", "4512737", "SOCKETOUTLET1", "SOCKETOUTLET2")
         ):
             value /= 1000
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
@@ -4891,7 +4922,6 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     else:
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Unknown attribute: %s value %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )
         store_lumi_attribute(self, MsgSrcAddr, MsgAttrID , MsgClusterData)
-
 
 def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 

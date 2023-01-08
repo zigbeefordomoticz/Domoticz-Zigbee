@@ -1,0 +1,23 @@
+{
+    "_blakadder": "https://zigbee.blakadder.com/Aqara_JY-GZ-01AQ.html",
+    "_Source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1422",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "0001": "",
+            "0500": "",
+            "0019": "",
+            "Type": "Smoke"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0001" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "000a", "4000" ],
+        "0001": [ "0020", "0033", "0035" ],
+        "0500": [ "0001", "0000", "0002", "0010"],
+        "0019": []
+    }
+}

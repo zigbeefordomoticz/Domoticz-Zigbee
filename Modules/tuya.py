@@ -6,7 +6,8 @@
 """
     Module: tuya.py
 
-    Description: Tuya specific
+    Descripti
+    on: Tuya specific
 
 """
 
@@ -58,7 +59,17 @@ TUYA_SMARTAIR_MANUFACTURER = (
     "_TZE200_yvx5lh6k",
 )
 
-TUYA_TEMP_HUMI = ( "_TZE200_bjawzodf", "_TZE200_bq5c8xfe", )
+TUYA_MOTION = (
+    "_TZE200_bh3n6gk8",
+    '_TZE200_3towulqd', 
+    '_TZE200_1ibpyhdc'
+)
+
+TUYA_TEMP_HUMI = ( 
+    "_TZE200_bjawzodf", 
+    "_TZE200_bq5c8xfe", 
+    "_TZE200_qoy0ekbd" 
+)
 
 TUYA_SIREN_MANUFACTURER = (
     "_TZE200_d0yu2xgi",
@@ -186,7 +197,7 @@ TUYA_eTRV_MANUFACTURER = (
     "_TZE200_qc4fpmcn",
 )
 
-TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL + TUYA_SMOKE_MANUFACTURER + TUYA_TEMP_HUMI
+TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL + TUYA_SMOKE_MANUFACTURER + TUYA_TEMP_HUMI + TUYA_MOTION
 TUYA_MANUFACTURER_NAME = (
     TUYA_ENERGY_MANUFACTURER
     + TS011F_MANUF_NAME
@@ -210,6 +221,7 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_GARAGE_DOOR
     + TUYA_SMOKE_MANUFACTURER
     + TUYA_TEMP_HUMI
+    + TUYA_MOTION
 )
 
 
@@ -493,6 +505,10 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
 
     elif _ModelName == "TS0601-temphumi":
         tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+ 
+    elif _ModelName == "TS0601-motion":
+        tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        
         
     else:
         attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
@@ -1427,10 +1443,14 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", int(data, 16))
        
     elif dp == 0x02:   # Humi
-        humi = int(data, 16) // 10
+        if (
+            'Manufacturer Name' in self.ListOfDevices[ NwkId ]
+            and self.ListOfDevices[ NwkId ][ 'Manufacturer Name' ] not in ( '_TZE200_qoy0ekbd',)
+        ):
+            humi = int(data, 16) // 10
         store_tuya_attribute(self, NwkId, "Humi", humi)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0405", humi)
-        store_tuya_attribute(self, NwkId, "Humi", data)
+        checkAndStoreAttributeValue(self, NwkId, "01", "0405", "0000", humi)
         
     elif dp == 0x04:   # Battery ????
         store_tuya_attribute(self, NwkId, "Battery", data)
@@ -1442,3 +1462,71 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
     else:
         self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+        
+def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+    
+    self.log.logging("Tuya", "Log", "tuya_motion_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+
+    if dp == 0x01:
+        # Occupancy
+        store_tuya_attribute(self, NwkId, "Occupancy", data)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0406", data )
+        checkAndStoreAttributeValue(self, NwkId, "01", "0406", "0000", data)
+
+    elif dp == 0x04:
+        # Battery
+        store_tuya_attribute(self, NwkId, "Battery", data)
+        checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", int(data, 16))
+        self.ListOfDevices[NwkId]["Battery"] = int(data, 16)
+        Update_Battery_Device(self, Devices, NwkId, int(data, 16))
+        store_tuya_attribute(self, NwkId, "BatteryStatus", data)
+  
+    elif dp == 0x09:
+        # Sensitivity - {'0': 'low', '1': 'medium', '2': 'high'}
+        store_tuya_attribute(self, NwkId, "Sensitivity", data)
+        
+    elif dp == 0x0a:
+        # Keep time - {'0': '10', '1': '30', '2': '60', '3': '120'}
+        store_tuya_attribute(self, NwkId, "KeepTime", data)
+        
+    elif dp == 0x0c:
+        # Illuminance
+        store_tuya_attribute(self, NwkId, "Illuminance", data)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0400", (int(data, 16)) )
+        checkAndStoreAttributeValue(self, NwkId, "01", "0400", "0000", int(data, 16))
+   
+    else:
+        self.log.logging("Tuya", "Log", "tuya_motion_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+
+def tuya_motion_zg204l_sensitivity(self, nwkid, sensitivity):
+    # {'low': 0, 'medium': 1, 'high': 2}
+    self.log.logging("Tuya", "Debug", "tuya_motion_zg204l_keeptime - %s mode: %s" % (nwkid, sensitivity))
+    if sensitivity not in (0x00, 0x01, 0x02):
+        return
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+
+    action = "%02x04" % 0x09
+    # determine which Endpoint
+    EPout = "01"
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    data = "%02x" % sensitivity
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+    
+def tuya_motion_zg204l_keeptime(self, nwkid, keep_time):
+    # {'10': 0, '30': 1, '60': 2, '120': 3}
+    self.log.logging("Tuya", "Debug", "tuya_motion_zg204l_keeptime - %s mode: %s" % (nwkid, keep_time))
+    if keep_time not in (0x00, 0x01, 0x02, 0x03 ):
+        return
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+
+    action = "%02x04" % 0x0a
+    # determine which Endpoint
+    EPout = "01"
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    data = "%02x" % keep_time
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+    

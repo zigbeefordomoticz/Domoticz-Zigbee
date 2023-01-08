@@ -570,7 +570,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
             npdu = MsgData[12:14]
             apdu = MsgData[14:16]
 
-    if self.pluginconf.pluginConf["debugzigateCmd"]:
+    if self.pluginconf.pluginConf["coordinatorCmd"]:
         i_sqn = None
         if PacketType in ("0100", "0120", "0110"):
             i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, sqn_app, TYPE_APP_ZCL)
@@ -1060,14 +1060,14 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
 
     if self.ControllerIEEE != extaddr:
         # In order to update the first time
-        self.adminWidgets.updateNotificationWidget(Devices, "Zigate IEEE: %s" % extaddr)
+        self.adminWidgets.updateNotificationWidget(Devices, "Coordinator IEEE: %s" % extaddr)
 
     self.pluginParameters["CoordinatorIEEE"] = extaddr
     self.ControllerIEEE = extaddr
     self.ControllerNWKID = addr
 
     if self.ControllerNWKID != "0000":
-        self.log.logging("Input", "Error", "Zigate not correctly initialized")
+        self.log.logging("Input", "Error", "Coordinator not correctly initialized")
         return
 
     # At that stage IEEE is set to 0x0000 which is correct for the Coordinator
@@ -1075,7 +1075,7 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
         initLODZigate(self, addr, extaddr)
 
     if self.currentChannel != int(Channel, 16):
-        self.adminWidgets.updateNotificationWidget(Devices, "Zigate Channel: %s" % str(int(Channel, 16)))
+        self.adminWidgets.updateNotificationWidget(Devices, "Coordinator Channel: %s" % str(int(Channel, 16)))
 
     # Let's check if this is a first initialisation, and then we need to update the Channel setting
     if (
@@ -1263,7 +1263,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     updLQI(self, MsgSrcAddr, MsgLQI)
     _powered = mainPoweredDevice(self, MsgSrcAddr)
 
-    if self.pluginconf.pluginConf["debugzigateCmd"]:
+    if self.pluginconf.pluginConf["coordinatorCmd"]:
         if MsgSEQ:
             self.log.logging(
                 "Input",
@@ -1283,13 +1283,8 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     if MsgStatus == "00":
         timeStamped(self, MsgSrcAddr, 0x8011)
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-        if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] != "Live":
-            self.log.logging(
-                "Input",
-                "Log",
-                "Receive an APS Ack from %s, let's put the device back to Live" % MsgSrcAddr,
-                MsgSrcAddr,
-            )
+        if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Live", "Disabled"):
+            self.log.logging( "Input", "Log", "Receive an APS Ack from %s, let's put the device back to Live" % MsgSrcAddr, MsgSrcAddr, )
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
         return
 
@@ -1310,6 +1305,10 @@ def set_health_state(self, MsgSrcAddr, ClusterId, Status):
 
     if "Health" not in self.ListOfDevices[MsgSrcAddr]:
         return
+    if self.ListOfDevices[MsgSrcAddr]["Health"] == "Disabled":
+        # If the device has been disabled, just drop the message
+        return
+
     if self.ListOfDevices[MsgSrcAddr]["Health"] != "Not Reachable":
         self.ListOfDevices[MsgSrcAddr]["Health"] = "Not Reachable"
 
@@ -1504,9 +1503,9 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
         self.log.logging(
             "Input",
             "Status",
-            "Start Network: Node is on network. ZiGate is already in network so network is already formed",
+            "Start Network: Node is on network. Coordinator is already in network so network is already formed",
         )
-        Status = "Start Network: Node is on network. ZiGate is already in network so network is already formed"
+        Status = "Start Network: Node is on network. Coordinator is already in network so network is already formed"
     elif MsgDataStatus == "06":
         self.log.logging(
             "Input",
@@ -1566,7 +1565,7 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
         self.log.logging(
             "Input",
             "Status",
-            "Zigate details IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s"
+            "Coordinator details IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s"
             % (
                 MsgExtendedAddress,
                 MsgShortAddress,
@@ -1577,7 +1576,7 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
         )
     else:
         Domoticz.Error(
-            "Zigate initialisation failed IEEE: %s, Nwkid: %s, Channel: %s"
+            "Coordinator initialisation failed IEEE: %s, Nwkid: %s, Channel: %s"
             % (MsgExtendedAddress, MsgShortAddress, MsgChannel)
         )
 
@@ -2046,6 +2045,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
 
     updLQI(self, addr, MsgLQI)
 
+    self.ListOfDevices[addr]["_rawNodeDescriptor"] = MsgData[8:]
     self.ListOfDevices[addr]["Max Buffer Size"] = max_buffer
     self.ListOfDevices[addr]["Max Rx"] = max_rx
     self.ListOfDevices[addr]["Max Tx"] = max_tx
@@ -2574,7 +2574,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
         self.log.logging(
             "Input",
             "Log",
-            "Removing this not completly provisionned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress),
+            "Removing this not completly provisioned device due to a leave ( %s , %s )" % (sAddr, MsgExtAddress),
         )
 
     elif self.ListOfDevices[sAddr]["Status"] == "Leave":
@@ -3137,7 +3137,7 @@ def read_report_attributes(
             MsgSrcAddr,
         )
 
-        if "Health" in self.ListOfDevices[MsgSrcAddr]:
+        if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Disabled",):
             self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
 
         updSQN(self, MsgSrcAddr, str(MsgSQN))
@@ -3182,8 +3182,8 @@ def isZDeviceName(self, MsgSrcAddr):
 
 def debug_LQI(self, MsgSrcAddr, MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcEp):
     if (
-        self.pluginconf.pluginConf["debugLQI"]
-        and self.ListOfDevices[MsgSrcAddr]["LQI"] <= self.pluginconf.pluginConf["debugLQI"]
+        self.pluginconf.pluginConf["LQIthreshold"]
+        and self.ListOfDevices[MsgSrcAddr]["LQI"] <= self.pluginconf.pluginConf["LQIthreshold"]
     ):
         if isZDeviceName(self, MsgSrcAddr):
             self.log.logging(
@@ -3596,7 +3596,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
         zigpy_plugin_sanity_check(self, MsgSrcAddr)
         return
     
-    if "Health" in self.ListOfDevices[MsgSrcAddr]:
+    if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Disabled",):
         self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
 
     timeStamped(self, MsgSrcAddr, 0x8401)

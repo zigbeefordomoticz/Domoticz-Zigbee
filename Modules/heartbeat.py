@@ -10,14 +10,10 @@
 
 """
 
-import time
 import datetime
+import time
 
 import Domoticz
-from Zigbee.zdpCommands import (zdp_IEEE_address_request,
-                                zdp_node_descriptor_request,
-                                zdp_NWK_address_request)
-
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
@@ -27,8 +23,10 @@ from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
 from Modules.paramDevice import sanity_check_of_param
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
+                                    ReadAttribute_ZLinkyIndex,
+                                    ReadAttributeReq_Scheduled_ZLinky,
+                                    ReadAttributeReq_ZLinky,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
-                                    ReadAttributeRequest_0702_0000,
                                     ReadAttributeRequest_0001,
                                     ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0008_0000,
@@ -37,11 +35,9 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0201_0012,
                                     ReadAttributeRequest_0402,
                                     ReadAttributeRequest_0405,
+                                    ReadAttributeRequest_0702_0000,
                                     ReadAttributeRequest_0702_PC321,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
-                                    ReadAttributeReq_ZLinky,
-                                    ReadAttribute_ZLinkyIndex,
-                                    ReadAttributeReq_Scheduled_ZLinky,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
                                     ping_tuya_device)
@@ -50,10 +46,11 @@ from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
                            get_device_nickname, getListOfEpForCluster, is_hex,
                            is_time_to_perform_work, mainPoweredDevice,
                            night_shift_jobs, removeNwkInList)
-from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
 from Modules.tuyaTRV import tuya_switch_online
-
+from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
+from Zigbee.zdpCommands import (zdp_node_descriptor_request,
+                                zdp_NWK_address_request)
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -321,7 +318,10 @@ def checkHealth(self, NwkId):
     # Checking current state of the this Nwk
     if "Health" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Health"] = ""
-
+        
+    if self.ListOfDevices[NwkId]["Health"] == "Disabled":
+        return False
+                 
     if "Stamp" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Stamp"] = {'LastPing': 0, 'LastSeen': 0}
         self.ListOfDevices[NwkId]["Health"] = "unknown"
@@ -353,9 +353,7 @@ def checkHealth(self, NwkId):
         self.ListOfDevices[NwkId]["Health"] = "Not seen last 24hours"
 
     # If device flag as Not Reachable, don't do anything
-    return (
-        "Health" not in self.ListOfDevices[NwkId]
-        or self.ListOfDevices[NwkId]["Health"] != "Not Reachable")
+    return ( "Health" not in self.ListOfDevices[NwkId] or self.ListOfDevices[NwkId]["Health"] != "Not Reachable")
 
 
 def pingRetryDueToBadHealth(self, NwkId):
@@ -407,7 +405,7 @@ def pingRetryDueToBadHealth(self, NwkId):
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
         lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
-        zdp_NWK_address_request(self, "FFFD", lookup_ieee)
+        zdp_NWK_address_request(self, "fffd", lookup_ieee)
         submitPing(self, NwkId)
         return
 
@@ -708,24 +706,16 @@ def processKnownDevices(self, Devices, NWKID):
         mgtm_binding(self, NWKID, "BindingTable")
 
     # If corresponding Attributes not present, let's do a Request Node Description
-    if night_shift_jobs( self ) and not enabledEndDevicePolling and intHB != 0 and ((intHB % NODE_DESCRIPTOR_REFRESH) == 0):
-        req_node_descriptor = False
+    if night_shift_jobs( self ) and _mainPowered and intHB != 0 and ((intHB % NODE_DESCRIPTOR_REFRESH) == 0):
         if (
-            "Manufacturer" not in self.ListOfDevices[NWKID]
+            "Manufacturer" not in self.ListOfDevices[NWKID] 
+            or self.ListOfDevices[NWKID]["Manufacturer"] in ( "", {} )
             or "DeviceType" not in self.ListOfDevices[NWKID]
             or "LogicalType" not in self.ListOfDevices[NWKID]
             or "PowerSource" not in self.ListOfDevices[NWKID]
             or "ReceiveOnIdle" not in self.ListOfDevices[NWKID]
+            or "_rawNodeDescriptor" not in self.ListOfDevices[NWKID]
         ):
-            req_node_descriptor = True
-        if (
-            "Manufacturer" in self.ListOfDevices[NWKID]
-            and self.ListOfDevices[NWKID]["Manufacturer"] == ""
-        ):
-            req_node_descriptor = True
-
-        if ( req_node_descriptor and night_shift_jobs( self ) ):
-            
             if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
                 #sendZigateCmd(self, "0042", str(NWKID), ackIsDisabled=True)  # Request a Node Descriptor
                 zdp_node_descriptor_request(self, NWKID)
@@ -813,6 +803,17 @@ def processListOfDevices(self, Devices):
             entriesToBeRemoved.append(NWKID)
             continue
 
+        if "Param" in self.ListOfDevices[NWKID] and "Disabled" in self.ListOfDevices[NWKID]["Param"]:
+            if self.ListOfDevices[NWKID]["Param"]["Disabled"] and self.ListOfDevices[NWKID]["Health"] == "Disabled":
+                continue
+            
+            if not self.ListOfDevices[NWKID]["Param"]["Disabled"] and self.ListOfDevices[NWKID]["Health"] == "Disabled":
+                # Looks like it was disabled and it is not any more. 
+                # We need to refresh it
+                self.ListOfDevices[NWKID]["Health"] = ""
+                del self.ListOfDevices[NWKID]["Stamp"]
+                self.ListOfDevices[NWKID]["RIA"] = "0"
+                
         status = self.ListOfDevices[NWKID]["Status"]
         if self.ListOfDevices[NWKID]["RIA"] not in ( "", {}):
             RIA = int(self.ListOfDevices[NWKID]["RIA"])
