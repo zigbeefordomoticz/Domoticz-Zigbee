@@ -10,14 +10,10 @@
 
 """
 
-import time
 import datetime
+import time
 
 import Domoticz
-from Zigbee.zdpCommands import (zdp_IEEE_address_request,
-                                zdp_node_descriptor_request,
-                                zdp_NWK_address_request)
-
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
@@ -27,8 +23,10 @@ from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
 from Modules.paramDevice import sanity_check_of_param
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
+                                    ReadAttribute_ZLinkyIndex,
+                                    ReadAttributeReq_Scheduled_ZLinky,
+                                    ReadAttributeReq_ZLinky,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
-                                    ReadAttributeRequest_0702_0000,
                                     ReadAttributeRequest_0001,
                                     ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0008_0000,
@@ -37,11 +35,9 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0201_0012,
                                     ReadAttributeRequest_0402,
                                     ReadAttributeRequest_0405,
+                                    ReadAttributeRequest_0702_0000,
                                     ReadAttributeRequest_0702_PC321,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
-                                    ReadAttributeReq_ZLinky,
-                                    ReadAttribute_ZLinkyIndex,
-                                    ReadAttributeReq_Scheduled_ZLinky,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
                                     ping_tuya_device)
@@ -50,10 +46,11 @@ from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
                            get_device_nickname, getListOfEpForCluster, is_hex,
                            is_time_to_perform_work, mainPoweredDevice,
                            night_shift_jobs, removeNwkInList)
-from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
 from Modules.tuyaTRV import tuya_switch_online
-
+from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
+from Zigbee.zdpCommands import (zdp_node_descriptor_request,
+                                zdp_NWK_address_request)
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -408,7 +405,7 @@ def pingRetryDueToBadHealth(self, NwkId):
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
         lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
-        zdp_NWK_address_request(self, "FFFD", lookup_ieee)
+        zdp_NWK_address_request(self, "fffd", lookup_ieee)
         submitPing(self, NwkId)
         return
 

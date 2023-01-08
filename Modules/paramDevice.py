@@ -40,9 +40,10 @@ from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           get_tuya_attribute, tuya_backlight_command,
                           tuya_cmd_ts004F, tuya_curtain_mode,
                           tuya_energy_childLock, tuya_external_switch_mode,
-                          tuya_garage_run_time, tuya_switch_indicate_light,
-                          tuya_switch_relay_status, tuya_TS0004_back_light,
-                          tuya_TS0004_indicate_light,
+                          tuya_garage_run_time, tuya_motion_zg204l_keeptime,
+                          tuya_motion_zg204l_sensitivity,
+                          tuya_switch_indicate_light, tuya_switch_relay_status,
+                          tuya_TS0004_back_light, tuya_TS0004_indicate_light,
                           tuya_window_cover_calibration,
                           tuya_window_cover_motor_reversal)
 from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
@@ -50,13 +51,14 @@ from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
                                tuya_siren2_alarm_volume)
 from Modules.tuyaTRV import (tuya_trv_boost_time, tuya_trv_calibration,
                              tuya_trv_child_lock, tuya_trv_eco_temp,
+                             tuya_trv_holiday_setpoint,
                              tuya_trv_set_confort_temperature,
                              tuya_trv_set_eco_temperature,
                              tuya_trv_set_max_setpoint,
                              tuya_trv_set_min_setpoint,
                              tuya_trv_set_opened_window_temp,
                              tuya_trv_thermostat_sensor_mode,
-                             tuya_trv_window_detection, tuya_trv_holiday_setpoint)
+                             tuya_trv_window_detection)
 
 
 def Ballast_max_level(self, nwkid, max_level):
@@ -270,6 +272,8 @@ DEVICE_PARAMETERS = {
     "RTCZCGQ11LMMotionSensibility": RTCZCGQ11LM_motion_opple_sensitivity,
     "RTCZCGQ11LMApproachDistance": RTCZCGQ11LM_motion_opple_approach_distance,
     "RTCZCGQ11LMMonitoringMode": RTCZCGQ11LM_motion_opple_monitoring_mode,
+    "ZG204Z_MotionSensivity": tuya_motion_zg204l_sensitivity,
+    "ZG204Z_MotionOccupancyTime": tuya_motion_zg204l_keeptime
 }
 
 def sanity_check_of_param(self, NwkId):
