@@ -941,7 +941,7 @@ def zigpy_plugin_sanity_check(self, nwkid):
             self.ListOfDevices[nwkid]["Heartbeat"] = "0"
         return True
     # we have a disconnect as IEEE is not pointing to the right nwkid
-    reconnectNWkDevice(self, nwkid, ieee, self.IEEE2NWK[ ieee ])
+    return reconnectNWkDevice(self, nwkid, ieee, self.IEEE2NWK[ ieee ])
 
 def lookupForParentDevice(self, nwkid=None, ieee=None):
 
