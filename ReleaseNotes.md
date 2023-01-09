@@ -23,9 +23,19 @@ Release Numbering
 - [Hardware] - Managing Power state for TS0001 smart relay
 - [Hardware] - Integrating Ikea Air Purifier (@rhuijben)
 - [Hardware] - ADEO LEXMAN Smart Plug 16A
+- [Hardware] - 2 channels relay ( ZB-SW02)
+- [Hardware] - Gledopto 12W Dual White & Color Led bulb
+- [Hardware] - Light Switch 2 Gang
+- [Hardware] - Light Switch - 1 Gang DE
+- [Hardware] - Aqara Smoke sensor JY-GZ-01AQ
+
+- [WebUI] - Angular15
+- [WebUI] - Responsive version ( work with mobile and tablets)
 
 - [Technical] - Improvment of storing Node Descriptor
 - [Technical] - zigpy version from 23 Dec. 2022
+- [Technical] - customstart.sh script to ease and automate docker installation. (thanks to @deufo)
+
 
 
 ## 20 Dec. 2022 - stable6 - 6.3.008
