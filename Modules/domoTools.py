@@ -502,7 +502,7 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
         if "ErrorManagement" in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]["ErrorManagement"] = 0
 
-        if self.ListOfDevices[NwkId]["Health"] not in ( "Disabled", ):
+        if "Health" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Health"] not in ( "Disabled", ):
             self.ListOfDevices[NwkId]["Health"] = "Live"
 
         # if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:

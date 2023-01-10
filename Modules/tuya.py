@@ -15,215 +15,22 @@ import time
 from datetime import datetime, timedelta
 
 import Domoticz
-
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
                            get_and_inc_ZCL_SQN, is_ack_tobe_disabled, updSQN)
+from Modules.tuyaConst import (TUYA_MANUF_CODE,
+                               TUYA_eTRV_MODEL)
 from Modules.tuyaSiren import tuya_siren2_response, tuya_siren_response
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
-from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_response
+from Modules.tuyaTRV import tuya_eTRV_response
 from Modules.zigateConsts import ZIGATE_EP
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
-
-# Cluster 0xef00
-# Commands
-#   Direction: Coordinator -> Device 0x00 SetPoint
-#   Direction: Device -> Coordinator 0x01
-#   Direction: Device -> Coordinator 0x02 Setpoint command response
-
-TUYA_MANUF_CODE = "1002"
-
-
-#   "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
-
-TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l" )
-TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4", "_TZ3000_tk3s5tyg")
-
-
-# TS0601
-TUYA_WATER_TIMER = ("_TZE200_htnnfasr", "_TZE200_akjefhj5", "_TZE200_81isopgh",)
-TUYA_ENERGY_MANUFACTURER = (
-    "_TZE200_fsb6zw01",
-    "_TZE200_byzdayie",
-    "_TZE200_ewxhg6o9"
-)
-TUYA_GARAGE_DOOR = ( "_TZE200_nklqjk62", )
-TUYA_SMARTAIR_MANUFACTURER = (
-    "_TZE200_8ygsuhe1",
-    "_TZE200_yvx5lh6k",
-)
-
-TUYA_MOTION = (
-    "_TZE200_bh3n6gk8",
-    '_TZE200_3towulqd', 
-    '_TZE200_1ibpyhdc'
-)
-
-TUYA_TEMP_HUMI = ( 
-    "_TZE200_bjawzodf", 
-    "_TZE200_bq5c8xfe", 
-    "_TZE200_qoy0ekbd" 
-)
-
-TUYA_SIREN_MANUFACTURER = (
-    "_TZE200_d0yu2xgi",
-    "_TYST11_d0yu2xgi",
-)
-TUYA_SIREN_MODEL = (
-    "TS0601",
-    "0yu2xgi",
-)
-
-TUYA_DIMMER_MANUFACTURER = (
-    "_TZE200_dfxkcots", 
-    )
-
-TUYA_2GANGS_DIMMER_MANUFACTURER = (
-    "_TZE200_e3oitdyu",
-)
-TUYA_SWITCH_MANUFACTURER = (
-    "_TZE200_7tdtqgwv",
-    "_TZE200_oisqyl4o",
-    "_TZE200_amp6tsvy",
-)
-TUYA_2GANGS_SWITCH_MANUFACTURER = ("_TZE200_g1ib5ldv",)
-TUYA_3GANGS_SWITCH_MANUFACTURER = ("TZE200_oisqyl4o",)
-
-TUYA_SMART_ALLIN1 = ( "_TZ3210_jijr1sss", )
-TUYA_CURTAIN_MAUFACTURER = (
-    "_TZE200_cowvfni3",
-    "_TZE200_wmcdj3aq",
-    "_TZE200_fzo2pocs",
-    "_TZE200_nogaemzt",
-    "_TZE200_5zbp6j0u",
-    "_TZE200_fdtjuw7u",
-    "_TZE200_bqcqqjpb",
-    "_TZE200_zpzndjez",
-    "_TYST11_cowvfni3",
-    "_TYST11_wmcdj3aq",
-    "_TYST11_fzo2pocs",
-    "_TYST11_nogaemzt",
-    "_TYST11_5zbp6j0u",
-    "_TYST11_fdtjuw7u",
-    "_TYST11_bqcqqjpb",
-    "_TYST11_zpzndjez",
-    "_TZE200_rddyvrci",
-    "_TZE200_nkoabg8w",
-    "_TZE200_xuzcvlku",
-    "_TZE200_4vobcgd3",
-    "_TZE200_pk0sfzvr",
-    "_TYST11_xu1rkty3",
-    "_TZE200_zah67ekd",
-)
-
-TUYA_CURTAIN_MODEL = (
-    "owvfni3",
-    "mcdj3aq",
-    "zo2pocs",
-    "ogaemzt",
-    "zbp6j0u",
-    "dtjuw7u",
-    "qcqqjpb",
-    "pzndjez",
-)
-
-TUYA_THERMOSTAT_MANUFACTURER = (
-    "_TZE200_aoclfnxz",
-    "_TYST11_zuhszj9s",
-    "_TYST11_jeaxp72v",
-    "_TZE200_dzuqwsyg"    # https://www.domoticz.com/forum/viewtopic.php?p=290066#p290066
-)
-#TUYA_eTRV1_MANUFACTURER = (
-#    "_TZE200_kfvq6avy",
-#    "_TZE200_ckud7u2l",
-#    "_TYST11_KGbxAXL2",
-#    "_TYST11_ckud7u2l",
-#)
-
-TUYA_SMOKE_MANUFACTURER = (
-    "_TZE200_ntcy3xu1",
-)
-
-# https://github.com/zigpy/zigpy/discussions/653#discussioncomment-314395
-TUYA_eTRV1_MANUFACTURER = (
-    "_TYST11_zivfvd7h",
-    "_TZE200_zivfvd7h",
-    "_TYST11_kfvq6avy",
-    "_TZE200_kfvq6avy",
-    "_TYST11_jeaxp72v",
-    "_TZE200_cwnjrr72",
-)
-TUYA_eTRV2_MANUFACTURER = (
-    "_TZE200_ckud7u2l",
-    "_TYST11_ckud7u2l",
-)
-TUYA_eTRV3_MANUFACTURER = (
-    "_TZE200_c88teujp",
-    "_TYST11_KGbxAXL2",
-    "_TYST11_zuhszj9s",
-    "_TZE200_azqp6ssj",
-    "_TZE200_yw7cahqs",
-    "_TZE200_9gvruqf5",
-    "_TZE200_zuhszj9s",
-    "_TZE200_2ekuz3dz",
-)
-TUYA_eTRV4_MANUFACTURER = (
-    "_TZE200_b6wax7g0",  
-)
-
-TUYA_eTRV5_MANUFACTURER = (
-    "_TZE200_7yoranx2",   # model: 'TV01-ZB',           vendor: 'Moes'
-    "_TZE200_e9ba97vf",   # MODEL : 'TV01-ZB',          vendor: 'Moes'
-    "_TZE200_hue3yfsn",   # MODEL : 'TV02-Zigbee',      vendor: 'TuYa'
-    "_TZE200_husqqvux",   # MODEL : 'TSL-TRV-TV01ZG',   vendor: 'Tesla Smart
-    "_TZE200_kly8gjlz",   # 
-    "_TZE200_lnbfnyxd",   # MODEL : 'TSL-TRV-TV01ZG',   vendor: 'Tesla Smart'
-    '_TZE200_kds0pmmv',   # MODEL : 'TV01-ZB',          vendor: 'Moes'
-    "_TZE200_mudxchsu",   # MODEL : 'TV05-ZG curve',    vendor: 'TuYa'
-    "_TZE200_kds0pmmv",   # MODEL : 'TV01-ZB',          vendor: 'Moes'
-    "_TZE200_lllliz3p",   # MODEL : 'TV02-Zigbee',      vendor: 'TuYa'
-)
-
-TUYA_eTRV_MANUFACTURER = (
-    "_TYST11_2dpplnsn",
-    "_TZE200_wlosfena",
-    "_TZE200_fhn3negr",
-    "_TZE200_qc4fpmcn",
-)
-
-TUYA_TS0601_MODEL_NAME = TUYA_eTRV_MODEL + TUYA_CURTAIN_MODEL + TUYA_SIREN_MODEL + TUYA_SMOKE_MANUFACTURER + TUYA_TEMP_HUMI + TUYA_MOTION
-TUYA_MANUFACTURER_NAME = (
-    TUYA_ENERGY_MANUFACTURER
-    + TS011F_MANUF_NAME
-    + TS0041_MANUF_NAME
-    + TUYA_SIREN_MANUFACTURER
-    + TUYA_DIMMER_MANUFACTURER
-    + TUYA_SWITCH_MANUFACTURER
-    + TUYA_2GANGS_SWITCH_MANUFACTURER
-    + TUYA_3GANGS_SWITCH_MANUFACTURER
-    + TUYA_CURTAIN_MAUFACTURER
-    + TUYA_THERMOSTAT_MANUFACTURER
-    + TUYA_eTRV1_MANUFACTURER
-    + TUYA_eTRV2_MANUFACTURER
-    + TUYA_eTRV3_MANUFACTURER
-    + TUYA_eTRV4_MANUFACTURER
-    + TUYA_eTRV5_MANUFACTURER
-    + TUYA_eTRV_MANUFACTURER
-    + TUYA_SMARTAIR_MANUFACTURER
-    + TUYA_WATER_TIMER
-    + TUYA_SMART_ALLIN1
-    + TUYA_GARAGE_DOOR
-    + TUYA_SMOKE_MANUFACTURER
-    + TUYA_TEMP_HUMI
-    + TUYA_MOTION
-)
-
 
 # Tuya Doc: https://developer.tuya.com/en/docs/iot/access-standard-zigbee?id=Kaiuyf28lqebl
 
@@ -1463,6 +1270,7 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
         
+
 def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     self.log.logging("Tuya", "Log", "tuya_motion_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
