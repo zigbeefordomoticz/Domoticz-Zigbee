@@ -1,10 +1,11 @@
 
-from Modules.tuyaConst import (TUYA_2GANGS_DIMMER_MANUFACTURER,
+from Modules.tuyaConst import (TS0002_RELAY_SWITCH_MANUF,
+                               TUYA_2GANGS_DIMMER_MANUFACTURER,
                                TUYA_2GANGS_SWITCH_MANUFACTURER,
                                TUYA_CURTAIN_MAUFACTURER,
                                TUYA_DIMMER_MANUFACTURER,
-                               TUYA_ENERGY_MANUFACTURER, TUYA_MOTION,
-                               TUYA_SIREN_MANUFACTURER,
+                               TUYA_ENERGY_MANUFACTURER, TUYA_GARAGE_DOOR,
+                               TUYA_MOTION, TUYA_SIREN_MANUFACTURER,
                                TUYA_SMARTAIR_MANUFACTURER,
                                TUYA_SMOKE_MANUFACTURER,
                                TUYA_SWITCH_MANUFACTURER, TUYA_TEMP_HUMI,
@@ -14,8 +15,8 @@ from Modules.tuyaConst import (TUYA_2GANGS_DIMMER_MANUFACTURER,
                                TUYA_eTRV2_MANUFACTURER,
                                TUYA_eTRV3_MANUFACTURER,
                                TUYA_eTRV4_MANUFACTURER,
-                               TUYA_GARAGE_DOOR,
                                TUYA_eTRV5_MANUFACTURER)
+
 
 def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_code=None, device_id=None):
     self.log.logging( "Pairing", "Log", "check_found_plugin_model - %s %s %s %s" % (
@@ -59,6 +60,10 @@ PLUGIN_MODELS_MATRIX = [
         "PluginModelName": "lumi.sensor_switch.aq3t",},
 
     # TUYA
+    { "Model": [ "TS0002",],
+        "Manufacturer": [ "_TZ3000_zmy4lslw",  '_TZ3000_01gpyda5', '_TZ3000_bvrlqyj7', '_TZ3000_7ed9cqgi'] ,
+        "PluginModelName": "TS0002_relay_switch"
+    },
     { "Model": ["TS0003",],
         "Manufacturer": [ "_TYZB01_ncutbjdi", ],
         "PluginModelName": "TS0003-QS-Zigbee-S05-LN",},

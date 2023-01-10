@@ -57,13 +57,19 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     if parkside:
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "0d", ackIsDisabled=False)
 
-    elif _ModelName == "TS0216":
+    if _ModelName == "TS0216":
         # Heiman like siren
         # Just do the Regitsration
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", TUYA_MANUF_CODE, "01", "ffde", "20", "13", ackIsDisabled=False)
         return
-    else:
+    
+    if _ModelName == 'TS0002-relay-switch':
+
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
+        tuya_cmd_0x0000_0xf0(self, nwkid)
+        return
+      
+    write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
 
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Zigbee Device Reset
@@ -115,7 +121,6 @@ def tuya_cmd_ts004F(self, NwkId, mode):
     bindDevice(self, ieee, "02", cluster, destaddr=None, destep="01")
     bindDevice(self, ieee, "03", cluster, destaddr=None, destep="01")
     bindDevice(self, ieee, "04", cluster, destaddr=None, destep="01")
-
 
 def tuya_cmd_0x0000_0xf0(self, NwkId):
 
@@ -1133,18 +1138,24 @@ TUYA_CLUSTER_EOO1_ID = "e001"
 TUYA_SWITCH_MODE = {
     "Toggle": 0x00,
     "State": 0x01,
-    "Momentary": 0x02
+    "Momentary": 0x02,
+    0: 0x00,
+    1: 0x01,
+    2: 0x02
 }
 
 def tuya_external_switch_mode( self, NwkId, mode):
  
     self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - mode %s" % mode, NwkId)
     if mode not in TUYA_SWITCH_MODE:
-        self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - None existing mode %s" % mode, NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - mode %s undefined" % mode, NwkId)
         return
     EPout = "01"
     mode = "%02x" %TUYA_SWITCH_MODE[mode]
-    write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_TS0004_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)
+    if "Model" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ]["Model"] in ( "TS0002_relay_switch",):
+        write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, "0000", "00", "d030", "30", mode, ackIsDisabled=False)
+    else:
+        write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_TS0004_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)
 
 def tuya_TS0004_back_light(self, nwkid, mode):
     

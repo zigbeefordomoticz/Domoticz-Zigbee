@@ -287,10 +287,10 @@ def retreive_attributes_from_default_plugin_list(self, key, Ep, cluster):
 
 def ping_tuya_device(self, key):
 
-    PING_CLUSTER = "0000"
+    PING_CLUSTER = "0000" 
     PING_ATTRIBUTE = "0001"
     self.log.logging("ReadAttributes", "Log", "Ping Tuya Devices - Key: %s" % (key), nwkid=key)
-    send_zigatecmd_zcl_ack(self, key, "0100", ZIGATE_EP + "01" + PING_CLUSTER + "00" + "00" + "0000" + "%02x" % (0x01) + PING_ATTRIBUTE)
+    return read_attribute( self, key, ZIGATE_EP, "01", PING_CLUSTER, "00", "00", "0000", "%02x" % (0x01), PING_ATTRIBUTE, ackIsDisabled=False, )
 
 
 def ping_device_with_read_attribute(self, key):

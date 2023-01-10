@@ -633,7 +633,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya eTRV registration needed")
         tuya_eTRV_registration(self, NWKID, device_reset=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS0121",):
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS0121", "TS0002_relay_switch"):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
         tuya_TS0121_registration(self, NWKID)
 
@@ -643,7 +643,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
             ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
 
-    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0222", ):
+    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0222", "TS0002_relay_switch"):
         tuya_command_f0( self, NWKID )
         
     elif self.ListOfDevices[NWKID]["Model"] in (
