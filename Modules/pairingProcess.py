@@ -17,6 +17,7 @@ from Modules.basicOutputs import getListofAttribute, identifyEffect
 from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice
 from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
+from Modules.domoTools import CLUSTER_TO_TYPE
 from Modules.livolo import livolo_bind
 from Modules.lumi import (enable_click_mode_aqara, enable_operation_mode_aqara,
                           enableOppleSwitch)
@@ -32,19 +33,17 @@ from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
-from Modules.tools import ( getListOfEpForCluster,
-                           is_fake_ep)
+from Modules.tools import getListOfEpForCluster, is_fake_ep
 from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration
+from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
 from Modules.tuyaTRV import tuya_eTRV_registration
-from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.zb_tables_management import mgmt_rtg
 from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 from Zigbee.zdpCommands import (zdp_active_endpoint_request,
                                 zdp_node_descriptor_request,
                                 zdp_simple_descriptor_request)
-from Modules.domoTools import CLUSTER_TO_TYPE
 
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
@@ -633,7 +632,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya eTRV registration needed")
         tuya_eTRV_registration(self, NWKID, device_reset=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS0121", "TS0002_relay_switch"):
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS0121", "TS0002_relay_switch", "TS0002_relay_switch"):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
         tuya_TS0121_registration(self, NWKID)
 
@@ -643,7 +642,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
             ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
 
-    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0222", "TS0002_relay_switch"):
+    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0222", "TS0002_relay_switch", "TS0003_relay_switch"):
         tuya_command_f0( self, NWKID )
         
     elif self.ListOfDevices[NWKID]["Model"] in (

@@ -1,5 +1,6 @@
 
 from Modules.tuyaConst import (TS0002_RELAY_SWITCH_MANUF,
+                               TS0003_RELAY_SWITCH_MANUF,
                                TUYA_2GANGS_DIMMER_MANUFACTURER,
                                TUYA_2GANGS_SWITCH_MANUFACTURER,
                                TUYA_CURTAIN_MAUFACTURER,
@@ -61,9 +62,13 @@ PLUGIN_MODELS_MATRIX = [
 
     # TUYA
     { "Model": [ "TS0002",],
-        "Manufacturer": [ "_TZ3000_zmy4lslw",  '_TZ3000_01gpyda5', '_TZ3000_bvrlqyj7', '_TZ3000_7ed9cqgi'] ,
-        "PluginModelName": "TS0002_relay_switch"
-    },
+        "Manufacturer": TS0002_RELAY_SWITCH_MANUF ,
+        "PluginModelName": "TS0002_relay_switch"},
+    
+    { "Model": ["TS0003",],
+        "Manufacturer": TS0003_RELAY_SWITCH_MANUF,
+        "PluginModelName": "TS0003_relay_switch",},
+
     { "Model": ["TS0003",],
         "Manufacturer": [ "_TYZB01_ncutbjdi", ],
         "PluginModelName": "TS0003-QS-Zigbee-S05-LN",},

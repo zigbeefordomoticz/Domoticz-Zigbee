@@ -148,6 +148,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         "TS011F-din",
         "TS0004",
         "TS0004-_TZ3000_excgg5kb",
+        "TS0002", "TS0003", "TS0002_relay_switch", "TS0003_relay_switch"
     ):
         self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s TUYA Manufacturer" % (nwkid, mode), nwkid)
         

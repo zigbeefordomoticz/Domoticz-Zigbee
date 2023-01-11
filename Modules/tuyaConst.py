@@ -7,7 +7,8 @@
 
 TUYA_MANUF_CODE = "1002"
 
-TS0002_RELAY_SWITCH_MANUF = ( "_TZ3000_zmy4lslw", )
+TS0002_RELAY_SWITCH_MANUF = ( "_TZ3000_zmy4lslw", "_TZ3000_01gpyda5", "_TZ3000_bvrlqyj7", "_TZ3000_7ed9cqgi", )
+TS0003_RELAY_SWITCH_MANUF = ( "_TZ3000_odzoiovu", )
 
 #   "_TZE200_i48qyn9s" : tuyaReadRawAPS ,
 
