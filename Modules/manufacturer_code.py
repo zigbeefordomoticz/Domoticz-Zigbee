@@ -38,7 +38,7 @@ TUYA_PREFIX = (
     "_TZ",
     "_TY",
 )
-TUYA_MANUF_CODE = 1002
+TUYA_MANUF_CODE= [ '1002', '1141' ]
 
 
 def check_and_update_manufcode(self):
@@ -56,13 +56,22 @@ def check_and_update_manufcode(self):
 
             elif self.ListOfDevices[nwkid]["Manufacturer Name"][:3] in TUYA_PREFIX:
                 # Tuya
-                if self.ListOfDevices[nwkid]["Manufacturer"] != TUYA_MANUF_CODE:
-                    self.ListOfDevices[nwkid]["Manufacturer"] = TUYA_MANUF_CODE
+                if self.ListOfDevices[nwkid]["Manufacturer"] not in TUYA_MANUF_CODE:
+                    self.ListOfDevices[nwkid]["Manufacturer"] = '1002'
 
 PREFIX_MAC_LEN = 6
 PREFIX_MACADDR_IKEA_TRADFRI = ( "000d6f", "14b457")
 PREFIX_MACADDR_DEVELCO = ( "0015bc", )
-PREFIX_MACADDR_TUYA = ( "842e14", "847127", "84fd27", "588e81", "60a423", "a4c138", "b4e3f9", "bc33ac", )
+PREFIX_MACADDR_TUYA = ( 
+    "588e81",
+    "60a423",
+    "842e14",
+    "847127",
+    "84fd27",
+    "a4c138",
+    "b4e3f9",
+    "bc33ac",
+    )
 PREFIX_MACADDR_LEGRAND = ( "000474", )
 PREFIX_MACADDR_PROFALUX = ( "20918a", )
 PREFIX_MACADDR_WIZER_LEGACY = ( "00124b", )

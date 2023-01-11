@@ -23,7 +23,7 @@ from Modules.macPrefix import DEVELCO_PREFIX, casaiaPrefix, OWON_PREFIX
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
                                        PREFIX_MACADDR_IKEA_TRADFRI,
                                        PREFIX_MACADDR_OPPLE,
-                                       PREFIX_MACADDR_TUYA,
+                                       PREFIX_MACADDR_TUYA, TUYA_MANUF_CODE,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
@@ -91,7 +91,7 @@ def get_max_read_attribute_value( self, nwkid=None):
                 maxReadAttributesByRequest = self.pluginconf.pluginConf["ReadAttributeChunk"]
 
             elif self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
-                read_configuration_report_chunk = 5
+                read_configuration_report_chunk = 6
 
     self.log.logging("ReadAttributes", "Debug", "get_max_read_attribute_value( %s ) => %s" %( nwkid, read_configuration_report_chunk) , nwkid=nwkid)
 
@@ -379,9 +379,13 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             listAttributes.append(0x4000)
         if 0xF000 not in listAttributes:
             listAttributes.append(0xF000)
+            
+    elif self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
+        self.log.logging("ReadAttributes", "Log", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
+        listAttributes = [ 0x0004, 0x0000, 0x0001,  0x0005, 0x0007, 0xfffe] 
 
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
-    self.log.logging("ReadAttributes", "Log", "EP: %s" % self.ListOfDevices[key]["Ep"])
+    self.log.logging("ReadAttributes", "Log", "EP: %s Attributes: %s" % (self.ListOfDevices[key]["Ep"], str(listAttributes)))
 
     ieee = self.ListOfDevices[ key ]['IEEE']
     if len(ListOfEp) == 0:
@@ -389,10 +393,17 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
         self.log.logging( "ReadAttributes", "Log", "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
 
         if ( ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
+            self.log.logging( "ReadAttributes", "Log", "Request Basic  Opple : " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
-        elif ( ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX):
+        elif ( ieee[: len(DEVELCO_PREFIX)] in DEVELCO_PREFIX):
+            self.log.logging( "ReadAttributes", "Log", "Request Basic  Develco : " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
             ReadAttributeReq(self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+            
+        elif ieee[:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:  
+            self.log.logging( "ReadAttributes", "Log", "Request Basic  Tuya : " + key + " EPout = " + "01", nwkid=key, )
+            ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+            ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
             
         else:
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
@@ -463,7 +474,11 @@ def ReadAttributeRequest_0000_for_general(self, key):
         listAttrGeneric = []
         manufacturer_code = "0000"
 
-        if (
+        if self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
+            self.log.logging("ReadAttributes", "Log", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
+            listAttributes = [ 0x0004, 0x0000, 0x0001,  0x0005, 0x0007, 0xfffe] 
+
+        elif (
             ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e")
             or ("Manufacturer Name" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric")
             or ("Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("EH-ZB-VAC"))
