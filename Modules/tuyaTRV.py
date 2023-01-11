@@ -1171,10 +1171,13 @@ def tuya_set_calibration_if_needed(self, NwkId):
         self.log.logging( "Tuya", "Debug", "thermostat_Calibration - 2 complements of %s" % (
             target_calibration), )
 
-        target_calibration = ( 0xffffffff + target_calibration +1 )
-        #target_calibration = abs(int(hex(-target_calibration - pow(2, 32)), 16))
-        self.log.logging( "Tuya", "Debug", "thermostat_Calibration - 2 complement is %08x" % (
-            target_calibration), )
+        if get_model_name(self, NwkId) in ( "TS0601-thermostat", ):
+            target_calibration =  abs( abs(target_calibration) - 4096 )
+        else:
+            target_calibration = ( 0xffffffff + target_calibration +1 )
+            #target_calibration = abs(int(hex(-target_calibration - pow(2, 32)), 16))
+            self.log.logging( "Tuya", "Debug", "thermostat_Calibration - 2 complement is %08x" % (
+                target_calibration), )
 
     if "Tuya" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Tuya"] = {}
