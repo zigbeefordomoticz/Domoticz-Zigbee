@@ -1179,11 +1179,11 @@ def tuya_set_calibration_if_needed(self, NwkId):
     if "Tuya" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Tuya"] = {}
 
-    if "Calibration" not in self.ListOfDevices[NwkId]["Tuya"]:
-        # Not existing feature !
-        return
-
-    if target_calibration == int(self.ListOfDevices[NwkId]["Tuya"]["Calibration"], 16):
+    if (
+        "Calibration" in self.ListOfDevices[NwkId]["Tuya"]
+        and target_calibration == int(self.ListOfDevices[NwkId]["Tuya"]["Calibration"], 16)
+    ):
+        self.log.logging( "Tuya", "Debug", "thermostat_Calibration - Calibration already in place")
         return
 
     self.log.logging( "Tuya", "Debug", "thermostat_Calibration - Set Thermostat offset on %s off %s/%08x" % (
