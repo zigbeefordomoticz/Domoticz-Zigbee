@@ -24,7 +24,7 @@ fi
 
 echo "(2) update python3 modules if needed"
 echo ""
-sudo python3 -m pip --no-input install -r requirements.txt
+sudo python3 -m pip --ignore-requires-python --no-input install -r requirements.txt
 ret="$?"
 if [ "$ret" != "0" ] ; then
     echo "ERROR while running command 'sudo python3 -m pip --ignore-requires-python --no-input install -r requirements.txt'."
