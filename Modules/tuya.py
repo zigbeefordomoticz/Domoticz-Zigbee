@@ -63,7 +63,7 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", TUYA_MANUF_CODE, "01", "ffde", "20", "13", ackIsDisabled=False)
         return
     
-    if _ModelName == 'TS0002-relay-switch':
+    if _ModelName in ('TS0002-relay-switch', 'TS0601-motion', ):
 
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
         tuya_cmd_0x0000_0xf0(self, nwkid)
@@ -1289,10 +1289,11 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     if dp == 0x01:
         # Occupancy
         self.log.logging("Tuya", "Log", "tuya_motion_response - Occupancy %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
-        
+        # Looks like the Occupancy indicator is inverse
+        occupancy = "%02x" %abs(int(data,16) -1 )
         store_tuya_attribute(self, NwkId, "Occupancy", data)
-        MajDomoDevice(self, Devices, NwkId, srcEp, "0406", data )
-        checkAndStoreAttributeValue(self, NwkId, "01", "0406", "0000", data)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0406", occupancy )
+        checkAndStoreAttributeValue(self, NwkId, "01", "0406", "0000", occupancy)
 
     elif dp == 0x04:
         # Battery
