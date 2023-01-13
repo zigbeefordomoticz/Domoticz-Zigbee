@@ -98,11 +98,14 @@ def get_max_read_attribute_value( self, nwkid=None):
     return read_configuration_report_chunk or self.pluginconf.pluginConf["ReadAttributeChunk"]
 
 
-def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, ):
+def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, forceLen=False):
 
     maxReadAttributesByRequest = get_max_read_attribute_value( self, addr )    
 
-    if not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
+    if forceLen:
+        normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled, force=True) 
+        
+    elif not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled)
     else:
         for shortlist in split_list(ListOfAttributes, wanted_parts=maxReadAttributesByRequest):
@@ -116,7 +119,7 @@ def split_list(list_in, wanted_parts=1):
     return [list_in[x : x + wanted_parts] for x in range(0, len(list_in), wanted_parts)]
 
 
-def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled):
+def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled, force=False):
 
     if "Health" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["Health"] == "Not Reachable":
         return
@@ -141,7 +144,7 @@ def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttribute
             continue
         
         Attr_ = "%04x" % (x)
-        if skipThisAttribute(self, addr, EpOut, Cluster, Attr_):
+        if not force and skipThisAttribute(self, addr, EpOut, Cluster, Attr_):
             self.log.logging("ReadAttributes", "Debug", "Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_), nwkid=addr)
             continue
 
@@ -382,7 +385,7 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             
     elif self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
         self.log.logging("ReadAttributes", "Log", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
-        listAttributes = [ 0x0004, 0x0000, 0x0001,  0x0005, 0x0007, 0xfffe] 
+        listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
 
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
     self.log.logging("ReadAttributes", "Log", "EP: %s Attributes: %s" % (self.ListOfDevices[key]["Ep"], str(listAttributes)))
@@ -446,6 +449,13 @@ def add_attributes_from_device_certified_conf(self, key, cluster, listAttributes
             listAttributes.append(int(attr, 16))  # pytype: disable=wrong-arg-types
     return listAttributes
 
+def ReadAttributeRequest_0000_for_tuya(self, key):
+    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_0000_for_tuya %s" %key, nwkid=key)
+
+    listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
+
+    ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False, forceLen=True)
+            
 
 def ReadAttributeRequest_0000_for_general(self, key):
 
@@ -476,7 +486,7 @@ def ReadAttributeRequest_0000_for_general(self, key):
 
         if self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
             self.log.logging("ReadAttributes", "Log", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
-            listAttributes = [ 0x0004, 0x0000, 0x0001,  0x0005, 0x0007, 0xfffe] 
+            listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
 
         elif (
             ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e")
