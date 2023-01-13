@@ -2502,20 +2502,18 @@ def Decode8046(self, Devices, MsgData, MsgLQI):  # Match Descriptor response
 
     updSQN(self, MsgDataShAddr, MsgDataSQN)
     updLQI(self, MsgDataShAddr, MsgLQI)
-    self.log.logging(
-        "Input",
-        "Log",
-        "Decode8046 - Match Descriptor response: SQN: "
-        + MsgDataSQN
-        + ", Status "
-        + DisplayStatusCode(MsgDataStatus)
-        + ", short Addr "
-        + MsgDataShAddr
-        + ", Lenght list  "
-        + MsgDataLenList
-        + ", Match list "
-        + MsgDataMatchList,
-    )
+    self.log.logging( "Input", "Log", "Decode8046 - Match Descriptor response: SQN: %s Status: %s Nwkid: %s Lenght: %s List: %s" %(
+        MsgDataSQN, MsgDataStatus, MsgDataShAddr, MsgDataLenList, MsgDataMatchList))
+    if MsgDataStatus == '00' and MsgDataLenList != '00' and self.iaszonemgt:
+        # We have some Ep matchin the 0500 cluster request
+        # let's trigger enrollment
+        idx = 0
+        while idx < int(MsgDataLenList,16):
+            ep = MsgDataMatchList[idx: idx + 2]
+            idx += 2
+            self.log.logging( "Input", "Log", "Decode8046 - Match Descriptor response Nwkid: %sfound Ep: %s Matching 0500" %( 
+                MsgDataShAddr, ep))
+            self.iaszonemgt.IAS_write_CIE_after_match_descriptor(MsgDataShAddr, ep )
 
 
 def Decode8047(self, Devices, MsgData, MsgLQI):  # Management Leave response
