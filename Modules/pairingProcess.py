@@ -655,7 +655,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "TS130F-_TZ3000_1dd0d5yi",
         "TS130F-_TZ3000_zirycpws",
         "TS0601-temphumi",
-        "TS0601-motion"
+       
     ):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
         tuya_registration(self, NWKID, device_reset=True)
@@ -664,7 +664,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, device_reset=True, parkside=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0216", ):
+    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0216",  "TS0601-motion" ):
         # Do just the registration
         tuya_registration(self, NWKID )
 

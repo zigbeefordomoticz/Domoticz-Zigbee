@@ -1288,12 +1288,16 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
     if dp == 0x01:
         # Occupancy
+        self.log.logging("Tuya", "Log", "tuya_motion_response - Occupancy %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        
         store_tuya_attribute(self, NwkId, "Occupancy", data)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0406", data )
         checkAndStoreAttributeValue(self, NwkId, "01", "0406", "0000", data)
 
     elif dp == 0x04:
         # Battery
+        self.log.logging("Tuya", "Log", "tuya_motion_response - Battery %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        
         store_tuya_attribute(self, NwkId, "Battery", data)
         checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", int(data, 16))
         self.ListOfDevices[NwkId]["Battery"] = int(data, 16)
@@ -1302,14 +1306,20 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
   
     elif dp == 0x09:
         # Sensitivity - {'0': 'low', '1': 'medium', '2': 'high'}
+        self.log.logging("Tuya", "Log", "tuya_motion_response - Sensitivity %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        
         store_tuya_attribute(self, NwkId, "Sensitivity", data)
         
     elif dp == 0x0a:
         # Keep time - {'0': '10', '1': '30', '2': '60', '3': '120'}
+        self.log.logging("Tuya", "Log", "tuya_motion_response - Keep Time %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        
         store_tuya_attribute(self, NwkId, "KeepTime", data)
         
     elif dp == 0x0c:
         # Illuminance
+        self.log.logging("Tuya", "Log", "tuya_motion_response - Illuminance %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        
         store_tuya_attribute(self, NwkId, "Illuminance", data)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0400", (int(data, 16)) )
         checkAndStoreAttributeValue(self, NwkId, "01", "0400", "0000", int(data, 16))
