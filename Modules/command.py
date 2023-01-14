@@ -479,7 +479,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "PR412", "CPR412", "CPR412-E"):
                 actuator_off(self, NWKID, EPout, "Light")
                 #sendZigateCmd(self, "0092", "02" + NWKID + ZIGATE_EP + EPout + "00")
-            elif DeviceType in ("Vanne", "Curtain",) or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F", ):
+            elif (
+                DeviceType in ("Vanne", "Curtain",) 
+                or "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "TS130F",)
+            ):
                 actuator_off(self, NWKID, EPout, "WindowCovering")
                 
             if DeviceType in ( "CurtainInverted", "Curtain"):
