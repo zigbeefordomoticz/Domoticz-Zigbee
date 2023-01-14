@@ -388,7 +388,7 @@ class BasePlugin:
         debuging_information(self, "Debug")
          
         if not self.pluginconf.pluginConf[ "PluginAnalytics" ]:
-            self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin analytics functionality has been disabled !!!" )
+            self.log.logging( "Plugin", "Error", "That's a shame plugin analytics functionality is disabled !!! (check settings to enable it)" )
  
         self.StartupFolder = Parameters["StartupFolder"]
 
