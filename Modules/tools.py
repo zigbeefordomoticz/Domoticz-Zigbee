@@ -932,7 +932,7 @@ def zigpy_plugin_sanity_check(self, nwkid):
         return False
     if ieee not in self.IEEE2NWK:
         return False
-    if self.IEEE2NWK[ ieee ] == nwkid:
+    if self.IEEE2NWK[ ieee ] == nwkid and nwkid in self.ListOfDevices:
         if "Status" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Status"] in ( 'Leave', ):
             # the device is alive and ieee/nwkid is correct
             self.log.logging("Input", "Status", "zigpy_plugin_sanity_check - Update Status from %s to 'inDB' for NetworkID : %s" % (
