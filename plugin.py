@@ -387,6 +387,9 @@ class BasePlugin:
         # Debuging information
         debuging_information(self, "Debug")
          
+        if not self.pluginconf.pluginConf[ "PluginAnalytics" ]:
+            self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin analytics functionality has been disabled !!!" )
+ 
         self.StartupFolder = Parameters["StartupFolder"]
 
         self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log )
