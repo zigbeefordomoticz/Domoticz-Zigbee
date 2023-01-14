@@ -12,7 +12,7 @@ fi
 
 
 if test -d /opt/domoticz/userdata/plugins/Domoticz-Zigbee; then
-    pip3 install --ignore-requires-python -r /opt/domoticz/userdata/plugins/Domoticz-Zigbee/requirements.txt
+    pip3 install -r /opt/domoticz/userdata/plugins/Domoticz-Zigbee/requirements.txt --ignore-requires-python 
 else
     cd /opt/domoticz/userdata/plugins
     git clone https://github.com/zigbeefordomoticz/Domoticz-Zigbee.git
