@@ -7,9 +7,9 @@ exec 2>&1
 echo "Starting Zigbee for Domoticz plugin Upgrade process."
 echo "----------------------------------------------------"
 
-#env
-#echo $(id)
-#echo $(who am i)
+env
+echo $(id)
+echo $(who am i)
 
 echo "(1) updating Zigbee for Domoticz plugin"
 echo ""
