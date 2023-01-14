@@ -681,7 +681,8 @@ CLUSTER_TO_TYPE = {
     "Strenght": "Strenght",
     "Orientation": "Orientation", 
     "fc40": "ThermoMode", 
-    "ff66": "DEMAIN"
+    "ff66": "DEMAIN",
+    "fc80": "Heiman"
 }
 
 def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", ModelName=""):
