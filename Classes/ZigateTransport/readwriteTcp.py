@@ -65,7 +65,7 @@ def tcp_re_connect(self):
             return True
         nb_attempt += 1
         time.sleep( WAITING_TIME )
-        self.logging_tcpip("Error", "tcp_re_connect - reconnection %s attempt on %s" % ( nb_attempt, self._connection) )
+        self.logging_tcpip("Error", "tcp_re_connect - reconnection %s attempt" % ( nb_attempt) )
     return False
 
 
