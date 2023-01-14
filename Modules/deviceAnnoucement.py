@@ -18,24 +18,20 @@ from Modules.casaia import restart_plugin_reset_ModuleIRCode
 from Modules.domoTools import lastSeenUpdate
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.livolo import livolo_bind
-from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
-                                       PREFIX_MACADDR_IKEA_TRADFRI,
-                                       PREFIX_MACADDR_LIVOLO,
-                                       PREFIX_MACADDR_OPPLE,
-                                       PREFIX_MACADDR_TUYA,
-                                       PREFIX_MACADDR_XIAOMI, TUYA_MANUF_CODE)
+from Modules.manufacturer_code import (PREFIX_MAC_LEN,
+                                       PREFIX_MACADDR_LIVOLO)
 from Modules.pairingProcess import (handle_device_specific_needs,
                                     interview_state_004d,
                                     zigbee_provision_device)
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
-from Modules.readAttributes import ReadAttributeRequest_0000_for_tuya
+
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped)
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import tuya_eTRV_registration
 from Zigbee.zdpCommands import zdp_node_descriptor_request
-from Zigbee.zdpRawCommands import zdp_raw_match_desc_req_0500
+
 
 DELAY_BETWEEN_2_DEVICEANNOUCEMENT = 20
 
@@ -385,12 +381,6 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
 
     self.log.logging( "DeviceAnnoucement", "Debug", "Decode004D - %s Infos: %s" % (
         NwkId, self.ListOfDevices[NwkId]), NwkId, )
-    
-    if MsgIEEE[:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
-        ReadAttributeRequest_0000_for_tuya( self, NwkId)
-
-    # Check if Cluster 0500 is on this device. If so this will trigger IAS asap
-    zdp_raw_match_desc_req_0500( self,NwkId )
     
 
     interview_state_004d(self, NwkId, RIA=None, status=None)

@@ -22,12 +22,14 @@ from Modules.livolo import livolo_bind
 from Modules.lumi import (enable_click_mode_aqara, enable_operation_mode_aqara,
                           enableOppleSwitch)
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
+                                       PREFIX_MACADDR_TUYA,
                                        PREFIX_MACADDR_WIZER_LEGACY,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.orvibo import OrviboRegistration
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
+                                    ReadAttributeRequest_0000_for_tuya,
                                     ReadAttributeRequest_0300)
 from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
@@ -44,6 +46,7 @@ from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 from Zigbee.zdpCommands import (zdp_active_endpoint_request,
                                 zdp_node_descriptor_request,
                                 zdp_simple_descriptor_request)
+from Zigbee.zdpRawCommands import zdp_raw_match_desc_req_0500
 
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
@@ -140,16 +143,8 @@ def do_we_have_key_clusters( self, NWKID ):
     
     
 def interview_state_004d(self, NWKID, RIA=None, status=None):
-    self.log.logging(
-        "Pairing",
-        "Debug",
-        "interview_state_004d - NWKID: %s, Status: %s, RIA: %s,"
-        % (
-            NWKID,
-            status,
-            RIA,
-        ),
-    )
+    self.log.logging( "Pairing", "Debug", "interview_state_004d - NWKID: %s, Status: %s, RIA: %s," % ( 
+        NWKID, status, RIA, ), )
     self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s %s" % (RIA, NWKID, status))
     if RIA:
         self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
@@ -163,8 +158,14 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     if ( MsgIEEE and ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE ) ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
-    if ( self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY ):
+    elif ( self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
+        
+    elif ( MsgIEEE and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA):
+        ReadAttributeRequest_0000_for_tuya( self, NWKID)
+
+    # Check if Cluster 0500 is on this device. If so this will trigger IAS asap
+    zdp_raw_match_desc_req_0500( self,NWKID )
 
     zdp_active_endpoint_request(self, NWKID )
     return "0045"
@@ -663,7 +664,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, device_reset=True, parkside=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0216",):
+    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0216", "TY0A01", ):
         # Do just the registration
         tuya_registration(self, NWKID )
 
