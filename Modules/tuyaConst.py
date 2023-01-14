@@ -15,6 +15,10 @@ TS0003_RELAY_SWITCH_MANUF = ( "_TZ3000_odzoiovu", )
 TS011F_MANUF_NAME = ("_TZ3000_wamqdr3f", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l" )
 TS0041_MANUF_NAME = ("_TZ3000_xkwalgne", "_TZ3000_peszejy7", "_TZ3000_8kzqqzu4", "_TZ3000_tk3s5tyg")
 
+# Tuya Smart Lock
+# TY0A01
+TUYA_SMART_DOOR_LOCK_MODEL = ( "TY0A01", )
+TUYA_SMART_DOOR_LOCK_MANUF = ( "_TYST12_qcdc4vui", )
 
 # TS0601
 TUYA_WATER_TIMER = ("_TZE200_htnnfasr", "_TZE200_akjefhj5", "_TZE200_81isopgh",)
@@ -240,4 +244,5 @@ TUYA_MANUFACTURER_NAME = (
     + TUYA_SMOKE_MANUFACTURER
     + TUYA_TEMP_HUMI
     + TUYA_MOTION
+    + TUYA_SMART_DOOR_LOCK_MANUF
 )

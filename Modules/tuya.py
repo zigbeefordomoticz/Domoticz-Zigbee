@@ -21,7 +21,7 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
                            get_and_inc_ZCL_SQN, is_ack_tobe_disabled, updSQN)
-from Modules.tuyaConst import (TUYA_MANUF_CODE,
+from Modules.tuyaConst import (TUYA_MANUF_CODE, TUYA_SMART_DOOR_LOCK_MODEL,
                                TUYA_eTRV_MODEL)
 from Modules.tuyaSiren import tuya_siren2_response, tuya_siren_response
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
@@ -320,7 +320,9 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
  
     elif _ModelName == "TS0601-motion":
         tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
-        
+ 
+    elif _ModelName in TUYA_SMART_DOOR_LOCK_MODEL:
+        tuya_smart_door_lock(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)  
         
     else:
         attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
@@ -1360,3 +1362,32 @@ def tuya_motion_zg204l_keeptime(self, nwkid, keep_time):
     data = "%02x" % keep_time
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
     
+    
+def tuya_smart_door_lock(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
+
+    store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+
+    if dp == 8:
+        store_tuya_attribute(self, NwkId, "Open Or Close-%s" %(datatype), data)
+    elif dp == 9:
+        store_tuya_attribute(self, NwkId, "Alarm-%s" %(datatype), data)
+    elif dp == 10:
+        # %
+        store_tuya_attribute(self, NwkId, "Battery-%s" %(datatype), data)
+        Update_Battery_Device(self, Devices, NwkId, int(data, 16))
+    elif dp == 12:
+        store_tuya_attribute(self, NwkId, "Reverse Lock-%s" %(datatype), data)
+    elif dp == 14:
+        store_tuya_attribute(self, NwkId, "Doorbell-%s" %(datatype), data)
+    elif dp == 16:
+        store_tuya_attribute(self, NwkId, "SwitchDirection-%s" %(datatype), data)
+    elif dp == 19:
+        store_tuya_attribute(self, NwkId, "AutoLockTime-%s" %(datatype), data)
+    elif dp == 38:
+        store_tuya_attribute(self, NwkId, "Unlocked-%s" %(datatype), data)
+    elif dp == 40:
+        store_tuya_attribute(self, NwkId, "App Unlock Without Password-%s" %(datatype), data)
+    elif dp == 41:
+        store_tuya_attribute(self, NwkId, "App Unlock-%s" %(datatype), data)
+    elif dp == 101:
+        store_tuya_attribute(self, NwkId, "Auxiliary opening/locking-%s" %(datatype), data)
