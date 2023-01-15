@@ -609,11 +609,10 @@ SWITCH_LVL_MATRIX = {
         0xf1: (2, "20"),
         0xf2: (3, "30"),
         0xf3: (4, "40"),
-        0xf4: (5, "50"),
         "ForceUpdate": True,
-        "LevelNames": "Off|Movie|At Home|Sleep|Go Out|Other",
+        "LevelNames": "Off|Movie|At Home|Sleep|Go Out",
         "Language": {
-            "fr-FR": { "Off|Movie|At Home|Sleep|Go Out|Other"}
+            "fr-FR": { "Off|Movie|At Home|Sleep|Go Out"}
         },
     },
 }

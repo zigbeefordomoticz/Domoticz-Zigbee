@@ -472,7 +472,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" % (t), NWKID)
 
             # 5 Selectors, Style 1, OffHidden
-            if t in ("IAS_ACE",):
+            if t in ("IAS_ACE", "HeimanSceneSwitch", ):
                 Options = createSwitchSelector(self, 5, DeviceType=t, OffHidden=True, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" % (t), NWKID)
@@ -484,7 +484,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AlarmWD" % (t), NWKID)
 
             # 6 Buttons, Style 1, OffHidden
-            if t in ( "GenericLvlControl", "AqaraOppleMiddle", "HeimanSceneSwitch"):
+            if t in ( "GenericLvlControl", "AqaraOppleMiddle", ):
                 Options = createSwitchSelector(self, 6, DeviceType=t, OffHidden=True, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in GenericLvlControl" % (t), NWKID)
