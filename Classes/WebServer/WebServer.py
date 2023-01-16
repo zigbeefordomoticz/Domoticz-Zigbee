@@ -1104,10 +1104,17 @@ class WebServer(object):
                     zdev_lst.append(entry)
                 _response["Data"] = json.dumps(zdev_lst, sort_keys=False)
             elif len(parameters) == 1:
+                device_infos = {
+                    "PluginInfos": self.pluginParameters,
+                    "Analytics": self.pluginconf.pluginConf["PluginAnalytics"]
+                }
                 if parameters[0] in self.ListOfDevices:
-                    _response["Data"] = json.dumps(self.ListOfDevices[parameters[0]], sort_keys=False)
+                    device_infos["Device"] = self.ListOfDevices[parameters[0]]
+
                 elif parameters[0] in self.IEEE2NWK:
-                    _response["Data"] = json.dumps(self.ListOfDevices[self.IEEE2NWK[parameters[0]]], sort_keys=False)
+                    device_infos["Device"] = self.ListOfDevices[self.IEEE2NWK[parameters[0]]]
+
+                _response["Data"] = json.dumps(device_infos, sort_keys=False)
 
         return _response
 
