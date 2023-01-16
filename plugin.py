@@ -123,6 +123,7 @@ from Modules.domoTools import ResetDevice
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
+from Modules.profalux import profalux_fake_deviceModel
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
@@ -458,6 +459,12 @@ class BasePlugin:
         # Check proper match against Domoticz Devices
         checkListOfDevice2Devices(self, Devices)
         checkDevices2LOD(self, Devices)
+        
+        for x in self.ListOfDevices:
+            # Fixing Profalux Model is required
+            if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] in ( "", {} ):
+                profalux_fake_deviceModel(self, x)
+
 
         self.log.logging("Plugin", "Debug", "ListOfDevices after checkListOfDevice2Devices: " + str(self.ListOfDevices))
         self.log.logging("Plugin", "Debug", "IEEE2NWK after checkListOfDevice2Devices     : " + str(self.IEEE2NWK))
