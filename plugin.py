@@ -388,7 +388,7 @@ class BasePlugin:
         debuging_information(self, "Debug")
          
         if not self.pluginconf.pluginConf[ "PluginAnalytics" ]:
-            self.log.logging( "Plugin", "Error", "That's a shame plugin analytics functionality is disabled !!! (check settings to enable it)" )
+            self.pluginconf.pluginConf[ "PluginAnalytics" ] = -1
  
         self.StartupFolder = Parameters["StartupFolder"]
 
@@ -1696,12 +1696,8 @@ def _check_plugin_version( self ):
         self.pluginParameters["PluginUpdate"] = False
 
         if checkPluginUpdate(self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
-            if "beta" in self.pluginParameters["PluginBranch"] :
-                log_mode = "Error"
-            else:
-                log_mode = "Status"
-            self.log.logging("Plugin", log_mode, "*** A more recent plugin version is waiting for you on gitHub. You are on %s and %s is available !!" %(
-                self.pluginParameters["PluginVersion"], self.pluginParameters["available"]))
+            self.log.logging("Plugin", "Status", "*** A recent plugin version (%s) is waiting for you on gitHub. You are on (%s) ***" %(
+                self.pluginParameters["available"], self.pluginParameters["PluginVersion"] ))
             self.pluginParameters["PluginUpdate"] = True
         if checkFirmwareUpdate(
             self.FirmwareMajorVersion,
