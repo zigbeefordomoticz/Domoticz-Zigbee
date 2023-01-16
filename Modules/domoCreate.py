@@ -472,7 +472,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" % (t), NWKID)
 
             # 5 Selectors, Style 1, OffHidden
-            if t in ("IAS_ACE",):
+            if t in ("IAS_ACE", "HeimanSceneSwitch", ):
                 Options = createSwitchSelector(self, 5, DeviceType=t, OffHidden=True, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" % (t), NWKID)
@@ -703,7 +703,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch" % (t), NWKID)
 
-            if t == "DoorLock":
+            if t in ("DoorLock", "TuyaDoorLock",):
                 # Switchtype_ = 19 Doorlock
                 # Switchtype_ = 20 DoorlockInvertded
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=19)

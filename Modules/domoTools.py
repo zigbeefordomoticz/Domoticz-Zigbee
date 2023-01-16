@@ -502,7 +502,7 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
         if "ErrorManagement" in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]["ErrorManagement"] = 0
 
-        if self.ListOfDevices[NwkId]["Health"] not in ( "Disabled", ):
+        if "Health" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Health"] not in ( "Disabled", ):
             self.ListOfDevices[NwkId]["Health"] = "Live"
 
         # if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
@@ -681,7 +681,8 @@ CLUSTER_TO_TYPE = {
     "Strenght": "Strenght",
     "Orientation": "Orientation", 
     "fc40": "ThermoMode", 
-    "ff66": "DEMAIN"
+    "ff66": "DEMAIN",
+    "fc80": "Heiman"
 }
 
 def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", ModelName=""):

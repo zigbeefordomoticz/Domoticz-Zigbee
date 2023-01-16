@@ -22,6 +22,8 @@ from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
+from Modules.pluginModels import check_found_plugin_model
+from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
 from Modules.zlinky import update_zlinky_device_model_if_needed
 
 CIE_ATTRIBUTES = {
@@ -180,6 +182,9 @@ def LoadDeviceList(self):
         fixing_consumption_lumi(self, addr)
         fixing_iSQN_None(self, addr)
 
+        # Fixing TS0601 which has been removed.
+        hack_ts0601(self, addr)
+        
         # Check if 566 fixs are needed
         if (
             self.pluginconf.pluginConf["Bug566"] 
@@ -223,7 +228,7 @@ def LoadDeviceList(self):
         self.pluginconf.write_Settings()
 
     load_new_param_definition(self)
-
+    
     return res
 
 
@@ -661,6 +666,7 @@ def CheckDeviceList(self, key, val):
                 key,
             )
 
+    profalux_fix_remote_device_model(self)
     check_and_update_manufcode(self)
     check_and_update_ForceAckCommands(self)
 
@@ -925,3 +931,61 @@ def cleanup_table_entries( self):
                         one_more_time = True
                         break
                     idx += 1
+                    
+def profalux_fix_remote_device_model(self):
+    
+    for x in self.ListOfDevices:
+        
+        if 'ZDeviceID' not in self.ListOfDevices[ x ] or self.ListOfDevices[ x ]['ZDeviceID'] != '0201':
+            continue
+        if "Manufacturer" not in self.ListOfDevices[ x ]:
+            continue
+        if self.ListOfDevices[ x ]["Manufacturer"] != "1110":
+            continue
+        if self.ListOfDevices[ x ]["Manufacturer Name"] != "Profalux":
+            self.ListOfDevices[ x ]["Manufacturer Name"] = "Profalux"
+        if "MacCapa" not in self.ListOfDevices[x]:
+            continue
+        if self.ListOfDevices[x]["MacCapa"] != "80":
+            continue
+        if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
+            self.log.logging( "Profalux", "Status", "++++++ Model Name for %s forced to : %s" % (
+                x, self.ListOfDevices[x]["Model"],), x)
+            self.ListOfDevices[x]["Model"] = "Telecommande-Profalux"
+
+def hack_ts0601(self, nwkid):
+    # Purpose is to rename the Model name of potential working TS0601 as a Thermostat
+    
+    if ( 'Model' not in self.ListOfDevices[ nwkid ] or self.ListOfDevices[ nwkid ][ 'Model' ] != 'TS0601' ):
+        return
+    
+    # This is a TS0601 based Model
+    model_name = self.ListOfDevices[ nwkid ][ 'Model' ] 
+
+    if 'Manufacturer Name' not in self.ListOfDevices[ nwkid ]:
+        # This is not expected, log Error
+        hack_ts0601_error(self, nwkid, model_name)
+        return
+    manuf_name = self.ListOfDevices[ nwkid ]['Manufacturer Name']
+    
+    if manuf_name in TUYA_MANUFACTURER_NAME:
+        hack_ts0601_rename_model( self, nwkid, model_name, manuf_name)
+        return
+    hack_ts0601_error(self, nwkid, model_name, manufacturer=manuf_name)
+    
+        
+def hack_ts0601_error(self, nwkid, model, manufacturer=None):
+    # Looks like we have a TS0601 and something wrong !!!
+    self.log.logging("Tuya", "Error", "This device is not correctly configured, please contact us with the here after information")
+    self.log.logging("Tuya", "Error", "    - Device        %s" %nwkid )
+    self.log.logging("Tuya", "Error", "    - Model         %s" %model )
+    self.log.logging("Tuya", "Error", "    - Manufacturer  %s" %manufacturer )
+            
+
+def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
+
+    suggested_model = check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=None, device_id=None )
+    
+    if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
+        self.log.logging("Tuya", "Status", "Adjusting Model name from %s to %s" %( modelName, suggested_model))
+        self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model

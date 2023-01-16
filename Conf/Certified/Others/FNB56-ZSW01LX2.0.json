@@ -1,0 +1,30 @@
+{
+    "_blakadder": "https://zigbee.blakadder.com/3A_HGZB-41-DE.html",
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1423",
+    "Ep": {
+        "0b": {
+            "0000": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0006": "",
+            "0008": "",
+            "1000": "",
+            "0019": "",
+            "Type": "Switch"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0006", "0008" ],
+    "ConfigureReporting": {
+        "0006": { "Attributes": { "0000": { "DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "01" } } }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "000a", "4000" ],
+        "0006": [ "0000", "4000", "4001", "4002", "4003" ],
+        "0008": [ "0000" ],
+        "0019": []
+    },
+    "Param": {
+    }
+}

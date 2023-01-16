@@ -15,13 +15,16 @@ from Modules.orvibo import orviboReadRawAPS
 from Modules.philips import philipsReadRawAPS
 from Modules.pollControl import receive_poll_cluster
 from Modules.schneider_wiser import schneiderReadRawAPS
-from Modules.tuya import TUYA_MANUFACTURER_NAME, tuyaReadRawAPS
+from Modules.tuya import tuyaReadRawAPS
+from Modules.heiman import heimanReadRawAPS
+from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
 
 # Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
     # Manuf : ( callbackDeviceAwake_xxxxx function )
     "105e": schneiderReadRawAPS,
     "1021": legrandReadRawAPS,
+    "120b": heimanReadRawAPS,
     "115f": lumiReadRawAPS,
     "100b": philipsReadRawAPS,
     "1002": tuyaReadRawAPS,
@@ -39,24 +42,11 @@ CALLBACK_TABLE2 = {
     "Philips": philipsReadRawAPS,
     "OWON": casaiaReadRawAPS,
     "CASAIA": casaiaReadRawAPS,
+    "HEIMAN": heimanReadRawAPS,
 }
 
 
-def inRawAps(
-    self,
-    Devices,
-    srcnwkid,
-    srcep,
-    cluster,
-    dstnwkid,
-    dstep,
-    Sqn,
-    GlobalCommand,
-    ManufacturerCode,
-    Command,
-    Data,
-    payload,
-):
+def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, GlobalCommand, ManufacturerCode, Command, Data, payload, ):
 
     """
     This function is called by Decode8002
@@ -67,13 +57,8 @@ def inRawAps(
             srcnwkid, srcep, cluster, ManufacturerCode, Command, Data), srcnwkid, )
         return
 
-    self.log.logging(
-        "inRawAPS",
-        "Debug",
-        "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s"
-        % (srcnwkid, srcep, cluster, ManufacturerCode, Command, Data),
-        srcnwkid,
-    )
+    self.log.logging( "inRawAPS", "Debug", "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" % (
+        srcnwkid, srcep, cluster, ManufacturerCode, Command, Data), srcnwkid, )
     if cluster == "0020":  # Poll Control ( Not implemented in firmware )
         # self.log.logging("inRawAPS","Log","Cluster 0020 -- POLL CLUSTER")
         receive_poll_cluster(self, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data)
@@ -83,7 +68,6 @@ def inRawAps(
         if self.OTA and Command == "01":
             # Query Next Image Request
             self.OTA.query_next_image_request(srcnwkid, srcep, Sqn, Data)
-
         return
 
     if cluster == "0500":  # IAS Cluster

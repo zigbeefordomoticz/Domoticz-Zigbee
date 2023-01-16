@@ -31,16 +31,6 @@ from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
                            get_deviceconf_parameter_value, getEPforClusterType,
                            is_hex, set_status_datastruct,
                            set_timestamp_datastruct)
-from Modules.tuya import (TUYA_2GANGS_DIMMER_MANUFACTURER,
-                          TUYA_2GANGS_SWITCH_MANUFACTURER,
-                          TUYA_CURTAIN_MAUFACTURER, TUYA_DIMMER_MANUFACTURER,
-                          TUYA_ENERGY_MANUFACTURER, TUYA_SIREN_MANUFACTURER,
-                          TUYA_SMARTAIR_MANUFACTURER, TUYA_SMOKE_MANUFACTURER,
-                          TUYA_SWITCH_MANUFACTURER, TUYA_TEMP_HUMI,
-                          TUYA_THERMOSTAT_MANUFACTURER, TUYA_TS0601_MODEL_NAME,
-                          TUYA_WATER_TIMER, TUYA_eTRV1_MANUFACTURER,
-                          TUYA_eTRV2_MANUFACTURER, TUYA_eTRV3_MANUFACTURER,
-                          TUYA_eTRV4_MANUFACTURER, TUYA_eTRV5_MANUFACTURER)
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
@@ -50,6 +40,7 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
+from Modules.pluginModels import check_found_plugin_model
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -354,146 +345,6 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             
         elif modelName + manufacturer_name in self.DeviceConf:
             modelName = modelName + manufacturer_name
-            
-        elif modelName == "Thermostat" and ( manufacturer_name == "Schneider Electric" or manuf_code == "105e"):
-            modelName = "Wiser2-Thermostat"
-
-        elif modelName == "lumi.sensor_swit":
-            modelName = "lumi.sensor_switch.aq3"
-
-        elif modelName == "TS011F":
-            if manufacturer_name == "_TZ3000_vzopcetz":
-                # Lidl multiprise
-                modelName = "TS011F-multiprise"
-            elif manufacturer_name == "_TZ3000_pmz6mjyu":
-                # MOES MS-104BZ-1
-                modelName = "TS011F-2Gang-switches"
-            elif manufacturer_name in (
-                "_TZ3000_w0qqde0g", "_TZ3000_gjnozsaz", "_TZ3000_zloso4jk", 
-                "_TZ3000_cphmq0q7", "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak",
-                "_TZ3000_typdpbpg", "_TZ3000_ksw8qtmt", "_TZ3000_amdymr7l",
-                "_TZ3000_2putqrmw", 
-            ):
-                modelName = "TS011F-plug"
-
-            elif manufacturer_name in ( "_TZ3000_qeuvnohg" , ):
-                # ZigBee 16A 1P Rail Din KWh 
-                modelName = "TS011F-din"
-
-        elif modelName == "TS0201":
-            if manufacturer_name == "_TZ3000_qaaysllp":
-                modelName = "TS0201" + "-" + manufacturer_name
-
-        elif modelName == "TS0202":
-            if manufacturer_name in ("_TZ3210_jijr1sss",):
-                modelName += "-_TZ3210_jijr1sss"
-
-        elif modelName == "AC211":
-            modelName = "AC221"
-
-        elif modelName == "TS0207":
-            # Thanks to TUYA, we get the Model Name used for Water Leak and for Range Extender.
-            if "ZDeviceID" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["ZDeviceID"] == "0402":
-                # Water Leak
-                modelName += "-waterleak"
-            elif "ZDeviceID" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["ZDeviceID"] == "0008":
-                # Range extender
-                modelName += "-extender"
-            else:
-                modelName = ""
-
-        elif modelName == "0yu2xgi":  # Tuya Siren
-            modelName = "TS0601-sirene"
-
-        elif modelName in TUYA_TS0601_MODEL_NAME:
-            # https://github.com/dresden-elektronik/deconz-rest-plugin/wiki/Tuya-devices-List
-
-            modelName = "TS0601"
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "ReadCluster - %s / %s - Recepion Model: >%s< ManufName: >%s<" % (MsgClusterId, MsgAttrID, modelName, manufacturer_name),
-                MsgSrcAddr,
-            )
-
-            if manufacturer_name in TUYA_SIREN_MANUFACTURER:  # Sirene
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Sirene" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-sirene"
-                
-            if manufacturer_name in TUYA_TEMP_HUMI:  # Temp/Humi Sensor
-                modelName += "-temphumi"
-
-            if manufacturer_name in TUYA_SMOKE_MANUFACTURER:  # Smoke detector
-                modelName += "-smoke"
-
-            elif manufacturer_name in TUYA_DIMMER_MANUFACTURER:  # Dimmer
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Dimmer" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-dimmer"
-                
-            elif manufacturer_name in TUYA_2GANGS_DIMMER_MANUFACTURER:  # 2 Gangs dimmer
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to 2 Gangs Dimmer" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-2Gangs-dimmer"
-
-            elif manufacturer_name in TUYA_SWITCH_MANUFACTURER:  # Switch
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Switch" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-switch"
-
-            elif manufacturer_name in TUYA_2GANGS_SWITCH_MANUFACTURER:  # 2 Gangs Switch
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to 2 Gangs Switch" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-2Gangs-switch"
-
-            elif manufacturer_name in TUYA_CURTAIN_MAUFACTURER:
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Curtain" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-curtain"
-
-            elif manufacturer_name in TUYA_THERMOSTAT_MANUFACTURER:  # Thermostat
-                # Thermostat BTH-002 (to be confirmed   ) and WZB-TRVL ( @d2n2e2o) and Thermostat Essentials Premium ( to be confirmed )
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Thermostat" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-thermostat"
-
-            elif manufacturer_name in TUYA_eTRV1_MANUFACTURER:  # eTRV
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV1" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-eTRV1"
-
-            elif manufacturer_name in TUYA_eTRV2_MANUFACTURER:  # eTRV
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV2" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-eTRV2"
-
-            elif manufacturer_name in TUYA_eTRV3_MANUFACTURER:  # eTRV
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV3" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-eTRV3"
-
-            elif manufacturer_name in TUYA_eTRV5_MANUFACTURER:  # eTRV
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV4" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-eTRV5"
-
-            elif manufacturer_name in TUYA_eTRV4_MANUFACTURER:  # eTRV
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to eTRV3" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-_TZE200_b6wax7g0"
-
-            elif manufacturer_name in TUYA_SMARTAIR_MANUFACTURER:  # Smart Air Box
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Smart Air" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-SmartAir"
-
-            elif manufacturer_name in TUYA_ENERGY_MANUFACTURER:  # Energy
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Energy" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-Energy"
-
-            elif manufacturer_name in TUYA_WATER_TIMER:  # Parkside Water timer
-                self.log.logging("Cluster", "Log", "ReadCluster - %s / %s force to Watering Timer" % (MsgSrcAddr, MsgSrcEp))
-                modelName += "-Parkside-Watering-Timer"
-
-            self.log.logging(
-                "Cluster",
-                "Log",
-                "ReadCluster - %s / %s - Updated Model: >%s<" % (MsgClusterId, MsgAttrID, modelName),
-                MsgSrcAddr,
-            )
-
-        elif modelName == "TS0003":
-            if "Manufacturer Name" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Manufacturer Name"] in ("_TYZB01_ncutbjdi",):
-                # QS-Zigbee-S05-LN
-                modelName += "-QS-Zigbee-S05-LN"
 
         elif modelName in ("lumi.remote.b686opcn01", "lumi.remote.b486opcn01", "lumi.remote.b286opcn01"):
             # Manage the Aqara Bulb mode or not
@@ -507,13 +358,16 @@ def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                     # Overwrite the Confif file
                     modelName += "-bulb"
 
-        # elif modelName == 'GL-C-009' and 'Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'GL-C-007':
-        #    modelName = 'GL-C-007-2ID'
-        #    return
-
         elif modelName == "PIR323" and MsgSrcEp == "03":
             # Very bad hack, but Owon use the same model name for 2 devices!
             modelName = "THS317"
+            
+        else:
+            zdevice_id = None
+            if "ZDeviceID" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["ZDeviceID"]:
+                zdevice_id = self.ListOfDevices[MsgSrcAddr]["ZDeviceID"]
+
+            modelName = check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=manuf_code, device_id=zdevice_id)
 
         # Here the Device is not yet provisioned
         if "Model" not in self.ListOfDevices[MsgSrcAddr]:

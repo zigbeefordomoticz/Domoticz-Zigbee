@@ -35,7 +35,7 @@ from Zigbee.zdpRawCommands import (zdp_management_binding_table_request,
 from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
                                        send_zigatecmd_zcl_noack)
-from Modules.tools import (build_fcf, get_and_inc_ZDP_SQN,
+from Modules.tools import (build_fcf, get_and_inc_ZDP_SQN,lookupForIEEE,
                            getListOfEpForCluster, is_ack_tobe_disabled, is_hex,
                            mainPoweredDevice, set_isqn_datastruct,
                            set_request_datastruct, set_timestamp_datastruct)
@@ -662,7 +662,7 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
     attribute = "4003"
     data_type = "30"  #
 
-    if model_name in ( "TS0121", "TS0115", "TS011F-multiprise", "TS011F-2Gang-switches", "TS011F-plug" , "TS011F-din", "TS0004-_TZ3000_excgg5kb", "TS0001",):
+    if model_name in ( "TS0121", "TS0115", "TS011F-multiprise", "TS011F-2Gang-switches", "TS011F-plug" , "TS011F-din", "TS0004-_TZ3000_excgg5kb", "TS0001","TS0002", "TS0003", "TS0002_relay_switch", "TS0003_relay_switch"):
         attribute = "8002"
         if OnOffMode == 0xFF:
             OnOffMode = 0x02
@@ -679,15 +679,28 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
             del self.ListOfDevices[key]["Ep"][EPout]["0006"][attribute]
         return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True, )
 
+def handle_unknow_device( self, Nwkid):
+    # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
+    # Will request in the next hearbeat to for a IEEE request
+    ieee = lookupForIEEE(self, Nwkid, True)
+    if ieee:
+        self.log.logging("Input", "Debug", "Found IEEE for short address: %s is %s" % (Nwkid, ieee))
+        if Nwkid in self.UnknownDevices:
+            self.UnknownDevices.remove(Nwkid)
+    else:
+        try_to_find_ieee_matching_nwkid(self, Nwkid)
+        self.UnknownDevices.append(Nwkid)
 
-def unknown_device_nwkid(self, nwkid):
+def try_to_find_ieee_matching_nwkid(self, nwkid):
 
     if nwkid in self.UnknownDevices:
         return
 
-    self.log.logging("BasicOutput", "Debug", "unknown_device_nwkid is DISaBLED for now !!!", nwkid)
-
+    if 'TryFindingIeeeOfUnknownNwkid' not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["TryFindingIeeeOfUnknownNwkid"]:
+        return
+    zdp_IEEE_address_request(self, "fffd", nwkid, u8RequestType="00", u8StartIndex="00")
     self.UnknownDevices.append(nwkid)
+    
     # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
     if self.networkmap and not self.networkmap.NetworkMapPhase():
         self.networkmap.start_scan()

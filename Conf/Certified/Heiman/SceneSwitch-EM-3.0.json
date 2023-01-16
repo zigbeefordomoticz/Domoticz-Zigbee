@@ -1,0 +1,30 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1439",
+    "_blakadder": "https://zigbee.blakadder.com/Heiman_HS2SS.html",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0001": "",
+            "0003": "",
+            "0004": "",
+            "0019": "",
+            "0005": "",
+            "0b05": "",
+            "fc80": "",
+            "Type": "HeimanSceneSwitch"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0001", "fc80" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007" ],
+        "0001": [ "0020", "0021" ],
+        "0019": []
+    },
+    "BatteryDevice": 1,
+    "VoltageConverter": 10,
+    "BatteryPercentageConverter": 2,
+    "Param": {
+    }
+}

@@ -603,4 +603,16 @@ SWITCH_LVL_MATRIX = {
         "ForceUpdate": True,
         "LevelNames": "Off|Enter|Leave|Left_enter|Right_leave|Right_enter|Left_leave|Approach|Away",
     },
+    "HeimanSceneSwitch": {
+        0: (0, "Off"),
+        0xf0: (1, "10"),
+        0xf1: (2, "20"),
+        0xf2: (3, "30"),
+        0xf3: (4, "40"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|Movie|At Home|Sleep|Go Out",
+        "Language": {
+            "fr-FR": { "Off|Movie|At Home|Sleep|Go Out"}
+        },
+    },
 }

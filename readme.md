@@ -72,7 +72,10 @@ Your first place to get support is via the Forums.
 
 # Donations
 
-Donations are more than welcome and will be used to buy new hardware, devices, sensors and in such testing and making them working with this ZigBee plugin For Domoticz. Please feel free to use the current link :
+If you are a Manufacturer or sellers who can send us sampes so that we can also integrate them, you would be more than welcome.
+
+We are very grateful to our generous donors, who will allow the acquisition of additional equipment for testing and integration.
+
 
 * <img src="https://www.pipiche.fr//pp.svg" width="24" height="24" alt="Donate via Paypal"/> <a href="https://paypal.me/pipiche">Donate via PayPal</a>
 <br/>

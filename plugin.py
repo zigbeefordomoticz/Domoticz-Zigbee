@@ -305,8 +305,11 @@ class BasePlugin:
             self.onStop()
             return
 
-        if Parameters["Mode5"] == "" or "http://" not in Parameters["Mode5"].lower():
-            Domoticz.Error("Please cross-check the Domoticz Hardware settingi for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
+        if (
+            Parameters["Mode5"] == "" 
+            or ( "http://" not in Parameters["Mode5"].lower() and "https://" not in Parameters["Mode5"].lower() )
+        ):
+            Domoticz.Error("Please cross-check the Domoticz Hardware setting for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
             self.onStop()
 
         # Set plugin heartbeat to 1s
@@ -384,6 +387,9 @@ class BasePlugin:
         # Debuging information
         debuging_information(self, "Debug")
          
+        if not self.pluginconf.pluginConf[ "PluginAnalytics" ]:
+            self.pluginconf.pluginConf[ "PluginAnalytics" ] = -1
+ 
         self.StartupFolder = Parameters["StartupFolder"]
 
         self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log )
@@ -1348,6 +1354,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.PluginHealth,
         webserver_port,
         self.log,
+        self.transport
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
@@ -1448,11 +1455,11 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.52.3",
-        "zigpy_znp": "0.9.2",
-        "zigpy_deconz": "0.19.2",
+        "zigpy": "0.51.5",
+        "zigpy_znp": "0.9.1",
+        "zigpy_deconz": "0.19.1",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.34.5",
+        "zigpy_ezsp": "0.34.3",
         }
 
     flag = True
@@ -1689,12 +1696,8 @@ def _check_plugin_version( self ):
         self.pluginParameters["PluginUpdate"] = False
 
         if checkPluginUpdate(self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
-            if "beta" in self.pluginParameters["PluginBranch"] :
-                log_mode = "Error"
-            else:
-                log_mode = "Status"
-            self.log.logging("Plugin", log_mode, "*** A more recent plugin version is waiting for you on gitHub. You are on %s and %s is available !!" %(
-                self.pluginParameters["PluginVersion"], self.pluginParameters["available"]))
+            self.log.logging("Plugin", "Status", "*** A recent plugin version (%s) is waiting for you on gitHub. You are on (%s) ***" %(
+                self.pluginParameters["available"], self.pluginParameters["PluginVersion"] ))
             self.pluginParameters["PluginUpdate"] = True
         if checkFirmwareUpdate(
             self.FirmwareMajorVersion,

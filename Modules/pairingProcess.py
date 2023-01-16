@@ -17,33 +17,36 @@ from Modules.basicOutputs import getListofAttribute, identifyEffect
 from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice
 from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
+from Modules.domoTools import CLUSTER_TO_TYPE
 from Modules.livolo import livolo_bind
 from Modules.lumi import (enable_click_mode_aqara, enable_operation_mode_aqara,
                           enableOppleSwitch)
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
+                                       PREFIX_MACADDR_TUYA,
                                        PREFIX_MACADDR_WIZER_LEGACY,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.orvibo import OrviboRegistration
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
+                                    ReadAttributeRequest_0000_for_tuya,
                                     ReadAttributeRequest_0300)
 from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
-from Modules.tools import (build_list_of_device_model, getListOfEpForCluster,
-                           is_fake_ep)
+from Modules.tools import getListOfEpForCluster, is_fake_ep
 from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration
+from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
-from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
+from Modules.tuyaTRV import tuya_eTRV_registration
 from Modules.zb_tables_management import mgmt_rtg
 from Modules.zigateConsts import CLUSTERS_LIST, ZIGATE_EP
 from Zigbee.zdpCommands import (zdp_active_endpoint_request,
                                 zdp_node_descriptor_request,
                                 zdp_simple_descriptor_request)
-from Modules.domoTools import CLUSTER_TO_TYPE
+from Zigbee.zdpRawCommands import zdp_raw_match_desc_req_0500
 
 
 def processNotinDBDevices(self, Devices, NWKID, status, RIA):
@@ -140,16 +143,8 @@ def do_we_have_key_clusters( self, NWKID ):
     
     
 def interview_state_004d(self, NWKID, RIA=None, status=None):
-    self.log.logging(
-        "Pairing",
-        "Debug",
-        "interview_state_004d - NWKID: %s, Status: %s, RIA: %s,"
-        % (
-            NWKID,
-            status,
-            RIA,
-        ),
-    )
+    self.log.logging( "Pairing", "Debug", "interview_state_004d - NWKID: %s, Status: %s, RIA: %s," % ( 
+        NWKID, status, RIA, ), )
     self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s %s" % (RIA, NWKID, status))
     if RIA:
         self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
@@ -163,8 +158,14 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     if ( MsgIEEE and ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE ) ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
-    if ( self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY ):
+    elif ( self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
+        
+    elif ( MsgIEEE and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA):
+        ReadAttributeRequest_0000_for_tuya( self, NWKID)
+
+    # Check if Cluster 0500 is on this device. If so this will trigger IAS asap
+    zdp_raw_match_desc_req_0500( self,NWKID )
 
     zdp_active_endpoint_request(self, NWKID )
     return "0045"
@@ -294,13 +295,9 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
         and "CreateWidgetDomoticz"
         in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]
-        and not self.DeviceConf[self.ListOfDevices[NWKID]["Model"]][
-            "CreateWidgetDomoticz"
-        ]
+        and not self.DeviceConf[self.ListOfDevices[NWKID]["Model"]][ "CreateWidgetDomoticz" ]
     ):
-        self.ListOfDevices[NWKID]["Status"] = "notDB"
-        self.ListOfDevices[NWKID]["PairingInProgress"] = False
-        self.CommiSSionning = False
+        create_device_without_Domoticz_Widgets( self, NWKID)
         return
 
     # Let's check if we have a profalux device, and if that is a remote. In such case, just drop this
@@ -309,9 +306,7 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         and self.ListOfDevices[NWKID]["Manufacturer"] == "1110"
         and self.ListOfDevices[NWKID]["ZDeviceID"] == "0201"
     ):  # Remote
-        self.ListOfDevices[NWKID]["Status"] = "notDB"
-        self.ListOfDevices[NWKID]["PairingInProgress"] = False
-        self.CommiSSionning = False
+        create_device_without_Domoticz_Widgets( self, NWKID)
         return
 
     # Check once more if we have received the Model Name
@@ -344,7 +339,12 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         full_provision_device(self, Devices, NWKID, RIA, status)
         return
 
-
+def create_device_without_Domoticz_Widgets( self, Nwkid):
+        self.ListOfDevices[Nwkid]["Status"] = "notDB"
+        self.ListOfDevices[Nwkid]["PairingInProgress"] = False
+        self.CommiSSionning = False
+        self.ListOfDevices[ Nwkid ]["CertifiedDevice"] = self.ListOfDevices[Nwkid]["Model"] in self.DeviceConf
+   
 def full_provision_device(self, Devices, NWKID, RIA, status):
 
     self.log.logging(
@@ -396,7 +396,8 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
 
 def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
-    if self.ListOfDevices[NWKID]["Model"] in ("TS004F",):
+    modelName = self.ListOfDevices[NWKID]["Model"] if "Model" in self.ListOfDevices[NWKID] else ""
+    if modelName in ("TS004F",):
         self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
@@ -408,7 +409,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
         mgmt_rtg(self, NWKID, "BindingTable")
 
     # Just after Binding Enable Opple with Magic Word
-    if self.ListOfDevices[NWKID]["Model"] in (
+    if modelName in (
         "lumi.remote.b686opcn01",
         "lumi.remote.b486opcn01",
         "lumi.remote.b286opcn01",
@@ -447,8 +448,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     handle_device_specific_needs(self, Devices, NWKID)
     
     # 6- Updating the Certified devices list
-    if 'ConfigSource' in self.ListOfDevices[NWKID]:
-        self.ListOfDevices[ NWKID ]["CertifiedDevice"] = (self.ListOfDevices[NWKID]['ConfigSource'] == "DeviceConf")
+    self.ListOfDevices[ NWKID ]["CertifiedDevice"] = modelName in self.DeviceConf
 
 
 
@@ -633,7 +633,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya eTRV registration needed")
         tuya_eTRV_registration(self, NWKID, device_reset=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS0121",):
+    elif self.ListOfDevices[NWKID]["Model"] in ("TS0121", "TS0002_relay_switch", "TS0002_relay_switch"):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
         tuya_TS0121_registration(self, NWKID)
 
@@ -643,7 +643,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
             ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
 
-    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0222", ):
+    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0222", "TS0002_relay_switch", "TS0003_relay_switch", 'TS0601-motion'):
         tuya_command_f0( self, NWKID )
         
     elif self.ListOfDevices[NWKID]["Model"] in (
@@ -655,7 +655,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "TS130F-_TZ3000_8kzqqzu4",
         "TS130F-_TZ3000_1dd0d5yi",
         "TS130F-_TZ3000_zirycpws",
-        "TS0601-temphumi"
+        "TS0601-temphumi",
     ):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
         tuya_registration(self, NWKID, device_reset=True)
@@ -664,7 +664,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, device_reset=True, parkside=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0216", ):
+    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0216", "TY0A01", ):
         # Do just the registration
         tuya_registration(self, NWKID )
 
