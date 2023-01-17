@@ -41,6 +41,7 @@ from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.pairingProcess import interview_state_8045, request_next_Ep
+from Modules.paramDevice import get_device_config_param
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.readClusters import ReadCluster
@@ -3683,7 +3684,10 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     )
     value = MsgZoneStatus[2:4]
 
-    if (
+    if get_device_config_param( self, MsgSrcAddr, "MotionViaIASAlarm1"):
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
+    
+    elif (
         "ClusterType" in self.ListOfDevices[MsgSrcAddr]
         and "Motion" in self.ListOfDevices[MsgSrcAddr]["ClusterType"]
         and self.ListOfDevices[MsgSrcAddr]["Model"] in (

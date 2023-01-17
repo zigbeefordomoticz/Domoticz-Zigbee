@@ -22,7 +22,11 @@
         "0019": [],
         "0500": [ "0000", "0001", "0002", "0010", "0011" ]
     },
+   
     "VoltageConverter": 10,
     "BatteryDevice": 1,
-    "BatteryPercentageConverter": 2 
+    "BatteryPercentageConverter": 2 ,
+    "Param": {
+        "MotionViaIASAlarm1": 1
+    }
 }
