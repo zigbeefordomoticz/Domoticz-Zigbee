@@ -193,6 +193,40 @@ SWITCH_LVL_MATRIX = {
         "Language": {
             "fr-FR": {"LevelNames": "Simple click|Double click|Triple click|Quadruple+ click"}},
     },
+    "SwitchAQ2WithOff": {
+        "0": (0, "00"),
+        "1": (1, "10"),
+        "2": (2, "20"),
+        "3": (3, "30"),
+        "4": (4, "40"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "80": (5, "50"),
+        "255": (4, "40"),
+        "ForceUpdate": True,
+        "LevelNames": "Off | One click|Two clicks|Tree clicks|Four+ clicks",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off | Simple click|Double click|Triple click|Quadruple+ click"}},
+    },
+
+    "SwitchAQ3WithOff": {
+        "0": (0, "00"),
+        "1": (1, "10"),
+        "2": (2, "20"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "16": (3, "30"),
+        "17": (4, "40"),
+        "18": (5, "50"),
+        "00": (0, "00"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|Click|Double click|Long click|Release click|Shake",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Click|Double click|Long click|Relacher click|Remuer"}},
+    },
+    
     "SwitchAQ3": {
         "1": (0, "00"),
         "2": (1, "10"),
@@ -207,6 +241,8 @@ SWITCH_LVL_MATRIX = {
         "Language": {
             "fr-FR": {"LevelNames": "Click|Double click|Long click|Relacher click|Remuer"}},
     },
+
+
     "DSwitch": {
         "LevelNames": "Off|Left Click|Right Click|Both Click",
         "ForceUpdate": True,
