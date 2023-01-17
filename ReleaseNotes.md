@@ -18,15 +18,31 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-##    Jan. 2023 - stable6 - 6.3.009
+##    Jan. 2023 - stable6 - 6.3.009 / 2023.1
 
 - [Hardware] - Managing Power state for TS0001 smart relay
 - [Hardware] - Integrating Ikea Air Purifier (@rhuijben)
 - [Hardware] - ADEO LEXMAN Smart Plug 16A
+- [Hardware] - Gledopto 12W Dual White & Color Led bulb
+- [Harwdare] - GLEDOPTO G95 7W LED filament bulb (thanks to @RMvdBijl sponsorship)
+- [Hardware] - Light Switch 2 Gang
+- [Hardware] - Light Switch - 1 Gang DE
+- [Hardware] - Tuya relay switch 1, 2, 3 gangs ( ZB-SWxx )
+- [Hardware] - Aqara Smoke sensor JY-GZ-01AQ
+- [Hardware] - Heiman Scene controler
+- [Hardware] - Tuya Motion + Lux PIR ZG-204Z
+- [Hardware] - Philips LOM008 
+- [Hardware] - Nodon Window Covering 
+
+- [WebUI] - Angular15
+- [WebUI] - Responsive version ( work with mobile and tablets)
 
 - [Technical] - Improvment of storing Node Descriptor
 - [Technical] - zigpy version from 23 Dec. 2022
-
+- [Technical] - customstart.sh script to ease and automate docker installation. (thanks to @deufo)
+- [Technical] - Resilience of Zigate Wifi
+- [Technical] - Logging for zigpy layers
+- [Technical] - Improve pairing of Tuya devices
 
 ## 20 Dec. 2022 - stable6 - 6.3.008
 
