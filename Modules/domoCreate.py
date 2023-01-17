@@ -388,7 +388,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options, Image=7)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl/FanSpeed" % (t), NWKID)
 
-            if t in ("ACSwing", "TuyaSirenHumi", "TuyaSirenTemp", "LegrandSleepWakeupSelector"):  # 2
+            if t in ("ACSwing", "TuyaSirenHumi", "TuyaSirenTemp",):  # 2
                 Options = createSwitchSelector(self, 2, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACSwing" % (t), NWKID)           
@@ -410,6 +410,13 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = createSwitchSelector(self, 3, DeviceType=t, OffHidden=True, SelectorStyle=0)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." % (t), NWKID)
+
+            # 3 Selector , OffHidden, Style 1 (command)
+            if t in ("LegrandSleepWakeupSelector",):
+                Options = createSwitchSelector(self, 3, DeviceType=t, OffHidden=True, SelectorStyle=1)
+                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in LegrandSleepWakeupSelector..." % (t), NWKID)
+
 
             # 4 Selector , OffHidden, Style 0 (command)
             if t in ("DSwitch", "blindIKEA", "ThermoMode_6"):
