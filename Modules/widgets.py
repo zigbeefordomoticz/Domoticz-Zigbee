@@ -170,12 +170,13 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt|Toggle"}},
     },
     "LegrandSleepWakeupSelector": {
-        "00": (0, "00"),
-        "01": (1, "10"),
+        "": ( 0, "00"),
+        "00": (1, "10"),
+        "01": (2, "20"),
         "ForceUpdate": True,
-        "LevelNames": "Sleep|WakeUp",
+        "LevelNames": "Off|Sleep|WakeUp",
         "Language": {
-            "fr-FR": {"LevelNames": "Coucher|Lever"}},
+            "fr-FR": {"LevelNames": "Off|Coucher|Lever"}},
     },
     "SwitchAQ2": {
         "1": (0, "00"),
