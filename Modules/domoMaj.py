@@ -653,7 +653,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             svalue = "%s" % (nvalue)
             UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
 
-        if ClusterType == "Analog" and WidgetType == "Voc" and Attribute_ == "0055":
+        if ClusterType == "Analog" and WidgetType == "Voc" and Attribute_ == "":
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, svalue, BatteryLevel, SignalLevel)
             
         if ClusterType == "Temp" and WidgetType == "Voc" and Attribute_ == "0003":
