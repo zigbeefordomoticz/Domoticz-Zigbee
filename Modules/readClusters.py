@@ -1430,40 +1430,20 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # Are we receiving Power or is that XCube or something else
         if getEPforClusterType(self, MsgSrcAddr, "Analog") and MsgAttType == "39":
             # We have an Analog Widget created, so we can consider it is not a Xiaomi Plug nor an Aqara/XCube
-            self.log.logging(
-                "Cluster",
-                "Debug",
-                "readCluster - %s - %s/%s Xiaomi attribute: %s:  %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData)),
-                MsgSrcAddr,
-            )
+            self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Xiaomi attribute: %s:  %s " % (
+                MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData)), MsgSrcAddr, )
             if not checkValidValue(self, MsgSrcAddr, MsgAttType, MsgClusterData):
-                self.log.logging(
-                    "Cluster",
-                    "Info",
-                    "Cluster000c - MsgAttrID: %s MsgAttType: %s DataLen: %s : invalid Data Value found : %s"
-                    % (MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-                    MsgSrcAddr,
-                )
+                self.log.logging( "Cluster", "Info", "Cluster000c - MsgAttrID: %s MsgAttType: %s DataLen: %s : invalid Data Value found : %s" % (
+                    MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
                 return
-            MajDomoDevice(
-                self,
-                Devices,
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                str(decodeAttribute(self, MsgAttType, MsgClusterData)),
-            )
+            MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(decodeAttribute(self, MsgAttType, MsgClusterData)),)
             return
 
         EPforPower = getEPforClusterType(self, MsgSrcAddr, "Power")
         EPforMeter = getEPforClusterType(self, MsgSrcAddr, "Meter")
         EPforPowerMeter = getEPforClusterType(self, MsgSrcAddr, "PowerMeter")
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" % (EPforPower, EPforMeter, EPforPowerMeter),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" % (
+            EPforPower, EPforMeter, EPforPowerMeter), MsgSrcAddr, )
 
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0 and self.ListOfDevices[MsgSrcAddr]["Model"] != "lumi.airmonitor.acn01":
             # Magic Cub
