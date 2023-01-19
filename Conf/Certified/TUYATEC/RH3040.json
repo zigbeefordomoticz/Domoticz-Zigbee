@@ -12,7 +12,7 @@
         }
     },
     "Type": "",
-    "ClusterToBind": [ ],
+    "ClusterToBind": [ "0001", "0500"],
     "ConfigureReporting": {
     },
     "ReadAttributes": {
