@@ -170,12 +170,13 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt|Toggle"}},
     },
     "LegrandSleepWakeupSelector": {
-        "00": (0, "00"),
-        "01": (1, "10"),
+        "": ( 0, "00"),
+        "00": (1, "10"),
+        "01": (2, "20"),
         "ForceUpdate": True,
-        "LevelNames": "Sleep|WakeUp",
+        "LevelNames": "Off|Sleep|WakeUp",
         "Language": {
-            "fr-FR": {"LevelNames": "Coucher|Lever"}},
+            "fr-FR": {"LevelNames": "Off|Coucher|Lever"}},
     },
     "SwitchAQ2": {
         "1": (0, "00"),
@@ -193,6 +194,40 @@ SWITCH_LVL_MATRIX = {
         "Language": {
             "fr-FR": {"LevelNames": "Simple click|Double click|Triple click|Quadruple+ click"}},
     },
+    "SwitchAQ2WithOff": {
+        "0": (0, "00"),
+        "1": (1, "10"),
+        "2": (2, "20"),
+        "3": (3, "30"),
+        "4": (4, "40"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "80": (5, "50"),
+        "255": (4, "40"),
+        "ForceUpdate": True,
+        "LevelNames": "Off | One click|Two clicks|Tree clicks|Four+ clicks",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off | Simple click|Double click|Triple click|Quadruple+ click"}},
+    },
+
+    "SwitchAQ3WithOff": {
+        "0": (0, "00"),
+        "1": (1, "10"),
+        "2": (2, "20"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "16": (3, "30"),
+        "17": (4, "40"),
+        "18": (5, "50"),
+        "00": (0, "00"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|Click|Double click|Long click|Release click|Shake",
+        "Language": {
+            "fr-FR": {"LevelNames": "Off|Click|Double click|Long click|Relacher click|Remuer"}},
+    },
+    
     "SwitchAQ3": {
         "1": (0, "00"),
         "2": (1, "10"),
@@ -207,6 +242,8 @@ SWITCH_LVL_MATRIX = {
         "Language": {
             "fr-FR": {"LevelNames": "Click|Double click|Long click|Relacher click|Remuer"}},
     },
+
+
     "DSwitch": {
         "LevelNames": "Off|Left Click|Right Click|Both Click",
         "ForceUpdate": True,
@@ -602,5 +639,17 @@ SWITCH_LVL_MATRIX = {
         "80": (8, "80"),  # Away
         "ForceUpdate": True,
         "LevelNames": "Off|Enter|Leave|Left_enter|Right_leave|Right_enter|Left_leave|Approach|Away",
+    },
+    "HeimanSceneSwitch": {
+        0: (0, "Off"),
+        0xf0: (1, "10"),
+        0xf1: (2, "20"),
+        0xf2: (3, "30"),
+        0xf3: (4, "40"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|Movie|At Home|Sleep|Go Out",
+        "Language": {
+            "fr-FR": { "Off|Movie|At Home|Sleep|Go Out"}
+        },
     },
 }

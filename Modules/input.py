@@ -20,7 +20,7 @@ from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                              sqn_get_internal_sqn_from_app_sqn,
                                              sqn_get_internal_sqn_from_aps_sqn)
 from Modules.basicInputs import read_attribute_response
-from Modules.basicOutputs import (getListofAttribute, send_default_response,
+from Modules.basicOutputs import (getListofAttribute, send_default_response,handle_unknow_device,
                                   setTimeServer)
 from Modules.callback import callbackDeviceAwake
 from Modules.deviceAnnoucement import device_annoucementv2
@@ -41,6 +41,7 @@ from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
 from Modules.livolo import livolo_read_attribute_request
 from Modules.lumi import AqaraOppleDecoding
 from Modules.pairingProcess import interview_state_8045, request_next_Ep
+from Modules.paramDevice import get_device_config_param
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.readClusters import ReadCluster
@@ -348,7 +349,8 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
     
     if MsgSrcAddr not in self.ListOfDevices:
-        zigpy_plugin_sanity_check(self, MsgSrcAddr)
+        if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+            handle_unknow_device( self, MsgSrcAddr)
         return
 
     # Livolo case, where livolo provide Switch status update via a Malformed read Attribute request
@@ -1257,7 +1259,8 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ControllerLink, MsgSEQ)
 
     if MsgSrcAddr not in self.ListOfDevices:
-        zigpy_plugin_sanity_check(self, MsgSrcAddr)
+        if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+            handle_unknow_device( self, MsgSrcAddr)
         return
 
     updLQI(self, MsgSrcAddr, MsgLQI)
@@ -1442,6 +1445,7 @@ def Decode8015(self, Devices, MsgData, MsgLQI):  # Get device list ( following r
     # ieee: 8bytes
     # power_type: 2bytes - 0 Battery, 1 AC Power
     # rssi: 2 bytes - Signal Strength between 1 - 255
+
     numberofdev = len(MsgData)
     self.log.logging(
         "Input",
@@ -1873,7 +1877,7 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
         MsgStartIndex = int( MsgData[26:28], 16)
         MsgDeviceList = MsgData[28:]
 
-    self.log.logging( "Input", "Log", "Network Address response, [%s] Status: %s Ieee: %s NwkId: %s" %(
+    self.log.logging( "Input", "Debug", "Network Address response, [%s] Status: %s Ieee: %s NwkId: %s" %(
         MsgSequenceNumber, DisplayStatusCode(MsgDataStatus), MsgIEEE, MsgShortAddress))
 
     if extendedResponse:
@@ -1913,7 +1917,10 @@ def Decode8040(self, Devices, MsgData, MsgLQI):  # Network Address response
             "Log",
             "Decode 8040 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (MsgIEEE, MsgShortAddress),
         )
-        if self.pluginconf.pluginConf["reconnectonNWKaddr"] and not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
+        if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
+            if not zigpy_plugin_sanity_check(self, MsgShortAddress):
+                handle_unknow_device( self, MsgShortAddress)
+
             self.log.logging("Input", "Debug", "Decode 8040 - Not able to reconnect (unknown device)")
             return
 
@@ -1982,7 +1989,10 @@ def Decode8041(self, Devices, MsgData, MsgLQI):  # IEEE Address response
         # hoping that we can reconnect to an existing Device
         self.log.logging( "Input", "Debug", "Decode 8041 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect" % (
             MsgIEEE, MsgShortAddress),)
-        if self.pluginconf.pluginConf["reconnectonIEEEaddr"] and not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
+        if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
+            if not zigpy_plugin_sanity_check(self, MsgShortAddress):
+                handle_unknow_device( self, MsgShortAddress)
+
             self.log.logging("Input", "Log", "Decode 8041 - Not able to reconnect (unknown device) %s %s" %(MsgIEEE, MsgShortAddress),)
             return
 
@@ -2493,20 +2503,18 @@ def Decode8046(self, Devices, MsgData, MsgLQI):  # Match Descriptor response
 
     updSQN(self, MsgDataShAddr, MsgDataSQN)
     updLQI(self, MsgDataShAddr, MsgLQI)
-    self.log.logging(
-        "Input",
-        "Log",
-        "Decode8046 - Match Descriptor response: SQN: "
-        + MsgDataSQN
-        + ", Status "
-        + DisplayStatusCode(MsgDataStatus)
-        + ", short Addr "
-        + MsgDataShAddr
-        + ", Lenght list  "
-        + MsgDataLenList
-        + ", Match list "
-        + MsgDataMatchList,
-    )
+    self.log.logging( "Input", "Log", "Decode8046 - Match Descriptor response: SQN: %s Status: %s Nwkid: %s Lenght: %s List: %s" %(
+        MsgDataSQN, MsgDataStatus, MsgDataShAddr, MsgDataLenList, MsgDataMatchList))
+    if MsgDataStatus == '00' and MsgDataLenList != '00' and self.iaszonemgt:
+        # We have some Ep matchin the 0500 cluster request
+        # let's trigger enrollment
+        idx = 0
+        while idx < int(MsgDataLenList,16):
+            ep = MsgDataMatchList[idx: idx + 2]
+            idx += 2
+            self.log.logging( "Input", "Log", "Decode8046 - Match Descriptor response Nwkid: %sfound Ep: %s Matching 0500" %( 
+                MsgDataShAddr, ep))
+            self.iaszonemgt.IAS_write_CIE_after_match_descriptor(MsgDataShAddr, ep )
 
 
 def Decode8047(self, Devices, MsgData, MsgLQI):  # Management Leave response
@@ -3162,14 +3170,6 @@ def read_report_attributes(
     # Device not found, let's try to find it, or trigger a scan
     handle_unknow_device( self, MsgSrcAddr)
 
-def handle_unknow_device( self, Nwkid):
-    # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
-    # Will request in the next hearbeat to for a IEEE request
-    ieee = lookupForIEEE(self, Nwkid, True)
-    if ieee:
-        self.log.logging("Input", "Debug", "Found IEEE for short address: %s is %s" % (Nwkid, ieee))
-        if Nwkid in self.UnknownDevices:
-            self.UnknownDevices.remove(Nwkid)
    
     
 def isZDeviceName(self, MsgSrcAddr):
@@ -3338,7 +3338,8 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
     MsgSrcAddr = MsgData[2:6]
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("Decode8120 - receiving Configure reporting response from unknown %s" % MsgSrcAddr)
-        zigpy_plugin_sanity_check(self, MsgSrcAddr)
+        if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+            handle_unknow_device( self, MsgSrcAddr)
         return
 
     timeStamped(self, MsgSrcAddr, 0x8120)
@@ -3433,7 +3434,8 @@ def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
         )
 
         if MsgSrcAddr not in self.ListOfDevices:
-            zigpy_plugin_sanity_check(self, MsgSrcAddr)
+            if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+                handle_unknow_device( self, MsgSrcAddr)
             return
 
         if "Attributes List" not in self.ListOfDevices[MsgSrcAddr]:
@@ -3491,7 +3493,8 @@ def Decode8141(self, Devices, MsgData, MsgLQI):  # Attribute Discovery Extended 
         )
 
         if MsgSrcAddr not in self.ListOfDevices:
-            zigpy_plugin_sanity_check(self, MsgSrcAddr)
+            if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+                handle_unknow_device( self, MsgSrcAddr)
             return
 
         if "Attributes List" not in self.ListOfDevices[MsgSrcAddr]:
@@ -3593,7 +3596,8 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
 
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("Decode8401 - unknown IAS device %s from plugin" % MsgSrcAddr)
-        zigpy_plugin_sanity_check(self, MsgSrcAddr)
+        if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+            handle_unknow_device( self, MsgSrcAddr)
         return
     
     if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Disabled",):
@@ -3652,7 +3656,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
 
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEp]["0500"][
         "0002"
-    ] = "alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" % (
+    ] = "alarm1: %s, alarm2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" % (
         alarm1,
         alarm2,
         tamper,
@@ -3680,7 +3684,15 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     )
     value = MsgZoneStatus[2:4]
 
-    if (
+    motion_via_IAS_alarm = get_device_config_param( self, MsgSrcAddr, "MotionViaIASAlarm1")
+    self.log.logging( "Input", "Debug", "MotionViaIASAlarm1 = %s" % (motion_via_IAS_alarm))
+    
+    if motion_via_IAS_alarm is not None and motion_via_IAS_alarm == 1:
+        self.log.logging( "Input", "Debug", "Motion detected sending to MajDomo %s/%s %s" % (
+            MsgSrcAddr, MsgEp, (alarm1 or alarm2)))    
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % (alarm1 or alarm2))
+    
+    elif (
         "ClusterType" in self.ListOfDevices[MsgSrcAddr]
         and "Motion" in self.ListOfDevices[MsgSrcAddr]["ClusterType"]
         and self.ListOfDevices[MsgSrcAddr]["Model"] in (
@@ -3884,11 +3896,13 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     )
 
     if MsgSrcAddr not in self.ListOfDevices:
-        zigpy_plugin_sanity_check(self, MsgSrcAddr)
+        if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+            handle_unknow_device( self, MsgSrcAddr)
         return
 
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
-        zigpy_plugin_sanity_check(self, MsgSrcAddr)
+        if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+            handle_unknow_device( self, MsgSrcAddr)
         return
 
     if check_duplicate_sqn(self, MsgSrcAddr, MsgEP, MsgClusterId, MsgSQN):
@@ -4141,11 +4155,13 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
 
 
     if MsgSrcAddr not in self.ListOfDevices:
-        zigpy_plugin_sanity_check(self, MsgSrcAddr)
+        if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+            handle_unknow_device( self, MsgSrcAddr)
         return
 
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
-        zigpy_plugin_sanity_check(self, MsgSrcAddr)
+        if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+            handle_unknow_device( self, MsgSrcAddr)
         return
 
     if check_duplicate_sqn(self, MsgSrcAddr, MsgEP, MsgClusterId, MsgSQN):
@@ -4403,10 +4419,12 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
         MsgSrcAddr,
     )
     if MsgSrcAddr not in self.ListOfDevices:
-        zigpy_plugin_sanity_check(self, MsgSrcAddr)
+        if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+            handle_unknow_device( self, MsgSrcAddr)
         return
     if self.ListOfDevices[MsgSrcAddr]["Status"] != "inDB":
-        zigpy_plugin_sanity_check(self, MsgSrcAddr)
+        if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
+            handle_unknow_device( self, MsgSrcAddr)
         return
 
     updLQI(self, MsgSrcAddr, MsgLQI)

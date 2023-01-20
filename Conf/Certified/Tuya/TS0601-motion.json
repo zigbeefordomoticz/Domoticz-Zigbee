@@ -5,6 +5,8 @@
             "0000": "",
             "0004": "",
             "0005": "",
+            "0500": "",
+            "000a": "",
             "0019": "",
             "Type": "Motion/Lux"
         }
@@ -13,13 +15,16 @@
     "ClusterToBind": [ ],
     "ConfigureReporting": {},
     "ReadAttributes": {
-        "0000": [ "0004", "0005", "0000", "0001", "0007", "ffe2", "ffe4", "ffdf", "fffe" ],
+        "0000": [  "0004", "0000", "0001", "0005", "0007", "fffe" ],
+        "0001": [],
         "0019": [],
+        "0500": [  "0000", "0001", "0002", "0010", "0011"],
         "ef00": []
     },
     "Param": {
         "ZG204Z_MotionSensivity": 2,
-        "ZG204Z_MotionOccupancyTime": 0
+        "ZG204Z_MotionOccupancyTime": 0,
+        "ForceIASRegistrationEp": "01"
     },
     "BatteryDevice": 1
 }

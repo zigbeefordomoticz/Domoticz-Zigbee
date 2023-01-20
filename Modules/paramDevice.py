@@ -148,6 +148,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
         "TS011F-din",
         "TS0004",
         "TS0004-_TZ3000_excgg5kb",
+        "TS0002", "TS0003", "TS0002_relay_switch", "TS0003_relay_switch"
     ):
         self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s TUYA Manufacturer" % (nwkid, mode), nwkid)
         
@@ -292,7 +293,7 @@ def sanity_check_of_param(self, NwkId):
 
 def get_device_config_param( self, NwkId, config_parameter):
     
-    #self.log.logging("ReadAttributes", "Log", "get_device_config_param: %s Config: %s" %( NwkId,config_parameter ))
+    self.log.logging("Input", "Debug", "get_device_config_param: %s Config: %s" %( NwkId,config_parameter ))
     
     if NwkId not in self.ListOfDevices:
         return None
@@ -301,7 +302,7 @@ def get_device_config_param( self, NwkId, config_parameter):
     if config_parameter not in self.ListOfDevices[NwkId]["Param"]:
         return None
 
-    #self.log.logging("ReadAttributes", "Log", "get_device_config_param: %s Config: %s return %s" %( 
-    #    NwkId,config_parameter, self.ListOfDevices[NwkId]["Param"][ config_parameter ]))
+    self.log.logging("Input", "Debug", "get_device_config_param: %s Config: %s return %s" %( 
+        NwkId,config_parameter, self.ListOfDevices[NwkId]["Param"][ config_parameter ]))
 
     return self.ListOfDevices[NwkId]["Param"][ config_parameter ]

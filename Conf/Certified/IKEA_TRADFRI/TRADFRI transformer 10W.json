@@ -1,4 +1,6 @@
 {
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1436",
+    "_blakadder": "https://zigbee.blakadder.com/Ikea_ICPSHC24-10EU-IL-1.html",
     "Ep": {
         "01": {
             "0000": "",

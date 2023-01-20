@@ -124,6 +124,7 @@ from Modules.readZclClusters import load_zcl_cluster
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
+from Modules.profalux import profalux_fake_deviceModel
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
@@ -389,6 +390,9 @@ class BasePlugin:
         # Debuging information
         debuging_information(self, "Debug")
          
+        if not self.pluginconf.pluginConf[ "PluginAnalytics" ]:
+            self.pluginconf.pluginConf[ "PluginAnalytics" ] = -1
+ 
         self.StartupFolder = Parameters["StartupFolder"]
 
         self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log )
@@ -459,6 +463,12 @@ class BasePlugin:
         # Check proper match against Domoticz Devices
         checkListOfDevice2Devices(self, Devices)
         checkDevices2LOD(self, Devices)
+        
+        for x in self.ListOfDevices:
+            # Fixing Profalux Model is required
+            if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] in ( "", {} ):
+                profalux_fake_deviceModel(self, x)
+
 
         self.log.logging("Plugin", "Debug", "ListOfDevices after checkListOfDevice2Devices: " + str(self.ListOfDevices))
         self.log.logging("Plugin", "Debug", "IEEE2NWK after checkListOfDevice2Devices     : " + str(self.IEEE2NWK))
@@ -1697,12 +1707,8 @@ def _check_plugin_version( self ):
         self.pluginParameters["PluginUpdate"] = False
 
         if checkPluginUpdate(self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
-            if "beta" in self.pluginParameters["PluginBranch"] :
-                log_mode = "Error"
-            else:
-                log_mode = "Status"
-            self.log.logging("Plugin", log_mode, "*** A more recent plugin version is waiting for you on gitHub. You are on %s and %s is available !!" %(
-                self.pluginParameters["PluginVersion"], self.pluginParameters["available"]))
+            self.log.logging("Plugin", "Status", "*** A recent plugin version (%s) is waiting for you on gitHub. You are on (%s) ***" %(
+                self.pluginParameters["available"], self.pluginParameters["PluginVersion"] ))
             self.pluginParameters["PluginUpdate"] = True
         if checkFirmwareUpdate(
             self.FirmwareMajorVersion,

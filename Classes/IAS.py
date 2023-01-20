@@ -102,6 +102,9 @@ class IAS_Zone_Management:
         self.logging("Debug", f"setZigateIEEE - Set Zigate IEEE: {ZigateIEEE}")
         self.ControllerIEEE = ZigateIEEE
 
+    def IAS_write_CIE_after_match_descriptor( self, nwkid, ep):
+        set_IAS_CIE_Address(self, nwkid, ep)
+        
     def IAS_device_enrollment(self, NwkId):
         # This is coming from the plugin.
         # Let's see first if anything has to be done

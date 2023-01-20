@@ -11,7 +11,8 @@ from Modules.casaia import casaia_check_irPairing, casaia_setpoint
 from Modules.danfoss import thermostat_Setpoint_Danfoss
 from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.schneider_wiser import schneider_setpoint
-from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_setpoint
+from Modules.tuyaTRV import tuya_setpoint
+from Modules.tuyaConst import TUYA_eTRV_MODEL
 
 
 def thermostat_Setpoint_SPZB(self, NwkId, setpoint):

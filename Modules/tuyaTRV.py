@@ -22,58 +22,8 @@ from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            is_ack_tobe_disabled, voltage2batteryP)
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
+from Modules.tuyaConst import eTRV_MODELS
 from Modules.zigateConsts import ZIGATE_EP
-
-TUYA_eTRV_MODEL = (
-    "TS0601",
-    "TS0601-eTRV",
-    "TS0601-eTRV1",
-    "TS0601-eTRV2",
-    "TS0601-eTRV3",
-    "TS0601-eTRV5",
-    "TS0601-_TZE200_b6wax7g0",      # BRT-100  MOES by Tuya
-    "TS0601-_TZE200_chyvmhay",      # Lidl Valve
-    "TS0601-thermostat",
-    "TS0601-_TZE200_dzuqwsyg",      # Tuya Thermostat with Cooling & Fan control (mapped to "TS0601-thermostat-Coil")
-    "uhszj9s",
-    "GbxAXL2",
-    "88teujp",
-    "kud7u2l",
-    "eaxp72v",
-    "fvq6avy",
-    "ivfvd7h",
-)
-
-eTRV_MODELS = {
-    # Thermostat
-    "TS0601-thermostat": "TS0601-thermostat",
-    "TS0601-_TZE200_dzuqwsyg": "TS0601-thermostat-Coil",
-    
-    # Siterwell GS361A-H04
-    "ivfvd7h": "TS0601-eTRV1",
-    "fvq6avy": "TS0601-eTRV1",
-    "eaxp72v": "TS0601-eTRV1",
-    "TS0601-eTRV1": "TS0601-eTRV1",
-    
-    # Moes HY368 / HY369
-    "kud7u2l": "TS0601-eTRV2",
-    "TS0601-eTRV2": "TS0601-eTRV2",
-    
-    # Saswell SEA802 / SEA801 Zigbee versions
-    "88teujp": "TS0601-eTRV3",
-    "GbxAXL2": "TS0601-eTRV3",
-    "uhszj9s": "TS0601-eTRV3",
-    "TS0601-eTRV3": "TS0601-eTRV3",
-    
-    # 
-    "TS0601-eTRV5": "TS0601-eTRV5",
-    # MOES BRT-100
-    "TS0601-_TZE200_b6wax7g0": "TS0601-_TZE200_b6wax7g0",
-    
-    # Lidl Valve
-    "TS0601-_TZE200_chyvmhay": "TS0601-_TZE200_chyvmhay"
-    
-}
 
 
 def tuya_eTRV_registration(self, nwkid, device_reset=False):
@@ -1221,19 +1171,22 @@ def tuya_set_calibration_if_needed(self, NwkId):
         self.log.logging( "Tuya", "Debug", "thermostat_Calibration - 2 complements of %s" % (
             target_calibration), )
 
-        target_calibration = ( 0xffffffff + target_calibration +1 )
-        #target_calibration = abs(int(hex(-target_calibration - pow(2, 32)), 16))
-        self.log.logging( "Tuya", "Debug", "thermostat_Calibration - 2 complement is %08x" % (
-            target_calibration), )
+        if get_model_name(self, NwkId) in ( "TS0601-thermostat", ):
+            target_calibration = abs( abs(target_calibration) - 4096 )
+        else:
+            target_calibration = ( 0xffffffff + target_calibration +1 )
+            #target_calibration = abs(int(hex(-target_calibration - pow(2, 32)), 16))
+            self.log.logging( "Tuya", "Debug", "thermostat_Calibration - 2 complement is %08x" % (
+                target_calibration), )
 
     if "Tuya" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["Tuya"] = {}
 
-    if "Calibration" not in self.ListOfDevices[NwkId]["Tuya"]:
-        # Not existing feature !
-        return
-
-    if target_calibration == int(self.ListOfDevices[NwkId]["Tuya"]["Calibration"], 16):
+    if (
+        "Calibration" in self.ListOfDevices[NwkId]["Tuya"]
+        and target_calibration == int(self.ListOfDevices[NwkId]["Tuya"]["Calibration"], 16)
+    ):
+        self.log.logging( "Tuya", "Debug", "thermostat_Calibration - Calibration already in place")
         return
 
     self.log.logging( "Tuya", "Debug", "thermostat_Calibration - Set Thermostat offset on %s off %s/%08x" % (

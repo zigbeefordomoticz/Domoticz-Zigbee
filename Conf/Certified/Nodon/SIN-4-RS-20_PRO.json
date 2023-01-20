@@ -1,0 +1,38 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1438",
+    "_blakadder": "https://zigbee.blakadder.com/NodOn_SIN-4-RS-20_PRO.html",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0001": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0102": "",
+            "fc57": "",
+            "0019": "",
+            "1000": "",
+            "Type": "WindowCovering"
+        },
+        "f2": {
+            "0021": "",
+            "Type": ""
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0001", "0102" ],
+    "ConfigureReporting": {
+        "0102": {
+            "Attributes": {
+                "0008": { "DataType": "20", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "01" },
+                "0009": { "DataType": "20", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "01" }
+            }
+        }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "000a", "4000" ],
+        "0001": [ "0000" ],
+        "0102": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009"],
+        "0019": []
+    }
+}

@@ -18,16 +18,20 @@ from Modules.casaia import restart_plugin_reset_ModuleIRCode
 from Modules.domoTools import lastSeenUpdate
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.livolo import livolo_bind
-from Modules.manufacturer_code import PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO
+from Modules.manufacturer_code import (PREFIX_MAC_LEN,
+                                       PREFIX_MACADDR_LIVOLO)
 from Modules.pairingProcess import (handle_device_specific_needs,
                                     interview_state_004d,
                                     zigbee_provision_device)
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
+
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
                            initDeviceInList, mainPoweredDevice, timeStamped)
+from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
-from Modules.tuyaTRV import TUYA_eTRV_MODEL, tuya_eTRV_registration
+from Modules.tuyaTRV import tuya_eTRV_registration
 from Zigbee.zdpCommands import zdp_node_descriptor_request
+
 
 DELAY_BETWEEN_2_DEVICEANNOUCEMENT = 20
 
@@ -347,11 +351,8 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     if IEEEExist(self, MsgIEEE) and not DeviceExist(
         self, Devices, NwkId, MsgIEEE
     ):
-        self.log.logging(
-            "DeviceAnnoucement",
-            "Error",
-            "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " % (NwkId, MsgIEEE, str(self.ListOfDevices[NwkId])),
-        )
+        self.log.logging( "DeviceAnnoucement", "Error", "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " % (
+            NwkId, MsgIEEE, str(self.ListOfDevices[NwkId])), )
         return
 
     # 2- Create the Data Structutre
@@ -378,12 +379,10 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     self.webserver.add_element_to_devices_in_pairing_mode( NwkId)
     self.log.logging("DeviceAnnoucement", "Log", "--> %s" % str(self.webserver.DevicesInPairingMode))
 
-    self.log.logging(
-        "DeviceAnnoucement",
-        "Debug",
-        "Decode004D - %s Infos: %s" % (NwkId, self.ListOfDevices[NwkId]),
-        NwkId,
-    )
+    self.log.logging( "DeviceAnnoucement", "Debug", "Decode004D - %s Infos: %s" % (
+        NwkId, self.ListOfDevices[NwkId]), NwkId, )
+    
+
     interview_state_004d(self, NwkId, RIA=None, status=None)
 
     timeStamped(self, NwkId, 0x004D)

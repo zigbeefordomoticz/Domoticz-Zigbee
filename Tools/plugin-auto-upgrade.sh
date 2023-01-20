@@ -1,20 +1,22 @@
 #!/bin/bash
 
+# export GIT_TRACE=1
 
+exec 2>&1
 
 echo "Starting Zigbee for Domoticz plugin Upgrade process."
 echo "----------------------------------------------------"
 
-#env
-#echo $(id)
-#echo $(who am i)
-
+env
+echo $(id)
+echo $(who am i)
 
 echo "(1) updating Zigbee for Domoticz plugin"
 echo ""
 echo "Setup submodule.recurse $(git config --add submodule.recurse true)"
 echo ""
 git pull --recurse-submodules
+#git pull --recurse-submodules  && git submodule update --recursive
 ret="$?"
 if [ "$ret" != "0" ] ; then
     echo "ERROR while running command 'git pull --recurse-submodules'."
@@ -24,7 +26,7 @@ fi
 
 echo "(2) update python3 modules if needed"
 echo ""
-sudo python3 -m pip --no-input install -r requirements.txt
+sudo python3 -m pip --no-input install -r requirements.txt --ignore-requires-python
 ret="$?"
 if [ "$ret" != "0" ] ; then
     echo "ERROR while running command 'sudo python3 -m pip --ignore-requires-python --no-input install -r requirements.txt'."

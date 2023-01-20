@@ -4,15 +4,19 @@
 # Author: pipiche38
 #
 
+import contextlib
 import select
 import socket
 import time
+import errno
 
 from Classes.ZigateTransport.readDecoder import decode_and_split_message
 from Classes.ZigateTransport.tools import (handle_thread_error,
                                            stop_waiting_on_queues)
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 
+MAX_RETRY = 5
+WAITING_TIME = 10.0
 
 # Manage TCP connection
 def open_tcpip(self):
@@ -21,9 +25,7 @@ def open_tcpip(self):
         self._connection = socket.create_connection((self._wifiAddress, self._wifiPort))
 
     except Exception as e:
-        self.logging_tcpip(
-            "Error", "Cannot open Zigate Wifi %s Port %s error: %s" % (self._wifiAddress, self._serialPort, e)
-        )
+        self.logging_tcpip( "Error", "Cannot open Zigate Wifi %s Port %s error: %s" % (self._wifiAddress, self._serialPort, e) )
         return False
 
     set_keepalive(self, self._connection)
@@ -34,10 +36,6 @@ def open_tcpip(self):
 
 def set_keepalive(self, sock):
     set_keepalive_linux(sock)
-
-
-# def set_keepalive_windows( sock, after_idle_sec=1, interval_sec=3, max_fails=20):
-#    sock.ioctl(socket.SIO_KEEPALIVE_VALS, (1, 10000, 3000))
 
 
 def set_keepalive_linux(sock, after_idle_sec=1, interval_sec=3, max_fails=5):
@@ -54,18 +52,21 @@ def set_keepalive_linux(sock, after_idle_sec=1, interval_sec=3, max_fails=5):
 
 
 def tcp_re_connect(self):
-    self.logging_tcpip("Debug", "tcp_re_connect - Trying to reconnect the TCP connection !!!! %s" % self._connection)
+    self.logging_tcpip("Error", "tcp_re_connect - Trying to reconnect the TCP connection !!!! %s" % self._connection)
     if self._connection:
-        try:
+        with contextlib.suppress(Exception):
             self._connection.shutdown(socket.SHUT_RDWR)
             self.logging_tcpip("Debug", "tcp_re_connect - TCP connection nicely shutdown")
-        except Exception as e:
-            pass
-
-    if not open_tcpip(self):
-        return False
-    self.logging_tcpip("Log", "tcp_re_connect - TCP connection successfuly re-established :-) %s" % self._connection)
-    return True
+    
+    nb_attempt = 1
+    while nb_attempt < MAX_RETRY:
+        if open_tcpip(self):
+            self.logging_tcpip("Error", "tcp_re_connect - TCP connection successfuly re-established :-) %s" % self._connection)  
+            return True
+        nb_attempt += 1
+        time.sleep( WAITING_TIME )
+        self.logging_tcpip("Error", "tcp_re_connect - reconnection %s attempt" % ( nb_attempt) )
+    return False
 
 
 def tcpip_read_from_zigate(self):
@@ -136,6 +137,7 @@ def tcpip_read_from_zigate(self):
             return "WifiError"
 
         time.sleep(0.05)
-
-    stop_waiting_on_queues(self)
+    
     self.logging_tcpip("Status", "ZigateTransport: ZiGateTcpIpListen Thread stop.")
+    stop_waiting_on_queues(self)
+    
