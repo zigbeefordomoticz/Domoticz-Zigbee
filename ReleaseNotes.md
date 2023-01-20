@@ -106,7 +106,7 @@ Release Numbering
 
 ## 19 Oct. 2022 - stable6 - 6.3.002
 
-- [Issue] - Improve pairing mecanism for the CMS323
+- [Issue] - Improve pairing mecanism for the CMS323
 
 - [Issue] - Prevent Aqara Motion to report un-expected Off
 - [Issue] - Provide additional ZLinky translated parameters
@@ -116,14 +116,14 @@ Release Numbering
 
 - [Hardware] - Tuya Smart Temp+Humi Sensor
 - [Tecnical] - OTA for zigpy devices
-- [Technical] - New REST API /raw-zigbee allowing to send zigbee raw commands
+- [Technical] - New REST API /raw-zigbee allowing to send zigbee raw commands
 - [Technical] - Enhacement of the WebUI
 - [Technical] - Fix on Motion/Lux devices. Prevent updating Widget when no move.
 - [Hardware] - Integration of Tuya Smoke detector <https://zigbee.blakadder.com/Tuya_YG400A.html>
 - [Hardware] - Integration of Curtain Module WS-Zigbee-CP03
 - [Hardware] - New Lidl PIR
 - [Hardware] - Certification of HUE Ensis lights
-- [Technical] - Automatic coordinator backup/restore for non-Zigate coordinators
+- [Technical] - Automatic coordinator backup/restore for non-Zigate coordinators
 - [Technical] - Support of device Over-The-Air firmware upgrade for non-Zigate coordinators
 - [Hardware] - ZLinky support for Historique, Standard, Mono, tri and Production mode. WebUI interface to visualise ALL Linky attributes
 - [Technical] - Full implementation of Over-The-Air device firmware upgrade
@@ -211,7 +211,7 @@ Release Numbering
 
 - [Technical] - relying zigpy libraries for none Zigate Coordinators
 - [Hardware] - Enable Texas Instrument Coordinator based on zigpy-znp library
-- [Hardware] - Enable Silicon Labs Coordinator based on zigpy bellows library
+- [Hardware] - Enable Silicon Labs Coordinator based on zigpy bellows library
 - [Technical] - Enable analytics information from WebUI
 - [Hardware] - Moes Curtain Switch calibration
 - [Hardware] - Moes Siren without temp/humi sensors
@@ -831,3 +831,4 @@ Mainly a technical version in order to split the code in pieces.
 - Bug fixing
 
 ## 8 September 2018 - 2.4.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/2.4.0>
+
