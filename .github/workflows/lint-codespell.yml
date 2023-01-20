@@ -1,44 +1,33 @@
- lint-codespell:
-    name: Check codespell
+name: Spell Checking
+
+on: [pull_request]
+
+jobs:
+  codespell:
+    name: Check spelling with codespell
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python $
+        uses: actions/setup-python@v2
+        with:
+          python-version: $
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install codespell
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Check spelling with codespell
+        run: codespell --ignore-words=codespell.txt || exit 1
+  misspell:
+    name: Check spelling with misspell
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code from GitHub
-        uses: actions/checkout@v3
-      - name: Set up Python ${{ env.PYTHON_VERSION_DEFAULT }}
-        uses: actions/setup-python@v4
-        id: python
-        with:
-          python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
-      - name: Restore base Python virtual environment
-        id: cache-venv
-        uses: actions/cache@v3
-        with:
-          path: venv
-          key: >-
-            ${{ env.CACHE_VERSION}}-${{ runner.os }}-base-venv-${{
-            steps.python.outputs.python-version }}-${{
-            hashFiles('setup.py', 'requirements_test.txt') }}
-      - name: Fail job if Python cache restore failed
-        if: steps.cache-venv.outputs.cache-hit != 'true'
-        run: |
-          echo "Failed to restore Python virtual environment from cache"
-          exit 1
-      - name: Restore pre-commit environment from cache
-        id: cache-precommit
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.PRE_COMMIT_HOME }}
-          key: |
-            ${{ env.CACHE_VERSION}}-${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: Fail job if cache restore failed
-        if: steps.cache-venv.outputs.cache-hit != 'true'
-        run: |
-          echo "Failed to restore Python virtual environment from cache"
-          exit 1
-      - name: Register codespell problem matcher
-        run: |
-          echo "::add-matcher::.github/workflows/matchers/codespell.json"
-      - name: Run codespell
-        run: |
-          . venv/bin/activate
-          pre-commit run --hook-stage manual codespell --all-files --show-diff-on-failure
+      - uses: actions/checkout@v2
+      - name: Install
+        run: wget -O - -q https://git.io/misspell | sh -s -- -b .
+      - name: Misspell
+        run: ./misspell -error
