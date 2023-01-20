@@ -1,4 +1,4 @@
-name: Spell Checking
+name: CODE Spell
 
 on: [pull_request]
 
