@@ -41,8 +41,7 @@ jobs:
             There hasn't been any activity on this pull request recently. This
             pull request has been automatically marked as stale because of that
             and will be closed if no further activity occurs within 7 days.
-            Thank you for your contributions.
-            
+            Thank you for your contributions
       # The 30 day stale policy for issues
       # Used for:
       # - Issues that are pending more information (incomplete issues)
