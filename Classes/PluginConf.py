@@ -223,7 +223,7 @@ SETTINGS = {
             "showTimeOutMsg": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             
             "logFORMAT": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
-            "NXPExtendedErrorCode": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "NXPExtendedErrorCode": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             
             "coordinatorCmd": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             
