@@ -653,6 +653,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             svalue = "%s" % (nvalue)
             UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
 
+        if ClusterType == "Analog" and WidgetType == "Voc" and Attribute_ == "":
+            UpdateDevice_v2(self, Devices, DeviceUnit, 0, svalue, BatteryLevel, SignalLevel)
+            
         if ClusterType == "Temp" and WidgetType == "Voc" and Attribute_ == "0003":
             # voc for VOC_Sensor from Nexturn is provided via Temp cluster
             svalue = "%s" % (round(value, 1))
@@ -1177,7 +1180,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     nValue, sValue = getDimmerLevelOfColor(self, value)
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
-            elif WidgetType in ("LegrandSelector", "LegrandSleepWakeupSelector"):
+            elif WidgetType == "LegrandSelector":
                 self.log.logging("Widget", "Debug", "------> LegrandSelector : Value -> %s" % value, NWKID)
                 if value == "00":
                     nValue = 0
@@ -1201,6 +1204,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
                 else:
                     Domoticz.Error("------>  %s LegrandSelector Unknown value %s" % (NWKID, value))
+                    
+            elif WidgetType == "LegrandSleepWakeupSelector":
+                self.log.logging("Widget", "Debug", "------> LegrandSleepWakeupSelector : Value -> %s" % value, NWKID)
+                if value == "00":
+                    nValue = 1
+                    sValue = "10"  # sleep
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                elif value == "01":
+                    nValue = 2
+                    sValue = "20"  # wakeup
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                else:
+                    Domoticz.Error("------>  %s LegrandSleepWakeupSelector Unknown value %s" % (NWKID, value))
 
             elif WidgetType == "Generic_5_buttons":
                 self.log.logging("Widget", "Debug", "------> Generic 5 buttons : Value -> %s" % value, NWKID)

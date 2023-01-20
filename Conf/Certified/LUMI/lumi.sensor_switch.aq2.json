@@ -2,7 +2,7 @@
 	"Ep": {
 		"01": {
 			"0006": "",
-			"Type": "SwitchAQ2"
+			"Type": "SwitchAQ2WithOff"
 		}
 	},
 	"Type": "",

@@ -223,7 +223,7 @@ SETTINGS = {
             "showTimeOutMsg": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             
             "logFORMAT": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
-            "NXPExtendedErrorCode": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "NXPExtendedErrorCode": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             
             "coordinatorCmd": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             
@@ -349,7 +349,7 @@ SETTINGS = {
             "polling0002": {"type": "int","default": 86400,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingONOFF": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingLvlControl": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
-            "polling000C": {"type": "int","default": 3600,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "polling000c": {"type": "int","default": 3600,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "polling0019": {"type": "int","default": 86400,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "polling0100": {"type": "int","default": 3600,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "polling0020": {"type": "int","default": 3600,"current": None,"restart": 0,"hidden": True,"Advanced": True,},

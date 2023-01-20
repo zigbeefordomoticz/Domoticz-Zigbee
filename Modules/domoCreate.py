@@ -388,7 +388,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options, Image=7)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl/FanSpeed" % (t), NWKID)
 
-            if t in ("ACSwing", "TuyaSirenHumi", "TuyaSirenTemp", "LegrandSleepWakeupSelector"):  # 2
+            if t in ("ACSwing", "TuyaSirenHumi", "TuyaSirenTemp",):  # 2
                 Options = createSwitchSelector(self, 2, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACSwing" % (t), NWKID)           
@@ -410,6 +410,13 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = createSwitchSelector(self, 3, DeviceType=t, OffHidden=True, SelectorStyle=0)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." % (t), NWKID)
+
+            # 3 Selector , OffHidden, Style 1 (command)
+            if t in ("LegrandSleepWakeupSelector",):
+                Options = createSwitchSelector(self, 3, DeviceType=t, OffHidden=True, SelectorStyle=1)
+                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in LegrandSleepWakeupSelector..." % (t), NWKID)
+
 
             # 4 Selector , OffHidden, Style 0 (command)
             if t in ("DSwitch", "blindIKEA", "ThermoMode_6"):
@@ -448,7 +455,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = createSwitchSelector(self, 4, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Vibration" % (t), NWKID)
-
+                
             # 5 Selectors, Style 0 ( mode command)
             if t in ("ThermoMode", "ThermoMode_3"):
                 Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
@@ -472,7 +479,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" % (t), NWKID)
 
             # 5 Selectors, Style 1, OffHidden
-            if t in ("IAS_ACE", "HeimanSceneSwitch", ):
+            if t in ("IAS_ACE", "HeimanSceneSwitch", "SwitchAQ2WithOff",):
                 Options = createSwitchSelector(self, 5, DeviceType=t, OffHidden=True, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" % (t), NWKID)
@@ -484,7 +491,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AlarmWD" % (t), NWKID)
 
             # 6 Buttons, Style 1, OffHidden
-            if t in ( "GenericLvlControl", "AqaraOppleMiddle", ):
+            if t in ( "GenericLvlControl", "AqaraOppleMiddle", "SwitchAQ3WithOff",):
                 Options = createSwitchSelector(self, 6, DeviceType=t, OffHidden=True, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in GenericLvlControl" % (t), NWKID)

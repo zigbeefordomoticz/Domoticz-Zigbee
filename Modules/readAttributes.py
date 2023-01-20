@@ -702,13 +702,15 @@ def ReadAttributeRequest_0020(self, key):
             ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0020", 0x0000)
 
 
-def ReadAttributeRequest_000C(self, key):
-    # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_000C - Key: %s " % key, nwkid=key)
+def ReadAttributeRequest_000c(self, key):
+    # Cluster 0x000c with attribute 0x0055 / Xiaomi Power and Metering
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_000c - Key: %s " % key, nwkid=key)
 
-    listAttributes = [0x0051, 0x0055, 0x006F, 0xFF05]
-    ListOfEp = getListOfEpForCluster(self, key, "000C")
+    
+    
+    ListOfEp = getListOfEpForCluster(self, key, "000c")
     for EPout in ListOfEp:
+        listAttributes = retreive_ListOfAttributesByCluster(self, key, EPout, "000c")
         if listAttributes:
             self.log.logging(
                 "ReadAttributes",
@@ -716,11 +718,11 @@ def ReadAttributeRequest_000C(self, key):
                 "Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout,
                 nwkid=key,
             )
-            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "000C", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "000c", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0019(self, key):
-    # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
+    # Cluster 0x000c with attribute 0x0055 / Xiaomi Power and Metering
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0019 - Key: %s " % key, nwkid=key)
 
     ListOfEp = getListOfEpForCluster(self, key, "0019")
@@ -1670,7 +1672,7 @@ READ_ATTRIBUTES_REQUEST = {
     "0002": (ReadAttributeRequest_0002, "polling0002"),
     "0006": (ReadAttributeRequest_0006, "pollingONOFF"),
     "0008": (ReadAttributeRequest_0008, "pollingLvlControl"),
-    "000C": (ReadAttributeRequest_000C, "polling000C"),
+    "000c": (ReadAttributeRequest_000c, "polling000c"),
     #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     "0019": (ReadAttributeRequest_0019, "polling0019"),
     "0020": (ReadAttributeRequest_0020, "polling0020"),
