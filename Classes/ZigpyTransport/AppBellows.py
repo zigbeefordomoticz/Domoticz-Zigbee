@@ -37,7 +37,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
         LOGGER.info("EZSP Configuration: %s", self.config)
 
-    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
@@ -48,6 +48,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackBackup = callBackBackup
         self.HardwareID = HardwareID
+        self.captureRxFrame = captureRxFrame
 
         """
         Starts a network, optionally forming one with random settings if necessary.

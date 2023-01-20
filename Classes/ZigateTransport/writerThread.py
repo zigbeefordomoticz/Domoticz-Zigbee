@@ -203,7 +203,7 @@ def thread_sendData(self, cmd, datas, ackIsDisabled, waitForResponseIn, isqn):
         "Semaphore": self.semaphore_gate._value,
     }
     self.statistics._sent += 1
-    if self.pluginconf.pluginConf["debugzigateCmd"]:
+    if self.pluginconf.pluginConf["coordinatorCmd"]:
         self.logging_writer("Log", "_sendData to ZiGate NOW  - [%s] %s %s" % (isqn, cmd, datas))
 
     return write_to_zigate(self, self._connection, bytes.fromhex(encode_message(cmd, datas)))

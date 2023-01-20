@@ -18,7 +18,6 @@ from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import get_and_inc_ZCL_SQN
 from Modules.zigateConsts import ZIGATE_EP
 
-
 def profalux_fake_deviceModel(self, nwkid):
 
     """

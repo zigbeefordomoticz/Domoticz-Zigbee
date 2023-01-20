@@ -46,7 +46,7 @@ def zdp_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         # Power_Desc_req
         self.log.logging("zdpDecoder", "Debug", "Power_Desc_req NOT IMPLEMENTED YET")
         return frame
-
+    
     if ClusterId == "0036":
         self.log.logging("zdpDecoder", "Debug", "Mgmt_Permit_Joining_req NOT IMPLEMENTED %s" %Payload)
         return None
@@ -336,9 +336,18 @@ def buildframe_power_description_response(self, SrcNwkId, SrcEndPoint, ClusterId
 
 
 def buildframe_match_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
-    self.log.logging("zdpDecoder", "Error", "buildframe_match_description_response NOT IMPLEMENTED YET")
-    return frame
-
+    self.log.logging( "zdpDecoder", "Debug", "buildframe_match_description_response SrcNwkId: %s Payload: %s  frame: %s len: %s" %( 
+        SrcNwkId, Payload, frame, len(Payload)))
+    sqn = Payload[:2]
+    status = Payload[2:4]
+    if status != "00":
+        return frame
+    NWKAddrOfInterest = Payload[4:8]
+    matchLenght = Payload[8:10]
+    matchList = Payload[10:]
+    buildPayload = sqn + status + NWKAddrOfInterest + matchLenght + matchList
+    return encapsulate_plugin_frame("8046", buildPayload, frame[len(frame) - 4 : len(frame) - 2])    
+    
 
 def buildframe_complex_description_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     self.log.logging("zdpDecoder", "Error", "buildframe_match_description_response NOT IMPLEMENTED YET")

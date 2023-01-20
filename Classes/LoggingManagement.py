@@ -40,8 +40,18 @@ class LoggingManagement:
         self.logging_queue = None
         self.logging_thread = None
         self._startTime = int(time.time())
-        self.zigpy_log_zigate = None
-        self.zigpy_log_znp = None
+
+        self.debugzigpy = False
+        zigpy_loging_mode("warning")
+        self.debugZNP = False
+        zigpy_logging_znp("warning")
+        self.debugEZSP = False
+        zigpy_logging_ezsp("warning")
+        self.debugZigate = False
+        zigpy_logging_zigate("warning")
+        self.debugdeconz = False
+        zigpy_logging_deconz("warning")
+
         self.zigpy_login()
 
         start_logging_thread(self)
@@ -87,30 +97,44 @@ class LoggingManagement:
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareMajorVersion"] = FirmwareMajorVersion
 
     def zigpy_login(self):
-        zigpy_loging_mode("warning")
-        zigpy_logging_zigate("warning")
-        zigpy_logging_deconz("warning")
-        zigpy_logging_ezsp("warning")
-        zigpy_logging_znp("warning")
-
-        if "debugZigpy" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpy"]:
+        if not self.debugzigpy and self.pluginconf.pluginConf["Zigpy"]:
+            self.debugzigpy = True
             zigpy_loging_mode("debug")
+        elif self.debugzigpy and not self.pluginconf.pluginConf["Zigpy"]:
+            self.debugzigpy = False
+            zigpy_loging_mode("warning")
         
-        if "debugZigpyZNP" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpyZNP"]:
-            # Debug ZNP
+        # Debug ZNP
+        if not self.debugZNP and self.pluginconf.pluginConf["ZigpyZNP"]:
+            self.debugZNP = True
             zigpy_logging_znp("debug")
+        elif self.debugZNP and not self.pluginconf.pluginConf["ZigpyZNP"]:
+            self.debugZNP = False
+            zigpy_logging_znp("warning")
 
-        if "debugZigpyEZSP" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpyEZSP"]:
-            # Debug Bellows/Ezsp
+        # Debug Bellows/Ezsp
+        if not self.debugEZSP and self.pluginconf.pluginConf["ZigpyEZSP"]:
+            self.debugEZSP = True
             zigpy_logging_ezsp("debug")
+        elif self.debugEZSP and not self.pluginconf.pluginConf["ZigpyEZSP"]:
+            self.debugEZSP = False
+            zigpy_logging_ezsp("warning")
 
-        if "debugZigpyZigate" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpyZigate"]:
-            # Debug Zigate
+        # Debug Zigate
+        if not self.debugZigate and self.pluginconf.pluginConf["ZigpyZigate"]:
+            self.debugZigate = True
             zigpy_logging_zigate("debug")
-            
-        if "debugZigpydeCONZ" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["debugZigpydeCONZ"]:
-            # Debug deConz
+        elif self.debugZigate and not self.pluginconf.pluginConf["ZigpyZigate"]:
+            self.debugZigate = False
+            zigpy_logging_zigate("warning")
+             
+        # Debug deConz
+        if not self.debugdeconz and self.pluginconf.pluginConf["ZigpydeCONZ"]:
+            self.debugdeconz = True
             zigpy_logging_deconz("debug")
+        elif self.debugdeconz and not self.pluginconf.pluginConf["ZigpydeCONZ"]:
+            self.debugdeconz = False
+            zigpy_logging_deconz("warning")
 
 
     def openLogFile(self):
@@ -218,27 +242,9 @@ class LoggingManagement:
         self._newError = False
 
     def logging(self, module, logType, message, nwkid=None, context=None):
-        if (
-            "debugTransportZigpyZNP" in self.pluginconf.pluginConf
-            and self.pluginconf.pluginConf["debugTransportZigpyZNP"]
-        ):
-            if not self.zigpy_log_znp:
-                self.zigpy_log_znp = True
-                self.zigpy_login()
-        elif self.zigpy_log_znp:
-            self.zigpy_log_znp = False
-            self.zigpy_login()
-
-        if (
-            "debugTransportZigpyZigate" in self.pluginconf.pluginConf
-            and self.pluginconf.pluginConf["debugTransportZigpyZigate"]
-        ):
-            if not self.zigpy_log_zigate:
-                self.zigpy_log_zigate = True
-                self.zigpy_login()
-        elif self.zigpy_log_zigate:
-            self.zigpy_log_zigate = False
-            self.zigpy_login()
+        #Domoticz.Log("%s %s %s %s %s %s %s" % (module, logType, message, nwkid, context, self.logging_thread, self.logging_queue))
+        # Set python3 modules logging if required
+        self.zigpy_login()
 
         try:
             thread_id = threading.current_thread().native_id
@@ -291,6 +297,7 @@ def _loggingDebug(self, thread_name, message):
 
     elif self.pluginconf.pluginConf["logThreadName"]:
         Domoticz.Log(" [%17s] " % thread_name + message)
+        
     else:
         Domoticz.Log(message)
 
@@ -301,7 +308,7 @@ def _logginfilter(self, thread_name, message, nwkid):
         _loggingDebug(self, thread_name, message)
     elif nwkid:
         nwkid = nwkid.lower()
-        _debugMatchId = self.pluginconf.pluginConf["debugMatchId"].lower().split(",")
+        _debugMatchId = self.pluginconf.pluginConf["MatchingNwkId"].lower().strip().split(",")
         if ("ffff" in _debugMatchId) or (nwkid in _debugMatchId) or (nwkid == "ffff"):
             _loggingDebug(self, thread_name, message)
 
@@ -456,12 +463,12 @@ def logging_thread(self):
             elif logType == "Debug":
                 # thread filter
                 threadFilter = [
-                    x for x in self.threadLogConfig if self.pluginconf.pluginConf["debugThread" + self.threadLogConfig[x]] == 1
+                    x for x in self.threadLogConfig if self.pluginconf.pluginConf["Thread" + self.threadLogConfig[x]] == 1
                 ]
                 if threadFilter and thread_name not in threadFilter:
                     continue
                 thread_name=thread_name + " " + thread_id
-                pluginConfModule = "debug" + str(module)
+                pluginConfModule = str(module)
                 if pluginConfModule in self.pluginconf.pluginConf:
                     if self.pluginconf.pluginConf[pluginConfModule]:
                         _logginfilter(self, thread_name, message, nwkid)

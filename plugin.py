@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.3">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.4">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -28,12 +28,13 @@
             </options>
         </param>
         <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">
-            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet)</description>
+            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet) or Socket. In case of Socket use the IP to put the remote ip</description>
             <options>
                 <option label="USB"   value="USB" />
                 <option label="DIN"   value="DIN" />
                 <option label="PI"    value="PI" />
                 <option label="TCPIP" value="Wifi"/>
+                <option label="Socket" value="Socket"/>
                 <option label="None"  value="None"/>
             </options>
         </param>
@@ -122,6 +123,7 @@ from Modules.domoTools import ResetDevice
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
+from Modules.profalux import profalux_fake_deviceModel
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
@@ -304,8 +306,11 @@ class BasePlugin:
             self.onStop()
             return
 
-        if Parameters["Mode5"] == "" or "http://" not in Parameters["Mode5"].lower():
-            Domoticz.Error("Please cross-check the Domoticz Hardware settingi for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
+        if (
+            Parameters["Mode5"] == "" 
+            or ( "http://" not in Parameters["Mode5"].lower() and "https://" not in Parameters["Mode5"].lower() )
+        ):
+            Domoticz.Error("Please cross-check the Domoticz Hardware setting for the plugin instance. >%s< You must set the API base URL" %Parameters["Mode5"])
             self.onStop()
 
         # Set plugin heartbeat to 1s
@@ -383,6 +388,9 @@ class BasePlugin:
         # Debuging information
         debuging_information(self, "Debug")
          
+        if not self.pluginconf.pluginConf[ "PluginAnalytics" ]:
+            self.pluginconf.pluginConf[ "PluginAnalytics" ] = -1
+ 
         self.StartupFolder = Parameters["StartupFolder"]
 
         self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log )
@@ -451,6 +459,12 @@ class BasePlugin:
         # Check proper match against Domoticz Devices
         checkListOfDevice2Devices(self, Devices)
         checkDevices2LOD(self, Devices)
+        
+        for x in self.ListOfDevices:
+            # Fixing Profalux Model is required
+            if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] in ( "", {} ):
+                profalux_fake_deviceModel(self, x)
+
 
         self.log.logging("Plugin", "Debug", "ListOfDevices after checkListOfDevice2Devices: " + str(self.ListOfDevices))
         self.log.logging("Plugin", "Debug", "IEEE2NWK after checkListOfDevice2Devices     : " + str(self.IEEE2NWK))
@@ -589,7 +603,16 @@ class BasePlugin:
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", Parameters["SerialPort"])  
+
+            if Parameters["Mode2"] == "Socket":
+                SerialPort = "socket://" + Parameters["IP"] + ':' + Parameters["Port"]
+                self.transport += "Socket"
+            else:
+                SerialPort = Parameters["SerialPort"]
+
+            SerialPort = Parameters["SerialPort"]
+            
+            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort)  
             self.ControllerLink.open_cie_connection()
             self.pluginconf.pluginConf["ControllerInRawMode"] = True
           
@@ -1338,6 +1361,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.PluginHealth,
         webserver_port,
         self.log,
+        self.transport
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
@@ -1679,12 +1703,8 @@ def _check_plugin_version( self ):
         self.pluginParameters["PluginUpdate"] = False
 
         if checkPluginUpdate(self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
-            if "beta" in self.pluginParameters["PluginBranch"] :
-                log_mode = "Error"
-            else:
-                log_mode = "Status"
-            self.log.logging("Plugin", log_mode, "*** A more recent plugin version is waiting for you on gitHub. You are on %s and %s is available !!" %(
-                self.pluginParameters["PluginVersion"], self.pluginParameters["available"]))
+            self.log.logging("Plugin", "Status", "*** A recent plugin version (%s) is waiting for you on gitHub. You are on (%s) ***" %(
+                self.pluginParameters["available"], self.pluginParameters["PluginVersion"] ))
             self.pluginParameters["PluginUpdate"] = True
         if checkFirmwareUpdate(
             self.FirmwareMajorVersion,

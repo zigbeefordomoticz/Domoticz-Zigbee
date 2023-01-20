@@ -23,7 +23,7 @@ from Modules.macPrefix import DEVELCO_PREFIX, casaiaPrefix, OWON_PREFIX
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
                                        PREFIX_MACADDR_IKEA_TRADFRI,
                                        PREFIX_MACADDR_OPPLE,
-                                       PREFIX_MACADDR_TUYA,
+                                       PREFIX_MACADDR_TUYA, TUYA_MANUF_CODE,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_ack_tobe_disabled, is_attr_unvalid_datastruct,
@@ -35,22 +35,7 @@ from Modules.zigateConsts import ZIGATE_EP
 from Modules.zlinky import get_OPTARIF
 
 ATTRIBUTES = {
-    "0000": [
-        0x0004,
-        0x0005,
-        0x0000,
-        0x0001,
-        0x0002,
-        0x0003,
-        0x0006,
-        0x0007,
-        0x000A,
-        0x000F,
-        0x0010,
-        0x0015,
-        0x4000,
-        0xF000,
-    ],
+    "0000": [ 0x0004, 0x0005, 0x0000, 0x0001, 0x0002, 0x0003, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000, 0xF000, ],
     "0001": [0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0033, 0x0035],
     "0002": [0x000, 0x0001, 0x0002, 0x0003, 0x0010, 0x0011, 0x0012, 0x0013, 0x0014],
     "0003": [0x0000],
@@ -63,51 +48,8 @@ ATTRIBUTES = {
     "0019": [0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009, 0x000A],
     "0020": [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006],
     "0100": [0x0000, 0x0001, 0x0002, 0x0010, 0x0011],
-    "0101": [
-        0x0000,
-        0x0001,
-        0x0002,
-        0x0010,
-        0x0011,
-        0x0012,
-        0x0013,
-        0x0014,
-        0x0015,
-        0x0016,
-        0x0017,
-        0x0018,
-        0x0019,
-        0x0020,
-        0x0023,
-        0x0025,
-        0x0026,
-        0x0027,
-        0x0028,
-        0x0030,
-        0x0032,
-        0x0034,
-        0x0040,
-        0x0042,
-        0x0043,
-        0xFFFD,
-    ],
-    "0102": [
-        0x0000,
-        0x0001,
-        0x0002,
-        0x0003,
-        0x0004,
-        0x0007,
-        0x0008,
-        0x0009,
-        0x000A,
-        0x000B,
-        0x0010,
-        0x0011,
-        0x0014,
-        0x0017,
-        0xFFFD,
-    ],
+    "0101": [0x0000,0x0001,0x0002,0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,0x0018,0x0019,0x0020,0x0023,0x0025,0x0026,0x0027,0x0028,0x0030,0x0032,0x0034,0x0040,0x0042,0x0043,0xFFFD,],
+    "0102": [0x0000,0x0001,0x0002,0x0003,0x0004,0x0007,0x0008,0x0009,0x000A,0x000B,0x0010,0x0011,0x0014,0x0017,0xFFFD,],
     "0201": [0x0000, 0x0008, 0x0010, 0x0011, 0x0012, 0x0014, 0x0015, 0x0016, 0x001B, 0x001C, 0x001F, 0xFD00],
     "0202": [0x0000, 0x0001],
     "0204": [0x0000, 0x0001, 0x0002],
@@ -122,11 +64,7 @@ ATTRIBUTES = {
     "0702": [0x0000, 0x0017, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
     "000f": [0x0000, 0x0051, 0x0055, 0x006F, 0xFFFD],
     "0b01": [0x000D],
-    "0b04": [
-        0x050B,
-        0x0505,
-        0x0508,
-    ],
+    "0b04": [0x050B,0x0505,0x0508,],
     "0b05": [0x0000],  # Tuya
     "e000": [0xd001, 0xd002, 0xd003 ],
     "e001": [0xd010, 0xd011, 0xd030 ],  # Tuya TS004F
@@ -134,6 +72,8 @@ ATTRIBUTES = {
     "fc01": [0x0000, 0x0001, 0x0002],  # Legrand Cluster
     "fc21": [0x0001],
     "fc40": [0x0000],   # Legrand
+    "fc57": [ ],  # Ikea STARKVIND
+    "fc7d": [ 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008],   # Ikea STARKVIND
     "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
 }
 
@@ -151,18 +91,21 @@ def get_max_read_attribute_value( self, nwkid=None):
                 maxReadAttributesByRequest = self.pluginconf.pluginConf["ReadAttributeChunk"]
 
             elif self.ListOfDevices[nwkid]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
-                read_configuration_report_chunk = 5
+                read_configuration_report_chunk = 6
 
     self.log.logging("ReadAttributes", "Debug", "get_max_read_attribute_value( %s ) => %s" %( nwkid, read_configuration_report_chunk) , nwkid=nwkid)
 
     return read_configuration_report_chunk or self.pluginconf.pluginConf["ReadAttributeChunk"]
 
 
-def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, ):
+def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, forceLen=False):
 
     maxReadAttributesByRequest = get_max_read_attribute_value( self, addr )    
 
-    if not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
+    if forceLen:
+        normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled, force=True) 
+        
+    elif not isinstance(ListOfAttributes, list) or len(ListOfAttributes) <= maxReadAttributesByRequest:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled)
     else:
         for shortlist in split_list(ListOfAttributes, wanted_parts=maxReadAttributesByRequest):
@@ -176,7 +119,7 @@ def split_list(list_in, wanted_parts=1):
     return [list_in[x : x + wanted_parts] for x in range(0, len(list_in), wanted_parts)]
 
 
-def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled):
+def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled, force=False):
 
     if "Health" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["Health"] == "Not Reachable":
         return
@@ -201,7 +144,7 @@ def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttribute
             continue
         
         Attr_ = "%04x" % (x)
-        if skipThisAttribute(self, addr, EpOut, Cluster, Attr_):
+        if not force and skipThisAttribute(self, addr, EpOut, Cluster, Attr_):
             self.log.logging("ReadAttributes", "Debug", "Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_), nwkid=addr)
             continue
 
@@ -347,10 +290,10 @@ def retreive_attributes_from_default_plugin_list(self, key, Ep, cluster):
 
 def ping_tuya_device(self, key):
 
-    PING_CLUSTER = "0000"
+    PING_CLUSTER = "0000" 
     PING_ATTRIBUTE = "0001"
     self.log.logging("ReadAttributes", "Log", "Ping Tuya Devices - Key: %s" % (key), nwkid=key)
-    send_zigatecmd_zcl_ack(self, key, "0100", ZIGATE_EP + "01" + PING_CLUSTER + "00" + "00" + "0000" + "%02x" % (0x01) + PING_ATTRIBUTE)
+    return read_attribute( self, key, ZIGATE_EP, "01", PING_CLUSTER, "00", "00", "0000", "%02x" % (0x01), PING_ATTRIBUTE, ackIsDisabled=False, )
 
 
 def ping_device_with_read_attribute(self, key):
@@ -439,9 +382,13 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             listAttributes.append(0x4000)
         if 0xF000 not in listAttributes:
             listAttributes.append(0xF000)
+            
+    elif self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
+        self.log.logging("ReadAttributes", "Log", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
+        listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
 
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
-    self.log.logging("ReadAttributes", "Log", "EP: %s" % self.ListOfDevices[key]["Ep"])
+    self.log.logging("ReadAttributes", "Log", "EP: %s Attributes: %s" % (self.ListOfDevices[key]["Ep"], str(listAttributes)))
 
     ieee = self.ListOfDevices[ key ]['IEEE']
     if len(ListOfEp) == 0:
@@ -449,10 +396,17 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
         self.log.logging( "ReadAttributes", "Log", "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
 
         if ( ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
+            self.log.logging( "ReadAttributes", "Log", "Request Basic  Opple : " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
-        elif ( ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX):
+        elif ( ieee[: len(DEVELCO_PREFIX)] in DEVELCO_PREFIX):
+            self.log.logging( "ReadAttributes", "Log", "Request Basic  Develco : " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
             ReadAttributeReq(self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+            
+        elif ieee[:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:  
+            self.log.logging( "ReadAttributes", "Log", "Request Basic  Tuya : " + key + " EPout = " + "01", nwkid=key, )
+            ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
+            ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
             
         else:
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
@@ -495,6 +449,13 @@ def add_attributes_from_device_certified_conf(self, key, cluster, listAttributes
             listAttributes.append(int(attr, 16))  # pytype: disable=wrong-arg-types
     return listAttributes
 
+def ReadAttributeRequest_0000_for_tuya(self, key):
+    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_0000_for_tuya %s" %key, nwkid=key)
+
+    listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
+
+    ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False, forceLen=True)
+            
 
 def ReadAttributeRequest_0000_for_general(self, key):
 
@@ -523,7 +484,11 @@ def ReadAttributeRequest_0000_for_general(self, key):
         listAttrGeneric = []
         manufacturer_code = "0000"
 
-        if (
+        if self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
+            self.log.logging("ReadAttributes", "Log", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
+            listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
+
+        elif (
             ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e")
             or ("Manufacturer Name" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric")
             or ("Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("EH-ZB-VAC"))
@@ -737,13 +702,15 @@ def ReadAttributeRequest_0020(self, key):
             ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0020", 0x0000)
 
 
-def ReadAttributeRequest_000C(self, key):
-    # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_000C - Key: %s " % key, nwkid=key)
+def ReadAttributeRequest_000c(self, key):
+    # Cluster 0x000c with attribute 0x0055 / Xiaomi Power and Metering
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_000c - Key: %s " % key, nwkid=key)
 
-    listAttributes = [0x0051, 0x0055, 0x006F, 0xFF05]
-    ListOfEp = getListOfEpForCluster(self, key, "000C")
+    
+    
+    ListOfEp = getListOfEpForCluster(self, key, "000c")
     for EPout in ListOfEp:
+        listAttributes = retreive_ListOfAttributesByCluster(self, key, EPout, "000c")
         if listAttributes:
             self.log.logging(
                 "ReadAttributes",
@@ -751,11 +718,11 @@ def ReadAttributeRequest_000C(self, key):
                 "Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout,
                 nwkid=key,
             )
-            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "000C", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+            ReadAttributeReq(self, key, ZIGATE_EP, EPout, "000c", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0019(self, key):
-    # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
+    # Cluster 0x000c with attribute 0x0055 / Xiaomi Power and Metering
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0019 - Key: %s " % key, nwkid=key)
 
     ListOfEp = getListOfEpForCluster(self, key, "0019")
@@ -1688,6 +1655,15 @@ def ReadAttributeRequest_ff66(self, key):
 
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "ff66", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+def ReadAttributeRequest_fc7d(self, key):
+    # Cluster IKEA
+    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_fc7d - Key: %s " % key, nwkid=key)
+    EPout = "01"
+    listAttributes = retreive_ListOfAttributesByCluster(self, key, EPout, "fc7d")
+    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_fc7d - Key: %s request %s" % (
+        key, listAttributes), nwkid=key)
+    ReadAttributeReq(self, key, ZIGATE_EP, EPout, "fc7d", listAttributes, manufacturer_spec="01", manufacturer="117c", ackIsDisabled=is_ack_tobe_disabled(self, key))
+
 
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
@@ -1696,7 +1672,7 @@ READ_ATTRIBUTES_REQUEST = {
     "0002": (ReadAttributeRequest_0002, "polling0002"),
     "0006": (ReadAttributeRequest_0006, "pollingONOFF"),
     "0008": (ReadAttributeRequest_0008, "pollingLvlControl"),
-    "000C": (ReadAttributeRequest_000C, "polling000C"),
+    "000c": (ReadAttributeRequest_000c, "polling000c"),
     #'000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     "0019": (ReadAttributeRequest_0019, "polling0019"),
     "0020": (ReadAttributeRequest_0020, "polling0020"),
@@ -1724,5 +1700,6 @@ READ_ATTRIBUTES_REQUEST = {
     "fc01": (ReadAttributeRequest_fc01, "pollingfc01"),
     "fc21": (ReadAttributeRequest_fc21, "pollingfc21"),
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),
+    "fc7d": (ReadAttributeRequest_fc7d, "pollingfc7d"),
     "ff66": (ReadAttributeRequest_ff66, "pollingff66"),
 }

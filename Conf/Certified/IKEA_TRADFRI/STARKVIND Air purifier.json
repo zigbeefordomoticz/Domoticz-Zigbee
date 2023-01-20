@@ -1,0 +1,50 @@
+{
+    "_product": "STARKVIND Air purifie",
+    "_blakadder": "https://zigbee.blakadder.com/Ikea_E2007.html",
+    "_version": "0.1",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0202": "",
+            "fc57": "",
+            "fc7d": "",
+            "0019": "",
+            "0400": "",
+            "042a": "",
+            "Type": "PM25/AirPurifierMode/FanSpeed/AirPurifierAlarm"
+        },
+        "f2": {
+            "Type": ""
+        }
+
+    },
+    "Type": "",
+    "ClusterToBind": [ "0202", "0400", "042a", "0019", "fc7d", "fc57" ],
+    "ConfigureReporting": {
+        "fc7d": { 
+            "Attributes": {
+                "0000": { "ManufSpecific": "117c", "DataType": "23", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01" },
+                "0001": { "ManufSpecific": "117c", "DataType": "20", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01" },
+                "0002": { "ManufSpecific": "117c", "DataType": "23", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "00000001" },
+                "0003": { "ManufSpecific": "117c", "DataType": "10", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01" },
+                "0004": { "ManufSpecific": "117c", "DataType": "21", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
+                "0005": { "ManufSpecific": "117c", "DataType": "10", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01" },
+                "0006": { "ManufSpecific": "117c", "DataType": "20", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01" },
+                "0007": { "ManufSpecific": "117c", "DataType": "20", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "01" },
+                "0008": { "ManufSpecific": "117c", "DataType": "23", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "00000001" }
+            }
+        }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007", "000a", "4000" ],
+        "0202": [],
+        "0400": [],
+        "042a": [],
+        "fc57": [],
+        "fc7d": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008"],
+        "0019": []
+    }
+}

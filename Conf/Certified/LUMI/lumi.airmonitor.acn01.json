@@ -1,0 +1,34 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1448",
+    "_blakadder": "https://zigbee.blakadder.com/Aqara_AAQS-S01.html",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0001": "",
+            "0003": "",
+            "0402": "",
+            "0405": "",
+            "000c": "",
+            "0019": "",
+            "fcc0": "",
+            "Type": "Temp/Humi/Voc"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0402", "0405", "000c" ],
+    "ConfigureReporting": {
+        "0402": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "000a", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" } } },
+        "0405": { "Attributes": { "0000": { "DataType": "21", "MinInterval": "003c", "MaxInterval": "0384", "TimeOut": "0000", "Change": "0001" } } },
+        "000c": { "Attributes": { "0055": { "DataType": "39", "MinInterval": "0010", "MaxInterval": "0384", "TimeOut": "0000", "Change": "00000001" } } }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "000a", "4000"],
+        "0001": [ "0020", "0033", "0035"],
+        "0402": [ "0000"],
+        "0405": [ "0000"],
+        "0019": [],
+	"000c": [ "0055" ]
+
+    },
+    "BatteryDevice": 1
+}

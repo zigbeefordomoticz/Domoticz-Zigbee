@@ -106,7 +106,7 @@ def send_zigatecmd_raw(self, cmd, datas, highpriority=False, ackIsDisabled=False
         return
 
     i_sqn = self.ControllerLink.sendData(cmd, datas, highpriority, ackIsDisabled, NwkId=NwkId)
-    if self.pluginconf.pluginConf["debugzigateCmd"]:
+    if self.pluginconf.pluginConf["coordinatorCmd"]:
         self.log.logging(
             "BasicOutput",
             "Log",
