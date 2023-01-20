@@ -1,7 +1,6 @@
  lint-codespell:
     name: Check codespell
     runs-on: ubuntu-latest
-    needs: pre-commit
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v3
