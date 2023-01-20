@@ -1,6 +1,7 @@
 {
     "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1445",
     "_blakadder": "https://zigbee.blakadder.com/Samotech_SM301Z.html",
+    "_comment": "The Off motion is managed by the device. So it is important to leave resetMotiondelay parameter to 0",
     "Ep": {
         "01": {
             "0000": "",
@@ -27,6 +28,7 @@
     "BatteryDevice": 1,
     "BatteryPercentageConverter": 2 ,
     "Param": {
+        "resetMotiondelay" : 0,
         "MotionViaIASAlarm1": 1
     }
 }
