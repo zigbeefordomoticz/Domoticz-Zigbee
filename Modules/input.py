@@ -3684,8 +3684,13 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     )
     value = MsgZoneStatus[2:4]
 
-    if get_device_config_param( self, MsgSrcAddr, "MotionViaIASAlarm1"):
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
+    motion_via_IAS_alarm = get_device_config_param( self, MsgSrcAddr, "MotionViaIASAlarm1")
+    self.log.logging( "Input", "Debug", "MotionViaIASAlarm1 = %s" % (motion_via_IAS_alarm))
+    
+    if  motion_via_IAS_alarm is not None and motion_via_IAS_alarm == 1:
+        self.log.logging( "Input", "Debug", "Motion detected sending to MajDomo %s/%s %s" % (
+            MsgSrcAddr, MsgEp, (alarm1 or alarm2)))    
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % (alarm1 or alarm2))
     
     elif (
         "ClusterType" in self.ListOfDevices[MsgSrcAddr]
