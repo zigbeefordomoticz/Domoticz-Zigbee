@@ -18,6 +18,57 @@ ACTIONS_TO_FUNCTIONS = {
     UPDATE_DOMO_DEVICE: MajDomoDevice
 }
 
+def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
+    
+    self.log.logging("readZclClusters", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source))
+
+    device_model = _get_model_name( self, MsgSrcAddr)
+    _name = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Name", model=device_model)
+    _datatype = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DataType", model=device_model)
+    _ranges = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Range", model=device_model )
+    _special_values = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecialValues", model=device_model)
+    _eval_formula = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExp", model=device_model )
+    _action_list = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ActionList", model=device_model )
+    _eval_inputs = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExpCustomVariables", model=device_model)
+    _function = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalFunc", model=device_model)
+    
+    value = _decode_attribute_data( MsgAttType, MsgClusterData)
+    
+    if _datatype != MsgAttType:
+        self.log.logging("readZclClusters", "Error", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
+            MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ))
+        
+    _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValueOverwrite", model=device_model)
+    if _force_value is not None:
+        value = _force_value
+        
+    if _special_values is not None:
+        check_special_values( self, value, MsgAttType, _special_values )
+        
+    if _ranges is not None:
+        checking_ranges = _check_range( self, value, MsgAttType, _ranges, )
+        if checking_ranges is not None and not checking_ranges:
+            self.log.logging("readZclClusters", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
+            
+    if _eval_formula is not None:
+        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, value, _eval_inputs, _eval_formula, _function)
+
+    formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, _ranges, _special_values, _eval_formula, _action_list, _eval_inputs, _force_value, value)
+    if value is None:
+        return
+    
+    if _action_list is None:
+        self.log.logging("readZclClusters", "Debug", "---> No Action")
+        return
+    
+    for data_action in _action_list:
+        if data_action == CHECK_AND_STORE:
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+
+        elif data_action == UPDATE_DOMO_DEVICE and majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
+            action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )
+
 def _read_zcl_cluster( self, cluster_filename ):
     with open(cluster_filename, "rt") as handle:
         try:
@@ -162,8 +213,6 @@ def _update_eval_formula( self, formula, input_variable, variable_name):
     self.log.logging("readZclClusters", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
     return formula.replace( input_variable, variable_name )
 
-
-
 def load_zcl_cluster(self):
     zcl_cluster_path = self.pluginconf.pluginConf["pluginConfig"] + "ZclDefinitions"
     if not isdir(zcl_cluster_path):
@@ -189,8 +238,8 @@ def load_zcl_cluster(self):
             "Version": cluster_definition[ "Version" ],
             "Attributes": dict( cluster_definition[ "Attributes" ] )
         }
-        self.log.logging("readZclClusters", "Status", " - ZCL Cluster %s - %s (v%s) loaded" %( 
-            cluster_definition[ "ClusterId"], cluster_definition["Description"], cluster_definition[ "Version" ],))
+        self.log.logging("readZclClusters", "Status", " - ZCL Cluster %s - (V%s) %s loaded" %( 
+            cluster_definition[ "ClusterId"], cluster_definition[ "Version" ], cluster_definition["Description"],))
 
 def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
     if model not in self.DeviceConf:
@@ -231,58 +280,7 @@ def cluster_attribute_retreival(self, ep, cluster, attribute, parameter, model=N
     if model and is_cluster_specific_config(self, model, ep, cluster, attribute=attribute):
         return _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter )
     return _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter )
-
-def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
     
-    self.log.logging("readZclClusters", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
-        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source))
-
-    device_model = _get_model_name( self, MsgSrcAddr)
-    _name = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Name", model=device_model)
-    _datatype = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DataType", model=device_model)
-    _ranges = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Range", model=device_model )
-    _special_values = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecialValues", model=device_model)
-    _eval_formula = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExp", model=device_model )
-    _action_list = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ActionList", model=device_model )
-    _eval_inputs = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExpCustomVariables", model=device_model)
-    _function = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalFunc", model=device_model)
-    
-    value = _decode_attribute_data( MsgAttType, MsgClusterData)
-    
-    if _datatype != MsgAttType:
-        self.log.logging("readZclClusters", "Error", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
-            MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ))
-        
-    _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValueOverwrite", model=device_model)
-    if _force_value is not None:
-        value = _force_value
-        
-    if _special_values is not None:
-        check_special_values( self, value, MsgAttType, _special_values )
-        
-    if _ranges is not None:
-        checking_ranges = _check_range( self, value, MsgAttType, _ranges, )
-        if checking_ranges is not None and not checking_ranges:
-            self.log.logging("readZclClusters", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
-            
-    if _eval_formula is not None:
-        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, value, _eval_inputs, _eval_formula, _function)
-
-    formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, _ranges, _special_values, _eval_formula, _action_list, _eval_inputs, _force_value, value)
-    if value is None:
-        return
-    
-    if _action_list is None:
-        self.log.logging("readZclClusters", "Debug", "---> No Action")
-        return
-    
-    for data_action in _action_list:
-        if data_action == CHECK_AND_STORE:
-            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-
-        elif data_action == UPDATE_DOMO_DEVICE and majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
-            action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )
-            
 def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
     self.log.logging( "readZclClusters", "Debug", "action_majdomodevice - %s/%s %s %s %s %s" %(
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ))    
@@ -305,7 +303,6 @@ def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, majCluster, majValue, Attribute_=majAttribute)
     
-
 def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model, value):
 
     _majdomodeviceValidValues = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValidValuesDomoDevices", model=model)
@@ -322,8 +319,7 @@ def check_special_values( self, value, data_type, _special_values ):
             self.log.logging("readZclClusters", "Log", " . found %s as %s" %( value, _special_values[ x ] ))
             flag = True
     return flag
-        
-        
+    
 def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula, _function):
 
     self.log.logging("readZclClusters", "Log", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
@@ -354,7 +350,6 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
         evaluation_result = eval( _eval_formula )
     self.log.logging("readZclClusters", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
     return evaluation_result
-
 
 def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, device_model, attr_name, exp_dt, _ranges, _special_values, eval_formula, action_list, eval_inputs, force_value, value):
 
