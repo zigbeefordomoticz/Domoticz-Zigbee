@@ -18,8 +18,12 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-##              
 
+
+
+##  WIP develop            
+
+- [Technical] - Plugin requires python3.8 or above.
 - [Technical] - Upgrading zigpy radio modules to the version zigpy: 0.53.1, zigpy_znp: 0.9.2, zigpy_deconz: 0.19.2, zigpy_ezsp: 0.34.6
 
 
