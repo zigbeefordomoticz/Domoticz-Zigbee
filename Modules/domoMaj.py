@@ -1459,7 +1459,7 @@ def getDimmerLevelOfColor(self, value):
         sValue = 100
 
     else:
-        sValue = round(((int(value, 16) * 100) / 255))
+        sValue = round(((analogValue * 100) / 255))
         if sValue > 100:
             sValue = 100
 
