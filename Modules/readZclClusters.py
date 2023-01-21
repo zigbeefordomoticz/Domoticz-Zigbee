@@ -20,6 +20,7 @@ ACTIONS_TO_FUNCTIONS = {
 
 def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
     
+
     self.log.logging("ZclClusters", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source))
 
@@ -75,8 +76,8 @@ def _read_zcl_cluster( self, cluster_filename ):
             return json.load(handle)
         except ValueError as e:
             self.log.logging("ZclClusters", "Error", "--> JSON readZclClusters: %s load failed with error: %s" % (cluster_filename, str(e)))
-
             return None
+            
         except Exception as e:
             self.log.logging("ZclClusters", "Error", "--> JSON readZclClusters: %s load general error: %s" % (cluster_filename, str(e)))
             return None
@@ -185,11 +186,14 @@ def _get_model_name( self, nwkid):
     return None
 
 def _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter ):
+
     self.log.logging("ZclClusters", "Debug", " . _cluster_zcl_attribute_retreival %s %s %s" %( cluster, attribute, parameter))
+
     if (
         attribute in self.readZclClusters[ cluster ]["Attributes"] 
         and parameter in self.readZclClusters[ cluster ]["Attributes"][ attribute ]
     ):
+
         self.log.logging("ZclClusters", "Debug", " . %s %s %s --> %s" %(
             cluster, attribute, parameter, self.readZclClusters[ cluster ]["Attributes"][ attribute ][ parameter ])
         ) 
@@ -197,12 +201,16 @@ def _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter ):
     return None
 
 def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter ):
+
     self.log.logging("ZclClusters", "Debug", " . _cluster_specific_attribute_retreival %s %s %s %s %s" %( model, ep, cluster, attribute, parameter))
+
     if (
         attribute in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"] 
         and parameter in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ]
     ):
+
         self.log.logging("ZclClusters", "Debug", " . %s %s %s --> %s" %(
+
             cluster, attribute, parameter, self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ][ parameter ])
         ) 
 
@@ -210,7 +218,9 @@ def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, 
     return None
 
 def _update_eval_formula( self, formula, input_variable, variable_name):
+
     self.log.logging("ZclClusters", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
+
     return formula.replace( input_variable, variable_name )
 
 def load_zcl_cluster(self):
@@ -219,6 +229,7 @@ def load_zcl_cluster(self):
         return
 
     self.log.logging("ZclClusters", "Status", "Loading ZCL Cluster definitions")
+
     zcl_cluster_definition = [f for f in listdir(zcl_cluster_path) if isfile(join(zcl_cluster_path, f))]
     for cluster_definition in sorted(zcl_cluster_definition):
         cluster_filename = str(zcl_cluster_path + "/" + cluster_definition)
@@ -238,6 +249,7 @@ def load_zcl_cluster(self):
             "Version": cluster_definition[ "Version" ],
             "Attributes": dict( cluster_definition[ "Attributes" ] )
         }
+
         self.log.logging("ZclClusters", "Status", " - ZCL Cluster %s - (V%s) %s loaded" %( 
             cluster_definition[ "ClusterId"], cluster_definition[ "Version" ], cluster_definition["Description"],))
 
@@ -256,6 +268,7 @@ def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
         return False
     if attribute not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"]:
         return False
+
     self.log.logging("ZclClusters", "Debug", "is_cluster_specific_config %s/%s and definition %s" %( 
         cluster, attribute, self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ] ))
 
@@ -271,6 +284,7 @@ def is_cluster_zcl_config_available( self, cluster, attribute=None):
         or not self.readZclClusters[ cluster ]["Attributes"][ attribute ]["Enabled"]
     ):
         return False
+
     self.log.logging("ZclClusters", "Debug", "is_cluster_zcl_config_available %s/%s and definition %s" %( 
         cluster, attribute, self.readZclClusters[ cluster ]["Attributes"][ attribute ] ))
     
@@ -309,6 +323,7 @@ def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model
     if _majdomodeviceValidValues is None:
         return True
     eval_result = eval( _majdomodeviceValidValues )
+
     self.log.logging("ZclClusters", "Debug", " . majdomodevice_possiblevalues: %s -> %s" %( eval_result, _majdomodeviceValidValues))
     return eval_result
 
@@ -316,6 +331,7 @@ def check_special_values( self, value, data_type, _special_values ):
     flag = False
     for x in _special_values:
         if value == _decode_attribute_data( data_type, x):
+
             self.log.logging("ZclClusters", "Log", " . found %s as %s" %( value, _special_values[ x ] ))
             flag = True
     return flag
@@ -323,6 +339,7 @@ def check_special_values( self, value, data_type, _special_values ):
 def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula, _function):
 
     self.log.logging("ZclClusters", "Log", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
+
     if _function and _function in dict(FUNCTION_MODULE):
         return FUNCTION_MODULE[ _function ]
         
@@ -334,6 +351,7 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
                 cluster = _eval_inputs[x][ "ClusterId" ]
                 attribute = _eval_inputs[x][ "AttributeId" ]
                 custom_value = getAttributeValue(self, nwkid, ep, cluster, attribute)
+
                 self.log.logging("ZclClusters", "Debug", " . %s/%s = %s" %( cluster, attribute, custom_value ))
                 if custom_value is None:
                     self.log.logging("ZclClusters", "Error", "process_cluster_attribute_response - unable to found Input variable: %s Cluster: %s Attribute: %s" %(
