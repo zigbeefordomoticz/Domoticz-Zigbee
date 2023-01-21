@@ -10,7 +10,16 @@ from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
 
 from DevicesModules import FUNCTION_MODULE
 
+# "ActionList":
+#   check_store_value - check the value and store in the corresponding data strcuture entry
+#   upd_domo_device - trigger update request in domoticz
+#   store_specif_attribute - Store the data value in self.ListOfDevices[ nwkid ][_storage_specificlvl1 ][_storage_specificlvl2][_storage_specificlvl3]
+
 CHECK_AND_STORE = "check_store_value"
+STORE_SPECIFIC_ATTRIBUTE = "store_specif_attribute"
+STORE_SPECIFIC_PLACE = "SpecifStoragelvl1"
+STORE_SPECIFIC_PLACE = "SpecifStoragelvl2"
+STORE_SPECIFIC_PLACE = "SpecifStoragelvl3"
 UPDATE_DOMO_DEVICE = "upd_domo_device"
 
 ACTIONS_TO_FUNCTIONS = {
@@ -31,6 +40,9 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     _special_values = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecialValues", model=device_model)
     _eval_formula = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExp", model=device_model )
     _action_list = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ActionList", model=device_model )
+    _storage_specificlvl1 = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl1", model=device_model )
+    _storage_specificlvl2 = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl2", model=device_model )
+    _storage_specificlvl3 = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl3", model=device_model )
     _eval_inputs = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExpCustomVariables", model=device_model)
     _function = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalFunc", model=device_model)
     
@@ -69,6 +81,10 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
 
         elif data_action == UPDATE_DOMO_DEVICE and majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
             action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )
+            
+        elif data_action == STORE_SPECIFIC_ATTRIBUTE:
+            store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3)
+            
 
 def _read_zcl_cluster( self, cluster_filename ):
     with open(cluster_filename, "rt") as handle:
@@ -368,6 +384,23 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
     self.log.logging("ZclClusters", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
     return evaluation_result
 
+def store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3):
+    if _storage_specificlvl1 is None:
+        return
+    if [ _storage_specificlvl1 ] not in self.ListOfDevices[ MsgSrcAddr ]:
+        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ] = {}
+    if _storage_specificlvl2 is None:
+        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ] = value
+        return
+    if [ _storage_specificlvl2 ] not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ]:
+        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ] = {}
+    if _storage_specificlvl3 is None:
+        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ] = value
+        return
+    if [ _storage_specificlvl3 ] not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ]:
+        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = {}    
+    self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = value
+    
 def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, device_model, attr_name, exp_dt, _ranges, _special_values, eval_formula, action_list, eval_inputs, force_value, value):
 
     if not self.pluginconf.pluginConf["trackZclClusters"]:
