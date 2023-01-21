@@ -1,0 +1,57 @@
+{ 
+    "ClusterId": "0402",
+    "Description": "Temperature Measurement",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "MeasuredValue",
+            "DataType": "29" ,
+            "Range": [ "954d", "7fff"],
+            "SpecialValues": { "0800": "temperature measurement is unknown" },
+            "Acc": "RP" ,
+            "Default": "",
+            "Mandatory": true,
+            "DomoClusterType": "Temp",
+            "EvalExp": "round(int(value) / 100, 1)",
+            "ActionList": [ "check_store_value", "upd_domo_device"]
+        },
+        "0001": { 
+            "Enabled": true,
+            "Name": "MinMeasuredValue" ,
+            "DataType": "29",
+            "Range": [ "954d", "7ffe" ],
+            "SpecialValues": { "0800": "temperature measurement is unknown" },
+            "Acc": "R",
+            "Default": "",
+            "EvalExp": "round(int(value) / 100, 1)",
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+
+        },
+        "0002": { 
+            "Enabled": true,
+            "Name": "MaxMeasuredValue" ,
+            "DataType": "29",
+            "Range": [ "954d", "7ffe" ],
+            "SpecialValues": { "00": "frequency that is too low to be measured.", "fe": "frequency that is too high to be measured", "ff": "frequency could not be measured" },
+            "Acc": "R",
+            "Default": "",
+            "EvalExp": "round(int(value) / 100, 1)",
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+
+        },
+        "0003": { 
+            "Enabled": true,
+            "Name": "Tolerance" ,
+            "DataType": "21",
+            "Range": [ "0000", "0800" ],
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        }
+    }
+}

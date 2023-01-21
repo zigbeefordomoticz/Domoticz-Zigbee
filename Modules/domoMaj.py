@@ -1077,60 +1077,36 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                 # We might get a Level, but the device is still Off and we shouldn't make it On .
                 nValue = None
-                # Normalize sValue vs. analog value coomming from a ReadATtribute
-                analogValue = int(value, 16)
-                self.log.logging("Widget", "Debug", "------>  LvlControl analogValue: -> %s" % analogValue, NWKID)
-                if analogValue >= 255:
-                    sValue = 100
-                else:
-                    sValue = round(((int(value, 16) * 100) / 255))
-                    if sValue > 100:
-                        sValue = 100
-                    if sValue == 0 and analogValue > 0:
-                        sValue = 1
-                    # Looks like in the case of the Profalux shutter, we never get 0 or 100
-                    if Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
-                        if sValue == 1 and analogValue == 1:
-                            sValue = 0
-                        if sValue == 99 and analogValue == 254:
-                            sValue = 100
-                self.log.logging(
-                    "Widget",
-                    "Debug",
-                    "------>  LvlControl new sValue: -> %s old nValue/sValue %s:%s" % (sValue, Devices[DeviceUnit].nValue, Devices[DeviceUnit].sValue),
-                    NWKID,
-                )
+                self.log.logging("Widget", "Debug", "------>  LvlControl analogValue: -> %s" % value, NWKID)
+                
+                normalized_value = normalized_lvl_value(  Devices, DeviceUnit, value )
+                self.log.logging( "Widget", "Debug", "------>  LvlControl new sValue: -> %s old nValue/sValue %s:%s" % (
+                    normalized_value, Devices[DeviceUnit].nValue, Devices[DeviceUnit].sValue), NWKID, )
+                
                 # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
-                if sValue == 0:
+                if normalized_value == 0:
                     nValue = 0
                     if Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (0, 0, Devices[DeviceUnit].SwitchType),
-                            NWKID,
-                        )
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
+                            0, 0, Devices[DeviceUnit].SwitchType), NWKID, )
                         UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
                     else:
                         # if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
-                        if Devices[DeviceUnit].nValue == 0 and (Devices[DeviceUnit].sValue == "Off" or Devices[DeviceUnit].sValue == str(sValue)):
+                        if Devices[DeviceUnit].nValue == 0 and (Devices[DeviceUnit].sValue == "Off" or Devices[DeviceUnit].sValue == str(normalized_value)):
                             pass
                         else:
                             self.log.logging("Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s" % (0, 0), NWKID)
                             UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
-                elif sValue == 100:
+
+                elif normalized_value == 100:
                     nValue = 1
                     if Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (1, 100, Devices[DeviceUnit].SwitchType),
-                            NWKID,
-                        )
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
+                            1, 100, Devices[DeviceUnit].SwitchType), NWKID, )
                         UpdateDevice_v2(self, Devices, DeviceUnit, 1, "100", BatteryLevel, SignalLevel)
 
                     else:
-                        if Devices[DeviceUnit].nValue == 0 and (Devices[DeviceUnit].sValue == "Off" or Devices[DeviceUnit].sValue == str(sValue)):
+                        if Devices[DeviceUnit].nValue == 0 and (Devices[DeviceUnit].sValue == "Off" or Devices[DeviceUnit].sValue == str(normalized_value)):
                             pass
                         else:
                             self.log.logging("Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s" % (1, 100), NWKID)
@@ -1139,35 +1115,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 else:  # sValue != 0 and sValue != 100
 
                     # if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
-                    if Devices[DeviceUnit].nValue == 0 and (Devices[DeviceUnit].sValue == "Off" or Devices[DeviceUnit].sValue == str(sValue)):
+                    if Devices[DeviceUnit].nValue == 0 and (Devices[DeviceUnit].sValue == "Off" or Devices[DeviceUnit].sValue == str(normalized_value)):
                         # Do nothing. We receive a ReadAttribute  giving the position of a Off device.
                         pass
                     elif Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (nValue, sValue, Devices[DeviceUnit].SwitchType),
-                            NWKID,
-                        )
-                        UpdateDevice_v2(self, Devices, DeviceUnit, 2, str(sValue), BatteryLevel, SignalLevel)
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
+                            nValue, normalized_value, Devices[DeviceUnit].SwitchType), NWKID, )
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 2, str(normalized_value), BatteryLevel, SignalLevel)
 
                     else:
                         # Just update the Level if Needed
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (nValue, sValue, Devices[DeviceUnit].SwitchType),
-                            NWKID,
-                        )
-                        UpdateDevice_v2(
-                            self,
-                            Devices,
-                            DeviceUnit,
-                            Devices[DeviceUnit].nValue,
-                            str(sValue),
-                            BatteryLevel,
-                            SignalLevel,
-                        )
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
+                            nValue, normalized_value, Devices[DeviceUnit].SwitchType), NWKID, )
+                        UpdateDevice_v2( self, Devices, DeviceUnit, Devices[DeviceUnit].nValue, str(normalized_value), BatteryLevel, SignalLevel, )
 
             elif WidgetType in (
                 "ColorControlRGB",
@@ -1592,3 +1552,26 @@ def retreive_data_from_current(self, Devices, Unit, _format):
     self.log.logging("Widget", "Debug", "retreive_data_from_current - Nb Param: %s returning %s" % (nb_parameters, currentsValue))
 
     return currentsValue.split(";")
+
+def normalized_lvl_value(  Devices, DeviceUnit, value ):
+    
+    # Normalize sValue vs. analog value coomming from a ReadAttribute
+    analogValue = value if isinstance( value, int) else int(value, 16)
+        
+    if analogValue >= 255:
+        normalized_value = 255
+
+    normalized_value = round(((analogValue * 100) / 255))
+    if normalized_value > 100:
+        normalized_value = 100
+    if normalized_value == 0 and analogValue > 0:
+        normalized_value = 1
+        
+    # Looks like in the case of the Profalux shutter, we never get 0 or 100
+    if Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
+        if normalized_value == 1 and analogValue == 1:
+            normalized_value = 0
+        if normalized_value == 99 and analogValue == 254:
+            normalized_value = 100
+            
+    return normalized_value
