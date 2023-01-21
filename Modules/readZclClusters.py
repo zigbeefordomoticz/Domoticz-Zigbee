@@ -20,7 +20,7 @@ ACTIONS_TO_FUNCTIONS = {
 
 def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
     
-    self.log.logging("readZclClusters", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
+    self.log.logging("ZclClusters", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source))
 
     device_model = _get_model_name( self, MsgSrcAddr)
@@ -36,7 +36,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     value = _decode_attribute_data( MsgAttType, MsgClusterData)
     
     if _datatype != MsgAttType:
-        self.log.logging("readZclClusters", "Error", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
+        self.log.logging("ZclClusters", "Error", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ))
         
     _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValueOverwrite", model=device_model)
@@ -49,7 +49,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     if _ranges is not None:
         checking_ranges = _check_range( self, value, MsgAttType, _ranges, )
         if checking_ranges is not None and not checking_ranges:
-            self.log.logging("readZclClusters", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
+            self.log.logging("ZclClusters", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
             
     if _eval_formula is not None:
         value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, value, _eval_inputs, _eval_formula, _function)
@@ -59,7 +59,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         return
     
     if _action_list is None:
-        self.log.logging("readZclClusters", "Debug", "---> No Action")
+        self.log.logging("ZclClusters", "Debug", "---> No Action")
         return
     
     for data_action in _action_list:
@@ -74,11 +74,11 @@ def _read_zcl_cluster( self, cluster_filename ):
         try:
             return json.load(handle)
         except ValueError as e:
-            self.log.logging("readZclClusters", "Error", "--> JSON readZclClusters: %s load failed with error: %s" % (cluster_filename, str(e)))
+            self.log.logging("ZclClusters", "Error", "--> JSON readZclClusters: %s load failed with error: %s" % (cluster_filename, str(e)))
 
             return None
         except Exception as e:
-            self.log.logging("readZclClusters", "Error", "--> JSON readZclClusters: %s load general error: %s" % (cluster_filename, str(e)))
+            self.log.logging("ZclClusters", "Error", "--> JSON readZclClusters: %s load general error: %s" % (cluster_filename, str(e)))
             return None
     return None
 
@@ -160,17 +160,17 @@ def _decode_caracter_string(attribute_value, handleErrors):
     return decode
 
 def _check_range( self, value, datatype, _range):
-    self.log.logging("readZclClusters", "Debug", " . _check_range %s %s %s" %(value, datatype, _range))
+    self.log.logging("ZclClusters", "Debug", " . _check_range %s %s %s" %(value, datatype, _range))
     
     if len(_range) != 2:
-        self.log.logging("readZclClusters", "Error", " . Incorrect range %s" %str(_range))
+        self.log.logging("ZclClusters", "Error", " . Incorrect range %s" %str(_range))
         return None
     
     _range1 = _decode_attribute_data( datatype, _range[0])
     _range2 = _decode_attribute_data( datatype, _range[1])
     
-    self.log.logging("readZclClusters", "Debug", " . _check_range range1: %s" %(_range1))
-    self.log.logging("readZclClusters", "Debug", " . _check_range range2: %s" %(_range2))
+    self.log.logging("ZclClusters", "Debug", " . _check_range range1: %s" %(_range1))
+    self.log.logging("ZclClusters", "Debug", " . _check_range range2: %s" %(_range2))
     
     if _range1 < _range2:
         return _range1 <= value <= _range2
@@ -185,24 +185,24 @@ def _get_model_name( self, nwkid):
     return None
 
 def _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter ):
-    self.log.logging("readZclClusters", "Debug", " . _cluster_zcl_attribute_retreival %s %s %s" %( cluster, attribute, parameter))
+    self.log.logging("ZclClusters", "Debug", " . _cluster_zcl_attribute_retreival %s %s %s" %( cluster, attribute, parameter))
     if (
         attribute in self.readZclClusters[ cluster ]["Attributes"] 
         and parameter in self.readZclClusters[ cluster ]["Attributes"][ attribute ]
     ):
-        self.log.logging("readZclClusters", "Debug", " . %s %s %s --> %s" %(
+        self.log.logging("ZclClusters", "Debug", " . %s %s %s --> %s" %(
             cluster, attribute, parameter, self.readZclClusters[ cluster ]["Attributes"][ attribute ][ parameter ])
         ) 
         return self.readZclClusters[ cluster ]["Attributes"][ attribute ][ parameter ]
     return None
 
 def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter ):
-    self.log.logging("readZclClusters", "Debug", " . _cluster_specific_attribute_retreival %s %s %s %s %s" %( model, ep, cluster, attribute, parameter))
+    self.log.logging("ZclClusters", "Debug", " . _cluster_specific_attribute_retreival %s %s %s %s %s" %( model, ep, cluster, attribute, parameter))
     if (
         attribute in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"] 
         and parameter in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ]
     ):
-        self.log.logging("readZclClusters", "Debug", " . %s %s %s --> %s" %(
+        self.log.logging("ZclClusters", "Debug", " . %s %s %s --> %s" %(
             cluster, attribute, parameter, self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ][ parameter ])
         ) 
 
@@ -210,7 +210,7 @@ def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, 
     return None
 
 def _update_eval_formula( self, formula, input_variable, variable_name):
-    self.log.logging("readZclClusters", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
+    self.log.logging("ZclClusters", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
     return formula.replace( input_variable, variable_name )
 
 def load_zcl_cluster(self):
@@ -218,7 +218,7 @@ def load_zcl_cluster(self):
     if not isdir(zcl_cluster_path):
         return
 
-    self.log.logging("readZclClusters", "Status", "Loading ZCL Cluster definitions")
+    self.log.logging("ZclClusters", "Status", "Loading ZCL Cluster definitions")
     zcl_cluster_definition = [f for f in listdir(zcl_cluster_path) if isfile(join(zcl_cluster_path, f))]
     for cluster_definition in sorted(zcl_cluster_definition):
         cluster_filename = str(zcl_cluster_path + "/" + cluster_definition)
@@ -238,7 +238,7 @@ def load_zcl_cluster(self):
             "Version": cluster_definition[ "Version" ],
             "Attributes": dict( cluster_definition[ "Attributes" ] )
         }
-        self.log.logging("readZclClusters", "Status", " - ZCL Cluster %s - (V%s) %s loaded" %( 
+        self.log.logging("ZclClusters", "Status", " - ZCL Cluster %s - (V%s) %s loaded" %( 
             cluster_definition[ "ClusterId"], cluster_definition[ "Version" ], cluster_definition["Description"],))
 
 def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
@@ -256,7 +256,7 @@ def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
         return False
     if attribute not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"]:
         return False
-    self.log.logging("readZclClusters", "Debug", "is_cluster_specific_config %s/%s and definition %s" %( 
+    self.log.logging("ZclClusters", "Debug", "is_cluster_specific_config %s/%s and definition %s" %( 
         cluster, attribute, self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ] ))
 
     return True
@@ -271,7 +271,7 @@ def is_cluster_zcl_config_available( self, cluster, attribute=None):
         or not self.readZclClusters[ cluster ]["Attributes"][ attribute ]["Enabled"]
     ):
         return False
-    self.log.logging("readZclClusters", "Debug", "is_cluster_zcl_config_available %s/%s and definition %s" %( 
+    self.log.logging("ZclClusters", "Debug", "is_cluster_zcl_config_available %s/%s and definition %s" %( 
         cluster, attribute, self.readZclClusters[ cluster ]["Attributes"][ attribute ] ))
     
     return True
@@ -309,20 +309,20 @@ def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model
     if _majdomodeviceValidValues is None:
         return True
     eval_result = eval( _majdomodeviceValidValues )
-    self.log.logging("readZclClusters", "Debug", " . majdomodevice_possiblevalues: %s -> %s" %( eval_result, _majdomodeviceValidValues))
+    self.log.logging("ZclClusters", "Debug", " . majdomodevice_possiblevalues: %s -> %s" %( eval_result, _majdomodeviceValidValues))
     return eval_result
 
 def check_special_values( self, value, data_type, _special_values ):
     flag = False
     for x in _special_values:
         if value == _decode_attribute_data( data_type, x):
-            self.log.logging("readZclClusters", "Log", " . found %s as %s" %( value, _special_values[ x ] ))
+            self.log.logging("ZclClusters", "Log", " . found %s as %s" %( value, _special_values[ x ] ))
             flag = True
     return flag
     
 def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula, _function):
 
-    self.log.logging("readZclClusters", "Log", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
+    self.log.logging("ZclClusters", "Log", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
     if _function and _function in dict(FUNCTION_MODULE):
         return FUNCTION_MODULE[ _function ]
         
@@ -334,21 +334,21 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
                 cluster = _eval_inputs[x][ "ClusterId" ]
                 attribute = _eval_inputs[x][ "AttributeId" ]
                 custom_value = getAttributeValue(self, nwkid, ep, cluster, attribute)
-                self.log.logging("readZclClusters", "Debug", " . %s/%s = %s" %( cluster, attribute, custom_value ))
+                self.log.logging("ZclClusters", "Debug", " . %s/%s = %s" %( cluster, attribute, custom_value ))
                 if custom_value is None:
-                    self.log.logging("readZclClusters", "Error", "process_cluster_attribute_response - unable to found Input variable: %s Cluster: %s Attribute: %s" %(
+                    self.log.logging("ZclClusters", "Error", "process_cluster_attribute_response - unable to found Input variable: %s Cluster: %s Attribute: %s" %(
                         x, cluster, attribute))
                     continue
                 custom_variable[ idx ] = custom_value
                 _eval_formula = _update_eval_formula( self, _eval_formula, x, "custom_variable[ %s ]" % idx)
-                self.log.logging("readZclClusters", "Debug", " . Updated formula: %s" %_eval_formula)
+                self.log.logging("ZclClusters", "Debug", " . Updated formula: %s" %_eval_formula)
 
         for x in custom_variable:
-            self.log.logging("readZclClusters", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]))
+            self.log.logging("ZclClusters", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]))
         
     if _eval_formula is not None and _eval_formula != "":
         evaluation_result = eval( _eval_formula )
-    self.log.logging("readZclClusters", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
+    self.log.logging("ZclClusters", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
     return evaluation_result
 
 def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, device_model, attr_name, exp_dt, _ranges, _special_values, eval_formula, action_list, eval_inputs, force_value, value):
