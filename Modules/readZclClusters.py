@@ -331,14 +331,13 @@ def check_special_values( self, value, data_type, _special_values ):
     flag = False
     for x in _special_values:
         if value == _decode_attribute_data( data_type, x):
-
-            self.log.logging("ZclClusters", "Log", " . found %s as %s" %( value, _special_values[ x ] ))
+            self.log.logging("ZclClusters", "Debug", " . found %s as %s" %( value, _special_values[ x ] ))
             flag = True
     return flag
     
 def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula, _function):
 
-    self.log.logging("ZclClusters", "Log", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
+    self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
 
     if _function and _function in dict(FUNCTION_MODULE):
         return FUNCTION_MODULE[ _function ]
