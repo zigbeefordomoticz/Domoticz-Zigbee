@@ -370,6 +370,8 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
 
 def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, device_model, attr_name, exp_dt, _ranges, _special_values, eval_formula, action_list, eval_inputs, force_value, value):
 
+    if not self.pluginconf.pluginConf["trackZclClusters"]:
+        return
     cluster_description = self.readZclClusters[ cluster ]["Description"]
-    self.log.logging( "readZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s" %(
+    self.log.logging( "ZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s" %(
         nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, value ))        

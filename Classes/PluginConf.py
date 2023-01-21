@@ -211,14 +211,16 @@ SETTINGS = {
     "VerboseLogging": {
         "Order": 13,
         "param": {
-            "MatchingNwkId": {"type": "str","default": "ffff","current": None,"restart": 0,"hidden": False,"Advanced": False,},
-            "LQIthreshold": {"type": "int","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
-            "logDeviceUpdate": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "enablePluginLogging": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": False,},
+            "logDeviceUpdate": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            "trackZclClusters": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            "logThreadName": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            "trackTransportError": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+
+            "LQIthreshold": {"type": "int","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            "MatchingNwkId": {"type": "str","default": "ffff","current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "loggingBackupCount": {"type": "int","default": 7,"current": None,"restart": 1,"hidden": False,"Advanced": False,},
             "loggingMaxMegaBytes": {"type": "int","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": False,},
-            "logThreadName": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
-            "trackTransportError": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "ZiGateReactTime": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "showTimeOutMsg": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             
