@@ -1,12 +1,15 @@
 name: lint_python
-
+    
 on:
   push:
-    branches: [ develop, stable6]
+    branches:
+      - develop
+      - stable6
+    paths:
+      - "**.py"
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ develop ]
-
+    paths:
+      - "**.py"
 jobs:
   lint_python:
     runs-on: ubuntu-latest
