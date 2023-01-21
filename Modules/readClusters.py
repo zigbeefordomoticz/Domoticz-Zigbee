@@ -19,6 +19,7 @@ import Domoticz
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice
+from Modules.readZclClusters import (is_cluster_zcl_config_available, process_cluster_attribute_response)
 from Modules.ikeaTradfri import ikea_air_purifier_cluster
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster,
@@ -41,6 +42,7 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
 from Modules.pluginModels import check_found_plugin_model
+
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -132,33 +134,11 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
 
 def storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus):
-
-    # i_sqnFromMessage = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
-    # i_sqn_expected = get_isqn_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
-
-    # if MsgType == '8100' and i_sqn_expected and i_sqnFromMessage and i_sqn_expected != i_sqnFromMessage:
-    #     Domoticz.Log("+++ SQN Missmatch in ReadCluster %s/%s %s %s i_sqn: %s e_sqn: %s i_esqn: %s "
-    #         %( MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, i_sqn_expected, MsgSQN, i_sqnFromMessage ))
-
     set_status_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
     set_timestamp_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, int(time()))
 
 
-def ReadCluster(
-    self,
-    Devices,
-    MsgType,
-    MsgSQN,
-    MsgSrcAddr,
-    MsgSrcEp,
-    MsgClusterId,
-    MsgAttrID,
-    MsgAttrStatus,
-    MsgAttType,
-    MsgAttSize,
-    MsgClusterData,
-    Source=None,
-):
+def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source=None, ):
 
     if MsgSrcAddr not in self.ListOfDevices:
         _context = {
@@ -173,8 +153,7 @@ def ReadCluster(
         return
 
     if not DeviceExist(self, Devices, MsgSrcAddr):
-        # Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
-        # Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
+        # We cannot process a none existing device.
         return
 
     if (
@@ -208,32 +187,22 @@ def ReadCluster(
     storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
 
     if MsgAttrStatus != "00" and MsgClusterId != "0500":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" % (MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID),
-            nwkid=MsgSrcAddr,
-        )
+        # We receive a Read Attribute response or a Report with a status error.
+        self.log.logging( "Cluster", "Debug", "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" % (
+            MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID), nwkid=MsgSrcAddr, )
         self.statistics._clusterKO += 1
         return
 
-    if MsgClusterId in DECODE_CLUSTER:
-        _func = DECODE_CLUSTER[MsgClusterId]
-        _func(
-            self,
-            Devices,
-            MsgSQN,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            MsgAttType,
-            MsgAttSize,
-            MsgClusterData,
-            Source,
-        )
-    else:
 
+    if self.pluginconf.pluginConf["readZclClusters"] and is_cluster_zcl_config_available( self, MsgClusterId, attribute=MsgAttrID):
+        process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
+    
+    elif MsgClusterId in DECODE_CLUSTER:
+
+        _func = DECODE_CLUSTER[MsgClusterId]
+        _func( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
+
+    else:
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         _context = {
             "MsgClusterId": str(MsgClusterId),
@@ -243,13 +212,9 @@ def ReadCluster(
             "MsgAttSize": str(MsgAttSize),
             "MsgClusterData": str(MsgClusterData),
         }
-        self.log.logging(
-            "Cluster",
-            "Error",
-            "ReadCluster - Error/unknown Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr),
-            MsgSrcAddr,
-            _context,
-        )
+
+        self.log.logging( "Cluster", "Error", "ReadCluster - Error/unknow Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr), MsgSrcAddr, _context, )
+
 
 
 def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -3063,8 +3028,6 @@ def Cluster0301(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
-
-
 def Cluster0400(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # (Measurement: LUX)
     #  Lux=10^((y-1)/10000)

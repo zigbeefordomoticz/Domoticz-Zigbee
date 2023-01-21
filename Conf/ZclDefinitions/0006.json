@@ -1,0 +1,54 @@
+{
+    "ClusterId": "0006",
+    "Description": "On/Off",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "OnOff",
+            "DataType": "10" ,
+            "Acc": "RPS" ,
+            "Default": "0",
+            "Mandatory": true,
+            "DomoClusterType": "Switch",
+            "ActionList": [ "check_store_value", "upd_domo_device"]
+        },
+        "4000": { 
+            "Enabled": true,
+            "Name": "GlobalSceneControl",
+            "DataType": "10" ,
+            "Acc": "R" ,
+            "Default": "1",
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "4001": { 
+            "Enabled": true,
+            "Name": "OnTime",
+            "DataType": "21" ,
+            "Acc": "RW" ,
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "4002": { 
+            "Enabled": true,
+            "Name": "OffWaitTime",
+            "DataType": "21" ,
+            "Acc": "RW" ,
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "4003": { 
+            "Enabled": true,
+            "Name": "StartUpOnOff",
+            "DataType": "30" ,
+            "Acc": "RW" ,
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        }
+    }
+}
