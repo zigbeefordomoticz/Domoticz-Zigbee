@@ -331,14 +331,13 @@ def check_special_values( self, value, data_type, _special_values ):
     flag = False
     for x in _special_values:
         if value == _decode_attribute_data( data_type, x):
-
-            self.log.logging("ZclClusters", "Log", " . found %s as %s" %( value, _special_values[ x ] ))
+            self.log.logging("ZclClusters", "Debug", " . found %s as %s" %( value, _special_values[ x ] ))
             flag = True
     return flag
     
 def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula, _function):
 
-    self.log.logging("ZclClusters", "Log", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
+    self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
 
     if _function and _function in dict(FUNCTION_MODULE):
         return FUNCTION_MODULE[ _function ]
@@ -371,6 +370,8 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
 
 def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, device_model, attr_name, exp_dt, _ranges, _special_values, eval_formula, action_list, eval_inputs, force_value, value):
 
+    if not self.pluginconf.pluginConf["trackZclClusters"]:
+        return
     cluster_description = self.readZclClusters[ cluster ]["Description"]
-    self.log.logging( "readZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s" %(
+    self.log.logging( "ZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s" %(
         nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, value ))        
