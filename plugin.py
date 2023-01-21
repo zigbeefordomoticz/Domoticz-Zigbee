@@ -271,7 +271,7 @@ class BasePlugin:
 
     def onStart(self):
         Domoticz.Log("Zigbee for Domoticz plugin started!")
-        assert sys.version_info >= (3, 4)  # nosec
+        assert sys.version_info >= (3, 8)  # nosec
         
         if check_requirements( self ):
             self.onStop()
