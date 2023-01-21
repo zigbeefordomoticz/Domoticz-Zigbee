@@ -18,6 +18,8 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+- [Technical] - Plugin requires python3.8 or above.
+
 ##    Jan. 2023 - stable6 - 6.3.009 / 2023.1
 
 - [Hardware] - Managing Power state for TS0001 smart relay
