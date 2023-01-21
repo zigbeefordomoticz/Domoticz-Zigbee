@@ -1453,7 +1453,8 @@ def CheckUpdateGroup(self, NwkId, Ep, ClusterId):
 def getDimmerLevelOfColor(self, value):
 
     nValue = 1
-    analogValue = int(value, 16)
+    analogValue = value if isinstance( value, int) else int(value, 16)
+
     if analogValue >= 255:
         sValue = 100
 
