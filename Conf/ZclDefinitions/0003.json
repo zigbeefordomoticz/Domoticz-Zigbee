@@ -1,0 +1,17 @@
+{
+    "ClusterId": "0003",
+    "Description": "Identify",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "IdentifyTime",
+            "DataType": "21" ,
+            "Range": [ "0000", "ffff" ] ,
+            "Acc": "RW" ,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        }
+    }
+}
