@@ -249,7 +249,7 @@ def _handle_model_name( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, Msg
     self.log.logging( "ZclClusters", "Debug", "_handle_model_name - %s / %s - %s %s %s %s %s - %s" % (
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, value, device_model), MsgSrcAddr, )
     
-    modelName = _cleanup_model_name( self, MsgAttType, rawvalue)
+    modelName = _cleanup_model_name( MsgAttType, rawvalue)
     self.log.logging( "ZclClusters", "Debug", "_handle_model_name - modelName after cleanup %s" % modelName)
     
     modelName = _build_model_name( self, MsgSrcAddr, modelName)
@@ -396,23 +396,16 @@ def _is_device_already_provisionned( self, nwkid, modelName):
      
     
     
-def _cleanup_model_name( self, MsgAttType, value):
+def _cleanup_model_name( MsgAttType, value):
     # Stop at the first Null
-    self.log.logging( "ZclClusters", "Error", "_cleanup_model_name - %s %s" % (MsgAttType, value),)
-    
     idx = 0
     for _ in value:
         if value[idx : idx + 2] == "00":
             break
         idx += 2
-    self.log.logging( "ZclClusters", "Error", "      [1] -  %s" % ( value[:idx]),)
-    
     AttrModelName = _decode_attribute_data( MsgAttType, value[:idx], handleErrors=True) 
-    self.log.logging( "ZclClusters", "Error", "      [2] -  %s" % ( AttrModelName),)
     modelName = AttrModelName.replace("/", "")
-    self.log.logging( "ZclClusters", "Error", "      [3] -  %s" % ( modelName),)
     modelName = modelName.replace("  ", " ")
-    self.log.logging( "ZclClusters", "Error", "      [4] -  %s" % ( modelName),)
     return modelName
    
     
@@ -539,12 +532,13 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
     custom_variable = {}
     if _eval_inputs is not None:
         for idx, x in enumerate(_eval_inputs):
+            #  "EvalExpCustomVariables": {"scale": { "ClusterId": "0403", "AttributeId": "0014"}},
             if "Cluster" in _eval_inputs[x] and "Attribute" in _eval_inputs[x]:
                 cluster = _eval_inputs[x][ "ClusterId" ]
                 attribute = _eval_inputs[x][ "AttributeId" ]
                 custom_value = getAttributeValue(self, nwkid, ep, cluster, attribute)
 
-                self.log.logging("ZclClusters", "Debug", " . %s/%s = %s" %( cluster, attribute, custom_value ))
+                self.log.logging("ZclClusters", "Debug", " EvalExpCustomVariables . %s/%s = %s" %( cluster, attribute, custom_value ))
                 if custom_value is None:
                     self.log.logging("ZclClusters", "Error", "process_cluster_attribute_response - unable to found Input variable: %s Cluster: %s Attribute: %s" %(
                         x, cluster, attribute))
