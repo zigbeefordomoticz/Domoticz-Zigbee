@@ -796,6 +796,9 @@ def processListOfDevices(self, Devices):
     for NWKID in list(self.ListOfDevices.keys()):
         if NWKID in ("ffff", "0000"):
             continue
+        
+        if NWKID not in self.ListOfDevices:
+            continue
 
         # If this entry is empty, then let's remove it .
         if len(self.ListOfDevices[NWKID]) == 0:
