@@ -1427,7 +1427,16 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging("Cluster", "Debug", "%s/%s Out of service: %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == "0055":  # The PresentValueattribute  indicates the current value  of the  input,  output or value
-        # Are we receiving Power or is that XCube or something else
+        if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.airmonitor.acn01":
+            voc = str(decodeAttribute(self, MsgAttType, MsgClusterData))
+            self.log.logging("Cluster", "Log", "%s/%s Voc: %s" % (MsgSrcAddr, MsgSrcEp, voc), MsgSrcAddr)
+            if not checkValidValue(self, MsgSrcAddr, MsgAttType, voc):
+                self.log.logging( "Cluster", "Info", "Voc - invalid Data Value found : %s" % (
+                    voc), MsgSrcAddr, )
+                return
+            MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, voc)
+            return
+            
         if getEPforClusterType(self, MsgSrcAddr, "Analog") and MsgAttType == "39":
             # We have an Analog Widget created, so we can consider it is not a Xiaomi Plug nor an Aqara/XCube
             self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Xiaomi attribute: %s:  %s " % (
