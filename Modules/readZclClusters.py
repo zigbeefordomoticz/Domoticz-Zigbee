@@ -49,7 +49,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     value = _decode_attribute_data( MsgAttType, MsgClusterData)
     
     if _datatype != MsgAttType:
-        self.log.logging("ZclClusters", "Error", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
+        self.log.logging("ZclClusters", "Log", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ))
         
     _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValueOverwrite", model=device_model)
