@@ -15,9 +15,15 @@ from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
 #   upd_domo_device - trigger update request in domoticz
 #   store_specif_attribute - Store the data value in self.ListOfDevices[ nwkid ][_storage_specificlvl1 ][_storage_specificlvl2][_storage_specificlvl3]
 
+# "ActionList":
+#   check_store_value - check the value and store in the corresponding data strcuture entry
+#   upd_domo_device - trigger update request in domoticz
+#   store_specif_attribute - Store the data value in self.ListOfDevices[ nwkid ][_storage_specificlvl1 ][_storage_specificlvl2][_storage_specificlvl3]
+
 CHECK_AND_STORE = "check_store_value"
 STORE_SPECIFIC_ATTRIBUTE = "store_specif_attribute"
 BASIC_MODEL_NAME = "basic_model_name"
+
 STORE_SPECIFIC_PLACE = "SpecifStoragelvl1"
 STORE_SPECIFIC_PLACE = "SpecifStoragelvl2"
 STORE_SPECIFIC_PLACE = "SpecifStoragelvl3"
@@ -88,7 +94,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             
         elif data_action == BASIC_MODEL_NAME:
             _handle_model_name( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, device_model, MsgClusterData, value )
-            
+
 
 def _read_zcl_cluster( self, cluster_filename ):
     with open(cluster_filename, "rt") as handle:
