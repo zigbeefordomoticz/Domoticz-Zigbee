@@ -17,7 +17,7 @@
 
         "0020": { "Enabled": true, "Name":"LampQuantity", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
 
-        "0030": { "Enabled": true, "Name":"LampType", "DataType": "42" , "Range": [ ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
+        "0030": { "Enabled": true, "Name":"LampType", "DataType": "42" , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
         "0031": { "Enabled": true, "Name":"LampManufacturer", "DataType": "42" , "Range": [  ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
         "0032": { "Enabled": true, "Name":"LampRatedHours", "DataType": "2a" , "Range": [ "000000", "fffffe" ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
         "0033": { "Enabled": true, "Name":"LampBurnHours", "DataType": "2a" , "Range": [ "000000", "fffffe" ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
