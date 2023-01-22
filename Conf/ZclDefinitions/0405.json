@@ -13,7 +13,7 @@
             "Acc": "RP" ,
             "Default": "",
             "Mandatory": true,
-            "DomoClusterType": "Temp",
+            "DomoClusterType": "Humi",
             "EvalExp": "round(int(value) / 100, 1)",
             "ActionList": [ "check_store_value", "upd_domo_device"]
         },
