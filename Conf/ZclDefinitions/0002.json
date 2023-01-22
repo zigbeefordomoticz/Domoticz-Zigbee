@@ -1,0 +1,94 @@
+{
+    "ClusterId": "0002",
+    "Description": "Device Temperature Configuration",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "CurrentTemperature",
+            "DataType": "29" ,
+            "Range": [ "FF38", "00C8" ] ,
+            "Acc": "R" ,
+            "Mandatory": true,
+            "DomoClusterType": "Temp",
+            "UpdDomoDeviceWithCluster": "0402",
+            "ActionList": [ "check_store_value", "upd_domo_device"]
+        },
+        "0001": {
+            "Enabled": true,
+            "Name": "MinTempExperienced",
+            "DataType": "29" ,
+            "Range": [ "FF38", "00C8" ] ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0002": {
+            "Enabled": true,
+            "Name": "MaxTempExperienced",
+            "DataType": "29" ,
+            "Range": [ "FF38", "00C8" ] ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0003": {
+            "Enabled": true,
+            "Name": "OverTempTotalDwell",
+            "DataType": "21" ,
+            "Range": [ "0000", "ffff" ] ,
+            "Acc": "R" ,
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0010": {
+            "Enabled": true,
+            "Name": "DeviceTempAlarmMask",
+            "DataType": "18" ,
+            "Acc": "RW" ,
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0011": {
+            "Enabled": true,
+            "Name": "LowTempThreshold",
+            "DataType": "29" ,
+            "Range": [ "FF38", "00C8" ] ,
+            "Acc": "RW" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0012": {
+            "Enabled": true,
+            "Name": "HighTempThreshold",
+            "DataType": "29" ,
+            "Range": [ "FF38", "00C8" ] ,
+            "Acc": "RW" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0013": {
+            "Enabled": true,
+            "Name": "LowTempDwellTripPoint",
+            "DataType": "22" ,
+            "Range": [ "00000000", "ffffffff" ] ,
+            "Acc": "RW" ,
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0014": {
+            "Enabled": true,
+            "Name": "HighTempDwellTripPoint",
+            "DataType": "22" ,
+            "Range": [ "00000000", "ffffffff" ] ,
+            "Acc": "RW" ,
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        }
+    }
+}
