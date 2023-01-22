@@ -386,7 +386,7 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
 
 def store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3):
     
-    self.log.logging( "ZclClusters", "Log", "store_value_in_specif_storage - %s/%s %s %s %s %s" %(
+    self.log.logging( "ZclClusters", "Debug", "store_value_in_specif_storage - %s/%s %s %s %s %s" %(
         MsgSrcAddr, MsgSrcEp, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3, value))
     if _storage_specificlvl1 is None:
         return
