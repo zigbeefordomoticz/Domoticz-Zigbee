@@ -385,19 +385,22 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
     return evaluation_result
 
 def store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3):
+    
+    self.log.logging( "ZclClusters", "Log", "store_value_in_specif_storage - %s/%s %s %s %s %s" %(
+        MsgSrcAddr, MsgSrcEp, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3, value))
     if _storage_specificlvl1 is None:
         return
-    if [ _storage_specificlvl1 ] not in self.ListOfDevices[ MsgSrcAddr ]:
+    if _storage_specificlvl1 not in self.ListOfDevices[ MsgSrcAddr ]:
         self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ] = {}
     if _storage_specificlvl2 is None:
         self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ] = value
         return
-    if [ _storage_specificlvl2 ] not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ]:
+    if _storage_specificlvl2 not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ]:
         self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ] = {}
     if _storage_specificlvl3 is None:
         self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ] = value
         return
-    if [ _storage_specificlvl3 ] not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ]:
+    if _storage_specificlvl3 not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ]:
         self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = {}    
     self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = value
     
