@@ -1,0 +1,113 @@
+{
+    "ClusterId": "0019",
+    "Description": "OTA Upgrade",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "UpgradeServerID",
+            "DataType": "e2" ,
+            "Range": [ "00000000", "fffffffe" ],
+            "Acc": "R" ,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        },
+        "0001": { 
+            "Enabled": true,
+            "Name": "FileOffset",
+            "DataType": "23" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0002": { 
+            "Enabled": true,
+            "Name": "CurrentFileVersion",
+            "DataType": "23" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0003": { 
+            "Enabled": true,
+            "Name": "CurrentZigBeeStackVersion",
+            "DataType": "21" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0004": { 
+            "Enabled": true,
+            "Name": "DownloadedFileVersion",
+            "DataType": "23" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0005": { 
+            "Enabled": true,
+            "Name": "DownloadedZigBeeStackVersion",
+            "DataType": "2213" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0006": { 
+            "Enabled": true,
+            "Name": "ImageUpgradeStatus",
+            "DataType": "30" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0007": { 
+            "Enabled": true,
+            "Name": "Manufacturer ID",
+            "DataType": "21" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0008": { 
+            "Enabled": true,
+            "Name": "Image Type ID",
+            "DataType": "21" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0009": { 
+            "Enabled": true,
+            "Name": "MinimumBlockPeriod",
+            "DataType": "21" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "000a": { 
+            "Enabled": true,
+            "Name": "Image Stamp",
+            "DataType": "23" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "000b": { 
+            "Enabled": true,
+            "Name": "UpgradeActivationPolicy",
+            "DataType": "30" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "000c": { 
+            "Enabled": true,
+            "Name": "UpgradeTimeout Policy",
+            "DataType": "30" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        }
+    }
+}
