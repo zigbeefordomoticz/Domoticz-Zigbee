@@ -3692,28 +3692,11 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
             MsgSrcAddr, MsgEp, (alarm1 or alarm2)))    
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % (alarm1 or alarm2))
     
-    elif (
-        "ClusterType" in self.ListOfDevices[MsgSrcAddr]
-        and "Motion" in self.ListOfDevices[MsgSrcAddr]["ClusterType"]
-        and self.ListOfDevices[MsgSrcAddr]["Model"] in (
-            "3AFE14010402000D", "3AFE28010402000D",     # Konke Motion
-            "MOSZB-140",                                # Frient Motion
-            "TY0202", "TS0202","TS0202-_TZ3210_jijr1sss",  # Tuya Motion
-            "VMS_ADUROLIGH",                            # Aduro Motion
-            "LDSENK10",                                 # Adeo Motion
-            )                           
-    ):   # In case this is a Motion , let use the Motion Cluster to send the notification
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % alarm1)
-        
     elif self.ListOfDevices[MsgSrcAddr]["Model"] in ( "lumi.sensor_magnet", "lumi.sensor_magnet.aq2", "lumi.sensor_magnet.acn001", "lumi.magnet.acn001", ):  # Xiaomi Door sensor
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % alarm1)
         
     elif Model not in ("RC-EF-3.0", "RC-EM"):
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, "%02d" % (alarm1 or alarm2), )
-
-    # if self.ListOfDevices[MsgSrcAddr]["Model"] in (  'MOSZB-140',):
-    #    # Tamper is inverse
-    #    tamper = not tamper
 
     if tamper:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0009", "01")

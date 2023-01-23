@@ -32,6 +32,7 @@
     "BatteryPercentageConverter": 2,
     "Param": {
         "ReadAttributeChunk": 5,
-        "ForceIASRegistrationEp": "01"
+        "ForceIASRegistrationEp": "01",
+        "MotionViaIASAlarm1": 1
     }
 }

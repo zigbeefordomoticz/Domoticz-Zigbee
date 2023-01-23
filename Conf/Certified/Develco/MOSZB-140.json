@@ -83,6 +83,7 @@
     },
     "VoltageConverter": 10,
     "Param": {
+        "MotionViaIASAlarm1": 1,
         "ReadAttributeChunk": 5
     }
 }
