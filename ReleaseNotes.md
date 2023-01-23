@@ -18,6 +18,12 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+##    Jan. 2023 - stable6 - 6.3.010 
+
+- [Hardware] - LEDVANCE Ampoule LED E14 5W 
+- [Hardware] - Paulmann 50052 SmartHome Zigbee LED
+- [Hardware] - KAIYE Tuya Smart Zigbee Ampoule LED
+
 ##    Jan. 2023 - stable6 - 6.3.009 / 2023.1
 
 - [Hardware] - Managing Power state for TS0001 smart relay
