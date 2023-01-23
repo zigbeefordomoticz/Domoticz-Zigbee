@@ -1428,7 +1428,7 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "0055":  # The PresentValueattribute  indicates the current value  of the  input,  output or value
         if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.airmonitor.acn01":
-            voc = str(decodeAttribute(self, MsgAttType, MsgClusterData))
+            voc = decodeAttribute(self, MsgAttType, MsgClusterData)
             self.log.logging("Cluster", "Log", "%s/%s Voc: %s" % (MsgSrcAddr, MsgSrcEp, voc), MsgSrcAddr)
             if not checkValidValue(self, MsgSrcAddr, MsgAttType, voc):
                 self.log.logging( "Cluster", "Info", "Voc - invalid Data Value found : %s" % (
