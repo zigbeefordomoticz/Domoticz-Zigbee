@@ -1,0 +1,54 @@
+{
+    "ClusterId": "0203",
+    "Description": "Dehumidification Control",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "RelativeHumidity",
+            "DataType": "20" ,
+            "Range": [ "00", "64" ],
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value", "upd_domo_device"]
+        },
+        "0001": { 
+            "Enabled": true,
+            "Name": "DehumidificationCooling",
+            "DataType": "18" ,
+            "Range": [ "00", "64" ],
+            "Acc": "RP" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0010": { 
+            "Enabled": true,
+            "Name": "RHDehumidificationSet- point",
+            "DataType": "20" ,
+            "Range": [ "1e", "64" ],
+            "Acc": "RW" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0011": { 
+            "Enabled": true,
+            "Name": "RelativeHumidityMode",
+            "DataType": "18" ,
+            "Range": [ "00", "01" ],
+            "Acc": "RW" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0012": { 
+            "Enabled": true,
+            "Name": "DehumidificationLockout",
+            "DataType": "18" ,
+            "Range": [ "00", "01" ],
+            "Acc": "RW" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        }
+
+    }
+}
