@@ -1,0 +1,33 @@
+{
+    "ClusterId": "0100",
+    "Description": "Shade Configuration",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "PhysicalClosedLimit",
+            "DataType": "21" ,
+            "Range": [ "0001", "fffe" ],
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0001": { 
+            "Enabled": true,
+            "Name": "MotorStepSize",
+            "DataType": "20" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0002": { 
+            "Enabled": true,
+            "Name": "Status",
+            "DataType": "18" ,
+            "Acc": "R" ,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        }
+    }
+}
