@@ -428,7 +428,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     sValue = str(nValue * 10)
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
             
-            elif model_name not in ( "lumi.sensor_cube.aqgl01", "lumi.sensor_cube", "lumi.motion.ac01",):
+            elif WidgetType == "Analog":
                 # Analog Value from Analog Input cluster
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
 
