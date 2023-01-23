@@ -157,21 +157,7 @@ def createSwitchSelector(self, nbSelector, DeviceType=None, OffHidden=False, Sel
     return Options
 
 
-def createDomoticzWidget(
-    self,
-    Devices,
-    nwkid,
-    ieee,
-    ep,
-    cType,
-    widgetType=None,
-    Type_=None,
-    Subtype_=None,
-    Switchtype_=None,
-    widgetOptions=None,
-    Image=None,
-    ForceClusterType=None,
-):
+def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None, Type_=None, Subtype_=None, Switchtype_=None, widgetOptions=None, Image=None, ForceClusterType=None, ):
     """
     widgetType are pre-defined widget Type
     Type_, Subtype_ and Switchtype_ allow to create a widget ( Switchtype_ is optional )
@@ -213,13 +199,9 @@ def createDomoticzWidget(
             Options=widgetOptions,
         )
     elif Image:
-        myDev = Domoticz.Device(
-            DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_, Image=Image
-        )
+        myDev = Domoticz.Device( DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_, Image=Image )
     elif Switchtype_:
-        myDev = Domoticz.Device(
-            DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_
-        )
+        myDev = Domoticz.Device( DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_ )
     else:
         myDev = Domoticz.Device(DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_)
 
@@ -369,9 +351,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Humi and Temp" % (Type), NWKID)
 
         for t in Type:
-            self.log.logging(
-                "Widget", "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" % (DeviceID_IEEE, Ep, t), NWKID
-            )
+            self.log.logging( "Widget", "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" % (DeviceID_IEEE, Ep, t), NWKID )
 
             # === Selector Switches
             if t in ("ACMode_2",):  # 5
@@ -447,11 +427,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HueSmartButton" % (t), NWKID)
 
             # 4 Selectors, Style 1
-            if t in (
-                "Vibration",
-                "Button_3",
-                "SwitchAQ2",
-            ):
+            if t in ( "Vibration", "Button_3", "SwitchAQ2", ):
                 Options = createSwitchSelector(self, 4, DeviceType=t, SelectorStyle=1)
                 createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Vibration" % (t), NWKID)
@@ -554,173 +530,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Lumi Lock" % (t), NWKID)
 
             # ==== Classic Widget
-            if t in ("AirQuality",):
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType="Air Quality")
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Air Quality" % (t), NWKID)
 
-            if t in ("Voc", "PM25"):
-                Options = "1;ppm"
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType="Custom")
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in VOC" % (t), NWKID)
-
-            if t in ("CH2O",):
-                Options = "1;ppm"
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetType="Custom")
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in VOC" % (t), NWKID)
-
-            if t in ("CarbonDioxyde",):
-                Options = "1;ppm"
-                createDomoticzWidget(
-                    self,
-                    Devices,
-                    NWKID,
-                    DeviceID_IEEE,
-                    Ep,
-                    t,
-                    Type_=0xF3,
-                    Subtype_=31,
-                    Switchtype_=0,
-                    widgetOptions=Options,
-                )
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Carbon Dioxyde" % (t), NWKID)
-
-            if t in ("CarbonMonoxyde",):
-                Options = "1;ppm"
-                createDomoticzWidget(
-                    self,
-                    Devices,
-                    NWKID,
-                    DeviceID_IEEE,
-                    Ep,
-                    t,
-                    Type_=0xF3,
-                    Subtype_=31,
-                    Switchtype_=0,
-                    widgetOptions=Options,
-                )
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Carbon Monoxyde" % (t), NWKID)
-
-            if t in ("Analog",):
-                Options = "1;tbd"
-                createDomoticzWidget(
-                    self,
-                    Devices,
-                    NWKID,
-                    DeviceID_IEEE,
-                    Ep,
-                    t,
-                    Type_=0xF3,
-                    Subtype_=31,
-                    Switchtype_=0,
-                    widgetOptions=Options,
-                )
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Analog Device" % (t), NWKID)
-
-            if t in ("Alarm", "Tamper", "Alarm_ZL", "Alarm_ZL2", "Alarm_ZL3", "AirPurifierAlarm"):
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=22, Switchtype_=0)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Alarm" % (t), NWKID)
-
-            if t in ("Valve", "FanSpeed", ):
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=6, Switchtype_=0)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Valve/FanSpeed" % (t), NWKID)
-
-            if t in ("ThermoSetpoint", "TempSetCurrent"):
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=242, Subtype_=1)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoSetPoint" % (t), NWKID)
-
-            if t == "Temp":
-                # Detecteur temp
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Temperature")
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Temp" % (t), NWKID)
-
-            if t == "Humi":
-                # Detecteur hum
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Humidity")
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Humidity" % (t), NWKID)
-
-            if t == "Baro":
-                # Detecteur Baro
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Barometer")
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Barometer" % (t), NWKID)
-
-            if t in ("Ampere",):
-                # Will display Current real time
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=23)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Ampere" % (t), NWKID)
-
-            if t in ("Ampere3",):
-                # Widget Ampere for Tri-Phase installation
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=89, Subtype_=1)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Ampere Tri" % (t), NWKID)
-
-            if t == "Power":
-                # Will display Watt real time
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Usage")
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Power" % (t), NWKID)
-
-            if t == "Meter":
-                # Will display kWh
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, "kWh")
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Meter" % (t), NWKID)
-
-            if t == "Voltage":
-                # Voltage
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Voltage")
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Voltage" % (t), NWKID)
-
-            if t in ("Door", "DoorSensor",):
-                # capteur ouverture/fermeture xiaomi
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=11)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Door" % (t), NWKID)
-
-            if t == "Motion":
-                # detecteur de presence
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=8)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Motion" % (t), NWKID)
-
-            if t in ("LivoloSWL", "LivoloSWR"):
-                # Livolo Switch Left and Right
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=0)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Livolo" % (t), NWKID)
-
-            if t == "Smoke":
-                # detecteur de fumee
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=5)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Smoke" % (t), NWKID)
-
-            if t == "Lux":
-                # Lux sensors
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=246, Subtype_=1, Switchtype_=0)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Lux" % (t), NWKID)
-
-            if t in (
-                "Switch",
-                "SwitchButton",
-                "PAC-SWITCH",
-                "ShutterCalibration",
-            ):
-                # inter sans fils 1 touche 86sw1 xiaomi
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=0)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch" % (t), NWKID)
-
-            if t in ("HeatingStatus", "ThermoOnOff", "HeatingSwitch"):
-                # inter sans fils 1 touche 86sw1 xiaomi
-                createDomoticzWidget(
-                    self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=0, Image=15
-                )
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch" % (t), NWKID)
-
-            if t in ("DoorLock", "TuyaDoorLock",):
-                # Switchtype_ = 19 Doorlock
-                # Switchtype_ = 20 DoorlockInvertded
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=19)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Button" % (t), NWKID)
-
-            if t == "Button":
-                # inter sans fils 1 touche 86sw1 xiaomi
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=9)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Button" % (t), NWKID)
-
+            if create_simple_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
+                continue
+            
             if t in ("Aqara", "XCube"):
                 # Do not use the generic createDomoticzWidget , because this one required 2 continuous widget.
                 # usage later on is based on that assumption
@@ -764,34 +577,6 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(ID)] = "Text"
 
-            if t == "Strength":
-                # Vibration strength
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=31)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Strenght" % (t), NWKID)
-
-            if t in ("Orientation",):
-                # Vibration Orientation (text)
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=243, Subtype_=19)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Orientation" % (t), NWKID)
-
-            if t == "Water":
-                # detecteur d'eau
-                createDomoticzWidget(
-                    self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=0, Image=11
-                )
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Water" % (t), NWKID)
-
-            if t == "Plug":
-                # prise pilote
-                createDomoticzWidget(
-                    self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=0, Image=1
-                )
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Plug" % (t), NWKID)
-
-            if t in ("P1Meter", "P1Meter_ZL"):
-                # P1 Smart Meter Energy Type 250, Subtype = 250
-                createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=250, Subtype_=1, Switchtype_=1)
-                self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in P1Meter" % (t), NWKID)
 
             # ====== Blind and Venetian
             # Subtype =
@@ -819,82 +604,30 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t in ( "VanneInverted", "CurtainInverted"):
                 # Blind Percentage Inverterd
-                createDomoticzWidget(
-                    self,
-                    Devices,
-                    NWKID,
-                    DeviceID_IEEE,
-                    Ep,
-                    t,
-                    Type_=244,
-                    Subtype_=73,
-                    Switchtype_=21,
-                )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=21, )
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in BlindInverted" % (t), NWKID)
     
             if t == "BlindInverted":
                 # Blind Percentage Inverterd
-                createDomoticzWidget(
-                    self,
-                    Devices,
-                    NWKID,
-                    DeviceID_IEEE,
-                    Ep,
-                    t,
-                    Type_=244,
-                    Subtype_=73,
-                    Switchtype_=16,
-                    ForceClusterType="LvlControl",
-                )
+                createDomoticzWidget(self,Devices,NWKID,DeviceID_IEEE,Ep,t,Type_=244,Subtype_=73,Switchtype_=16,ForceClusterType="LvlControl",)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in BlindInverted" % (t), NWKID)
 
             if t in ( "Vanne", "Curtain"):
                 # Blind Percentage
-                createDomoticzWidget(
-                    self,
-                    Devices,
-                    NWKID,
-                    DeviceID_IEEE,
-                    Ep,
-                    t,
-                    Type_=244,
-                    Subtype_=73,
-                    Switchtype_=22,
-                )
+                createDomoticzWidget(self,Devices,NWKID,DeviceID_IEEE,Ep,t,Type_=244,Subtype_=73,Switchtype_=22,)
                 
             if t == "Blind":
                 # Blind Percentage
-                createDomoticzWidget(
-                    self,
-                    Devices,
-                    NWKID,
-                    DeviceID_IEEE,
-                    Ep,
-                    t,
-                    Type_=244,
-                    Subtype_=73,
-                    Switchtype_=13,
-                    ForceClusterType="LvlControl",
-                )
+                createDomoticzWidget(self,Devices,NWKID,DeviceID_IEEE,Ep,t,Type_=244,Subtype_=73,Switchtype_=13,ForceClusterType="LvlControl",)
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Blind" % (t), NWKID)
 
             if t == "WindowCovering":
                 # Blind Percentage Inverted
                 # or Venetian Blind EU
-                if (
-                    self.ListOfDevices[NWKID]["ProfileID"] == "0104"
-                    and self.ListOfDevices[NWKID]["ZDeviceID"] == "0202"
-                ):
-                    createDomoticzWidget(
-                        self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=16
-                    )
-                elif (
-                    self.ListOfDevices[NWKID]["ProfileID"] == "0104"
-                    and self.ListOfDevices[NWKID]["ZDeviceID"] == "0200"
-                ):
-                    createDomoticzWidget(
-                        self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=15
-                    )
+                if ( self.ListOfDevices[NWKID]["ProfileID"] == "0104" and self.ListOfDevices[NWKID]["ZDeviceID"] == "0202" ):
+                    createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=16 )
+                elif ( self.ListOfDevices[NWKID]["ProfileID"] == "0104" and self.ListOfDevices[NWKID]["ZDeviceID"] == "0200" ):
+                    createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=15)
 
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in WindowCovering" % (t), NWKID)
 
@@ -910,41 +643,21 @@ def CreateDomoDevice(self, Devices, NWKID):
                     )
 
                 else:
-                    if (
-                        self.ListOfDevices[NWKID]["ProfileID"] == "0104"
-                        and self.ListOfDevices[NWKID]["ZDeviceID"] == "0202"
-                    ):
+                    if ( self.ListOfDevices[NWKID]["ProfileID"] == "0104" and self.ListOfDevices[NWKID]["ZDeviceID"] == "0202" ):
                         # Windows Covering / Profalux -> Inverted
-                        createDomoticzWidget(
-                            self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=16
-                        )
+                        createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=16 )
 
-                    elif (
-                        self.ListOfDevices[NWKID]["ProfileID"] == "0104"
-                        and self.ListOfDevices[NWKID]["ZDeviceID"] == "0200"
-                    ):
+                    elif ( self.ListOfDevices[NWKID]["ProfileID"] == "0104" and self.ListOfDevices[NWKID]["ZDeviceID"] == "0200" ):
                         # Shade
                         self.log.logging("Widget", "Debug", "---> Shade based on ZDeviceID", NWKID)
-                        createDomoticzWidget(
-                            self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=15
-                        )
+                        createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=15 )
 
                     else:
                         # variateur de luminosite + On/off
-                        createDomoticzWidget(
-                            self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=7
-                        )
+                        createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=7 )
 
             # ======= Color Control: RGB, WW, Z or combinaisons
-            if t in (
-                "ColorControlRGB",
-                "ColorControlWW",
-                "ColorControlRGBWW",
-                "ColorControlFull",
-                "ColorControl",
-                "ColorControlRGBW",
-                "ColorControlRGBWZ",
-            ):
+            if t in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", "ColorControlRGBW", "ColorControlRGBWZ", ):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Colorxxxx" % (t), NWKID)
                 # variateur de couleur/luminosite/on-off
 
@@ -1009,3 +722,90 @@ def CreateDomoDevice(self, Devices, NWKID):
         self.log.logging(
             "Widget", "Debug", "CreatDomoDevice - Set Type to : %s" % self.ListOfDevices[NWKID]["Type"], NWKID
         )
+
+
+def create_simple_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_type):
+    
+    if widget_type not in SIMPLE_WIDGET:
+        return False
+    
+    widget_record = SIMPLE_WIDGET[ widget_type ]
+    if "widgetType" in widget_record:
+        self.log.logging( "Widget", "Debug", "CreateDomoDevice - Type: %s Widget %s for %s" %(
+            widget_type, widget_record[ "widgetType" ], NwkId), NwkId)
+        createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_type, widget_record[ "widgetType" ])
+        return True
+    
+    Type = widget_record[ "Type" ] if "Type" in widget_record else None
+    Subtype = widget_record[ "Subtype" ] if "Subtype" in widget_record else None
+    Switchtype = widget_record[ "Switchtype" ] if "Switchtype" in widget_record else None
+    Image = widget_record[ "Image" ] if "Image" in widget_record else None
+    
+    if Type and Subtype and Switchtype and Image:
+        self.log.logging( "Widget", "Debug", "CreateDomoDevice - Type: %s Subtype %s Switchtype: %s Image: %s for %s" %(
+            Type, Subtype, Switchtype, Image, NwkId ), NwkId)
+        createDomoticzWidget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_type, Type_=Type, Subtype_=Subtype, Switchtype_=Switchtype, Image=Image )
+        return True
+    if Type and Subtype and Switchtype:
+        self.log.logging( "Widget", "Debug", "CreateDomoDevice - Type: %s Subtype %s Switchtype: %s for %s" %(
+            Type, Subtype, Switchtype, NwkId ), NwkId)
+        createDomoticzWidget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_type, Type_=Type, Subtype_=Subtype, Switchtype_=Switchtype, )
+        return True
+    if Type and Subtype:
+        self.log.logging( "Widget", "Debug", "CreateDomoDevice - Type: %s Subtype %s for %s" %(
+            Type, Subtype, NwkId ), NwkId)
+        createDomoticzWidget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_type, Type_=Type, Subtype_=Subtype, )
+        return True
+    return False
+
+
+SIMPLE_WIDGET = {
+    "Temp": { "widgetType":"Temperature",},
+    "Humi": { "widgetType":"Humidity",},
+    "Baro": { "widgetType":"Barometer",},
+    "AirQuality": { "widgetType":"Air Quality",},
+    "Power": { "widgetType":"Usage",},
+    "Meter": { "widgetType":"kWh",},
+    "Voltage": { "widgetType":"Voltage",},
+    "Voc": { "widgetType": "Custom", "Options": "1;ppm"},
+    "PM25": { "widgetType": "Custom", "Options": "1;ppm"},
+    "CH2O": { "widgetType": "Custom", "Options": "1;ppm"},
+    "CarbonDioxyde": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;ppm"},
+    "CarbonMonoxyde": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;ppm"},
+    "Analog": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;tbd"},
+    "Alarm": { "Type": 243, "Subtype": 22, "Switchtype": 0,},
+    "Tamper": { "Type": 243, "Subtype": 22, "Switchtype": 0,},
+    "Alarm_ZL": { "Type": 243, "Subtype": 22, "Switchtype": 0,},
+    "Alarm_ZL2": { "Type": 243, "Subtype": 22, "Switchtype": 0,},
+    "Alarm_ZL3": { "Type": 243, "Subtype": 22, "Switchtype": 0,},
+    "AirPurifierAlarm": { "Type": 243, "Subtype": 22, "Switchtype": 0,},
+    "Valve": { "Type": 243, "Subtype": 6, "Switchtype": 0,},
+    "FanSpeed": { "Type": 243, "Subtype": 6, "Switchtype": 0,},
+    "ThermoSetpoint": { "Type": 242, "Subtype": 1,},
+    "TempSetCurrent": { "Type": 242, "Subtype": 1,},
+    "Ampere": { "Type": 243, "Subtype": 23,},
+    "Ampere3": { "Type": 89, "Subtype": 1,},
+    "Door": { "Type": 244, "Subtype": 73, "Switchtype": 11,},
+    "DoorSensor": { "Type": 244, "Subtype": 73, "Switchtype": 11,},
+    "DoorLock": { "Type": 244, "Subtype": 73, "Switchtype": 19,},
+    "TuyaDoorLock": { "Type": 244, "Subtype": 73, "Switchtype": 19,},
+    "Motion": { "Type": 244, "Subtype": 73, "Switchtype": 8,},
+    "LivoloSWL": { "Type": 244, "Subtype": 73, "Switchtype": 0,},
+    "LivoloSWR": { "Type": 244, "Subtype": 73, "Switchtype": 0,},
+    "Smoke": { "Type": 244, "Subtype": 73, "Switchtype": 5,},
+    "Lux": { "Type": 246, "Subtype": 1, "Switchtype": 0,},
+    "Switch": { "Type": 244, "Subtype": 73, "Switchtype": 0,},
+    "Plug": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 1},
+    "SwitchButton": { "Type": 244, "Subtype": 73, "Switchtype": 0,},
+    "PAC-SWITCH": { "Type": 244, "Subtype": 73, "Switchtype": 0,},
+    "ShutterCalibration": { "Type": 244, "Subtype": 73, "Switchtype": 0,},
+    "HeatingStatus": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 15},
+    "ThermoOnOff": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 15},
+    "HeatingSwitch": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 15},
+    "Button": { "Type": 244, "Subtype": 73, "Switchtype": 9,},
+    "Strength": { "Type": 243, "Subtype": 31,},
+    "Orientation": { "Type": 243, "Subtype": 19,},
+    "Water": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 11},
+    "P1Meter": { "Type": 250, "Subtype": 1, "Switchtype": 1,},
+    "P1Meter_ZL": { "Type": 250, "Subtype": 1, "Switchtype": 1,},
+}
