@@ -20,6 +20,9 @@ Release Numbering
 
 ##    Jan. 2023 - stable6 - 6.3.010 
 
+- [Hardware] - Ikea_LED1924G9
+- [Hardware] - Lonsonho_QS-Zigbee-D02-TRIAC-L
+- [Hardware] - Lonsonho_QS-Zigbee-D02-TRIAC-LN
 - [Hardware] - LEDVANCE Ampoule LED E14 5W 
 - [Hardware] - Paulmann 50052 SmartHome Zigbee LED
 - [Hardware] - KAIYE Tuya Smart Zigbee Ampoule LED
