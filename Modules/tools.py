@@ -733,7 +733,10 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
         return inMacCapa
 
     # Convert battery annouced devices to main powered / Make sure that you do the reverse n NetworkMap
-    if self.ListOfDevices[nwkid]["Model"] in ("TI0001", "TS0011", "TS0013", "TS0601-switch", "TS0601-2Gangs-switch", ):
+    if (
+        get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "MainPoweredDevice")
+        or self.ListOfDevices[nwkid]["Model"] in ("TI0001", "TS0011", "TS0013", "TS0601-switch", "TS0601-2Gangs-switch", )
+    ):
         # Livol Switch, must be converted to Main Powered
         # Patch some status as Device Annouced doesn't provide much info
         self.ListOfDevices[nwkid]["LogicalType"] = "Router"
@@ -743,14 +746,9 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
         return "8e"
 
     # Convert Main Powered device to Battery
-    if self.ListOfDevices[nwkid]["Model"] in (
-        "lumi.remote.b686opcn01",
-        "lumi.remote.b486opcn01",
-        "lumi.remote.b286opcn01",
-        "lumi.remote.b686opcn01-bulb",
-        "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b286opcn01-bulb",
-        "lumi.remote.b686opcn01",
+    if (
+        get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "BatteryPoweredDevice")
+        or self.ListOfDevices[nwkid]["Model"] in ( "lumi.remote.b686opcn01", "lumi.remote.b486opcn01", "lumi.remote.b286opcn01", "lumi.remote.b686opcn01-bulb", "lumi.remote.b486opcn01-bulb", "lumi.remote.b286opcn01-bulb", "lumi.remote.b686opcn01",)
     ):
         # Aqara Opple Switch, must be converted to Battery Devices
         self.ListOfDevices[nwkid]["MacCapa"] = "80"
@@ -787,18 +785,24 @@ def mainPoweredDevice(self, nwkid):
         mainPower = self.ListOfDevices[nwkid]["MacCapa"] in ["8e", "84"]
 
     # These are Model annouced as Main Power and are not
-    if model_name in (
-        "lumi.remote.b686opcn01",
-        "lumi.remote.b486opcn01",
-        "lumi.remote.b286opcn01",
-        "lumi.remote.b686opcn01-bulb",
-        "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b286opcn01-bulb",
+    if (
+        get_deviceconf_parameter_value(self, model_name, "BatteryPoweredDevice")
+        or model_name in (
+            "lumi.remote.b686opcn01",
+            "lumi.remote.b486opcn01",
+            "lumi.remote.b286opcn01",
+            "lumi.remote.b686opcn01-bulb",
+            "lumi.remote.b486opcn01-bulb",
+            "lumi.remote.b286opcn01-bulb",
+        )
     ):
         mainPower = False
 
     # These are device annouced as Battery, but are Main Powered ( some time without neutral)
-    if model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch", "ZBMINI-L",):
+    if (
+        get_deviceconf_parameter_value(self, model_name, "MainPoweredDevice")
+        or model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch", "ZBMINI-L",)
+    ):
         mainPower = True
         self.ListOfDevices[nwkid]["LogicalType"] = "End Device"
         self.ListOfDevices[nwkid]["DevideType"] = "RFD"

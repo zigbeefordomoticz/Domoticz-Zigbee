@@ -27,8 +27,9 @@
         "0402": [ "0000"],
         "0405": [ "0000"],
         "0019": [],
-	"000c": [ "0055" ]
+        "000c": [ "0055" ]
 
     },
-    "BatteryDevice": 1
+    "BatteryDevice": 1,
+    "BatteryPoweredDevice": 1
 }
