@@ -17,7 +17,7 @@ import json
 import socket
 import time
 import urllib.request
-
+import ssl
 import Domoticz
 
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
@@ -71,12 +71,21 @@ def extract_username_password( self, url_base_api ):
         
 
 def open_and_read( self, url ):
+    self.logging("Log", f'opening url {url}')
+    
+    myssl_context = None
+    if "https" in url.lower():
+        myssl_context = ssl.create_default_context();
+        myssl_context.check_hostname=False
+        myssl_context.verify_mode=ssl.CERT_NONE
     
     retry = 3
     while retry:
         try:
-            with urllib.request.urlopen(url) as response:
+            self.logging("Log", f'opening url {url} with context {myssl_context} ')
+            with urllib.request.urlopen(url, context=myssl_context) as response:
                 return response.read()
+
         except urllib.error.HTTPError as e:
             if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
                 reason = f'{e.code} {str(e.reason)}'
@@ -109,8 +118,17 @@ def domoticz_request( self, url):
         self.logging("Debug",'domoticz request Authorization: %s' %request)
         request.add_header("Authorization", "Basic %s" % self.authentication_str)
     self.logging("Debug",'domoticz request open url')
+    
+    myssl_context = None
+    if "https" in url.lower():
+        myssl_context = ssl.create_default_context();
+        myssl_context.check_hostname=False
+        myssl_context.verify_mode=ssl.CERT_NONE
+
+
     try:
-        response = urllib.request.urlopen(request)
+        self.logging("Log", f'opening url {request} with context {myssl_context} ')
+        response = urllib.request.urlopen(request, context=myssl_context)
     except urllib.error.URLError as e:
         self.logging("Error", "Urlopen to %s rejected. Error: %s" %(url, e))
         return None
