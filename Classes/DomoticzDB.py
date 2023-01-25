@@ -75,7 +75,7 @@ def open_and_read( self, url ):
     
     myssl_context = None
     if "https" in url.lower():
-        myssl_context = ssl.create_default_context();
+        myssl_context = ssl.create_default_context()
         myssl_context.check_hostname=False
         myssl_context.verify_mode=ssl.CERT_NONE
     
@@ -121,7 +121,7 @@ def domoticz_request( self, url):
     
     myssl_context = None
     if "https" in url.lower():
-        myssl_context = ssl.create_default_context();
+        myssl_context = ssl.create_default_context()
         myssl_context.check_hostname=False
         myssl_context.verify_mode=ssl.CERT_NONE
 
