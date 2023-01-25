@@ -75,10 +75,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
 
 def hack_battery(self, Nwkid):
 
-    if self.ListOfDevices[Nwkid]["PowerSource"] == "Main" or self.ListOfDevices[Nwkid]["MacCapa"] in (
-        "84",
-        "8e",
-    ):
+    if self.ListOfDevices[Nwkid]["PowerSource"] == "Main" or self.ListOfDevices[Nwkid]["MacCapa"] in ( "84", "8e", ):
         # This is a Main Powered device. Make sure we do not report battery
         self.ListOfDevices[Nwkid]["Battery"] = {}
         return

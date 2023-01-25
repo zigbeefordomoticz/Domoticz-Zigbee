@@ -417,9 +417,96 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Thermostat Setpoint: %s %s" % (0, setpoint), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
-        if "Analog" in ClusterType and model_name not in ( "lumi.sensor_cube.aqgl01", "lumi.sensor_cube", "lumi.motion.ac01",):
-            # Analog Value from Analog Input cluster
-            UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+        if "Analog" in ClusterType:
+            if  WidgetType == "Voc" and Attribute_ == "":
+                sValue = str( value )
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == "Motionac01" and Ep == "01":  # Motionac01
+                if value <= 7:
+                    nValue= value + 1
+                    sValue = str(nValue * 10)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+            
+            elif WidgetType == "Analog":
+                # Analog Value from Analog Input cluster
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, value, BatteryLevel, SignalLevel)
+
+        if ("XCube" in ClusterType) or ("Analog" in ClusterType and model_name in ("lumi.sensor_cube.aqgl01", "lumi.sensor_cube")):  # XCube Aqara or Xcube
+            if WidgetType == "Aqara" :
+                self.log.logging(
+                    "Widget",
+                    "Debug",
+                    "-------->  XCube Aqara Ep: %s Attribute_: %s Value: %s = " % (Ep, Attribute_, value),
+                    NWKID,
+                )
+                if Ep == "02" and Attribute_ == "":  # Magic Cube Aqara
+                    self.log.logging("Widget", "Debug", "---------->  XCube update device with data = " + str(value), NWKID)
+                    nValue = int(value)
+                    sValue = value
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif Ep == "03":  # Magic Cube Aqara Rotation
+                    if Attribute_ == "0055":  # Rotation Angle
+                        self.log.logging(
+                            "Widget",
+                            "Debug",
+                            "---------->  XCube update Rotaion Angle with data = " + str(value),
+                            NWKID,
+                        )
+                        # Update Text widget ( unit + 1 )
+                        nValue = 0
+                        sValue = value
+                        UpdateDevice_v2(self, Devices, DeviceUnit + 1, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                    else:
+                        self.log.logging("Widget", "Debug", "---------->  XCube update  with data = " + str(value), NWKID)
+                        nValue = int(value)
+                        sValue = value
+                        if nValue == 80:
+                            nValue = 8
+
+                        elif nValue == 90:
+                            nValue = 9
+
+                        self.log.logging(
+                            "Widget",
+                            "Debug",
+                            "-------->  XCube update device with data = %s , nValue: %s sValue: %s" % (value, nValue, sValue),
+                            NWKID,
+                        )
+                        UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+            elif WidgetType == "XCube" and Ep == "02":  # cube xiaomi
+                if value == "0000":  # shake
+                    state = "10"
+                    data = "01"
+                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif value in ("0204", "0200", "0203", "0201", "0202", "0205"):
+                    state = "50"
+                    data = "05"
+                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif value in ("0103", "0100", "0104", "0101", "0102", "0105"):  # Slide/M%ove
+                    state = "20"
+                    data = "02"
+                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif value == "0003":  # Free Fall
+                    state = "70"
+                    data = "07"
+                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif "0004" <= value <= "0059":  # 90°
+                    state = "30"
+                    data = "03"
+                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif value >= "0060":  # 180°
+                    state = "90"
+                    data = "09"
+                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Valve" in ClusterType:  # Valve Position
             if WidgetType == "Valve" and Attribute_ in ("026d", "4001", "0008"):
@@ -653,9 +740,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             svalue = "%s" % (nvalue)
             UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
 
-        if ClusterType == "Analog" and WidgetType == "Voc" and Attribute_ == "":
-            UpdateDevice_v2(self, Devices, DeviceUnit, 0, svalue, BatteryLevel, SignalLevel)
-            
         if ClusterType == "Temp" and WidgetType == "Voc" and Attribute_ == "0003":
             # voc for VOC_Sensor from Nexturn is provided via Temp cluster
             svalue = "%s" % (round(value, 1))
@@ -1374,87 +1458,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 nValue, sValue = getDimmerLevelOfColor(self, value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
-        if ("XCube" in ClusterType) or ("Analog" in ClusterType and model_name in ("lumi.sensor_cube.aqgl01", "lumi.sensor_cube")):  # XCube Aqara or Xcube
-            if WidgetType == "Aqara" :
-                self.log.logging(
-                    "Widget",
-                    "Debug",
-                    "-------->  XCube Aqara Ep: %s Attribute_: %s Value: %s = " % (Ep, Attribute_, value),
-                    NWKID,
-                )
-                if Ep == "02" and Attribute_ == "":  # Magic Cube Aqara
-                    self.log.logging("Widget", "Debug", "---------->  XCube update device with data = " + str(value), NWKID)
-                    nValue = int(value)
-                    sValue = value
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-                elif Ep == "03":  # Magic Cube Aqara Rotation
-                    if Attribute_ == "0055":  # Rotation Angle
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "---------->  XCube update Rotaion Angle with data = " + str(value),
-                            NWKID,
-                        )
-                        # Update Text widget ( unit + 1 )
-                        nValue = 0
-                        sValue = value
-                        UpdateDevice_v2(self, Devices, DeviceUnit + 1, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                    else:
-                        self.log.logging("Widget", "Debug", "---------->  XCube update  with data = " + str(value), NWKID)
-                        nValue = int(value)
-                        sValue = value
-                        if nValue == 80:
-                            nValue = 8
-
-                        elif nValue == 90:
-                            nValue = 9
-
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "-------->  XCube update device with data = %s , nValue: %s sValue: %s" % (value, nValue, sValue),
-                            NWKID,
-                        )
-                        UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-            elif WidgetType == "XCube" and Ep == "02":  # cube xiaomi
-                if value == "0000":  # shake
-                    state = "10"
-                    data = "01"
-                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                elif value in ("0204", "0200", "0203", "0201", "0202", "0205"):
-                    state = "50"
-                    data = "05"
-                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                elif value in ("0103", "0100", "0104", "0101", "0102", "0105"):  # Slide/M%ove
-                    state = "20"
-                    data = "02"
-                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                elif value == "0003":  # Free Fall
-                    state = "70"
-                    data = "07"
-                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                elif "0004" <= value <= "0059":  # 90°
-                    state = "30"
-                    data = "03"
-                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                elif value >= "0060":  # 180°
-                    state = "90"
-                    data = "09"
-                    UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-        if ClusterType == "Analog" and WidgetType == "Motionac01" and Ep == "01":  # Motionac01
-            if value <= 7:
-                nValue= value + 1
-                sValue = str(nValue * 10)
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Orientation" in ClusterType:
             # Xiaomi Vibration

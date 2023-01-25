@@ -270,7 +270,16 @@ class BasePlugin:
         self.pythonModuleVersion = {}
 
     def onStart(self):
-        Domoticz.Log("Zigbee for Domoticz plugin started!")
+        
+        Domoticz.Status( "Zigbee for Domoticz plugin started!")
+        
+        current_python_version_major = sys.version_info.major
+        current_python_version_minor = sys.version_info.minor
+        
+        Domoticz.Status( "Python3 requires 3.8 or above and you are running %s.%s" %(
+            current_python_version_major, current_python_version_minor))
+    
+        
         assert sys.version_info >= (3, 8)  # nosec
         
         if check_requirements( self ):
