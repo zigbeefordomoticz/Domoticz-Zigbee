@@ -74,7 +74,7 @@ def open_and_read( self, url ):
     self.logging("Log", f'opening url {url}')
     
     myssl_context = None
-    if "https" in url.lower():
+    if "https" in url.lower() and self.plugin.pluginConf["AcceptSelfSignedCertificates"]:
         myssl_context = ssl.create_default_context()
         myssl_context.check_hostname=False
         myssl_context.verify_mode=ssl.CERT_NONE
@@ -82,7 +82,7 @@ def open_and_read( self, url ):
     retry = 3
     while retry:
         try:
-            self.logging("Log", f'opening url {url} with context {myssl_context} ')
+            self.logging("Debug", f'opening url {url} with context {myssl_context}')
             with urllib.request.urlopen(url, context=myssl_context) as response:
                 return response.read()
 
@@ -120,14 +120,13 @@ def domoticz_request( self, url):
     self.logging("Debug",'domoticz request open url')
     
     myssl_context = None
-    if "https" in url.lower():
+    if "https" in url.lower() and self.plugin.pluginConf["AcceptSelfSignedCertificates"]:
         myssl_context = ssl.create_default_context()
         myssl_context.check_hostname=False
         myssl_context.verify_mode=ssl.CERT_NONE
 
-
     try:
-        self.logging("Log", f'opening url {request} with context {myssl_context} ')
+        self.logging("Debug", f'opening url {request} with context {myssl_context}')
         response = urllib.request.urlopen(request, context=myssl_context)
     except urllib.error.URLError as e:
         self.logging("Error", "Urlopen to %s rejected. Error: %s" %(url, e))
