@@ -20,6 +20,8 @@ Release Numbering
 
 ##    Jan. 2023 - stable6 - 6.3.010 
 
+- Technical] - Supporting SSL without checking Self Signed Certificates
+- [Hardware] - Smart Plug 20A EU manufacturer by Tuya
 - [Hardware] - Ikea_LED1924G9
 - [Hardware] - Lonsonho_QS-Zigbee-D02-TRIAC-L
 - [Hardware] - Lonsonho_QS-Zigbee-D02-TRIAC-LN
