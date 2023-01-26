@@ -74,7 +74,7 @@ def open_and_read( self, url ):
     self.logging("Log", f'opening url {url}')
     
     myssl_context = None
-    if "https" in url.lower() and self.plugin.pluginConf["AcceptSelfSignedCertificates"]:
+    if "https" in url.lower() and self.plugin.pluginConf["CheckSSLCertificateValidity"]:
         myssl_context = ssl.create_default_context()
         myssl_context.check_hostname=False
         myssl_context.verify_mode=ssl.CERT_NONE
@@ -120,7 +120,7 @@ def domoticz_request( self, url):
     self.logging("Debug",'domoticz request open url')
     
     myssl_context = None
-    if "https" in url.lower() and self.plugin.pluginConf["AcceptSelfSignedCertificates"]:
+    if "https" in url.lower() and self.plugin.pluginConf["CheckSSLCertificateValidity"]:
         myssl_context = ssl.create_default_context()
         myssl_context.check_hostname=False
         myssl_context.verify_mode=ssl.CERT_NONE
