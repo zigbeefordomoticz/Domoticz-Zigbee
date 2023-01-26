@@ -691,323 +691,71 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
 
 
 SIMPLE_WIDGET = {
-    "Temp+Hum+Baro": {
-        "widgetType": "Temp+Hum+Baro",
-    },
-    "Temp+Hum": {
-        "widgetType": "Temp+Hum",
-    },
-    "Temp": {
-        "widgetType": "Temperature",
-    },
-    "Humi": {
-        "widgetType": "Humidity",
-    },
-    "Baro": {
-        "widgetType": "Barometer",
-    },
-    "AirQuality": {
-        "widgetType": "Air Quality",
-    },
-    "Power": {
-        "widgetType": "Usage",
-    },
-    "Meter": {
-        "widgetType": "kWh",
-    },
-    "Voltage": {
-        "widgetType": "Voltage",
-    },
-    "Voc": {
-        "widgetType": "Custom", 
-        "Options": "1;ppm"
-    },
-    "PM25": {
-        "widgetType": "Custom", 
-        "Options": "1;ppm"
-    },
-    "CH2O": {
-        "widgetType": "Custom", 
-        "Options": "1;ppm"
-    },
-    "CarbonDioxyde": {
-        "Type": 0xF3,
-        "Subtype": 31,
-        "Switchtype": 0,
-        "Options": "1;ppm",
-    },
-    "CarbonMonoxyde": {
-        "Type": 0xF3,
-        "Subtype": 31,
-        "Switchtype": 0,
-        "Options": "1;ppm",
-    },
-    "Analog": {
-        "Type": 0xF3,
-        "Subtype": 31,
-        "Switchtype": 0,
-        "Options": "1;tbd",
-    },
-    "Alarm": {
-        "Type": 243,
-        "Subtype": 22,
-        "Switchtype": 0,
-    },
-    "Tamper": {
-        "Type": 243,
-        "Subtype": 22,
-        "Switchtype": 0,
-    },
-    "Alarm_ZL": {
-        "Type": 243,
-        "Subtype": 22,
-        "Switchtype": 0,
-    },
-    "Alarm_ZL2": {
-        "Type": 243,
-        "Subtype": 22,
-        "Switchtype": 0,
-    },
-    "Alarm_ZL3": {
-        "Type": 243,
-        "Subtype": 22,
-        "Switchtype": 0,
-    },
-    "AirPurifierAlarm": {
-        "Type": 243,
-        "Subtype": 22,
-        "Switchtype": 0,
-    },
-    "Valve": {
-        "Type": 243,
-        "Subtype": 6,
-        "Switchtype": 0,
-    },
-    "FanSpeed": {
-        "Type": 243,
-        "Subtype": 6,
-        "Switchtype": 0,
-    },
-    "ThermoSetpoint": {
-        "Type": 242,
-        "Subtype": 1,
-    },
-    "TempSetCurrent": {
-        "Type": 242,
-        "Subtype": 1,
-    },
-    "Ampere": {
-        "Type": 243,
-        "Subtype": 23,
-    },
-    "Ampere3": {
-        "Type": 89,
-        "Subtype": 1,
-    },
-    "Door": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 11,
-    },
-    "DoorSensor": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 11,
-    },
-    "DoorLock": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 19,
-    },
-    "TuyaDoorLock": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 19,
-    },
-    "Motion": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 8,
-    },
-    "LivoloSWL": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 0,
-    },
-    "LivoloSWR": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 0,
-    },
-    "Smoke": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 5,
-    },
-    "Lux": {
-        "Type": 246,
-        "Subtype": 1,
-        "Switchtype": 0,
-    },
-    "Switch": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 0,
-    },
-    "Plug": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 0, 
-        "Image": 1,
-    },
-    "SwitchButton": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 0,
-    },
-    "PAC-SWITCH": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 0,
-    },
-    "ShutterCalibration": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 0,
-    },
-    "HeatingStatus": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 0,
-        "Image": 15,
-    },
-    "ThermoOnOff": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 0, 
-        "Image": 15,
-    },
-    "HeatingSwitch": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 0,
-        "Image": 15,
-    },
-    "Button": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 9,
-    },
-    "Strength": {
-        "Type": 243,
-        "Subtype": 31,
-    },
-    "Orientation": {
-        "Type": 243,
-        "Subtype": 19,
-    },
-    "Water": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 0, 
-        "Image": 11,
-    },
-    "P1Meter": {
-        "Type": 250,
-        "Subtype": 1,
-        "Switchtype": 1,
-    },
-    "P1Meter_ZL": {
-        "Type": 250,
-        "Subtype": 1,
-        "Switchtype": 1,
-    },
-    "ColorControlRGBWW": {
-        "Type": 241,
-        "Subtype": 0x04,
-        "Switchtype": 7,
-    },
-    "ColorControlFull": {
-        "Type": 241,
-        "Subtype": 0x07,
-        "Switchtype": 7,
-    },
-    "ColorControlWW": {
-        "Type": 241,
-        "Subtype": 0x08,
-        "Switchtype": 7,
-    },
-    "ColorControlRGBW": {
-        "Type": 241,
-        "Subtype": 0x01,
-        "Switchtype": 7,
-    },
-    "ColorControlRGBWZ": {
-        "Type": 241,
-        "Subtype": 0x02,
-        "Switchtype": 7,
-    },
-    "ColorControlRGB": {
-        "Type": 241,
-        "Subtype": 1,
-        "Switchtype": 7,
-    },
-    "LvlControl": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 7
-    },
-
-    "VenetianInverted": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 15
-    },
-    "Venetian": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 15
-    },
-    "BSO-Volet": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 16
-    },
-    "BSO-Orientation": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 16
-    },
-    "VanneInverted": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 21
-    },
-    "CurtainInverted": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 21
-    },
-    "Vanne": {
-        "Type": 244, 
-        "Subtype": 73, 
-        "Switchtype": 22
-    },
-    "Curtain": {
-        "Type": 244,
-        "Subtype": 73, 
-        "Switchtype": 22
-    },
-    "BlindInverted": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 16,
-        "ForceClusterType": "LvlControl",
-    },
-    "Blind": {
-        "Type": 244,
-        "Subtype": 73,
-        "Switchtype": 13,
-        "ForceClusterType": "LvlControl",
-    },
+    "Temp+Hum+Baro": { "widgetType": "Temp+Hum+Baro", },
+    "Temp+Hum": { "widgetType": "Temp+Hum", },
+    "Temp": { "widgetType": "Temperature", },
+    "Humi": { "widgetType": "Humidity", },
+    "Baro": { "widgetType": "Barometer", },
+    "AirQuality": { "widgetType": "Air Quality", },
+    "Power": { "widgetType": "Usage", },
+    "Meter": { "widgetType": "kWh", },
+    "Voltage": { "widgetType": "Voltage", },
+    "Voc": { "widgetType": "Custom", "Options": "1;ppm" },
+    "PM25": { "widgetType": "Custom", "Options": "1;ppm" },
+    "CH2O": { "widgetType": "Custom", "Options": "1;ppm" },
+    "CarbonDioxyde": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;ppm", },
+    "CarbonMonoxyde": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;ppm", },
+    "Analog": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;tbd", },
+    "Alarm": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
+    "Tamper": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
+    "Alarm_ZL": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
+    "Alarm_ZL2": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
+    "Alarm_ZL3": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
+    "AirPurifierAlarm": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
+    "Valve": { "Type": 243, "Subtype": 6, "Switchtype": 0, },
+    "FanSpeed": { "Type": 243, "Subtype": 6, "Switchtype": 0, },
+    "ThermoSetpoint": { "Type": 242, "Subtype": 1, },
+    "TempSetCurrent": { "Type": 242, "Subtype": 1, },
+    "Ampere": { "Type": 243, "Subtype": 23, },
+    "Ampere3": { "Type": 89, "Subtype": 1, },
+    "Door": { "Type": 244, "Subtype": 73, "Switchtype": 11, },
+    "DoorSensor": { "Type": 244, "Subtype": 73, "Switchtype": 11, },
+    "DoorLock": { "Type": 244, "Subtype": 73, "Switchtype": 19, },
+    "TuyaDoorLock": { "Type": 244, "Subtype": 73, "Switchtype": 19, },
+    "Motion": { "Type": 244, "Subtype": 73, "Switchtype": 8, },
+    "LivoloSWL": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
+    "LivoloSWR": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
+    "Smoke": { "Type": 244, "Subtype": 73, "Switchtype": 5, },
+    "Lux": { "Type": 246, "Subtype": 1, "Switchtype": 0, },
+    "Switch": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
+    "Plug": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 1, },
+    "SwitchButton": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
+    "PAC-SWITCH": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
+    "ShutterCalibration": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
+    "HeatingStatus": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 15, },
+    "ThermoOnOff": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 15, },
+    "HeatingSwitch": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 15, },
+    "Button": { "Type": 244, "Subtype": 73, "Switchtype": 9, },
+    "Strength": { "Type": 243, "Subtype": 31, },
+    "Orientation": { "Type": 243, "Subtype": 19, },
+    "Water": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 11, },
+    "P1Meter": { "Type": 250, "Subtype": 1, "Switchtype": 1, },
+    "P1Meter_ZL": { "Type": 250, "Subtype": 1, "Switchtype": 1, },
+    "ColorControlRGBWW": { "Type": 241, "Subtype": 0x04, "Switchtype": 7, },
+    "ColorControlFull": { "Type": 241, "Subtype": 0x07, "Switchtype": 7, },
+    "ColorControlWW": { "Type": 241, "Subtype": 0x08, "Switchtype": 7, },
+    "ColorControlRGBW": { "Type": 241, "Subtype": 0x01, "Switchtype": 7, },
+    "ColorControlRGBWZ": { "Type": 241, "Subtype": 0x02, "Switchtype": 7, },
+    "ColorControlRGB": { "Type": 241, "Subtype": 1, "Switchtype": 7, },
+    "LvlControl": { "Type": 244, "Subtype": 73, "Switchtype": 7 },
+    "VenetianInverted": { "Type": 244, "Subtype": 73, "Switchtype": 15 },
+    "Venetian": { "Type": 244, "Subtype": 73, "Switchtype": 15 },
+    "BSO-Volet": { "Type": 244, "Subtype": 73, "Switchtype": 16 },
+    "BSO-Orientation": { "Type": 244, "Subtype": 73, "Switchtype": 16 },
+    "VanneInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21 },
+    "CurtainInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21 },
+    "Vanne": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
+    "Curtain": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
+    "BlindInverted": { "Type": 244, "Subtype": 73, "Switchtype": 16, "ForceClusterType": "LvlControl", },
+    "Blind": { "Type": 244, "Subtype": 73, "Switchtype": 13, "ForceClusterType": "LvlControl", },
 }
