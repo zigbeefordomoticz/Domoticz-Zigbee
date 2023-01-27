@@ -439,189 +439,112 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
         self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(ID)] = "Text"
 
 
+def number_switch_selectors( widget_type ):
+    if widget_type not in SWITCH_LVL_MATRIX:
+        return 0
+    if "LevelNames" not in SWITCH_LVL_MATRIX[ widget_type ]:
+        return 0
+    levels = SWITCH_LVL_MATRIX[ widget_type ]["LevelNames"]
+    return len( levels.split('|') )
+
+def off_hidden( widget_type ):
+    if widget_type not in SWITCH_LVL_MATRIX:
+        return False
+    if "OffHidden" not in SWITCH_LVL_MATRIX[ widget_type ]:
+        return False
+    return SWITCH_LVL_MATRIX[ widget_type ]["OffHidden"]
+
+def selector_style( widget_type ):
+    if widget_type not in SWITCH_LVL_MATRIX:
+        return 0
+    if "SelectorStyle" not in SWITCH_LVL_MATRIX[ widget_type ]:
+        return 0
+    return SWITCH_LVL_MATRIX[ widget_type ]["SelectorStyle"]
+    
+
 def create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
-        # === Selector Switches
-        if t == "BSO-Orientation":
-            # BSO Orientation for Profalux, Create a Switch selector instead of Slider
-            # createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 13 )
-            Options = createSwitchSelector(self, 11, DeviceType=t, OffHidden=True, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in BSO-Orientation" % (t), NWKID)
 
-        if t in ("ACMode_2",):  # 5
-            Options = createSwitchSelector(self, 5, DeviceType=t, OffHidden=False, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options, Image=16)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACMode_2" % (t), NWKID)
+    # 5 Selectors, Style 1, OffHidden
+    if t in ("IAS_ACE", "HeimanSceneSwitch", "SwitchAQ2WithOff",):
+        Options = createSwitchSelector(self, 5, DeviceType=t, OffHidden=True, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" % (t), NWKID)
 
-        if t in ( "SwitchAlarm", ):
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_=244, Subtype_=73, Switchtype_=0, Image=13)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Switch Alarm" % (t), NWKID)
+    # 6 Selectors, Style 1
+    if t in ("AlarmWD", ):
+        Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AlarmWD" % (t), NWKID)
+
+    # 6 Buttons, Style 1, OffHidden
+    if t in ( "GenericLvlControl", "AqaraOppleMiddle", "SwitchAQ3WithOff",):
+        Options = createSwitchSelector(self, 6, DeviceType=t, OffHidden=True, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in GenericLvlControl" % (t), NWKID)
+
+    # 7 Selectors, Style 1
+    if t in ("ThermoModeEHZBRTS", "INNR_RC110_LIGHT"):
+        Options = createSwitchSelector(self, 7, DeviceType=t, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoModeEHZBRTS" % (t), NWKID)
+
+    # 7 Selectors, Style 0, OffHidden
+    if t in ("LegrandFilPilote",):
+        Options = createSwitchSelector(self, 7, DeviceType=t, OffHidden=True, SelectorStyle=0)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in LegrandFilPilote" % (t), NWKID)
+
+    # 7 Selectors, Style 0, OffHidden, SelectorStyle 1
+    if t in ("FIP",):
+        Options = createSwitchSelector(self, 7, DeviceType=t, OffHidden=True, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FIP" % (t), NWKID)
+
+    # 8 Selectors, Style 0, OffShowen, SelectorStyle 1
+    if t in ("Motionac01",):
+        Options = createSwitchSelector(self, 9, DeviceType=t, OffHidden=False, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Motionac01" % (t), NWKID)
+
+    # 10 Selectors, Style 1, OffHidden
+    if t in ("DButton_3",):
+        Options = createSwitchSelector(self, 10, DeviceType=t, OffHidden=True, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DButton3" % (t), NWKID)
+
+    # 12 Selectors
+    if t in ("OrviboRemoteSquare"):
+        Options = createSwitchSelector(self, 13, DeviceType=t, OffHidden=True, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+
+    # 13 Selectors, Style 1
+    if t in ("INNR_RC110_SCENE",):
+        Options = createSwitchSelector(self, 13, DeviceType=t, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in INNR SCENE" % (t), NWKID)
+
+    # 14 Selectors, Style 1
+    if t in ("Ikea_Round_5b",):
+        Options = createSwitchSelector(self, 14, DeviceType=t, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Ikea Round" % (t), NWKID)
+
+    if t in ("TINT_REMOTE_WHITE",):
+        Options = createSwitchSelector(self, 19, DeviceType=t, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Tint-Remote-White" % (t), NWKID)
+
+    if t in ("LumiLock"):
+        Options = createSwitchSelector(self, 16, DeviceType=t, SelectorStyle=1)
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Lumi Lock" % (t), NWKID)
             
-        if t in ("FanControl", ):  # 6
-            Options = createSwitchSelector(self, 6, DeviceType=t, OffHidden=False, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options, Image=7)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FanControl/FanSpeed" % (t), NWKID)
+    if t in SWITCH_LVL_MATRIX:
+        Options = createSwitchSelector(self, 11, DeviceType=t, OffHidden=off_hidden( t ), SelectorStyle=selector_style( t ))
+        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+        self.log.logging("Widget", "Debug", "create_switch_selector_widget - t: %s" % (t), NWKID)
+        return
 
-        if t in ("ACSwing", "TuyaSirenHumi", "TuyaSirenTemp",):  # 2
-            Options = createSwitchSelector(self, 2, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACSwing" % (t), NWKID)           
-
-        # 2 Selectors, Style 0
-        if t in ( "AirPurifierMode", ):
-            Options = createSwitchSelector(self, 7, DeviceType=t, SelectorStyle=0)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AirPurifierMode" % (t), NWKID)
-
-        # 3 Selectors, Style 0
-        if t in ("Toggle", "ThermoMode_2"):
-            Options = createSwitchSelector(self, 3, DeviceType=t, SelectorStyle=0)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Toggle/ThermoMode_2" % (t), NWKID)
-
-        # 3 Selector , OffHidden, Style 0 (command)
-        if t in ("HACTMODE", "LegranCableMode", ):
-            Options = createSwitchSelector(self, 3, DeviceType=t, OffHidden=True, SelectorStyle=0)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HACTMODE..." % (t), NWKID)
-
-        # 3 Selector , OffHidden, Style 1 (command)
-        if t in ("LegrandSleepWakeupSelector",):
-            Options = createSwitchSelector(self, 3, DeviceType=t, OffHidden=True, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in LegrandSleepWakeupSelector..." % (t), NWKID)
-
-
-        # 4 Selector , OffHidden, Style 0 (command)
-        if t in ("DSwitch", "blindIKEA", "ThermoMode_6"):
-            Options = createSwitchSelector(self, 4, DeviceType=t, OffHidden=True, SelectorStyle=0)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DSwitch..." % (t), NWKID)
-
-        if t in ("ThermoMode_5", ):
-            Options = createSwitchSelector(self, 4, DeviceType=t, OffHidden=False, SelectorStyle=0)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DSwitch..." % (t), NWKID)
-
-        # 5 Selector , OffHidden, Style 0 (command)
-        if t in ("ContractPower", "KF204Switch"):
-            Options = createSwitchSelector(self, 6, DeviceType=t, OffHidden=True, SelectorStyle=0)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ContractPower ..." % (t), NWKID)
-
-        # 4 Selectors, OffHidden, Style 1
-        if t in ("DButton", "ThermoMode_4",):
-            Options = createSwitchSelector(self, 4, DeviceType=t, OffHidden=True, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DButton" % (t), NWKID)
-
-        if t in ("HueSmartButton",):
-            Options = createSwitchSelector(self, 3, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in HueSmartButton" % (t), NWKID)
-
-        # 4 Selectors, Style 1
-        if t in ( "Vibration", "Button_3", "SwitchAQ2", ):
-            Options = createSwitchSelector(self, 4, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Vibration" % (t), NWKID)
-            
-        # 5 Selectors, Style 0 ( mode command)
-        if t in ("ThermoMode", "ThermoMode_3"):
-            Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoMode" % (t), NWKID)
-
-        if t in ("ACMode",):
-            Options = createSwitchSelector(self, 5, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ACMode" % (t), NWKID)
-
-        if t in ("CAC221ACMode",):
-            Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in CAC221ACMode" % (t), NWKID)
-
-        # 6 Selectors, Style 1
-        if t in ( "Generic_5_buttons", "LegrandSelector", "SwitchAQ3", "SwitchIKEA", "AqaraOppleMiddleBulb", "TuyaSiren", ):
-            Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" % (t), NWKID)
-
-        # 5 Selectors, Style 1, OffHidden
-        if t in ("IAS_ACE", "HeimanSceneSwitch", "SwitchAQ2WithOff",):
-            Options = createSwitchSelector(self, 5, DeviceType=t, OffHidden=True, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Generic_5" % (t), NWKID)
-
-        # 6 Selectors, Style 1
-        if t in ("AlarmWD", ):
-            Options = createSwitchSelector(self, 6, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in AlarmWD" % (t), NWKID)
-
-        # 6 Buttons, Style 1, OffHidden
-        if t in ( "GenericLvlControl", "AqaraOppleMiddle", "SwitchAQ3WithOff",):
-            Options = createSwitchSelector(self, 6, DeviceType=t, OffHidden=True, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in GenericLvlControl" % (t), NWKID)
-
-        # 7 Selectors, Style 1
-        if t in ("ThermoModeEHZBRTS", "INNR_RC110_LIGHT"):
-            Options = createSwitchSelector(self, 7, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in ThermoModeEHZBRTS" % (t), NWKID)
-
-        # 7 Selectors, Style 0, OffHidden
-        if t in ("LegrandFilPilote",):
-            Options = createSwitchSelector(self, 7, DeviceType=t, OffHidden=True, SelectorStyle=0)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in LegrandFilPilote" % (t), NWKID)
-
-        # 7 Selectors, Style 0, OffHidden, SelectorStyle 1
-        if t in ("FIP",):
-            Options = createSwitchSelector(self, 7, DeviceType=t, OffHidden=True, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in FIP" % (t), NWKID)
-
-        # 8 Selectors, Style 0, OffShowen, SelectorStyle 1
-        if t in ("Motionac01",):
-            Options = createSwitchSelector(self, 9, DeviceType=t, OffHidden=False, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Motionac01" % (t), NWKID)
-
-        # 10 Selectors, Style 1, OffHidden
-        if t in ("DButton_3",):
-            Options = createSwitchSelector(self, 10, DeviceType=t, OffHidden=True, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in DButton3" % (t), NWKID)
-
-        # 12 Selectors
-        if t in ("OrviboRemoteSquare"):
-            Options = createSwitchSelector(self, 13, DeviceType=t, OffHidden=True, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-
-        # 13 Selectors, Style 1
-        if t in ("INNR_RC110_SCENE",):
-            Options = createSwitchSelector(self, 13, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in INNR SCENE" % (t), NWKID)
-
-        # 14 Selectors, Style 1
-        if t in ("Ikea_Round_5b",):
-            Options = createSwitchSelector(self, 14, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Ikea Round" % (t), NWKID)
-
-        if t in ("TINT_REMOTE_WHITE",):
-            Options = createSwitchSelector(self, 19, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Tint-Remote-White" % (t), NWKID)
-
-        if t in ("LumiLock"):
-            Options = createSwitchSelector(self, 16, DeviceType=t, SelectorStyle=1)
-            createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Lumi Lock" % (t), NWKID)
 
 
 def colorcontrol_if_undefinded( self, Nwkid ):
@@ -758,4 +681,5 @@ SIMPLE_WIDGET = {
     "Curtain": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
     "BlindInverted": { "Type": 244, "Subtype": 73, "Switchtype": 16, "ForceClusterType": "LvlControl", },
     "Blind": { "Type": 244, "Subtype": 73, "Switchtype": 13, "ForceClusterType": "LvlControl", },
+    "SwitchAlarm": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 13 },
 }

@@ -107,6 +107,7 @@ SWITCH_LVL_MATRIX = {
         "3": (3, "30"),
         "03": (3, "30"),
         "ForceUpdate": True,
+        "SelectorStyle":1,
         "LevelNames": "Off|Click|Double Click|Long Click",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Click|Double Click|Long Click"}},
@@ -118,6 +119,8 @@ SWITCH_LVL_MATRIX = {
         "03": (3, "30"),
         "04": (4, "40"),
         "ForceUpdate": True,
+        "SelectorStyle":1,
+        
         "LevelNames": "button1|button2|button3|button4|button5",
         "Language": {
             "fr-FR": {"LevelNames": "Bouton1|Bouton2|Bouton3|Bouton4|Bouton5"}},
@@ -129,6 +132,8 @@ SWITCH_LVL_MATRIX = {
         "03": (3, "30"),
         "04": (4, "40"),
         "ForceUpdate": True,
+        "SelectorStyle":1,
+        
         "LevelNames": "Off|On|-|+|Release",
         "Language": {
             "fr-FR": {"LevelNames": "Eteindre|Marche|-|+|Arrêt"}},
@@ -156,7 +161,13 @@ SWITCH_LVL_MATRIX = {
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Eteindre|Marche|Monter|Descendre|Arrêt"}},
     },
-    "HueSmartButton": {"toggle": (1, "10"), "move": (3, "30"), "LevelNames": "Off|toggle|move", "Language": {}},
+    "HueSmartButton": {
+        "toggle": (1, "10"), 
+        "move": (3, "30"),
+        "SelectorStyle":1,
+        "LevelNames": "Off|toggle|move", 
+        "Language": {}
+    },
     "LegrandSelector": {
         "00": (0, "00"),
         "01": (1, "10"),
@@ -165,6 +176,8 @@ SWITCH_LVL_MATRIX = {
         "stop": (4, "40"),
         "02": (5, "50"),
         "ForceUpdate": True,
+        "SelectorStyle":1,
+        
         "LevelNames": "Off|On|Dim +|Dim -|Stop|Toggle",
         "Language": {
             "fr-FR": {"LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt|Toggle"}},
@@ -174,6 +187,8 @@ SWITCH_LVL_MATRIX = {
         "00": (1, "10"),
         "01": (2, "20"),
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Sleep|WakeUp",
         "Language": {
             "fr-FR": {"LevelNames": "Off|Coucher|Lever"}},
@@ -190,6 +205,7 @@ SWITCH_LVL_MATRIX = {
         "80": (3, "30"),
         "255": (3, "30"),
         "ForceUpdate": True,
+        "SelectorStyle":1,
         "LevelNames": "One click|Two clicks|Tree clicks|Four+ clicks",
         "Language": {
             "fr-FR": {"LevelNames": "Simple click|Double click|Triple click|Quadruple+ click"}},
@@ -238,6 +254,8 @@ SWITCH_LVL_MATRIX = {
         "18": (4, "40"),
         "00": (0, "00"),
         "ForceUpdate": True,
+        "SelectorStyle":1,
+        
         "LevelNames": "Click|Double click|Long click|Release click|Shake",
         "Language": {
             "fr-FR": {"LevelNames": "Click|Double click|Long click|Relacher click|Remuer"}},
@@ -247,11 +265,15 @@ SWITCH_LVL_MATRIX = {
     "DSwitch": {
         "LevelNames": "Off|Left Click|Right Click|Both Click",
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 0,
         "Language": {
             "fr-FR": {"LevelNames": "Off|Left Click|Right Click|Both Click"}},
     },
     "DButton": {
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Switch 1|Switch 2|Both_Click",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Click Gauche|Click Droit|Click des 2"}},
@@ -265,6 +287,7 @@ SWITCH_LVL_MATRIX = {
     },
     "Toggle": {
         "ForceUpdate": True,
+        "SelectorStyle": 0,
         "LevelNames": "Off|On|Toggle",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Marche|Bascule"}},
@@ -289,6 +312,7 @@ SWITCH_LVL_MATRIX = {
         "20": (2, "20"),
         "30": (3, "30"),
         "ForceUpdate": False,
+        "SelectorStyle":1,
         "LevelNames": "Off|Tilt|Vibrate|Free Fall",
         "Language": {
             "fr": {"LevelNames": "Arrêt|Incliner|Vibrer|Chute libre"}},
@@ -300,6 +324,8 @@ SWITCH_LVL_MATRIX = {
         "03": (3, "30"),
         "04": (4, "40"),
         "ForceUpdate": True,
+        "SelectorStyle":1,
+        
         "LevelNames": "Off|On|Push Up|Push Down|Release",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Marche|Appuyer Haut|Appuyer Bas|Relacher"}},
@@ -309,6 +335,8 @@ SWITCH_LVL_MATRIX = {
         "01": (2,"20"),
         "02": (3,"30"),
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 0,
         "LevelNames": "Off|Open|Close|Stop",
         "Language": {
             "fr-FR": {"LevelNames": "Off|Ouvrir|Fermer|Arreter"}}
@@ -358,6 +386,8 @@ SWITCH_LVL_MATRIX = {
         "08": (4, "40"),  # Dry
         "07": (5, "50"),  # Fan
         "ForceUpdate": False,
+        "SelectorStyle":1,
+        
         "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}},
@@ -367,6 +397,7 @@ SWITCH_LVL_MATRIX = {
         1: (1, "10"),
         2: (2, "20"),
         "ForceUpdate": True,
+        "SelectorStyle": 0,
         "LevelNames": "Off|Auto|Manual",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
@@ -376,6 +407,8 @@ SWITCH_LVL_MATRIX = {
         1: (1, "10"),   # Confort Ok Acova
         2: (2, "20"),   # No-Freez
         "ForceUpdate": True,
+        "SelectorStyle":1,
+        
         "LevelNames": "Off|Comfort|No-Freeze",
         "Language": {"fr-FR": {"LevelNames": "Arrêt|Confort|hors-gel"}},
     },   
@@ -387,6 +420,8 @@ SWITCH_LVL_MATRIX = {
         3: (3, "20"),    # Temp hand
         4: (4, "30"),    # Holiday
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Auto|Manual|Temp Hand|Holidays",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
@@ -397,6 +432,8 @@ SWITCH_LVL_MATRIX = {
         2: (2, "20"),   # Manual
         3: (3, "30"),   # Away
         "ForceUpdate": True,
+        "OffHidden": False, 
+        "SelectorStyle": 0,
         "LevelNames": "Off|Auto|Manual|Away",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Manual|Away"}},
@@ -407,6 +444,8 @@ SWITCH_LVL_MATRIX = {
         2: (2, "20"),  # Heat
         3: (3, "30"),  # Fan
         "ForceUpdate": False,
+        "OffHidden": True, 
+        "SelectorStyle": 0,
         "LevelNames": "Off|Cool|Heat|Fan",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Ventilateur"}},
@@ -425,12 +464,16 @@ SWITCH_LVL_MATRIX = {
         "00": (1, "10"),
         "03": (2, "20"),
         "ForceUpdate": False,
+        "OffHidden": True, 
+        "SelectorStyle": 0,
         "LevelNames": "Off|Conventional|Fil Pilote",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}},
     },
     "ContractPower": {
         "ForceUpdate": False,
+        "OffHidden": True, 
+        "SelectorStyle": 0,
         "LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA",
         "Language": {
             "fr-FR": {"LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA"}},
@@ -445,6 +488,8 @@ SWITCH_LVL_MATRIX = {
         "0100": (1, "10"),  # Normal
         "0200": (2, "20"),  # FIP
         "ForceUpdate": False,
+        "OffHidden": True, 
+        "SelectorStyle": 0,
         "LevelNames": "Off|Conventional|Fil Pilote",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}},
@@ -457,6 +502,8 @@ SWITCH_LVL_MATRIX = {
     },
     "TuyaSiren": {
         "ForceUpdate": True,
+        "SelectorStyle":1,
+        
         "00": (0, "00"),
         "01": (1, "10"),
         "02": (2, "20"),
@@ -468,17 +515,19 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5"}},
     },
     "TuyaSirenHumi": {
-        "ForceUpdate": True,
         "00": (0, "00"),
         "01": (1, "10"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
         "LevelNames": "Off|Alarm Humidity",
         "Languages": {
             "fr-FR": {"LevelNames": "Off|Alarm Humidité"}},
     },
     "TuyaSirenTemp": {
-        "ForceUpdate": True,
         "00": (0, "00"),
         "01": (1, "10"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
         "LevelNames": "Off|Alarm Temperature",
         "Languages": {
             "fr-FR": {"LevelNames": "Off|Alarm Température"}},
@@ -529,6 +578,8 @@ SWITCH_LVL_MATRIX = {
         90: (9, "90"),
         100: (10, "100"),
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|0°|10°|20°|30°|40°|50°|60°|70°|80°|90°",
     },
     "IAS_ACE": {
@@ -551,6 +602,7 @@ SWITCH_LVL_MATRIX = {
         "05": (2, "50"),  # Speed 4
         "06": (2, "60"),  # Speed 5
         "ForceUpdate": True,
+        "SelectorStyle": 0,
         "LevelNames": "Off|Auto|Spd1|Spd2|Spd3|Spd4|Spd5",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Vit1|Vit2|Vit3|Vit4|V5"}},
@@ -563,6 +615,8 @@ SWITCH_LVL_MATRIX = {
         "02": (3, "30"),  # Moyen
         "03": (4, "40"),  # Fort
         "ForceUpdate": True,
+        "OffHidden": False, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Auto|Low|Medium|High",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Bas|Moyen|Fort"}},
@@ -574,6 +628,8 @@ SWITCH_LVL_MATRIX = {
         "08": (3, "30"),  # Dry
         "07": (4, "40"),  # Fan
         "ForceUpdate": True,
+        "OffHidden": False, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Cool|Heat|Dry|Fan",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"},
@@ -588,6 +644,8 @@ SWITCH_LVL_MATRIX = {
         "08": (3, "40"),  # Dry
         "07": (4, "50"),  # Fan
         "ForceUpdate": False,
+        "SelectorStyle":1,
+        
         "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"},
@@ -597,6 +655,7 @@ SWITCH_LVL_MATRIX = {
         "00": (0, "00"),  # Off - All wings stopped
         "01": (1, "10"),  # On Mode
         "ForceUpdate": True,
+        "SelectorStyle": 1,
         "LevelNames": "Off|On",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Allumé"},
@@ -609,6 +668,8 @@ SWITCH_LVL_MATRIX = {
         "03": (3, "30"),  # Button - ( Down )
         "04": (4, "40"),  # Button + ( Up )
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 0,
         "LevelNames": "Off|0|X|+|-",
         "Language": {
             "fr-FR": {"LevelNames": "Off|0|X|+|-"},
@@ -621,6 +682,8 @@ SWITCH_LVL_MATRIX = {
         "08": (3, "30"),  # Dry
         "07": (4, "40"),  # Fan
         "ForceUpdate": False,
+        "SelectorStyle":1,
+        
         "LevelNames": "Off|Cool|Heat|Dry|Fan",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"},
