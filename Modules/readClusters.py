@@ -3562,6 +3562,37 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
+def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
+    # For Instant Power
+    # Device Configuration PowerMeteringMultiplier can overwrite the Multiplier
+    # Device Configuration PowerMeteringDivisor can overwrite the Divisor
+    # For Summation 
+    # Device Configuration SummationMeteringMultiplier can overwrite the Multiplier
+    # Device Configuration SummationMeteringDivisor can overwrite the Divisor
+
+    conso = raw_value  # Raw value
+    multiplier = divisor = None
+    
+    modelName = self.ListOfDevices[NwkId]["Model"] if "Model" in self.ListOfDevices[NwkId] else None
+    # Check if we have a Device configuration overwrite
+    if modelName and modelName not in ( '', {} ):
+        if MsgAttrID == "0400":
+            # Instant Power
+            multiplier = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "PowerMeteringMultiplier")
+            divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "PowerMeteringDivisor")
+        elif MsgAttrID == "0000":
+            # Summation
+            multiplier = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "SummationMeteringMultiplier")
+            divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "SummationMeteringDivisor")
+
+    if multiplier is None:
+        multiplier = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0301"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0301" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
+    if divisor is None:
+        divisor = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0302"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
+
+    self.log.logging("Cluster", "Debug", "compute_metering_conso - Multiplier: %s , Divisior: %s " % (multiplier, divisor))
+
+    return round( (( conso * multiplier ) / divisor ), 3)
 
 def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
 
@@ -3650,7 +3681,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(conso), Attribute_="0000")
 
         else:
-            conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             if value > 0x7FFFFFFFFFFFFFFF:
                 self.log.logging(
                     "Cluster",
@@ -3894,7 +3925,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 MsgSrcAddr,
             )
             return
-        conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
         self.log.logging(
             "Cluster",
@@ -4049,7 +4080,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         elif MsgAttrID in ("4000", "4001", "4002"):  # Lx Energy Consuption (Meter)
             line = 1 + (int(MsgAttrID, 16) - 0x4000)
             fake_ep = "f%s" % line
-            conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0000", value)
+            conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0000", value)
 
             checkAndStoreAttributeValue(self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(value))
             self.ListOfDevices[MsgSrcAddr]["Ep"][fake_ep][MsgClusterId]["0000"] = str(conso)
@@ -4064,7 +4095,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         elif MsgAttrID in ("4100", "4101", "4102"):  # Reactive energy summation
             line = 1 + (int(MsgAttrID, 16) - 0x4100)
             fake_ep = "f%s" % line
-            conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0000", value)
+            conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0000", value)
             checkAndStoreAttributeValue(self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(conso))
 
         else:
