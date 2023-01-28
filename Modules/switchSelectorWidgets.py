@@ -12,7 +12,7 @@
 """
 
 
-SWITCH_LVL_MATRIX = {
+SWITCH_SELECTORS = {
     "Plug": {
         "00": (0, "Off"), 
         "01": (1, "On"), 

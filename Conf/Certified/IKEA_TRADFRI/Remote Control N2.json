@@ -27,5 +27,8 @@
         "0006": [],
         "0008": [],
         "0019": []
+    },
+    "Param": {
+        "resetSwitchSelectorPushButton": 30
     }
 }

@@ -13,7 +13,7 @@ import Domoticz
 
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2)
-from Modules.widgets import SWITCH_LVL_MATRIX
+from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 
 
@@ -121,19 +121,19 @@ def createSwitchSelector(self, nbSelector, DeviceType=None, OffHidden=False, Sel
     Options["SelectorStyle"] = "0"
 
     if DeviceType:
-        if DeviceType in SWITCH_LVL_MATRIX:
+        if DeviceType in SWITCH_SELECTORS:
             # In all cases let's populate with the Standard LevelNames
-            if "LevelNames" in SWITCH_LVL_MATRIX[DeviceType]:
-                Options["LevelNames"] = SWITCH_LVL_MATRIX[DeviceType]["LevelNames"]
+            if "LevelNames" in SWITCH_SELECTORS[DeviceType]:
+                Options["LevelNames"] = SWITCH_SELECTORS[DeviceType]["LevelNames"]
 
             # In case we have a localized version, we will overwrite the standard vesion
-            if self.pluginconf.pluginConf["Lang"] != "en-US" and "Language" in SWITCH_LVL_MATRIX[DeviceType]:
+            if self.pluginconf.pluginConf["Lang"] != "en-US" and "Language" in SWITCH_SELECTORS[DeviceType]:
                 lang = self.pluginconf.pluginConf["Lang"]
                 if (
-                    lang in SWITCH_LVL_MATRIX[DeviceType]["Language"]
-                    and "LevelNames" in SWITCH_LVL_MATRIX[DeviceType]["Language"][lang]
+                    lang in SWITCH_SELECTORS[DeviceType]["Language"]
+                    and "LevelNames" in SWITCH_SELECTORS[DeviceType]["Language"][lang]
                 ):
-                    Options["LevelNames"] = SWITCH_LVL_MATRIX[DeviceType]["Language"][lang]["LevelNames"]
+                    Options["LevelNames"] = SWITCH_SELECTORS[DeviceType]["Language"][lang]["LevelNames"]
 
             if Options["LevelNames"] != "":
                 count = sum(map(lambda x: 1 if "|" in x else 0, Options["LevelNames"]))
@@ -441,33 +441,33 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
 
 
 def number_switch_selectors( widget_type ):
-    if widget_type not in SWITCH_LVL_MATRIX:
+    if widget_type not in SWITCH_SELECTORS:
         return 0
-    if "LevelNames" not in SWITCH_LVL_MATRIX[ widget_type ]:
+    if "LevelNames" not in SWITCH_SELECTORS[ widget_type ]:
         return 0
-    levels = SWITCH_LVL_MATRIX[ widget_type ]["LevelNames"]
+    levels = SWITCH_SELECTORS[ widget_type ]["LevelNames"]
     return len( levels.split('|') )
 
 
 def off_hidden( widget_type ):
-    if widget_type not in SWITCH_LVL_MATRIX:
+    if widget_type not in SWITCH_SELECTORS:
         return False
-    if "OffHidden" not in SWITCH_LVL_MATRIX[ widget_type ]:
+    if "OffHidden" not in SWITCH_SELECTORS[ widget_type ]:
         return False
-    return SWITCH_LVL_MATRIX[ widget_type ]["OffHidden"]
+    return SWITCH_SELECTORS[ widget_type ]["OffHidden"]
 
 
 def selector_style( widget_type ):
-    if widget_type not in SWITCH_LVL_MATRIX:
+    if widget_type not in SWITCH_SELECTORS:
         return 0
-    if "SelectorStyle" not in SWITCH_LVL_MATRIX[ widget_type ]:
+    if "SelectorStyle" not in SWITCH_SELECTORS[ widget_type ]:
         return 0
-    return SWITCH_LVL_MATRIX[ widget_type ]["SelectorStyle"]
+    return SWITCH_SELECTORS[ widget_type ]["SelectorStyle"]
     
 
 def create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
 
-    if t not in SWITCH_LVL_MATRIX:
+    if t not in SWITCH_SELECTORS:
         return False
 
     _OffHidden=off_hidden( t )
