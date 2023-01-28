@@ -1671,3 +1671,46 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
     self.log.logging("Plugin", "Log", "")
     
     self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
+
+def is_domoticz_bellow_2020(self):
+    return self.DomoticzMajor < 2020
+
+
+def is_domoticz_bellow_2021(self):
+    return self.DomoticzMajor < 2021
+
+
+def is_domoticz_above_2022(self):
+    return self.DomoticzMajor > 2022
+
+
+def is_domoticz_above_2022_2(self):
+    if self.DomoticzMajor > 2022:
+        return True
+    return self.DomoticzMajor == 2022 and self.DomoticzMinor >= 2
+
+
+def is_domoticz_new_blind(self):
+    return is_domoticz_above_2022_2(self)
+
+
+def is_domoticz_update_SuppressTriggers( self ):
+    
+    if is_domoticz_above_2022:
+        return True
+    
+    if is_domoticz_bellow_2021:
+        return False
+
+    if self.DomoticzMajor == 2021 and self.DomoticzMinor == 1 and self.DomoticzBuild < 13374:
+        return False
+    
+    return True
+
+
+def is_domoticz_touch(self):
+    if self.VersionNewFashion:
+        return True
+    if self.DomoticzMajor >= 2022:
+        return True
+    return self.DomoticzMajor == 4 and self.DomoticzMinor >= 10547
