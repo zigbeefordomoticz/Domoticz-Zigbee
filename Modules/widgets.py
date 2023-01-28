@@ -13,8 +13,16 @@
 
 
 SWITCH_LVL_MATRIX = {
-    "Plug": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
-    "Door": {"00": (0, "Closed"), "01": (1, "Open"), "ForceUpdate": False},
+    "Plug": {
+        "00": (0, "Off"), 
+        "01": (1, "On"), 
+        "ForceUpdate": False
+    },
+    "Door": {
+        "00": (0, "Closed"), 
+        "01": (1, "Open"), 
+        "ForceUpdate": False
+    },
     "DoorLock": {
         # Doorlock widget seems to behave inverted
         "01": (0, "Closed"),
@@ -38,23 +46,52 @@ SWITCH_LVL_MATRIX = {
         "120105": (14, "140"),  # Key 5
         "121105": (15, "150"),
         "ForceUpdate": True,
+        "SelectorStyle": 1,
         "LevelNames": "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5",
         "Language": {
             "fr-FR": { "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5"}
         },
     },
-    "Smoke": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
-    "Water": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
-    "Switch": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
-    "ThermoOnOff": {0: (0, "Off"), 1: (1, "On"), "ForceUpdate": False},
-    "SwitchButton": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": True},
-    #"Motion": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": True},
-    "LivoloSWL": {"00": (0, "Off"), "01": (1, "On"), "ForceUpdate": False},
-    "LivoloSWR": {"10": (0, "Off"), "11": (1, "On"), "ForceUpdate": False},
+    "Smoke": {
+        "00": (0, "Off"), 
+        "01": (1, "On"), 
+        "ForceUpdate": False
+        },
+    "Water": {
+        "00": (0, "Off"), 
+        "01": (1, "On"), 
+        "ForceUpdate": False
+        },
+    "Switch": {
+        "00": (0, "Off"), 
+        "01": (1, "On"), 
+        "ForceUpdate": False
+        },
+    "ThermoOnOff": {
+        0: (0, "Off"), 
+        1: (1, "On"),
+        "ForceUpdate": False
+        },
+    "SwitchButton": {
+        "00": (0, "Off"), 
+        "01": (1, "On"), 
+        "ForceUpdate": True
+        },
+    "LivoloSWL": {
+        "00": (0, "Off"), 
+        "01": (1, "On"), 
+        "ForceUpdate": False
+        },
+    "LivoloSWR": {
+        "10": (0, "Off"), 
+        "11": (1, "On"), 
+        "ForceUpdate": False
+        },
     "INNR_RC110_SCENE": {
         "00": (0, "00"),
         "01": (1, "01"),
         "ForceUpdate": False,
+        "SelectorStyle": 1,
         "LevelNames": "Off|On|+|-|Long +|Long -|Release|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Marche|+|-|Long +|Long -|Rel.|Scène1|Scène2|Scène3|Scène4|Scène5|Scène6"}
@@ -64,6 +101,7 @@ SWITCH_LVL_MATRIX = {
         "00": (0, "00"),
         "01": (1, "01"),
         "ForceUpdate": False,
+        "SelectorStyle": 1,
         "LevelNames": "Off|On|+|-|Long +|Long -|Release",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Marche|+|-|Long +|Long -|Rel."}},
@@ -89,6 +127,7 @@ SWITCH_LVL_MATRIX = {
         "17": (17, "170"),  # ColorMove Up
         "18": (18, "180"),  # COlorMove Sop
         "ForceUpdate": True,
+        "SelectorStyle": 1,
         "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",
         "Language": {
             "fr-FR": { "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",}
@@ -120,7 +159,6 @@ SWITCH_LVL_MATRIX = {
         "04": (4, "40"),
         "ForceUpdate": True,
         "SelectorStyle":1,
-        
         "LevelNames": "button1|button2|button3|button4|button5",
         "Language": {
             "fr-FR": {"LevelNames": "Bouton1|Bouton2|Bouton3|Bouton4|Bouton5"}},
@@ -133,7 +171,6 @@ SWITCH_LVL_MATRIX = {
         "04": (4, "40"),
         "ForceUpdate": True,
         "SelectorStyle":1,
-        
         "LevelNames": "Off|On|-|+|Release",
         "Language": {
             "fr-FR": {"LevelNames": "Eteindre|Marche|-|+|Arrêt"}},
@@ -146,6 +183,8 @@ SWITCH_LVL_MATRIX = {
         "04": (4, "40"),
         "05": (5, "50"),
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "off|Click|Double click|Tripple click|Long click|Release",
         "Language": {
             "fr-FR": {"LevelNames": "off|Clic|Double clic|Triple clic|Long clic|Relacher"}},
@@ -157,6 +196,8 @@ SWITCH_LVL_MATRIX = {
         "movedown": (4, "40"),
         "stop": (5, "50"),
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Off|On|Dim +|Dim -|Stop",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Eteindre|Marche|Monter|Descendre|Arrêt"}},
@@ -177,7 +218,6 @@ SWITCH_LVL_MATRIX = {
         "02": (5, "50"),
         "ForceUpdate": True,
         "SelectorStyle":1,
-        
         "LevelNames": "Off|On|Dim +|Dim -|Stop|Toggle",
         "Language": {
             "fr-FR": {"LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt|Toggle"}},
@@ -223,6 +263,8 @@ SWITCH_LVL_MATRIX = {
         "80": (5, "50"),
         "255": (4, "40"),
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off | One click|Two clicks|Tree clicks|Four+ clicks",
         "Language": {
             "fr-FR": {"LevelNames": "Off | Simple click|Double click|Triple click|Quadruple+ click"}},
@@ -239,6 +281,8 @@ SWITCH_LVL_MATRIX = {
         "18": (5, "50"),
         "00": (0, "00"),
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Click|Double click|Long click|Release click|Shake",
         "Language": {
             "fr-FR": {"LevelNames": "Off|Click|Double click|Long click|Relacher click|Remuer"}},
@@ -255,7 +299,6 @@ SWITCH_LVL_MATRIX = {
         "00": (0, "00"),
         "ForceUpdate": True,
         "SelectorStyle":1,
-        
         "LevelNames": "Click|Double click|Long click|Release click|Shake",
         "Language": {
             "fr-FR": {"LevelNames": "Click|Double click|Long click|Relacher click|Remuer"}},
@@ -280,6 +323,8 @@ SWITCH_LVL_MATRIX = {
     },
     "DButton_3": {
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Left click|Left Double click|Left Long click|Right click|Right Double Click|Right Long click|Both click|Both Double click|Both Long click",
         "Language": {
             "fr-FR": { "LevelNames": "Arrêt|Click Gauche|Double click Gauche|Long Click Gauche|Click Droit|Double Click Droit|Long Click Droit|Click des 2|Double Click des 2|Long Click des 2"}
@@ -325,7 +370,6 @@ SWITCH_LVL_MATRIX = {
         "04": (4, "40"),
         "ForceUpdate": True,
         "SelectorStyle":1,
-        
         "LevelNames": "Off|On|Push Up|Push Down|Release",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Marche|Appuyer Haut|Appuyer Bas|Relacher"}},
@@ -358,6 +402,7 @@ SWITCH_LVL_MATRIX = {
         "left_hold": (12, "120"),
         #"release_down": (13, "130"),
         "ForceUpdate": True,
+        "SelectorStyle": 1,
         "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release",
         "Language": {
             "fr-FR": { "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"}
@@ -372,6 +417,7 @@ SWITCH_LVL_MATRIX = {
         "05": (5, "50"),
         "06": (6, "60"),
         "ForceUpdate": False,
+        "SelectorStyle": 1,
         "LevelNames": "Off| Manual| Schedule| Manual Energy Saver| Schedule Energy Saver| Holiday| Holiday Frost Protection",
         "Language": {
             "fr-FR": {
@@ -387,7 +433,6 @@ SWITCH_LVL_MATRIX = {
         "07": (5, "50"),  # Fan
         "ForceUpdate": False,
         "SelectorStyle":1,
-        
         "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}},
@@ -408,7 +453,6 @@ SWITCH_LVL_MATRIX = {
         2: (2, "20"),   # No-Freez
         "ForceUpdate": True,
         "SelectorStyle":1,
-        
         "LevelNames": "Off|Comfort|No-Freeze",
         "Language": {"fr-FR": {"LevelNames": "Arrêt|Confort|hors-gel"}},
     },   
@@ -480,6 +524,8 @@ SWITCH_LVL_MATRIX = {
     },
     "FIP": {
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Confort|Confort -1|Confort -2|Eco|Hors Gel|Arrêt"}},
@@ -496,6 +542,7 @@ SWITCH_LVL_MATRIX = {
     },
     "AlarmWD": {
         "ForceUpdate": True,
+        "SelectorStyle": 1,
         "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêter|Alarme|Sirène|Flash|Armer|Désarmer"}},
@@ -503,7 +550,6 @@ SWITCH_LVL_MATRIX = {
     "TuyaSiren": {
         "ForceUpdate": True,
         "SelectorStyle":1,
-        
         "00": (0, "00"),
         "01": (1, "10"),
         "02": (2, "20"),
@@ -547,6 +593,8 @@ SWITCH_LVL_MATRIX = {
         42: (11, "110"),
         43: (12, "120"),
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release",
         "Language": {
             "fr-FR": { "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"}
@@ -589,6 +637,8 @@ SWITCH_LVL_MATRIX = {
         "03": (3, "30"),  # Arm All Zones - Command Arm 0x00 - Payload Arm all Zone 0x03
         "04": (4, "40"),  # Disarm - Command 0x00 - Payload Disarm 0x00
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Emergency|Arm Day (Home Zones Only)|Arm All Zones|Disarm",
         "Language": {
             "fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}},
@@ -645,7 +695,6 @@ SWITCH_LVL_MATRIX = {
         "07": (4, "50"),  # Fan
         "ForceUpdate": False,
         "SelectorStyle":1,
-        
         "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"},
@@ -683,7 +732,6 @@ SWITCH_LVL_MATRIX = {
         "07": (4, "40"),  # Fan
         "ForceUpdate": False,
         "SelectorStyle":1,
-        
         "LevelNames": "Off|Cool|Heat|Dry|Fan",
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"},
@@ -701,6 +749,8 @@ SWITCH_LVL_MATRIX = {
         "70": (7, "70"),  # Approach
         "80": (8, "80"),  # Away
         "ForceUpdate": True,
+        "OffHidden": False, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Enter|Leave|Left_enter|Right_leave|Right_enter|Left_leave|Approach|Away",
     },
     "HeimanSceneSwitch": {
@@ -710,6 +760,8 @@ SWITCH_LVL_MATRIX = {
         0xf2: (3, "30"),
         0xf3: (4, "40"),
         "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
         "LevelNames": "Off|Movie|At Home|Sleep|Go Out",
         "Language": {
             "fr-FR": { "Off|Movie|At Home|Sleep|Go Out"}
