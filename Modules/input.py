@@ -32,7 +32,9 @@ from Modules.ikeaTradfri import (ikea_motion_sensor_8095,
                                  ikea_remote_control_8095,
                                  ikea_remote_switch_8085,
                                  ikea_remote_switch_8095,
-                                 ikea_wireless_dimer_8085)
+                                 ikea_wireless_dimer_8085,
+                                 ikea_remote_control_80A7,
+                                 ikea_remoteN2_control_80A7)
 from Modules.inRawAps import inRawAps
 from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
                                      legrand_remote_switch_8085,
@@ -4385,22 +4387,9 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
     MsgDirection = MsgData[10:12]
     unkown_ = MsgData[12:18]
     MsgSrcAddr = MsgData[18:22]
+    
+    _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
 
-    # Ikea Remote 5 buttons round.
-    #  ( cmd, directioni, cluster )
-    #  ( 0x07, 0x00, 0005 )  Click right button
-    #  ( 0x07, 0x01, 0005 )  Click left button
-
-    TYPE_DIRECTIONS = {"00": "right", "01": "left", "02": "middle"}
-    TYPE_ACTIONS = {"07": "click", "08": "hold", "09": "release"}
-    self.log.logging( "Input", 'Debug', "Decode80A7 - MsgData: %s" % MsgData, MsgSrcAddr)
-    self.log.logging(
-        "Input",
-        "Debug",
-        "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
-        % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
-        MsgSrcAddr,
-    )
     if MsgSrcAddr not in self.ListOfDevices:
         if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
             handle_unknow_device( self, MsgSrcAddr)
@@ -4416,54 +4405,16 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
 
     timeStamped(self, MsgSrcAddr, 0x80A7)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-    if "Model" not in self.ListOfDevices[MsgSrcAddr]:
-        return
 
-    if MsgClusterId == "0005" and MsgDirection not in TYPE_DIRECTIONS:
-        # Might be in the case of Release Left or Right
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode80A7 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
-            % (MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_),
-        )
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, Direction: %s, %s" % (
-            MsgCmd,
-            MsgDirection,
-            unkown_,
-        )
+    if _ModelName in ("TRADFRI remote control", ):
+        ikea_remote_control_80A7( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_ )      
+    elif _ModelName in ( "Remote Control N2",):
+        ikea_remoteN2_control_80A7( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_ )
 
-    elif MsgClusterId == "0005" and MsgCmd in TYPE_ACTIONS:
-        selector = TYPE_DIRECTIONS[MsgDirection] + "_" + TYPE_ACTIONS[MsgCmd]
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector)
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = selector
-        self.log.logging("Input", "Debug", "Decode80A7 - selector: %s" % selector, MsgSrcAddr)
-
-        if self.groupmgt and TYPE_DIRECTIONS[MsgDirection] in (
-            "right",
-            "left",
-        ):
-            self.groupmgt.manageIkeaTradfriRemoteLeftRight(MsgSrcAddr, TYPE_DIRECTIONS[MsgDirection])
     else:
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s"
-            % (
-                MsgSQN,
-                MsgSrcAddr,
-                MsgEP,
-                MsgClusterId,
-                MsgCmd,
-                MsgDirection,
-                unkown_,
-            ),
-        )
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, Direction: %s, %s" % (
-            MsgCmd,
-            MsgDirection,
-            unkown_,
-        )
+        self.log.logging( "Input", "Log", "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" % (
+            MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_, ),)
+        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, Direction: %s, %s" % ( MsgCmd, MsgDirection, unkown_, )
 
 
 def Decode8806(self, Devices, MsgData, MsgLQI):
