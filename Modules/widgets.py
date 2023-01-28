@@ -408,6 +408,29 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": { "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"}
         },
     },
+    "Ikea_Remote_2N": {
+        "00": (0, "00"),
+        "toggle": (1, "10"),
+        "left_click": (2, "20"),
+        "right_click": (3, "30"),
+        "click_up": (4, "40"),
+        "hold_up": (5, "50"),
+        "release_up": (6, "60"),
+        "click_down": (7, "70"),
+        "hold_down": (8, "80"),
+        "release_down": (9, "90"),
+        "right_hold": (10, "100"),
+        "right_release": (11, "110"),
+        "left_hold": (12, "120"),
+        "left_release": (13, "130"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release",
+        "Language": {
+            "fr-FR": { "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"}
+        },
+    },
+
     "ThermoModeEHZBRTS": {
         "00": (0, "Off"),
         "01": (1, "10"),

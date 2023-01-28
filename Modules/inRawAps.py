@@ -7,7 +7,7 @@ import struct
 
 from Modules.casaia import CASAIA_MANUF_CODE, casaiaReadRawAPS
 from Modules.domoMaj import MajDomoDevice
-from Modules.ikeaTradfri import ikea_openclose_remote
+from Modules.ikeaTradfri import ikea_openclose_remote, ikeaReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
 from Modules.livolo import livoloReadRawAPS
 from Modules.lumi import lumiReadRawAPS
@@ -22,6 +22,7 @@ from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
 # Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
     # Manuf : ( callbackDeviceAwake_xxxxx function )
+    "117c": ikeaReadRawAPS,
     "105e": schneiderReadRawAPS,
     "1021": legrandReadRawAPS,
     "120b": heimanReadRawAPS,
@@ -33,6 +34,7 @@ CALLBACK_TABLE = {
 
 CALLBACK_TABLE2 = {
     # Manufacturer Name
+    "IKEA of Sweden": ikeaReadRawAPS,
     "LIVOLO": livoloReadRawAPS,
     "欧瑞博": orviboReadRawAPS,
     "Legrand": legrandReadRawAPS,
