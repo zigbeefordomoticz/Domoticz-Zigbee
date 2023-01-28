@@ -299,8 +299,6 @@ def extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType):
     return _Type, GlobalEP, GlobalType
 
 
-
-
 def CreateDomoDevice(self, Devices, NWKID):
     """
     CreateDomoDevice
@@ -470,9 +468,15 @@ def selector_style( widget_type ):
 def create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
 
     if t in SWITCH_LVL_MATRIX:
-        Options = createSwitchSelector(self, 11, DeviceType=t, OffHidden=off_hidden( t ), SelectorStyle=selector_style( t ))
+        
+        _OffHidden=off_hidden( t )
+        _SelectorStyle=selector_style( t )
+        _num_level = number_switch_selectors( t )
+        
+        Options = createSwitchSelector(self, _num_level, DeviceType=t, OffHidden=_OffHidden, SelectorStyle=_SelectorStyle)
         createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-        self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - t: %s" % (t), NWKID)
+        self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - t: %s Levels: %s Off: %s Style: %s " % (
+            t, _num_level, _OffHidden, _SelectorStyle), NWKID)
         return
 
 
