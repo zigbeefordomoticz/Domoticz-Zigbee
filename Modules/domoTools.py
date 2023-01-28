@@ -12,16 +12,9 @@
 import time
 
 import Domoticz
-<<<<<<< Updated upstream
-
-from Modules.tools import lookupForIEEE
-from Modules.widgets import SWITCH_LVL_MATRIX
-from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
-=======
-from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (is_domoticz_touch,
                            is_domoticz_update_SuppressTriggers, lookupForIEEE)
->>>>>>> Stashed changes
+from Modules.widgets import SWITCH_LVL_MATRIX
 
 
 def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):

@@ -1055,10 +1055,10 @@ def get_domoticz_version( self ):
         self.DomoticzMinor = int(minor)
         self.VersionNewFashion = True
         
-    Domoticz.Log( "DomoticzBuild : %s" %self.DomoticzBuild) 
-    Domoticz.Log( "DomoticzMajor : %s" %self.DomoticzMajor) 
-    Domoticz.Log( "DomoticzMinor : %s" %self.DomoticzMinor) 
-    Domoticz.Log( "VersionNewFashion : %s" %self.VersionNewFashion) 
+    #Domoticz.Log( "DomoticzBuild : %s" %self.DomoticzBuild) 
+    #Domoticz.Log( "DomoticzMajor : %s" %self.DomoticzMajor) 
+    #Domoticz.Log( "DomoticzMinor : %s" %self.DomoticzMinor) 
+    #Domoticz.Log( "VersionNewFashion : %s" %self.VersionNewFashion) 
         
     return True
 
