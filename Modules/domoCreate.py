@@ -467,17 +467,17 @@ def selector_style( widget_type ):
 
 def create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
 
-    if t in SWITCH_LVL_MATRIX:
-        
-        _OffHidden=off_hidden( t )
-        _SelectorStyle=selector_style( t )
-        _num_level = number_switch_selectors( t )
-        
-        Options = createSwitchSelector(self, _num_level, DeviceType=t, OffHidden=_OffHidden, SelectorStyle=_SelectorStyle)
-        createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-        self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - t: %s Levels: %s Off: %s Style: %s " % (
-            t, _num_level, _OffHidden, _SelectorStyle), NWKID)
-        return
+    if t not in SWITCH_LVL_MATRIX:
+        return False
+
+    _OffHidden=off_hidden( t )
+    _SelectorStyle=selector_style( t )
+    _num_level = number_switch_selectors( t )
+    Options = createSwitchSelector(self, _num_level, DeviceType=t, OffHidden=_OffHidden, SelectorStyle=_SelectorStyle)
+    createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+    self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - t: %s Levels: %s Off: %s Style: %s " % (
+        t, _num_level, _OffHidden, _SelectorStyle), NWKID)
+    return True
 
 
 def colorcontrol_if_undefinded( self, Nwkid ):
