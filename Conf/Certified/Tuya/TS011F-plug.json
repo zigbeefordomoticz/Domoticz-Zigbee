@@ -42,6 +42,7 @@
         "000a": [ "0007" ],
         "0019": []
     },
+    "RMSCurrentDivisor": 1000,
     "Param": {
         "PowerOnAfterOffOn": 2,
         "TuyaBackLight": 1,
