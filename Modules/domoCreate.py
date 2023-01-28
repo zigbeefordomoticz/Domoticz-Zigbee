@@ -46,13 +46,13 @@ def deviceName(self, NWKID, DeviceType, IEEE_, EP_):
 
     _Model = _NickName = None
     devName = ""
-    self.log.logging("Widget", "Debug", "deviceName - %s/%s - %s %s" % (NWKID, EP_, IEEE_, DeviceType), NWKID)
+    self.log.logging("WidgetCreation", "Debug", "deviceName - %s/%s - %s %s" % (NWKID, EP_, IEEE_, DeviceType), NWKID)
     if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] != {}:
         _Model = self.ListOfDevices[NWKID]["Model"]
-        self.log.logging("Widget", "Debug", "deviceName - Model found: %s" % _Model, NWKID)
+        self.log.logging("WidgetCreation", "Debug", "deviceName - Model found: %s" % _Model, NWKID)
         if _Model in self.DeviceConf and "NickName" in self.DeviceConf[_Model]:
             _NickName = self.DeviceConf[_Model]["NickName"]
-            self.log.logging("Widget", "Debug", "deviceName - NickName found %s" % _NickName, NWKID)
+            self.log.logging("WidgetCreation", "Debug", "deviceName - NickName found %s" % _NickName, NWKID)
 
     if _NickName is None and _Model is None:
         _Model = ""
@@ -62,7 +62,7 @@ def deviceName(self, NWKID, DeviceType, IEEE_, EP_):
         devName = _Model + "_"
 
     devName += DeviceType + "-" + IEEE_ + "-" + EP_
-    self.log.logging("Widget", "Debug", "deviceName - Dev Name: %s" % devName, NWKID)
+    self.log.logging("WidgetCreation", "Debug", "deviceName - Dev Name: %s" % devName, NWKID)
 
     return devName
 
@@ -77,11 +77,11 @@ def FreeUnit(self, Devices, nbunit_=1):
     Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
     """
     if how_many_slot_available( Devices ) <= 5:
-        self.log.logging("Widget", "Status", "It seems that you can create only 5 Domoticz widgets more !!!")
+        self.log.logging("WidgetCreation", "Status", "It seems that you can create only 5 Domoticz widgets more !!!")
     elif how_many_slot_available( Devices ) <= 15:
-        self.log.logging("Widget", "Status", "It seems that you can create only 15 Domoticz widgets more !!")
+        self.log.logging("WidgetCreation", "Status", "It seems that you can create only 15 Domoticz widgets more !!")
     elif how_many_slot_available( Devices ) <= 30:
-        self.log.logging("Widget", "Status", "It seems that you can create only 30 Domoticz widgets more !")
+        self.log.logging("WidgetCreation", "Status", "It seems that you can create only 30 Domoticz widgets more !")
         
     for x in range(1, 255):
         if x not in Devices:
@@ -94,10 +94,10 @@ def FreeUnit(self, Devices, nbunit_=1):
                 else:
                     break
                 if nb == nbunit_:  # We have found nbunit consecutive slots
-                    self.log.logging("Widget", "Debug", "FreeUnit - device " + str(x) + " available")
+                    self.log.logging("WidgetCreation", "Debug", "FreeUnit - device " + str(x) + " available")
                     return x
 
-    self.log.logging("Widget", "Debug", "FreeUnit - device " + str(len(Devices) + 1))
+    self.log.logging("WidgetCreation", "Debug", "FreeUnit - device " + str(len(Devices) + 1))
     return len(Devices) + 1
 
 
@@ -167,10 +167,10 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     """
 
     unit = FreeUnit(self, Devices)
-    self.log.logging("Widget", "Debug", "CreateDomoDevice - unit: %s" % unit, nwkid)
+    self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - unit: %s" % unit, nwkid)
 
     self.log.logging(
-        "Widget",
+        "WidgetCreation",
         "Debug",
         "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s"
         % (cType, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, Image, ForceClusterType),
@@ -218,44 +218,44 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
 
 def over_write_type_from_deviceconf( self, Devices, NwkId):
 
-    self.log.logging( "Widget", "Debug", "over_write_type_from_deviceconf - NwkId to be processed : %s " % NwkId, NwkId )
+    self.log.logging( "WidgetCreation", "Debug", "over_write_type_from_deviceconf - NwkId to be processed : %s " % NwkId, NwkId )
     if NwkId not in self.ListOfDevices:
-        self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s not found " % NwkId, NwkId )
+        self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s not found " % NwkId, NwkId )
         return
     if 'Ep' not in self.ListOfDevices[ NwkId ]:
-        self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Ep' not found" % NwkId, NwkId )
+        self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Ep' not found" % NwkId, NwkId )
         return
 
     if "Model" not in self.ListOfDevices[ NwkId ]:
-        self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Model' not found" % NwkId, NwkId )
+        self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Model' not found" % NwkId, NwkId )
         return
     _model = self.ListOfDevices[ NwkId ]["Model"]
     if _model not in self.DeviceConf:
-        self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s Model: %s not found in DeviceConf" % (NwkId, _model), NwkId )
+        self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s Model: %s not found in DeviceConf" % (NwkId, _model), NwkId )
         return
     _deviceConf = self.DeviceConf[ _model ]
 
     for _ep in self.ListOfDevices[ NwkId ]['Ep']:
         if _ep not in _deviceConf['Ep']:
-            self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s 'ep: %s' not found in DeviceConf" % (NwkId, _ep), NwkId )
+            self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'ep: %s' not found in DeviceConf" % (NwkId, _ep), NwkId )
             continue
         if "Type" not in _deviceConf['Ep'][ _ep ]:
-            self.log.logging( "Widget", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Type' not found in DevieConf" % (NwkId,), NwkId )
+            self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Type' not found in DevieConf" % (NwkId,), NwkId )
             continue
         if "Type" in self.ListOfDevices[ NwkId ]['Ep'][ _ep ] and self.ListOfDevices[ NwkId ]['Ep'][ _ep ]["Type"] == _deviceConf['Ep'][ _ep ]["Type"]:
-            self.log.logging( "Widget", "Debug", "over_write_type_from_deviceconf - NwkId : %s Device Type: %s == Device Conf Type: %s" % (
+            self.log.logging( "WidgetCreation", "Debug", "over_write_type_from_deviceconf - NwkId : %s Device Type: %s == Device Conf Type: %s" % (
                 NwkId,self.ListOfDevices[ NwkId ]['Ep'][ _ep ]["Type"] , _deviceConf['Ep'][ _ep ]["Type"]), NwkId )
             continue
 
         self.log.logging(
-            "Widget", "Debug", "over_write_type_from_deviceconf - Ep Overwrite Type with a new one %s on ep: %s" % (
+            "WidgetCreation", "Debug", "over_write_type_from_deviceconf - Ep Overwrite Type with a new one %s on ep: %s" % (
                 _deviceConf['Ep'][ _ep ]["Type"], _ep), NwkId )
 
         self.ListOfDevices[ NwkId ]['Ep'][ _ep ]["Type"] = _deviceConf['Ep'][ _ep ]["Type"]
 
 
 def extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType):
-    self.log.logging( "Widget", "Debug", "extract_key_infos - entering %s %s %s" % ( Ep, GlobalEP, str(GlobalType)), NWKID )
+    self.log.logging( "WidgetCreation", "Debug", "extract_key_infos - entering %s %s %s" % ( Ep, GlobalEP, str(GlobalType)), NWKID )
     _dType = ""
     _aType = ""
     _Type = ""
@@ -263,25 +263,25 @@ def extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType):
     if "Type" in self.ListOfDevices[NWKID]["Ep"][Ep]:
         if self.ListOfDevices[NWKID]["Ep"][Ep]["Type"] == "":
             _Type = GetType(self, NWKID, Ep).split("/")
-            self.log.logging( "Widget", "Debug", "CreateDomoDevice - Type via GetType: %s Ep: %s" %( 
+            self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - Type via GetType: %s Ep: %s" %( 
                 str(_Type) , str(Ep)), NWKID )
         else:
             _dType = self.ListOfDevices[NWKID]["Ep"][Ep]["Type"]
             _aType = str(_dType)
             _Type = _aType.split("/")
-            self.log.logging( "Widget", "Debug", "CreateDomoDevice - Type via ListOfDevice: %s Ep: %s" %( 
+            self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - Type via ListOfDevice: %s Ep: %s" %( 
                 str(_Type), str(Ep)), NWKID, )
             
     elif self.ListOfDevices[NWKID]["Type"] in [{}, ""]:
         _Type = GetType(self, NWKID, Ep).split("/")
-        self.log.logging( "Widget", "Debug", "CreateDomoDevice - Type via GetType: %s Ep: %s" %( 
+        self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - Type via GetType: %s Ep: %s" %( 
             str(_Type), str(Ep)), NWKID )
         
     else:
         GlobalEP = True
         if "Type" in self.ListOfDevices[NWKID]:
             Type = self.ListOfDevices[NWKID]["Type"].split("/")
-            self.log.logging("Widget", "Debug", "CreateDomoDevice - Type : %s " %(str(_Type)), NWKID)
+            self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Type : %s " %(str(_Type)), NWKID)
 
     # Check if Type is known
     if len(_Type) == 1 and _Type[0] == "":
@@ -289,11 +289,11 @@ def extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType):
 
     for iterType in _Type:
         if iterType not in GlobalType and iterType != "":
-            self.log.logging( "Widget", "Debug", "adding Type : %s to Global Type: %s" % (
+            self.log.logging( "WidgetCreation", "Debug", "adding Type : %s to Global Type: %s" % (
                 iterType, str(GlobalType)), NWKID )
             GlobalType.append(iterType)
             
-    self.log.logging( "Widget", "Debug", "extract_key_infos - returning %s %s %s" % (
+    self.log.logging( "WidgetCreation", "Debug", "extract_key_infos - returning %s %s %s" % (
         _Type, GlobalEP, str(GlobalType)), NWKID )
             
     return _Type, GlobalEP, GlobalType
@@ -321,11 +321,11 @@ def CreateDomoDevice(self, Devices, NWKID):
     GlobalEP = False
     GlobalType = []
 
-    self.log.logging( "Widget", "Debug", "CreatDomoDevice - Ep to be processed : %s " % self.ListOfDevices[NWKID]["Ep"].keys(), NWKID )
+    self.log.logging( "WidgetCreation", "Debug", "CreatDomoDevice - Ep to be processed : %s " % self.ListOfDevices[NWKID]["Ep"].keys(), NWKID )
     for Ep in self.ListOfDevices[NWKID]["Ep"]:
 
         # Use 'type' at level EndPoint if existe
-        self.log.logging("Widget", "Debug", "CreatDomoDevice - Process EP : %s GlobalEP: %s GlobalType: %s" %( 
+        self.log.logging("WidgetCreation", "Debug", "CreatDomoDevice - Process EP : %s GlobalEP: %s GlobalType: %s" %( 
             Ep, GlobalEP, str(GlobalType)), NWKID)
    
         if GlobalEP:
@@ -333,7 +333,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             break
         
         Type, GlobalEP, GlobalType = extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType)
-        self.log.logging("Widget", "Debug", "CreatDomoDevice - Type: %s GlobalEp: %s GlobalType: %s" %( 
+        self.log.logging("WidgetCreation", "Debug", "CreatDomoDevice - Type: %s GlobalEp: %s GlobalType: %s" %( 
             Type, GlobalEP, str(GlobalType)), NWKID)
         
         if Type is None:
@@ -343,10 +343,10 @@ def CreateDomoDevice(self, Devices, NWKID):
         # In such case and the device is a Bulb or a Dimmer Switch we will get a combinaison of Switch/LvlControl and ColorControlxxx
         # We want to avoid creating of 3 widgets while 1 is enought.
         # if self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:
-        self.log.logging("Widget", "Debug", "---> Check if we need to reduce Type: %s" % Type)
+        self.log.logging("WidgetCreation", "Debug", "---> Check if we need to reduce Type: %s" % Type)
         Type = cleanup_widget_Type(Type)
 
-        self.log.logging("Widget", "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
+        self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
         if "ClusterType" not in self.ListOfDevices[NWKID]["Ep"][Ep]:
             self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"] = {}
@@ -360,7 +360,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             create_native_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Temp+Humo")
 
         for t in Type:
-            self.log.logging( "Widget", "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" % (DeviceID_IEEE, Ep, t), NWKID )
+            self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" % (DeviceID_IEEE, Ep, t), NWKID )
 
             t = update_widget_type_if_possible( self, NWKID, t)
 
@@ -377,7 +377,7 @@ def CreateDomoDevice(self, Devices, NWKID):
     update_device_type( self, NWKID, GlobalType )
 
 def update_device_type( self, NWKID, GlobalType ):
-    self.log.logging("Widget", "Debug", "GlobalType: %s" % (str(GlobalType)), NWKID)
+    self.log.logging("WidgetCreation", "Debug", "GlobalType: %s" % (str(GlobalType)), NWKID)
     if len(GlobalType) != 0:
         self.ListOfDevices[NWKID]["Type"] = ""
         for iterType in GlobalType:
@@ -385,7 +385,7 @@ def update_device_type( self, NWKID, GlobalType ):
                 self.ListOfDevices[NWKID]["Type"] = iterType
             else:
                 self.ListOfDevices[NWKID]["Type"] = self.ListOfDevices[NWKID]["Type"] + "/" + iterType
-        self.log.logging( "Widget", "Debug", "CreatDomoDevice - Set Type to : %s" % self.ListOfDevices[NWKID]["Type"], NWKID )
+        self.log.logging( "WidgetCreation", "Debug", "CreatDomoDevice - Set Type to : %s" % self.ListOfDevices[NWKID]["Type"], NWKID )
 
 
 def update_widget_type_if_possible( self, Nwkid, widget_type):
@@ -472,12 +472,12 @@ def create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     if t in SWITCH_LVL_MATRIX:
         Options = createSwitchSelector(self, 11, DeviceType=t, OffHidden=off_hidden( t ), SelectorStyle=selector_style( t ))
         createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
-        self.log.logging("Widget", "Debug", "create_switch_selector_widget - t: %s" % (t), NWKID)
+        self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - t: %s" % (t), NWKID)
         return
 
 
 def colorcontrol_if_undefinded( self, Nwkid ):
-    self.log.logging("Widget", "Debug", "colorcontrol_if_undefinded %s" % (Nwkid), Nwkid)
+    self.log.logging("WidgetCreation", "Debug", "colorcontrol_if_undefinded %s" % (Nwkid), Nwkid)
     # variateur de couleur/luminosite/on-off
     # Generic ColorControl, let's try to find a better one.
     if "Epv2" in self.ListOfDevices[Nwkid]:
@@ -518,7 +518,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
     
     widget_record = SIMPLE_WIDGET[ widget_name ]
     if "widgetType" in widget_record:
-        self.log.logging( "Widget", "Debug", "CreateDomoDevice - Type: %s Widget %s for %s" %(
+        self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - Type: %s Widget %s for %s" %(
             widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
         createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
         return True
