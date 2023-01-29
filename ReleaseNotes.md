@@ -20,6 +20,7 @@ Release Numbering
 
 ##    Jan. 2023 - stable6 - 6.3.010 
 
+- [WebUI] - Revert the input zone for device nickname
 - Technical] - Supporting SSL without checking Self Signed Certificates
 - [Hardware] - Smart Plug 20A EU manufacturer by Tuya
 - [Hardware] - Ikea_LED1924G9
