@@ -275,8 +275,6 @@ class BasePlugin:
         
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
-        _current_python_version_major = 3
-        _current_python_version_minor = 7
 
         Domoticz.Status( "Python3 requires 3.8 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
