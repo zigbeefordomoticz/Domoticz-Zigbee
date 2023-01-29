@@ -273,14 +273,14 @@ class BasePlugin:
         
         Domoticz.Status( "Zigbee for Domoticz plugin started!")
         
-        current_python_version_major = sys.version_info.major
-        current_python_version_minor = sys.version_info.minor
-        
+        _current_python_version_major = sys.version_info.major
+        _current_python_version_minor = sys.version_info.minor
+
         Domoticz.Status( "Python3 requires 3.8 or above and you are running %s.%s" %(
-            current_python_version_major, current_python_version_minor))
+            _current_python_version_major, _current_python_version_minor))
     
         # TODO put the check of python3.8 on hold
-        # assert sys.version_info >= (3, 8)  # nosec
+        assert sys.version_info >= (3, 7)  # nosec
         
         if check_requirements( self ):
             self.onStop()
@@ -386,12 +386,12 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging(
-            "Plugin",
-            "Status",
-            "Zigbee for Domoticz (z4d) plugin %s-%s started"
-            % (self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]),
-        )
+        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s started"
+            % (self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
+        if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
+            self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
+                _current_python_version_major , _current_python_version_minor))
+
 
         # Debuging information
         debuging_information(self, "Debug")
