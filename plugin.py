@@ -279,8 +279,8 @@ class BasePlugin:
         Domoticz.Status( "Python3 requires 3.8 or above and you are running %s.%s" %(
             current_python_version_major, current_python_version_minor))
     
-        
-        assert sys.version_info >= (3, 8)  # nosec
+        # TODO put the check of python3.8 on hold
+        # assert sys.version_info >= (3, 8)  # nosec
         
         if check_requirements( self ):
             self.onStop()
