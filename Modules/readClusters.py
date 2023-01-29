@@ -3578,9 +3578,9 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
     elif unit == "Unitless":
         conso = raw_value
     else:
-        self.log.logging("Cluster", "Error", "compute_metering_conso - Unknown %s/%s %s" %( 
-            NwkId, MsgSrcEp,self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0300"] ), NwkId)
-        conso = raw_value
+        self.log.logging("Cluster", "Error", "compute_metering_conso - Unknown %s/%s assuming kW" %( 
+            NwkId, MsgSrcEp ), NwkId)
+        conso = raw_value * 1000
         
     multiplier = None
     divisor = None
