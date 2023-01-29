@@ -3571,13 +3571,17 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
     # Device Configuration SummationMeteringMultiplier can overwrite the Multiplier
     # Device Configuration SummationMeteringDivisor can overwrite the Divisor
 
-    unit = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0300"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0300" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else "kW" )
+    # Get the Unit, to see if we have Kilo, so then multiply by 1000.
+    unit = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "MeteringUnit")
+    if unit is None:
+        unit = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0300"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0300" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else "kW" )
     if unit == "kW":
-        # Domoticz expect in Watt/h
+        # Domoticz expect in Watts
         conso = raw_value * 1000
     elif unit == "Unitless":
         conso = raw_value
     else:
+        # We assumed default as kW
         self.log.logging("Cluster", "Error", "compute_metering_conso - Unknown %s/%s assuming kW" %( 
             NwkId, MsgSrcEp ), NwkId)
         conso = raw_value * 1000
@@ -3597,13 +3601,15 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
             divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "SummationMeteringDivisor")
 
     if multiplier is None:
+        # By default Multiplier is assumed to be 1
         multiplier = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0301"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0301" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
     if divisor is None:
+        # By default Multiplier is assumed to be 1
         divisor = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0302"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
  
-    self.log.logging("Cluster", "Debug", "compute_metering_conso - Multiplier: %s , Divisior: %s " % (multiplier, divisor))
-
     conso = round( (( conso * multiplier ) / divisor ), 3)
+    self.log.logging("Cluster", "Debug", "compute_metering_conso - %s/%s Unit: %s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
+        NwkId, MsgSrcEp, unit, multiplier, divisor, raw_value, conso), NwkId)
 
     if ( 
         MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] 
@@ -3614,41 +3620,6 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
         ReadAttributeRequest_0702_multiplier_divisor(self,NwkId )
        
     return conso
-
-def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
-
-    conso = raw_value  # Raw value
-    if "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET2", ):
-        value = round(conso / 10, 3)
-        
-    elif "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET1", ):
-        value = round(conso / 1000, 3)
-
-    elif MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-        diviser = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0302"]
-        value = round(conso / (diviser / 1000), 3)
-        self.log.logging("Cluster", "Debug", "compute_conso - %s Power %s, div: %s --> %s Watts" % (MsgAttrID, conso, diviser, value))
-
-    elif MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0301" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-        multiplier = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0301"]
-        value = round(conso * multiplier, 3)
-        self.log.logging( "Cluster", "Debug", "compute_conso - %s Power %s, multiply: %s --> %s Watts" % (
-            MsgAttrID, conso, multiplier, value), )
-    else:
-        # Old fashion
-        value = round(conso / 10, 3)
-        if "Model" in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]["Model"] == "EH-ZB-SPD-V2":
-                value = round(conso, 3)
-
-            elif self.ListOfDevices[MsgSrcAddr]["Model"] == "TS0121":
-                value = round(conso * 10, 3)
-
-            elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("PC321", "CPC321"):
-                value = round(conso, 3)
-
-    return value
-
 
 def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
@@ -4043,7 +4014,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if MsgAttrID in ("2000", "2001", "2002"):  # Lx phase Power
             line = 1 + (int(MsgAttrID, 16) - 0x2000)
             fake_ep = "f%s" % line
-            conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
             checkAndStoreAttributeValue(self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(conso))
             self.ListOfDevices[MsgSrcAddr]["Ep"][fake_ep][MsgClusterId]["0400"] = str(conso)
@@ -4058,7 +4029,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         elif MsgAttrID in ("2100", "2101", "2102"):  # Reactive Power
             line = 1 + (int(MsgAttrID, 16) - 0x2100)
             fake_ep = "f%s" % line
-            conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0400", value)
+            conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0400", value)
             checkAndStoreAttributeValue(self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(conso))
 
         elif MsgAttrID in ("3000", "3001", "3002"):  # Lx Voltage
