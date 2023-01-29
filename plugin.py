@@ -1281,7 +1281,7 @@ def check_firmware_level(self):
         self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
         return False
 
-    if int(self.FirmwareVersion, 16) > 0x0321:
+    if int(self.FirmwareVersion, 16) > 0x0323:
         self.log.logging("Plugin", "Error", "WARNING: Firmware %s is not yet supported" % self.FirmwareVersion.lower())
         self.pluginconf.pluginConf["forceAckOnZCL"] = False
         return True
