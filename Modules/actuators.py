@@ -231,12 +231,10 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
     # First manage level
     # if Hue_List['m'] or Hue_List['m'] != 9998 or manage_level:
     if Hue_List["m"] or Hue_List["m"] != 9998:
-        OnOff = "01"  # 00 = off, 01 = on
         value = int(1 + value * 254 / 100)  # To prevent off state
         self.log.logging("Command", "Debug", "---------- Set Level: %s" % (value), nwkid)
-        # u16TransitionTime is the time taken, in units of tenths of a second, to reach the target level
-        # (0xFFFF means use the u16OnOffTransitionTime attribute instead
-        actuator_setlevel(self, nwkid, EPout, value, "Light", "ffff")
+        transitionMoveLevel = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToLevel"]) if "moveToLevel" in self.ListOfDevices[nwkid]["Param"] else "0000"
+        actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)
 
     # ColorModeTemp = 2   // White with color temperature. Valid fields: t
     if Hue_List["m"] == 2:

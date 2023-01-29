@@ -98,7 +98,7 @@ PLUGIN_MODELS_MATRIX = [
         "Manufacturer": [ 
             "_TZ3000_w0qqde0g", "_TZ3000_gjnozsaz", "_TZ3000_zloso4jk","_TZ3000_cphmq0q7", 
             "_TZ3000_ew3ldmgx", "_TZ3000_dpo1ysak", "_TZ3000_typdpbpg", "_TZ3000_ksw8qtmt",
-            "_TZ3000_amdymr7l", "_TZ3000_2putqrmw",],
+            "_TZ3000_amdymr7l", "_TZ3000_2putqrmw", "_TZ3000_gvn91tmx"],
         "ManufId": [],
         "PluginModelName": "TS011F-plug" },
     

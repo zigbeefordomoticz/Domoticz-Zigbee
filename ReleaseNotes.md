@@ -18,6 +18,18 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+##    Jan. 2023 - stable6 - 6.3.010 
+
+- [WebUI] - Revert the input zone for device nickname
+- Technical] - Supporting SSL without checking Self Signed Certificates
+- [Hardware] - Smart Plug 20A EU manufacturer by Tuya
+- [Hardware] - Ikea_LED1924G9
+- [Hardware] - Lonsonho_QS-Zigbee-D02-TRIAC-L
+- [Hardware] - Lonsonho_QS-Zigbee-D02-TRIAC-LN
+- [Hardware] - LEDVANCE Ampoule LED E14 5W 
+- [Hardware] - Paulmann 50052 SmartHome Zigbee LED
+- [Hardware] - KAIYE Tuya Smart Zigbee Ampoule LED
+
 ##    Jan. 2023 - stable6 - 6.3.009 / 2023.1
 
 - [Hardware] - Managing Power state for TS0001 smart relay
