@@ -782,87 +782,30 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 
     if MsgClusterID in ("8032", "8033"):
         # Routing table: Mgmt_Rtg_rsp
-        mgmt_rtg_rsp(
-            self,
-            srcnwkid,
-            MsgSourcePoint,
-            MsgClusterID,
-            dstnwkid,
-            MsgDestPoint,
-            MsgPayload,
-        )
+        mgmt_rtg_rsp( self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload, )
         return
 
     if MsgProfilID != "0104":
         # Not handle
-        self.log.logging(
-            "inRawAPS",
-            "Debug",
-            "Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s"
-            % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload),
-            srcnwkid,
-        )
+        self.log.logging( "inRawAPS", "Debug", "Decode8002 - NwkId: %s Ep: %s Cluster: %s Payload: %s" % (
+            srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload), srcnwkid, )
         return
 
-    (
-        default_response,
-        GlobalCommand,
-        Sqn,
-        ManufacturerCode,
-        Command,
-        Data,
-    ) = retreive_cmd_payload_from_8002(MsgPayload)
+    (default_response,GlobalCommand,Sqn,ManufacturerCode,Command,Data,) = retreive_cmd_payload_from_8002(MsgPayload)
 
     if "SQN" in self.ListOfDevices[srcnwkid] and Sqn == self.ListOfDevices[srcnwkid]["SQN"]:
-        self.log.logging(
-            "inRawAPS",
-            "Debug",
-            "Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
-            % (
-                srcnwkid,
-                MsgSourcePoint,
-                MsgClusterID,
-                GlobalCommand,
-                Command,
-                Data,
-            ),
-            srcnwkid,
-        )
+        self.log.logging( "inRawAPS", "Debug", "Decode8002 - Duplicate message drop NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s" % (
+            srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data, ), srcnwkid, )
         return
 
     updSQN(self, srcnwkid, Sqn)
 
     if GlobalCommand and int(Command, 16) in ZIGBEE_COMMAND_IDENTIFIER:
-        self.log.logging(
-            "inRawAPS",
-            "Debug",
-            "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s"
-            % (
-                srcnwkid,
-                MsgSourcePoint,
-                MsgClusterID,
-                GlobalCommand,
-                Command,
-                ZIGBEE_COMMAND_IDENTIFIER[int(Command, 16)],
-                Data,
-            ),
-            srcnwkid,
-        )
+        self.log.logging( "inRawAPS", "Debug", "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s (%33s) Data: %s" % (
+            srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, ZIGBEE_COMMAND_IDENTIFIER[int(Command, 16)], Data, ), srcnwkid, )
     else:
-        self.log.logging(
-            "inRawAPS",
-            "Debug",
-            "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s"
-            % (
-                srcnwkid,
-                MsgSourcePoint,
-                MsgClusterID,
-                GlobalCommand,
-                Command,
-                Data,
-            ),
-            srcnwkid,
-        )
+        self.log.logging( "inRawAPS", "Debug", "Decode8002 - NwkId: %s Ep: %s Cluster: %s GlobalCommand: %5s Command: %s Data: %s" % (
+            srcnwkid, MsgSourcePoint, MsgClusterID, GlobalCommand, Command, Data, ), srcnwkid, )
 
     updLQI(self, srcnwkid, MsgLQI)
 
@@ -874,20 +817,8 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
 
         data = Sqn + MsgSourcePoint + MsgClusterID + cmd + direction + "000000" + srcnwkid
 
-        self.log.logging(
-            "inRawAPS",
-            "Debug",
-            "Decode8002 - Sqn: %s NwkId %s Ep %s Cluster %s Cmd %s Direction %s"
-            % (
-                Sqn,
-                srcnwkid,
-                MsgClusterID,
-                MsgClusterID,
-                cmd,
-                direction,
-            ),
-            srcnwkid,
-        )
+        self.log.logging( "inRawAPS", "Debug", "Decode8002 - Sqn: %s NwkId %s Ep %s Cluster %s Cmd %s Direction %s" % ( 
+            Sqn, srcnwkid, MsgClusterID, MsgClusterID, cmd, direction, ), srcnwkid, )
         Decode80A7(self, Devices, data, MsgLQI)
         return
 
@@ -903,21 +834,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     ):
         return
 
-    inRawAps(
-        self,
-        Devices,
-        srcnwkid,
-        MsgSourcePoint,
-        MsgClusterID,
-        dstnwkid,
-        MsgDestPoint,
-        Sqn,
-        GlobalCommand,
-        ManufacturerCode,
-        Command,
-        Data,
-        MsgPayload,
-    )
+    inRawAps( self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, Sqn, GlobalCommand, ManufacturerCode, Command, Data, MsgPayload, )
     callbackDeviceAwake(self, Devices, srcnwkid, MsgSourcePoint, MsgClusterID)
 
 

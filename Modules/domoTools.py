@@ -12,10 +12,9 @@
 import time
 
 import Domoticz
-
-from Modules.tools import lookupForIEEE
+from Modules.tools import (is_domoticz_touch,
+                           is_domoticz_update_SuppressTriggers, lookupForIEEE)
 from Modules.widgets import SWITCH_LVL_MATRIX
-from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 
 
 def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):
@@ -343,20 +342,9 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         )
 
 
-def Update_Battery_Device(
-    self,
-    Devices,
-    NwkId,
-    BatteryLvl,
-):
+def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
 
-    if not self.VersionNewFashion:
-        return
-    if self.DomoticzMajor < 2021:
-        return
-    if self.DomoticzMajor < 1:
-        return
-    if self.DomoticzMajor == 2021 and self.DomoticzMinor == 1 and self.DomoticzBuild < 13374:
+    if not is_domoticz_update_SuppressTriggers( self ):
         return
 
     if NwkId not in self.ListOfDevices:
@@ -368,19 +356,13 @@ def Update_Battery_Device(
     for device_unit in Devices:
         if Devices[device_unit].DeviceID != ieee:
             continue
-        self.log.logging(
-            "Widget",
-            "Debug",
-            "Update_Battery_Device Battery: now: %s prev: %s (%15s)"
-            % (BatteryLvl, Devices[device_unit].BatteryLevel, Devices[device_unit].Name),
-        )
+        self.log.logging( "Widget", "Debug", "Update_Battery_Device Battery: now: %s prev: %s (%15s)" % (
+            BatteryLvl, Devices[device_unit].BatteryLevel, Devices[device_unit].Name), )
 
         if Devices[device_unit].BatteryLevel == int(BatteryLvl):
             continue
 
-        self.log.logging(
-            "Widget", "Debug", "Update_Battery_Device Battery: %s  (%15s)" % (BatteryLvl, Devices[device_unit].Name)
-        )
+        self.log.logging( "Widget", "Debug", "Update_Battery_Device Battery: %s  (%15s)" % (BatteryLvl, Devices[device_unit].Name) )
         Devices[device_unit].Update(
             nValue=Devices[device_unit].nValue,
             sValue=Devices[device_unit].sValue,
@@ -467,16 +449,9 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
 
     if Unit:
         # self.log.logging( "Widget", "Debug2", "Touch unit %s" %( Devices[Unit].Name ))
-        if not self.VersionNewFashion and (
-            self.DomoticzMajor < 4 or (self.DomoticzMajor == 4 and self.DomoticzMinor < 10547)
-        ):
-            self.log.logging(
-                "Widget",
-                "Debug2",
-                "Not the good Domoticz level for lastSeenUpdate %s %s %s"
-                % (self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor),
-                NwkId,
-            )
+        if not is_domoticz_touch(self):
+            self.log.logging( "Widget", "Log", "Not the good Domoticz level for lastSeenUpdate %s %s %s" % (
+                self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor), NwkId, )
             return
         # Extract NwkId from Device Unit
         IEEE = Devices[Unit].DeviceID
@@ -490,38 +465,22 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
     if NwkId:
         if NwkId not in self.ListOfDevices:
             return
-
         if "IEEE" not in self.ListOfDevices[NwkId]:
             return
-
         if "Stamp" not in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]["Stamp"] = {"Time": {}, "MsgType": {}, "LastSeen": 0}
         if "LastSeen" not in self.ListOfDevices[NwkId]["Stamp"]:
             self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] = 0
-
         if "ErrorManagement" in self.ListOfDevices[NwkId]:
             self.ListOfDevices[NwkId]["ErrorManagement"] = 0
-
         if "Health" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Health"] not in ( "Disabled", ):
             self.ListOfDevices[NwkId]["Health"] = "Live"
 
-        # if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
-        #    #self.log.logging( "Widget", "Debug", "Too early for a new update of lastSeenUpdate %s" %NwkId, NwkId)
-        #    return
-        # self.log.logging( "Widget", "Debug", "Update LastSeen for device %s" %NwkId, NwkId)
-
         self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] = int(time.time())
         _IEEE = self.ListOfDevices[NwkId]["IEEE"]
-        if not self.VersionNewFashion and (
-            self.DomoticzMajor < 4 or (self.DomoticzMajor == 4 and self.DomoticzMinor < 10547)
-        ):
-            self.log.logging(
-                "Widget",
-                "Debug",
-                "Not the good Domoticz level for Touch %s %s %s"
-                % (self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor),
-                NwkId,
-            )
+        if not is_domoticz_touch(self):
+            self.log.logging( "Widget", "Log", "Not the good Domoticz level for Touch %s %s %s" % (
+                self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor), NwkId, )
             return
         for x in list(Devices):
             if x in Devices and Devices[x].DeviceID == _IEEE:
