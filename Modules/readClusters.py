@@ -3571,9 +3571,19 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
     # Device Configuration SummationMeteringMultiplier can overwrite the Multiplier
     # Device Configuration SummationMeteringDivisor can overwrite the Divisor
 
-    conso = raw_value  # Raw value
-    multiplier = divisor = None
-    
+    unit = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0300"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0300" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else "kW" )
+    if unit == "kW":
+        # Domoticz expect in Watt/h
+        conso = raw_value * 1000
+    elif unit == "Unitless":
+        conso = raw_value
+    else:
+        self.log.logging("Cluster", "Error", "compute_metering_conso - Unknown %s/%s %s" %( 
+            NwkId, MsgSrcEp,self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0300"] ), NwkId)
+        conso = raw_value
+        
+    multiplier = None
+    divisor = None
     modelName = self.ListOfDevices[NwkId]["Model"] if "Model" in self.ListOfDevices[NwkId] else None
     # Check if we have a Device configuration overwrite
     if modelName and modelName not in ( '', {} ):
@@ -3594,16 +3604,6 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
     self.log.logging("Cluster", "Debug", "compute_metering_conso - Multiplier: %s , Divisior: %s " % (multiplier, divisor))
 
     conso = round( (( conso * multiplier ) / divisor ), 3)
-    
-    unit = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0300"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0300" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else "kW" )
-    if unit == "kW":
-        # Domoticz expect in Watt/h
-        conso = conso * 1000
-    elif unit == "Unitless":
-        pass
-    else:
-        self.log.logging("Cluster", "Error", "compute_metering_conso - Unknown %s/%s %s" %( 
-            NwkId, MsgSrcEp,self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0300"] ), NwkId)
 
     if ( 
         MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] 
