@@ -12,7 +12,7 @@
 import time
 
 import Domoticz
-from Modules.tools import (is_domoticz_touch,
+from Modules.tools import (is_domoticz_touch, print_stack, 
                            is_domoticz_update_SuppressTriggers, lookupForIEEE)
 from Modules.widgets import SWITCH_LVL_MATRIX
 
@@ -463,6 +463,9 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
             NwkId = self.IEEE2NWK[IEEE]
 
     if NwkId:
+        if NwkId == "0000":
+            # Coordinator, no action to be taken
+            return
         if NwkId not in self.ListOfDevices:
             return
         if "IEEE" not in self.ListOfDevices[NwkId]:
@@ -508,6 +511,7 @@ def device_touch( self, Devices, unit):
     if is_meter_widget( self, Devices, unit):
         return
 
+    #print_stack(self)
     Devices[unit].Touch()
 
 def GetType(self, Addr, Ep):
