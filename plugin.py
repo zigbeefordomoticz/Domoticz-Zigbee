@@ -280,7 +280,7 @@ class BasePlugin:
             _current_python_version_major, _current_python_version_minor))
     
         # TODO put the check of python3.8 on hold
-        assert sys.version_info >= (3, 7)  # nosec
+        assert sys.version_info >= (3, 6)  # nosec
         
         if check_requirements( self ):
             self.onStop()
