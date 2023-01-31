@@ -209,13 +209,16 @@ def buildframe_active_endpoint_response(self, SrcNwkId, SrcEndPoint, ClusterId, 
     nwkid = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
     if status != "00":
         buildPayload = sqn + status + nwkid
+        self.log.logging("zdpDecoder", "Debug", "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s" % (
+            sqn, status, nwkid))
+
     else:
         nbEp = Payload[8:10]
         ep_list = Payload[10:]
         buildPayload = sqn + status + nwkid + nbEp + ep_list
 
-    self.log.logging("zdpDecoder", "Debug", "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s nbEp: %s epList: %s" % (
-        sqn, status, nwkid, nbEp, ep_list))
+        self.log.logging("zdpDecoder", "Debug", "buildframe_active_endpoint_response sqn: %s status: %s nwkid: %s nbEp: %s epList: %s" % (
+            sqn, status, nwkid, nbEp, ep_list))
     return encapsulate_plugin_frame("8045", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
