@@ -18,8 +18,12 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-##    Jan. 2023 - stable6 - 6.3.010 
+##    Feb. 2023 - stable6 - 6.3.010 
 
+- [Hardware] - New flavor of TS011F Tuya plug
+- [Hardware] - Smart Air Detector 6 in 1 manufactured by Tuya
+- [Hardware] - Comply with the new ZLinky firmware V2 and the ZLinky version
+- [Technical] - Accept Zigate firmware 3.23 (not tested by us)
 - [WebUI] - Revert the input zone for device nickname
 - Technical] - Supporting SSL without checking Self Signed Certificates
 - [Hardware] - Smart Plug 20A EU manufacturer by Tuya
@@ -29,6 +33,7 @@ Release Numbering
 - [Hardware] - LEDVANCE Ampoule LED E14 5W 
 - [Hardware] - Paulmann 50052 SmartHome Zigbee LED
 - [Hardware] - KAIYE Tuya Smart Zigbee Ampoule LED
+- [Technical] - Unclassified fixes
 
 ##    Jan. 2023 - stable6 - 6.3.009 / 2023.1
 
