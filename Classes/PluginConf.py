@@ -205,6 +205,7 @@ SETTINGS = {
             "pluginReports": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginWWW": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginLogs": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            "storeDomoticzDatabase": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
         },
     },
     # Verbose
@@ -313,7 +314,6 @@ SETTINGS = {
         "Order": 16,
         "param": {
             "TryFindingIeeeOfUnknownNwkid": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
-            "storeDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "useDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
         },
     },

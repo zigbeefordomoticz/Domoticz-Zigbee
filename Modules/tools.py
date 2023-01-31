@@ -733,7 +733,10 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
         return inMacCapa
 
     # Convert battery annouced devices to main powered / Make sure that you do the reverse n NetworkMap
-    if self.ListOfDevices[nwkid]["Model"] in ("TI0001", "TS0011", "TS0013", "TS0601-switch", "TS0601-2Gangs-switch", ):
+    if (
+        get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "MainPoweredDevice")
+        or self.ListOfDevices[nwkid]["Model"] in ("TI0001", "TS0011", "TS0013", "TS0601-switch", "TS0601-2Gangs-switch", )
+    ):
         # Livol Switch, must be converted to Main Powered
         # Patch some status as Device Annouced doesn't provide much info
         self.ListOfDevices[nwkid]["LogicalType"] = "Router"
@@ -743,14 +746,9 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
         return "8e"
 
     # Convert Main Powered device to Battery
-    if self.ListOfDevices[nwkid]["Model"] in (
-        "lumi.remote.b686opcn01",
-        "lumi.remote.b486opcn01",
-        "lumi.remote.b286opcn01",
-        "lumi.remote.b686opcn01-bulb",
-        "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b286opcn01-bulb",
-        "lumi.remote.b686opcn01",
+    if (
+        get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "BatteryPoweredDevice")
+        or self.ListOfDevices[nwkid]["Model"] in ( "lumi.remote.b686opcn01", "lumi.remote.b486opcn01", "lumi.remote.b286opcn01", "lumi.remote.b686opcn01-bulb", "lumi.remote.b486opcn01-bulb", "lumi.remote.b286opcn01-bulb", "lumi.remote.b686opcn01",)
     ):
         # Aqara Opple Switch, must be converted to Battery Devices
         self.ListOfDevices[nwkid]["MacCapa"] = "80"
@@ -787,18 +785,24 @@ def mainPoweredDevice(self, nwkid):
         mainPower = self.ListOfDevices[nwkid]["MacCapa"] in ["8e", "84"]
 
     # These are Model annouced as Main Power and are not
-    if model_name in (
-        "lumi.remote.b686opcn01",
-        "lumi.remote.b486opcn01",
-        "lumi.remote.b286opcn01",
-        "lumi.remote.b686opcn01-bulb",
-        "lumi.remote.b486opcn01-bulb",
-        "lumi.remote.b286opcn01-bulb",
+    if (
+        get_deviceconf_parameter_value(self, model_name, "BatteryPoweredDevice")
+        or model_name in (
+            "lumi.remote.b686opcn01",
+            "lumi.remote.b486opcn01",
+            "lumi.remote.b286opcn01",
+            "lumi.remote.b686opcn01-bulb",
+            "lumi.remote.b486opcn01-bulb",
+            "lumi.remote.b286opcn01-bulb",
+        )
     ):
         mainPower = False
 
     # These are device annouced as Battery, but are Main Powered ( some time without neutral)
-    if model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch", "ZBMINI-L",):
+    if (
+        get_deviceconf_parameter_value(self, model_name, "MainPoweredDevice")
+        or model_name in ("TI0001", "TS0011", "TS0601-switch", "TS0601-2Gangs-switch", "ZBMINI-L",)
+    ):
         mainPower = True
         self.ListOfDevices[nwkid]["LogicalType"] = "End Device"
         self.ListOfDevices[nwkid]["DevideType"] = "RFD"
@@ -1011,14 +1015,9 @@ def checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAtt
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
 
 def checkValidValue(self, MsgSrcAddr, AttType, Data ):
-
-    if int(AttType, 16) == 0xe2:  # UTCTime
-        if Data == "ffffffff":
-            return False
-    if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.airmonitor.acn01":
-        if Data == "8000" or Data == "0000":
-            return False
-    return True
+    if int(AttType, 16) == 0xE2 and Data == "ffffffff":
+        return False
+    return self.ListOfDevices[MsgSrcAddr][ "Model" ] != "lumi.airmonitor.acn01" or Data not in ["8000", "0000"]
 
 def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 
@@ -1672,3 +1671,46 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
     self.log.logging("Plugin", "Log", "")
     
     self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
+
+def is_domoticz_bellow_2020(self):
+    return self.DomoticzMajor < 2020
+
+
+def is_domoticz_bellow_2021(self):
+    return self.DomoticzMajor < 2021
+
+
+def is_domoticz_above_2022(self):
+    return self.DomoticzMajor > 2022
+
+
+def is_domoticz_above_2022_2(self):
+    if self.DomoticzMajor > 2022:
+        return True
+    return self.DomoticzMajor == 2022 and self.DomoticzMinor >= 2
+
+
+def is_domoticz_new_blind(self):
+    return is_domoticz_above_2022_2(self)
+
+
+def is_domoticz_update_SuppressTriggers( self ):
+    
+    if is_domoticz_above_2022:
+        return True
+    
+    if is_domoticz_bellow_2021:
+        return False
+
+    if self.DomoticzMajor == 2021 and self.DomoticzMinor == 1 and self.DomoticzBuild < 13374:
+        return False
+    
+    return True
+
+
+def is_domoticz_touch(self):
+    if self.VersionNewFashion:
+        return True
+    if self.DomoticzMajor >= 2022:
+        return True
+    return self.DomoticzMajor == 4 and self.DomoticzMinor >= 10547
