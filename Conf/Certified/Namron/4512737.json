@@ -1,0 +1,58 @@
+{
+    "_comment": "Touch Termostat 16A White",
+    "_blakadder": "https://zigbee.blakadder.com/Namron_4512737.html",
+    "_source": "https://www.domoticz.com/forum/viewtopic.php?p=298597#p298597",
+    "_version": "1.0",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0009": "",
+            "0201": "",
+            "0204": "",
+            "0702": "",
+            "0b04": "",
+            "0406": "",
+            "Type": "Alarm/Temp/ThermoSetpoint/ThermoMode/Valve/Power/Meter/Ampere/Motion"
+        },
+        "02": {
+            "0000": "",
+	    "0019": "",
+            "Type": ""
+        },
+        "f2": {
+            "0021": "",
+            "Type": ""
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0204", "0406", "0402", "0201", "0702", "0b04" ],
+    "ConfigureReporting": {
+        "0201": { "Attributes": {
+            "0000": { "DataType": "29", "MaxInterval": "012C", "MinInterval": "012c", "TimeOut": "0000", "Change": "0050" },
+            "0012": { "DataType": "29", "MaxInterval": "0e10", "MinInterval": "012c", "TimeOut": "0000", "Change": "0001" },
+            "0014": { "DataType": "29", "MaxInterval": "0e10", "MinInterval": "012c", "TimeOut": "0000", "Change": "0001" }
+        }},
+        "0706": { "Attributes": {
+            "0000": { "DataType": "25", "MaxInterval": "012C", "MinInterval": "0005", "TimeOut": "0000", "Change": "000000000000000a" }
+        }},
+        "0b04": { "Attributes": {
+            "0505": { "DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"},
+            "0508": { "DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"},
+            "050b": { "DataType": "29", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000a"}
+        }}
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0004", "0005", "0001", "0002", "0003", "0006", "0007", "000a", "4000"],
+        "0406": [ ],
+        "0702": [ "0300", "0301", "0302", "0200", "0303", "0306"],
+        "0201": [ "1000", "1001", "1002", "1003", "1004", "1005", "1006", "1007", "1008", "1009", "100a", "100b", "2001", "2002", "0002", "0029", "0001", "0000", "0011", "0014", "001b", "001c", "0012", "0010" ],
+        "0402": [],
+        "0b04": [ "1000", "0802", "050B", "0505", "0508"],
+        "0204": [ "0000", "0001" ]
+    },
+    "RMSCurrentDivisor": 1000,
+    "PowerMeteringDivisor": 1000000
+}

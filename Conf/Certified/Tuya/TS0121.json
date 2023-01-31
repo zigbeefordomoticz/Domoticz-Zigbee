@@ -29,6 +29,7 @@
         "0b04": [ "0508", "050b", "0505" ]
     },
     "RMSCurrentDivisor": 2000,
+    "SummationMeteringDivisor": 100,
     "Param": {
         "PowerOnAfterOffOn": 2,
         "IndicatorMode": 1,

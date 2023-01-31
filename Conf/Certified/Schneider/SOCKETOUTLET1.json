@@ -40,5 +40,6 @@
         "0b05": [ "011c", "011d" ],
         "0019": []
     },
-    "RMSCurrentDivisor": 1000
+    "RMSCurrentDivisor": 1000,
+    "PowerMeteringDivisor": 1000000
 }
