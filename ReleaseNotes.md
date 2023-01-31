@@ -18,7 +18,7 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-##    Feb. 2023 - stable6 - 6.3.010 
+##    Feb. 2023 - stable6 - 6.3.010 ( 2023.2 )
 
 - [Hardware] - New flavor of TS011F Tuya plug
 - [Hardware] - Smart Air Detector 6 in 1 manufactured by Tuya
@@ -35,7 +35,7 @@ Release Numbering
 - [Hardware] - KAIYE Tuya Smart Zigbee Ampoule LED
 - [Technical] - Unclassified fixes
 
-##    Jan. 2023 - stable6 - 6.3.009 / 2023.1
+##    Jan. 2023 - stable6 - 6.3.009 ( 2023.1 )
 
 - [Hardware] - Managing Power state for TS0001 smart relay
 - [Hardware] - Integrating Ikea Air Purifier (@rhuijben)
