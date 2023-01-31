@@ -14,7 +14,7 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                UpdateDevice_v2, remove_bad_cluster_type_entry)
 from Modules.tools import zigpy_plugin_sanity_check
-from Modules.widgets import SWITCH_LVL_MATRIX
+from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
                             get_tarif_color, zlinky_sum_all_indexes)
@@ -618,7 +618,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 #   0x00: Off
                 #   0x01: Confort
                 #   0x03: No-Freeze
-                if "ThermoMode_3" not in SWITCH_LVL_MATRIX:
+                if "ThermoMode_3" not in SWITCH_SELECTORS:
                     continue
                 if int(value) == 0x00:
                     # Off # 00
@@ -641,13 +641,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             elif WidgetType == "ThermoMode_2" and Attribute_ == "001c":
                 # Use by Tuya TRV
-                if "ThermoMode_2" not in SWITCH_LVL_MATRIX:
+                if "ThermoMode_2" not in SWITCH_SELECTORS:
                     continue
-                if value not in SWITCH_LVL_MATRIX["ThermoMode_2"]:
+                if value not in SWITCH_SELECTORS["ThermoMode_2"]:
                     Domoticz.Error("Unknown TermoMode2 value: %s" % value)
                     continue
-                nValue = SWITCH_LVL_MATRIX["ThermoMode_2"][value][0]
-                sValue = SWITCH_LVL_MATRIX["ThermoMode_2"][value][1]
+                nValue = SWITCH_SELECTORS["ThermoMode_2"][value][0]
+                sValue = SWITCH_SELECTORS["ThermoMode_2"][value][1]
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 2 %s %s:%s" % (value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
@@ -1113,17 +1113,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------> Switch off as System Mode is Off")
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, "00", BatteryLevel, SignalLevel)
 
-            elif WidgetType in SWITCH_LVL_MATRIX and value in SWITCH_LVL_MATRIX[WidgetType]:
-                self.log.logging("Widget", "Debug", "------> Auto Update %s" % str(SWITCH_LVL_MATRIX[WidgetType][value]))
-                if len(SWITCH_LVL_MATRIX[WidgetType][value]) == 2:
-                    nValue, sValue = SWITCH_LVL_MATRIX[WidgetType][value]
-                    _ForceUpdate = SWITCH_LVL_MATRIX[WidgetType]["ForceUpdate"]
+            elif WidgetType in SWITCH_SELECTORS and value in SWITCH_SELECTORS[WidgetType]:
+                self.log.logging("Widget", "Debug", "------> Auto Update %s" % str(SWITCH_SELECTORS[WidgetType][value]))
+                if len(SWITCH_SELECTORS[WidgetType][value]) == 2:
+                    nValue, sValue = SWITCH_SELECTORS[WidgetType][value]
+                    _ForceUpdate = SWITCH_SELECTORS[WidgetType]["ForceUpdate"]
                     self.log.logging( "Widget", "Debug", "------> Switch update WidgetType: %s with %s" % (
-                        WidgetType, str(SWITCH_LVL_MATRIX[WidgetType])), NWKID, )
+                        WidgetType, str(SWITCH_SELECTORS[WidgetType])), NWKID, )
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=_ForceUpdate)
                 else:
-                    self.log.logging( "Widget", "Error", "------>  len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" % (
-                        WidgetType, value, len(SWITCH_LVL_MATRIX[WidgetType])), NWKID, )
+                    self.log.logging( "Widget", "Error", "------>  len(SWITCH_SELECTORS[ %s ][ %s ]) == %s" % (
+                        WidgetType, value, len(SWITCH_SELECTORS[WidgetType])), NWKID, )
 
         if "WindowCovering" in ClusterType:  # 0x0102
             if WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted"):

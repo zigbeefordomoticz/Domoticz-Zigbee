@@ -12,10 +12,11 @@
 import time
 
 import Domoticz
+
+from Modules.switchSelectorWidgets import SWITCH_SELECTORS
+from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.tools import (is_domoticz_touch,
                            is_domoticz_update_SuppressTriggers, lookupForIEEE)
-from Modules.widgets import SWITCH_LVL_MATRIX
-
 
 def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):
     """
@@ -224,8 +225,8 @@ def ResetDevice(self, Devices):
         if TimedOutMotion and WidgetType in ("Motion", "Vibration"):
             resetMotion(self, Devices, NWKID, WidgetType, unit, SignalLevel, BatteryLvl, now, LUpdate, TimedOutMotion)
 
-        elif TimedOutSwitchButton and WidgetType in SWITCH_LVL_MATRIX:
-            if "ForceUpdate" in SWITCH_LVL_MATRIX[WidgetType] and SWITCH_LVL_MATRIX[WidgetType]["ForceUpdate"]:
+        elif TimedOutSwitchButton and WidgetType in SWITCH_SELECTORS:
+            if "ForceUpdate" in SWITCH_SELECTORS[WidgetType] and SWITCH_SELECTORS[WidgetType]["ForceUpdate"]:
                 resetSwitchSelectorPushButton( self, Devices, NWKID, WidgetType, unit, SignalLevel, BatteryLvl, now, LUpdate, TimedOutSwitchButton, )
     self.log.logging( "Widget", "Debug", "ResetDevice end")
 
