@@ -182,6 +182,9 @@ def LoadDeviceList(self):
         fixing_consumption_lumi(self, addr)
         fixing_iSQN_None(self, addr)
 
+        # Cleaning OTA structure if needed
+        cleanup_ota(self, addr)
+        
         # Fixing TS0601 which has been removed.
         hack_ts0601(self, addr)
         
@@ -888,6 +891,7 @@ def load_new_param_definition(self):
             elif param == "netatmoReleaseButton":
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["EnableReleaseButton"]
 
+
 def cleanup_table_entries( self):
 
     for tablename in ("RoutingTable", "AssociatedDevices", "Neighbours" ):
@@ -931,6 +935,7 @@ def cleanup_table_entries( self):
                         one_more_time = True
                         break
                     idx += 1
+ 
                     
 def profalux_fix_remote_device_model(self):
     
@@ -952,6 +957,7 @@ def profalux_fix_remote_device_model(self):
             self.log.logging( "Profalux", "Status", "++++++ Model Name for %s forced to : %s" % (
                 x, self.ListOfDevices[x]["Model"],), x)
             self.ListOfDevices[x]["Model"] = "Telecommande-Profalux"
+
 
 def hack_ts0601(self, nwkid):
     # Purpose is to rename the Model name of potential working TS0601 as a Thermostat
@@ -989,3 +995,27 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
     if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
         self.log.logging("Tuya", "Status", "Adjusting Model name from %s to %s" %( modelName, suggested_model))
         self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model
+        
+def cleanup_ota(self, nwkid):
+    
+    if "OTAUpgrade" not in self.ListOfDevices[ nwkid ]:
+        return
+
+    existing_upgrade = []
+    clean_ota = {}
+
+    for stamp in sorted(self.ListOfDevices[ nwkid ]["OTAUpgrade"].keys(), reverse=True ):
+        version = self.ListOfDevices[ nwkid ]["OTAUpgrade"][ stamp ]["Version"]
+        image_type = self.ListOfDevices[ nwkid ]["OTAUpgrade"][ stamp ]["Type"]
+        if ( version, image_type) not in existing_upgrade:
+            time_stamp = self.ListOfDevices[ nwkid ]["OTAUpgrade"][ stamp ]["Time"]
+            clean_ota[ stamp ] = {
+                "Time": time_stamp,
+                "Version": version,
+                "Type": image_type,
+            }
+            existing_upgrade.append( ( version, image_type) )
+            continue
+    if clean_ota:
+        del self.ListOfDevices[ nwkid ]["OTAUpgrade"]
+        self.ListOfDevices[ nwkid ]["OTAUpgrade"] = dict(clean_ota)
