@@ -17,7 +17,7 @@
     </description>
     <params>
         <param field="Mode1" label="Coordinator Model" width="75px" required="true" default="None">
-            <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP, or Silicon Labs EZSP</description>
+            <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP, Silicon Labs EZSP or ConBee/RasBee</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
                 <option label="ZiGate+" value="V2"/>
@@ -1286,7 +1286,7 @@ def check_firmware_level(self):
         self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
         return False
 
-    if int(self.FirmwareVersion, 16) > 0x0321:
+    if int(self.FirmwareVersion, 16) > 0x0323:
         self.log.logging("Plugin", "Error", "WARNING: Firmware %s is not yet supported" % self.FirmwareVersion.lower())
         self.pluginconf.pluginConf["forceAckOnZCL"] = False
         return True

@@ -1,0 +1,19 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1480",
+    "_blakadder": "https://zigbee.blakadder.com/Lonsonho_QS-Zigbee-D02-TRIAC-LN.html",
+    "_comment": "Dimmer Switch Module With Neutral 1 Gang",
+    "_version": "1.0",
+    "Ep": {
+        "01": { "0000": "", "0004": "", "0005": "", "0006": "", "0008": "", "000a": "", "0019": "", "Type": "LvlControl" }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0006", "0008"],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007"],
+        "0006": [ "0000", "4001", "4002" ],
+        "0008": [ "0000" ]
+    },
+    "Param": {
+    }
+}

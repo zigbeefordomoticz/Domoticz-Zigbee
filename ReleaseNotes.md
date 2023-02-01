@@ -18,16 +18,30 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-
-
-
 ##  WIP develop            
 
 - [Technical] - Plugin requires python3.8 or above.
 - [Technical] - Upgrading zigpy radio modules to the version zigpy: 0.53.1, zigpy_znp: 0.9.2, zigpy_deconz: 0.19.2, zigpy_ezsp: 0.34.6
 
 
-##    Jan. 2023 - stable6 - 6.3.009 / 2023.1
+##    Feb. 2023 - stable6 - 6.3.010 ( 2023.2 )
+
+- [Hardware] - New flavor of TS011F Tuya plug
+- [Hardware] - Smart Air Detector 6 in 1 manufactured by Tuya
+- [Hardware] - Comply with the new ZLinky firmware V2 and the ZLinky version
+- [Technical] - Accept Zigate firmware 3.23 (not tested by us)
+- [WebUI] - Revert the input zone for device nickname
+- Technical] - Supporting SSL without checking Self Signed Certificates
+- [Hardware] - Smart Plug 20A EU manufacturer by Tuya
+- [Hardware] - Ikea_LED1924G9
+- [Hardware] - Lonsonho_QS-Zigbee-D02-TRIAC-L
+- [Hardware] - Lonsonho_QS-Zigbee-D02-TRIAC-LN
+- [Hardware] - LEDVANCE Ampoule LED E14 5W 
+- [Hardware] - Paulmann 50052 SmartHome Zigbee LED
+- [Hardware] - KAIYE Tuya Smart Zigbee Ampoule LED
+- [Technical] - Unclassified fixes
+
+##    Jan. 2023 - stable6 - 6.3.009 ( 2023.1 )
 
 - [Hardware] - Managing Power state for TS0001 smart relay
 - [Hardware] - Integrating Ikea Air Purifier (@rhuijben)
