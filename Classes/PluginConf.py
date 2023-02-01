@@ -213,14 +213,16 @@ SETTINGS = {
     "VerboseLogging": {
         "Order": 13,
         "param": {
-            "MatchingNwkId": {"type": "str","default": "ffff","current": None,"restart": 0,"hidden": False,"Advanced": False,},
-            "LQIthreshold": {"type": "int","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
-            "logDeviceUpdate": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "enablePluginLogging": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": False,},
+            "logDeviceUpdate": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            "trackZclClusters": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            "logThreadName": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            "trackTransportError": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+
+            "LQIthreshold": {"type": "int","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            "MatchingNwkId": {"type": "str","default": "ffff","current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "loggingBackupCount": {"type": "int","default": 7,"current": None,"restart": 1,"hidden": False,"Advanced": False,},
             "loggingMaxMegaBytes": {"type": "int","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": False,},
-            "logThreadName": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
-            "trackTransportError": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "ZiGateReactTime": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "showTimeOutMsg": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             
@@ -230,6 +232,7 @@ SETTINGS = {
             "coordinatorCmd": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             
             "Input": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "ZclClusters": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "DeviceAnnoucement": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "BasicOutput": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "Binding": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
@@ -314,6 +317,17 @@ SETTINGS = {
     "Experimental": {
         "Order": 16,
         "param": {
+            "readZclClusters": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "PluginLogMode": {"type": "list","list": { "system defaut": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},"default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            "reconnectonIEEEaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "reconnectonNWKaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "disableZCLDefaultResponse": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "ControllerInHybridMode": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "ControllerInRawMode": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "nPDUaPDUThreshold": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,"ZigpyRadio": ""},
+            "forceAckOnZCL": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "DropBadAnnoucement": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "expJsonDatabase": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "TryFindingIeeeOfUnknownNwkid": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "useDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
         },

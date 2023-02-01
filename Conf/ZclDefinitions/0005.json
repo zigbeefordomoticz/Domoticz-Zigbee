@@ -1,0 +1,66 @@
+{
+    "ClusterId": "0005",
+    "Description": "Scenes",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "SceneCount",
+            "DataType": "20" ,
+            "Range": [ "00", "ff" ],
+            "Acc": "R" ,
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        },
+        "0001": { 
+            "Enabled": true,
+            "Name": "CurrentScene",
+            "DataType": "20" ,
+            "Range": [ "00", "ff" ],
+            "Acc": "R" ,
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        },
+        "0002": { 
+            "Enabled": true,
+            "Name": "CurrentGroup",
+            "DataType": "21" ,
+            "Range": [ "0000", "fff7" ],
+            "Acc": "R" ,
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        },
+        "0003": { 
+            "Enabled": true,
+            "Name": "SceneValid",
+            "DataType": "10" ,
+            "Acc": "R" ,
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        },
+        "0004": { 
+            "Enabled": true,
+            "Name": "NameSupport",
+            "DataType": "18" ,
+            "Acc": "R" ,
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        },
+        "0005": { 
+            "Enabled": true,
+            "Name": "LastConfiguredBy",
+            "DataType": "f0" ,
+            "Range": [ "00", "ff" ],
+            "Acc": "R" ,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        }
+
+    }
+}

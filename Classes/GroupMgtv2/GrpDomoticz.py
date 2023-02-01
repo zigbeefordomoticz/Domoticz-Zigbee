@@ -348,10 +348,11 @@ def update_domoticz_group_device(self, GroupId):
                     self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] != ""
                     and self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] != {}
                 ):
+                    lvl_value = self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] if isinstance( self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], int ) else int(self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], 16)
                     if level is None:
-                        level = int(self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], 16)
+                        level = lvl_value
                     else:
-                        level = round((level + int(self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], 16)) / 2)
+                        level = round((level + lvl_value) / 2)
 
         # Cluster Window Covering
         if Cluster and Cluster == "0102" and "0102" in self.ListOfDevices[NwkId]["Ep"][Ep]:

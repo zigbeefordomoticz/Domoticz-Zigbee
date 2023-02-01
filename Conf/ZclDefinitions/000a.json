@@ -1,0 +1,97 @@
+{
+    "ClusterId": "000a",
+    "Description": "Time",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "Time",
+            "DataType": "e2" ,
+            "Range": [ "00000000", "fffffffe" ],
+            "Acc": "RW" ,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        },
+        "0001": { 
+            "Enabled": true,
+            "Name": "TimeStatus",
+            "DataType": "18" ,
+            "Acc": "RW" ,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        },
+        "0002": { 
+            "Enabled": true,
+            "Name": "TimeZone",
+            "DataType": "2b" ,
+            "Range": [ "FFFEAE80", "00015180" ],
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0003": { 
+            "Enabled": true,
+            "Name": "DstStart",
+            "DataType": "23" ,
+            "Range": [ "00000000", "fffffffe" ],
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0004": { 
+            "Enabled": true,
+            "Name": "DstEnd",
+            "DataType": "23" ,
+            "Range": [ "00000000", "fffffffe" ],
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0005": { 
+            "Enabled": true,
+            "Name": "DstShift",
+            "DataType": "2b" ,
+            "Range": [ "FFFEAE80", "00015180" ],
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0006": { 
+            "Enabled": true,
+            "Name": "StandardTime",
+            "DataType": "23" ,
+            "Range": [ "00000000", "fffffffe" ],
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0007": { 
+            "Enabled": true,
+            "Name": "LocalTime",
+            "DataType": "23" ,
+            "Range": [ "00000000", "fffffffe" ],
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0008": { 
+            "Enabled": true,
+            "Name": "LastSetTime",
+            "DataType": "e2" ,
+            "Range": [ "00000000", "ffffffff" ],
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "0009": { 
+            "Enabled": true,
+            "Name": "ValidUntilTime",
+            "DataType": "e2" ,
+            "Range": [ "00000000", "ffffffff" ],
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        }
+    }
+}
