@@ -1310,19 +1310,11 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         request_read_device_status(self, NWKID)
 
     if Command == "Set Color":
-
-        actuator_setcolor(self, NWKID, EPout, Level, Color)
-
-
         # RGBW --> Action on W Level (bri) setcolbrightnessvalue: ID: d9, bri: 96, color: '{m: 3, RGB: ffffff, CWWW: 0000, CT: 0}'
         #      --> Action on RGB (RGB)     setcolbrightnessvalue: ID: d9, bri: 59, color: '{m: 3, RGB: 53ff42, CWWW: 0000, CT: 0}'
 
-        self.log.logging(
-            "Command",
-            "Debug",
-            "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s"
-            % (NWKID, EPout, Unit, DeviceType, Level, Color),
-            NWKID,
+        self.log.logging( "Command", "Debug", "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" % (
+            NWKID, EPout, Unit, DeviceType, Level, Color), NWKID,
         )
         actuator_setcolor(self, NWKID, EPout, Level, Color)
         request_read_device_status(self, NWKID)
