@@ -1,0 +1,32 @@
+{
+    "_blakadder": "https://zigbee.blakadder.com/Aqara_WS-EUK02.html",
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1503",
+    "_comment": "Aqara smart wall switch H1 EU (no neutral, double rocker)",
+    "_version": "0.1",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0002": "",
+            "0003": "",
+            "0004": "",
+            "0006": "",
+            "0009": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Switch"
+        },
+        "02": {
+            "0000": "",
+            "0006": "",
+            "Type": "Switch"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0006" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": ["0000","0001","0002","0003","0004","0005","0006","0007"],
+        "0006": ["0000"],
+        "0019": []
+    }
+}
