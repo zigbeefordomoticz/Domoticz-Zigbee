@@ -12,7 +12,7 @@
             "0008": "",
             "0019": "",
             "fc57": "",
-            "Type": "Ikea_Round_5b"
+            "Type": "Ikea_Remote_2N"
         }
     },
     "Type": "",
@@ -28,5 +28,8 @@
         "0006": [],
         "0008": [],
         "0019": []
+    },
+    "Param": {
+        "resetSwitchSelectorPushButton": 30
     }
 }

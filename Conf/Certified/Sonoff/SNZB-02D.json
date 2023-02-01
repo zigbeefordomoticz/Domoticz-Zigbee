@@ -1,0 +1,35 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1485",
+    "_blakadder": "https://zigbee.blakadder.com/Sonoff_SNZB-02D.html",
+    "_comment": "Sonoff LCD Temperature Humidity Sensor",
+    "_version": "1.0",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0001": "",
+            "0003": "",
+            "0020": "",
+            "0402": "",
+            "0405": "",
+            "fc57": "",
+            "fc11": "",
+            "0019": "",
+            "Type": "Temp/Humi"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0402", "0405", "0001" ],
+    "ConfigureReporting": {
+        "0402": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "001E", "MaxInterval": "0258", "TimeOut": "0000", "Change": "000A" } } },
+        "0405": { "Attributes": { "0000": { "DataType": "21", "MinInterval": "001E", "MaxInterval": "0258", "TimeOut": "0000", "Change": "012C" } } }
+    },
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0003", "0007", "4000" ],
+        "0001": [ "0021" ],
+        "0402": [ "0000" ],
+        "0405": [ "0000" ],
+        "0019": []
+    },
+    "BatteryDevice": 1,
+    "BatteryPercentageConverter": 2
+}

@@ -17,7 +17,7 @@
     </description>
     <params>
         <param field="Mode1" label="Coordinator Model" width="75px" required="true" default="None">
-            <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP, or Silicon Labs EZSP</description>
+            <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP, Silicon Labs EZSP or ConBee/RasBee</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
                 <option label="ZiGate+" value="V2"/>
@@ -272,8 +272,17 @@ class BasePlugin:
         self.pythonModuleVersion = {}
 
     def onStart(self):
-        Domoticz.Log("Zigbee for Domoticz plugin started!")
-        assert sys.version_info >= (3, 8)  # nosec
+        
+        Domoticz.Status( "Zigbee for Domoticz plugin started!")
+        
+        _current_python_version_major = sys.version_info.major
+        _current_python_version_minor = sys.version_info.minor
+
+        Domoticz.Status( "Python3 requires 3.8 or above and you are running %s.%s" %(
+            _current_python_version_major, _current_python_version_minor))
+    
+        # TODO put the check of python3.8 on hold
+        assert sys.version_info >= (3, 6)  # nosec
         
         if check_requirements( self ):
             self.onStop()
@@ -379,12 +388,12 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging(
-            "Plugin",
-            "Status",
-            "Zigbee for Domoticz (z4d) plugin %s-%s started"
-            % (self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]),
-        )
+        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s started"
+            % (self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
+        if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
+            self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
+                _current_python_version_major , _current_python_version_minor))
+
 
         # Debuging information
         debuging_information(self, "Debug")
@@ -1050,6 +1059,11 @@ def get_domoticz_version( self ):
         self.DomoticzMinor = int(minor)
         self.VersionNewFashion = True
         
+    #Domoticz.Log( "DomoticzBuild : %s" %self.DomoticzBuild) 
+    #Domoticz.Log( "DomoticzMajor : %s" %self.DomoticzMajor) 
+    #Domoticz.Log( "DomoticzMinor : %s" %self.DomoticzMinor) 
+    #Domoticz.Log( "VersionNewFashion : %s" %self.VersionNewFashion) 
+        
     return True
 
 
@@ -1276,7 +1290,7 @@ def check_firmware_level(self):
         self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
         return False
 
-    if int(self.FirmwareVersion, 16) > 0x0321:
+    if int(self.FirmwareVersion, 16) > 0x0323:
         self.log.logging("Plugin", "Error", "WARNING: Firmware %s is not yet supported" % self.FirmwareVersion.lower())
         self.pluginconf.pluginConf["forceAckOnZCL"] = False
         return True

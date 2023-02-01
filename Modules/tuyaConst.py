@@ -31,6 +31,7 @@ TUYA_GARAGE_DOOR = ( "_TZE200_nklqjk62", )
 TUYA_SMARTAIR_MANUFACTURER = (
     "_TZE200_8ygsuhe1",
     "_TZE200_yvx5lh6k",
+    "_TZE200_dwcarsat",
 )
 
 TUYA_MOTION = (

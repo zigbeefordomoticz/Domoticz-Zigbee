@@ -1,0 +1,33 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1473",
+    "_blakadder": "https://zigbee.blakadder.com/Ledvance_4058075208421.html",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0006": "",
+            "0008": "",
+            "0019": "",
+            "0b05": "",
+            "Type": "LvlControl"
+        },
+        "f2": {
+            "0021": "",
+            "Type": ""
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0006", "0008" ],
+    "ConfigureReporting": {
+        "0006": { "Attributes": { "0000": { "Change": "01", "DataType": "10", "MaxInterval": "0258", "MinInterval": "0000", "TimeOut": "0FFF" } } },
+        "0008": { "Attributes": { "0000": { "Change": "01", "DataType": "20", "MaxInterval": "0258", "MinInterval": "0000", "TimeOut": "0FFF" } } }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007", "4000" ],
+        "0006": [ "0000", "4001", "4002" ],
+        "0008": [ "0000" ],
+        "0019": []
+    }
+}
