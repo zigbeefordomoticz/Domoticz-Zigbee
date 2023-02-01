@@ -41,9 +41,14 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         _retreived_backup = do_retreive_backup( self )
         if _retreived_backup:
             _retreived_backup = NetworkBackup.from_dict( _retreived_backup )
+
         if _retreived_backup:
+            if self.pluginconf.pluginConf[ "OverWriteCoordinatorIEEEOnlyOnce"]:
+                LOGGER.debug("Allow eui64 overwrite only once !!!") 
+                _retreived_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
+
             LOGGER.debug("Last backup retreived: %s" % _retreived_backup )
-            self.backups.add_backup( backup= _retreived_backup )
+            self.backups.add_backup( backup=_retreived_backup )
 
     if force_form:
         with contextlib.suppress(Exception):
