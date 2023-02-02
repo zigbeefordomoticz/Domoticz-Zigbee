@@ -179,7 +179,12 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     updSQN(self, NwkId, sqn)
 
     cmd = MsgPayload[4:6]  # uint8
-
+    # 09/46/02/
+    #   01 c1/01/02/0004/000000c2
+    #         02/02/0004/00000037
+    #         04/02/0004/00000064
+    #         0a/02/0004/00000168
+    #         0b/02/0004/000000c8
     # Send a Default Response ( why might check the FCF eventually )
     if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
         tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
@@ -189,19 +194,23 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     if cmd == "01":  # TY_DATA_RESPONE
         status = MsgPayload[6:8]  # uint8
         transid = MsgPayload[8:10]  # uint8
-        dp = int(MsgPayload[10:12], 16)
-        datatype = int(MsgPayload[12:14], 16)
-        fn = MsgPayload[14:16]
-        len_data = MsgPayload[16:18]
-        data = MsgPayload[18:]
-        self.log.logging(
-            "Tuya",
-            "Debug2",
-            "tuyaReadRawAPS - command %s MsgPayload %s/ Data: %s" % (cmd, MsgPayload, MsgPayload[6:]),
-            NwkId,
-        )
-        tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
-
+        idx = 10
+        while idx < len(MsgPayload):
+            dp = int(MsgPayload[idx:idx + 2], 16)
+            idx += 2
+            datatype = int(MsgPayload[idx:idx + 2], 16)
+            idx += 2
+            fn = MsgPayload[idx:idx + 2]
+            idx += 2
+            len_data = 2 * int(MsgPayload[idx:idx + 4], 16)
+            idx += 4
+            data = MsgPayload[idx:idx + len_data]
+            idx += len_data
+            self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - command %s dp: %s dt: %s fn: %s len: %s data: %s idx: %s" % (
+                cmd, dp, datatype, fn, len_data, data, idx ), NwkId, )
+            tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+            
+            
     elif cmd == "02":  # TY_DATA_REPORT
         status = MsgPayload[6:8]  # uint8
         transid = MsgPayload[8:10]  # uint8
