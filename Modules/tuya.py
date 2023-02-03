@@ -173,7 +173,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     if len(MsgPayload) < 6:
         self.log.logging("Tuya", "Debug2", "tuyaReadRawAPS - MsgPayload %s too short" % (MsgPayload), NwkId)
         return
-
+    
     fcf = MsgPayload[:2]  # uint8
     sqn = MsgPayload[2:4]  # uint8
     updSQN(self, NwkId, sqn)
@@ -1259,7 +1259,7 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
     elif dp == 0x02:   # Humi
         if (
             'Manufacturer Name' in self.ListOfDevices[ NwkId ]
-            and self.ListOfDevices[ NwkId ][ 'Manufacturer Name' ] not in ( '_TZE200_qoy0ekbd',)
+            and self.ListOfDevices[ NwkId ][ 'Manufacturer Name' ] not in ( '_TZE200_qoy0ekbd', '_TZE200_whkgqxse')
         ):
             humi = int(data, 16) // 10
         store_tuya_attribute(self, NwkId, "Humi", humi)
