@@ -1,14 +1,15 @@
 
 import binascii
 import json
-import struct
+
 from os import listdir
 from os.path import isdir, isfile, join
 
 from DevicesModules import FUNCTION_MODULE
 from Modules.domoMaj import MajDomoDevice
-from Modules.pluginModels import check_found_plugin_model
+
 from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
+from Modules.zclClusterHelpers import handle_model_name, decoding_attribute_data
 
 # "ActionList":
 #   check_store_value - check the value and store in the corresponding data strcuture entry
@@ -53,7 +54,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     _eval_inputs = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExpCustomVariables", model=device_model)
     _function = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalFunc", model=device_model)
     
-    value = _decode_attribute_data( MsgAttType, MsgClusterData)
+    value = decoding_attribute_data( MsgAttType, MsgClusterData)
     
     if _datatype != MsgAttType:
         self.log.logging("ZclClusters", "Log", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
@@ -94,7 +95,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3)
             
         elif data_action == BASIC_MODEL_NAME:
-            _handle_model_name( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, device_model, MsgClusterData, value )
+            handle_model_name( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, device_model, MsgClusterData, value )
 
 
 def _read_zcl_cluster( self, cluster_filename ):
@@ -110,83 +111,6 @@ def _read_zcl_cluster( self, cluster_filename ):
             return None
     return None
 
-def _decode_attribute_data( AttType, attribute_value, handleErrors=False):
-
-    if len(attribute_value) == 0:
-        return ""
-
-    if int(AttType, 16) == 0x10:  # Boolean
-        return attribute_value[:2]
-
-    if int(AttType, 16) == 0x18:  # 8Bit bitmap
-        return int(attribute_value[:8], 16)
-
-    if int(AttType, 16) == 0x19:  # 16BitBitMap
-        return int(attribute_value[:4], 16)
-
-    if int(AttType, 16) == 0x20:  # Uint8 / unsigned char
-        return int(attribute_value[:2], 16)
-
-    if int(AttType, 16) == 0x21:  # 16BitUint
-        return struct.unpack("H", struct.pack("H", int(attribute_value[:4], 16)))[0]
-
-    if int(AttType, 16) == 0x22:  # ZigBee_24BitUint
-        return struct.unpack("I", struct.pack("I", int("0" + attribute_value, 16)))[0]
-
-    if int(AttType, 16) == 0x23:  # 32BitUint
-        return struct.unpack("I", struct.pack("I", int(attribute_value[:8], 16)))[0]
-
-    if int(AttType, 16) == 0x25:  # ZigBee_48BitUint
-        return struct.unpack("Q", struct.pack("Q", int(attribute_value, 16)))[0]
-
-    if int(AttType, 16) == 0x28:  # int8
-        return int(attribute_value, 16)
-
-    if int(AttType, 16) == 0x29:  # 16Bitint   -> tested on Measurement clusters
-        return struct.unpack("h", struct.pack("H", int(attribute_value[:4], 16)))[0]
-
-    if int(AttType, 16) == 0x2A:  # ZigBee_24BitInt
-        return struct.unpack("i", struct.pack("I", int("0" + attribute_value, 16)))[0]
-
-    if int(AttType, 16) == 0x2B:  # 32Bitint
-        return struct.unpack("i", struct.pack("I", int(attribute_value[:8], 16)))[0]
-
-    if int(AttType, 16) == 0x2D:  # ZigBee_48Bitint
-        return struct.unpack("q", struct.pack("Q", int(attribute_value, 16)))[0]
-
-    if int(AttType, 16) == 0x30:  # 8BitEnum
-        return int(attribute_value[:2], 16)
-
-    if int(AttType, 16) == 0x31:  # 16BitEnum
-        return struct.unpack("h", struct.pack("H", int(attribute_value[:4], 16)))[0]
-
-    if int(AttType, 16) == 0x39:  # Xiaomi Float
-        return struct.unpack("f", struct.pack("I", int(attribute_value, 16)))[0]
-
-    if int(AttType, 16) in {0x42, 0x43}:  # CharacterString
-        return _decode_caracter_string( attribute_value, handleErrors)
-    return attribute_value
-
-def _decode_caracter_string( attribute_value, handleErrors):
-    decode = ""
-
-    try:
-        decode = binascii.unhexlify(attribute_value).decode("utf-8")
-        
-    except Exception as e:
-        if handleErrors:  # If there is an error we force the result to '' This is used for 0x0000/0x0005
-            decode = ""
-        else:
-            decode = binascii.unhexlify(attribute_value).decode("utf-8", errors="ignore")
-            decode = decode.replace("\x00", "")
-            decode = decode.strip()
-
-    # Cleaning
-    decode = decode.strip("\x00")
-    decode = decode.strip()
-    if decode is None:
-        decode = ""
-    return decode
 
 def _check_range( self, value, datatype, _range):
     self.log.logging("ZclClusters", "Debug", " . _check_range %s %s %s" %(value, datatype, _range))
@@ -195,8 +119,8 @@ def _check_range( self, value, datatype, _range):
         self.log.logging("ZclClusters", "Error", " . Incorrect range %s" %str(_range))
         return None
     
-    _range1 = _decode_attribute_data( datatype, _range[0])
-    _range2 = _decode_attribute_data( datatype, _range[1])
+    _range1 = decoding_attribute_data( datatype, _range[0])
+    _range2 = decoding_attribute_data( datatype, _range[1])
     
     self.log.logging("ZclClusters", "Debug", " . _check_range range1: %s" %(_range1))
     self.log.logging("ZclClusters", "Debug", " . _check_range range2: %s" %(_range2))
@@ -207,11 +131,13 @@ def _check_range( self, value, datatype, _range):
     if _range1 > _range2:
         return _range1 >= value >= _range2
 
+
 def _get_model_name( self, nwkid):
 
     if "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( '', {}):
         return self.ListOfDevices[ nwkid ]["Model"]
     return None
+
 
 def _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter ):
 
@@ -227,6 +153,7 @@ def _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter ):
         ) 
         return self.readZclClusters[ cluster ]["Attributes"][ attribute ][ parameter ]
     return None
+
 
 def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter ):
 
@@ -245,176 +172,13 @@ def _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, 
         return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ][ parameter ]
     return None
 
+
 def _update_eval_formula( self, formula, input_variable, variable_name):
 
     self.log.logging("ZclClusters", "Debug", " . _update_eval_formula( %s, %s, %s" %( formula, input_variable, variable_name))
 
     return formula.replace( input_variable, variable_name )
 
-
-def _handle_model_name( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, device_model, rawvalue, value ):
-    self.log.logging( "ZclClusters", "Debug", "_handle_model_name - %s / %s - %s %s %s %s %s - %s" % (
-        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, value, device_model), MsgSrcAddr, )
-    
-    modelName = _cleanup_model_name( MsgAttType, rawvalue)
-    self.log.logging( "ZclClusters", "Debug", "_handle_model_name - modelName after cleanup %s" % modelName)
-    
-    modelName = _build_model_name( self, MsgSrcAddr, modelName)
-    self.log.logging( "ZclClusters", "Debug", "_handle_model_name - modelName after build model name %s" % modelName)
-    
-    # Here the Device is not yet provisioned
-    if "Model" not in self.ListOfDevices[MsgSrcAddr]:
-        self.ListOfDevices[MsgSrcAddr]["Model"] = {}
-
-    self.log.logging( "ZclClusters", "Debug", "_handle_model_name - %s / %s - Recepion Model: >%s<" % (
-        MsgClusterId, MsgAttrID, modelName), MsgSrcAddr, )
-    if modelName == "":
-        return
-
-    if _is_device_already_provisionned( self, MsgSrcAddr, modelName):
-        return
-
-    if self.ListOfDevices[MsgSrcAddr]["Model"] == modelName and self.ListOfDevices[MsgSrcAddr]["Model"] in self.DeviceConf:
-        # This looks like a Duplicate, just drop
-        self.log.logging("ZclClusters", "Debug", "_handle_model_name - %s / %s - no action" % (
-            MsgClusterId, MsgAttrID), MsgSrcAddr)
-        return
-
-    if self.ListOfDevices[MsgSrcAddr]["Model"] != modelName and self.ListOfDevices[MsgSrcAddr]["Model"] in self.DeviceConf:
-        # We ae getting a different Model Name, let's log an drop
-        self.log.logging( "ZclClusters", "Error", "_handle_model_name - %s / %s - no action as it is a different Model Name than registered %s" % (
-            MsgClusterId, MsgAttrID, modelName), MsgSrcAddr, )
-        return
-
-    if self.ListOfDevices[MsgSrcAddr]["Model"] in ( "", {}):
-        self.ListOfDevices[MsgSrcAddr]["Model"] = modelName
-        
-    elif self.ListOfDevices[MsgSrcAddr]["Model"] in self.DeviceConf:
-        modelName = self.ListOfDevices[MsgSrcAddr]["Model"]
-        
-    elif modelName in self.DeviceConf:
-        self.ListOfDevices[MsgSrcAddr]["Model"] = modelName
-
-    if _update_data_structutre_based_on_model_name( self, MsgSrcAddr, modelName) and self.iaszonemgt:
-        self.iaszonemgt.force_IAS_registration_if_needed(MsgSrcAddr)
-
-
-def _update_data_structutre_based_on_model_name( self, MsgSrcAddr, modelName):
-    # Let's see if this model is known in DeviceConf. If so then we will retreive already the Eps
-    if self.ListOfDevices[MsgSrcAddr]["Model"] not in self.DeviceConf: 
-        return False
-
-    modelName = self.ListOfDevices[MsgSrcAddr]["Model"]
-    self.log.logging("ZclClusters", "Debug", "_handle_model_name Extract all info from Model : %s" % self.DeviceConf[modelName], MsgSrcAddr)
-
-    if "ConfigSource" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["ConfigSource"] == "DeviceConf":
-        self.log.logging("ZclClusters", "Debug", "_handle_model_name Not redoing the DeviceConf enrollement", MsgSrcAddr)
-        return True
-
-    if "Param" in self.DeviceConf[modelName]:
-        self.ListOfDevices[MsgSrcAddr]["Param"] = dict(self.DeviceConf[modelName]["Param"])
-
-    _BackupEp = None
-    if "Type" in self.DeviceConf[modelName]:  # If type exist at top level : copy it
-        if "ConfigSource" not in self.ListOfDevices[MsgSrcAddr]:
-            self.ListOfDevices[MsgSrcAddr]["ConfigSource"] = "DeviceConf"
-
-        self.ListOfDevices[MsgSrcAddr]["Type"] = self.DeviceConf[modelName]["Type"]
-
-        if "Ep" in self.ListOfDevices[MsgSrcAddr]:
-            self.log.logging("ZclClusters", "Debug", "_handle_model_name Removing existing received Ep", MsgSrcAddr)
-            _BackupEp = dict(self.ListOfDevices[MsgSrcAddr]["Ep"])
-            del self.ListOfDevices[MsgSrcAddr]["Ep"]  # It has been prepopulated by some 0x8043 message, let's remove them.
-            self.ListOfDevices[MsgSrcAddr]["Ep"] = {}  # It has been prepopulated by some 0x8043 message, let's remove them.
-            self.log.logging("ZclClusters", "Debug", "-- Record removed 'Ep' %s" % (self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
-            
-    _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, _BackupEp)
-
-def _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, inital_ep):
-    for Ep in self.DeviceConf[modelName]["Ep"]:  # For each Ep in DeviceConf.txt
-        if Ep not in self.ListOfDevices[MsgSrcAddr]["Ep"]:  # If this EP doesn't exist in database
-            self.ListOfDevices[MsgSrcAddr]["Ep"][Ep] = {}  # create it.
-            self.log.logging( "ZclClusters", "Debug", "-- Create Endpoint %s in record %s" % (
-                Ep, self.ListOfDevices[MsgSrcAddr]["Ep"]), MsgSrcAddr, )
-
-        for cluster in self.DeviceConf[modelName]["Ep"][Ep]:  # For each cluster discribe in DeviceConf.txt
-            if cluster in self.ListOfDevices[MsgSrcAddr]["Ep"][Ep]:
-                # If this cluster doesn't exist in database
-                continue
-
-            self.log.logging("ZclClusters", "Debug", "----> Cluster: %s" % cluster, MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster] = {}  # create it.
-            if inital_ep and Ep in inital_ep:
-                # In case we had data, let's retreive it
-                if cluster not in inital_ep[Ep]:
-                    continue
-                for attr in inital_ep[Ep][cluster]:
-                    if attr in self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster]:
-                        if self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster][ attr ] in ["", {}]:
-                            self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster][attr] = inital_ep[Ep][cluster][attr]
-                    else:
-                        self.ListOfDevices[MsgSrcAddr]["Ep"][Ep][cluster][attr] = inital_ep[Ep][cluster][attr]
-
-                    self.log.logging( "ZclClusters", "Debug", "------> Cluster %s set with Attribute %s" % (
-                        cluster, attr), MsgSrcAddr, )
-
-        if "Type" in self.DeviceConf[modelName]["Ep"][Ep]:  # If type exist at EP level : copy it
-            self.ListOfDevices[MsgSrcAddr]["Ep"][Ep]["Type"] = self.DeviceConf[modelName]["Ep"][Ep]["Type"]
-        if ( "ColorMode" in self.DeviceConf[modelName]["Ep"][Ep] and "ColorInfos" not in self.ListOfDevices[MsgSrcAddr] ):
-            self.ListOfDevices[MsgSrcAddr]["ColorInfos"] = {}
-        if "ColorMode" in self.DeviceConf[modelName]["Ep"][Ep]:
-            self.ListOfDevices[MsgSrcAddr]["ColorInfos"]["ColorMode"] = int(self.DeviceConf[modelName]["Ep"][Ep]["ColorMode"])
-
-    self.log.logging( "ZclClusters", "Debug", "_handle_model_name Result based on DeviceConf is: %s" % str(self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr, )
-    return True
-
-
-def _build_model_name( self, nwkid, modelName):
-    manufacturer_name = self.ListOfDevices[nwkid]["Manufacturer Name"] if "Manufacturer Name" in self.ListOfDevices[nwkid] else ""
-    manuf_code = self.ListOfDevices[nwkid]["Manufacturer"] if "Manufacturer" in self.ListOfDevices[nwkid] else ""
-
-    # Try to check if the Model name is in the DeviceConf list ( optimised devices)
-    if modelName + '-' + manufacturer_name in self.DeviceConf:
-        return modelName + '-' + manufacturer_name
-        
-    if modelName + manufacturer_name in self.DeviceConf:
-        return modelName + manufacturer_name
-
-    zdevice_id = self.ListOfDevices[nwkid]["ZDeviceID"] if "ZDeviceID" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["ZDeviceID"] else None
-
-    return check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=manuf_code, device_id=zdevice_id)
-
-def _is_device_already_provisionned( self, nwkid, modelName):
-
-    if "Ep" not in self.ListOfDevices[nwkid]:
-        return False
-    for iterEp in list(self.ListOfDevices[nwkid]["Ep"]):
-        if "ClusterType" in list(self.ListOfDevices[nwkid]["Ep"][iterEp]):
-            self.log.logging( "ZclClusters", "Debug", "_is_device_already_provisionned - %s / %s - %s is already provisioned in Domoticz" % (
-                nwkid, iterEp, modelName), nwkid, )
-
-            # However if Model is not correctly set, let's take the opportunity to correct
-            if self.ListOfDevices[nwkid]["Model"] != modelName:
-                self.log.logging( "ZclClusters", "Debug", "_is_device_already_provisionned - %s / %s - Update Model Name %s" % (
-                    nwkid, iterEp, modelName), nwkid, )
-                self.ListOfDevices[nwkid]["Model"] = modelName
-            return True
-    return False
-     
-    
-    
-def _cleanup_model_name( MsgAttType, value):
-    # Stop at the first Null
-    idx = 0
-    for _ in value:
-        if value[idx : idx + 2] == "00":
-            break
-        idx += 2
-    AttrModelName = _decode_attribute_data( MsgAttType, value[:idx], handleErrors=True) 
-    modelName = AttrModelName.replace("/", "")
-    modelName = modelName.replace("  ", " ")
-    return modelName
-   
     
 def load_zcl_cluster(self):
     zcl_cluster_path = self.pluginconf.pluginConf["pluginConfig"] + "ZclDefinitions"
@@ -446,6 +210,7 @@ def load_zcl_cluster(self):
         self.log.logging("ZclClusters", "Status", " - ZCL Cluster %s - (V%s) %s loaded" %( 
             cluster_definition[ "ClusterId"], cluster_definition[ "Version" ], cluster_definition["Description"],))
 
+
 def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
     if model not in self.DeviceConf:
         return False
@@ -466,7 +231,8 @@ def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
         cluster, attribute, self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ] ))
 
     return True
-    
+
+ 
 def is_cluster_zcl_config_available( self, cluster, attribute=None):
     if cluster not in self.readZclClusters:
         return False
@@ -483,11 +249,13 @@ def is_cluster_zcl_config_available( self, cluster, attribute=None):
     
     return True
 
+
 def cluster_attribute_retreival(self, ep, cluster, attribute, parameter, model=None):
     if model and is_cluster_specific_config(self, model, ep, cluster, attribute=attribute):
         return _cluster_specific_attribute_retreival( self, model, ep, cluster, attribute, parameter )
     return _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter )
-    
+
+  
 def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
     self.log.logging( "ZclClusters", "Debug", "action_majdomodevice - %s/%s %s %s %s %s" %(
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ))    
@@ -509,7 +277,8 @@ def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     majAttribute = _majdomo_attribute if _majdomo_attribute is not None else ""
     
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, majCluster, majValue, Attribute_=majAttribute)
-    
+
+
 def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model, value):
 
     _majdomodeviceValidValues = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValidValuesDomoDevices", model=model)
@@ -520,14 +289,16 @@ def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model
     self.log.logging("ZclClusters", "Debug", " . majdomodevice_possiblevalues: %s -> %s" %( eval_result, _majdomodeviceValidValues))
     return eval_result
 
+
 def check_special_values( self, value, data_type, _special_values ):
     flag = False
     for x in _special_values:
-        if value == _decode_attribute_data( data_type, x):
+        if value == decoding_attribute_data( data_type, x):
             self.log.logging("ZclClusters", "Debug", " . found %s as %s" %( value, _special_values[ x ] ))
             flag = True
     return flag
-    
+
+  
 def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula, _function):
 
     self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
@@ -584,6 +355,7 @@ def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula
             
     return None
 
+
 def store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3):
     
     self.log.logging( "ZclClusters", "Debug", "store_value_in_specif_storage - %s/%s %s %s %s %s" %(
@@ -603,7 +375,8 @@ def store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     if _storage_specificlvl3 not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ]:
         self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = {}    
     self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = value
-    
+
+ 
 def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, device_model, attr_name, exp_dt, _ranges, _special_values, eval_formula, action_list, eval_inputs, force_value, value):
 
     if not self.pluginconf.pluginConf["trackZclClusters"]:
