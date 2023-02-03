@@ -183,7 +183,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
         tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
 
-    # https://developer.tuya.com/en/docs/iot/tuuya-zigbee-door-lock-docking-access-standard?id=K9ik5898uzqrk
+    # https://developer.tuya.com/en/docs/iot/tuya-zigbee-module-uart-communication-protocol?id=K9ear5khsqoty
     self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - %s/%s fcf: %s sqn: %s cmd: %s Payload: %s" % (
         NwkId, srcEp, fcf, sqn, cmd, MsgPayload ), NwkId, )
     
