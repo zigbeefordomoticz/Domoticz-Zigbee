@@ -191,7 +191,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
     # https://developer.tuya.com/en/docs/iot/tuuya-zigbee-door-lock-docking-access-standard?id=K9ik5898uzqrk
     
-    if cmd == "01":  # TY_DATA_RESPONE
+    if cmd in ( "01", "02",):  # TY_DATA_RESPONE, TY_DATA_REPORT
         status = MsgPayload[6:8]  # uint8
         transid = MsgPayload[8:10]  # uint8
         idx = 10
@@ -210,23 +210,6 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
                 cmd, dp, datatype, fn, len_data, data, idx ), NwkId, )
             tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
             
-            
-    elif cmd == "02":  # TY_DATA_REPORT
-        status = MsgPayload[6:8]  # uint8
-        transid = MsgPayload[8:10]  # uint8
-        dp = int(MsgPayload[10:12], 16)
-        datatype = int(MsgPayload[12:14], 16)
-        fn = MsgPayload[14:16]
-        len_data = MsgPayload[16:18]
-        data = MsgPayload[18:]
-        self.log.logging(
-            "Tuya",
-            "Debug2",
-            "tuyaReadRawAPS - command %s MsgPayload %s/ Data: %s" % (cmd, MsgPayload, MsgPayload[6:]),
-            NwkId,
-        )
-        tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
-
     elif cmd == "06":  # TY_DATA_SEARCH
         status = MsgPayload[6:8]  # uint8
         transid = MsgPayload[8:10]  # uint8
