@@ -186,6 +186,11 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     # https://developer.tuya.com/en/docs/iot/tuuya-zigbee-door-lock-docking-access-standard?id=K9ik5898uzqrk
     self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - %s/%s fcf: %s sqn: %s cmd: %s Payload: %s" % (
         NwkId, srcEp, fcf, sqn, cmd, MsgPayload ), NwkId, )
+    
+    # 0c/02/0004/00000046
+    # 0d/02/0004/00000014
+    # 11/02/0004/0000001e0
+    # 90/40/001/00
 
     if cmd in ( "01", "02",):  # TY_DATA_RESPONE, TY_DATA_REPORT
         status = MsgPayload[6:8]  # uint8
@@ -205,10 +210,6 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             idx += 2
             self.log.logging( "Tuya", "Debug", "        datatype: %s" % ( datatype ), NwkId, )
             
-            fn = MsgPayload[idx:idx + 2]
-            idx += 2
-            self.log.logging( "Tuya", "Debug", "        fn: %s" % ( fn ), NwkId, )
-            
             len_data = 2 * int(MsgPayload[idx:idx + 4], 16)
             idx += 4
             self.log.logging( "Tuya", "Debug", "        len_data: %s" % ( len_data ), NwkId, )
@@ -217,8 +218,8 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             idx += len_data
             self.log.logging( "Tuya", "Debug", "        data: %s" % ( data ), NwkId, )
             
-            self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - command %s dp: %s dt: %s fn: %s len: %s data: %s idx: %s" % (
-                cmd, dp, datatype, fn, len_data, data, idx ), NwkId, )
+            self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - command %s dp: %s dt: %s len: %s data: %s idx: %s" % (
+                cmd, dp, datatype, len_data, data, idx ), NwkId, )
             tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
             
     elif cmd == "06":  # TY_DATA_SEARCH
