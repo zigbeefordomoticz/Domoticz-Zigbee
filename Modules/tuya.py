@@ -1264,7 +1264,6 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
             humi = int(data, 16) // 10
         else:
             humi = int(data, 16)
-
         store_tuya_attribute(self, NwkId, "Humi", humi)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0405", humi)
         checkAndStoreAttributeValue(self, NwkId, "01", "0405", "0000", humi)
