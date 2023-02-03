@@ -16,15 +16,18 @@ import struct
 from time import time
 
 import Domoticz
+
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice
-from Modules.readZclClusters import (is_cluster_zcl_config_available, process_cluster_attribute_response)
 from Modules.ikeaTradfri import ikea_air_purifier_cluster
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster,
                           store_lumi_attribute)
 from Modules.philips import philips_dimmer_switch
+from Modules.pluginModels import check_found_plugin_model
+from Modules.readZclClusters import (is_cluster_zcl_config_available,
+                                     process_cluster_attribute_response)
 from Modules.schneider_wiser import (receiving_heatingdemand_attribute,
                                      receiving_heatingpoint_attribute)
 from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
@@ -32,6 +35,8 @@ from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
                            get_deviceconf_parameter_value, getEPforClusterType,
                            is_hex, set_status_datastruct,
                            set_timestamp_datastruct)
+from Modules.zclClusterHelpers import (compute_electrical_measurement_conso,
+                                       compute_metering_conso)
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
@@ -41,9 +46,6 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
-from Modules.pluginModels import check_found_plugin_model
-from Modules.readAttributes import ReadAttributeRequest_0702_multiplier_divisor
-
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -3529,63 +3531,6 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
-    # For Instant Power
-    # Device Configuration PowerMeteringMultiplier can overwrite the Multiplier
-    # Device Configuration PowerMeteringDivisor can overwrite the Divisor
-    # For Summation 
-    # Device Configuration SummationMeteringMultiplier can overwrite the Multiplier
-    # Device Configuration SummationMeteringDivisor can overwrite the Divisor
-
-    # Get the Unit, to see if we have Kilo, so then multiply by 1000.
-    unit = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "MeteringUnit")
-    if unit is None:
-        unit = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0300"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0300" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else "kW" )
-    if unit == "kW":
-        # Domoticz expect in Watts
-        conso = raw_value * 1000
-    elif unit == "Unitless":
-        conso = raw_value
-    else:
-        # We assumed default as kW
-        self.log.logging("Cluster", "Error", "compute_metering_conso - Unknown %s/%s assuming kW" %( 
-            NwkId, MsgSrcEp ), NwkId)
-        conso = raw_value * 1000
-        
-    multiplier = None
-    divisor = None
-    modelName = self.ListOfDevices[NwkId]["Model"] if "Model" in self.ListOfDevices[NwkId] else None
-    # Check if we have a Device configuration overwrite
-    if modelName and modelName not in ( '', {} ):
-        if MsgAttrID == "0400":
-            # Instant Power
-            multiplier = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "PowerMeteringMultiplier")
-            divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "PowerMeteringDivisor")
-        elif MsgAttrID == "0000":
-            # Summation
-            multiplier = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "SummationMeteringMultiplier")
-            divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "SummationMeteringDivisor")
-
-    if multiplier is None:
-        # By default Multiplier is assumed to be 1
-        multiplier = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0301"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0301" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
-    if divisor is None:
-        # By default Multiplier is assumed to be 1
-        divisor = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0302"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
- 
-    conso = round( (( conso * multiplier ) / divisor ), 3)
-    self.log.logging("Cluster", "Debug", "compute_metering_conso - %s/%s Unit: %s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
-        NwkId, MsgSrcEp, unit, multiplier, divisor, raw_value, conso), NwkId)
-
-    if ( 
-        MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] 
-        and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] 
-        and ("0301" not in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] or "0302" not in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]
-             or "0300" not in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId])
-    ):
-        ReadAttributeRequest_0702_multiplier_divisor(self,NwkId )
-       
-    return conso
 
 def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
@@ -4104,21 +4049,8 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
 def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (
-            MsgClusterId,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgAttrID,
-            MsgAttType,
-            MsgAttSize,
-            decodeAttribute(self, MsgAttType, MsgClusterData),
-        ),
-        MsgSrcAddr,
-    )
+    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % ( 
+        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, decodeAttribute(self, MsgAttType, MsgClusterData), ), MsgSrcAddr, )
 
     if MsgAttrID == "0305":
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
@@ -4137,24 +4069,17 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             store_ZLinky_infos( self, MsgSrcAddr, 'ERQ4', int(decodeAttribute(self, MsgAttType, MsgClusterData)))
     
     if MsgAttrID == "050b":  # Active Power
-        
         if -32768 <= int(MsgClusterData[:4], 16) <= 32767:
             value = int(decodeAttribute(self, MsgAttType, MsgClusterData[:4]))
             self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
-            divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "ActivePowerDivisor", return_default=1)
-            value /= divisor
-            
+            value = compute_electrical_measurement_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
             if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
                 store_ZLinky_infos( self, MsgSrcAddr, 'CCASN', value)
         else:
-            self.log.logging(
-                "Cluster",
-                "Log",
-                "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s Out of Range!!" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-                MsgSrcAddr,
-            )
+            self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s Out of Range!!" % (
+                MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
 
     elif MsgAttrID == "090b":
             if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
@@ -4166,8 +4091,8 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Voltage %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         if value == 0xFFFF:
             return
-        divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "RMSVoltageDivisor", return_default=1)
-        value /= divisor    
+        value = compute_electrical_measurement_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         if MsgAttrID == "0505":
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
@@ -4184,12 +4109,9 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         if value == 0xFFFF:
             return
-
         self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L1 %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr, )
 
-        
-   
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
             store_ZLinky_infos( self, MsgSrcAddr, 'IRMS1', value)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
@@ -4198,9 +4120,7 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Check if Intensity is below subscription level
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, "0009", zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
         else:
-            divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "RMSCurrentDivisor", return_default=100)
-            value /= divisor
-        
+            value = compute_electrical_measurement_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
