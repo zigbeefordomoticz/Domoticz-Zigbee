@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.3">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="6.4">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -119,6 +119,7 @@ from Modules.database import (LoadDeviceList, WriteDeviceList,
                               importDeviceConfV2)
 from Modules.domoCreate import how_many_slot_available
 from Modules.domoTools import ResetDevice
+from Modules.readZclClusters import load_zcl_cluster
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
@@ -170,6 +171,7 @@ class BasePlugin:
         self.IEEE2NWK = {}
         self.ControllerData = {}
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
+        self.readZclClusters = {}
 
         # Objects from Classe
         self.configureReporting = None
@@ -280,7 +282,7 @@ class BasePlugin:
             _current_python_version_major, _current_python_version_minor))
     
         # TODO put the check of python3.8 on hold
-        assert sys.version_info >= (3, 7)  # nosec
+        assert sys.version_info >= (3, 6)  # nosec
         
         if check_requirements( self ):
             self.onStop()
@@ -432,7 +434,9 @@ class BasePlugin:
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Plugin Database: %s" % self.DeviceListName)
 
-
+        # Import Zcl Cluster definitions
+        load_zcl_cluster(self)
+        
         # Import Certified Device Configuration
         importDeviceConfV2(self)
 
@@ -1055,6 +1059,11 @@ def get_domoticz_version( self ):
         self.DomoticzMinor = int(minor)
         self.VersionNewFashion = True
         
+    #Domoticz.Log( "DomoticzBuild : %s" %self.DomoticzBuild) 
+    #Domoticz.Log( "DomoticzMajor : %s" %self.DomoticzMajor) 
+    #Domoticz.Log( "DomoticzMinor : %s" %self.DomoticzMinor) 
+    #Domoticz.Log( "VersionNewFashion : %s" %self.VersionNewFashion) 
+        
     return True
 
 
@@ -1470,11 +1479,11 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.51.5",
-        "zigpy_znp": "0.9.1",
-        "zigpy_deconz": "0.19.1",
+        "zigpy": "0.53.1",
+        "zigpy_znp": "0.9.2",
+        "zigpy_deconz": "0.19.2",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.34.3",
+        "zigpy_ezsp": "0.34.6",
         }
 
     flag = True

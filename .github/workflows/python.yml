@@ -1,14 +1,24 @@
-name: lint_python
-on: [pull_request, push]
+name: Python check
+    
+on:
+  push:
+    branches:
+      - develop
+      - stable6
+    paths:
+      - "**.py"
+  pull_request:
+    paths:
+      - "**.py"
 jobs:
   lint_python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.8"
-      - run: pip install bandit black codespell flake8 isort mypy pytest pyupgrade safety
+      - run: pip install bandit black codespell flake8 isort mypy pytest pyupgrade
       - run: bandit -r . || true
       - run: black --check . || true
       - run: codespell --quiet-level=2 --skip="./www" || true  # --ignore-words-list=""
@@ -20,6 +30,3 @@ jobs:
       - run: pytest . || true
       - run: pytest --doctest-modules . || true
       - run: shopt -s globstar && pyupgrade --py36-plus **/*.py || true
-      - run: safety check
-      
-      

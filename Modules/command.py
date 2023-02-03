@@ -41,7 +41,7 @@ from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
                              tuya_trv_mode, tuya_trv_onoff,
                              tuya_trv_switch_onoff)
 
-from Modules.widgets import SWITCH_LVL_MATRIX
+from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
 
@@ -215,8 +215,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
     # Sanity Check
     forceUpdateDev = False
-    if DeviceType in SWITCH_LVL_MATRIX and "ForceUpdate" in SWITCH_LVL_MATRIX[DeviceType]:
-        forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType]["ForceUpdate"]
+    if DeviceType in SWITCH_SELECTORS and "ForceUpdate" in SWITCH_SELECTORS[DeviceType]:
+        forceUpdateDev = SWITCH_SELECTORS[DeviceType]["ForceUpdate"]
     self.log.logging("Command", "Debug", "--------->3   forceUpdateDev: %s" % forceUpdateDev, NWKID)
 
     if DeviceType not in ACTIONATORS and not self.pluginconf.pluginConf["forcePassiveWidget"]:

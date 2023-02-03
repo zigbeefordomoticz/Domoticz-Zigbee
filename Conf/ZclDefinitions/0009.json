@@ -1,0 +1,16 @@
+{
+    "ClusterId": "0009",
+    "Description": "Alarms",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "AlarmCount",
+            "DataType": "21" ,
+            "Acc": "R" ,
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        }
+    }
+}

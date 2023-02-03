@@ -55,7 +55,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
     # 0x0043 / List of EndPoints is requested at the time we receive the End Device Annocement
     # 0x0045 / EndPoint Description is requested at the time we recice the List of EPs.
     # In case Model is defined and is in DeviceConf, we will short cut the all process and go to the Widget creation
-    if status in ("UNKNOW", "erasePDM", "provREQ"):
+    if status in ("UNKNOW", "erasePDM", "provREQ", "notDB"):
         return
 
     HB_ = int(self.ListOfDevices[NWKID]["Heartbeat"])

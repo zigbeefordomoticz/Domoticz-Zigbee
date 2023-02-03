@@ -1,0 +1,16 @@
+{
+    "ClusterId": "0004",
+    "Description": "Groups",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "NameSupport",
+            "DataType": "18" ,
+            "Acc": "R" ,
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        }
+    }
+}

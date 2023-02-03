@@ -578,7 +578,10 @@ def buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
             TransitionTime = decode_endian_data(Data[6:10],"21")
 
         buildPayload = Sqn + SrcEndPoint + ClusterId + "02" + SrcNwkId + Command + GroupID + SceneID + TransitionTime
-        return encapsulate_plugin_frame("80a5", buildPayload, frame[len(frame) - 4 : len(frame) - 2])        
+        return encapsulate_plugin_frame("80a5", buildPayload, frame[len(frame) - 4 : len(frame) - 2])   
+    
+    return frame
+             
 
 
 # Cluster 0x0006
