@@ -179,55 +179,44 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     updSQN(self, NwkId, sqn)
 
     cmd = MsgPayload[4:6]  # uint8
-    #                                  dp dt fn len
-    # 00/0104/ef00/01/01/02/db4f/02-00-00-09-c6-0202/77/ 01/02/0004/000000c2/020200040000003a04020004000000640a020004000001680b020004000000c8
-    # 00/0104/ef00/01/01/02/8a0c/02-00-00-09-9b-0203/64/ 01/02/0004/000000a0/020200040000004604020004000000640a020004000001680b020004000000c8
-    # 00/0104/ef00/01/01/02/8a0c/02-00-00-09-9e-0203/67/ 0c/02/0004/00000046/0d02000400000014110200040000001e0904000100
-    # 00/0104/ef00/01/01/02/8a0c/02-00-00-09-9f-0203/68/ 01/02/0004/0000009f/020200040000004604020004000000640a020004000001680b020004000000c8
-    # 00/0104/ef00/01/01/02/8a0c/02-00-00-09-a1-0203/6a/ 01/02/0004/0000009f/020200040000004604020004000000640a020004000001680b020004000000c8
-    
-    # 00/0104/ef00/01/01/02/8a0c
-    # 0200000999020362
-    # 01020004000000a2
-    # 0202000400000046
-    # 0402000400000064
-    # 0a02000400000168
-    # 0b020004000000c8
-    
-    # 099902036201020004000000a2020200040000004604020004000000640a020004000001680b020004000000c8
-    
-    # 09/46/02/
-    #   01 c1/01/02/0004/000000c2
-    #         02/02/0004/00000037
-    #         04/02/0004/00000064
-    #         0a/02/0004/00000168
-    #         0b/02/0004/000000c8
     # Send a Default Response ( why might check the FCF eventually )
     if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
         tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
 
     # https://developer.tuya.com/en/docs/iot/tuuya-zigbee-door-lock-docking-access-standard?id=K9ik5898uzqrk
-    
+    self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - %s/%s fcf: %s sqn: %s cmd: %s Payload: %s" % (
+        NwkId, srcEp, fcf, sqn, cmd, MsgPayload ), NwkId, )
+
     if cmd in ( "01", "02",):  # TY_DATA_RESPONE, TY_DATA_REPORT
         status = MsgPayload[6:8]  # uint8
+        self.log.logging( "Tuya", "Debug", "    status: %s" % ( status ), NwkId, )
+
         transid = MsgPayload[8:10]  # uint8
+        self.log.logging( "Tuya", "Debug", "    TransId: %s" % ( transid ), NwkId, )
         idx = 10
         while idx < len(MsgPayload):
+            self.log.logging( "Tuya", "Debug", "    working on remaining payload %s idx: %s" % ( MsgPayload[idx:], idx ), NwkId, )
+            
             dp = int(MsgPayload[idx:idx + 2], 16)
             idx += 2
+            self.log.logging( "Tuya", "Debug", "        dp: %s" % ( dp ), NwkId, )
+            
             datatype = int(MsgPayload[idx:idx + 2], 16)
             idx += 2
-            if dp == "00" and datatype == "09":
-                # No clue what it is , but let skip that one.
-                idx += 8
-                continue
+            self.log.logging( "Tuya", "Debug", "        datatype: %s" % ( datatype ), NwkId, )
             
             fn = MsgPayload[idx:idx + 2]
             idx += 2
+            self.log.logging( "Tuya", "Debug", "        fn: %s" % ( fn ), NwkId, )
+            
             len_data = 2 * int(MsgPayload[idx:idx + 4], 16)
             idx += 4
+            self.log.logging( "Tuya", "Debug", "        len_data: %s" % ( len_data ), NwkId, )
+            
             data = MsgPayload[idx:idx + len_data]
             idx += len_data
+            self.log.logging( "Tuya", "Debug", "        data: %s" % ( data ), NwkId, )
+            
             self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - command %s dp: %s dt: %s fn: %s len: %s data: %s idx: %s" % (
                 cmd, dp, datatype, fn, len_data, data, idx ), NwkId, )
             tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
@@ -270,24 +259,14 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         send_timesynchronisation(self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload[6:])
 
     else:
-        self.log.logging(
-            "Tuya",
-            "Log",
-            "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s"
-            % (_ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]),
-            NwkId,
-        )
+        self.log.logging( "Tuya", "Log", "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" % (
+            _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]), NwkId, )
 
 
 def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-    self.log.logging(
-        "Tuya",
-        "Debug",
-        "tuya_response - Model: %s Nwkid: %s/%s dp: %02x dt: %02x data: %s"
-        % (_ModelName, NwkId, srcEp, dp, datatype, data),
-        NwkId,
-    )
+    self.log.logging( "Tuya", "Debug", "tuya_response - Model: %s Nwkid: %s/%s dp: %02x dt: %02x data: %s" % (
+        _ModelName, NwkId, srcEp, dp, datatype, data), NwkId, )
 
     if _ModelName in ( "TS0202-_TZ3210_jijr1sss",):
         tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
