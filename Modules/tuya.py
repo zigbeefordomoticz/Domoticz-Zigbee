@@ -217,7 +217,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             idx += 2
             datatype = int(MsgPayload[idx:idx + 2], 16)
             idx += 2
-            if dp == "00" and dt == "09":
+            if dp == "00" and datatype == "09":
                 # No clue what it is , but let skip that one.
                 idx += 8
                 continue
