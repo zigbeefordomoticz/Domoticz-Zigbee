@@ -7,7 +7,7 @@
             "0403": {
                 "Attributes": {
                     "0000": { "Enabled": true, "Name": "Aqara MeasuredValue","DataType": "29" , "DomoClusterType": "Baro","ActionList": [ "check_store_value"]},
-                    "0010": { "Enabled": true, "Name": "Aqara ScaledValue", "DataType": "29" , "EvalExp": "value", "ActionList": [ "check_store_value", "upd_domo_device"]},
+                    "0010": { "Enabled": true, "Name": "Aqara ScaledValue", "DataType": "29" , "EvalExp": "round(int(value) / 10, 1)", "ActionList": [ "check_store_value", "upd_domo_device"]},
                     "0014": { "Enabled": true, "Name": "Aqara Scale", "DataType": "28", "ActionList": [ "check_store_value"] }
                 }
             },
