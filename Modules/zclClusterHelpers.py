@@ -262,6 +262,9 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
     # Device Configuration SummationMeteringMultiplier can overwrite the Multiplier
     # Device Configuration SummationMeteringDivisor can overwrite the Divisor
 
+    if isinstance(raw_value, str):
+        raw_value = int(raw_value,16)
+
     # Get the Unit, to see if we have Kilo, so then multiply by 1000.
     unit = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "MeteringUnit")
     if unit is None:
@@ -293,10 +296,10 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
 
     if multiplier is None:
         # By default Multiplier is assumed to be 1
-        multiplier = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0301"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0301" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
+        multiplier = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0301"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0301" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
     if divisor is None:
         # By default Multiplier is assumed to be 1
-        divisor = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0302"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
+        divisor = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0302"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
  
     conso = round( (( conso * multiplier ) / divisor ), 3)
     self.log.logging("Cluster", "Debug", "compute_metering_conso - %s/%s Unit: %s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
@@ -315,12 +318,17 @@ def compute_electrical_measurement_conso(self, NwkId, MsgSrcEp, MsgClusterId, Ms
     # ActivePowerDivisor 	
     # RMSVoltageDivisor
     # RMSCurrentDivisor
+    self.log.logging("Cluster", "Debug", "compute_electrical_measurement_conso - %s/%s %s %s %s %s" % (
+        NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value, type(raw_value)), NwkId)
 
     MULTIPLIER_DIVISOR_MATRIX = {
         '0505': { 'multiplier': '0600', 'divisor': '0601', 'custom': 'RMSVoltageDivisor'},    # RMSVoltage
         '0508': { 'multiplier': '0602', 'divisor': '0603', 'custom': 'RMSCurrentDivisor'},    # RMSCurrent
         '050b': { 'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},   # ActivePower
     }
+    if isinstance( raw_value, str):
+        raw_value = int(raw_value,16)
+
     conso = raw_value
     multiplier = None
     divisor = None
@@ -332,6 +340,7 @@ def compute_electrical_measurement_conso(self, NwkId, MsgSrcEp, MsgClusterId, Ms
     custom = MULTIPLIER_DIVISOR_MATRIX[ MsgAttrID ]['custom']
     divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], custom)
     if divisor is not None:
+        divisor = int(divisor )
         self.log.logging("Cluster", "Debug", "compute_electrical_measurement_conso - %s/%s Custom Divisor: %s , raw: %s result: %s" % (
             NwkId, MsgSrcEp, divisor, raw_value, conso), NwkId)
         return round( (( conso ) / divisor ), 3)
@@ -340,9 +349,9 @@ def compute_electrical_measurement_conso(self, NwkId, MsgSrcEp, MsgClusterId, Ms
     divisor_attribute = MULTIPLIER_DIVISOR_MATRIX[ MsgAttrID ]['divisor']
         
     # By default Multiplier is assumed to be 1
-    multiplier = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId][ multiplier_attribute ] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and multiplier_attribute in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
+    multiplier = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId][ multiplier_attribute ] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and multiplier_attribute in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
     # By default Multiplier is assumed to be 1
-    divisor = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId][ divisor_attribute ] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and divisor_attribute in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
+    divisor = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId][ divisor_attribute ] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and divisor_attribute in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
  
     conso = round( (( conso * multiplier ) / divisor ), 3)
     self.log.logging("Cluster", "Debug", "compute_electrical_measurement_conso - %s/%s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
