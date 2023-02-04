@@ -26,7 +26,12 @@ from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
 from Modules.lumi import (RTCZCGQ11LM_motion_opple_approach_distance,
                           RTCZCGQ11LM_motion_opple_monitoring_mode,
                           RTCZCGQ11LM_motion_opple_sensitivity,
-                          setXiaomiVibrationSensitivity)
+                          setXiaomiVibrationSensitivity,
+                          xiaomi_aqara_switch_mode_switch,
+                          xiaomi_flip_indicator_light,
+                          xiaomi_led_disabled_night,
+                          xiaomi_switch_operation_mode_opple,
+                          xiaomi_switch_power_outage_memory)
 from Modules.philips import (philips_led_indication,
                              philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
@@ -195,6 +200,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
             set_poweron_afteroffon(self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
+
 def _check_attribute_exist( self, nwkid, ep, cluster, attribute):
     if ep not in self.ListOfDevices[nwkid]["Ep"]:
         self.log.logging("Heartbeat", "Debug", "No ep: %s" %ep, nwkid)
@@ -207,8 +213,7 @@ def _check_attribute_exist( self, nwkid, ep, cluster, attribute):
         return False
     return True
    
-
-
+   
 def ias_wd_sirene_max_alarm_dureation( self, nwkid, duration):
     if self.iaszonemgt:
         Epout = getEpForCluster(self, nwkid, "0502", strict=True)
@@ -274,7 +279,12 @@ DEVICE_PARAMETERS = {
     "RTCZCGQ11LMApproachDistance": RTCZCGQ11LM_motion_opple_approach_distance,
     "RTCZCGQ11LMMonitoringMode": RTCZCGQ11LM_motion_opple_monitoring_mode,
     "ZG204Z_MotionSensivity": tuya_motion_zg204l_sensitivity,
-    "ZG204Z_MotionOccupancyTime": tuya_motion_zg204l_keeptime
+    "ZG204Z_MotionOccupancyTime": tuya_motion_zg204l_keeptime,
+    "AqaraOpple_switch_power_outage_memory": xiaomi_switch_power_outage_memory,
+    "AqaraOpple_led_disabled_night": xiaomi_led_disabled_night,
+    "AqaraOpple_flip_indicator_light": xiaomi_flip_indicator_light,
+    "AqaraOpple_switch_operation_mode_opple": xiaomi_switch_operation_mode_opple,
+    "AqaraOpple_aqara_switch_mode_switch": xiaomi_aqara_switch_mode_switch,
 }
 
 def sanity_check_of_param(self, NwkId):
