@@ -11,7 +11,7 @@
             "0702": "",
             "0b04": "",
             "0019": "",
-            "Type": "Plug/Power/Meter/Voltage"
+            "Type": "Plug/Power/Meter/Voltage/Ampere"
         }
     },
     "Type": "",
@@ -28,7 +28,10 @@
         "0702": [ "0000" ],
         "0b04": [ "0508", "050b", "0505" ]
     },
-    "RMSCurrentDivisor": 2000,
+    "RMSCurrentDivisor": 1000,
+    "MeteringUnit": "Unitless",
+    "SummationMeteringMultiplier": 1,
+    "SummationMeteringDivisor": 1,
     "Param": {
         "PowerOnAfterOffOn": 2,
         "IndicatorMode": 1,
