@@ -13,14 +13,13 @@ import time
 from math import atan, pi, sqrt
 
 import Domoticz
-
 from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
                                   write_attribute)
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.readAttributes import ReadAttributeRequest_0b04_050b
-from Modules.tools import (checkAndStoreAttributeValue, is_ack_tobe_disabled,
-                           voltage2batteryP)
+from Modules.tools import (checkAndStoreAttributeValue, getListOfEpForCluster,
+                           is_ack_tobe_disabled, voltage2batteryP)
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, SIZE_DATA_TYPE, ZIGATE_EP
 
 XIAOMI_POWERMETER_EP = {
@@ -102,27 +101,8 @@ def enableOppleSwitch(self, nwkid):
         self.ListOfDevices[nwkid]["Lumi"] = {"AqaraOppleBulbMode": True}
         return
 
-    manuf_id = "115f"
-    manuf_spec = "01"
-    cluster_id = "fcc0"
-    Hattribute = "0009"
-    data_type = "20"
-    Hdata = "01"
+    enable_operation_mode_aqara( self, nwkid)
 
-    self.log.logging("Lumi", "Debug", "Write Attributes LUMI Opple Magic Word Nwkid: %s" % nwkid, nwkid)
-    write_attribute(
-        self,
-        nwkid,
-        ZIGATE_EP,
-        "01",
-        cluster_id,
-        manuf_id,
-        manuf_spec,
-        Hattribute,
-        data_type,
-        Hdata,
-        ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
-    )
 
 def enable_operation_mode_aqara( self, nwkid):
     if nwkid not in self.ListOfDevices:
@@ -153,7 +133,7 @@ def enable_click_mode_aqara(self, nwkid):
     data_type = "20"
     Hdata = "02"   # Multi-Click
 
-    self.log.logging("Lumi", "Debug", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
+    self.log.logging("Lumi", "Debug", "Write enable_click_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
         self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
@@ -174,10 +154,11 @@ def xiaomi_switch_power_outage_memory(self, nwkid, mode):
     data_type = "10"
     Hdata = "%x" %mode
 
-    self.log.logging("Lumi", "Debug", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
-    write_attribute( 
-        self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
-        ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+    for _ep in getListOfEpForCluster(self, nwkid, "0006"):
+        self.log.logging("Lumi", "Debug", "Write xiaomi_switch_power_outage_memory AQARA Wireless Switch: %s/%s" % (nwkid, _ep), nwkid)
+        write_attribute( 
+            self, nwkid, ZIGATE_EP, _ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
+            ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
 
 def xiaomi_led_disabled_night(self, nwkid, mode):
@@ -231,10 +212,11 @@ def xiaomi_switch_operation_mode_opple(self, nwkid, mode):
     data_type = "20"
     Hdata = "%x" %mode
 
-    self.log.logging("Lumi", "Debug", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
-    write_attribute( 
-        self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
-        ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+    for _ep in getListOfEpForCluster(self, nwkid, "0006"):
+        self.log.logging("Lumi", "Debug", "Write xiaomi_switch_operation_mode_opple AQARA Wireless Switch: %s/%s" % (nwkid, _ep), nwkid)
+        write_attribute( 
+            self, nwkid, ZIGATE_EP, _ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
+            ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
 
 def xiaomi_aqara_switch_mode_switch(self, nwkid, mode):
@@ -250,10 +232,12 @@ def xiaomi_aqara_switch_mode_switch(self, nwkid, mode):
     data_type = "21"
     Hdata = "%x" %mode
 
-    self.log.logging("Lumi", "Debug", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
-    write_attribute( 
-        self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
-        ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+    for _ep in getListOfEpForCluster(self, nwkid, "0006"):
+        self.log.logging("Lumi", "Debug", "Write xiaomi_aqara_switch_mode_switch AQARA Wireless Switch: %s/%s" % (nwkid, _ep), nwkid)
+        write_attribute( 
+            self, nwkid, ZIGATE_EP, _ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
+            ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
 
 
 def RTCZCGQ11LM_motion_opple_sensitivity(self, nwkid, param):
