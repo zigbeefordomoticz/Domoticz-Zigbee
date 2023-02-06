@@ -18,6 +18,13 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+##    Feb. 2023 - stable6 - 6.3.011 ( 2023.3 )
+
+- [Hardware] - Heiman/Wiser SmartPlugin device
+- [Hardware] - Additional Tuya Thermostat devices
+- [Hardware] - Tuya LCD Temp Humi device
+- [WebUI] - Dashboard fix
+
 ##    Feb. 2023 - stable6 - 6.3.010 ( 2023.2 )
 
 - [Hardware] - New flavor of TS011F Tuya plug
