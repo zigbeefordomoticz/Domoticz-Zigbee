@@ -16,7 +16,6 @@ import struct
 from time import time
 
 import Domoticz
-
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice
@@ -25,9 +24,6 @@ from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
                           decode_vibrAngle, readLumiLock, readXiaomiCluster,
                           store_lumi_attribute)
 from Modules.philips import philips_dimmer_switch
-from Modules.pluginModels import check_found_plugin_model
-from Modules.readZclClusters import (is_cluster_zcl_config_available,
-                                     process_cluster_attribute_response)
 from Modules.schneider_wiser import (receiving_heatingdemand_attribute,
                                      receiving_heatingpoint_attribute)
 from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
@@ -35,8 +31,6 @@ from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
                            get_deviceconf_parameter_value, getEPforClusterType,
                            is_hex, set_status_datastruct,
                            set_timestamp_datastruct)
-from Modules.zclClusterHelpers import (compute_electrical_measurement_conso,
-                                       compute_metering_conso)
 from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
                                   LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
                                   ZONE_TYPE)
@@ -46,6 +40,7 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
+from Modules.pluginModels import check_found_plugin_model
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -137,11 +132,33 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
 
 def storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus):
+
+    # i_sqnFromMessage = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
+    # i_sqn_expected = get_isqn_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
+
+    # if MsgType == '8100' and i_sqn_expected and i_sqnFromMessage and i_sqn_expected != i_sqnFromMessage:
+    #     Domoticz.Log("+++ SQN Missmatch in ReadCluster %s/%s %s %s i_sqn: %s e_sqn: %s i_esqn: %s "
+    #         %( MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, i_sqn_expected, MsgSQN, i_sqnFromMessage ))
+
     set_status_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
     set_timestamp_datastruct(self, "ReadAttributes", MsgSrcAddr, MsgSrcEp, MsgClusterId, int(time()))
 
 
-def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source=None, ):
+def ReadCluster(
+    self,
+    Devices,
+    MsgType,
+    MsgSQN,
+    MsgSrcAddr,
+    MsgSrcEp,
+    MsgClusterId,
+    MsgAttrID,
+    MsgAttrStatus,
+    MsgAttType,
+    MsgAttSize,
+    MsgClusterData,
+    Source=None,
+):
 
     if MsgSrcAddr not in self.ListOfDevices:
         _context = {
@@ -156,7 +173,8 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
         return
 
     if not DeviceExist(self, Devices, MsgSrcAddr):
-        # We cannot process a none existing device.
+        # Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
+        # Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
         return
 
     if (
@@ -190,25 +208,32 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
     storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
 
     if MsgAttrStatus != "00" and MsgClusterId != "0500":
-        # We receive a Read Attribute response or a Report with a status error.
-        self.log.logging( "Cluster", "Debug", "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" % (
-            MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID), nwkid=MsgSrcAddr, )
+        self.log.logging(
+            "Cluster",
+            "Debug",
+            "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" % (MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID),
+            nwkid=MsgSrcAddr,
+        )
         self.statistics._clusterKO += 1
         return
 
-
-    if self.pluginconf.pluginConf["readZclClusters"] and is_cluster_zcl_config_available( self, MsgClusterId, attribute=MsgAttrID):
-        process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
-    
-    elif MsgClusterId in DECODE_CLUSTER:
-        if self.pluginconf.pluginConf["readZclClusters"] and MsgClusterId not in ( "0000", "0201", "0b04", ):
-            self.log.logging( "Cluster", "Log", "ReadCluster - Cluster %s/%s not yet ready for ZclCluster %s/%s" %(
-                MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp))
-
+    if MsgClusterId in DECODE_CLUSTER:
         _func = DECODE_CLUSTER[MsgClusterId]
-        _func( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
-
+        _func(
+            self,
+            Devices,
+            MsgSQN,
+            MsgSrcAddr,
+            MsgSrcEp,
+            MsgClusterId,
+            MsgAttrID,
+            MsgAttType,
+            MsgAttSize,
+            MsgClusterData,
+            Source,
+        )
     else:
+
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         _context = {
             "MsgClusterId": str(MsgClusterId),
@@ -218,9 +243,13 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
             "MsgAttSize": str(MsgAttSize),
             "MsgClusterData": str(MsgClusterData),
         }
-
-        self.log.logging( "Cluster", "Error", "ReadCluster - Error/unknow Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr), MsgSrcAddr, _context, )
-
+        self.log.logging(
+            "Cluster",
+            "Error",
+            "ReadCluster - Error/unknown Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr),
+            MsgSrcAddr,
+            _context,
+        )
 
 
 def Cluster0000(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -1398,16 +1427,7 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging("Cluster", "Debug", "%s/%s Out of service: %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == "0055":  # The PresentValueattribute  indicates the current value  of the  input,  output or value
-        if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.airmonitor.acn01":
-            voc = decodeAttribute(self, MsgAttType, MsgClusterData)
-            self.log.logging("Cluster", "Log", "%s/%s Voc: %s" % (MsgSrcAddr, MsgSrcEp, voc), MsgSrcAddr)
-            if not checkValidValue(self, MsgSrcAddr, MsgAttType, voc):
-                self.log.logging( "Cluster", "Info", "Voc - invalid Data Value found : %s" % (
-                    voc), MsgSrcAddr, )
-                return
-            MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, voc)
-            return
-            
+        # Are we receiving Power or is that XCube or something else
         if getEPforClusterType(self, MsgSrcAddr, "Analog") and MsgAttType == "39":
             # We have an Analog Widget created, so we can consider it is not a Xiaomi Plug nor an Aqara/XCube
             self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Xiaomi attribute: %s:  %s " % (
@@ -3043,6 +3063,8 @@ def Cluster0301(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
             MsgSrcAddr,
         )
+
+
 def Cluster0400(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # (Measurement: LUX)
     #  Lux=10^((y-1)/10000)
@@ -3532,6 +3554,41 @@ def Cluster0502(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )
 
 
+def compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
+
+    conso = raw_value  # Raw value
+    if "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET2", ):
+        value = round(conso / 10, 3)
+        
+    elif "Model" in self.ListOfDevices[MsgSrcAddr] in ( "SOCKETOUTLET1", ):
+        value = round(conso / 1000, 3)
+
+    elif MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
+        diviser = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0302"]
+        value = round(conso / (diviser / 1000), 3)
+        self.log.logging("Cluster", "Debug", "compute_conso - %s Power %s, div: %s --> %s Watts" % (MsgAttrID, conso, diviser, value))
+
+    elif MsgSrcEp in self.ListOfDevices[MsgSrcAddr]["Ep"] and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp] and "0301" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
+        multiplier = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0301"]
+        value = round(conso * multiplier, 3)
+        self.log.logging( "Cluster", "Debug", "compute_conso - %s Power %s, multiply: %s --> %s Watts" % (
+            MsgAttrID, conso, multiplier, value), )
+    else:
+        # Old fashion
+        value = round(conso / 10, 3)
+        if "Model" in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]["Model"] == "EH-ZB-SPD-V2":
+                value = round(conso, 3)
+
+            elif self.ListOfDevices[MsgSrcAddr]["Model"] == "TS0121":
+                value = round(conso * 10, 3)
+
+            elif self.ListOfDevices[MsgSrcAddr]["Model"] in ("PC321", "CPC321"):
+                value = round(conso, 3)
+
+    return value
+
+
 def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
     # Smart Energy Metering
@@ -3584,7 +3641,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(conso), Attribute_="0000")
 
         else:
-            conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             if value > 0x7FFFFFFFFFFFFFFF:
                 self.log.logging(
                     "Cluster",
@@ -3608,6 +3665,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
             store_ZLinky_infos( self, MsgSrcAddr, 'EAIT', value)
+            
 
     elif MsgAttrID == "0002":  # Current Max Demand Delivered
         self.log.logging(
@@ -3668,6 +3726,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         store_ZLinky_infos( self, MsgSrcAddr, 'HCHC', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'EJPHN', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'BBRHCJB', value)
+        
 
     elif MsgAttrID == "0102" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
         # HP or BBRHPJB
@@ -3692,6 +3751,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         store_ZLinky_infos( self, MsgSrcAddr, 'EASF03', value)
         store_ZLinky_infos( self, MsgSrcAddr, 'BBRHCJW', value)
 
+        
     elif MsgAttrID == "0106" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
         if value == 0:
             return
@@ -3751,10 +3811,10 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
 
     elif MsgAttrID == "0300":  # Unit of Measure
-        CLUSTER0702_MEASURE_UNITS = {0x00: "kW", 0x01: "m³", 0x02: "ft³", 0x03: "ccf", 0x0b: "Unitless"}
+        MEASURE_UNITS = {0: "kW", 1: "m³", 2: "ft³", 3: "ccf"}
 
-        if value in CLUSTER0702_MEASURE_UNITS:
-            value = CLUSTER0702_MEASURE_UNITS[value]
+        if value in MEASURE_UNITS:
+            value = MEASURE_UNITS[value]
 
         self.log.logging("Cluster", "Debug", "Cluster0702 - %s/%s Unit of Measure: %s" % (MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
@@ -3825,7 +3885,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 MsgSrcAddr,
             )
             return
-        conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
         self.log.logging(
             "Cluster",
@@ -3925,7 +3985,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if MsgAttrID in ("2000", "2001", "2002"):  # Lx phase Power
             line = 1 + (int(MsgAttrID, 16) - 0x2000)
             fake_ep = "f%s" % line
-            conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
             checkAndStoreAttributeValue(self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(conso))
             self.ListOfDevices[MsgSrcAddr]["Ep"][fake_ep][MsgClusterId]["0400"] = str(conso)
@@ -3940,7 +4000,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         elif MsgAttrID in ("2100", "2101", "2102"):  # Reactive Power
             line = 1 + (int(MsgAttrID, 16) - 0x2100)
             fake_ep = "f%s" % line
-            conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0400", value)
+            conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0400", value)
             checkAndStoreAttributeValue(self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(conso))
 
         elif MsgAttrID in ("3000", "3001", "3002"):  # Lx Voltage
@@ -3980,7 +4040,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         elif MsgAttrID in ("4000", "4001", "4002"):  # Lx Energy Consuption (Meter)
             line = 1 + (int(MsgAttrID, 16) - 0x4000)
             fake_ep = "f%s" % line
-            conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0000", value)
+            conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0000", value)
 
             checkAndStoreAttributeValue(self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(value))
             self.ListOfDevices[MsgSrcAddr]["Ep"][fake_ep][MsgClusterId]["0000"] = str(conso)
@@ -3995,7 +4055,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         elif MsgAttrID in ("4100", "4101", "4102"):  # Reactive energy summation
             line = 1 + (int(MsgAttrID, 16) - 0x4100)
             fake_ep = "f%s" % line
-            conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0000", value)
+            conso = compute_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0000", value)
             checkAndStoreAttributeValue(self, MsgSrcAddr, fake_ep, MsgClusterId, MsgAttrID, str(conso))
 
         else:
@@ -4049,8 +4109,21 @@ def Cluster0b01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
 def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
 
-    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % ( 
-        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, decodeAttribute(self, MsgAttType, MsgClusterData), ), MsgSrcAddr, )
+    self.log.logging(
+        "Cluster",
+        "Debug",
+        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
+        % (
+            MsgClusterId,
+            MsgSrcAddr,
+            MsgSrcEp,
+            MsgAttrID,
+            MsgAttType,
+            MsgAttSize,
+            decodeAttribute(self, MsgAttType, MsgClusterData),
+        ),
+        MsgSrcAddr,
+    )
 
     if MsgAttrID == "0305":
         if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
@@ -4069,17 +4142,24 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             store_ZLinky_infos( self, MsgSrcAddr, 'ERQ4', int(decodeAttribute(self, MsgAttType, MsgClusterData)))
     
     if MsgAttrID == "050b":  # Active Power
+        
         if -32768 <= int(MsgClusterData[:4], 16) <= 32767:
             value = int(decodeAttribute(self, MsgAttType, MsgClusterData[:4]))
             self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Power %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
-            value = compute_electrical_measurement_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "outletv4", "lumi.plug.maeu01", ):
+                value /= 10
+
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
             if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
                 store_ZLinky_infos( self, MsgSrcAddr, 'CCASN', value)
         else:
-            self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s Out of Range!!" % (
-                MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
+            self.log.logging(
+                "Cluster",
+                "Log",
+                "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s Out of Range!!" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
+                MsgSrcAddr,
+            )
 
     elif MsgAttrID == "090b":
             if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
@@ -4087,12 +4167,13 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         
     elif MsgAttrID in ("0505", "0905", "0a05"):  # RMS Voltage
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        
         self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Voltage %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         if value == 0xFFFF:
             return
-        value = compute_electrical_measurement_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "outletv4":
+            value /= 10
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("SPLZB-131", "SPLZB-132"):
+            value /= 100
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         if MsgAttrID == "0505":
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", str(value))
@@ -4109,21 +4190,43 @@ def Cluster0b04(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         if value == 0xFFFF:
             return
+
         self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L1 %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr, )
 
-        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+        if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "TS0121":
+            value /= 100
+            value /= 20
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
+        
+        elif (
+            "Model" in self.ListOfDevices[MsgSrcAddr] 
+            and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS011F-din", "TS011F-plug", "SP 120", "SPLZB-131", "4512737", "SOCKETOUTLET1", "SOCKETOUTLET2")
+        ):
+            value /= 1000
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
+   
+        elif "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ZLINK_CONF_MODEL:
+            value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
+            # from random import randrange
+            # value = randrange( 0x0, 0x3c)
+            if value == 0xFFFF:
+                return
+
             store_ZLinky_infos( self, MsgSrcAddr, 'IRMS1', value)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
 
             # Check if Intensity is below subscription level
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, "0009", zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value), Attribute_="0005", )
+
         else:
-            value = compute_electrical_measurement_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            # Other type of devices
+            value /= 100
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value), Attribute_=MsgAttrID)
-
 
     elif MsgAttrID in ("050a", "090a", "0a0a"):  # Max Current
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))

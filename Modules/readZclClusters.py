@@ -73,7 +73,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             self.log.logging("ZclClusters", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
             
     if _eval_formula is not None:
-        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, value, _eval_inputs, _eval_formula, _function)
+        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, _eval_inputs, _eval_formula, _function)
 
     formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, _ranges, _special_values, _eval_formula, _action_list, _eval_inputs, _force_value, value)
     if value is None:
@@ -299,12 +299,13 @@ def check_special_values( self, value, data_type, _special_values ):
     return flag
 
   
-def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula, _function):
+def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_inputs, _eval_formula, _function):
 
     self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
 
     if _function and _function in dict(FUNCTION_MODULE):
-        return FUNCTION_MODULE[ _function ]
+        func = FUNCTION_MODULE[ _function ]
+        return func( self, nwkid, ep, cluster, attribut, value )
         
     evaluation_result = value
     custom_variable = {}
