@@ -29,7 +29,7 @@ from Modules.lumi import (RTCZCGQ11LM_motion_opple_approach_distance,
                           setXiaomiVibrationSensitivity,
                           xiaomi_aqara_switch_mode_switch,
                           xiaomi_flip_indicator_light,
-                          xiaomi_led_disabled_night,
+                          xiaomi_led_disabled_night, xiaomi_opple_mode,
                           xiaomi_switch_operation_mode_opple,
                           xiaomi_switch_power_outage_memory)
 from Modules.philips import (philips_led_indication,
@@ -285,6 +285,7 @@ DEVICE_PARAMETERS = {
     "AqaraOpple_flip_indicator_light": xiaomi_flip_indicator_light,
     "AqaraOpple_switch_operation_mode_opple": xiaomi_switch_operation_mode_opple,
     "AqaraOpple_aqara_switch_mode_switch": xiaomi_aqara_switch_mode_switch,
+    "AqaraOppleMode": xiaomi_opple_mode,
 }
 
 def sanity_check_of_param(self, NwkId):

@@ -30,10 +30,12 @@
         "0019": []
     },
     "Param": {
+        "AqaraOppleMode": 1,
         "AqaraOpple_switch_power_outage_memory": 1,
         "AqaraOpple_led_disabled_night": 0,
         "AqaraOpple_flip_indicator_light": 0,
         "AqaraOpple_switch_operation_mode_opple": 0,
         "AqaraOpple_aqara_switch_mode_switch": 1
+        
     }
 }

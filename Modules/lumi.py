@@ -32,6 +32,7 @@ XIAOMI_POWERMETER_EP = {
     "lumi.switch.n1aeu1": "15"   # Xiaomi Aqara H1 1-gang (neutral wire) WS-EUK03
 }
 
+XIAOMI_OPPLE_CLUSTER = "fcc0"
 
 def pollingLumiPower(self, key):
     """
@@ -101,34 +102,36 @@ def enableOppleSwitch(self, nwkid):
         self.ListOfDevices[nwkid]["Lumi"] = {"AqaraOppleBulbMode": True}
         return
 
-    enable_operation_mode_aqara( self, nwkid)
+    xiaomi_opple_mode(self, nwkid, mode=0x01)
 
+def xiaomi_opple_mode(self, nwkid, mode=0x01):
 
-def enable_operation_mode_aqara( self, nwkid):
     if nwkid not in self.ListOfDevices:
         return
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0009"
     data_type = "20"
-    Hdata = "01"   # Event mode
+    Hdata = "%0x" %mode
 
-    self.log.logging("Lumi", "Debug", "Write enable_operation_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
+    self.log.logging("Lumi", "Debug", "Write xiaomi_opple_mode AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
         self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
-
+    
     
 def enable_click_mode_aqara(self, nwkid):
+    # 0x01: Fast
+    # 0x02: Multi
     
     if nwkid not in self.ListOfDevices:
         return
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0125"
     data_type = "20"
     Hdata = "02"   # Multi-Click
@@ -149,7 +152,7 @@ def xiaomi_switch_power_outage_memory(self, nwkid, mode):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0201"
     data_type = "10"
     Hdata = "%x" %mode
@@ -169,7 +172,7 @@ def xiaomi_led_disabled_night(self, nwkid, mode):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0203"
     data_type = "10"
     Hdata = "%x" %mode
@@ -188,7 +191,7 @@ def xiaomi_flip_indicator_light(self, nwkid, mode):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "00f0"
     data_type = "20"
     Hdata = "%x" %mode
@@ -207,7 +210,7 @@ def xiaomi_switch_operation_mode_opple(self, nwkid, mode):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0200"
     data_type = "20"
     Hdata = "%x" %mode
@@ -227,7 +230,7 @@ def xiaomi_aqara_switch_mode_switch(self, nwkid, mode):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0004"
     data_type = "21"
     Hdata = "%x" %mode
@@ -247,7 +250,7 @@ def RTCZCGQ11LM_motion_opple_sensitivity(self, nwkid, param):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "010c"
     data_type = "20"
     Hdata = "%02x" %param
@@ -263,7 +266,7 @@ def RTCZCGQ11LM_motion_opple_monitoring_mode(self, nwkid, param):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0144"
     data_type = "20"
     Hdata = "%02x" %param
@@ -279,7 +282,7 @@ def RTCZCGQ11LM_motion_opple_approach_distance(self, nwkid, param):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0146"
     data_type = "20"
     Hdata = "%02x" %param
