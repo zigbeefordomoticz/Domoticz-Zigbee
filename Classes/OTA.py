@@ -64,6 +64,7 @@ OTA_CODES = {
     "Lixee": {"Folder": "LIXEE", "ManufCode": 0x1037, "ManufName": "LiXee", "Enabled": True},
     "Eurotronics": {"Folder": "EUROTRONICS", "ManufCode": 0x1037, "ManufName": "Eurotronic", "Enabled": True},
     "SonOff": {"Folder": "SONOFF", "ManufCode": 0x1286, "ManufName": "Sonoff", "Enabled": True},
+    "NAMRON AS": {"Folder": "NAMRON AS", "ManufCode": 0x1224, "ManufName": "NAMRON AS", "Enabled": True},
 }
 
 

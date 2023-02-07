@@ -25,6 +25,7 @@ MATRIX_MANUFACTURER_NAME = {
     "1037": "LiXee",
     "1037": "Eurotronics",
     "1286": "Sonoff",
+    "1224": "NAMRON AS",
 }
 
 def rest_ota_firmware_list(self, verb, data, parameters):
