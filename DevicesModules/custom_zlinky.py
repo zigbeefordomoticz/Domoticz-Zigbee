@@ -23,7 +23,7 @@ def zlinky_clusters(self, Devices, nwkid, ep, cluster, attribut, value):
     
 
 def zlinky_meter_identification(self, Devices, nwkid, ep, cluster, attribut, value):
-    self.log.logging( "Cluster", "Debug", "zlinky_meter_identification %s - %s/%s Attribute: %s Value: %s" % (
+    self.log.logging( "ZLinky", "Debug", "zlinky_meter_identification %s - %s/%s Attribute: %s Value: %s" % (
         cluster, nwkid, ep, attribut, value), nwkid, )
     
     checkAndStoreAttributeValue( self, nwkid, ep, cluster, attribut, value, )
@@ -50,7 +50,7 @@ def zlinky_meter_identification(self, Devices, nwkid, ep, cluster, attribut, val
 def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
     # Smart Energy Metering
 
-    self.log.logging( "Cluster", "Debug", "zlinky_cluster_metering - %s - %s/%s attribut: %s value: %s" % (
+    self.log.logging( "ZLinky", "Debug", "zlinky_cluster_metering - %s - %s/%s attribut: %s value: %s" % (
         cluster, nwkid, ep, attribut, value), nwkid, )
 
     if attribut == "0000":  # CurrentSummationDelivered
@@ -168,7 +168,7 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         
     elif attribut == "0308":  # Serial Number
         value = binascii.unhexlify(value).decode("utf-8")
-        self.log.logging( "Cluster", "Debug", "Cluster0702 - 0x0308 - Serial Number %s" % (value), nwkid, )
+        self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0308 - Serial Number %s" % (value), nwkid, )
         
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'ADC0', value)
@@ -177,7 +177,7 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
 
 def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, attribut, value):
     
-    self.log.logging( "Cluster", "Debug", "zlinky_cluster_electrical_measurement - %s - %s/%s attribut: %s value: %s" % (
+    self.log.logging( "ZLinky", "Debug", "zlinky_cluster_electrical_measurement - %s - %s/%s attribut: %s value: %s" % (
         cluster, nwkid, ep, attribut, value), nwkid, )
 
     if attribut == "0305":
@@ -221,7 +221,7 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
     elif attribut == "0508":  # RMSCurrent
         if value == 0xFFFF:
             return
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L1 %s" % (
+        self.log.logging( "ZLinky", "Debug", "ReadCluster %s - %s/%s %s Current L1 %s" % (
             cluster, nwkid, ep, attribut, value), nwkid, )
 
         # from random import randrange
@@ -298,11 +298,11 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
 
     elif attribut in ( "050f", "0306",) :  # Apparent Power - 0x0306 is for tri-phased
         if value >= 0xFFFF:
-            self.log.logging( "Cluster", "Error", "=====> ReadCluster %s - %s/%s Apparent Power %s out of range !!!" % (cluster, nwkid, ep, value), nwkid, )
+            self.log.logging( "ZLinky", "Error", "=====> ReadCluster %s - %s/%s Apparent Power %s out of range !!!" % (cluster, nwkid, ep, value), nwkid, )
             return
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         
-        self.log.logging( "Cluster", "Debug", "=====> ReadCluster %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
+        self.log.logging( "ZLinky", "Debug", "=====> ReadCluster %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
         # ApparentPower (Represents  the  single  phase  or  Phase  A,  current  demand  of  apparent  (Square  root  of  active  and  reactive power) power, in VA.)
 
         self.log.logging( "ZLinky", "Debug", "=====> ReadCluster %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
@@ -352,7 +352,7 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
         else:
             MajDomoDevice(self, Devices, nwkid, "01", cluster, str(value), Attribute_=attribut)
 
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
+        self.log.logging( "ZLinky", "Debug", "ReadCluster %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
 
     elif attribut in ( "090f", ):
             store_ZLinky_infos( self, nwkid, 'SINSTS2', value)
