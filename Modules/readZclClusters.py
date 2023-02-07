@@ -44,7 +44,6 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     device_model = _get_model_name( self, MsgSrcAddr)
 
     _name = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Name", model=device_model)
-    _manuf_specific_cluster = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ManufSpecificCluster", model=device_model)
     _datatype = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DataType", model=device_model)
     _ranges = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Range", model=device_model )
     _special_values = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecialValues", model=device_model)
@@ -58,7 +57,9 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     
     value = decoding_attribute_data( MsgAttType, MsgClusterData)
     
-    if _manuf_specific_cluster and _manuf_specific_cluster in FUNCTION_MODULE:
+    _manuf_specific_cluster = _cluster_manufacturer_function(self, MsgSrcEp, MsgClusterId, model=device_model)
+    
+    if _manuf_specific_cluster is not None and _manuf_specific_cluster in FUNCTION_MODULE:
         func = FUNCTION_MODULE[ _manuf_specific_cluster ]
         func( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value )
         return
@@ -145,6 +146,16 @@ def _get_model_name( self, nwkid):
         return self.ListOfDevices[ nwkid ]["Model"]
     return None
 
+def _cluster_manufacturer_function(self, ep, cluster, model):
+    
+    if not is_cluster_specific_config(self, model, ep, cluster):
+        return None
+    
+    if "ManufSpecificCluster" not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]:
+        return None
+    
+    return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["ManufSpecificCluster"]
+ 
 
 def _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter ):
 
@@ -241,6 +252,7 @@ def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
 
  
 def is_cluster_zcl_config_available( self, cluster, attribute=None):
+    
     if cluster not in self.readZclClusters:
         return False
     if (
