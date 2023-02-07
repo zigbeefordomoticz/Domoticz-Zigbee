@@ -114,7 +114,7 @@ def xiaomi_opple_mode(self, nwkid, mode=0x01):
     cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0009"
     data_type = "20"
-    Hdata = "%0x" %mode
+    Hdata = "%02x" %mode
 
     self.log.logging("Lumi", "Debug", "Write xiaomi_opple_mode AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
@@ -155,7 +155,7 @@ def xiaomi_switch_power_outage_memory(self, nwkid, mode):
     cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0201"
     data_type = "10"
-    Hdata = "%x" %mode
+    Hdata = "%02x" %mode
 
     for _ep in getListOfEpForCluster(self, nwkid, "0006"):
         self.log.logging("Lumi", "Debug", "Write xiaomi_switch_power_outage_memory AQARA Wireless Switch: %s/%s" % (nwkid, _ep), nwkid)
@@ -175,7 +175,7 @@ def xiaomi_led_disabled_night(self, nwkid, mode):
     cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0203"
     data_type = "10"
-    Hdata = "%x" %mode
+    Hdata = "%02x" %mode
 
     self.log.logging("Lumi", "Debug", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
@@ -194,7 +194,7 @@ def xiaomi_flip_indicator_light(self, nwkid, mode):
     cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "00f0"
     data_type = "20"
-    Hdata = "%x" %mode
+    Hdata = "%02x" %mode
 
     self.log.logging("Lumi", "Debug", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
@@ -213,7 +213,7 @@ def xiaomi_switch_operation_mode_opple(self, nwkid, mode):
     cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0200"
     data_type = "20"
-    Hdata = "%x" %mode
+    Hdata = "%02x" %mode
 
     for _ep in getListOfEpForCluster(self, nwkid, "0006"):
         self.log.logging("Lumi", "Debug", "Write xiaomi_switch_operation_mode_opple AQARA Wireless Switch: %s/%s" % (nwkid, _ep), nwkid)
@@ -233,7 +233,7 @@ def xiaomi_aqara_switch_mode_switch(self, nwkid, mode):
     cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0004"
     data_type = "21"
-    Hdata = "%x" %mode
+    Hdata = "%02x" %mode
 
     for _ep in getListOfEpForCluster(self, nwkid, "0006"):
         self.log.logging("Lumi", "Debug", "Write xiaomi_aqara_switch_mode_switch AQARA Wireless Switch: %s/%s" % (nwkid, _ep), nwkid)
