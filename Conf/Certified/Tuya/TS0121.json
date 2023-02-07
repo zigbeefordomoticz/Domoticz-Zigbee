@@ -30,7 +30,7 @@
     },
     "RMSCurrentDivisor": 1000,
     "MeteringUnit": "Unitless",
-    "SummationMeteringMultiplier": 1,
+    "SummationMeteringMultiplier": 10,
     "SummationMeteringDivisor": 1,
     "Param": {
         "PowerOnAfterOffOn": 2,
