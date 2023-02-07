@@ -13,19 +13,19 @@ from Modules.bindings import webBind, webUnBind
 from Modules.zigateConsts import ZCL_CLUSTERS_ACT
 
 MATRIX_MANUFACTURER_NAME = {
-    "117c": "IKEA of Sweden",
-    "1246": "Danfoss",
-    "1189": "LEDVANCE",
-    "bbaa": "OSRAM",
-    "110C": "OSRAM",
-    "1021": "Legrand",
-    "100b": "Philips",
-    "105e": "Schneider Electric",
-    "1078": "Computime",
-    "1037": "LiXee",
-    "1037": "Eurotronics",
-    "1286": "Sonoff",
-    "1224": "NAMRON AS",
+    "1078":	"Computime",
+    "1246":	"Danfoss",
+    "1037":	"Eurotronics",
+    "117c":	"IKEA of Sweden",
+    "1189":	"LEDVANCE",
+    "1021":	"Legrand",
+    "1037":	"LiXee",
+    "1224":	"NAMRON AS", 
+    "bbaa":	"OSRAM",
+    "110C":	"OSRAM",
+    "100b":	"Philips",
+    "105e":	"Schneider Electric",
+    "1286":	"Sonoff", 
 }
 
 def rest_ota_firmware_list(self, verb, data, parameters):
