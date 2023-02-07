@@ -20,6 +20,7 @@ Release Numbering
 
 ##    Feb. 2023 - stable6 - 6.3.011 ( 2023.3 )
 
+- [Technical] - Fix issue when receiving a match_description_response
 - [Technical] - Plugin upgrade working on lates Bullseye version
 - [Hardware] - Heiman/Wiser SmartPlugin device
 - [Hardware] - Additional Tuya Thermostat devices
