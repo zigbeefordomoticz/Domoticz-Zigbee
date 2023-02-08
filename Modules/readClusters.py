@@ -3480,6 +3480,12 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "0011":  # Zone ID
         self.log.logging("Cluster", "Debug", "ReadCluster0500 - ZoneID : %s" % MsgClusterData, MsgSrcAddr)
 
+    elif MsgAttrID == "0013":  # CurrentZoneSensitivityLevel
+        self.log.logging("Cluster", "Debug", "ReadCluster0500 - CurrentZoneSensitivityLevel : %s" % MsgClusterData, MsgSrcAddr)
+
+    elif MsgAttrID == "f001":  # Tuya Keep Time Lookup
+        self.log.logging("Cluster", "Debug", "ReadCluster0500 - TuyaKeepTimeLookup : %s" % MsgClusterData, MsgSrcAddr)
+    
     else:
         self.log.logging(
             "Cluster",

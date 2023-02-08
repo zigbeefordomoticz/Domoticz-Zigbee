@@ -1066,6 +1066,16 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
             NwkId,
         )
 
+def tuya_pir_keep_time_lookup( self, nwkid, keeptime):
+    keeptime = min( keeptime // 30, 2)
+    
+    self.log.logging("Tuya", "Debug", "tuya_pir_keep_time_lookup - keeptime duration %s secondes" % keeptime, nwkid)
+    EPout = "01"
+    
+    write_attribute(self, nwkid, ZIGATE_EP, EPout, "0500", "0000", "00", "f001", "20", "%02x" %keeptime, ackIsDisabled=False)
+    
+
+    
 def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     if dp == 0x01:

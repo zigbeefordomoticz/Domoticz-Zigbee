@@ -49,7 +49,7 @@ from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           tuya_motion_zg204l_sensitivity,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
                           tuya_TS0004_back_light, tuya_TS0004_indicate_light,
-                          tuya_window_cover_calibration,
+                          tuya_window_cover_calibration, tuya_pir_keep_time_lookup,
                           tuya_window_cover_motor_reversal)
 from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
                                tuya_siren2_alarm_melody,
@@ -221,6 +221,9 @@ def ias_wd_sirene_max_alarm_dureation( self, nwkid, duration):
         if Epout is not None and len(Epout) == 1:
             self.iaszonemgt.IAS_WD_Maximum_duration( nwkid, Epout[0], duration)
 
+def ias_sensitivity(self, nwkid, sensitivity):
+    if self.iaszonemgt:
+        ias_sensitivity(self, nwkid, sensitivity)
 
 DEVICE_PARAMETERS = {
     "HueLedIndication": philips_led_indication,
@@ -286,6 +289,9 @@ DEVICE_PARAMETERS = {
     "AqaraOpple_switch_operation_mode_opple": xiaomi_switch_operation_mode_opple,
     "AqaraOpple_aqara_switch_mode_switch": xiaomi_aqara_switch_mode_switch,
     "AqaraOppleMode": xiaomi_opple_mode,
+    "TuyaPIRKeepTime": tuya_pir_keep_time_lookup,
+    "IASsensitivity": ias_sensitivity,
+    
 }
 
 def sanity_check_of_param(self, NwkId):
