@@ -6,7 +6,7 @@
     "ManufSpecificCluster": "zlinky_clusters",
     "Attributes": {
         "0000": { "Enabled": true, "Name": "OPTARIF", "DataType": "42" , "Acc": "R" , "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0001": { "Enabled": true, "Name": "Demain" , "DataType": "11", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0001": { "Enabled": true, "Name": "Demain" , "DataType": "42", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
         "0002": { "Enabled": true, "Name": "HHPHC" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
         "0003": { "Enabled": true, "Name": "PPOT" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
         "0004": { "Enabled": true, "Name": "PEJP" , "DataType": "20", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
