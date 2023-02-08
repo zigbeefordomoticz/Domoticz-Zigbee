@@ -147,14 +147,19 @@ def _get_model_name( self, nwkid):
     return None
 
 def _cluster_manufacturer_function(self, ep, cluster, model):
+
+    if (
+        is_cluster_specific_config(self, model, ep, cluster) 
+        and "ManufSpecificCluster" not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]
+    ):
+        return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["ManufSpecificCluster"]
     
-    if not is_cluster_specific_config(self, model, ep, cluster):
-        return None
-    
-    if "ManufSpecificCluster" not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]:
-        return None
-    
-    return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["ManufSpecificCluster"]
+    # Let's try in the Generic cluster
+    if  "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
+        # We have a Manufacturer Specific cluster
+        return self.readZclClusters[ cluster ]["ManufSpecificCluster"]
+
+    return None
  
 
 def _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter ):
@@ -255,6 +260,11 @@ def is_cluster_zcl_config_available( self, cluster, attribute=None):
     
     if cluster not in self.readZclClusters:
         return False
+    
+    if  "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
+        # We have a Manufacturer Specific cluster
+        return True
+    
     if (
         attribute is None 
         or attribute not in self.readZclClusters[ cluster ]["Attributes"] 
