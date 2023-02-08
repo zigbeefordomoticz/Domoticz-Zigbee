@@ -15,6 +15,8 @@ from Modules.zigateConsts import ZCL_CLUSTERS_ACT
 MATRIX_MANUFACTURER_NAME = {
     "117c": "IKEA of Sweden",
     "1246": "Danfoss",
+    "1015": "Develco",
+    "1015": "frient A/S",
     "1189": "LEDVANCE",
     "bbaa": "OSRAM",
     "110C": "OSRAM",

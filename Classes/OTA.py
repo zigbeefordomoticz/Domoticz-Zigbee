@@ -52,17 +52,20 @@ from Classes.LoggingManagement import LoggingManagement
 OTA_CLUSTER_ID = "0019"
 
 OTA_CODES = {
-    "Ikea": {"Folder": "IKEA-TRADFRI", "ManufCode": 0x117C, "ManufName": "IKEA of Sweden", "Enabled": True},
+    
     "Danfoss": {"Folder": "DANFOSS", "ManufCode": 0x1246, "ManufName": "Danfoss", "Enabled": True},
+    "Develco": {"Folder": "DEVELCO", "ManufCode": 0x1015, "ManufName": "Develco", "Enabled": True},
+    "Eurotronics": {"Folder": "EUROTRONICS", "ManufCode": 0x1037, "ManufName": "Eurotronic", "Enabled": True},
+    "Frient": {"Folder": "DEVELCO", "ManufCode": 0x1015, "ManufName": "frient A/S", "Enabled": True},
+    "Ikea": {"Folder": "IKEA-TRADFRI", "ManufCode": 0x117C, "ManufName": "IKEA of Sweden", "Enabled": True},
     "Ledvance": {"Folder": "LEDVANCE", "ManufCode": 0x1189, "ManufName": "LEDVANCE", "Enabled": True},
+    "Legrand": {"Folder": "LEGRAND", "ManufCode": 0x1021, "ManufName": "Legrand", "Enabled": True},
+    "Lixee": {"Folder": "LIXEE", "ManufCode": 0x1037, "ManufName": "LiXee", "Enabled": True},
     "Osram1": {"Folder": "OSRAM", "ManufCode": 0xBBAA, "ManufName": "OSRAM", "Enabled": True},
     "Osram2": {"Folder": "LEDVANCE", "ManufCode": 0x110C, "ManufName": "OSRAM", "Enabled": True},
-    "Legrand": {"Folder": "LEGRAND", "ManufCode": 0x1021, "ManufName": "Legrand", "Enabled": True},
     "Philips": {"Folder": "PHILIPS", "ManufCode": 0x100B, "ManufName": "Philips", "Enabled": True},
-    "Schneider": {"Folder": "SCHNEIDER-WISER", "ManufCode": 0x105E, "ManufName": "Schneider Electric", "Enabled": True},
     "Salus": {"Folder": "SALUS", "ManufCode": 0x1078, "ManufName": "Computime", "Enabled": True},
-    "Lixee": {"Folder": "LIXEE", "ManufCode": 0x1037, "ManufName": "LiXee", "Enabled": True},
-    "Eurotronics": {"Folder": "EUROTRONICS", "ManufCode": 0x1037, "ManufName": "Eurotronic", "Enabled": True},
+    "Schneider": {"Folder": "SCHNEIDER-WISER", "ManufCode": 0x105E, "ManufName": "Schneider Electric", "Enabled": True},
     "SonOff": {"Folder": "SONOFF", "ManufCode": 0x1286, "ManufName": "Sonoff", "Enabled": True},
 }
 
