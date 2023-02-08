@@ -23,7 +23,9 @@ def zlinky_clusters(self, Devices, nwkid, ep, cluster, attribut, value):
     elif cluster == "0b04":
         zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, attribut, value)
     
-
+    elif cluster == "ff66":
+        zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, value)
+        
 def zlinky_meter_identification(self, Devices, nwkid, ep, cluster, attribut, value):
     self.log.logging( "ZLinky", "Debug", "zlinky_meter_identification %s - %s/%s Attribute: %s Value: %s" % (
         cluster, nwkid, ep, attribut, value), nwkid, )
