@@ -153,7 +153,7 @@ def _cluster_manufacturer_function(self, ep, cluster, model):
         return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["ManufSpecificCluster"]
     
     # Let's try in the Generic cluster
-    if  "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
+    if "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
         # We have a Manufacturer Specific cluster
         return self.readZclClusters[ cluster ]["ManufSpecificCluster"]
 
@@ -264,7 +264,7 @@ def is_cluster_zcl_config_available( self, cluster, attribute=None):
     if cluster not in self.readZclClusters:
         return False
     
-    if  "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
+    if "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
         # We have a Manufacturer Specific cluster
         return True
     
