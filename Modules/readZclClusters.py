@@ -245,6 +245,11 @@ def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
         return False
     if self.DeviceConf[ model ]['Ep'][ ep ][ cluster ] in ( '', {} ):
         return False
+    if attribute is None:
+        self.log.logging("ZclClusters", "Debug", "is_cluster_specific_config %s/%s and definition %s" %( 
+            cluster, self.DeviceConf[ model ]['Ep'][ ep ][ cluster ] ))
+        return True
+    
     if "Attributes" not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]:
         return False
     if attribute not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"]:
