@@ -148,7 +148,7 @@ def _cluster_manufacturer_function(self, ep, cluster, model):
 
     if (
         is_cluster_specific_config(self, model, ep, cluster) 
-        and "ManufSpecificCluster" not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]
+        and "ManufSpecificCluster" in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]
     ):
         return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["ManufSpecificCluster"]
     
