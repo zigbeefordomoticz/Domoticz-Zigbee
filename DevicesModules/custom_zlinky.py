@@ -11,7 +11,9 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
 
 
 def zlinky_clusters(self, Devices, nwkid, ep, cluster, attribut, value):
-    
+    self.log.logging( "ZLinky", "Debug", "zlinky_clusters %s - %s/%s Attribute: %s Value: %s" % (
+        cluster, nwkid, ep, attribut, value), nwkid, )
+
     if cluster == "0b01":
         zlinky_meter_identification(self, Devices, nwkid, ep, cluster, attribut, value)
         
