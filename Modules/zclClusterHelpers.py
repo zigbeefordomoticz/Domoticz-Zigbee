@@ -1,5 +1,6 @@
-import struct
 import binascii
+import struct
+
 from Modules.pluginModels import check_found_plugin_model
 from Modules.readAttributes import ReadAttributeRequest_0702_multiplier_divisor
 from Modules.tools import get_deviceconf_parameter_value
@@ -302,7 +303,7 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
         divisor = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0302"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
  
     conso = round( (( conso * multiplier ) / divisor ), 3)
-    self.log.logging("Cluster", "Debug", "compute_metering_conso - %s/%s Unit: %s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
+    self.log.logging("ZclClusters", "Debug", "compute_metering_conso - %s/%s Unit: %s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
         NwkId, MsgSrcEp, unit, multiplier, divisor, raw_value, conso), NwkId)
     if ( 
         MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] 

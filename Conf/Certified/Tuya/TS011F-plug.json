@@ -43,6 +43,9 @@
         "0019": []
     },
     "RMSCurrentDivisor": 1000,
+    "MeteringUnit": "Unitless",
+    "SummationMeteringMultiplier": 10,
+    "SummationMeteringDivisor": 1,
     "Param": {
         "PowerOnAfterOffOn": 2,
         "TuyaBackLight": 1,
