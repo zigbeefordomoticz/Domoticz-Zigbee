@@ -37,11 +37,11 @@ ACTIONS_TO_FUNCTIONS = {
 
 def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
     
-
     self.log.logging("ZclClusters", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source))
 
     device_model = _get_model_name( self, MsgSrcAddr)
+
     _name = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Name", model=device_model)
     _datatype = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DataType", model=device_model)
     _ranges = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Range", model=device_model )
@@ -55,11 +55,17 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     _function = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalFunc", model=device_model)
     
     value = decoding_attribute_data( MsgAttType, MsgClusterData)
-    
+
     if _datatype != MsgAttType:
         self.log.logging("ZclClusters", "Log", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ))
-        
+    
+    _manuf_specific_cluster = _cluster_manufacturer_function(self, MsgSrcEp, MsgClusterId, model=device_model)
+    if _manuf_specific_cluster is not None and _manuf_specific_cluster in FUNCTION_MODULE:
+        func = FUNCTION_MODULE[ _manuf_specific_cluster ]
+        func( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value )
+        return
+     
     _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValueOverwrite", model=device_model)
     if _force_value is not None:
         value = _force_value
@@ -73,7 +79,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             self.log.logging("ZclClusters", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
             
     if _eval_formula is not None:
-        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, value, _eval_inputs, _eval_formula, _function)
+        value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, _eval_inputs, _eval_formula, _function)
 
     formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, _ranges, _special_values, _eval_formula, _action_list, _eval_inputs, _force_value, value)
     if value is None:
@@ -138,6 +144,21 @@ def _get_model_name( self, nwkid):
         return self.ListOfDevices[ nwkid ]["Model"]
     return None
 
+def _cluster_manufacturer_function(self, ep, cluster, model):
+
+    if (
+        is_cluster_specific_config(self, model, ep, cluster) 
+        and "ManufSpecificCluster" in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]
+    ):
+        return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["ManufSpecificCluster"]
+    
+    # Let's try in the Generic cluster
+    if "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
+        # We have a Manufacturer Specific cluster
+        return self.readZclClusters[ cluster ]["ManufSpecificCluster"]
+
+    return None
+ 
 
 def _cluster_zcl_attribute_retreival( self, cluster, attribute, parameter ):
 
@@ -222,6 +243,11 @@ def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
         return False
     if self.DeviceConf[ model ]['Ep'][ ep ][ cluster ] in ( '', {} ):
         return False
+    if attribute is None:
+        self.log.logging("ZclClusters", "Debug", "is_cluster_specific_config %s and definition %s" %( 
+            cluster, self.DeviceConf[ model ]['Ep'][ ep ][ cluster ] ))
+        return True
+    
     if "Attributes" not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]:
         return False
     if attribute not in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"]:
@@ -234,8 +260,14 @@ def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
 
  
 def is_cluster_zcl_config_available( self, cluster, attribute=None):
+    
     if cluster not in self.readZclClusters:
         return False
+    
+    if "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
+        # We have a Manufacturer Specific cluster
+        return True
+    
     if (
         attribute is None 
         or attribute not in self.readZclClusters[ cluster ]["Attributes"] 
@@ -299,12 +331,13 @@ def check_special_values( self, value, data_type, _special_values ):
     return flag
 
   
-def compute_attribute_value( self, nwkid, ep, value, _eval_inputs, _eval_formula, _function):
+def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_inputs, _eval_formula, _function):
 
     self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
 
     if _function and _function in dict(FUNCTION_MODULE):
-        return FUNCTION_MODULE[ _function ]
+        func = FUNCTION_MODULE[ _function ]
+        return func( self, nwkid, ep, cluster, attribut, value )
         
     evaluation_result = value
     custom_variable = {}

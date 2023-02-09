@@ -8,10 +8,10 @@
             "0004": "",
             "0005": "",
             "0019": "",
-            "0702": "",
-            "0b01": "",
-            "0b04": "",
-            "ff66": "",
+            "0702": { "ManufSpecificCluster": "zlinky_clusters" },
+            "0b01": { "ManufSpecificCluster": "zlinky_clusters" },
+            "0b04": { "ManufSpecificCluster": "zlinky_clusters" },
+            "ff66": { "ManufSpecificCluster": "zlinky_clusters" },
             "Type": "Meter/Power/P1Meter_ZL/Ampere3/Alarm_ZL/Alarm_ZL2/Alarm_ZL3"
         },
         "f2": {

@@ -1,7 +1,7 @@
 
 
 
-def konke_onoff(self, data):
+def konke_onoff(self, nwkid, ep, cluster, attribut, data):
     value = None
     if data in ("01", "80"):  # Simple Click
         value = "01"
