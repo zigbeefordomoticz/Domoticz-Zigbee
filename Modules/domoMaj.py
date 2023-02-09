@@ -334,7 +334,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
                 nValue = round(float(value), 2)
                 sValue = value
-                self.log.logging("Widget", "Debug", "------>  : " + sValue, NWKID)
+                self.log.logging("Widget", "Debug", "------>  : %s" % sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
 
         if "Meter" in ClusterType:  # Meter Usage.
