@@ -32,7 +32,7 @@ import struct
 import time
 from datetime import datetime
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, exists
 
 import Domoticz
 from Modules.sendZigateCommand import sendZigateCmd
@@ -842,7 +842,7 @@ def ota_scan_folder(self):  # OK 13/10
         self.ListOfImages["Brands"][brand] = {}
         ota_dir = self.pluginconf.pluginConf["pluginOTAFirmware"] + OTA_CODES[brand]["Folder"]
         # Check the folder exist
-        if not os.path.exists(ota_dir):
+        if not exists(ota_dir):
             continue
 
         ota_image_files = [f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
