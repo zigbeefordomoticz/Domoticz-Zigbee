@@ -838,9 +838,13 @@ def ota_scan_folder(self):  # OK 13/10
     for brand in OTA_CODES:
         if not OTA_CODES[brand]["Enabled"]:
             continue
-
+        
         self.ListOfImages["Brands"][brand] = {}
         ota_dir = self.pluginconf.pluginConf["pluginOTAFirmware"] + OTA_CODES[brand]["Folder"]
+        # Check the folder exist
+        if not os.path.exists(ota_dir):
+            continue
+
         ota_image_files = [f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
 
         logging(self, "Debug", "   screening %s" %ota_dir)
