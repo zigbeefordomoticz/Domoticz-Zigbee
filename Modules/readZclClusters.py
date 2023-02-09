@@ -119,14 +119,18 @@ def _read_zcl_cluster( self, cluster_filename ):
 
 
 def _check_range( self, value, datatype, _range):
-    self.log.logging("ZclClusters", "Debug", " . _check_range %s %s %s" %(value, datatype, _range))
+    self.log.logging("ZclClusters", "Debug", " . _check_range %s %s %s (%s)" %(value, datatype, _range, type(_range)))
     
     if len(_range) != 2:
         self.log.logging("ZclClusters", "Error", " . Incorrect range %s" %str(_range))
         return None
     
-    _range1 = decoding_attribute_data( datatype, _range[0])
-    _range2 = decoding_attribute_data( datatype, _range[1])
+    if isinstance(_range[0], int) and isinstance(_range[1], int):
+        _range1 = _range[0]
+        _range2 = _range[1]
+    else:
+        _range1 = decoding_attribute_data( datatype, _range[0])
+        _range2 = decoding_attribute_data( datatype, _range[1])
     
     self.log.logging("ZclClusters", "Debug", " . _check_range range1: %s" %(_range1))
     self.log.logging("ZclClusters", "Debug", " . _check_range range2: %s" %(_range2))
