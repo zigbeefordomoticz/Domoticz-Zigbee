@@ -23,9 +23,9 @@
             "Mandatory": false,
             "SpecifStoragelvl1": "LUMI",
             "SpecifStoragelvl2": "Presence",
+            "UpdDomoDeviceWithCluster": "0406",
             "ActionList": [
-                "store_specif_attribute"
-            ]
+                "store_specif_attribute", "upd_domo_device"]
         },
         "0143": {
             "Enabled": true,
@@ -35,9 +35,8 @@
             "Mandatory": false,
             "SpecifStoragelvl1": "LUMI",
             "SpecifStoragelvl2": "Presence_event",
-            "ActionList": [
-                "store_specif_attribute"
-            ]
+            "UpdDomoDeviceWithCluster": "000c",
+            "ActionList": [ "store_specif_attribute", "upd_domo_device" ]
         },
         "0144": {
             "Enabled": true,
