@@ -7,7 +7,7 @@
         "0000": {
             "Enabled": true,
             "Name": "CurrentSummationDelivered",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -25,7 +25,7 @@
         "0001": {
             "Enabled": true,
             "Name": "CurrentSummationReceived",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -41,7 +41,7 @@
         "0002": {
             "Enabled": true,
             "Name": "CurrentMaxDemandDelivered",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -57,7 +57,7 @@
         "0003": {
             "Enabled": true,
             "Name": "CurrentMaxDemandReceived",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -73,7 +73,7 @@
         "0004": {
             "Enabled": true,
             "Name": "DFTSummation",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -89,7 +89,7 @@
         "0005": {
             "Enabled": true,
             "Name": "DailyFreezeTime",
-            "DataType": 21,
+            "DataType": "21",
             "Range": [
                 "0000",
                 "173B"
@@ -104,7 +104,7 @@
         "0006": {
             "Enabled": true,
             "Name": "PowerFactor",
-            "DataType": 20,
+            "DataType": "20",
             "Range": [
                 -100,
                 100
@@ -150,7 +150,7 @@
         "000a": {
             "Enabled": true,
             "Name": "DefaultUpdatePeriod",
-            "DataType": 20,
+            "DataType": "20",
             "Range": [
                 "00",
                 "ff"
@@ -164,7 +164,7 @@
         "000b": {
             "Enabled": true,
             "Name": "FastPollUpdatePeriod",
-            "DataType": 20,
+            "DataType": "20",
             "Range": [
                 "00",
                 "ff"
@@ -178,7 +178,7 @@
         "000c": {
             "Enabled": true,
             "Name": "CurrentBlockPeriodConsumptionDelivered",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -192,7 +192,7 @@
         "000d": {
             "Enabled": true,
             "Name": "DailyConsumptionTarget",
-            "DataType": 22,
+            "DataType": "22",
             "Range": [
                 "000000",
                 "ffffff"
@@ -207,7 +207,7 @@
         "000e": {
             "Enabled": true,
             "Name": "CurrentBlock",
-            "DataType": 30,
+            "DataType": "30",
             "Range": [
                 "00",
                 10
@@ -222,7 +222,7 @@
         "000f": {
             "Enabled": true,
             "Name": "ProfileIntervalPeriod",
-            "DataType": 30,
+            "DataType": "30",
             "Range": [
                 "00",
                 "ff"
@@ -241,7 +241,7 @@
         "0011": {
             "Enabled": true,
             "Name": "PresetReadingTime",
-            "DataType": 21,
+            "DataType": "21",
             "Range": [
                 "0000",
                 "173b"
@@ -256,7 +256,7 @@
         "0012": {
             "Enabled": true,
             "Name": "SummationDeliveredPerReport",
-            "DataType": 21,
+            "DataType": "21",
             "Range": [
                 "0000",
                 "ffff"
@@ -271,7 +271,7 @@
         "0013": {
             "Enabled": true,
             "Name": "FlowRestriction",
-            "DataType": 20,
+            "DataType": "20",
             "Range": [
                 "00",
                 "ff"
@@ -286,7 +286,7 @@
         "0014": {
             "Enabled": true,
             "Name": "Supply Status",
-            "DataType": 30,
+            "DataType": "30",
             "Range": [
                 "00",
                 "ff"
@@ -301,7 +301,7 @@
         "0015": {
             "Enabled": true,
             "Name": "CurrentInletEnergyCarrierSummation",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -317,7 +317,7 @@
         "0016": {
             "Enabled": true,
             "Name": "CurrentOutletEnergyCarrierSummation",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -410,7 +410,7 @@
         "001c": {
             "Enabled": true,
             "Name": "PreviousBlockPeriodConsumptionDelivered",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -426,7 +426,7 @@
         "001d": {
             "Enabled": true,
             "Name": "CurrentBlockPeriod ConsumptionReceived",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -442,7 +442,7 @@
         "001e": {
             "Enabled": true,
             "Name": "CurrentBlockReceived",
-            "DataType": 30,
+            "DataType": "30",
             "Range": [
                 "00",
                 "ff"
@@ -457,7 +457,7 @@
         "001f": {
             "Enabled": true,
             "Name": "DFTSummation Received",
-            "DataType": 25,
+            "DataType": "25",
             "Range": [
                 "000000000000",
                 "ffffffffffff"
@@ -473,7 +473,7 @@
         "0020": {
             "Enabled": true,
             "Name": "ActiveRegisterTier Delivered",
-            "DataType": 30,
+            "DataType": "30",
             "Range": [
                 0,
                 48
@@ -488,7 +488,7 @@
         "0021": {
             "Enabled": true,
             "Name": "ActiveRegisterTier Received",
-            "DataType": 30,
+            "DataType": "30",
             "Range": [
                 0,
                 48
@@ -514,7 +514,7 @@
         "0200": {
             "Enabled": true,
             "Name": "Status",
-            "DataType": 18,
+            "DataType": "18",
             "Range": [
                 "00",
                 "ff"
@@ -537,7 +537,7 @@
         "0300": {
             "Enabled": true,
             "Name": "UnitofMeasure",
-            "DataType": 30,
+            "DataType": "30",
             "Range": [
                 "00",
                 "ff"
@@ -552,7 +552,7 @@
         "0301": {
             "Enabled": true,
             "Name": "Multiplier",
-            "DataType": 22,
+            "DataType": "22",
             "Range": [
                 "000000",
                 "ffffff"
@@ -567,7 +567,7 @@
         "0302": {
             "Enabled": true,
             "Name": "Divisor",
-            "DataType": 22,
+            "DataType": "22",
             "Range": [
                 "000000",
                 "ffffff"
@@ -582,7 +582,7 @@
         "0303": {
             "Enabled": true,
             "Name": "SummationFormatting",
-            "DataType": 18,
+            "DataType": "18",
             "Range": [
                 "00",
                 "ff"
@@ -597,7 +597,7 @@
         "0304": {
             "Enabled": true,
             "Name": "DemandFormatting",
-            "DataType": 18,
+            "DataType": "18",
             "Range": [
                 "00",
                 "ff"
@@ -612,7 +612,7 @@
         "0305": {
             "Enabled": true,
             "Name": "HistoricalConsumptionFormatting",
-            "DataType": 18,
+            "DataType": "18",
             "Range": [
                 "00",
                 "ff"
@@ -627,7 +627,7 @@
         "0306": {
             "Enabled": true,
             "Name": "MeteringDeviceType",
-            "DataType": 18,
+            "DataType": "18",
             "Range": [
                 "00",
                 "ff"
@@ -642,7 +642,7 @@
         "0307": {
             "Enabled": true,
             "Name": "SiteID",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": 0,
             "Mandatory": false,
@@ -653,7 +653,7 @@
         "0308": {
             "Enabled": true,
             "Name": "MeterSerialNumber",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": 0,
             "Mandatory": false,
@@ -681,7 +681,7 @@
         "0430": {
             "Enabled": true,
             "Name": "CurrentWeekConsumptionDelivered",
-            "DataType": 22,
+            "DataType": "22",
             "Range": [
                 "000000",
                 "ffffff"
@@ -697,7 +697,7 @@
         "0800": {
             "Enabled": true,
             "Name": "Generic Alarm Mask",
-            "DataType": 18,
+            "DataType": "18",
             "Range": [
                 "00",
                 "ff"
@@ -712,7 +712,7 @@
         "0801": {
             "Enabled": true,
             "Name": "Electricity Alarm Mask",
-            "DataType": 18,
+            "DataType": "18",
             "Range": [
                 "00",
                 "ff"

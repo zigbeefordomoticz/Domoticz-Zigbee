@@ -7,7 +7,7 @@
         "4000": {
             "Enabled": true,
             "Name": "SWBuildID",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
@@ -20,7 +20,7 @@
         "0000": {
             "Enabled": true,
             "Name": "ZCLVersion",
-            "DataType": 20,
+            "DataType": "20",
             "Range": [
                 "00",
                 "ff"
@@ -37,7 +37,7 @@
         "0001": {
             "Enabled": true,
             "Name": "ApplicationVersion",
-            "DataType": 20,
+            "DataType": "20",
             "Range": [
                 "00",
                 "ff"
@@ -54,7 +54,7 @@
         "0002": {
             "Enabled": true,
             "Name": "StackVersion",
-            "DataType": 20,
+            "DataType": "20",
             "Range": [
                 "00",
                 "ff"
@@ -71,7 +71,7 @@
         "0003": {
             "Enabled": true,
             "Name": "HWVersion",
-            "DataType": 20,
+            "DataType": "20",
             "Range": [
                 "00",
                 "ff"
@@ -88,7 +88,7 @@
         "0004": {
             "Enabled": true,
             "Name": "ManufacturerName",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
@@ -101,7 +101,7 @@
         "0005": {
             "Enabled": true,
             "Name": "ModelIdentifier",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
@@ -113,7 +113,7 @@
         "0006": {
             "Enabled": true,
             "Name": "DateCode",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
@@ -126,7 +126,7 @@
         "0007": {
             "Enabled": true,
             "Name": "PowerSource",
-            "DataType": 30,
+            "DataType": "30",
             "Range": [
                 "00",
                 "ff"
@@ -141,7 +141,7 @@
         "0008": {
             "Enabled": true,
             "Name": "GenericDevice-Class",
-            "DataType": 30,
+            "DataType": "30",
             "Range": [
                 "00",
                 "ff"
@@ -156,7 +156,7 @@
         "0009": {
             "Enabled": true,
             "Name": "GenericDevice-Type",
-            "DataType": 30,
+            "DataType": "30",
             "Range": [
                 "00",
                 "ff"
@@ -171,7 +171,7 @@
         "000a": {
             "Enabled": true,
             "Name": "ProductCode",
-            "DataType": 41,
+            "DataType": "41",
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
@@ -182,7 +182,7 @@
         "000b": {
             "Enabled": true,
             "Name": "ProductURL",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
@@ -193,7 +193,7 @@
         "000c": {
             "Enabled": true,
             "Name": "ManufacturerVersionDetails",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
@@ -204,7 +204,7 @@
         "000d": {
             "Enabled": true,
             "Name": "SerialNumber",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
@@ -215,7 +215,7 @@
         "000e": {
             "Enabled": true,
             "Name": "ProductLabel",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
@@ -226,7 +226,7 @@
         "0010": {
             "Enabled": true,
             "Name": "LocationDescription",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "RW",
             "Default": "",
             "Mandatory": false,
@@ -239,7 +239,7 @@
         "0011": {
             "Enabled": true,
             "Name": "PhysicalEnvironment",
-            "DataType": 30,
+            "DataType": "30",
             "Acc": "RW",
             "Default": 0,
             "Mandatory": false,
@@ -252,7 +252,7 @@
         "0012": {
             "Enabled": true,
             "Name": "DeviceEnabled",
-            "DataType": 10,
+            "DataType": "10",
             "Acc": "RW",
             "Default": 1,
             "Mandatory": false,
@@ -263,7 +263,7 @@
         "0013": {
             "Enabled": true,
             "Name": "AlarmMask",
-            "DataType": 18,
+            "DataType": "18",
             "Acc": "RW",
             "Default": 0,
             "Mandatory": false,
@@ -274,7 +274,7 @@
         "0014": {
             "Enabled": true,
             "Name": "DisableLocalConfig",
-            "DataType": 18,
+            "DataType": "18",
             "Acc": "RW",
             "Default": 0,
             "Mandatory": false,

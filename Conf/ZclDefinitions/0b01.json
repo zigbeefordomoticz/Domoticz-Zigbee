@@ -55,7 +55,7 @@
         "0006": {
             "Enabled": true,
             "Name": "Model",
-            "DataType": 43,
+            "DataType": "43",
             "Acc": "R",
             "Mandatory": false,
             "ActionList": [
@@ -65,7 +65,7 @@
         "0007": {
             "Enabled": true,
             "Name": "PartNumber",
-            "DataType": 43,
+            "DataType": "43",
             "Acc": "R",
             "Mandatory": false,
             "ActionList": [
