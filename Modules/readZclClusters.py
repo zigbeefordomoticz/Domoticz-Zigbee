@@ -5,7 +5,7 @@ import json
 from os import listdir
 from os.path import isdir, isfile, join
 
-from DevicesModules import FUNCTION_MODULE
+from DevicesModules import FUNCTION_MODULE, FUNCTION_WITH_ACTIONS_MODULE
 from Modules.domoMaj import MajDomoDevice
 
 from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
@@ -44,60 +44,47 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
 
     _name = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Name", model=device_model)
     _datatype = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DataType", model=device_model)
-    _ranges = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Range", model=device_model )
-    _special_values = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecialValues", model=device_model)
-    _eval_formula = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExp", model=device_model )
-    _action_list = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ActionList", model=device_model )
-    _storage_specificlvl1 = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl1", model=device_model )
-    _storage_specificlvl2 = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl2", model=device_model )
-    _storage_specificlvl3 = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl3", model=device_model )
-    _eval_inputs = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExpCustomVariables", model=device_model)
-    _function = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalFunc", model=device_model)
     
-    value = decoding_attribute_data( MsgAttType, MsgClusterData)
-
-    #self.log.logging("ZclClusters", "Debug2", "process_cluster_attribute_response \n" +
-    #    "  - Name         : %s\n" %_name +
-    #    "  - DataType     : %s\n" % _datatype+
-    #    "  - Range        : %s\n" % _ranges+
-    #    "  - SpecialValues: %s\n" % _special_values+
-    #    "  - EvalFormula  : %s\n" % _eval_formula+
-    #    "  - ActionList   : %s\n" % _action_list+
-    #    "  - StorageLvl1  : %s\n" % _storage_specificlvl1+
-    #    "  - StorageLvl2  : %s\n" % _storage_specificlvl2+
-    #    "  - StorageLvl3  : %s\n" % _storage_specificlvl3+
-    #    "  - EvalInput    : %s\n" % _eval_inputs+
-    #    "  - Function     : %s\n" % _function+
-    #    "  - Value        : %s\n" % value
-    #)
-                         
     if _datatype != MsgAttType:
         self.log.logging("ZclClusters", "Log", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ))
     
     # Do we have to use a manufacturer specific function, and then skip everything else
     _manuf_specific_cluster = _cluster_manufacturer_function(self, MsgSrcEp, MsgClusterId, model=device_model)
-    if _manuf_specific_cluster is not None and _manuf_specific_cluster in FUNCTION_MODULE:
-        func = FUNCTION_MODULE[ _manuf_specific_cluster ]
+    if _manuf_specific_cluster is not None and _manuf_specific_cluster in FUNCTION_WITH_ACTIONS_MODULE:
+        func = FUNCTION_WITH_ACTIONS_MODULE[ _manuf_specific_cluster ]
         func( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value )
         return
-     
+
+    value = decoding_attribute_data( MsgAttType, MsgClusterData)
+
     # More standard
     _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValueOverwrite", model=device_model)
     if _force_value is not None:
         value = _force_value
-        
+    
+    _special_values = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecialValues", model=device_model)
     if _special_values is not None:
         check_special_values( self, value, MsgAttType, _special_values )
-        
+    
+    _ranges = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Range", model=device_model )
     if _ranges is not None:
         checking_ranges = _check_range( self, value, MsgAttType, _ranges, )
         if checking_ranges is not None and not checking_ranges:
             self.log.logging("ZclClusters", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
-            
-    if _eval_formula is not None or _function is not None:
+    
+    _eval_inputs = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExpCustomVariables", model=device_model)
+    _function = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalFunc", model=device_model)
+    _eval_formula = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExp", model=device_model )
+    _manuf_specific_function = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ManufSpecificFunc", model=device_model)
+    if _manuf_specific_function is not None and _manuf_specific_function in FUNCTION_WITH_ACTIONS_MODULE:
+        func = FUNCTION_WITH_ACTIONS_MODULE[ _manuf_specific_function ]
+        func( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value )
+
+    elif _eval_formula is not None or _function is not None:
         value = compute_attribute_value( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, _eval_inputs, _eval_formula, _function)
 
+    _action_list = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ActionList", model=device_model )
     formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, _ranges, _special_values, _eval_formula, _action_list, _eval_inputs, _force_value, value)
     if value is None:
         self.log.logging("ZclClusters", "Debug", "---> Value is None")
@@ -115,6 +102,9 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )
             
         elif data_action == STORE_SPECIFIC_ATTRIBUTE:
+            _storage_specificlvl1 = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl1", model=device_model )
+            _storage_specificlvl2 = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl2", model=device_model )
+            _storage_specificlvl3 = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl3", model=device_model )
             store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3)
             
         elif data_action == BASIC_MODEL_NAME:
@@ -180,7 +170,7 @@ def _cluster_manufacturer_function(self, ep, cluster, model):
 
     return None
  
-
+    
 def _cluster_zcl_attribute_retrieval( self, cluster, attribute, parameter ):
 
     #self.log.logging("ZclClusters", "Debug", " . _cluster_zcl_attribute_retrieval %s %s %s" %(
