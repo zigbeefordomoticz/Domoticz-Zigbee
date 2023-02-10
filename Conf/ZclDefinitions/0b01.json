@@ -7,7 +7,7 @@
         "0000": {
             "Enabled": true,
             "Name": "CompanyName",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Mandatory": true,
             "ActionList": [
@@ -17,7 +17,7 @@
         "0001": {
             "Enabled": true,
             "Name": "MeterTypeID",
-            "DataType": 21,
+            "DataType": "21",
             "Range": [
                 "0000",
                 "ffff"
@@ -31,7 +31,7 @@
         "0004": {
             "Enabled": true,
             "Name": "DataQualityID",
-            "DataType": 21,
+            "DataType": "21",
             "Range": [
                 "0000",
                 "ffff"
@@ -45,7 +45,7 @@
         "0005": {
             "Enabled": true,
             "Name": "CustomerName",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": 0,
             "ActionList": [
@@ -75,7 +75,7 @@
         "0008": {
             "Enabled": true,
             "Name": "ProductRevision",
-            "DataType": 43,
+            "DataType": "43",
             "Acc": "R",
             "Mandatory": false,
             "ActionList": [
@@ -85,7 +85,7 @@
         "000a": {
             "Enabled": true,
             "Name": "SoftwareRevision",
-            "DataType": 43,
+            "DataType": "43",
             "Acc": "R",
             "Mandatory": false,
             "ActionList": [
@@ -95,7 +95,7 @@
         "000b": {
             "Enabled": true,
             "Name": "UtilityName",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": 0,
             "Mandatory": false,
@@ -106,7 +106,7 @@
         "000c": {
             "Enabled": true,
             "Name": "POD",
-            "DataType": 42,
+            "DataType": "42",
             "Acc": "R",
             "Default": 0,
             "Mandatory": true,
