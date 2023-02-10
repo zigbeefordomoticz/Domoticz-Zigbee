@@ -82,7 +82,7 @@
                 "check_store_value"
             ]
         },
-        "000A": {
+        "000a": {
             "Enabled": true,
             "Name": "SoftwareRevision",
             "DataType": 43,
@@ -92,7 +92,7 @@
                 "check_store_value"
             ]
         },
-        "000B": {
+        "000b": {
             "Enabled": true,
             "Name": "UtilityName",
             "DataType": 42,
@@ -103,7 +103,7 @@
                 "check_store_value"
             ]
         },
-        "000C": {
+        "000c": {
             "Enabled": true,
             "Name": "POD",
             "DataType": 42,
@@ -114,7 +114,7 @@
                 "check_store_value"
             ]
         },
-        "000D": {
+        "000d": {
             "Enabled": true,
             "Name": "AvailablePower",
             "DataType": "2a",
@@ -128,7 +128,7 @@
                 "check_store_value"
             ]
         },
-        "000E": {
+        "000e": {
             "Enabled": true,
             "Name": "PowerThreshold",
             "DataType": "2a",
