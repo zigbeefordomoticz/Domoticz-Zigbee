@@ -542,6 +542,14 @@
                 "00",
                 "ff"
             ],
+            "DecodedValueList": {
+                "0": "kW",
+                "1": "m³",
+                "2": "ft³",
+                "3": "ccf",
+                "11": "Unitless"
+            },
+
             "Acc": "R",
             "Default": 0,
             "Mandatory": false,
