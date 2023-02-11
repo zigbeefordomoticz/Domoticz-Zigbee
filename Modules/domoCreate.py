@@ -331,10 +331,10 @@ def CreateDomoDevice(self, Devices, NWKID):
             break
         
         Type, GlobalEP, GlobalType = extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType)
-        self.log.logging("WidgetCreation", "Debug", "CreatDomoDevice - Type: %s GlobalEp: %s GlobalType: %s" %( 
+        self.log.logging("WidgetCreation", "Debug", "CreatDomoDevice - Type: >%s< GlobalEp: >%s< GlobalType: >%s<" %( 
             Type, GlobalEP, str(GlobalType)), NWKID)
         
-        if Type is None:
+        if Type is None or Type in ( "", {} ):
             continue
 
         # In case Type is issued from GetType functions, this is based on Clusters,
