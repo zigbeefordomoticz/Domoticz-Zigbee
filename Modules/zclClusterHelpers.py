@@ -277,7 +277,7 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
         conso = raw_value
     else:
         # We assumed default as kW
-        self.log.logging("Cluster", "Error", "compute_metering_conso - Unknown %s/%s assuming kW" %( 
+        self.log.logging("Cluster", "Log", "compute_metering_conso - Unknown %s/%s assuming kW" %( 
             NwkId, MsgSrcEp ), NwkId)
         conso = raw_value * 1000
         
