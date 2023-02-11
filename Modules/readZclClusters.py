@@ -41,13 +41,14 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source))
 
     device_model = _get_model_name( self, MsgSrcAddr)
-
+    value = decoding_attribute_data( MsgAttType, MsgClusterData)
     _name = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Name", model=device_model)
     _datatype = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DataType", model=device_model)
     
     if _datatype != MsgAttType:
         self.log.logging("ZclClusters", "Log", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with %s" %( 
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ))
+    
     
     # Do we have to use a manufacturer specific function, and then skip everything else
     _manuf_specific_cluster = _cluster_manufacturer_function(self, MsgSrcEp, MsgClusterId, model=device_model)
@@ -56,7 +57,6 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         func( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value )
         return
 
-    value = decoding_attribute_data( MsgAttType, MsgClusterData)
 
     # More standard
     _force_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValueOverwrite", model=device_model)
