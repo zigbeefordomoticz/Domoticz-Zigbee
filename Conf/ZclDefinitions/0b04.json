@@ -486,7 +486,8 @@
             "EvalFunc": "compute_electrical_measurement_conso",
             "UpdDomoDeviceWithAttribute": "0508",
             "ActionList": [
-                "check_store_value"
+                "check_store_value",
+                "upd_domo_device"
             ]
         },
         "0509": {

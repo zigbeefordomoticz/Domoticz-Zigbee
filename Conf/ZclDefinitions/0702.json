@@ -16,7 +16,7 @@
             "Default": 0,
             "Mandatory": false,
             "EvalFunc": "compute_metering_conso",
-            "UpdDomoDeviceWithAttibute": "0000",
+            "UpdDomoDeviceWithAttribute": "0000",
             "ActionList": [
                 "check_store_value",
                 "upd_domo_device"
