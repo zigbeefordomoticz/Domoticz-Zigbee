@@ -168,9 +168,9 @@ def _cluster_manufacturer_function(self, ep, cluster, model):
         and "ManufSpecificCluster" in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]
     ):
         return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["ManufSpecificCluster"]
-    
+
     # Let's try in the Generic cluster
-    if "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
+    if cluster in self.readZclClusters and "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
         # We have a Manufacturer Specific cluster
         return self.readZclClusters[ cluster ]["ManufSpecificCluster"]
 
