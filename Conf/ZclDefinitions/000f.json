@@ -1,0 +1,17 @@
+{
+    "ClusterId": "000f",
+    "Description": "Binary Input",
+    "Version": 1,
+    "Enabled": true,
+    "Attributes": {
+        "0004": { "Enabled": true, "Name": "ActiveText", "DataType": "42", "Acc": "R", "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "001c": { "Enabled": true, "Name": "Description", "DataType": "42", "Acc": "R", "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "002e": { "Enabled": true, "Name": "InactiveText", "DataType": "42", "Acc": "R", "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0051": { "Enabled": true, "Name": "OutOfService", "DataType": "10", "Acc": "R", "Default": "", "Mandatory": true, "ActionList": [ "check_store_value"] },
+        "0054": { "Enabled": true, "Name": "Polarity", "DataType": "30", "Acc": "R", "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0055": { "Enabled": true, "Name": "PresentValue", "DataType": "10", "Acc": "R", "Default": "", "Mandatory": true, "ActionList": [ "check_store_value"] },
+        "0067": { "Enabled": true, "Name": "Reliability", "DataType": "30", "Acc": "R", "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "006f": { "Enabled": true, "Name": "StatusFlags", "DataType": "18", "Acc": "R", "Default": "", "Range": [ "00", "0f" ], "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0100": { "Enabled": true, "Name": "ApplicationType", "DataType": "23", "Acc": "R", "Default": "", "Range": [ "00", "ffffffff" ], "Mandatory": false, "ActionList": [ "check_store_value"] }
+    }
+}
