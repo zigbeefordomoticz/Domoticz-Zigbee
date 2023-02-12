@@ -4,21 +4,13 @@
     "Ep": {
         "01": {
             "0000": "",
-            "0001": {
-                "Attributes": {
-                    "0100": { "Enabled": true, "Name": "Wiser_0001_0100", "DataType": "42", "ActionList": [ "check_store_value" ] } 
-                    } 
-                },
+            "0001": { "Attributes": { "0100": { "Enabled": true, "Name": "Wiser_0001_0100", "DataType": "21", "ActionList": [ "check_store_value" ] }  }  },
             "0003": "",
             "0020": "",
             "0204": "",
             "0402": "",
             "0405": "",
-            "fe03": {
-                "Attributes": {
-                    "0020": { "Enabled": true, "Name": "Wiser_fe03_e001", "DataType": "21", "ActionList": [ "check_store_value" ] } 
-                    } 
-                },
+            "fe03": { "Attributes": { "0020": { "Enabled": true, "Name": "Wiser_fe03_e001", "DataType": "42", "ActionList": [ "check_store_value" ] }  }  },
             "0019": "",
             "0201": "",
             "0b05": { 
