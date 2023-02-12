@@ -1480,10 +1480,10 @@ def check_python_modules_version( self ):
     
     MODULES_VERSION = {
         "zigpy": "0.53.1",
-        "zigpy_znp": "0.9.2",
+        # "zigpy_znp": "0.9.2",    # @puddly remove the packing info in the gitrepo, loosing tracking
         "zigpy_deconz": "0.19.2",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.34.6",
+        "zigpy_ezsp": "0.34.8",
         }
 
     flag = True
