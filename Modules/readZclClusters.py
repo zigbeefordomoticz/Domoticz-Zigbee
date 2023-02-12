@@ -78,7 +78,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     _eval_formula = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExp", model=device_model )
     _manuf_specific_function = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ManufSpecificFunc", model=device_model)
     _decoding_value = cluster_attribute_retreival( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DecodedValueList", model=device_model)
-    self.log.logging("ZclClusters", "Log", "compute_attribute_value - _decoding_value: %s  value: %s" %( _decoding_value, str(value) ))
+    self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _decoding_value: %s  value: %s" %( _decoding_value, str(value) ))
     
     if _decoding_value is not None and str(value) in _decoding_value:
         value = _decoding_value[ str(value) ]
