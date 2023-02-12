@@ -196,8 +196,8 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
     
     elif MsgClusterId in DECODE_CLUSTER:
         if self.pluginconf.pluginConf["readZclClusters"] and MsgClusterId not in ( "0000", "0201", "0b04", ):
-            self.log.logging( "Cluster", "Log", "ReadCluster - Cluster %s/%s not yet ready for ZclCluster %s/%s" %(
-                MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp))
+            self.log.logging( "Cluster", "Log", "ReadCluster - Cluster %s/%s %s not yet ready for ZclCluster %s/%s " %(
+                MsgClusterId, MsgAttrID, MsgAttType, MsgSrcAddr, MsgSrcEp))
 
         _func = DECODE_CLUSTER[MsgClusterId]
         _func( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
