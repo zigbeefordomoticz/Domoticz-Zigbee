@@ -593,8 +593,10 @@
             "Acc": "R",
             "Default": "0",
             "Mandatory": false,
+            "UpdDomoDeviceWithAttribute": "050f",
             "ActionList": [
-                "check_store_value"
+                "check_store_value",
+                "upd_domo_device"
             ]
         },
         "0510": {
