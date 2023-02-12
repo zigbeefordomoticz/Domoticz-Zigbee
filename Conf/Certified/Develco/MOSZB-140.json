@@ -9,7 +9,7 @@
         },
         "23": {
             "0000": "",
-            "0001": "",
+            "0001": { "Attributes": { "003e": {"Enabled": true, "Name": "PhilipsSensitivity", "DataType": "20", "ActionList": [ "check_store_value"] }}},
             "0003": "",
             "000f": "",
             "0020": "",
