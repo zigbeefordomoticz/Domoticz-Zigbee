@@ -37,8 +37,8 @@ ACTIONS_TO_FUNCTIONS = {
 
 def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
     
-    self.log.logging("ZclClusters", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Data: %s Source: %s" %(
-        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData, Source))
+    self.log.logging("ZclClusters", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Type: %s Data: %s Source: %s" %(
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgClusterData, Source))
 
     device_model = _get_model_name( self, MsgSrcAddr)
     value = decoding_attribute_data( MsgAttType, MsgClusterData)
@@ -51,8 +51,11 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     
     
     # Do we have to use a manufacturer specific function, and then skip everything else
-    _manuf_specific_cluster = _cluster_manufacturer_function(self, MsgSrcEp, MsgClusterId, model=device_model)
+    _manuf_specific_cluster = _cluster_manufacturer_function(self, MsgSrcEp, MsgClusterId, MsgAttrID, model=device_model)
+    _we_need_raw_data = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ManufRawData", model=device_model)  # Mainly for Xiaomi
     if _manuf_specific_cluster is not None and _manuf_specific_cluster in FUNCTION_WITH_ACTIONS_MODULE:
+        if _we_need_raw_data:
+            value = MsgClusterData
         func = FUNCTION_WITH_ACTIONS_MODULE[ _manuf_specific_cluster ]
         func( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value )
         return
@@ -161,13 +164,15 @@ def _get_model_name( self, nwkid):
         return self.ListOfDevices[ nwkid ]["Model"]
     return None
 
-def _cluster_manufacturer_function(self, ep, cluster, model):
+def _cluster_manufacturer_function(self, ep, cluster, attribute, model):
 
-    if (
-        is_cluster_specific_config(self, model, ep, cluster) 
-        and "ManufSpecificCluster" in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]
-    ):
-        return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["ManufSpecificCluster"]
+    if is_cluster_specific_config(self, model, ep, cluster):
+        manuf_specific_function = _cluster_specific_attribute_retrieval( self, model, ep, cluster, attribute, "ManufSpecificFunc" )
+        if manuf_specific_function:
+            return manuf_specific_function
+        
+        if "ManufSpecificCluster" in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]:
+            return self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["ManufSpecificCluster"]
 
     # Let's try in the Generic cluster
     if cluster in self.readZclClusters and "ManufSpecificCluster" in self.readZclClusters[ cluster ]:

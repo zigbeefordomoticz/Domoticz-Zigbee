@@ -6,6 +6,7 @@
     "Attributes": {
         "00f7": {
             "Enabled": true,
+            "ManufRawData": true,
             "ManufSpecificFunc": "Lumi_fcc0",
             "Name": "Lumi 00f7",
             "DataType": "21",

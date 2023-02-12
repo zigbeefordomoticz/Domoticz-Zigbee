@@ -11,6 +11,9 @@ def decoding_attribute_data( AttType, attribute_value, handleErrors=False):
 
     if len(attribute_value) == 0:
         return ""
+    
+    if int(AttType, 16) == 0x00:
+        return attribute_value
 
     if int(AttType, 16) == 0x10:  # Boolean
         return attribute_value[:2]
