@@ -278,9 +278,6 @@ def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
 def is_cluster_zcl_config_available( self, nwkid, ep, cluster, attribute=None):
     """ Is this cluster is handle via the ZclCluster , is this cluster + attribute hanlde via ZclCluster """
     
-    if cluster not in self.readZclClusters:
-        return False
-    
     if is_manufacturer_specific_cluster( self, cluster):
         return True
     
@@ -290,12 +287,18 @@ def is_cluster_zcl_config_available( self, nwkid, ep, cluster, attribute=None):
     return is_generic_zcl_cluster( self, cluster, attribute)
     
 def is_manufacturer_specific_cluster( self, cluster):
+    
+    if cluster not in self.readZclClusters:
+        return False
     if "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
         # We have a Manufacturer Specific cluster
         return True
     
     
 def is_generic_zcl_cluster( self, cluster, attribute=None):
+    if cluster not in self.readZclClusters:
+        return False
+
     if (
         attribute is None 
         or attribute not in self.readZclClusters[ cluster ]["Attributes"] 
