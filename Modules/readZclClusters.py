@@ -204,7 +204,9 @@ def _cluster_specific_attribute_retrieval( self, model, ep, cluster, attribute, 
         # model, ep, cluster, attribute, parameter))
 
     if (
-        attribute in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"] 
+        ep in self.DeviceConf[ model ]['Ep']
+        and cluster in self.DeviceConf[ model ]['Ep'][ ep ]
+        and attribute in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"] 
         and parameter in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ]
     ):
 
