@@ -206,6 +206,8 @@ def _cluster_specific_attribute_retrieval( self, model, ep, cluster, attribute, 
     if (
         ep in self.DeviceConf[ model ]['Ep']
         and cluster in self.DeviceConf[ model ]['Ep'][ ep ]
+        and isinstance(self.DeviceConf[ model ]['Ep'][ ep ][cluster], dict )
+        and "Attributes" in self.DeviceConf[ model ]['Ep'][ ep ][cluster]
         and attribute in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"] 
         and parameter in self.DeviceConf[ model ]['Ep'][ ep ][ cluster ]["Attributes"][ attribute ]
     ):
