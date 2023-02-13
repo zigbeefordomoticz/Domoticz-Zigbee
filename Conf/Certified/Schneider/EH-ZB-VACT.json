@@ -14,7 +14,11 @@
 			"0009": "",
 			"0019": "",
 			"0201": "",
-			"0204": "",
+			"0204": {
+                "Attributes": {
+                    "4000": { "Enabled": true, "Name": "Wiser_0204_4000", "DataType": "30", "ActionList": [ "check_store_value"]}
+                }
+            },
 			"fe02": "",
 			"Type": "Temp/ThermoSetpoint/Door/Valve"
 		}
