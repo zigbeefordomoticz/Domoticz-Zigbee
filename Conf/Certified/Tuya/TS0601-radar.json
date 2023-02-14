@@ -32,7 +32,7 @@
         "ef00": []
     },
     "TS0601_DP": {
-        "01": { "sensor_type": "motion"},
+        "01": { "sensor_type": "motion", "DomoDeviceFormat": "str"},
         "02": { "sensor_type": "sensitivity"},
         "03": { "sensor_type": "radar_min_range"},
         "04": { "sensor_type": "radar_max_range"},

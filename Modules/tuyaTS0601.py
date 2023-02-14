@@ -7,6 +7,7 @@ from Modules.tools import checkAndStoreAttributeValue
 # Generic functions
 
 def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
+    self.log.logging("Tuya", "Log", "ts0601_response - %s %s %s %s %s" % (NwkId, model_name, dp, datatype, data), NwkId)
     
     dps_mapping = ts0601_extract_data_point_infos( self, model_name) 
     if dps_mapping is None:
@@ -33,6 +34,8 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
             NwkId, sensor_type, dp, datatype, data), NwkId)
         return False
     
+    value = check_domo_format_req( self, dps_mapping[ str_dp ], value)
+    
     func = DP_SENSOR_FUNCTION[ sensor_type ]
     func(self, Devices, NwkId, Ep, value )
     return True
@@ -55,6 +58,11 @@ def evaluate_expression_with_data(self, expression, value):
         
     return value
 
+def check_domo_format_req( self, dp_informations, value):
+    
+    if "DomoDeviceFormat" not in dp_informations:
+        return value
+    return str(value) if dp_informations[ "DomoDeviceFormat" ] == "str" else value
 
 def ts0601_extract_data_point_infos( self, model_name):
     
