@@ -615,4 +615,5 @@ SIMPLE_WIDGET = {
     "BlindInverted": { "Type": 244, "Subtype": 73, "Switchtype": 16, "ForceClusterType": "LvlControl", },
     "Blind": { "Type": 244, "Subtype": 73, "Switchtype": 13, "ForceClusterType": "LvlControl", },
     "SwitchAlarm": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 13 },
+    "Distance": { "Type": 243, "Subtype": 27, "Switchtype": 0},
 }

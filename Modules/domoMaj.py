@@ -1418,8 +1418,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 nValue, sValue = getDimmerLevelOfColor(self, value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
-
-
         if "Orientation" in ClusterType:
             # Xiaomi Vibration
             if WidgetType == "Orientation":
@@ -1431,6 +1429,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         if "Strenght" in ClusterType:
             if WidgetType == "Strength":
                 # value is a str containing all Orientation information to be updated on Text Widget
+                nValue = 0
+                sValue = value
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+        if "Distance" in ClusterType:
+                # value is a str containing all Distance information in cm
                 nValue = 0
                 sValue = value
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
