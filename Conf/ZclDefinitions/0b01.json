@@ -1,0 +1,146 @@
+{
+    "ClusterId": "0b01",
+    "Description": "Meter Identification",
+    "Version": 1,
+    "Enabled": true,
+    "Attributes": {
+        "0000": {
+            "Enabled": true,
+            "Name": "CompanyName",
+            "DataType": "42",
+            "Acc": "R",
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0001": {
+            "Enabled": true,
+            "Name": "MeterTypeID",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0004": {
+            "Enabled": true,
+            "Name": "DataQualityID",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0005": {
+            "Enabled": true,
+            "Name": "CustomerName",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": 0,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0006": {
+            "Enabled": true,
+            "Name": "Model",
+            "DataType": "43",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0007": {
+            "Enabled": true,
+            "Name": "PartNumber",
+            "DataType": "43",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0008": {
+            "Enabled": true,
+            "Name": "ProductRevision",
+            "DataType": "43",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000a": {
+            "Enabled": true,
+            "Name": "SoftwareRevision",
+            "DataType": "43",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000b": {
+            "Enabled": true,
+            "Name": "UtilityName",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000c": {
+            "Enabled": true,
+            "Name": "POD",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000d": {
+            "Enabled": true,
+            "Name": "AvailablePower",
+            "DataType": "2a",
+            "Range": [
+                "000000",
+                "ffffff"
+            ],
+            "Acc": "R",
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000e": {
+            "Enabled": true,
+            "Name": "PowerThreshold",
+            "DataType": "2a",
+            "Range": [
+                "000000",
+                "ffffffffffffffffff"
+            ],
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
+    }
+}

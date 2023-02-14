@@ -25,9 +25,10 @@
     "ClusterToBind": [ "0006", "0702", "0b04"],
     "ConfigureReporting": {
         "0702": { "Attributes": { "0000": { "DataType": "25", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "000000000001" } } },
-        "0b04": { "Attributes": { "0505": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
-                "0508": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
-                "050b": { "DataType": "29", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" }
+        "0b04": { "Attributes": { 
+            "0505": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
+            "0508": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" },
+            "050b": { "DataType": "29", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001" }
             }
         }
     },
@@ -40,6 +41,10 @@
         "0019": []
     },
     "RMSCurrentDivisor": 1000,
+    "MeteringUnit": "Unitless",
+    "SummationMeteringMultiplier": 10,
+    "SummationMeteringDivisor": 1,
+
     "Param": {
         "PowerOnAfterOffOn": 2,
         "TuyaBackLight": 1,

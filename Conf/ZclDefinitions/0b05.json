@@ -4,55 +4,485 @@
     "Version": "1",
     "Enabled": true,
     "Attributes": {
-        "0000": { 
+        "0000": {
             "Enabled": true,
             "Name": "NumberOfResets",
-            "DataType": "21" ,
-            "Range": [ "0000", "ffff" ] ,
-            "Acc": "R" ,
-            "Default": "0",
-            "Mandatory": false,
-            "ActionList": [ "check_store_value"]
-        },
-        "0001": { 
-            "Enabled": true,
-            "Name": "PersistentMemoryWrites" ,
             "DataType": "21",
-            "Range": [ "0000", "ffff" ] ,
+            "Range": [
+                "0000",
+                "ffff"
+            ],
             "Acc": "R",
             "Default": "0",
             "Mandatory": false,
-            "ActionList": [ "check_store_value"]
+            "ActionList": [
+                "check_store_value"
+            ]
         },
-        "0100": { "Enabled": true, "Name": "MacRxBcast" , "DataType": "23", "Range": [ "00000000", "ffffffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0101": { "Enabled": true, "Name": "MacTxBcast" , "DataType": "23", "Range": [ "00000000", "ffffffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0102": { "Enabled": true, "Name": "MacRxUcast" , "DataType": "23", "Range": [ "00000000", "ffffffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0103": { "Enabled": true, "Name": "MacTxUcast" , "DataType": "23", "Range": [ "00000000", "ffffffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0104": { "Enabled": true, "Name": "MacTxUcastRetry" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0105": { "Enabled": true, "Name": "MacTxUcastFail" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0106": { "Enabled": true, "Name": "APSRxBcast" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0107": { "Enabled": true, "Name": "APSTxBcast" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0108": { "Enabled": true, "Name": "APSRxUcast" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0109": { "Enabled": true, "Name": "APSTxUcastSuccess" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "010a": { "Enabled": true, "Name": "APSTxUcastRetry" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "010b": { "Enabled": true, "Name": "APSTxUcastFail" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "010c": { "Enabled": true, "Name": "RouteDiscInitiated" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "010d": { "Enabled": true, "Name": "NeighborAdded" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "010e": { "Enabled": true, "Name": "NeighborRemoved" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "010f": { "Enabled": true, "Name": "NeighborStale" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0110": { "Enabled": true, "Name": "JoinIndication" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0111": { "Enabled": true, "Name": "ChildMoved" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0112": { "Enabled": true, "Name": "NWKFCFailure" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0113": { "Enabled": true, "Name": "APSFCFailure" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0114": { "Enabled": true, "Name": "APSUnauthorizedKey" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0115": { "Enabled": true, "Name": "NWKDecryptFailures" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0116": { "Enabled": true, "Name": "APSDecryptFailures" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0117": { "Enabled": true, "Name": "PacketBufferAllocateFailures" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0118": { "Enabled": true, "Name": "RelayedUcast" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0119": { "Enabled": true, "Name": "PhytoMACqueuelimitreached" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "011a": { "Enabled": true, "Name": "PacketValidatedropcount" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "011b": { "Enabled": true, "Name": "AverageMACRetry-PerAPSMessageSent" , "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "011c": { "Enabled": true, "Name": "LastMessageLQI" , "DataType": "20", "Range": [ "00", "ff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "011d": { "Enabled": true, "Name": "LastMessageRSSI" , "DataType": "28", "Range": [ "00", "ff" ], "Acc": "R", "Default": "0", "Mandatory": false, "ActionList": [ "check_store_value"] }
+        "0001": {
+            "Enabled": true,
+            "Name": "PersistentMemoryWrites",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0100": {
+            "Enabled": true,
+            "Name": "MacRxBcast",
+            "DataType": "23",
+            "Range": [
+                "00000000",
+                "ffffffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0101": {
+            "Enabled": true,
+            "Name": "MacTxBcast",
+            "DataType": "23",
+            "Range": [
+                "00000000",
+                "ffffffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0102": {
+            "Enabled": true,
+            "Name": "MacRxUcast",
+            "DataType": "23",
+            "Range": [
+                "00000000",
+                "ffffffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0103": {
+            "Enabled": true,
+            "Name": "MacTxUcast",
+            "DataType": "23",
+            "Range": [
+                "00000000",
+                "ffffffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0104": {
+            "Enabled": true,
+            "Name": "MacTxUcastRetry",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0105": {
+            "Enabled": true,
+            "Name": "MacTxUcastFail",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0106": {
+            "Enabled": true,
+            "Name": "APSRxBcast",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0107": {
+            "Enabled": true,
+            "Name": "APSTxBcast",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0108": {
+            "Enabled": true,
+            "Name": "APSRxUcast",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0109": {
+            "Enabled": true,
+            "Name": "APSTxUcastSuccess",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "010a": {
+            "Enabled": true,
+            "Name": "APSTxUcastRetry",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "010b": {
+            "Enabled": true,
+            "Name": "APSTxUcastFail",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "010c": {
+            "Enabled": true,
+            "Name": "RouteDiscInitiated",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "010d": {
+            "Enabled": true,
+            "Name": "NeighborAdded",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "010e": {
+            "Enabled": true,
+            "Name": "NeighborRemoved",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "010f": {
+            "Enabled": true,
+            "Name": "NeighborStale",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0110": {
+            "Enabled": true,
+            "Name": "JoinIndication",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0111": {
+            "Enabled": true,
+            "Name": "ChildMoved",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0112": {
+            "Enabled": true,
+            "Name": "NWKFCFailure",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0113": {
+            "Enabled": true,
+            "Name": "APSFCFailure",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0114": {
+            "Enabled": true,
+            "Name": "APSUnauthorizedKey",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0115": {
+            "Enabled": true,
+            "Name": "NWKDecryptFailures",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0116": {
+            "Enabled": true,
+            "Name": "APSDecryptFailures",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0117": {
+            "Enabled": true,
+            "Name": "PacketBufferAllocateFailures",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0118": {
+            "Enabled": true,
+            "Name": "RelayedUcast",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0119": {
+            "Enabled": true,
+            "Name": "PhytoMACqueuelimitreached",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "011a": {
+            "Enabled": true,
+            "Name": "PacketValidatedropcount",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "011b": {
+            "Enabled": true,
+            "Name": "AverageMACRetry-PerAPSMessageSent",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "011c": {
+            "Enabled": true,
+            "Name": "LastMessageLQI",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "011d": {
+            "Enabled": true,
+            "Name": "LastMessageRSSI",
+            "DataType": "28",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
     }
 }

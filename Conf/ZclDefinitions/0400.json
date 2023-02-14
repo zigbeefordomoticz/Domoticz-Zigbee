@@ -58,7 +58,7 @@
             "Default": "ff",
             "EvalExp": "",
             "Mandatory": false,
-            "DecodedValueList": { "00": "Photodiode", "01": "CMOS", "ff": "Unknown"},
+            "DecodedValueList": { "0": "Photodiode", "1": "CMOS", "255": "Unknown"},
             "ActionList": [ "check_store_value"]
         }
 

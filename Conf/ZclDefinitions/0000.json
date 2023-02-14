@@ -1,33 +1,286 @@
 {
     "ClusterId": "0000",
     "Description": "Basic",
-    "Version": "1",
+    "Version": 1,
     "Enabled": true,
     "Attributes": {
-        "0000": { "Enabled": true, "Name": "ZCLVersion", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 8, "Mandatory": true, "SpecifStoragelvl1": "ZCL Version", "ActionList": [ "check_store_value", "store_specif_attribute"] },
-        "0001": { "Enabled": true, "Name": "ApplicationVersion", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 0, "Mandatory": false, "SpecifStoragelvl1": "App Version", "ActionList": [ "check_store_value", "store_specif_attribute"] },
-        "0002": { "Enabled": true, "Name": "StackVersion", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 0, "Mandatory": false, "SpecifStoragelvl1": "Stack Version", "ActionList": [ "check_store_value", "store_specif_attribute"] },
-        "0003": { "Enabled": true, "Name": "HWVersion", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 0, "Mandatory": false, "SpecifStoragelvl1": "HW Version", "ActionList": [ "check_store_value", "store_specif_attribute"] },
-        "0004": { "Enabled": true, "Name": "ManufacturerName", "DataType": "42" , "Acc": "R" , "Default": "", "Mandatory": false, "SpecifStoragelvl1": "Manufacturer Name", "ActionList": [ "check_store_value", "store_specif_attribute"] },
-        "0005": { "Enabled": true, "Name": "ModelIdentifier", "DataType": "42" ,  "Acc": "R" , "Default": "", "Mandatory": false, "ActionList": [ "check_store_value", "basic_model_name"] },
-        "0006": { "Enabled": true, "Name": "DateCode", "DataType": "42" , "Acc": "R" , "Default": "", "Mandatory": false, "SpecifStoragelvl1": "SWBUILD_1", "ActionList": [ "check_store_value", "store_specif_attribute"] },
-
-        "0007": { "Enabled": true, "Name": "PowerSource", "DataType": "30" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value"] },
-        "0008": { "Enabled": true, "Name": "GenericDevice-Class", "DataType": "30" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 255, "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0009": { "Enabled": true, "Name": "GenericDevice-Type", "DataType": "30" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 255, "Mandatory": false, "ActionList": [ "check_store_value"] },
-
-        "000a": { "Enabled": true, "Name": "ProductCode", "DataType": "41" , "Acc": "R" , "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "000b": { "Enabled": true, "Name": "ProductURL", "DataType": "42" , "Acc": "R" , "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "000c": { "Enabled": true, "Name": "ManufacturerVersionDetails", "DataType": "42" , "Acc": "R" , "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "000d": { "Enabled": true, "Name": "SerialNumber", "DataType": "42"  , "Acc": "R" , "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "000e": { "Enabled": true, "Name": "ProductLabel", "DataType": "42" ,  "Acc": "R" , "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0010": { "Enabled": true, "Name": "LocationDescription", "DataType": "42" , "Acc": "RW" , "Default": "", "Mandatory": false, "SpecifStoragelvl1": "SWBUILD_1", "ActionList": [ "check_store_value", "store_specif_attribute"] },
-
-        "0011": { "Enabled": true, "Name": "PhysicalEnvironment", "DataType": "30" ,  "Acc": "RW" , "Default": 0, "Mandatory": false, "SpecifStoragelvl1": "PhysicalEnv", "ActionList": [ "check_store_value", "store_specif_attribute"] },
-        "0012": { "Enabled": true, "Name": "DeviceEnabled", "DataType": "10" ,  "Acc": "RW" , "Default": 1, "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0013": { "Enabled": true, "Name": "AlarmMask", "DataType": "18" ,  "Acc": "RW" , "Default": 0, "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0014": { "Enabled": true, "Name": "DisableLocalConfig", "DataType": "18", "Acc": "RW" , "Default": 0, "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "4000": { "Enabled": true, "Name": "SWBuildID", "DataType": "42",  "Acc": "R" , "Default": "", "Mandatory": false, "SpecifStoragelvl1": "SWBUILD_3", "ActionList": [ "check_store_value", "store_specif_attribute"] }
-
+        "4000": {
+            "Enabled": true,
+            "Name": "SWBuildID",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "SpecifStoragelvl1": "SWBUILD_3",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "0000": {
+            "Enabled": true,
+            "Name": "ZCLVersion",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 8,
+            "Mandatory": true,
+            "SpecifStoragelvl1": "ZCL Version",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "0001": {
+            "Enabled": true,
+            "Name": "ApplicationVersion",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "SpecifStoragelvl1": "App Version",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "0002": {
+            "Enabled": true,
+            "Name": "StackVersion",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "SpecifStoragelvl1": "Stack Version",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "0003": {
+            "Enabled": true,
+            "Name": "HWVersion",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "SpecifStoragelvl1": "HW Version",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "0004": {
+            "Enabled": true,
+            "Name": "ManufacturerName",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "SpecifStoragelvl1": "Manufacturer Name",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "0005": {
+            "Enabled": true,
+            "Name": "ModelIdentifier",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value",
+                "basic_model_name"
+            ]
+        },
+        "0006": {
+            "Enabled": true,
+            "Name": "DateCode",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "SpecifStoragelvl1": "SWBUILD_1",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "0007": {
+            "Enabled": true,
+            "Name": "PowerSource",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0008": {
+            "Enabled": true,
+            "Name": "GenericDevice-Class",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 255,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0009": {
+            "Enabled": true,
+            "Name": "GenericDevice-Type",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 255,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000a": {
+            "Enabled": true,
+            "Name": "ProductCode",
+            "DataType": "41",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000b": {
+            "Enabled": true,
+            "Name": "ProductURL",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000c": {
+            "Enabled": true,
+            "Name": "ManufacturerVersionDetails",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000d": {
+            "Enabled": true,
+            "Name": "SerialNumber",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000e": {
+            "Enabled": true,
+            "Name": "ProductLabel",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0010": {
+            "Enabled": true,
+            "Name": "LocationDescription",
+            "DataType": "42",
+            "Acc": "RW",
+            "Default": "",
+            "Mandatory": false,
+            "SpecifStoragelvl1": "SWBUILD_1",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "0011": {
+            "Enabled": true,
+            "Name": "PhysicalEnvironment",
+            "DataType": "30",
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": false,
+            "SpecifStoragelvl1": "PhysicalEnv",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "0012": {
+            "Enabled": true,
+            "Name": "DeviceEnabled",
+            "DataType": "10",
+            "Acc": "RW",
+            "Default": 1,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0013": {
+            "Enabled": true,
+            "Name": "AlarmMask",
+            "DataType": "18",
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0014": {
+            "Enabled": true,
+            "Name": "DisableLocalConfig",
+            "DataType": "18",
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
     }
 }

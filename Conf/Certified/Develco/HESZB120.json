@@ -8,12 +8,11 @@
             "0000": "",
             "0001": "",
             "0003": "",
-            "000f": "",
+            "000f": { "Attributes": { "0055": { "Enabled": true, "Name": "PresentValue", "DataType": "10", "UpdDomoDeviceWithCluster": "0500", "ActionList": [ "check_store_value","upd_domo_device"] }}},
             "0020": "",
             "000a": "",
             "0500": "",
             "0502": "",
-            "0020": "",
             "0019": "",
             "Type": "Smoke/Voltage/AlarmWD"
         },

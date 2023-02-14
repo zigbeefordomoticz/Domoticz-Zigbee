@@ -1,10 +1,39 @@
 {
     "ClusterId": "0202",
     "Description": "Fan Control",
-    "Version": "1",
+    "Version": 1,
     "Enabled": true,
     "Attributes": {
-        "0000": { "Enabled": true, "Name": "FanMode", "DataType": "30" , "Range": [ "00", "06" ] , "Acc": "RW" , "Default": 5, "Mandatory": true, "ActionList": [ "check_store_value", "upd_domo_device"] },
-        "0001": { "Enabled": true, "Name": "FanModeSequence", "DataType": "30" , "Range": [ "00", "04" ] , "Acc": "RW" , "Default": 2, "Mandatory": true, "ActionList": [ "check_store_value"] }
+        "0000": {
+            "Enabled": true,
+            "Name": "FanMode",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "06"
+            ],
+            "Acc": "RW",
+            "Default": 5,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value",
+                "upd_domo_device"
+            ]
+        },
+        "0001": {
+            "Enabled": true,
+            "Name": "FanModeSequence",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "04"
+            ],
+            "Acc": "RW",
+            "Default": 2,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
     }
 }

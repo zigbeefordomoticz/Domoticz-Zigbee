@@ -14,7 +14,7 @@
             "e001": "",
             "000a": "",
             "0019": "",
-            "Type": "Plug/Power/Meter/Voltage"
+            "Type": "Plug/Power/Meter/Voltage/Ampere"
         },
         "f2": {
             "0000": "",
@@ -43,6 +43,9 @@
         "0019": []
     },
     "RMSCurrentDivisor": 1000,
+    "MeteringUnit": "Unitless",
+    "SummationMeteringMultiplier": 10,
+    "SummationMeteringDivisor": 1,
     "Param": {
         "PowerOnAfterOffOn": 2,
         "TuyaBackLight": 1,
