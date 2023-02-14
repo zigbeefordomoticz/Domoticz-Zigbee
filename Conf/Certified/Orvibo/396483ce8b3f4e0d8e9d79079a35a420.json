@@ -1,4 +1,7 @@
 {
+	"_blakadder": "https://zigbee.blakadder.com/Orvibo_CM10ZW.html",
+	"_description": "Dry Contact Module",
+	 "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1534",
 	"_comment": "Orvibo Dry Contact Module CM10ZW ",
 	"_version": "0.1",
 	"Ep": {
