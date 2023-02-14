@@ -3,10 +3,15 @@
     "_version": "0.1",
     "Ep": {
         "01": {
-            "0019":"",
+            "0000": { 
+                "Attributes": {
+                    "fff0": { "Enabled": true, "Name": "Aqara_0000_fff0", "DataType": "42" , "ManufRawData": true, "ManufSpecificFunc": "Lumi_fcc0", "ActionList": [ "check_store_value"]},
+                    "ff01": { "Enabled": true, "Name": "Aqara_0000_ff01", "DataType": "42" , "ManufRawData": true, "ManufSpecificFunc": "Lumi_fcc0", "ActionList": [ "check_store_value"]},
+                    "ff02": { "Enabled": true, "Name": "Aqara_0000_ff02", "DataType": "42" , "ManufRawData": true, "ManufSpecificFunc": "Lumi_fcc0", "ActionList": [ "check_store_value"]}  
+                }
+            },
             "0002":"",
             "000a":"",
-            "0000":"",
             "0006":"",
             "0010":"",
             "0003":"",

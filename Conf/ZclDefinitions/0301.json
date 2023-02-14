@@ -4,24 +4,238 @@
     "Version": "1",
     "Enabled": true,
     "Attributes": {
-        "0000": { "Enabled": true, "Name":"PhysicalMinLevel", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 1, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0001": { "Enabled": true, "Name":"PhysicalMaxLevel", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 254, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0003": { "Enabled": true, "Name":"BallastStatus", "DataType": "18" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-
-        "0010": { "Enabled": true, "Name":"MinLevel", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "RW" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0011": { "Enabled": true, "Name":"MaxLevel", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "RW" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0012": { "Enabled": true, "Name":"PowerOnLevel", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "RW" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0013": { "Enabled": true, "Name":"PowerOnFadeTime", "DataType": "21" , "Range": [ "0000", "ffff" ] , "Acc": "RW" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0014": { "Enabled": true, "Name":"IntrinsicBallastFactor", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "RW" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0015": { "Enabled": true, "Name":"BallastFactorAdjustment", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "RW" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-
-        "0020": { "Enabled": true, "Name":"LampQuantity", "DataType": "20" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-
-        "0030": { "Enabled": true, "Name":"LampType", "DataType": "42" , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0031": { "Enabled": true, "Name":"LampManufacturer", "DataType": "42" , "Range": [  ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0032": { "Enabled": true, "Name":"LampRatedHours", "DataType": "2a" , "Range": [ "000000", "fffffe" ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0033": { "Enabled": true, "Name":"LampBurnHours", "DataType": "2a" , "Range": [ "000000", "fffffe" ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0034": { "Enabled": true, "Name":"LampAlarmMode", "DataType": "18" , "Range": [ "00", "ff" ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0035": { "Enabled": true, "Name":"LampBurnHoursTripPoint", "DataType": "2a" , "Range": [ "000000", "fffffe" ] , "Acc": "R" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value" ] }
+        "0000": {
+            "Enabled": true,
+            "Name": "PhysicalMinLevel",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 1,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0001": {
+            "Enabled": true,
+            "Name": "PhysicalMaxLevel",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 254,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0003": {
+            "Enabled": true,
+            "Name": "BallastStatus",
+            "DataType": "18",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0010": {
+            "Enabled": true,
+            "Name": "MinLevel",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0011": {
+            "Enabled": true,
+            "Name": "MaxLevel",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0012": {
+            "Enabled": true,
+            "Name": "PowerOnLevel",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0013": {
+            "Enabled": true,
+            "Name": "PowerOnFadeTime",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0014": {
+            "Enabled": true,
+            "Name": "IntrinsicBallastFactor",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0015": {
+            "Enabled": true,
+            "Name": "BallastFactorAdjustment",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0020": {
+            "Enabled": true,
+            "Name": "LampQuantity",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0030": {
+            "Enabled": true,
+            "Name": "LampType",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0031": {
+            "Enabled": true,
+            "Name": "LampManufacturer",
+            "DataType": "42",
+            "Range": [],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0032": {
+            "Enabled": true,
+            "Name": "LampRatedHours",
+            "DataType": "2a",
+            "Range": [
+                "000000",
+                "fffffe"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0033": {
+            "Enabled": true,
+            "Name": "LampBurnHours",
+            "DataType": "2a",
+            "Range": [
+                "000000",
+                "fffffe"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0034": {
+            "Enabled": true,
+            "Name": "LampAlarmMode",
+            "DataType": "18",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0035": {
+            "Enabled": true,
+            "Name": "LampBurnHoursTripPoint",
+            "DataType": "2a",
+            "Range": [
+                "000000",
+                "fffffe"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
     }
 }

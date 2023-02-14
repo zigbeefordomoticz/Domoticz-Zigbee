@@ -4,8 +4,50 @@
     "Version": "1",
     "Enabled": true,
     "Attributes": {
-        "0000": { "Enabled": true, "Name": "TemperatureDisplayMode", "DataType": "30" , "Range": [ "00", "ff" ] , "Acc": "RW" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value"] },
-        "0001": { "Enabled": true, "Name": "KeypadLockout", "DataType": "30" , "Range": [ "00", "ff" ] , "Acc": "RW" , "Default": 0, "Mandatory": true, "ActionList": [ "check_store_value"] },
-        "0002": { "Enabled": true, "Name": "ScheduleProgrammingVisibility", "DataType": "30" , "Range": [ "00", "ff" ] , "Acc": "RW" , "Default": 0, "Mandatory": false, "ActionList": [ "check_store_value"] }
+        "0000": {
+            "Enabled": true,
+            "Name": "TemperatureDisplayMode",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0001": {
+            "Enabled": true,
+            "Name": "KeypadLockout",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0002": {
+            "Enabled": true,
+            "Name": "ScheduleProgrammingVisibility",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "RW",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
     }
 }

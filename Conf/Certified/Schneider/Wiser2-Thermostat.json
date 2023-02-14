@@ -1,58 +1,41 @@
 {
-	"_comment": "Schneider Wiser Thermostat (CCTFR6400)",
-	"_version": "0.1",
-	"Ep": {
-		"01": {
-			"0000": "",
-			"0001": "",
-			"0003": "",
-			"0020": "",
-			"0204": "",
-			"0402": "",
-			"0405": "",
-			"fe03": "",
-			"0019": "",
-			"0201": "",
-			"Type": "Humi/Temp/ThermoSetpoint/Valve"
-		}
-	},
-	"Type": "",
-	"ClusterToBind": [],
-	"ConfigureReporting": {},
-	"ReadAttributes": {
-		"0000": [
-			"0000",
-			"0001",
-			"0003",
-			"0004",
-			"0005",
-			"0007",
-			"e007",
-			"e009",
-			"4000"
-		],
-		"0003": [],
-		"0001": [
-			"0020",
-			"0021"
-		],
-		"0019": [
-			"0002"
-		],
-		"0201": [],
-		"0204": [
-			"0000",
-			"0001"
-		],
-		"0402": [
-			"0000"
-		],
-		"0405": [
-			"0000"
-		]
-	},
-	"Param": {
-		"WiserLockThermostat": 0,
-		"WiserRoomNumber": 1
-	}
+    "_comment": "Schneider Wiser Thermostat (CCTFR6400)",
+    "_version": "0.1",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0001": { "Attributes": { "0100": { "Enabled": true, "Name": "Wiser_0001_0100", "DataType": "21", "ActionList": [ "check_store_value" ] }  }  },
+            "0003": "",
+            "0020": "",
+            "0204": "",
+            "0402": "",
+            "0405": "",
+            "fe03": { "Attributes": { "0020": { "Enabled": true, "Name": "Wiser_fe03_e001", "DataType": "42", "ActionList": [ "check_store_value" ] }  }  },
+            "0019": "",
+            "0201": "",
+            "0b05": { 
+                "Attributes": {
+                    "e001": { "Enabled": true, "Name": "Wiser_0b05_e001", "DataType": "21", "ActionList": [ "check_store_value" ] } 
+                    } 
+                },
+            "Type": "Humi/Temp/ThermoSetpoint/Valve"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0003", "0004", "0005", "0007", "e007", "e009", "4000" ],
+        "0003": [],
+        "0001": ["0020","0021"],
+        "0019": ["0002"],
+        "0201": [],
+        "0204": ["0000","0001"],
+        "0402": ["0000"],
+        "0405": ["0000"]
+    },
+    "Param": {
+        "WiserLockThermostat": 0,
+        "WiserRoomNumber": 1
+    }
 }

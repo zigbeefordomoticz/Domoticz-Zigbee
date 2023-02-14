@@ -1,0 +1,723 @@
+{
+    "ClusterId": "0b04",
+    "Description": "Electrical Measurement",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0300": {
+            "Enabled": true,
+            "Name": "ACFrequency",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0301": {
+            "Enabled": true,
+            "Name": "ACFrequencyMin",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0302": {
+            "Enabled": true,
+            "Name": "ACFrequencyMax",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0303": {
+            "Enabled": true,
+            "Name": "NeutralCurrent",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0304": {
+            "Enabled": true,
+            "Name": "TotalActivePower",
+            "DataType": "2b",
+            "Range": [
+                -8388607,
+                8388607
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0305": {
+            "Enabled": true,
+            "Name": "TotalReactivePower",
+            "DataType": "2b",
+            "Range": [
+                -8388607,
+                8388607
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0306": {
+            "Enabled": true,
+            "Name": "TotalApparentPower",
+            "DataType": "23",
+            "Range": [
+                "00000000",
+                "ffffffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0307": {
+            "Enabled": true,
+            "Name": "Measured1stHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0308": {
+            "Enabled": true,
+            "Name": "Measured3rdHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0309": {
+            "Enabled": true,
+            "Name": "Measured5thHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "030a": {
+            "Enabled": true,
+            "Name": "Measured7thHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "030b": {
+            "Enabled": true,
+            "Name": "Measured9thHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "030c": {
+            "Enabled": true,
+            "Name": "Measured11thHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "030d": {
+            "Enabled": true,
+            "Name": "MeasuredPhase1stHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "030e": {
+            "Enabled": true,
+            "Name": "MeasuredPhase3rdHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "030f": {
+            "Enabled": true,
+            "Name": "MeasuredPhase5thHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0310": {
+            "Enabled": true,
+            "Name": "MeasuredPhase7thHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0311": {
+            "Enabled": true,
+            "Name": "MeasuredPhase9thHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0312": {
+            "Enabled": true,
+            "Name": "MeasuredPhase11thHarmonicCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0400": {
+            "Enabled": true,
+            "Name": "ACFrequencyMultiplier",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0401": {
+            "Enabled": true,
+            "Name": "ACFrequencyDivisor",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0402": {
+            "Enabled": true,
+            "Name": "PowerMultiplier",
+            "DataType": "23",
+            "Range": [
+                "00000000",
+                "ffffffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0403": {
+            "Enabled": true,
+            "Name": "PowerDivisor",
+            "DataType": "23",
+            "Range": [
+                "00000000",
+                "ffffffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0404": {
+            "Enabled": true,
+            "Name": "HarmonicCurrentMultiplier",
+            "DataType": "28",
+            "Range": [
+                -127,
+                127
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0405": {
+            "Enabled": true,
+            "Name": "PhaseHarmonicCurrentMultiplier",
+            "DataType": "28",
+            "Range": [
+                -127,
+                127
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0501": {
+            "Enabled": true,
+            "Name": "LineCurrent",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0502": {
+            "Enabled": true,
+            "Name": "ActiveCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0503": {
+            "Enabled": true,
+            "Name": "ReactiveCurrent",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0505": {
+            "Enabled": true,
+            "Name": "RMSVoltage",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "EvalFunc": "compute_electrical_measurement_conso",
+            "UpdDomoDeviceWithCluster": "0001",
+            "ActionList": [
+                "check_store_value",
+                "upd_domo_device"
+            ]
+        },
+        "0506": {
+            "Enabled": true,
+            "Name": "RMSVoltageMin",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0507": {
+            "Enabled": true,
+            "Name": "RMSVoltageMax",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0508": {
+            "Enabled": true,
+            "Name": "RMSCurrent",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "EvalFunc": "compute_electrical_measurement_conso",
+            "UpdDomoDeviceWithAttribute": "0508",
+            "ActionList": [
+                "check_store_value",
+                "upd_domo_device"
+            ]
+        },
+        "0509": {
+            "Enabled": true,
+            "Name": "RMSCurrentMin",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "050a": {
+            "Enabled": true,
+            "Name": "RMSCurrentMax",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "050b": {
+            "Enabled": true,
+            "Name": "ActivePower",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "EvalFunc": "compute_electrical_measurement_conso",
+            "ActionList": [
+                "check_store_value",
+                "upd_domo_device"
+            ]
+        },
+        "050c": {
+            "Enabled": true,
+            "Name": "ActivePowerMin",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "050d": {
+            "Enabled": true,
+            "Name": "ActivePowerMax",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "050e": {
+            "Enabled": true,
+            "Name": "ReactivePower",
+            "DataType": "29",
+            "Range": [
+                -32768,
+                32768
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "050f": {
+            "Enabled": true,
+            "Name": "ApparentPower",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "UpdDomoDeviceWithAttribute": "050f",
+            "ActionList": [
+                "check_store_value",
+                "upd_domo_device"
+            ]
+        },
+        "0510": {
+            "Enabled": true,
+            "Name": "PowerFactor",
+            "DataType": "28",
+            "Range": [
+                -100,
+                100
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0511": {
+            "Enabled": true,
+            "Name": "AverageRMSVoltageMeasurementPeriod",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0512": {
+            "Enabled": true,
+            "Name": "AverageRMSOverVoltageCounter",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0513": {
+            "Enabled": true,
+            "Name": "AverageRMSUnderVoltageCounter",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0514": {
+            "Enabled": true,
+            "Name": "RMSExtremeOverVoltagePeriod",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0515": {
+            "Enabled": true,
+            "Name": "RMSExtremeUnderVoltagePeriod",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0516": {
+            "Enabled": true,
+            "Name": "RMSVoltageSagPeriod",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0517": {
+            "Enabled": true,
+            "Name": "RMSVoltageSwellPeriod",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
+    }
+}
