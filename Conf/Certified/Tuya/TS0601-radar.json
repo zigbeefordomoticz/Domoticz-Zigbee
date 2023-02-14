@@ -1,0 +1,39 @@
+{
+    "_blakadder": "https://zigbee.blakadder.com/Tuya_ZY-M100-S.html",
+    "_description": "Human Presence Detector 5.8GHz Wall Mount",
+    "_source": "",
+    "Manufacturer": ["_TZE200_lyetpprm","_TZE200_jva8ink8","_TZE200_holel4dk","_TZE200_wukb7rhc","_TZE204_ztc6ggyl","_TZE200_ztc6ggyl"],
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Motion/Lux/Distance"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ],
+        "0001": [],
+        "0019": [],
+        "ef00": []
+    },
+    "TS0601_DP": {
+        "motion": { "dp": 1, "EvalExp": "value"},
+        "distance": { "dp": 9, "EvalExp": "value"},
+        "illuminance":{ "dp": 104, "EvalExp": "int(10 ** ((value - 1) / 10000))"},
+        "sensitivity": { "dp": 2, "EvalExp": "value"},
+        "radar_min_range": { "dp": 3, "EvalExp": "value"},
+        "radar_max_range": { "dp": 4, "EvalExp": "value"},
+        "radar_detection_delay": { "dp":101, "EvalExp": "value"},
+        "radar_fading_time": { "dp":102, "EvalExp": "value"}
+    },
+    "Param": {
+    },
+    "BatteryDevice": 1
+}
