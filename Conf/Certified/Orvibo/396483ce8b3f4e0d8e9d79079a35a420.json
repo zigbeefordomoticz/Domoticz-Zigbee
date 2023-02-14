@@ -1,0 +1,50 @@
+{
+	"_blakadder": "https://zigbee.blakadder.com/Orvibo_CM10ZW.html",
+	"_description": "Dry Contact Module",
+	 "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1534",
+	"_comment": "Orvibo Dry Contact Module CM10ZW ",
+	"_version": "0.1",
+	"Ep": {
+		"01": {
+			"0000": "",
+			"0004": "",
+			"0005": "",
+			"0006": "",
+			"Type": "Switch"
+		},
+		"02": {
+			"0004": "",
+			"0005": "",
+			"0006": "",
+			"Type": "Switch"
+		},
+		"03": {
+			"0004": "",
+			"0005": "",
+			"0006": "",
+			"Type": "Switch"
+		}
+	},
+	"Type": "",
+	"ClusterToBind": [
+		"0006"
+	],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [
+			"0004",
+			"0005",
+			"0000",
+			"0001",
+			"0003",
+			"0007",
+			"4000"
+		],
+		"0006": [
+			"0000"
+		]
+	},
+	"Param": {
+		"BindingTableRequest": 0
+	}
+}
