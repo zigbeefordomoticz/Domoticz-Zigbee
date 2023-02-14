@@ -301,8 +301,7 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            #Domoticz.Log("pluginParameters: %s" %self.pluginParameters)
-            _response["Data"] = json.dumps(self.pluginParameters)
+            _response["Data"] = json.dumps(get_plugin_parameters(self))
         return _response
 
     def rest_nwk_stat(self, verb, data, parameters):
@@ -1104,8 +1103,11 @@ class WebServer(object):
                     zdev_lst.append(entry)
                 _response["Data"] = json.dumps(zdev_lst, sort_keys=False)
             elif len(parameters) == 1:
+                
+                _response["Data"] = json.dumps( get_plugin_parameters(self))
+
                 device_infos = {
-                    "PluginInfos": self.pluginParameters,
+                    "PluginInfos": plugin_parameters,
                     "Analytics": self.pluginconf.pluginConf["PluginAnalytics"]
                 }
                 if parameters[0] in self.ListOfDevices:
@@ -1512,3 +1514,12 @@ def decode_device_param(self, nwkid, param):
     return {}
 
 
+def get_plugin_parameters(self):
+    plugin_parameters = dict(self.pluginParameters)
+    if "Mode5" in plugin_parameters:
+        del self.pluginParameters[ "Mode5" ]
+    if "Username" in plugin_parameters:
+        del self.pluginParameters[ "Username" ]
+    if "Password" in plugin_parameters:
+        del self.pluginParameters[ "Password" ]
+    return plugin_parameters
