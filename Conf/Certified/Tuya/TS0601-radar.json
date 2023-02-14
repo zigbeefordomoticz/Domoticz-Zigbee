@@ -2,7 +2,14 @@
     "_blakadder": "https://zigbee.blakadder.com/Tuya_ZY-M100-S.html",
     "_description": "Human Presence Detector 5.8GHz Wall Mount",
     "_source": "",
-    "Manufacturer": ["_TZE200_lyetpprm","_TZE200_jva8ink8","_TZE200_holel4dk","_TZE200_wukb7rhc","_TZE204_ztc6ggyl","_TZE200_ztc6ggyl"],
+    "Identifier": [
+        ["TS0601", "_TZE200_lyetpprm" ],
+        ["TS0601", "_TZE200_jva8ink8" ],
+        ["TS0601", "_TZE200_holel4dk" ],
+        ["TS0601", "_TZE200_wukb7rhc" ],
+        ["TS0601", "_TZE204_ztc6ggyl" ],
+        ["TS0601", "_TZE200_ztc6ggyl" ]
+    ],
     "Ep": {
         "01": {
             "0000": "",
