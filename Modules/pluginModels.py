@@ -19,10 +19,17 @@ from Modules.tuyaConst import (TS0002_RELAY_SWITCH_MANUF,
                                TUYA_eTRV5_MANUFACTURER)
 
 
+def plugin_self_identifier( self, model, manufacturer):
+    
+    if ( model, manufacturer ) in self.ModelManufMapping:
+        return self.ModelManufMapping[ ( model, manufacturer ) ]
+    return None
+
 def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_code=None, device_id=None):
     self.log.logging( "Pairing", "Log", "check_found_plugin_model - %s %s %s %s" % (
         model, manufacturer_name, manufacturer_code, device_id))
 
+    # Let's check if 
     for x in PLUGIN_MODELS_MATRIX:
         if "Model" in x and model not in x["Model"]:
             continue

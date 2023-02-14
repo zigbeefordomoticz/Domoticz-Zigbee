@@ -1,6 +1,6 @@
 import struct
 import binascii
-from Modules.pluginModels import check_found_plugin_model
+from Modules.pluginModels import check_found_plugin_model, plugin_self_identifier
 from Modules.readAttributes import ReadAttributeRequest_0702_multiplier_divisor
 from Modules.tools import get_deviceconf_parameter_value
 
@@ -207,8 +207,10 @@ def _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, inital_ep):
 
 
 def _build_model_name( self, nwkid, modelName):
+    
     manufacturer_name = self.ListOfDevices[nwkid]["Manufacturer Name"] if "Manufacturer Name" in self.ListOfDevices[nwkid] else ""
     manuf_code = self.ListOfDevices[nwkid]["Manufacturer"] if "Manufacturer" in self.ListOfDevices[nwkid] else ""
+
 
     # Try to check if the Model name is in the DeviceConf list ( optimised devices)
     if modelName + '-' + manufacturer_name in self.DeviceConf:
@@ -216,6 +218,11 @@ def _build_model_name( self, nwkid, modelName):
         
     if modelName + manufacturer_name in self.DeviceConf:
         return modelName + manufacturer_name
+    
+    # If not found, let see if the model name can be extracted from the (ModelName, ManufacturerName) tuple set in the Conf file as Identifier
+    plugin_identifier = plugin_self_identifier( self, modelName, manufacturer_name)
+    if plugin_identifier:
+        return plugin_identifier
 
     zdevice_id = self.ListOfDevices[nwkid]["ZDeviceID"] if "ZDeviceID" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["ZDeviceID"] else None
 

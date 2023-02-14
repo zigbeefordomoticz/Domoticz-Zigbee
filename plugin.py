@@ -171,6 +171,7 @@ class BasePlugin:
         self.IEEE2NWK = {}
         self.ControllerData = {}
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
+        self.ModelManufMapping = {}
         self.readZclClusters = {}
 
         # Objects from Classe

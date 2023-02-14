@@ -476,10 +476,13 @@ def importDeviceConfV2(self):
                     device_model_name = model_device.rsplit(".", 1)[0]
 
                     if device_model_name not in self.DeviceConf:
-                        self.log.logging(
-                            "Database", "Debug", "--> Config for %s/%s" % (str(brand), str(device_model_name))
-                        )
+                        self.log.logging( "Database", "Debug", "--> Config for %s/%s" % (str(brand), str(device_model_name)) )
                         self.DeviceConf[device_model_name] = dict(model_definition)
+
+                        if "Identifier" in model_definition:
+                            self.log.logging( "Database", "Log", "--> Identifier found %s" % (str(model_definition["Identifier"])) )
+                            for x in model_definition["Identifier"]:
+                                self.ModelManufMapping[ (x[0], x[1] )] = device_model_name
                     else:
                         self.log.logging(
                             "Database",
@@ -489,7 +492,9 @@ def importDeviceConfV2(self):
                 except Exception:
                     Domoticz.Error("--> Unexpected error when loading a configuration file")
 
+
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
+    self.log.logging("Database", "Status", "ModelManufMapping loaded - %s" %self.ModelManufMapping.keys())
     self.log.logging("Database", "Status", "DeviceConf loaded - %s confs loaded" %len(self.DeviceConf))
 
 
