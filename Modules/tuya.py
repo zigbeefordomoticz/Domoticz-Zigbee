@@ -27,6 +27,7 @@ from Modules.tuyaSiren import tuya_siren2_response, tuya_siren_response
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 from Modules.tuyaTRV import tuya_eTRV_response
+from Modules.tuyaTS0601 import ts0601_response
 from Modules.zigateConsts import ZIGATE_EP
 
 # Tuya TRV Commands
@@ -267,13 +268,12 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
 def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-    self.log.logging(
-        "Tuya",
-        "Debug",
-        "tuya_response - Model: %s Nwkid: %s/%s dp: %02x dt: %02x data: %s"
-        % (_ModelName, NwkId, srcEp, dp, datatype, data),
-        NwkId,
-    )
+    self.log.logging( "Tuya", "Debug", "tuya_response - Model: %s Nwkid: %s/%s dp: %02x dt: %02x data: %s" % (
+        _ModelName, NwkId, srcEp, dp, datatype, data), NwkId, )
+    
+    if ts0601_response(self, Devices, _ModelName, NwkId, srcEp, dp, datatype, data):
+        # This is a generic a new fashion to handle the Tuya TS0601 Data Point.
+        return
 
     if _ModelName in ( "TS0202-_TZ3210_jijr1sss",):
         tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)

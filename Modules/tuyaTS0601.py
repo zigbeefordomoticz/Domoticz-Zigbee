@@ -4,9 +4,69 @@ from Modules.tuyaTools import store_tuya_attribute
 from Modules.tools import checkAndStoreAttributeValue
 
 
+# Generic functions
+
+def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
+    
+    dps_mapping = ts0601_extract_data_point_infos( self, model_name) 
+    if dps_mapping is None:
+        return False
+    
+    str_dp = "%02x" %dp
+    if  str_dp not in dps_mapping:
+        self.log.logging("Tuya", "Log", "ts0601_response - unknow dp %s %s %s %s" % (NwkId, dp, datatype, data), NwkId)
+        store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
+        return False
+    
+    value = int(data, 16)
+    if "EvalExp" in dps_mapping[ str_dp ]:
+        value = evaluate_expression_with_data(self, dps_mapping[ str_dp ][ "EvalExp"], value)
+
+    if "sensor_type" not in dps_mapping[ str_dp ]:
+        self.log.logging("Tuya", "Error", "ts0601_response - no sensor_type provided %s %s %s %s" % (
+            NwkId, dp, datatype, data), NwkId)
+        return False
+    
+    sensor_type = dps_mapping[ str_dp ][ "sensor_type"]
+    if sensor_type not in DP_SENSOR_FUNCTION:
+        self.log.logging("Tuya", "Error", "ts0601_response - no sensor function found for %s %s %s %s %s" % (
+            NwkId, sensor_type, dp, datatype, data), NwkId)
+        return False
+    
+    func = DP_SENSOR_FUNCTION[ sensor_type ]
+    func(self, Devices, NwkId, Ep, value )
+    return True
+        
+        
+# Helpers        
+
+def evaluate_expression_with_data(self, expression, value):
+    try:
+        return eval( expression )
+        
+    except NameError as e:
+        self.log.logging("ZclClusters", "Error", "Undefined variable, please check the formula %s" %expression)
+    
+    except SyntaxError as e:
+        self.log.logging("ZclClusters", "Error", "Syntax error, please check the formula %s" %expression)
+
+    except ValueError as e:
+        self.log.logging("ZclClusters", "Error", "Value Error, please check the formula %s %s" %(expression, e))
+        
+    return value
+
+
+def ts0601_extract_data_point_infos( self, model_name):
+    
+    if model_name not in self.DeviceConf:
+        return None
+    if "TS0601_DP" not in self.DeviceConf[model_name ]:
+        return None
+    return self.DeviceConf[model_name ][ "TS0601_DP" ]
 
 
 
+# Sensors responses
 
 def ts0601_motion(self, Devices, nwkid, ep, value):
     # Occupancy

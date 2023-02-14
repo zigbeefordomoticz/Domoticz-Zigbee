@@ -3,12 +3,13 @@
     "_description": "Human Presence Detector 5.8GHz Wall Mount",
     "_source": "",
     "Identifier": [
-        ["TS0601", "_TZE200_lyetpprm" ],
-        ["TS0601", "_TZE200_jva8ink8" ],
-        ["TS0601", "_TZE200_holel4dk" ],
-        ["TS0601", "_TZE200_wukb7rhc" ],
-        ["TS0601", "_TZE204_ztc6ggyl" ],
-        ["TS0601", "_TZE200_ztc6ggyl" ]
+        [ "TS0601", "_TZE200_lyetpprm" ],
+        [ "TS0601", "_TZE200_jva8ink8" ],
+        [ "TS0601", "_TZE200_holel4dk" ],
+        [ "TS0601", "_TZE200_wukb7rhc" ],
+        [ "TS0601", "_TZE204_ztc6ggyl" ],
+        [ "TS0601", "_TZE200_ztc6ggyl" ],
+        [ "TS0601", "_TZE200_ikvncluo" ]
     ],
     "Ep": {
         "01": {
@@ -31,14 +32,14 @@
         "ef00": []
     },
     "TS0601_DP": {
-        "motion": { "dp": 1, "EvalExp": "value"},
-        "distance": { "dp": 9, "EvalExp": "value"},
-        "illuminance":{ "dp": 104, "EvalExp": "int(10 ** ((value - 1) / 10000))"},
-        "sensitivity": { "dp": 2, "EvalExp": "value"},
-        "radar_min_range": { "dp": 3, "EvalExp": "value"},
-        "radar_max_range": { "dp": 4, "EvalExp": "value"},
-        "radar_detection_delay": { "dp":101, "EvalExp": "value"},
-        "radar_fading_time": { "dp":102, "EvalExp": "value"}
+        "01": { "sensor_type": "motion"},
+        "02": { "sensor_type": "sensitivity"},
+        "03": { "sensor_type": "radar_min_range"},
+        "04": { "sensor_type": "radar_max_range"},
+        "09": { "sensor_type": "distance"},        
+        "65": { "sensor_type": "radar_detection_delay"},
+        "66": { "sensor_type": "radar_fading_time"},
+        "68": { "sensor_type": "illuminance", "EvalExp": "int(10 ** ((value - 1) / 10000))"}
     },
     "Param": {
     },
