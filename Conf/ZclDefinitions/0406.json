@@ -22,7 +22,7 @@
             "DataType": "30",
             "Acc": "R",
             "Default": "",
-            "DecodedValueList": { "00": "PIR", "01": "Ultrasonic", "02": "PIR and ultrasonic", "03": "Physical contact"},
+            "DecodedValueList": { "0": "PIR", "1": "Ultrasonic", "2": "PIR and ultrasonic", "3": "Physical contact"},
             "Mandatory": false,
             "ActionList": [ "check_store_value"]
         },
@@ -32,7 +32,7 @@
             "DataType": "18",
             "Acc": "R",
             "Default": "",
-            "DecodedValueList": { "01": "PIR", "02": "Ultrasonic", "04": "Physical contact"},
+            "DecodedValueList": { "1": "PIR", "2": "Ultrasonic", "4": "Physical contact"},
             "Mandatory": false,
             "ActionList": [ "check_store_value"]
         },

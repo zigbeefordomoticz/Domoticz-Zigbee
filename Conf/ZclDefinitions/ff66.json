@@ -5,46 +5,415 @@
     "Enabled": true,
     "ManufSpecificCluster": "zlinky_clusters",
     "Attributes": {
-        "0000": { "Enabled": true, "Name": "OPTARIF", "DataType": "42" , "Acc": "R" , "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0001": { "Enabled": true, "Name": "Demain" , "DataType": "42", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0002": { "Enabled": true, "Name": "HHPHC" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0003": { "Enabled": true, "Name": "PPOT" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0004": { "Enabled": true, "Name": "PEJP" , "DataType": "20", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0005": { "Enabled": true, "Name": "ADPS" , "DataType": "21", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0006": { "Enabled": true, "Name": "ADIR1" , "DataType": "21", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0007": { "Enabled": true, "Name": "ADIR2" , "DataType": "21", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0008": { "Enabled": true, "Name": "ADIR3" , "DataType": "21", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0100": { "Enabled": true, "Name": "AcquisitionTime" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0200": { "Enabled": true, "Name": "LTARF" , "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0201": { "Enabled": true, "Name": "NTARF" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0202": { "Enabled": true, "Name": "DATE" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0203": { "Enabled": true, "Name": "EASD01" , "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0204": { "Enabled": true, "Name": "EASD02" , "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0205": { "Enabled": true, "Name": "EASD03" , "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0206": { "Enabled": true, "Name": "EASD04" , "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0207": { "Enabled": true, "Name": "SINSTI" , "DataType": "29", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0208": { "Enabled": true, "Name": "SMAXIN" , "DataType": "29", "Acc": "RP", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0209": { "Enabled": true, "Name": "SMAXIN-1" , "DataType": "29", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0210": { "Enabled": true, "Name": "CCAIN" , "DataType": "29", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0211": { "Enabled": true, "Name": "CCAIN-1" , "DataType": "29", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0212": { "Enabled": true, "Name": "SMAXN1-1" , "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0213": { "Enabled": true, "Name": "SMAXN2-1" , "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0214": { "Enabled": true, "Name": "SMAXN3-1" , "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0215": { "Enabled": true, "Name": "MSG1" , "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0216": { "Enabled": true, "Name": "MSG2" , "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0217": { "Enabled": true, "Name": "STGE" , "DataType": "41", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0218": { "Enabled": true, "Name": "DPM1" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0219": { "Enabled": true, "Name": "FPM1" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0220": { "Enabled": true, "Name": "DPM2" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0221": { "Enabled": true, "Name": "FPM2" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0222": { "Enabled": true, "Name": "DPM3" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0223": { "Enabled": true, "Name": "FPM3" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0224": { "Enabled": true, "Name": "RELAIS" , "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0225": { "Enabled": true, "Name": "NJOURF" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0226": { "Enabled": true, "Name": "NJOURF+1" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0227": { "Enabled": true, "Name": "PJOURF+1" , "DataType": "41", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0228": { "Enabled": true, "Name": "PPOINTE1" , "DataType": "41", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0300": { "Enabled": true, "Name": "LinkyProtocol" , "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0400": { "Enabled": true, "Name": "SMAXN-1" , "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value"] }
+        "0000": {
+            "Enabled": true,
+            "Name": "OPTARIF",
+            "DataType": "42",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0001": {
+            "Enabled": true,
+            "Name": "Demain",
+            "DataType": "42",
+            "Acc": "RP",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0002": {
+            "Enabled": true,
+            "Name": "HHPHC",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0003": {
+            "Enabled": true,
+            "Name": "PPOT",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0004": {
+            "Enabled": true,
+            "Name": "PEJP",
+            "DataType": "20",
+            "Acc": "RP",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0005": {
+            "Enabled": true,
+            "Name": "ADPS",
+            "DataType": "21",
+            "Acc": "RP",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0006": {
+            "Enabled": true,
+            "Name": "ADIR1",
+            "DataType": "21",
+            "Acc": "RP",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0007": {
+            "Enabled": true,
+            "Name": "ADIR2",
+            "DataType": "21",
+            "Acc": "RP",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0008": {
+            "Enabled": true,
+            "Name": "ADIR3",
+            "DataType": "21",
+            "Acc": "RP",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0100": {
+            "Enabled": true,
+            "Name": "AcquisitionTime",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0200": {
+            "Enabled": true,
+            "Name": "LTARF",
+            "DataType": "42",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0201": {
+            "Enabled": true,
+            "Name": "NTARF",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0202": {
+            "Enabled": true,
+            "Name": "DATE",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0203": {
+            "Enabled": true,
+            "Name": "EASD01",
+            "DataType": "23",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0204": {
+            "Enabled": true,
+            "Name": "EASD02",
+            "DataType": "23",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0205": {
+            "Enabled": true,
+            "Name": "EASD03",
+            "DataType": "23",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0206": {
+            "Enabled": true,
+            "Name": "EASD04",
+            "DataType": "23",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0207": {
+            "Enabled": true,
+            "Name": "SINSTI",
+            "DataType": "29",
+            "Acc": "RP",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0208": {
+            "Enabled": true,
+            "Name": "SMAXIN",
+            "DataType": "29",
+            "Acc": "RP",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0209": {
+            "Enabled": true,
+            "Name": "SMAXIN-1",
+            "DataType": "29",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0210": {
+            "Enabled": true,
+            "Name": "CCAIN",
+            "DataType": "29",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0211": {
+            "Enabled": true,
+            "Name": "CCAIN-1",
+            "DataType": "29",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0212": {
+            "Enabled": true,
+            "Name": "SMAXN1-1",
+            "DataType": "21",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0213": {
+            "Enabled": true,
+            "Name": "SMAXN2-1",
+            "DataType": "21",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0214": {
+            "Enabled": true,
+            "Name": "SMAXN3-1",
+            "DataType": "21",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0215": {
+            "Enabled": true,
+            "Name": "MSG1",
+            "DataType": "42",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0216": {
+            "Enabled": true,
+            "Name": "MSG2",
+            "DataType": "42",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0217": {
+            "Enabled": true,
+            "Name": "STGE",
+            "DataType": "41",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0218": {
+            "Enabled": true,
+            "Name": "DPM1",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0219": {
+            "Enabled": true,
+            "Name": "FPM1",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0220": {
+            "Enabled": true,
+            "Name": "DPM2",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0221": {
+            "Enabled": true,
+            "Name": "FPM2",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0222": {
+            "Enabled": true,
+            "Name": "DPM3",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0223": {
+            "Enabled": true,
+            "Name": "FPM3",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0224": {
+            "Enabled": true,
+            "Name": "RELAIS",
+            "DataType": "21",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0225": {
+            "Enabled": true,
+            "Name": "NJOURF",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0226": {
+            "Enabled": true,
+            "Name": "NJOURF+1",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0227": {
+            "Enabled": true,
+            "Name": "PJOURF+1",
+            "DataType": "41",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0228": {
+            "Enabled": true,
+            "Name": "PPOINTE1",
+            "DataType": "41",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0300": {
+            "Enabled": true,
+            "Name": "LinkyProtocol",
+            "DataType": "20",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0400": {
+            "Enabled": true,
+            "Name": "SMAXN-1",
+            "DataType": "21",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
     }
 }

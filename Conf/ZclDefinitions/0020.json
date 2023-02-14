@@ -1,0 +1,101 @@
+{
+    "ClusterId": "0020",
+    "Description": "Poll Control",
+    "Version": 1,
+    "Enabled": true,
+    "Attributes": {
+        "0000": {
+            "Enabled": true,
+            "Name": "Check-inInterval",
+            "DataType": "23",
+            "Acc": "RW",
+            "Range": [
+                "00",
+                "6E0000"
+            ],
+            "Default": "3840",
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0001": {
+            "Enabled": true,
+            "Name": "LongPoll Interval",
+            "DataType": "23",
+            "Acc": "R",
+            "Range": [
+                "04",
+                "6E0000"
+            ],
+            "Default": "14",
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0002": {
+            "Enabled": true,
+            "Name": "ShortPollInterval",
+            "DataType": "21",
+            "Acc": "R",
+            "Range": [
+                "01",
+                "ffff"
+            ],
+            "Default": "02",
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0003": {
+            "Enabled": true,
+            "Name": "FastPollTimeout",
+            "DataType": "21",
+            "Acc": "RW",
+            "Range": [
+                "01",
+                "ffff"
+            ],
+            "Default": "28",
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0004": {
+            "Enabled": true,
+            "Name": "Check-inIntervalMin",
+            "DataType": "23",
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0005": {
+            "Enabled": true,
+            "Name": "LongPollIntervalMin",
+            "DataType": "23",
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0006": {
+            "Enabled": true,
+            "Name": "FastPollTimeoutMax",
+            "DataType": "21",
+            "Acc": "RW",
+            "Default": "0",
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
+    }
+}

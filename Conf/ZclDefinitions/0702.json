@@ -1,0 +1,736 @@
+{
+    "ClusterId": "0702",
+    "Description": "Metering (Smart Energy)",
+    "Version": 1,
+    "Enabled": true,
+    "Attributes": {
+        "0000": {
+            "Enabled": true,
+            "Name": "CurrentSummationDelivered",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "UpdDomoDeviceWithAttribute": "0000",
+            "ActionList": [
+                "check_store_value",
+                "upd_domo_device"
+            ]
+        },
+        "0001": {
+            "Enabled": true,
+            "Name": "CurrentSummationReceived",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0002": {
+            "Enabled": true,
+            "Name": "CurrentMaxDemandDelivered",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0003": {
+            "Enabled": true,
+            "Name": "CurrentMaxDemandReceived",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0004": {
+            "Enabled": true,
+            "Name": "DFTSummation",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0005": {
+            "Enabled": true,
+            "Name": "DailyFreezeTime",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "173B"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0006": {
+            "Enabled": true,
+            "Name": "PowerFactor",
+            "DataType": "20",
+            "Range": [
+                -100,
+                100
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0007": {
+            "Enabled": true,
+            "Name": "ReadingSnapShotTime",
+            "DataType": "e2",
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0008": {
+            "Enabled": true,
+            "Name": "CurrentMaxDemandDeliveredTime",
+            "DataType": "e2",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0009": {
+            "Enabled": true,
+            "Name": "CurrentMaxDemandReceivedTime",
+            "DataType": "e2",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000a": {
+            "Enabled": true,
+            "Name": "DefaultUpdatePeriod",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000b": {
+            "Enabled": true,
+            "Name": "FastPollUpdatePeriod",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000c": {
+            "Enabled": true,
+            "Name": "CurrentBlockPeriodConsumptionDelivered",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000d": {
+            "Enabled": true,
+            "Name": "DailyConsumptionTarget",
+            "DataType": "22",
+            "Range": [
+                "000000",
+                "ffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000e": {
+            "Enabled": true,
+            "Name": "CurrentBlock",
+            "DataType": "30",
+            "Range": [
+                "00",
+                10
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "000f": {
+            "Enabled": true,
+            "Name": "ProfileIntervalPeriod",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0010": {
+            "Enabled": true,
+            "Name": "Deprecated"
+        },
+        "0011": {
+            "Enabled": true,
+            "Name": "PresetReadingTime",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "173b"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0012": {
+            "Enabled": true,
+            "Name": "SummationDeliveredPerReport",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0013": {
+            "Enabled": true,
+            "Name": "FlowRestriction",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0014": {
+            "Enabled": true,
+            "Name": "Supply Status",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0015": {
+            "Enabled": true,
+            "Name": "CurrentInletEnergyCarrierSummation",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0016": {
+            "Enabled": true,
+            "Name": "CurrentOutletEnergyCarrierSummation",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0017": {
+            "Enabled": true,
+            "Name": "InletTemperature",
+            "DataType": "2a",
+            "Range": [
+                -8388607,
+                8388607
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "UpdDomoDeviceWithCluster": "0402",
+            "ActionList": [
+                "check_store_value",
+                "upd_domo_device"
+            ]
+        },
+        "0018": {
+            "Enabled": true,
+            "Name": "OutletTemperature",
+            "DataType": "2a",
+            "Range": [
+                -8388607,
+                8388607
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0019": {
+            "Enabled": true,
+            "Name": "ControlTemperature",
+            "DataType": "2a",
+            "Range": [
+                -8388607,
+                8388607
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "001a": {
+            "Enabled": true,
+            "Name": "CurrentInletEnergyCarrierDemand",
+            "DataType": "2a",
+            "Range": [
+                -8388607,
+                8388607
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "001b": {
+            "Enabled": true,
+            "Name": "CurrentOutletEnergyCarrierDemand",
+            "DataType": "2a",
+            "Range": [
+                -8388607,
+                8388607
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "001c": {
+            "Enabled": true,
+            "Name": "PreviousBlockPeriodConsumptionDelivered",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "001d": {
+            "Enabled": true,
+            "Name": "CurrentBlockPeriod ConsumptionReceived",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "001e": {
+            "Enabled": true,
+            "Name": "CurrentBlockReceived",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "001f": {
+            "Enabled": true,
+            "Name": "DFTSummation Received",
+            "DataType": "25",
+            "Range": [
+                "000000000000",
+                "ffffffffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0020": {
+            "Enabled": true,
+            "Name": "ActiveRegisterTier Delivered",
+            "DataType": "30",
+            "Range": [
+                0,
+                48
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0021": {
+            "Enabled": true,
+            "Name": "ActiveRegisterTier Received",
+            "DataType": "30",
+            "Range": [
+                0,
+                48
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0022": {
+            "Enabled": true,
+            "Name": "LastBlockSwitchTime",
+            "DataType": "e2",
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0200": {
+            "Enabled": true,
+            "Name": "Status",
+            "DataType": "18",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "DecodedValueList": {
+                "0": "Ok",
+                "1": "Low Battery",
+                "2": "Tamper Detect",
+                "3": "Power Failure",
+                "4": "Power Quality",
+                "5": "Lead Detect"
+            },
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0300": {
+            "Enabled": true,
+            "Name": "UnitofMeasure",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "DecodedValueList": {
+                "0": "kW",
+                "1": "m³",
+                "2": "ft³",
+                "3": "ccf",
+                "11": "Unitless"
+            },
+
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0301": {
+            "Enabled": true,
+            "Name": "Multiplier",
+            "DataType": "22",
+            "Range": [
+                "000000",
+                "ffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0302": {
+            "Enabled": true,
+            "Name": "Divisor",
+            "DataType": "22",
+            "Range": [
+                "000000",
+                "ffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0303": {
+            "Enabled": true,
+            "Name": "SummationFormatting",
+            "DataType": "18",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0304": {
+            "Enabled": true,
+            "Name": "DemandFormatting",
+            "DataType": "18",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0305": {
+            "Enabled": true,
+            "Name": "HistoricalConsumptionFormatting",
+            "DataType": "18",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0306": {
+            "Enabled": true,
+            "Name": "MeteringDeviceType",
+            "DataType": "18",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0307": {
+            "Enabled": true,
+            "Name": "SiteID",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0308": {
+            "Enabled": true,
+            "Name": "MeterSerialNumber",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0400": {
+            "Enabled": true,
+            "Name": "InstantaneousDemand",
+            "DataType": "2a",
+            "Range": [
+                -8388607,
+                8388607
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value",
+                "upd_domo_device"
+            ]
+        },
+        "0430": {
+            "Enabled": true,
+            "Name": "CurrentWeekConsumptionDelivered",
+            "DataType": "22",
+            "Range": [
+                "000000",
+                "ffffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "EvalFunc": "compute_metering_conso",
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0800": {
+            "Enabled": true,
+            "Name": "Generic Alarm Mask",
+            "DataType": "18",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "0801": {
+            "Enabled": true,
+            "Name": "Electricity Alarm Mask",
+            "DataType": "18",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
+    }
+}

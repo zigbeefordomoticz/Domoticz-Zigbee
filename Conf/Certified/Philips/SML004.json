@@ -9,13 +9,13 @@
             "0019": "",
             "0400": "",
             "0402": "",
-            "0406": { "Enabled": true, "Name": "Sensitivity" , "DataType": "20", "ActionList": [ "check_store_value"] },
+            "0406": { "Attributes": { "0030": {"Enabled": true, "Name": "PhilipsSensitivity" , "DataType": "20", "ActionList": [ "check_store_value"] }}},
             "Type": "Motion/Lux/Temp"
         }
     },
     "Type": "",
     "NickName": "Hue_Motion",
-    "ClusterToBind": [ "0406", "0400", "0402", "0001",  "0000" ],
+    "ClusterToBind": [ "0406", "0400", "0402", "0001", "0000" ],
     "bindEp": [
         "02"
     ],

@@ -240,7 +240,7 @@ def over_write_type_from_deviceconf( self, Devices, NwkId):
             self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'ep: %s' not found in DeviceConf" % (NwkId, _ep), NwkId )
             continue
         if "Type" not in _deviceConf['Ep'][ _ep ]:
-            self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Type' not found in DevieConf" % (NwkId,), NwkId )
+            self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Type' not found in DeviceConf" % (NwkId,), NwkId )
             continue
         if "Type" in self.ListOfDevices[ NwkId ]['Ep'][ _ep ] and self.ListOfDevices[ NwkId ]['Ep'][ _ep ]["Type"] == _deviceConf['Ep'][ _ep ]["Type"]:
             self.log.logging( "WidgetCreation", "Debug", "over_write_type_from_deviceconf - NwkId : %s Device Type: %s == Device Conf Type: %s" % (
@@ -331,10 +331,10 @@ def CreateDomoDevice(self, Devices, NWKID):
             break
         
         Type, GlobalEP, GlobalType = extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType)
-        self.log.logging("WidgetCreation", "Debug", "CreatDomoDevice - Type: %s GlobalEp: %s GlobalType: %s" %( 
+        self.log.logging("WidgetCreation", "Debug", "CreatDomoDevice - Type: >%s< GlobalEp: >%s< GlobalType: >%s<" %( 
             Type, GlobalEP, str(GlobalType)), NWKID)
         
-        if Type is None:
+        if Type is None or Type in ( "", {} ):
             continue
 
         # In case Type is issued from GetType functions, this is based on Clusters,
