@@ -209,8 +209,8 @@ def rest_zGroup(self, verb, data, parameters):
         if len(parameters) == 0:
             zgroup_lst = []
             for itergrp in ListOfGroups:
-                if int(itergrp,16) == self.pluginconf.pluginConf["pingViaGroup"]:
-                    continue
+                #if int(itergrp,16) == self.pluginconf.pluginConf["pingViaGroup"]:
+                #    continue
 
                 self.logging("Debug", "Process Group: %s" % itergrp)
                 zgroup = {

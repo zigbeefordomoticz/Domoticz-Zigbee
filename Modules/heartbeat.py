@@ -71,7 +71,8 @@ BINDING_TABLE_REFRESH = (( 3600 // HEARTBEAT ) + 11)
 NODE_DESCRIPTOR_REFRESH = (( 3600 // HEARTBEAT) + 13)
 ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 7)
 CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
-
+PING_DEVICE_VIA_GROUPID = 3567 // HEARTBEAT    # Secondes ( 59minutes et 45 secondes )
+FIRST_PING_VIA_GROUP = 127 // HEARTBEAT
 
 def attributeDiscovery(self, NwkId):
 
@@ -427,21 +428,16 @@ def pingRetryDueToBadHealth(self, NwkId):
 
 def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag):
 
+    if self.pluginconf.pluginConf["pingViaGroup"]:
+        self.log.logging( "Heartbeat", "Debug", "No direct pinDevices as Group ping is enabled" , NwkId, )
+        return
+    
     if "pingDeviceRetry" in self.ListOfDevices[NwkId]:
-        self.log.logging(
-            "Heartbeat",
-            "Debug",
-            "------> pinDevices %s health: %s, checkHealth: %s, mainPower: %s, retry: %s"
-            % (NwkId, health, checkHealthFlag, mainPowerFlag, self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"]),
-            NwkId,
-        )
+        self.log.logging( "Heartbeat", "Debug", "------> pinDevices %s health: %s, checkHealth: %s, mainPower: %s, retry: %s" % (
+            NwkId, health, checkHealthFlag, mainPowerFlag, self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"]), NwkId, )
     else:
-        self.log.logging(
-            "Heartbeat",
-            "Debug",
-            "------> pinDevices %s health: %s, checkHealth: %s, mainPower: %s" % (NwkId, health, checkHealthFlag, mainPowerFlag),
-            NwkId,
-        )
+        self.log.logging( "Heartbeat", "Debug", "------> pinDevices %s health: %s, checkHealth: %s, mainPower: %s" % (
+            NwkId, health, checkHealthFlag, mainPowerFlag), NwkId, )
 
     if not mainPowerFlag:
         return
@@ -496,35 +492,22 @@ def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag):
 
     if "LastPing" not in self.ListOfDevices[NwkId]["Stamp"]:
         self.ListOfDevices[NwkId]["Stamp"]["LastPing"] = 0
-
     lastPing = self.ListOfDevices[NwkId]["Stamp"]["LastPing"]
     lastSeen = self.ListOfDevices[NwkId]["Stamp"]["LastSeen"]
-
     if checkHealthFlag and now > (lastPing + 60) and self.ControllerLink.loadTransmit() == 0:
         submitPing(self, NwkId)
         return
 
-    self.log.logging(
-        "Heartbeat",
-        "Debug",
-        "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s"
-        % (NwkId, now, lastPing, lastSeen, self.pluginconf.pluginConf["pingDevicesFeq"]),
-        NwkId,
-    )
-
+    self.log.logging( "Heartbeat", "Debug", "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" % (
+        NwkId, now, lastPing, lastSeen, self.pluginconf.pluginConf["pingDevicesFeq"]), NwkId, )
     if (
         (now > (lastPing + self.pluginconf.pluginConf["pingDevicesFeq"]))
         and (now > (lastSeen + self.pluginconf.pluginConf["pingDevicesFeq"]))
         and self.ControllerLink.loadTransmit() == 0
     ):
 
-        self.log.logging(
-            "Heartbeat",
-            "Debug",
-            "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s"
-            % (NwkId, now, lastPing, lastSeen, self.pluginconf.pluginConf["pingDevicesFeq"]),
-            NwkId,
-        )
+        self.log.logging( "Heartbeat", "Debug", "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" % (
+            NwkId, now, lastPing, lastSeen, self.pluginconf.pluginConf["pingDevicesFeq"]), NwkId, )
 
         submitPing(self, NwkId)
 
@@ -898,7 +881,17 @@ def processListOfDevices(self, Devices):
             processNotinDBDevices(self, Devices, NWKID, status, RIA)
     # end for key in ListOfDevices
 
-    ping_devices_via_group(self)
+    if (
+        self.groupmgt 
+        and self.pluginconf.pluginConf["pingViaGroup"]
+        and (
+            self.HeartbeatCount == FIRST_PING_VIA_GROUP        # Let's do a group ping 2 minutes after start
+            or (self.HeartbeatCount % PING_DEVICE_VIA_GROUPID ) == 0   # Let's do a group ping every PING_DEVICE_VIA_GROUPID seconds
+        )
+    ):
+        ping_devices_via_group(self)
+    
+    
     for iterDevToBeRemoved in entriesToBeRemoved:
         if "IEEE" in self.ListOfDevices[iterDevToBeRemoved]:
             del self.ListOfDevices[iterDevToBeRemoved]["IEEE"]
@@ -935,12 +928,8 @@ def processListOfDevices(self, Devices):
     if self.networkenergy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
         self.networkenergy.do_scan()
 
-    self.log.logging(
-        "Heartbeat",
-        "Debug",
-        "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s"
-        % (self.HeartbeatCount, self.busy, self.CommiSSionning, self.ControllerLink.loadTransmit()),
-    )
+    self.log.logging( "Heartbeat", "Debug", "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" % (
+        self.HeartbeatCount, self.busy, self.CommiSSionning, self.ControllerLink.loadTransmit()), )
     return
 
 
@@ -959,7 +948,7 @@ def add_device_group_for_ping(self, NWKID):
         return
     
     target_ep = None
-    for ep in  self.ListOfDevices[NWKID]["Ep"]:
+    for ep in self.ListOfDevices[NWKID]["Ep"]:
         if "0004" in self.ListOfDevices[NWKID]["Ep"][ ep ]:
             target_ep = ep
 
@@ -974,7 +963,7 @@ def add_device_group_for_ping(self, NWKID):
         return
         
     target_ep = None
-    for ep in  self.ListOfDevices[NWKID]["Ep"]:
+    for ep in self.ListOfDevices[NWKID]["Ep"]:
         if "0004" in self.ListOfDevices[NWKID]["Ep"][ ep ]:
             target_ep = ep
     

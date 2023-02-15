@@ -335,8 +335,10 @@ def ping_devices_via_group(self):
     
     if self.groupmgt is None or not self.pluginconf.pluginConf["pingViaGroup"]:
         return
+    self.log.logging("ReadAttributes", "Log", "ping_devices_via_group")
+    
     target_groupid = "%04x" %self.pluginconf.pluginConf["pingViaGroup"] 
-    rawaps_read_attribute_req(self, target_groupid, "01", "01", "0000", "00", "00", "0000", "0000",  groupaddrmode=True)
+    rawaps_read_attribute_req(self, target_groupid, "01", "01", "0000", "00", "00", "0000", "0000", groupaddrmode=True)
     
 def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
