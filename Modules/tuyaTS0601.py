@@ -113,6 +113,7 @@ def ts0601_distance(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "Distance", value)
     MajDomoDevice(self, Devices, nwkid, ep, "Distance", value)
 
+
 def ts0601_battery(self, Devices, nwkid, ep, value ):
     self.log.logging("Tuya", "Log", "ts0601_battery - Battery %s %s %s" % (nwkid, ep, value), nwkid)
         
@@ -123,10 +124,87 @@ def ts0601_battery(self, Devices, nwkid, ep, value ):
     store_tuya_attribute(self, nwkid, "BatteryStatus", value)
 
 
+def ts0601_tamper(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya", "Log", "ts0601_tamper - Tamper %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "SmokeTamper", value)
+    state = "01" if value != 0 else "00"
+    MajDomoDevice(self, Devices, nwkid, ep, "0009", state)
+
+
+def ts0601_switch(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya", "Log", "ts0601_switch - Switch%s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Switch", value)
+    state = "01" if value != 0 else "00"
+    MajDomoDevice(self, Devices, nwkid, ep, "0006", state)
+
+
+def ts0601_level_percentage(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_level_percentage - Percentage%s %s %s" % (nwkid, ep, value), nwkid, )
+    store_tuya_attribute(self, nwkid, "PercentState", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0008", "%02x" %value)
+
+
+def ts0601_door(self, Devices, nwkid, ep, value):
+    # Door Contact: 0x00 => Closed, 0x01 => Open
+    self.log.logging( "Tuya", "Debug", "ts0601_door - Door Contact%s %s %s" % (nwkid, ep, value), nwkid, )
+    MajDomoDevice(self, Devices, nwkid, "01", "0500", "%02x" %value )
+    store_tuya_attribute(self, nwkid, "DoorContact", value)
+
+
+def ts0601_co2ppm(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_co2ppm - CO2 ppm %s %s %s" % (nwkid, ep, value), nwkid, )
+    store_tuya_attribute( self, nwkid, "CO2 ppm", value, )
+    MajDomoDevice(self, Devices, nwkid, ep, "0402", value, Attribute_="0005")
+
+
+def ts0601_voc(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_voc - VOC ppm %s %s %s" % (nwkid, ep, value), nwkid, )
+    store_tuya_attribute(self, nwkid, "VOC ppm", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0402", value, Attribute_="0003")
+
+
+def ts0601_ch20(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_ch20 - CH2O ppm %s %s %s" % (nwkid, ep, value), nwkid, )
+    store_tuya_attribute(self, nwkid, "CH2O ppm", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0402", value, Attribute_="0004")
+
+
+def ts0601_summation_energy(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_summation_energy - Summation %s %s %s" % (nwkid, ep, value), nwkid, )
+    MajDomoDevice(self, Devices, nwkid, ep, "0702", str(value), Attribute_="0000")
+    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", value)  # Store int
+    store_tuya_attribute(self, nwkid, "Energy", str(value))
+
+
+def ts0601_instant_power(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_instant_power - Instant Power %s %s %s" % (nwkid, ep, value), nwkid, )
+    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", str(value))
+    MajDomoDevice(self, Devices, nwkid, ep, "0702", str(value))
+    store_tuya_attribute(self, nwkid, "InstantPower", str(value))  # Store str
+
+
+def ts0601_voltage(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_voltage - Voltage %s %s %s" % (nwkid, ep, value), nwkid, )
+    MajDomoDevice(self, Devices, nwkid, ep, "0001", str(value))
+    store_tuya_attribute(self, nwkid, "Voltage", str(value))
+
+
+
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
     "temperature": ts0601_temperature,
     "humidity": ts0601_humidity,
-    "distance": ts0601_distance
+    "distance": ts0601_distance,
+    "battery": ts0601_battery,
+    "tamper": ts0601_tamper,
+    "switch": ts0601_switch,
+    "door": ts0601_door,
+    "lvl_percentage": ts0601_level_percentage,
+    "co2": ts0601_co2ppm,
+    "voc": ts0601_voc,
+    "ch20": ts0601_ch20,
+    "metering": ts0601_summation_energy,
+    "power": ts0601_instant_power,
+    "voltage": ts0601_voltage
 }
