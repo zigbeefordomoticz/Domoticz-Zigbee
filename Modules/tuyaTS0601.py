@@ -16,7 +16,7 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
     
     str_dp = "%02x" %dp
     if str_dp not in dps_mapping:
-        self.log.logging("Tuya", "Log", "ts0601_response - unknow dp %s %s %s %s" % (NwkId, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Log", "ts0601_response - unknow dp %s %s %s %s %s" % (NwkId, str_dp, datatype, data, str(dps_mapping)), NwkId)
         store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
         return False
     
