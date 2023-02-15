@@ -209,11 +209,15 @@ def rest_zGroup(self, verb, data, parameters):
         if len(parameters) == 0:
             zgroup_lst = []
             for itergrp in ListOfGroups:
+                if int(itergrp,16) == self.pluginconf.pluginConf["pingViaGroup"]:
+                    continue
+
                 self.logging("Debug", "Process Group: %s" % itergrp)
-                zgroup = {}
-                zgroup["_GroupId"] = itergrp
-                zgroup["GroupName"] = ListOfGroups[itergrp]["Name"]
-                zgroup["Devices"] = []
+                zgroup = {
+                    "_GroupId": itergrp,
+                    "GroupName": ListOfGroups[itergrp]["Name"],
+                    "Devices": [],
+                }
                 for itemDevice in ListOfGroups[itergrp]["Devices"]:
                     if len(itemDevice) == 2:
                         dev, ep = itemDevice
@@ -223,10 +227,7 @@ def rest_zGroup(self, verb, data, parameters):
                         dev, ep, ieee = itemDevice
 
                     self.logging("Debug", "--> add %s %s %s" % (dev, ep, ieee))
-                    _dev = {}
-                    _dev["_NwkId"] = dev
-                    _dev["Ep"] = ep
-                    _dev["IEEE"] = ieee
+                    _dev = {"_NwkId": dev, "Ep": ep, "IEEE": ieee}
                     zgroup["Devices"].append(_dev)
 
                 if "WidgetStyle" in ListOfGroups[itergrp]:
@@ -238,11 +239,18 @@ def rest_zGroup(self, verb, data, parameters):
                 # Let's check if we don't have an Ikea Remote in the group
                 if "Tradfri Remote" in ListOfGroups[itergrp]:
                     self.logging("Debug", "--> add Ikea Tradfri Remote")
-                    _dev = {}
-                    _dev["_NwkId"] = ListOfGroups[itergrp]["Tradfri Remote"]["Device Addr"]
-                    _dev["Unit"] = ListOfGroups[itergrp]["Tradfri Remote"]["Device Id"]
-                    _dev["Ep"] = ListOfGroups[itergrp]["Tradfri Remote"]["Ep"]
-                    _dev["Color Mode"] = ListOfGroups[itergrp]["Tradfri Remote"]["Color Mode"]
+                    _dev = {
+                        "_NwkId": ListOfGroups[itergrp]["Tradfri Remote"][
+                            "Device Addr"
+                        ],
+                        "Unit": ListOfGroups[itergrp]["Tradfri Remote"][
+                            "Device Id"
+                        ],
+                        "Ep": ListOfGroups[itergrp]["Tradfri Remote"]["Ep"],
+                        "Color Mode": ListOfGroups[itergrp]["Tradfri Remote"][
+                            "Color Mode"
+                        ],
+                    }
                     zgroup["Devices"].append(_dev)
                 zgroup_lst.append(zgroup)
             self.logging("Debug", "zGroup: %s" % zgroup_lst)
@@ -251,10 +259,11 @@ def rest_zGroup(self, verb, data, parameters):
         elif len(parameters) == 1:
             if parameters[0] in ListOfGroups:
                 itemGroup = parameters[0]
-                zgroup = {}
-                zgroup["_GroupId"] = itemGroup
-                zgroup["GroupName"] = ListOfGroups[itemGroup]["Name"]
-                zgroup["Devices"] = {}
+                zgroup = {
+                    "_GroupId": itemGroup,
+                    "GroupName": ListOfGroups[itemGroup]["Name"],
+                    "Devices": {},
+                }
                 for itemDevice in ListOfGroups[itemGroup]["Devices"]:
                     if len(itemDevice) == 2:
                         dev, ep = itemDevice
@@ -269,9 +278,12 @@ def rest_zGroup(self, verb, data, parameters):
                 # Let's check if we don't have an Ikea Remote in the group
                 if "Tradfri Remote" in ListOfGroups[itemGroup]:
                     self.logging("Log", "--> add Ikea Tradfri Remote")
-                    _dev = {}
-                    _dev["_NwkId"] = ListOfGroups[itemGroup]["Tradfri Remote"]["Device Addr"]
-                    _dev["Ep"] = "01"
+                    _dev = {
+                        "_NwkId": ListOfGroups[itemGroup]["Tradfri Remote"][
+                            "Device Addr"
+                        ],
+                        "Ep": "01",
+                    }
                     # zgroup["Devices"].append(_dev)  This looks very bad. Don't know where it is coming from
                     zgroup["Devices"][ListOfGroups[itemGroup]["Tradfri Remote"]["Device Addr"]] = "01"
                 _response["Data"] = json.dumps(zgroup, sort_keys=True)

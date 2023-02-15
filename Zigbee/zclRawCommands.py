@@ -14,7 +14,7 @@ DEFAULT_ACK_MODE = False
 # General Command Frame
 
 # Read Attributes Command
-def rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled=DEFAULT_ACK_MODE):
+def rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled=DEFAULT_ACK_MODE, groupaddrmode=False):
     self.log.logging("zclCommand", "Debug", "rawaps_read_attribute_req %s %s %s %s %s %s %s %s" % (nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr))
 
     cmd = "00"  # Read Attribute Command Identifier
@@ -43,7 +43,11 @@ def rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manu
         attribute = Attr[idx : idx + 4]
         idx += 4
         payload += "%04x" % struct.unpack(">H", struct.pack("H", int(attribute, 16)))[0]
-    raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
+    if not groupaddrmode:
+        raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, ackIsDisabled=ackIsDisabled)
+    else:
+        raw_APS_request(self, nwkid, EpOut, Cluster, "0104", payload, zigate_ep=EpIn, groupaddrmode=True, ackIsDisabled=ackIsDisabled)
+        
     return sqn
 
 

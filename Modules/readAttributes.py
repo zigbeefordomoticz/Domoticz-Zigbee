@@ -30,6 +30,7 @@ from Modules.tools import (check_datastruct, getListOfEpForCluster,
                            is_time_to_perform_work, reset_attr_datastruct,
                            set_isqn_datastruct, set_status_datastruct,
                            set_timestamp_datastruct)
+from Zigbee.zclRawCommands import rawaps_read_attribute_req
 from Modules.tuya import tuya_cmd_0x0000_0xf0
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.zlinky import get_OPTARIF
@@ -330,7 +331,13 @@ def ping_device_with_read_attribute(self, key):
         # Let's ping only 1 EndPoint
         break
 
-
+def ping_devices_via_group(self):
+    
+    if self.groupmgt is None or not self.pluginconf.pluginConf["pingViaGroup"]:
+        return
+    target_groupid = "%04x" %self.pluginconf.pluginConf["pingViaGroup"] 
+    rawaps_read_attribute_req(self, target_groupid, "01", "01", "0000", "00", "00", "0000", "0000",  groupaddrmode=True)
+    
 def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01

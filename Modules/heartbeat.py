@@ -40,7 +40,8 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
-                                    ping_tuya_device)
+                                    ping_tuya_device,
+                                    ping_devices_via_group)
 from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
                            get_device_nickname, getListOfEpForCluster, is_hex,
@@ -897,6 +898,7 @@ def processListOfDevices(self, Devices):
             processNotinDBDevices(self, Devices, NWKID, status, RIA)
     # end for key in ListOfDevices
 
+    ping_devices_via_group(self)
     for iterDevToBeRemoved in entriesToBeRemoved:
         if "IEEE" in self.ListOfDevices[iterDevToBeRemoved]:
             del self.ListOfDevices[iterDevToBeRemoved]["IEEE"]
@@ -956,10 +958,18 @@ def add_device_group_for_ping(self, NWKID):
     if "Capability" in self.ListOfDevices[NWKID] and "Full-Function Device" not in self.ListOfDevices[NWKID][ "Capability" ]:
         return
     
-    target_groupid = "%04x" %int(self.pluginconf.pluginConf["pingViaGroup"],16)
+    target_ep = None
+    for ep in  self.ListOfDevices[NWKID]["Ep"]:
+        if "0004" in self.ListOfDevices[NWKID]["Ep"][ ep ]:
+            target_ep = ep
+
+    if target_ep is None:
+        return
+    
+    target_groupid = "%04x" %self.pluginconf.pluginConf["pingViaGroup"]
     if (
         "GroupMemberShip" in self.ListOfDevices[NWKID] 
-        and target_groupid in self.ListOfDevices[NWKID][ "GroupMemberShip"]
+        and target_groupid in self.ListOfDevices[NWKID][ "GroupMemberShip"][ target_ep ]
     ):
         return
         

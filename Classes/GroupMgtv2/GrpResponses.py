@@ -91,6 +91,10 @@ def add_group_member_ship_response(self, MsgData):
             self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP][MsgGroupID] = {}
 
         self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP][MsgGroupID]["Status"] = "OK"
+        
+        if int(MsgGroupID,16) == self.pluginconf.pluginConf["pingViaGroup"]:
+            return
+
         checkToCreateOrUpdateGroup(self, MsgSrcAddr, MsgEP, MsgGroupID)
 
     else:
