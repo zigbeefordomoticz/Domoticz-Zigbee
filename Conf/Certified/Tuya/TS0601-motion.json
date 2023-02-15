@@ -27,7 +27,7 @@
         "ef00": []
     },
     "TS0601_DP": {
-        "01": { "sensor_type": "motion", "EvalExp": "abs(value - 1)", "DomoDeviceFormat": "str"},
+        "01": { "sensor_type": "motion", "EvalExp": "int(value == 0)", "DomoDeviceFormat": "str"},
         "04": { "sensor_type": "battery"},
         "09": { "store_tuya_attribute": "Sensitivity"},
         "0a": { "store_tuya_attribute": "KeepTime"},
