@@ -721,7 +721,10 @@ def processKnownDevices(self, Devices, NWKID):
                 zdp_node_descriptor_request(self, NWKID)
             else:
                 rescheduleAction = True
-
+                
+    if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
+        add_device_group_for_ping(self, NWKID)
+    
     if rescheduleAction and intHB != 0:  # Reschedule is set because Zigate was busy or Queue was too long to process
         self.ListOfDevices[NWKID]["Heartbeat"] = str(intHB - 1)  # So next round it trigger again
 
@@ -937,3 +940,34 @@ def processListOfDevices(self, Devices):
         % (self.HeartbeatCount, self.busy, self.CommiSSionning, self.ControllerLink.loadTransmit()),
     )
     return
+
+
+def add_device_group_for_ping(self, NWKID):
+
+    if self.groupmgt is None or not self.pluginconf.pluginConf["pingViaGroup"]:
+        return
+    
+    if not mainPoweredDevice(self, NWKID):
+        return
+    
+    if self.ListOfDevices[NWKID][ "LogicalType" ] != "Router":
+        return
+    
+    if "Capability" in self.ListOfDevices[NWKID] and "Full-Function Device" not in self.ListOfDevices[NWKID][ "Capability" ]:
+        return
+    
+    target_groupid = "%04x" %int(self.pluginconf.pluginConf["pingViaGroup"],16)
+    if (
+        "GroupMemberShip" in self.ListOfDevices[NWKID] 
+        and target_groupid in self.ListOfDevices[NWKID][ "GroupMemberShip"]
+    ):
+        return
+        
+    target_ep = None
+    for ep in  self.ListOfDevices[NWKID]["Ep"]:
+        if "0004" in self.ListOfDevices[NWKID]["Ep"][ ep ]:
+            target_ep = ep
+    
+    if target_ep:
+        self.groupmgt.addGroupMemberShip(NWKID, target_ep, target_groupid)
+    
