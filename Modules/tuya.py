@@ -1363,7 +1363,79 @@ def tuya_motion_zg204l_keeptime(self, nwkid, keep_time):
     data = "%02x" % keep_time
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
     
+
+def tuya_radar_motion_sensitivity(self, nwkid, mode):
     
+    self.log.logging("Tuya", "Debug", "tuya_radar_motion_sensitivity - %s mode: %s" % (nwkid, mode))
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+
+    action = "%02x02" % 0x02
+    # determine which Endpoint
+    EPout = "01"
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    data = "%02x" % mode
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+def tuya_radar_motion_radar_min_range(self, nwkid, mode):
+    
+    self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_min_range - %s mode: %s" % (nwkid, mode))
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+
+    action = "%02x02" % 0x03
+    # determine which Endpoint
+    EPout = "01"
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    data = "%02x" % mode
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+        
+def tuya_radar_motion_radar_max_range(self, nwkid, mode):
+    
+    self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_max_range - %s mode: %s" % (nwkid, mode))
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+
+    action = "%02x02" % 0x04
+    # determine which Endpoint
+    EPout = "01"
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    data = "%02x" % mode
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+        
+def tuya_radar_motion_radar_detection_delay(self, nwkid, mode):
+    
+    self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_detection_delay - %s mode: %s" % (nwkid, mode))
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+
+    action = "%02x02" % 0x65
+    # determine which Endpoint
+    EPout = "01"
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    data = "%02x" % mode
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+        
+def tuya_radar_motion_radar_fading_time(self, nwkid, mode):
+    
+    self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_fading_time - %s mode: %s" % (nwkid, mode))
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+
+    action = "%02x02" % 0x66
+    # determine which Endpoint
+    EPout = "01"
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    data = "%02x" % mode
+    tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+ 
+   
 def tuya_smart_door_lock(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
     store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)

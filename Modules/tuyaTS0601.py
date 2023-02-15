@@ -8,7 +8,7 @@ from Modules.domoTools import Update_Battery_Device
 # Generic functions
 
 def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
-    self.log.logging("Tuya", "Log", "ts0601_response - %s %s %s %s %s" % (NwkId, model_name, dp, datatype, data), NwkId)
+    self.log.logging("Tuya", "Debug", "ts0601_response - %s %s %s %s %s" % (NwkId, model_name, dp, datatype, data), NwkId)
     
     dps_mapping = ts0601_extract_data_point_infos( self, model_name) 
     if dps_mapping is None:
@@ -82,7 +82,7 @@ def ts0601_extract_data_point_infos( self, model_name):
 
 def ts0601_motion(self, Devices, nwkid, ep, value):
     # Occupancy
-    self.log.logging("Tuya", "Log", "ts0601_motion - Occupancy %s %s %s" % (nwkid, ep, value), nwkid)
+    self.log.logging("Tuya", "Debug", "ts0601_motion - Occupancy %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Occupancy", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0406", value )
     checkAndStoreAttributeValue(self, nwkid, "01", "0406", "0000", value)
@@ -90,32 +90,32 @@ def ts0601_motion(self, Devices, nwkid, ep, value):
 
 def ts0601_illuminance(self, Devices, nwkid, ep, value):
     # Illuminance
-    self.log.logging("Tuya", "Log", "ts0601_illuminance - Illuminance %s %s %s" % (nwkid, ep, value), nwkid)
+    self.log.logging("Tuya", "Debug", "ts0601_illuminance - Illuminance %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Illuminance", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0400", value)
     checkAndStoreAttributeValue(self, nwkid, "01", "0400", "0000", value)
 
 
 def ts0601_temperature(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya", "Log", "ts0601_temperature - Temperature %s %s %s " % (nwkid, ep, value), nwkid)
+    self.log.logging("Tuya", "Debug", "ts0601_temperature - Temperature %s %s %s " % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Temp", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0402", value)
     
     
 def ts0601_humidity(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya", "Log", "ts0601_humidity - humidity %s %s %s " % (nwkid, ep, value), nwkid)
+    self.log.logging("Tuya", "Debug", "ts0601_humidity - humidity %s %s %s " % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Humi", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0405", value)
 
 
 def ts0601_distance(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya", "Log", "ts0601_distance - Distance %s %s %s " % (nwkid, ep, value), nwkid)
+    self.log.logging("Tuya", "Debug", "ts0601_distance - Distance %s %s %s " % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Distance", value)
     MajDomoDevice(self, Devices, nwkid, ep, "Distance", value)
 
 
 def ts0601_battery(self, Devices, nwkid, ep, value ):
-    self.log.logging("Tuya", "Log", "ts0601_battery - Battery %s %s %s" % (nwkid, ep, value), nwkid)
+    self.log.logging("Tuya", "Debug", "ts0601_battery - Battery %s %s %s" % (nwkid, ep, value), nwkid)
         
     store_tuya_attribute(self, nwkid, "Battery", value)
     checkAndStoreAttributeValue(self, nwkid, "01", "0001", "0000", value)
@@ -125,14 +125,14 @@ def ts0601_battery(self, Devices, nwkid, ep, value ):
 
 
 def ts0601_tamper(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya", "Log", "ts0601_tamper - Tamper %s %s %s" % (nwkid, ep, value), nwkid)
+    self.log.logging("Tuya", "Debug", "ts0601_tamper - Tamper %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "SmokeTamper", value)
     state = "01" if value != 0 else "00"
     MajDomoDevice(self, Devices, nwkid, ep, "0009", state)
 
 
 def ts0601_switch(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya", "Log", "ts0601_switch - Switch%s %s %s" % (nwkid, ep, value), nwkid)
+    self.log.logging("Tuya", "Debug", "ts0601_switch - Switch%s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Switch", value)
     state = "01" if value != 0 else "00"
     MajDomoDevice(self, Devices, nwkid, ep, "0006", state)
