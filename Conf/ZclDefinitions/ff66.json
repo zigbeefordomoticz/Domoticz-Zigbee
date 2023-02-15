@@ -95,6 +95,17 @@
                 "check_store_value"
             ]
         },
+        "0009": {
+            "Enabled": true,
+            "Name": "MOTDETAT",
+            "DataType": "21",
+            "Acc": "RP",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+
         "0100": {
             "Enabled": true,
             "Name": "AcquisitionTime",
