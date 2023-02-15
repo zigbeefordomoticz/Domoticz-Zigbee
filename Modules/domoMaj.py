@@ -1412,38 +1412,34 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 sValue = "%s" % (10 * nValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
+        if ClusterType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ) and ClusterType == WidgetType:
             # We just manage the update of the Dimmer (Control Level)
-            if ClusterType == WidgetType:
-                nValue, sValue = getDimmerLevelOfColor(self, value)
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
+            nValue, sValue = getDimmerLevelOfColor(self, value)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
-        if "Orientation" in ClusterType:
+        if "Orientation" in ClusterType and WidgetType == "Orientation":
             # Xiaomi Vibration
-            if WidgetType == "Orientation":
-                # value is a str containing all Orientation information to be updated on Text Widget
-                nValue = 0
-                sValue = value
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+            # value is a str containing all Orientation information to be updated on Text Widget
+            nValue = 0
+            sValue = value
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-        if "Strenght" in ClusterType:
-            if WidgetType == "Strength":
-                # value is a str containing all Orientation information to be updated on Text Widget
-                nValue = 0
-                sValue = value
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        if "Strenght" in ClusterType and WidgetType == "Strenght":
+            # value is a str containing all Orientation information to be updated on Text Widget
+            nValue = 0
+            sValue = value
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-        if "Distance" in ClusterType:
-                # value is a str containing all Distance information in cm
-                nValue = 0
-                sValue = value
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        if "Distance" in ClusterType and WidgetType == "Distance":
+            # value is a str containing all Distance information in cm
+            nValue = 0
+            sValue = value
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-        if "Lux" in ClusterType:
-            if WidgetType == "Lux":
-                nValue = int(value)
-                sValue = value
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
+        if "Lux" in ClusterType and WidgetType == "Lux":
+            nValue = int(value)
+            sValue = value
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
 
         # Check if this Device belongs to a Group. In that case update group
         CheckUpdateGroup(self, NWKID, Ep, clusterID)
