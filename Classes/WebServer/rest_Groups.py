@@ -23,6 +23,7 @@ LIST_CLUSTERTYPE_FOR_GROUPS = (
     "VanneInverted", "Vanne",
     "BlindInverted", "Blind",
     "BSO-Volet", "BSO-Orientation",
+    "FanControl", "CAC221ACMode",
 )
 
 def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
@@ -92,13 +93,15 @@ def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
                                 device_lst.append(_device)
                     continue  # Next Ep
 
-                if not (
-                    "0004" in self.ListOfDevices[x]["Ep"][ep]
-                    or "ClusterType" in self.ListOfDevices[x]["Ep"][ep]
-                    and "ClusterType" in self.ListOfDevices[x]
-                    or "0006" in self.ListOfDevices[x]["Ep"][ep]
-                    or "0008" in self.ListOfDevices[x]["Ep"][ep]
-                    or "0102" in self.ListOfDevices[x]["Ep"][ep]
+                if (
+                    "ClusterType" not in self.ListOfDevices[x]
+                    and "ClusterType" not in self.ListOfDevices[x]["Ep"][ep]
+                    and "0004" not in self.ListOfDevices[x]["Ep"][ep]
+                    and "0006" not in self.ListOfDevices[x]["Ep"][ep]
+                    and "0008" not in self.ListOfDevices[x]["Ep"][ep]
+                    and "0102" not in self.ListOfDevices[x]["Ep"][ep]
+                    and "0201" not in self.ListOfDevices[x]["Ep"][ep]
+                    and "0202" not in self.ListOfDevices[x]["Ep"][ep]
                 ):
                     continue
 
