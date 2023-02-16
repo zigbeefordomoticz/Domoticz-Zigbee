@@ -1,7 +1,6 @@
 {
     "_comment": "Tuya RR400ZB /  Livarno Lux E14 4,5W RGB Bulb",
     "_blakkader": "https://zigbee.blakadder.com/Lidl_HG07834B.html",
-    "_manufacturer": [ "_TZ3000_th6zqqy6"] ,
     "_version": "1.0",
     "Ep": {
         "01": {
