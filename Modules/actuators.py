@@ -230,10 +230,12 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
     
     # First manage level
     # if Hue_List['m'] or Hue_List['m'] != 9998 or manage_level:
+    if "Param" in self.ListOfDevices[nwkid]:
+        transitionMoveLevel = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToLevel"]) if "moveToLevel" in self.ListOfDevices[nwkid]["Param"] else "0000"
+        
     if Hue_List["m"] or Hue_List["m"] != 9998:
         value = int(1 + value * 254 / 100)  # To prevent off state
         self.log.logging("Command", "Debug", "---------- Set Level: %s" % (value), nwkid)
-        transitionMoveLevel = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToLevel"]) if "moveToLevel" in self.ListOfDevices[nwkid]["Param"] else "0000"
         actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)
 
     # ColorModeTemp = 2   // White with color temperature. Valid fields: t
@@ -258,9 +260,7 @@ def handle_color_mode_2(self, nwkid, EPout, Hue_List):
     # t is 0 > 255
     TempKelvin = int(((255 - int(Hue_List["t"])) * (6500 - 1700) / 255) + 1700)
     TempMired = 1000000 // TempKelvin
-    self.log.logging(
-        "Command", "Debug", "handle_color_mode_2 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
-    )
+    self.log.logging( "Command", "Debug", "handle_color_mode_2 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid )
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
     zcl_move_to_colour_temperature( self, nwkid, EPout, Hex_Format(4, TempMired), transitionTemp)
             
