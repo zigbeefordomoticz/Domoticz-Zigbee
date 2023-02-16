@@ -11,21 +11,16 @@ import os.path
 import time
 
 import Domoticz
-from Classes.DomoticzDB import DomoticzDB_Preferences
-from Classes.LoggingManagement import LoggingManagement
 from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
 from Modules.actuators import actuators
-from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, setExtendedPANID, start_Zigate, zigateBlueLed , PermitToJoin
-from Modules.enki import enki_set_poweron_after_offon
-from Modules.philips import philips_set_poweron_after_offon
+from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, setExtendedPANID, zigateBlueLed , PermitToJoin
 from Modules.tools import is_hex
 from Modules.txPower import set_TxPower
 from Modules.zigateConsts import CERTIFICATION_CODE, ZCL_CLUSTERS_LIST, ZIGATE_COMMANDS
-from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
-                                       send_zigatecmd_zcl_ack,sendZigateCmd,
-                                       send_zigatecmd_zcl_noack)
+from Modules.sendZigateCommand import sendZigateCmd
 from Modules.zigateCommands import zigate_set_mode
+from Modules.database import importDeviceConfV2
 
 MIMETYPES = {
     "gif": "image/gif",
@@ -1471,6 +1466,17 @@ class WebServer(object):
             _response["Data"] = json.dumps(_battEnv, sort_keys=True)
         return _response
 
+    def rest_reload_device_conf(self, verb, data, parameters):
+        
+        _response = prepResponseMessage(self, setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb != "GET":
+            return _response
+        importDeviceConfV2(self)
+        _response["Data"] = {"Certified Configuration loaded"}
+        return _response
+
+        
     def logging(self, logType, message):
         self.log.logging("WebServer", logType, message)
 
@@ -1510,5 +1516,3 @@ def decode_device_param(self, nwkid, param):
         self.logging( "Error", "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for >%s< - %s.\n Make sure to use JSON syntax" % (
             _device_name, nwkid, param, e), )
     return {}
-
-

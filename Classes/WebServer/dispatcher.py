@@ -48,6 +48,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "raw-zigbee": {"Name": "raw-zigbee", "Verbs": {"PUT"}, "function": self.rest_raw_zigbee},
         "rcv-nw-hrdwr": {"Name": "rcv-nw-hrdwr", "Verbs": {"GET"}, "function": self.rest_rcv_nw_hrdwr},
         "recreate-widgets": {"Name": "recreate-widgets", "Verbs": {"PUT"}, "function": self.rest_recreate_widgets},
+        "reload-device-conf": {"Name": "reload-device-conf", "Verbs": {"GET"}, "function": self.rest_reload_device_conf},
         "req-nwk-full": {"Name": "req-nwk-full", "Verbs": {"GET"}, "function": self.rest_req_nwk_full},
         "req-nwk-inter": {"Name": "req-nwk-inter", "Verbs": {"GET"}, "function": self.rest_req_nwk_inter},
         "req-topologie": {"Name": "req-topologie", "Verbs": {"GET"}, "function": self.rest_req_topologie},
