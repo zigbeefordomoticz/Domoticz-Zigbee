@@ -9,7 +9,7 @@
         },
         "23": {
             "0000": "",
-            "0001": { "Attributes": { "003e": {"Enabled": true, "Name": "PhilipsSensitivity", "DataType": "20", "ActionList": [ "check_store_value"] }}},
+            "0001": { "Attributes": { "003e": {"Enabled": true, "Name": "PhilipsSensitivity", "DataType": "1b", "ActionList": [ "check_store_value"] }}},
             "0003": "",
             "000f": { "Attributes": { "0055": { "Enabled": true, "Name": "PresentValue", "DataType": "10", "UpdDomoDeviceWithCluster": "0406", "ActionList": [ "check_store_value","upd_domo_device"] }}},
             "0020": "",
