@@ -1367,6 +1367,9 @@ def tuya_motion_zg204l_keeptime(self, nwkid, keep_time):
 def tuya_radar_motion_sensitivity(self, nwkid, mode):
     
     self.log.logging("Tuya", "Debug", "tuya_radar_motion_sensitivity - %s mode: %s" % (nwkid, mode))
+    if mode > 7 and mode < 1 :
+        self.log.logging("Tuya", "Error", "tuya_radar_motion_sensitivity - %s Invalid sensitivity: %s" % (nwkid, mode))
+        return 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
     action = "%02x02" % 0x02
@@ -1395,6 +1398,10 @@ def tuya_radar_motion_radar_min_range(self, nwkid, mode):
 def tuya_radar_motion_radar_max_range(self, nwkid, mode):
     
     self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_max_range - %s mode: %s" % (nwkid, mode))
+    if mode > ( 10 * 100):
+        self.log.logging("Tuya", "Error", "tuya_radar_motion_radar_max_range - %s Invalid max range: %s cm" % (nwkid, mode))
+        return 
+
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
     action = "%02x02" % 0x04
@@ -1409,6 +1416,10 @@ def tuya_radar_motion_radar_max_range(self, nwkid, mode):
 def tuya_radar_motion_radar_detection_delay(self, nwkid, mode):
     
     self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_detection_delay - %s mode: %s" % (nwkid, mode))
+    if mode > 100 and mode < 0:
+        self.log.logging("Tuya", "Error", "tuya_radar_motion_radar_detection_delay - %s Invalid delay: %s" % (nwkid, mode))
+        return 
+
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
     action = "%02x02" % 0x65
@@ -1423,6 +1434,10 @@ def tuya_radar_motion_radar_detection_delay(self, nwkid, mode):
 def tuya_radar_motion_radar_fading_time(self, nwkid, mode):
     
     self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_fading_time - %s mode: %s" % (nwkid, mode))
+    if mode > 15000 and mode < 0:
+        self.log.logging("Tuya", "Error", "tuya_radar_motion_radar_fading_time - %s Invalid delay: %s" % (nwkid, mode))
+        return 
+
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
     action = "%02x02" % 0x66
