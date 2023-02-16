@@ -52,6 +52,7 @@ ZLinky_TIC_COMMAND = {
     "0006": "ADIR1",
     "0007": "ADIR2",
     "0008": "ADIR3",
+    "0009": "MOTDETAT",
 
     # Mode standard
     "0200": "LTARF",

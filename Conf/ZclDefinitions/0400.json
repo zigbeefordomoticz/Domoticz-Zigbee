@@ -56,7 +56,6 @@
             "Range": [ "00", "ff" ],
             "Acc": "R",
             "Default": "ff",
-            "EvalExp": "",
             "Mandatory": false,
             "DecodedValueList": { "0": "Photodiode", "1": "CMOS", "255": "Unknown"},
             "ActionList": [ "check_store_value"]

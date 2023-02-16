@@ -1,7 +1,6 @@
 {
     "_comment": "Tuya RR400ZB",
     "_blakadder": "https://zigbee.blakadder.com/Lidl_HG06104A.html",
-    "_manufacturer": [ "_TZ3000_riwp3k79" ],
     "_version": "1.0",
     "Ep": {
         "01": {

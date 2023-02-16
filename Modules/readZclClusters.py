@@ -10,6 +10,7 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.paramDevice import get_device_config_param
 from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
 from Modules.zclClusterHelpers import handle_model_name, decoding_attribute_data
+from Modules.batterieManagement import UpdateBatteryAttribute
 
 # "ActionList":
 #   check_store_value - check the value and store in the corresponding data strcuture entry
@@ -22,6 +23,7 @@ from Modules.zclClusterHelpers import handle_model_name, decoding_attribute_data
 #   store_specif_attribute - Store the data value in self.ListOfDevices[ nwkid ][_storage_specificlvl1 ][_storage_specificlvl2][_storage_specificlvl3]
 
 CHECK_AND_STORE = "check_store_value"
+CHECK_AND_STORE_RAW = "check_store_raw_value"
 STORE_SPECIFIC_ATTRIBUTE = "store_specif_attribute"
 BASIC_MODEL_NAME = "basic_model_name"
 
@@ -29,6 +31,7 @@ STORE_SPECIFIC_PLACE = "SpecifStoragelvl1"
 STORE_SPECIFIC_PLACE = "SpecifStoragelvl2"
 STORE_SPECIFIC_PLACE = "SpecifStoragelvl3"
 UPDATE_DOMO_DEVICE = "upd_domo_device"
+UPDATE_BATTERY = "update_battery"
 
 ACTIONS_TO_FUNCTIONS = {
     CHECK_AND_STORE: checkAndStoreAttributeValue,
@@ -41,7 +44,8 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgClusterData, Source))
 
     device_model = _get_model_name( self, MsgSrcAddr)
-    value = decoding_attribute_data( MsgAttType, MsgClusterData)
+    raw_value = decoding_attribute_data( MsgAttType, MsgClusterData)
+    value = raw_value
     _name = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "Name", model=device_model)
     _datatype = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DataType", model=device_model)
     
@@ -104,8 +108,15 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         return
     
     for data_action in _action_list:
-        if data_action == CHECK_AND_STORE:
+        if data_action == CHECK_AND_STORE_RAW:
+            # This is particularly true for Battery Voltage, where the UpdateBatteryAttribute() relys on deci-volts
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value)
+            
+        elif data_action == CHECK_AND_STORE:
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+            
+        elif data_action == UPDATE_BATTERY:
+            UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp)
 
         elif data_action == UPDATE_DOMO_DEVICE and majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
             action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )

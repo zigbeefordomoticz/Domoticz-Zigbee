@@ -13,7 +13,6 @@
             "Default": "ff",
             "Mandatory": true,
             "DomoClusterType": "LvlControl",
-            "EvalExp": "",
             "ActionList": [ "check_store_value", "upd_domo_device"]
         },
         "0001": { 
@@ -24,7 +23,6 @@
             "Acc": "R" ,
             "Default": "0",
             "Mandatory": false,
-            "EvalExp": "",
             "ActionList": [ "check_store_value"]
         },
         "00010": { 
@@ -35,7 +33,6 @@
             "Acc": "RW" ,
             "Default": "0",
             "Mandatory": false,
-            "EvalExp": "",
             "ActionList": [ "check_store_value"]
         },
         "00011": { 
@@ -46,7 +43,6 @@
             "Acc": "RW" ,
             "Default": "ff",
             "Mandatory": false,
-            "EvalExp": "",
             "ActionList": [ "check_store_value"]
         },
         "4000": { 
@@ -57,7 +53,6 @@
             "Acc": "RW" ,
             "Default": "ff",
             "Mandatory": false,
-            "EvalExp": "",
             "ActionList": [ "check_store_value"]
         }
     }

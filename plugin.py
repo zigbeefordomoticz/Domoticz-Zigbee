@@ -1304,6 +1304,7 @@ def check_firmware_level(self):
 
 
 def start_GrpManagement(self, homefolder):
+    
     self.groupmgt = GroupsManagement(
         self.zigbee_communication,
         self.VersionNewFashion,
