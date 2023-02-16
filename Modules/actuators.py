@@ -230,8 +230,12 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
     
     # First manage level
     # if Hue_List['m'] or Hue_List['m'] != 9998 or manage_level:
-    if "Param" in self.ListOfDevices[nwkid]:
-        transitionMoveLevel = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToLevel"]) if "moveToLevel" in self.ListOfDevices[nwkid]["Param"] else "0000"
+    transitionMoveLevel = "0000"
+    if (
+        "Param" in self.ListOfDevices[nwkid]
+        and "moveToLevel" in self.ListOfDevices[nwkid]["Param"]
+    ):
+        transitionMoveLevel = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToLevel"])
         
     if Hue_List["m"] or Hue_List["m"] != 9998:
         value = int(1 + value * 254 / 100)  # To prevent off state
