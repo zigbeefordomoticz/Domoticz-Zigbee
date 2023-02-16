@@ -288,6 +288,9 @@ def update_domoticz_group_device(self, GroupId):
     """
     Update the Group status On/Off and Level , based on the attached devices
     """
+    
+    if int(GroupId,16) == self.pluginconf.pluginConf["pingViaGroup"]:
+        return
 
     #####
     if GroupId not in self.ListOfGroups:

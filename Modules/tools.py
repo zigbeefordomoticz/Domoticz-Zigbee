@@ -1522,6 +1522,8 @@ def how_many_devices(self):
 
 def get_deviceconf_parameter_value(self, model, attribute, return_default=None):
     
+    if model in ( '', {}):
+        return return_default
     if model not in self.DeviceConf:
         return return_default
     if attribute not in self.DeviceConf[ model ]:
