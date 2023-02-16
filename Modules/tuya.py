@@ -1374,7 +1374,7 @@ def tuya_radar_motion_sensitivity(self, nwkid, mode):
     EPout = "01"
     cluster_frame = "11"
     cmd = "00"  # Command
-    data = "%02x" % mode
+    data = "%04x" % mode
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 
@@ -1388,7 +1388,7 @@ def tuya_radar_motion_radar_min_range(self, nwkid, mode):
     EPout = "01"
     cluster_frame = "11"
     cmd = "00"  # Command
-    data = "%02x" % mode
+    data = "%04x" % mode
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
         
@@ -1402,7 +1402,7 @@ def tuya_radar_motion_radar_max_range(self, nwkid, mode):
     EPout = "01"
     cluster_frame = "11"
     cmd = "00"  # Command
-    data = "%02x" % mode
+    data = "%04x" % mode
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
         
@@ -1416,7 +1416,7 @@ def tuya_radar_motion_radar_detection_delay(self, nwkid, mode):
     EPout = "01"
     cluster_frame = "11"
     cmd = "00"  # Command
-    data = "%02x" % mode
+    data = "%04x" % mode
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
         
@@ -1430,7 +1430,7 @@ def tuya_radar_motion_radar_fading_time(self, nwkid, mode):
     EPout = "01"
     cluster_frame = "11"
     cmd = "00"  # Command
-    data = "%02x" % mode
+    data = "%04x" % mode
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 
