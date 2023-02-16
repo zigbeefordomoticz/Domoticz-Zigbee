@@ -108,7 +108,6 @@
             "Acc": "R" ,
             "Default": "",
             "Mandatory": false,
-            "EvalExp": "",
             "ActionList": [ "check_store_value"]
         }
     }
