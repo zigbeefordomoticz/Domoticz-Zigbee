@@ -4772,6 +4772,11 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     if MsgAttrID == "00f7":
         readXiaomiCluster(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
 
+    elif MsgAttrID == "0112":   # Motion
+        store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
+        self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
+
     elif MsgAttrID == "0142":   # Presence
         store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )

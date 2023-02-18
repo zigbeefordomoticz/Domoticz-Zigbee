@@ -670,6 +670,31 @@ def readXiaomiCluster(
     s6b = retreive4Tag("6b20", MsgClusterData)[:2]
 
 
+    if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac02":
+        # "lumi.motion.ac02"
+        sIllulminence = retreive4Tag("6521", MsgClusterData)[:4]
+        sDetectionInterval = retreive4Tag("6920", MsgClusterData)[:2]
+        sMotionSensitivity = retreive4Tag("6a20", MsgClusterData)[:2]
+        sTriggerIndicator = retreive4Tag("6b20", MsgClusterData)[:2]
+
+        if sIllulminence != "":
+            store_lumi_attribute(self, MsgSrcAddr, "Illuminance", sIllulminence)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", sIllulminence)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sIllulminence %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sIllulminence, int(sIllulminence,16)), MsgSrcAddr, )
+
+        if sDetectionInterval != "":
+            store_lumi_attribute(self, MsgSrcAddr, "DetectionInterval", sDetectionInterval)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sDetectionInterval %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sDetectionInterval, int(sDetectionInterval,16)), MsgSrcAddr, )
+
+        if sMotionSensitivity != "":
+            store_lumi_attribute(self, MsgSrcAddr, "MotionSensitivity", sMotionSensitivity)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s MotionSensitivity %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sMotionSensitivity, int(sMotionSensitivity,16)), MsgSrcAddr, )
+
+        if sTriggerIndicator != "":
+            store_lumi_attribute(self, MsgSrcAddr, "TriggerIndicator", sTriggerIndicator)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s TriggerIndicator %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sTriggerIndicator, int(sTriggerIndicator,16)), MsgSrcAddr, )
+
+
     if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac01":
         if s68 != "":
             store_lumi_attribute(self, MsgSrcAddr, "s68", sPresence)
