@@ -1,15 +1,3 @@
-[submodule "external/zigpy-znp"]
-	path = external/zigpy-znp
-	url = https://github.com/zigbeefordomoticz/zigpy-znp.git
-[submodule "external/zigpy"]
-	path = external/zigpy
-	url = https://github.com/zigbeefordomoticz/zigpy.git
 [submodule "external/zigpy-zigate"]
 	path = external/zigpy-zigate
 	url = https://github.com/zigbeefordomoticz/zigpy-zigate
-[submodule "external/zigpy-deconz"]
-	path = external/zigpy-deconz
-	url = https://github.com/zigbeefordomoticz/zigpy-deconz.git
-[submodule "external/bellows"]
-	path = external/bellows
-	url = https://github.com/zigbeefordomoticz/bellows.git

@@ -1,23 +1,4 @@
-aiohttp
-aiosignal
-aiosqlite>=0.16.0
-async-timeout
-attrs
-click
-click-log>=0.2.1
-crccheck
-coloredlogs
-jsonschema
-crccheck
-frozenlist
-multidict
-pure-pcapy3
-pyserial>=3.5
-pyserial-asyncio; platform_system!="Windows"
-pyserial-asyncio!=0.5; platform_system=="Windows"
-pyusb>=1.2.1
-typing-extensions
-voluptuous
-yarl
-cryptography
-dnspython==2.2.1
+zigpy==0.53.1
+zigpy_znp==0.9.2
+zigpy_deconz==0.19.2
+bellows==0.34.6
