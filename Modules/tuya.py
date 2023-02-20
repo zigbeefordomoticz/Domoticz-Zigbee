@@ -852,7 +852,7 @@ def tuya_curtain_mode(self, nwkid, mode):
 
 def tuya_backlight_command(self, nwkid, mode):
     if int(mode) in {0, 1, 2}:
-        backlist_attribute = ( "5000" if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS130F-_TZ3000_1dd0d5yi",) else "8001"  )
+        backlist_attribute = ( "5000" if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS130F-_TZ3000_fvhunhxb", "TS130F-_TZ3000_1dd0d5yi",) else "8001"  )
         write_attribute( self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", backlist_attribute, "30", "%02x" % int(mode), ackIsDisabled=False )
 
 

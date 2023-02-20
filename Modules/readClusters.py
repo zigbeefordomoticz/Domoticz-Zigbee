@@ -1195,7 +1195,7 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
 
-    elif MsgAttrID == "8001" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS130F-_TZ3000_zirycpws", "TS130F-_TZ3000_8kzqqzu4", "TS130F-_TZ3000_femsaaua",) :
+    elif MsgAttrID == "8001" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS130F-_TZ3000_fvhunhxb", "TS130F-_TZ3000_zirycpws", "TS130F-_TZ3000_8kzqqzu4", "TS130F-_TZ3000_femsaaua",) :
         # Curtain Mode
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, str(decodeAttribute(self, MsgAttType, MsgClusterData)))
         self.log.logging(
@@ -2249,7 +2249,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-    elif MsgAttrID == "f002" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS130F-_TZ3000_zirycpws", "TS130F-_TZ3000_8kzqqzu4", "TS130F-_TZ3000_femsaaua",):
+    elif MsgAttrID == "f002" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS130F-_TZ3000_fvhunhxb", "TS130F-_TZ3000_zirycpws", "TS130F-_TZ3000_8kzqqzu4", "TS130F-_TZ3000_femsaaua",):
         self.log.logging(
             "Cluster",
             "Debug",
@@ -2257,7 +2257,7 @@ def Cluster0102(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgSrcAddr,
         )
 
-    elif MsgAttrID == "f003" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS130F-_TZ3000_zirycpws", "TS130F-_TZ3000_8kzqqzu4", "TS130F-_TZ3000_femsaaua",):
+    elif MsgAttrID == "f003" and "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ( "TS130F-_TZ3000_fvhunhxb", "TS130F-_TZ3000_zirycpws", "TS130F-_TZ3000_8kzqqzu4", "TS130F-_TZ3000_femsaaua",):
         self.log.logging(
             "Cluster",
             "Debug",

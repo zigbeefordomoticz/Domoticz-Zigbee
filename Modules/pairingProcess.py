@@ -655,6 +655,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "TS130F-_TZ3000_8kzqqzu4",
         "TS130F-_TZ3000_1dd0d5yi",
         "TS130F-_TZ3000_zirycpws",
+        "TS130F-_TZ3000_fvhunhxb",
         "TS0601-temphumi",
     ):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
