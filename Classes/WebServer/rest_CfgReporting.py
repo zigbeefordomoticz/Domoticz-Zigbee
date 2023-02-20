@@ -215,6 +215,9 @@ def convert_to_json( self, data ):
     cluster_list = []
 
     for cluster in data:
+        if "Attributes" not in data[ cluster ]:
+            continue
+
         cluster_info = {"ClusterId": cluster, "Attributes": []}
         for attribute in data[ cluster ]["Attributes"]:
             infos = {item: data[cluster]["Attributes"][attribute][item] for item in data[cluster]["Attributes"][attribute]}
