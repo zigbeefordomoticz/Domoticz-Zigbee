@@ -26,10 +26,10 @@ fi
 
 echo "(2) update python3 modules if needed"
 echo ""
-sudo python3 -m pip --no-input install -r requirements.txt --ignore-requires-python
+sudo python3 -m pip --no-input install -r requirements.txt --ignore-requires-python --upgrade
 ret="$?"
 if [ "$ret" != "0" ] ; then
-    echo "ERROR while running command 'sudo python3 -m pip --ignore-requires-python --no-input install -r requirements.txt'."
+    echo "ERROR while running command 'sudo python3 -m pip --ignore-requires-python --no-input install -r requirements.txt --upgrade'."
     echo "Is sudo available for this user without password ?"
     exit -2
 fi
