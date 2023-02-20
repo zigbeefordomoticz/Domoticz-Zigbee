@@ -885,21 +885,31 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     nValue = 10
 
                 sValue = str(nValue * 10)
-                Domoticz.Log(" BSO-Orientation Angle: 0x%s/%s Converted into nValue: %s sValue: %s" % (value, int(value, 16), nValue, sValue))
+                self.log.logging("Widget", "Debug", " BSO-Orientation Angle: 0x%s/%s Converted into nValue: %s sValue: %s" % (value, int(value, 16), nValue, sValue))
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                 return
 
         if ClusterType == "Switch" and WidgetType == "SwitchAlarm":
-            # value is str
-            nValue = int( value,16 )
+            if isinstance(value, str):
+                nValue = int(value, 16)
+            else:
+                self.log.logging("Widget", "Error", "Looks like this value is not provided in str %s/%s %s %s %s %s" %(
+                    NWKID, Ep, clusterID, ClusterType, WidgetType, value))
+                nValue = value
+                
             sValue = "%02x" %nValue
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
             
             
         if ClusterType in ( "Motion", "Door",) and WidgetType == "Motion":
             self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NWKID)
-            
-            nValue = int(value, 16)
+            if isinstance(value, str):
+                nValue = int(value, 16)
+            else:
+                self.log.logging("Widget", "Error", "Looks like this value is not provided in str %s/%s %s %s %s %s" %(
+                    NWKID, Ep, clusterID, ClusterType, WidgetType, value))
+                nValue = value
+                
             if nValue == 1:
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, "On", BatteryLevel, SignalLevel, ForceUpdate_=True)
             else:
