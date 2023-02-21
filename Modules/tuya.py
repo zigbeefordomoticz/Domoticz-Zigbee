@@ -44,7 +44,7 @@ from Modules.zigateConsts import ZIGATE_EP
 #   0x04: enum8 ( 0x00-0xff)
 #   0x05: bitmap ( 1,2, 4 bytes) as bits
     
-def tuya_registration(self, nwkid, device_reset=False, parkside=False):
+def tuya_registration(self, nwkid, device_reset=False, parkside=False, tuya_registration_value=None):
     if "Model" not in self.ListOfDevices[nwkid]:
             return
     _ModelName = self.ListOfDevices[nwkid]["Model"]
@@ -58,34 +58,29 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
     if parkside:
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "0d", ackIsDisabled=False)
 
-    if _ModelName == "TS0216":
+    if tuya_registration_value:
+        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", TUYA_MANUF_CODE, "01", "ffde", "20", "%02x" %tuya_registration_value, ackIsDisabled=False)
+    
+    elif _ModelName == "TS0216":
         # Heiman like siren
         # Just do the Regitsration
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", TUYA_MANUF_CODE, "01", "ffde", "20", "13", ackIsDisabled=False)
         return
     
-    if _ModelName in ('TS0002-relay-switch', 'TS0601-motion', ):
+    elif _ModelName in ('TS0002-relay-switch', 'TS0601-motion', ):
 
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
         tuya_cmd_0x0000_0xf0(self, nwkid)
         return
-      
-    write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
+    
+    else:
+        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
 
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Zigbee Device Reset
     if device_reset:
         payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
-        raw_APS_request(
-            self,
-            nwkid,
-            EPout,
-            "ef00",
-            "0104",
-            payload,
-            zigate_ep=ZIGATE_EP,
-            ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
-        )
+        raw_APS_request( self, nwkid, EPout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
         self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s reset device Cmd: 03" % nwkid)
 
     # Gw->Zigbee gateway query MCU version
@@ -94,16 +89,7 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False):
         payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "000e"
     else:
         payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "10" + "0002"
-    raw_APS_request(
-        self,
-        nwkid,
-        EPout,
-        "ef00",
-        "0104",
-        payload,
-        zigate_ep=ZIGATE_EP,
-        ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
-    )
+    raw_APS_request( self, nwkid, EPout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
 def tuya_cmd_ts004F(self, NwkId, mode):
     TS004F_MODE = {
@@ -1365,9 +1351,9 @@ def tuya_motion_zg204l_keeptime(self, nwkid, keep_time):
     
 
 def tuya_radar_motion_sensitivity(self, nwkid, mode):
-    
+    # 00/35/0202000400000000
     self.log.logging("Tuya", "Debug", "tuya_radar_motion_sensitivity - %s mode: %s" % (nwkid, mode))
-    if mode > 7 and mode < 1 :
+    if mode > 7 and mode < 0 :
         self.log.logging("Tuya", "Error", "tuya_radar_motion_sensitivity - %s Invalid sensitivity: %s" % (nwkid, mode))
         return 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
@@ -1377,7 +1363,7 @@ def tuya_radar_motion_sensitivity(self, nwkid, mode):
     EPout = "01"
     cluster_frame = "11"
     cmd = "00"  # Command
-    data = "%04x" % mode
+    data = "%08x" % mode
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 
@@ -1391,7 +1377,7 @@ def tuya_radar_motion_radar_min_range(self, nwkid, mode):
     EPout = "01"
     cluster_frame = "11"
     cmd = "00"  # Command
-    data = "%04x" % mode
+    data = "%08x" % mode
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
         
@@ -1409,7 +1395,7 @@ def tuya_radar_motion_radar_max_range(self, nwkid, mode):
     EPout = "01"
     cluster_frame = "11"
     cmd = "00"  # Command
-    data = "%04x" % mode
+    data = "%08x" % mode
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
         
@@ -1427,7 +1413,7 @@ def tuya_radar_motion_radar_detection_delay(self, nwkid, mode):
     EPout = "01"
     cluster_frame = "11"
     cmd = "00"  # Command
-    data = "%04x" % mode
+    data = "%08x" % mode
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
         
@@ -1445,7 +1431,7 @@ def tuya_radar_motion_radar_fading_time(self, nwkid, mode):
     EPout = "01"
     cluster_frame = "11"
     cmd = "00"  # Command
-    data = "%04x" % mode
+    data = "%08x" % mode
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 
