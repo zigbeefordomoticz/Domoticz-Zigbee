@@ -35,7 +35,7 @@ from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
-from Modules.tools import getListOfEpForCluster, is_fake_ep
+from Modules.tools import getListOfEpForCluster, is_fake_ep, get_deviceconf_parameter_value
 from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
@@ -612,6 +612,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
     if "Model" not in self.ListOfDevices[NWKID]:
         return
 
+    # Tuya_regitration ?
+    tuya_registration_parameter = get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "TUYA_REGISTRATION", return_default=None)  
     # In case of Schneider Wiser, let's do the Registration Process
     MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
     if self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
@@ -632,7 +634,11 @@ def handle_device_specific_needs(self, Devices, NWKID):
     elif self.ListOfDevices[NWKID]["Model"] in (TUYA_eTRV_MODEL):
         self.log.logging("Pairing", "Debug", "Tuya eTRV registration needed")
         tuya_eTRV_registration(self, NWKID, device_reset=True)
-
+        
+    elif tuya_registration_parameter: 
+        tuya_registration(self, NWKID, device_reset=False, parkside=False, tuya_registration_value=tuya_registration_parameter)
+            
+            
     elif self.ListOfDevices[NWKID]["Model"] in ("TS0121", "TS0002_relay_switch", "TS0002_relay_switch"):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
         tuya_TS0121_registration(self, NWKID)
