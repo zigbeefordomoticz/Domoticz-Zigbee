@@ -893,8 +893,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if isinstance(value, str):
                 nValue = int(value, 16)
             else:
-                self.log.logging("Widget", "Error", "Looks like this value is not provided in str %s/%s %s %s %s %s" %(
-                    NWKID, Ep, clusterID, ClusterType, WidgetType, value))
+                self.log.logging("Widget", "Error", "Looks like this value is not provided in str for %s/%s %s %s %s %s %s" %(
+                    NWKID, Ep, model_name, clusterID, ClusterType, WidgetType, value))
                 nValue = value
                 
             sValue = "%02x" %nValue
@@ -906,8 +906,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if isinstance(value, str):
                 nValue = int(value, 16)
             else:
-                self.log.logging("Widget", "Error", "Looks like this value is not provided in str %s/%s %s %s %s %s" %(
-                    NWKID, Ep, clusterID, ClusterType, WidgetType, value))
+                self.log.logging("Widget", "Error", "Looks like this value is not provided in str for %s/%s %s %s %s %s %s" %(
+                    NWKID, Ep, model_name, clusterID, ClusterType, WidgetType, value))
                 nValue = value
                 
             if nValue == 1:
