@@ -94,6 +94,8 @@ import os
 import threading
 import time
 
+import z4d_certified_devices
+
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
 from Classes.DomoticzDB import (DomoticzDB_DeviceStatus, DomoticzDB_Hardware,
@@ -115,11 +117,9 @@ from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
                                     checkPluginVersion)
 from Modules.command import mgtCommand
 from Modules.database import (LoadDeviceList, WriteDeviceList,
-                              checkDevices2LOD, checkListOfDevice2Devices,
-                              importDeviceConfV2)
+                              checkDevices2LOD, checkListOfDevice2Devices)
 from Modules.domoCreate import how_many_slot_available
 from Modules.domoTools import ResetDevice
-from Modules.readZclClusters import load_zcl_cluster
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
@@ -435,11 +435,15 @@ class BasePlugin:
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Plugin Database: %s" % self.DeviceListName)
 
+
+        z4d_certified_devices_pathname = os.path.dirname( z4d_certified_devices.__file__ ) + "/"
+        self.log.logging("Plugin", "Log", "Pathname to z4d_certified_devices %s" %z4d_certified_devices_pathname)
+
         # Import Zcl Cluster definitions
-        load_zcl_cluster(self)
+        z4d_certified_devices.load_zcl_cluster(self,  z4d_certified_devices_pathname)
         
         # Import Certified Device Configuration
-        importDeviceConfV2(self)
+        z4d_certified_devices.importDeviceConfV2(self, z4d_certified_devices_pathname )
 
         # if type(self.DeviceConf) is not dict:
         if not isinstance(self.DeviceConf, dict):
@@ -451,6 +455,7 @@ class BasePlugin:
         # Import DeviceList.txt Filename is : DeviceListName
         self.log.logging("Plugin", "Status", "load ListOfDevice")
         if LoadDeviceList(self) == "Failed":
+
             self.log.logging("Plugin", "Error", "Something wennt wrong during the import of Load of Devices ...")
             self.log.logging(
                 "Plugin",
@@ -558,6 +563,7 @@ class BasePlugin:
         elif self.transport == "ZigpyZiGate":
             # Zigpy related modules
             import zigpy
+
             import zigpy_zigate
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
@@ -575,6 +581,7 @@ class BasePlugin:
         elif self.transport == "ZigpyZNP":
             import zigpy
             import zigpy_znp
+
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
@@ -592,6 +599,7 @@ class BasePlugin:
         elif self.transport == "ZigpydeCONZ":
             import zigpy
             import zigpy_deconz
+
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
@@ -607,6 +615,7 @@ class BasePlugin:
         elif self.transport == "ZigpyEZSP":
             import bellows
             import zigpy
+
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
