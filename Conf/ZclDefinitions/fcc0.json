@@ -25,6 +25,7 @@
             "SpecifStoragelvl1": "LUMI",
             "SpecifStoragelvl2": "Presence",
             "UpdDomoDeviceWithCluster": "0406",
+            "DomoDeviceFormat": "str",
             "ActionList": [
                 "store_specif_attribute", "upd_domo_device"]
         },
