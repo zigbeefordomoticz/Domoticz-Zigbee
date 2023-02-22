@@ -42,6 +42,11 @@ from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           tuya_energy_childLock, tuya_external_switch_mode,
                           tuya_garage_run_time, tuya_motion_zg204l_keeptime,
                           tuya_motion_zg204l_sensitivity,
+                          tuya_radar_motion_radar_detection_delay,
+                          tuya_radar_motion_radar_fading_time,
+                          tuya_radar_motion_radar_max_range,
+                          tuya_radar_motion_radar_min_range,
+                          tuya_radar_motion_sensitivity,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
                           tuya_TS0004_back_light, tuya_TS0004_indicate_light,
                           tuya_window_cover_calibration,
@@ -274,7 +279,12 @@ DEVICE_PARAMETERS = {
     "RTCZCGQ11LMApproachDistance": RTCZCGQ11LM_motion_opple_approach_distance,
     "RTCZCGQ11LMMonitoringMode": RTCZCGQ11LM_motion_opple_monitoring_mode,
     "ZG204Z_MotionSensivity": tuya_motion_zg204l_sensitivity,
-    "ZG204Z_MotionOccupancyTime": tuya_motion_zg204l_keeptime
+    "ZG204Z_MotionOccupancyTime": tuya_motion_zg204l_keeptime,
+    "RadarMotionSensitivity": tuya_radar_motion_sensitivity,
+    "RadarMotionMinRange": tuya_radar_motion_radar_min_range,
+    "RadarMotionMaxRange": tuya_radar_motion_radar_max_range,
+    "RadarMotionDelay": tuya_radar_motion_radar_detection_delay,
+    "RadarMotionFading": tuya_radar_motion_radar_fading_time
 }
 
 def sanity_check_of_param(self, NwkId):

@@ -1,0 +1,53 @@
+{
+    "_blakadder": "https://zigbee.blakadder.com/Tuya_ZY-M100-S.html",
+    "_description": "Human Presence Detector 5.8GHz Wall Mount",
+    "_source": "",
+    "Identifier": [
+        [ "TS0601", "_TZE200_lyetpprm" ],
+        [ "TS0601", "_TZE200_jva8ink8" ],
+        [ "TS0601", "_TZE200_holel4dk" ],
+        [ "TS0601", "_TZE200_wukb7rhc" ],
+        [ "TS0601", "_TZE204_ztc6ggyl" ],
+        [ "TS0601", "_TZE200_ztc6ggyl" ],
+        [ "TS0601", "_TZE200_ikvncluo" ]
+    ],
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Motion/Lux/Distance"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ],
+        "0001": [],
+        "0019": [],
+        "ef00": []
+    },
+    "TS0601_DP": {
+        "01": { "sensor_type": "motion", "DomoDeviceFormat": "str"},
+        "09": { "sensor_type": "distance", "EvalExp": "int((value//10)*10)"}, 
+        "68": { "sensor_type": "illuminance"},
+        "02": { "store_tuya_attribute": "sensitivity"},
+        "03": { "store_tuya_attribute": "radar_min_range"},
+        "04": { "store_tuya_attribute": "radar_max_range"},
+        "65": { "store_tuya_attribute": "radar_detection_delay"},
+        "66": { "store_tuya_attribute": "radar_fading_time"}
+        
+    },
+    "TUYA_REGISTRATION": 13,
+    "Param": {
+        "RadarMotionSensitivity": 7,
+        "RadarMotionMinRange": 60,
+        "RadarMotionMaxRange": 690,
+        "RadarMotionDelay": 1,
+        "RadarMotionFading": 150
+    }
+}

@@ -58,9 +58,12 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
         self.log.logging( "inRawAPS", "Error", "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s not found in ListOfDevices !!" % (
             srcnwkid, srcep, cluster, ManufacturerCode, Command, Data), srcnwkid, )
         return
-
+    
     self.log.logging( "inRawAPS", "Debug", "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s Cmd: %s Data: %s" % (
         srcnwkid, srcep, cluster, ManufacturerCode, Command, Data), srcnwkid, )
+    
+    model_name = self.ListOfDevices[srcnwkid]["Model"] if "Model" in self.ListOfDevices[srcnwkid] else ""
+
     if cluster == "0020":  # Poll Control ( Not implemented in firmware )
         # self.log.logging("inRawAPS","Log","Cluster 0020 -- POLL CLUSTER")
         receive_poll_cluster(self, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, ManufacturerCode, Command, Data)
@@ -123,7 +126,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
             color_temp_mired = payload[8:10] + payload[6:8]
             transition_time = payload[12:14] + payload[10:12]
             # self.log.logging("inRawAPS","Log","Move to Color Temp - Command: %s Temp_Mired: %s TransitionTime: %s" %(Command, color_temp_mired, transition_time))
-            if "Model" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Model"] == "tint-Remote-white":
+            if model_name == "tint-Remote-white":
                 COLOR_SCENE_WHITE = {
                     "022b": "09",
                     "01dc": "10",
@@ -143,7 +146,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
             color_temp_max_mireds = payload[18:20] + payload[16:18]
             # self.log.logging("inRawAPS","Log","Move Color Temperature - Command: %s mode: %s rate: %s min_mired: %s max_mired: %s" %(
             #    Command, move_mode, rate, color_temp_min_mireds, color_temp_max_mireds))
-            if "Model" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Model"] == "tint-Remote-white":
+            if model_name == "tint-Remote-white":
                 if move_mode == "01":  # Down
                     MajDomoDevice(self, Devices, srcnwkid, srcep, "0008", "16")
 
@@ -152,7 +155,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
 
         elif Command == "47":  # Stop Move Step
             # self.log.logging("inRawAPS","Log","Stop Move Step - Command: %s" %Command)
-            if "Model" in self.ListOfDevices[srcnwkid] and self.ListOfDevices[srcnwkid]["Model"] == "tint-Remote-white":
+            if model_name == "tint-Remote-white":
                 MajDomoDevice(self, Devices, srcnwkid, srcep, "0008", "18")
 
         else:
@@ -161,10 +164,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
         return
 
     if cluster == "0102":  # Window Covering
-        if (
-            "Model" in self.ListOfDevices[srcnwkid]
-            and self.ListOfDevices[srcnwkid]["Model"] == "TRADFRI openclose remote"
-        ):
+        if model_name == "TRADFRI openclose remote":
             ikea_openclose_remote(self, Devices, srcnwkid, srcep, Command, Data, Sqn)
             return
 
@@ -195,38 +195,28 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
     if "Manufacturer" not in self.ListOfDevices[srcnwkid]:
         return
 
-    manuf = manuf_name = ""
-    if "Manufacturer Name" in self.ListOfDevices[srcnwkid]:
-        manuf_name = self.ListOfDevices[srcnwkid]["Manufacturer Name"]
+    manuf = str(self.ListOfDevices[srcnwkid]["Manufacturer"]) if "Manufacturer" in self.ListOfDevices[srcnwkid] else ""
+    manuf_name = self.ListOfDevices[srcnwkid]["Manufacturer Name"] if "Manufacturer Name" in self.ListOfDevices[srcnwkid] else ""
 
-    manuf = str(self.ListOfDevices[srcnwkid]["Manufacturer"])
-
-    self.log.logging(
-        "inRawAPS",
-        "Debug",
-        "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s manuf: %s manuf_name: %s Cmd: %s Data: %s"
-        % (srcnwkid, srcep, cluster, ManufacturerCode, manuf, manuf_name, Command, Data),
-        srcnwkid,
-    )
+    self.log.logging( "inRawAPS", "Debug", "inRawAps Nwkid: %s Ep: %s Cluster: %s ManufCode: %s manuf: %s manuf_name: %s Cmd: %s Data: %s" % (
+        srcnwkid, srcep, cluster, ManufacturerCode, manuf, manuf_name, Command, Data), srcnwkid, )
 
     func = None
-    if manuf in CALLBACK_TABLE:
-        # self.log.logging( "inRawAPS", 'Debug',"Found in CALLBACK_TABLE")
+    if model_name in self.DeviceConf and "TS0601_DP" in self.DeviceConf[ model_name ]:
+        func = tuyaReadRawAPS
+  
+    elif manuf in CALLBACK_TABLE:
         func = CALLBACK_TABLE[manuf]
-        # func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
+
     elif manuf_name in CALLBACK_TABLE2:
-        # self.log.logging( "inRawAPS", 'Debug',"Found in CALLBACK_TABLE2")
         func = CALLBACK_TABLE2[manuf_name]
-        # func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
+
     elif manuf_name in TUYA_MANUFACTURER_NAME:
         func = tuyaReadRawAPS
+        
     else:
-        self.log.logging(
-            "inRawAPS",
-            "Log",
-            "inRawAps %s/%s Cluster %s Manuf: %s/%s Command: %s Data: %s Payload: %s not processed !!!"
-            % (srcnwkid, srcep, cluster, manuf, manuf_name, Command, Data, payload),
-        )
+        self.log.logging( "inRawAPS", "Log", "inRawAps %s/%s Cluster %s Manuf: %s/%s Command: %s Data: %s Payload: %s not processed !!!" % (
+            srcnwkid, srcep, cluster, manuf, manuf_name, Command, Data, payload), )
 
     if func:
         func(self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
