@@ -421,7 +421,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
         enableOppleSwitch(self, NWKID)
 
     # 2 Enable Configure Reporting for any applicable cluster/attributes
-    if not delay_binding_and_reporting(self, NWKID):
+    if not delay_binding_and_reporting(self, NWKID) and self.configureReporting:
         self.log.logging("Pairing", "Debug", "Request Configure Reporting for %s" % NWKID)
         self.configureReporting.processConfigureReporting(NwkId=NWKID)
 
@@ -635,9 +635,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya eTRV registration needed")
         tuya_eTRV_registration(self, NWKID, device_reset=True)
         
-    elif tuya_registration_parameter: 
+    elif tuya_registration_parameter:
         tuya_registration(self, NWKID, device_reset=False, parkside=False, tuya_registration_value=tuya_registration_parameter)
-            
             
     elif self.ListOfDevices[NWKID]["Model"] in ("TS0121", "TS0002_relay_switch", "TS0002_relay_switch"):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
