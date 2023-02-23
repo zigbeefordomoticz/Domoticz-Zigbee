@@ -434,63 +434,55 @@ def importDeviceConf(self):
     self.log.logging("Database", "Status", "DeviceConf loaded - %s confs loaded" %len(self.DeviceConf))
 
 
-def importDeviceConfV2(self):
+def import_local_device_conf(self):
 
     from os import listdir
-    from os.path import isdir, isfile, join
+    from os.path import isfile, join
 
     # Read DeviceConf for backward compatibility
     importDeviceConf(self)
 
-    model_certified = self.pluginconf.pluginConf["pluginConfig"] + "Certified"
+    model_directory = self.pluginconf.pluginConf["pluginConfig"] + "Local-Devices"
 
-    if os.path.isdir(model_certified):
-        model_brand_list = [f for f in listdir(model_certified) if isdir(join(model_certified, f))]
+    if os.path.isdir(model_directory):
+        model_list = [f for f in listdir(model_directory) if isfile(join(model_directory, f))]
 
-        for brand in model_brand_list:
-            if brand in ("README.md", ".PRECIOUS"):
+        for model_device in model_list:
+            if model_device in ("README.md", ".PRECIOUS"):
                 continue
 
-            model_directory = model_certified + "/" + brand
+            filename = str(model_directory + "/" + model_device)
+            with open(filename, "rt") as handle:
+                try:
+                    model_definition = json.load(handle)
+                except ValueError as e:
+                    Domoticz.Error("--> JSON ConfFile: %s load failed with error: %s" % (filename, str(e)))
 
-            model_list = [f for f in listdir(model_directory) if isfile(join(model_directory, f))]
+                    continue
+                except Exception as e:
+                    Domoticz.Error("--> JSON ConfFile: %s load general error: %s" % (filename, str(e)))
 
-            for model_device in model_list:
-                if model_device in ("README.md", ".PRECIOUS"):
                     continue
 
-                filename = str(model_directory + "/" + model_device)
-                with open(filename, "rt") as handle:
-                    try:
-                        model_definition = json.load(handle)
-                    except ValueError as e:
-                        Domoticz.Error("--> JSON ConfFile: %s load failed with error: %s" % (filename, str(e)))
+            try:
+                device_model_name = model_device.rsplit(".", 1)[0]
 
-                        continue
-                    except Exception as e:
-                        Domoticz.Error("--> JSON ConfFile: %s load general error: %s" % (filename, str(e)))
+                if device_model_name not in self.DeviceConf:
+                    self.log.logging( "Database", "Debug", "--> Config for %s" % ( str(device_model_name)) )
+                    self.DeviceConf[device_model_name] = dict(model_definition)
 
-                        continue
-
-                try:
-                    device_model_name = model_device.rsplit(".", 1)[0]
-
-                    if device_model_name not in self.DeviceConf:
-                        self.log.logging( "Database", "Debug", "--> Config for %s/%s" % (str(brand), str(device_model_name)) )
-                        self.DeviceConf[device_model_name] = dict(model_definition)
-
-                        if "Identifier" in model_definition:
-                            self.log.logging( "Database", "Log", "--> Identifier found %s" % (str(model_definition["Identifier"])) )
-                            for x in model_definition["Identifier"]:
-                                self.ModelManufMapping[ (x[0], x[1] )] = device_model_name
-                    else:
-                        self.log.logging(
-                            "Database",
-                            "Debug",
-                            "--> Config for %s/%s not loaded as already defined" % (str(brand), str(device_model_name)),
-                        )
-                except Exception:
-                    Domoticz.Error("--> Unexpected error when loading a configuration file")
+                    if "Identifier" in model_definition:
+                        self.log.logging( "Database", "Log", "--> Identifier found %s" % (str(model_definition["Identifier"])) )
+                        for x in model_definition["Identifier"]:
+                            self.ModelManufMapping[ (x[0], x[1] )] = device_model_name
+                else:
+                    self.log.logging(
+                        "Database",
+                        "Debug",
+                        "--> Config for %s not loaded as already defined" % (str(device_model_name)),
+                    )
+            except Exception:
+                Domoticz.Error("--> Unexpected error when loading a configuration file")
 
 
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
