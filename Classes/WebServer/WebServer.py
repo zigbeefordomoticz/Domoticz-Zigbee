@@ -1501,6 +1501,7 @@ class WebServer(object):
         if verb != "GET":
             return _response
         import_local_device_conf(self)
+        z4d_certified_devices_pathname = os.path.dirname( z4d_certified_devices.__file__ ) + "/"
         z4d_certified_devices.z4d_import_device_configuration(self, z4d_certified_devices_pathname )
         _response["Data"] = {"Certified Configuration loaded"}
         return _response
