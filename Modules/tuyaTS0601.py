@@ -188,12 +188,19 @@ def ts0601_voltage(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0001", str(value))
     store_tuya_attribute(self, nwkid, "Voltage", str(value))
 
+def ts0601_setpoint(self, Devices, nwkid, ep, value):
+
+    self.log.logging("Tuya", "Debug", "ts0601_setpoint - After Nwkid: %s/%s Setpoint: %s" % (nwkid, ep, value))
+    MajDomoDevice(self, Devices, nwkid, ep, "0201", value, Attribute_="0012")
+    checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", value)
+    store_tuya_attribute(self, nwkid, "SetPoint", value)
 
 
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
     "temperature": ts0601_temperature,
+    "setpoint": ts0601_setpoint,
     "humidity": ts0601_humidity,
     "distance": ts0601_distance,
     "battery": ts0601_battery,
