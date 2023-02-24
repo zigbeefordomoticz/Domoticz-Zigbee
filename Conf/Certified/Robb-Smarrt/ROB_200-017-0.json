@@ -14,7 +14,7 @@
             "0702": "",
             "0b04": "",
             "0019": "",
-            "Type": "Plug/Meter/Power/Current/Voltage/Temp"
+            "Type": "Plug/Meter/Power/Ampere/Voltage/Temp"
         }
     },
     "Type": "",
