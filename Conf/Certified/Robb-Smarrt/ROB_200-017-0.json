@@ -6,9 +6,9 @@
     "Ep": {
         "01": {
             "0000": "",
-            "0002": "",
             "0006": "",
             "0009": "",
+	    "0402": "",
             "0702": "",
             "0b04": "",
             "0019": "",
@@ -16,10 +16,10 @@
         }
     },
     "Type": "",
-    "ClusterToBind": [ "0006", "0002", "0702", "0b04" ],
+    "ClusterToBind": [ "0006", "0402", "0702", "0b04" ],
     "ConfigureReporting": {
-        "0002": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "0010" }}},
-        "0006": { "Attributes": { "0000": { "DataType": "10", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0FFF", "Change": "01" }}},
+        "0006": { "Attributes": { "0000": { "DataType": "10", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "01" }}},
+	"0402": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "001E", "MaxInterval": "0258", "TimeOut": "0000", "Change": "000A" }}},
         "0702": { "Attributes": { "0000": { "DataType": "25", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "000000000000000a" }}},
         "0b04": {
             "Attributes": {
