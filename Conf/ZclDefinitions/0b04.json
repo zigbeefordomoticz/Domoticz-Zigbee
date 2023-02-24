@@ -718,6 +718,48 @@
             "ActionList": [
                 "check_store_value"
             ]
+        },
+        "0600": { 
+            "Enabled": true, 
+            "Name": "ACVoltageMultiplier",
+            "DataType": "21",
+            "Range": ["0001","ffff"],
+            "ActionList": [ "check_store_value" ] 
+        },
+        "0601": { 
+            "Enabled": true, 
+            "Name": "ACVoltageDivisor",
+            "DataType": "21",
+            "Range": ["0001","ffff"],
+            "ActionList": [ "check_store_value" ] 
+        },
+        "0602": { 
+            "Enabled": true, 
+            "Name": "HarmonicCurrentMultiplier",
+            "DataType": "21",
+            "Range": ["0001","ffff"],
+            "ActionList": [ "check_store_value" ] 
+        },
+        "0603": { 
+            "Enabled": true, 
+            "Name": "ACCurrentDivisor",
+            "DataType": "21",
+            "Range": ["0001","ffff"],
+            "ActionList": [ "check_store_value" ]
+        },
+        "0604": { 
+            "Enabled": true, 
+            "Name": "ACPowerMultiplier",
+            "DataType": "21",
+            "Range": ["0001","ffff"],
+            "ActionList": [ "check_store_value" ] 
+        },
+        "0605": { 
+            "Enabled": true, 
+            "Name": "ACPowerDivisor",
+            "DataType": "21",
+            "Range": ["0001","ffff"],
+            "ActionList": [ "check_store_value" ] 
         }
     }
 }
