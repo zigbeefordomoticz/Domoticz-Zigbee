@@ -26,7 +26,7 @@
     },
     "TS0601_DP": {
         "02": { "store_tuya_attribute": "SystemMode"},
-        "03": { "store_tuya_attribute": "RunningState", "EvalExp": "int((value//10)*10)"},
+        "03": { "store_tuya_attribute": "RunningState"},
         "04": { "store_tuya_attribute": "SetPoint", "sensor_type": "setpoint", "EvalExp": "int((value//10)*10)"},
         "05": { "store_tuya_attribute": "Temperature", "sensor_type": "temperature" , "EvalExp": "int((value//10)*10)"},
         "07": { "store_tuya_attribute": "ChildLock"},

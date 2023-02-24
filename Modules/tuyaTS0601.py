@@ -1,9 +1,8 @@
 
 from Modules.domoMaj import MajDomoDevice
-from Modules.tuyaTools import store_tuya_attribute
-from Modules.tools import checkAndStoreAttributeValue
 from Modules.domoTools import Update_Battery_Device
-
+from Modules.tools import checkAndStoreAttributeValue, get_and_inc_ZCL_SQN
+from Modules.tuyaTools import store_tuya_attribute, tuya_cmd
 
 # Generic functions
 
@@ -27,23 +26,38 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
     if "store_tuya_attribute" in dps_mapping[ str_dp ]:
         store_tuya_attribute(self, NwkId, dps_mapping[ str_dp ]["store_tuya_attribute"], data)
     
+    return_value = sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp )
+    
+    return return_value
+    
+def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp ):
     if "sensor_type" not in dps_mapping[ str_dp ]:
         if "store_tuya_attribute" not in dps_mapping[ str_dp ]:
             store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
         return True
-    
+
     sensor_type = dps_mapping[ str_dp ][ "sensor_type"]
-    if sensor_type not in DP_SENSOR_FUNCTION:
-        self.log.logging("Tuya", "Error", "ts0601_response - no sensor function found for %s %s %s %s %s" % (
-            NwkId, sensor_type, dp, datatype, data), NwkId)
+    if sensor_type in DP_SENSOR_FUNCTION:
+        value = check_domo_format_req( self, dps_mapping[ str_dp ], value)
+        func = DP_SENSOR_FUNCTION[ sensor_type ]
+        func(self, Devices, NwkId, Ep, value )
         return True
     
-    value = check_domo_format_req( self, dps_mapping[ str_dp ], value)
+    return False
+
+
+def action_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp):
+    if "action_type" not in dps_mapping[ str_dp ]:
+        return False
+    action_type = dps_mapping[ str_dp ][ "action_type"]
+    if action_type in DP_ACTION_FUNCTION:
+        value = check_domo_format_req( self, dps_mapping[ str_dp ], value)
+        func = DP_ACTION_FUNCTION[ action_type ]
+        func(self, NwkId, Ep, dp, datatype, value )
+        return True
+
+    return False
     
-    func = DP_SENSOR_FUNCTION[ sensor_type ]
-    func(self, Devices, NwkId, Ep, value )
-    return True
-        
         
 # Helpers        
 
@@ -188,13 +202,12 @@ def ts0601_voltage(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0001", str(value))
     store_tuya_attribute(self, nwkid, "Voltage", str(value))
 
-def ts0601_setpoint(self, Devices, nwkid, ep, value):
 
+def ts0601_setpoint(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya", "Debug", "ts0601_setpoint - After Nwkid: %s/%s Setpoint: %s" % (nwkid, ep, value))
     MajDomoDevice(self, Devices, nwkid, ep, "0201", value, Attribute_="0012")
     checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", value)
     store_tuya_attribute(self, nwkid, "SetPoint", value)
-
 
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
@@ -214,4 +227,33 @@ DP_SENSOR_FUNCTION = {
     "metering": ts0601_summation_energy,
     "power": ts0601_instant_power,
     "voltage": ts0601_voltage
+}
+
+def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
+    cluster_frame = "11"
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    tuya_cmd(self, NwkId, Ep, cluster_frame, sqn, "00", action, data)
+
+   
+def ts0601_action_setpoint(self, NwkId, Ep, dp, datatype, value):
+    self.log.logging("Tuya", "Debug", "ts0601_action_setpoint - %s Setpoint: %s" % (NwkId, value))
+    action = "%02x02" % dp
+    data = "%08x" % value
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+   
+def ts0601_action_calibration(self, NwkId, Ep, dp, datatype, value):
+    self.log.logging("Tuya", "Debug", "ts0601_action_calibration - %s Calibration: %s" % (NwkId, value))
+    action = "%02x02" % dp
+    # determine which Endpoint
+    if value < 0:
+        value = ( 0xffffffff - value + 1 )
+        #calibration = abs(int(hex(-calibration - pow(2, 32)), 16))
+    data = "%08x" % value
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+    
+
+DP_ACTION_FUNCTION = {
+    "setpoint": ts0601_action_setpoint,
+    "calibration": ts0601_action_calibration,
+    
 }
