@@ -4,6 +4,18 @@
     "Version": "1",
     "Enabled": true,
     "Attributes": {
+        "0000": {
+            "Enabled": true,
+            "Name": "MeasurementType",
+            "Range": [ "00000000", "ffffffff"],
+            "DataType": "1b",
+            "Acc": "R",
+            "Default": "0",
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
         "0300": {
             "Enabled": true,
             "Name": "ACFrequency",
