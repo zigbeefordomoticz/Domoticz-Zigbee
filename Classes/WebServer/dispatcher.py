@@ -7,7 +7,9 @@
 import json
 
 import Domoticz
-from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+
 
 def do_rest(self, Connection, verb, data, version, command, parameters):
 
@@ -62,6 +64,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "topologie": {"Name": "topologie", "Verbs": {"GET", "DELETE"}, "function": self.rest_netTopologie},
         "unbinding": {"Name": "unbinding", "Verbs": {"PUT"}, "function": self.rest_unbinding},
         "unbinding-group": {"Name": "unbinding-group", "Verbs": {"PUT"}, "function": self.rest_group_unbinding},
+        "upgrade-certified-devices" : {"Name": "upgrade-certified-devices", "Verbs": {"GET"}, "function": self.rest_certified_devices_update},
         "zdevice-name": {"Name": "zdevice-name", "Verbs": {"GET", "PUT", "DELETE"}, "function": self.rest_zDevice_name},
         "zdevice-raw": {"Name": "zdevice-raw", "Verbs": {"GET", "PUT"}, "function": self.rest_zDevice_raw},
         "zdevice": {"Name": "zdevice", "Verbs": {"GET", "DELETE"}, "function": self.rest_zDevice},

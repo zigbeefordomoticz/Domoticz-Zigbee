@@ -395,8 +395,8 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s [Certified Devices: %s] started"
-            % (self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"], self.pluginParameters["CertifiedDbVersion"] ), )
+        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s [Certified Devices: %s] started" % (
+            self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"], self.pluginParameters["CertifiedDbVersion"] ), )
         if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
             self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
                 _current_python_version_major , _current_python_version_minor))
@@ -1396,7 +1396,8 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.PluginHealth,
         webserver_port,
         self.log,
-        self.transport
+        self.transport,
+        self.ModelManufMapping
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)

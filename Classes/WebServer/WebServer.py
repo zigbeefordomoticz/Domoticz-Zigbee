@@ -10,8 +10,6 @@ import os
 import os.path
 import time
 
-import z4d_certified_devices
-
 import Domoticz
 from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import (prepResponseMessage,
@@ -20,7 +18,6 @@ from Modules.actuators import actuators
 from Modules.basicOutputs import (PermitToJoin, ZigatePermitToJoin,
                                   initiate_change_channel, setExtendedPANID,
                                   zigateBlueLed)
-from Modules.database import import_local_device_conf
 from Modules.sendZigateCommand import sendZigateCmd
 from Modules.tools import is_hex
 from Modules.txPower import set_TxPower
@@ -85,7 +82,9 @@ class WebServer(object):
     from Classes.WebServer.rest_Ota import (rest_ota_devices_for_manufcode,
                                             rest_ota_firmware_list,
                                             rest_ota_firmware_update)
-    from Classes.WebServer.rest_PluginUpgrade import rest_plugin_upgrade
+    from Classes.WebServer.rest_PluginUpgrade import (
+        certified_devices_update, rest_certified_devices_update,
+        rest_plugin_upgrade, rest_reload_device_conf)
     from Classes.WebServer.rest_Provisioning import (rest_full_reprovisionning,
                                                      rest_new_hrdwr,
                                                      rest_rcv_nw_hrdwr)
@@ -120,7 +119,8 @@ class WebServer(object):
         PluginHealth,
         httpPort,
         log,
-        transport
+        transport,
+        ModelManufMapping
     ):
         self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
@@ -128,6 +128,7 @@ class WebServer(object):
         self.httpServerConns = {}
         self.httpPort = httpPort
         self.log = log
+        self.ModelManufMapping = ModelManufMapping
 
         self.httpsServerConn = None
         self.httpsClientConn = None
@@ -169,6 +170,7 @@ class WebServer(object):
         self.FirmwareVersion = None
         # Start the WebServer
         self.startWebServer()
+        self.certified_devices_update()
 
     def fake_mode(self):
         return (
@@ -1494,17 +1496,6 @@ class WebServer(object):
             _response["Data"] = json.dumps(_battEnv, sort_keys=True)
         return _response
 
-    def rest_reload_device_conf(self, verb, data, parameters):
-        
-        _response = prepResponseMessage(self, setupHeadersResponse())
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        if verb != "GET":
-            return _response
-        import_local_device_conf(self)
-        z4d_certified_devices_pathname = os.path.dirname( z4d_certified_devices.__file__ ) + "/"
-        z4d_certified_devices.z4d_import_device_configuration(self, z4d_certified_devices_pathname )
-        _response["Data"] = {"Certified Configuration loaded"}
-        return _response
 
         
     def logging(self, logType, message):
