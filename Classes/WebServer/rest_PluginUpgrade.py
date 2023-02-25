@@ -1,9 +1,8 @@
 
 
 import json
-import os  # nosec
 import subprocess  # nosec
-
+import os
 import z4d_certified_devices
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
@@ -61,17 +60,28 @@ def _reload_device_conf(self):
     z4d_certified_devices.z4d_import_device_configuration(self, z4d_certified_devices_pathname )
 
 def certified_devices_update(self):
+
+    CERTIFIED_DEVICES_UPGRADE_CMD = "python3 -m pip install z4d-certified-devices --upgrade"
+
     self.logging("Status", "Plugin looks to upgrade the Certified Device package")
     
-    stream = os.popen( 'python3 -m pip install z4d-certified-devices --upgrade')
-    output = stream.readlines()
+    process = subprocess.run( 
+        CERTIFIED_DEVICES_UPGRADE_CMD ,
+        cwd=self.pluginParameters["HomeFolder"],
+        universal_newlines=True,
+        text=True,
+        capture_output=True,
+        shell=True
+    )
+    result = {"result": str(process.stdout), "ReturnCode": process.returncode }
+    Logging_mode = "Log" if result["ReturnCode"] == 0 else "Error"
     
     _reload_device_conf(self)
-
-    for line in output:    
-        self.logging( "Log", "%s" %(line))
+    self.logging(Logging_mode, "Certified Device package upgrade results")
+    for line in result["result"].split("\n"):    
+        self.logging( Logging_mode, "%s" %(line))
         
-    return output
+    return result
   
    
 def rest_certified_devices_update(self, verb, data, parameters):
