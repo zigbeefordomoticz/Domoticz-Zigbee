@@ -35,6 +35,7 @@ from Modules.tuya import tuya_cmd_0x0000_0xf0
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.zlinky import get_OPTARIF
 
+
 ATTRIBUTES = {
     "0000": [ 0x0004, 0x0005, 0x0000, 0x0001, 0x0002, 0x0003, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000, 0xF000, ],
     "0001": [0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0033, 0x0035],
@@ -77,6 +78,7 @@ ATTRIBUTES = {
     "fc7d": [ 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008],   # Ikea STARKVIND
     "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
 }
+
 
 
 def get_max_read_attribute_value( self, nwkid=None):
@@ -199,6 +201,17 @@ def skipThisAttribute(self, addr, EpOut, Cluster, Attr):
     return True
 
 
+def retreive_attributes_from_zcl_standard( self, cluster):
+    
+    if cluster in self.readZclClusters and "Attributes" in self.readZclClusters[ cluster ]:
+        return int(self.readZclClusters[ cluster ]["Attributes"].keys(), 16)
+
+    if cluster in ATTRIBUTES:
+        return ATTRIBUTES[ cluster ]
+    
+    return None
+
+
 def retreive_ListOfAttributesByCluster(self, key, Ep, cluster):
 
     targetAttribute = retreive_attributes_based_on_configuration(self, key, cluster)
@@ -258,7 +271,7 @@ def retreive_attributes_from_default_device_list(self, key, Ep, cluster):
         (self.ListOfDevices[key]["Model"] == "SPE600" and cluster == "0702")
         or (self.ListOfDevices[key]["Model"] == "TS0302" and cluster == "0102")
     ):  # Zemismart Blind switch
-        for addattr in ATTRIBUTES[cluster]:
+        for addattr in retreive_attributes_from_zcl_standard( self, cluster):
             if addattr not in targetAttribute:
                 targetAttribute.append(addattr)
     return targetAttribute
@@ -267,28 +280,18 @@ def retreive_attributes_from_default_device_list(self, key, Ep, cluster):
 def retreive_attributes_from_default_plugin_list(self, key, Ep, cluster):
 
     targetAttribute = None
-    self.log.logging(
-        "ReadAttributes",
-        "Debug2",
-        "retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" % cluster,
-        nwkid=key,
-    )
-    if cluster in ATTRIBUTES:
-        targetAttribute = ATTRIBUTES[cluster]
-    else:
-        Domoticz.Debug("retreive_ListOfAttributesByCluster: Missing Attribute for cluster %s" % cluster)
+    targetAttribute = retreive_attributes_from_zcl_standard( self, cluster)
+    if targetAttribute is None:
+        self.log.logging( "ReadAttributes", "Debug", "retreive_ListOfAttributesByCluster: Missing Attribute for cluster %s" % cluster)
         targetAttribute = [0x0000]
-    self.log.logging(
-        "ReadAttributes",
-        "Debug",
-        "---- retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : " % (cluster)
-        + " ".join("0x{:04x}".format(num) for num in targetAttribute),
-        nwkid=key,
-    )
+        
+    self.log.logging( "ReadAttributes", "Debug", "---- retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : " % (
+        cluster) + " ".join("0x{:04x}".format(num) for num in targetAttribute), nwkid=key,)
 
     return targetAttribute
 
 
+    
 def ping_tuya_device(self, key):
 
     PING_CLUSTER = "0000" 
