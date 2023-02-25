@@ -1,0 +1,39 @@
+{
+    "_comment": "Philips Hue Motion (SML001 Indoor, SML002 Outdoor) Sensor",
+    "_version": "1.0",
+    "Ep": {
+        "02": {
+            "0000": "",
+            "0001": "",
+            "0003": "",
+            "0019": "",
+            "0400": "",
+            "0402": "",
+            "0406": { "Attributes": { "0030": {"Enabled": true, "Name": "PhilipsSensitivity", "DataType": "20", "ActionList": [ "check_store_value"] }}},
+            "Type": "Motion/Lux/Temp"
+        }
+    },
+    "Type": "",
+    "NickName": "Hue_Motion",
+    "ClusterToBind": [ "0406", "0400", "0402", "0001" ],
+    "bindEp": [ "02" ],
+    "ConfigureReporting": {
+        "0400": { "Attributes": { "0000": { "DataType": "21", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "07D0" } } },
+        "0402": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "000A", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "0014" } } },
+        "0001": { "Attributes": { "0021": { "DataType": "20", "MinInterval": "1C20", "MaxInterval": "1C20", "TimeOut": "0FFF", "Change": "00" } } },
+        "0406": { "Attributes": { "0000": { "DataType": "18", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0FFF", "Change": "00" } } }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0032", "0033" ],
+        "0001": [ "0020" ],
+        "0406": [ "0000", "0010", "0030", "0031" ],
+        "0402": ["0000"]
+    },
+    "Param": {
+        "occupancySensibility": 0,
+        "PIROccupiedToUnoccupiedDelay": 30,
+        "HueLedIndication": 0
+    },
+    "BatteryDevice": 1,
+    "BatteryPercentageConverter": 2
+}
