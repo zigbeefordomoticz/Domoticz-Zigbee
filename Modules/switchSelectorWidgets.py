@@ -517,7 +517,18 @@ SWITCH_SELECTORS = {
         "Language": {
             "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Ventilateur"}},
     },
-      
+    "ThermoMode_7": {
+        2: (0, "00"),  # Off
+        0: (1, "10"),  # Auto
+        1: (2, "20"),  # Heat
+        "ForceUpdate": False,
+        "OffHidden": False, 
+        "SelectorStyle": 0,
+        "LevelNames": "Off|Auto|Heat",
+        "Language": {
+            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Ventilateur"}},
+    },
+
     "HeatingStatus": {
         0: (0, "Off"),
         1: (1, "10"),
