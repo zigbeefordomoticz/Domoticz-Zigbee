@@ -1,0 +1,40 @@
+{
+    "_comment": "Tuya TRV / Avatto ME167",
+    "_version": "0.10",
+    "Identifier": [
+        [ "TS0601", "_TZE200_bvu2wnxz" ],
+        [ "TS0601", "_TZE200_6rdj8dzm" ],
+        [ "TS0601", "_TZE200_gd4rvykv" ]  
+    ],
+
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Temp/ThermoSetpoint/ThermoMode_7"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+    },
+    "TS0601_DP": {
+        "02": { "store_tuya_attribute": "SystemMode"},
+        "03": { "store_tuya_attribute": "RunningState"},
+        "04": { "store_tuya_attribute": "SetPoint", "sensor_type": "setpoint", "EvalExp": "int((value//10)*10)"},
+        "05": { "store_tuya_attribute": "Temperature", "sensor_type": "temperature" , "EvalExp": "int((value//10)*10)"},
+        "07": { "store_tuya_attribute": "ChildLock"},
+        "35": { "store_tuya_attribute": "ErrorStatus"},
+        "39": { "store_tuya_attribute": "FrostProtection"},
+        "47": { "store_tuya_attribute": "Calibration"}
+    },
+    "PollingEnabled": 1,
+    "Param": {
+    }
+}

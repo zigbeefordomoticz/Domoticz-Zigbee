@@ -1,0 +1,41 @@
+{
+    "_blakadder": "https://zigbee.blakadder.com/ROBB_ROB_200-017-0.html",
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1545",
+    "_description": "Smart Plug 3680W",
+    "_version": "1.0",
+    "Ep": {
+        "01": {
+            "0000": "",
+	    "0004": "",
+	    "0005": "",
+            "0006": "",
+            "0009": "",
+            "0402": "",
+            "0702": "",
+            "0b04": "",
+            "0019": "",
+            "Type": "Plug/Meter/Power/Ampere/Voltage/Temp"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0006", "0402", "0702", "0b04" ],
+    "ConfigureReporting": {
+        "0006": { "Attributes": { "0000": { "DataType": "10", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "01" }}},
+        "0402": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "001E", "MaxInterval": "0258", "TimeOut": "0000", "Change": "000A" }}},
+        "0702": { "Attributes": { "0000": { "DataType": "25", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "000000000000000a" }}},
+        "0b04": {
+            "Attributes": {
+                "0505": { "DataType": "21", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "0096" },
+                "0508": { "DataType": "21", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "0064" },
+                "050b": { "DataType": "29", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "000a" }
+            }
+        }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0002", "0004", "0005", "0006", "0007", "000a", "4000" ],
+        "0002": [ "0000" ],
+        "0006": [ "0000" ],
+        "0702": [ "0000", "0200", "0300", "0301", "0302", "0306" ],
+        "0b04": [ "0000", "0300", "030d", "0400", "0401", "0405", "0505", "0508", "050b", "050e", "0600", "0601", "0602", "0603", "0604", "0605" ]
+    }
+}
