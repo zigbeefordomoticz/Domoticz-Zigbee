@@ -290,7 +290,34 @@ def RTCZCGQ11LM_motion_opple_approach_distance(self, nwkid, param):
     self.log.logging("Lumi", "Debug", "Write Motion Approach Distance %s -> %s" % (nwkid, param), nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
-    
+def RTCGQ14LM_trigger_indicator(self, nwkid, param):
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
+    Hattribute = "0152"
+    data_type = "20"
+    Hdata = "%02x" %param
+
+    self.log.logging("Lumi", "Debug", "Write Motion Approach Distance %s -> %s" % (nwkid, param), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+  
+def aqara_detection_interval(self, nwkid, param):
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
+    Hattribute = "0102"
+    data_type = "20"
+    Hdata = "%02x" %param
+
+    self.log.logging("Lumi", "Debug", "Write Motion Approach Distance %s -> %s" % (nwkid, param), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+       
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
     if srcNWKID not in self.ListOfDevices:

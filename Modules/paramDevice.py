@@ -31,7 +31,9 @@ from Modules.lumi import (RTCZCGQ11LM_motion_opple_approach_distance,
                           xiaomi_flip_indicator_light,
                           xiaomi_led_disabled_night, xiaomi_opple_mode,
                           xiaomi_switch_operation_mode_opple,
-                          xiaomi_switch_power_outage_memory)
+                          xiaomi_switch_power_outage_memory,
+                          RTCGQ14LM_trigger_indicator,
+                          aqara_detection_interval)
 from Modules.philips import (philips_led_indication,
                              philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
@@ -291,6 +293,9 @@ DEVICE_PARAMETERS = {
     "AqaraOppleMode": xiaomi_opple_mode,
     "TuyaPIRKeepTime": tuya_pir_keep_time_lookup,
     "IASsensitivity": ias_sensitivity,
+    "RTCGQ14LMTriggerIndicator": RTCGQ14LM_trigger_indicator,
+    "AqaraDetectionInterval": aqara_detection_interval,
+    
     
 }
 
