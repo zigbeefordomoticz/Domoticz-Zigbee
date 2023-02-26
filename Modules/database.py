@@ -234,7 +234,7 @@ def LoadDeviceList(self):
 
 def loadTxtDatabase(self, dbName):
     res = "Success"
-    with open(dbName, "r") as myfile2:
+    with open(dbName, "r", encoding='utf-8') as myfile2:
         self.log.logging("Database", "Debug", "Open : " + dbName)
         nb = 0
         for line in myfile2:
@@ -457,7 +457,7 @@ def importDeviceConfV2(self):
                     continue
 
                 filename = str(model_directory + "/" + model_device)
-                with open(filename, "rt") as handle:
+                with open(filename, "rt", encoding='utf-8') as handle:
                     try:
                         model_definition = json.load(handle)
                     except ValueError as e:
@@ -564,7 +564,7 @@ def saveZigateNetworkData(self, nkwdata):
     json_filename = self.pluginconf.pluginConf["pluginData"] + "Zigate.json"
     self.log.logging("Database", "Debug", "Write " + json_filename + " = " + str(self.ListOfDevices))
     try:
-        with open(json_filename, "wt") as json_file:
+        with open(json_filename, "wt", encoding='utf-8') as json_file:
             json.dump(nkwdata, json_file, indent=4, sort_keys=True)
     except IOError:
         Domoticz.Error("Error while writing Zigate Network Details%s" % json_filename)
