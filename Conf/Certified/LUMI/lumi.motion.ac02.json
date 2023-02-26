@@ -26,9 +26,6 @@
         "0019": [ ]
     },
     "Param": {
-        "resetMotiondelay": 30,
-        "RTCZCGQ11LMMotionSensibility": 2,
-        "RTCZCGQ11LMApproachDistance": 1,
-        "RTCZCGQ11LMMonitoringMode": 0
+        "resetMotiondelay": 30
     }
 }
