@@ -817,9 +817,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             
             nValue = int(value, 16)
             if nValue == 1:
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, "On", BatteryLevel, SignalLevel, ForceUpdate_=True)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=True)
             else:
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, "Off", BatteryLevel, SignalLevel, ForceUpdate_=False)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=False)
             continue
 
         if (

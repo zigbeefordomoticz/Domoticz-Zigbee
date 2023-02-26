@@ -4775,7 +4775,14 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "0112":   # Motion
         store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
         self.log.logging( "Cluster", "Log", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
+        if "Model" in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]["Model"] == 'lumi.motion.ac02':
+            # Provides luminance and motion in the same message
+            _motion = int(MsgClusterData[:4],16)
+            _luminance = int(MsgClusterData[4:8],16)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", str(_motion) )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(_luminance) )
+        else: 
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
 
     elif MsgAttrID == "0142":   # Presence
         store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
