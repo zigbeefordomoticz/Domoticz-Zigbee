@@ -27,7 +27,7 @@
     },
     "Param": {
         "resetMotiondelay": 30,
-        "AqaraDetectionInterval": 30,
+        "AqaraDetectionInterval": 5,
         "RTCGQ14LMTriggerIndicator": 1,
         "RTCZCGQ11LMMotionSensibility": 2
     }
