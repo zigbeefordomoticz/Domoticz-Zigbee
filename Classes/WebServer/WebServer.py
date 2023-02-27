@@ -1104,10 +1104,8 @@ class WebServer(object):
                 _response["Data"] = json.dumps(zdev_lst, sort_keys=False)
             elif len(parameters) == 1:
                 
-                _response["Data"] = json.dumps( get_plugin_parameters(self))
-
                 device_infos = {
-                    "PluginInfos": plugin_parameters,
+                    "PluginInfos": get_plugin_parameters(self, filter=True),
                     "Analytics": self.pluginconf.pluginConf["PluginAnalytics"]
                 }
                 if parameters[0] in self.ListOfDevices:
@@ -1514,12 +1512,13 @@ def decode_device_param(self, nwkid, param):
     return {}
 
 
-def get_plugin_parameters(self):
+def get_plugin_parameters(self, filter=False):
     plugin_parameters = dict(self.pluginParameters)
-    if "Mode5" in plugin_parameters:
-        del self.pluginParameters[ "Mode5" ]
-    if "Username" in plugin_parameters:
-        del self.pluginParameters[ "Username" ]
-    if "Password" in plugin_parameters:
-        del self.pluginParameters[ "Password" ]
+    if filter:
+        if "Mode5" in plugin_parameters:
+           del self.pluginParameters[ "Mode5" ]
+        if "Username" in plugin_parameters:
+           del self.pluginParameters[ "Username" ]
+        if "Password" in plugin_parameters:
+           del self.pluginParameters[ "Password" ]
     return plugin_parameters
