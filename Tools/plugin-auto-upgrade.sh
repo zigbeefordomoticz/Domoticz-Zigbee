@@ -21,6 +21,8 @@ echo " "
 /usr/bin/whoami
 echo " "
 
+
+
 echo "(1) git config --global --add safe.directory"
 git config  --global --add safe.directory $(pwd)
 git config  --global --add safe.directory $(pwd)/external/zigpy
@@ -46,7 +48,12 @@ fi
 echo " "
 echo "(3) update python3 modules if needed"
 echo ""
-sudo python3 -m pip --no-input install -r requirements.txt --ignore-requires-python
+if [ "$(whoami)" == "root" ] ; then
+    python3 -m pip --no-input install -r requirements.txt --ignore-requires-python
+else
+    sudo python3 -m pip --no-input install -r requirements.txt --ignore-requires-python
+fi
+
 ret="$?"
 if [ "$ret" != "0" ] ; then
     echo "ERROR while running command 'sudo python3 -m pip --ignore-requires-python --no-input install -r requirements.txt'."
