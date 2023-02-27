@@ -285,14 +285,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
 
-            dzenv = {}
-            # dzenv['proto'] = self.pluginconf.pluginConf['proto']
-            # dzenv['host'] = self.pluginconf.pluginConf['host']
-            # dzenv["port"] = self.pluginconf.pluginConf["port"]
-
-            dzenv["WebUserName"] = self.WebUsername
-            dzenv["WebPassword"] = self.WebPassword
-
+            dzenv = {"WebUserName": self.WebUsername, "WebPassword": self.WebPassword}
             _response["Data"] = json.dumps(dzenv, sort_keys=True)
         return _response
 
@@ -1103,7 +1096,6 @@ class WebServer(object):
                     zdev_lst.append(entry)
                 _response["Data"] = json.dumps(zdev_lst, sort_keys=False)
             elif len(parameters) == 1:
-                
                 device_infos = {
                     "PluginInfos": get_plugin_parameters(self, filter=True),
                     "Analytics": self.pluginconf.pluginConf["PluginAnalytics"]
@@ -1516,9 +1508,9 @@ def get_plugin_parameters(self, filter=False):
     plugin_parameters = dict(self.pluginParameters)
     if filter:
         if "Mode5" in plugin_parameters:
-           del self.pluginParameters[ "Mode5" ]
+            del plugin_parameters[ "Mode5" ]
         if "Username" in plugin_parameters:
-           del self.pluginParameters[ "Username" ]
+            del plugin_parameters[ "Username" ]
         if "Password" in plugin_parameters:
-           del self.pluginParameters[ "Password" ]
+            del plugin_parameters[ "Password" ]
     return plugin_parameters
