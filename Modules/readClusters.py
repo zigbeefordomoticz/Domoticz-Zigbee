@@ -4779,8 +4779,8 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Provides luminance and motion in the same message
             _motion = int(MsgClusterData[:4],16)
             _luminance = int(MsgClusterData[4:8],16)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", str(_motion) )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(_luminance) )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", str(_motion) )
         else: 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
 
