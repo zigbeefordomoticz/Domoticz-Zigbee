@@ -18,14 +18,29 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-##    Feb. 2023 - stable6 - 6.3.011 ( 2023.3 )
+##    March. 2023 - stable6 - 6.3.011 ( 2023.3 )
 
-- [Technical] - Fix issue when receiving a match_description_response
-- [Technical] - Plugin upgrade working on lates Bullseye version
-- [Hardware] - Heiman/Wiser SmartPlugin device
+- [Hardware] - Heiman/Wiser SmartPlug device
 - [Hardware] - Additional Tuya Thermostat devices
 - [Hardware] - Tuya LCD Temp Humi device
-- [WebUI] - Dashboard fix
+- [Hardware] - Device Owon THS317-ET
+- [Hardware] - Tuya Smart Curtain TS130F model
+- [Hardware] - Wiser Water leak sensor 
+- [Hardware] - Wiser Micro dimmer
+- [Hardware] - Wiser Micro Switch
+- [Hardware] - Orvibo 3 dry switch
+- [Hardware] - Aqara Motion Sensor P1 MS02
+- [Hardware] - Enki LED
+- [Hardware] - Sunricher Remote ZGRC-13
+
+- [Technical] - Do not check Zigate firmware anymore
+- [Technical] - Use UTF-8 encoding when retreiving files
+- [Technical] - Fix issue when receiving a match_description_response
+- [Technical] - Plugin upgrade working on lates Bullseye version
+- [Technical] - Fix issue with Plugin upgrade and Bullseye
+
+- [WebUI] - Dashboard optimization
+- [WebUI] - Dashboard display 4 battery levels
 
 ##    Feb. 2023 - stable6 - 6.3.010 ( 2023.2 )
 
