@@ -170,7 +170,12 @@ def ts0601_co2ppm(self, Devices, nwkid, ep, value):
     store_tuya_attribute( self, nwkid, "CO2 ppm", value, )
     MajDomoDevice(self, Devices, nwkid, ep, "0402", value, Attribute_="0005")
 
+def ts0601_mp25(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_mp25 - MP25 ppm %s %s %s" % (nwkid, ep, value), nwkid, )
+    store_tuya_attribute( self, nwkid, "MP25", value, )
+    MajDomoDevice(self, Devices, nwkid, ep, "042a", value,)
 
+    
 def ts0601_voc(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya", "Debug", "ts0601_voc - VOC ppm %s %s %s" % (nwkid, ep, value), nwkid, )
     store_tuya_attribute(self, nwkid, "VOC ppm", value)
@@ -209,6 +214,7 @@ def ts0601_setpoint(self, Devices, nwkid, ep, value):
     checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", value)
     store_tuya_attribute(self, nwkid, "SetPoint", value)
 
+
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
@@ -224,6 +230,7 @@ DP_SENSOR_FUNCTION = {
     "co2": ts0601_co2ppm,
     "voc": ts0601_voc,
     "ch20": ts0601_ch20,
+    "mp25": ts0601_mp25,
     "metering": ts0601_summation_energy,
     "power": ts0601_instant_power,
     "voltage": ts0601_voltage

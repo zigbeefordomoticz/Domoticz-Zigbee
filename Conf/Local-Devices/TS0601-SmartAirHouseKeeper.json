@@ -1,0 +1,38 @@
+{
+    "_comment": "Tuya Smart Air Box X1",
+    "_version": "0.10",
+    "Identifier": [
+        [ "TS0601", "_TZE200_dwcarsat" ]
+    ],
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Temp/Humi/CarbonDioxyde/CH2O/Voc/PM25"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [
+        "0000",
+        "ef00"
+    ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+    },
+    "TS0601_DP": {
+        "02": { "sensor_type": "mp25", "EvalExp": "int(value/10)" },
+        "12": { "sensor_type": "temperature", "EvalExp": "int(value/10)" },
+        "13": { "sensor_type": "humidity", "EvalExp": "int(value/10)" },
+        "14": { "sensor_type": "ch20", "EvalExp": "int(value/10)" },
+        "15": { "sensor_type": "voc", "EvalExp": "int(value/10)" },
+        "16": { "sensor_type": "co2", "EvalExp": "int(value/10)" }
+    },
+    "Param": {
+        "AcquisitionFrequency": 60
+    }
+}
