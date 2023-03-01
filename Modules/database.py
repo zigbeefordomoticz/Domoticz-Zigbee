@@ -472,8 +472,9 @@ def import_local_device_conf(self):
                     self.DeviceConf[device_model_name] = dict(model_definition)
 
                     if "Identifier" in model_definition:
-                        self.log.logging( "Database", "Log", "--> Identifier found %s" % (str(model_definition["Identifier"])) )
+                        self.log.logging( "Database", "Debug", "--> Identifier found %s" % (str(model_definition["Identifier"])) )
                         for x in model_definition["Identifier"]:
+                            self.log.logging( "Database", "Debug", "-->     %s" %x)
                             self.ModelManufMapping[ (x[0], x[1] )] = device_model_name
                 else:
                     self.log.logging(
@@ -487,7 +488,7 @@ def import_local_device_conf(self):
 
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
     self.log.logging("Database", "Status", "ModelManufMapping loaded - %s" %self.ModelManufMapping.keys())
-    self.log.logging("Database", "Status", "DeviceConf loaded - %s confs loaded" %len(self.DeviceConf))
+    self.log.logging("Database", "Status", "Local-Device conf loaded - %s confs loaded" %len(self.DeviceConf))
 
 
 def checkDevices2LOD(self, Devices):
