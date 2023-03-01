@@ -94,6 +94,8 @@ import os
 import threading
 import time
 
+import z4d_certified_devices
+
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
 from Classes.DomoticzDB import (DomoticzDB_DeviceStatus, DomoticzDB_Hardware,
@@ -116,14 +118,14 @@ from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
 from Modules.command import mgtCommand
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
-                              importDeviceConfV2)
+                              import_local_device_conf)
 from Modules.domoCreate import how_many_slot_available
 from Modules.domoTools import ResetDevice
-from Modules.readZclClusters import load_zcl_cluster
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
 from Modules.piZigate import switchPiZigate_mode
 from Modules.profalux import profalux_fake_deviceModel
+from Modules.readZclClusters import load_zcl_cluster
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
@@ -239,6 +241,7 @@ class BasePlugin:
 
         self.PluzzyFirmware = False
         self.pluginVersion = {}
+        self.z4d_certified_devices_version = None
 
         self.loggingFileHandle = None
         self.level = 0
@@ -339,8 +342,11 @@ class BasePlugin:
                 self.onStop()
                 return
 
+        self.z4d_certified_devices_version = z4d_certified_devices.__version__
+
         self.pluginParameters["PluginBranch"] = _pluginversion["branch"]
         self.pluginParameters["PluginVersion"] = _pluginversion["version"]
+        self.pluginParameters["CertifiedDbVersion"] = z4d_certified_devices.__version__
         self.pluginParameters["TimeStamp"] = 0
         self.pluginParameters["available"] = None
         self.pluginParameters["available-firmMajor"] = None
@@ -389,8 +395,8 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s started"
-            % (self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
+        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s [Certified Devices: %s] started" % (
+            self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"], self.pluginParameters["CertifiedDbVersion"] ), )
         if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
             self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
                 _current_python_version_major , _current_python_version_minor))
@@ -434,12 +440,17 @@ class BasePlugin:
 
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Plugin Database: %s" % self.DeviceListName)
+        
+        z4d_certified_devices_pathname = os.path.dirname( z4d_certified_devices.__file__ ) + "/"
+        self.log.logging("Plugin", "Log", "Pathname to z4d_certified_devices %s" %z4d_certified_devices_pathname)
 
         # Import Zcl Cluster definitions
         load_zcl_cluster(self)
         
         # Import Certified Device Configuration
-        importDeviceConfV2(self)
+        import_local_device_conf(self)
+        z4d_certified_devices.z4d_import_device_configuration(self, z4d_certified_devices_pathname )
+        
 
         # if type(self.DeviceConf) is not dict:
         if not isinstance(self.DeviceConf, dict):
@@ -451,6 +462,7 @@ class BasePlugin:
         # Import DeviceList.txt Filename is : DeviceListName
         self.log.logging("Plugin", "Status", "load ListOfDevice")
         if LoadDeviceList(self) == "Failed":
+
             self.log.logging("Plugin", "Error", "Something wennt wrong during the import of Load of Devices ...")
             self.log.logging(
                 "Plugin",
@@ -558,6 +570,7 @@ class BasePlugin:
         elif self.transport == "ZigpyZiGate":
             # Zigpy related modules
             import zigpy
+
             import zigpy_zigate
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
@@ -575,6 +588,7 @@ class BasePlugin:
         elif self.transport == "ZigpyZNP":
             import zigpy
             import zigpy_znp
+
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
@@ -592,6 +606,7 @@ class BasePlugin:
         elif self.transport == "ZigpydeCONZ":
             import zigpy
             import zigpy_deconz
+
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
@@ -607,6 +622,7 @@ class BasePlugin:
         elif self.transport == "ZigpyEZSP":
             import bellows
             import zigpy
+
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
@@ -1375,7 +1391,8 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.PluginHealth,
         webserver_port,
         self.log,
-        self.transport
+        self.transport,
+        self.ModelManufMapping
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)

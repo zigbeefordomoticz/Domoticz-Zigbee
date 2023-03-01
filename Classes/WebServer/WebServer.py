@@ -12,15 +12,18 @@ import time
 
 import Domoticz
 from Classes.PluginConf import SETTINGS
-from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
 from Modules.actuators import actuators
-from Modules.basicOutputs import ZigatePermitToJoin, initiate_change_channel, setExtendedPANID, zigateBlueLed , PermitToJoin
+from Modules.basicOutputs import (PermitToJoin, ZigatePermitToJoin,
+                                  initiate_change_channel, setExtendedPANID,
+                                  zigateBlueLed)
+from Modules.sendZigateCommand import sendZigateCmd
 from Modules.tools import is_hex
 from Modules.txPower import set_TxPower
-from Modules.zigateConsts import CERTIFICATION_CODE, ZCL_CLUSTERS_LIST, ZIGATE_COMMANDS
-from Modules.sendZigateCommand import sendZigateCmd
 from Modules.zigateCommands import zigate_set_mode
-from Modules.database import importDeviceConfV2
+from Modules.zigateConsts import (CERTIFICATION_CODE, ZCL_CLUSTERS_LIST,
+                                  ZIGATE_COMMANDS)
 
 MIMETYPES = {
     "gif": "image/gif",
@@ -51,23 +54,47 @@ MIMETYPES = {
 
 class WebServer(object):
 
-    from Classes.WebServer.com import onConnect, onDisconnect, onStop, startWebServer
+    from Classes.WebServer.com import (onConnect, onDisconnect, onStop,
+                                       startWebServer)
     from Classes.WebServer.dispatcher import do_rest
     from Classes.WebServer.onMessage import onMessage
-    from Classes.WebServer.rest_Bindings import rest_binding, rest_binding_table_disp, rest_binding_table_req, rest_bindLSTcluster, rest_bindLSTdevice, rest_group_binding, rest_group_unbinding, rest_unbinding
-    from Classes.WebServer.rest_Casaia import rest_casa_device_ircode_update, rest_casa_device_list
-    from Classes.WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
-    from Classes.WebServer.rest_Groups import rest_rescan_group, rest_scan_devices_for_group, rest_zGroup, rest_zGroup_lst_avlble_dev
-    from Classes.WebServer.rest_Ota import rest_ota_devices_for_manufcode, rest_ota_firmware_list, rest_ota_firmware_update
-    from Classes.WebServer.rest_Provisioning import rest_full_reprovisionning, rest_new_hrdwr, rest_rcv_nw_hrdwr
+    from Classes.WebServer.rest_Bindings import (rest_binding,
+                                                 rest_binding_table_disp,
+                                                 rest_binding_table_req,
+                                                 rest_bindLSTcluster,
+                                                 rest_bindLSTdevice,
+                                                 rest_group_binding,
+                                                 rest_group_unbinding,
+                                                 rest_unbinding)
+    from Classes.WebServer.rest_Casaia import (rest_casa_device_ircode_update,
+                                               rest_casa_device_list)
+    from Classes.WebServer.rest_CfgReporting import (
+        rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config)
+    from Classes.WebServer.rest_Energy import (rest_req_nwk_full,
+                                               rest_req_nwk_inter)
+    from Classes.WebServer.rest_Groups import (rest_rescan_group,
+                                               rest_scan_devices_for_group,
+                                               rest_zGroup,
+                                               rest_zGroup_lst_avlble_dev)
+    from Classes.WebServer.rest_logging import (rest_logErrorHistory,
+                                                rest_logErrorHistoryClear,
+                                                rest_logPlugin)
+    from Classes.WebServer.rest_Ota import (rest_ota_devices_for_manufcode,
+                                            rest_ota_firmware_list,
+                                            rest_ota_firmware_update)
+    from Classes.WebServer.rest_PluginUpgrade import (
+        certified_devices_update, rest_certified_devices_update,
+        rest_plugin_upgrade, rest_reload_device_conf)
+    from Classes.WebServer.rest_Provisioning import (rest_full_reprovisionning,
+                                                     rest_new_hrdwr,
+                                                     rest_rcv_nw_hrdwr)
     from Classes.WebServer.rest_recreateWidget import rest_recreate_widgets
-    from Classes.WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
-    from Classes.WebServer.sendresponse import sendResponse
-    from Classes.WebServer.tools import DumpHTTPResponseToLog, keepConnectionAlive
-    from Classes.WebServer.rest_PluginUpgrade import rest_plugin_upgrade
-    from Classes.WebServer.rest_CfgReporting import rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config
+    from Classes.WebServer.rest_Topology import (rest_netTopologie,
+                                                 rest_req_topologie)
     from Classes.WebServer.rest_ZLinky import rest_zlinky
-    from Classes.WebServer.rest_logging import rest_logPlugin, rest_logErrorHistory, rest_logErrorHistoryClear
+    from Classes.WebServer.sendresponse import sendResponse
+    from Classes.WebServer.tools import (DumpHTTPResponseToLog,
+                                         keepConnectionAlive)
 
     hearbeats = 0
 
@@ -92,7 +119,8 @@ class WebServer(object):
         PluginHealth,
         httpPort,
         log,
-        transport
+        transport,
+        ModelManufMapping
     ):
         self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
@@ -100,6 +128,7 @@ class WebServer(object):
         self.httpServerConns = {}
         self.httpPort = httpPort
         self.log = log
+        self.ModelManufMapping = ModelManufMapping
 
         self.httpsServerConn = None
         self.httpsClientConn = None
@@ -141,6 +170,7 @@ class WebServer(object):
         self.FirmwareVersion = None
         # Start the WebServer
         self.startWebServer()
+        self.certified_devices_update()
 
     def fake_mode(self):
         return (
@@ -1458,15 +1488,6 @@ class WebServer(object):
             _response["Data"] = json.dumps(_battEnv, sort_keys=True)
         return _response
 
-    def rest_reload_device_conf(self, verb, data, parameters):
-        
-        _response = prepResponseMessage(self, setupHeadersResponse())
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        if verb != "GET":
-            return _response
-        importDeviceConfV2(self)
-        _response["Data"] = {"Certified Configuration loaded"}
-        return _response
 
         
     def logging(self, logType, message):
