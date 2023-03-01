@@ -1,0 +1,45 @@
+{
+    "_blakadder": "https://zigbee.blakadder.com/Heiman_HS2SK.html",
+    "_source": "https://easydomoticz.com/forum/viewtopic.php?p=110775#p110775",
+    "_comment": "Metering Plug",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "0004": "",
+            "0006": "",
+            "0009": "",
+            "0702": "",
+            "0b04": "",
+            "0019": "",
+            "Type": "Switch/Voltage/Power/Meter/Ampere"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0006", "0b04", "0702" ],
+    "ConfigureReporting": {
+        "0006": { "Attributes": { "0000": { "DataType": "10", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0FFF", "Change": "01" } } },
+        "0702": { 
+            "Attributes": { 
+                "0000": { "DataType": "25", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "00000000000003e8" },
+                "0400": { "Change": "00000190", "DataType": "2a", "MaxInterval": "0258", "MinInterval": "001E", "TimeOut": "0000" }
+            }
+        },
+        "0b04": {
+            "Attributes": {
+                "0505": { "DataType": "21", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "0096" },
+                "0508": { "DataType": "21", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "0064" },
+                "050b": { "DataType": "29", "MinInterval": "0005", "MaxInterval": "0e10", "TimeOut": "0000", "Change": "000a" }
+            }
+        }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0003", "0004", "0005", "0006", "0007" ],
+        "0019": [],
+        "0006": [ "0000"],
+        "0702": [ "0000", "0200", "0300", "0301", "0302", "0303", "0306", "0400"],
+        "0b04": [ "050B", "0505", "0508", "0600", "0601", "0602", "0603", "0604", "0605"]
+    },
+    "Param": {
+    }
+}

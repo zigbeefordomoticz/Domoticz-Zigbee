@@ -26,7 +26,14 @@ from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
 from Modules.lumi import (RTCZCGQ11LM_motion_opple_approach_distance,
                           RTCZCGQ11LM_motion_opple_monitoring_mode,
                           RTCZCGQ11LM_motion_opple_sensitivity,
-                          setXiaomiVibrationSensitivity)
+                          setXiaomiVibrationSensitivity,
+                          xiaomi_aqara_switch_mode_switch,
+                          xiaomi_flip_indicator_light,
+                          xiaomi_led_disabled_night, xiaomi_opple_mode,
+                          xiaomi_switch_operation_mode_opple,
+                          xiaomi_switch_power_outage_memory,
+                          RTCGQ14LM_trigger_indicator,
+                          aqara_detection_interval)
 from Modules.philips import (philips_led_indication,
                              philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
@@ -44,7 +51,7 @@ from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           tuya_motion_zg204l_sensitivity,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
                           tuya_TS0004_back_light, tuya_TS0004_indicate_light,
-                          tuya_window_cover_calibration,
+                          tuya_window_cover_calibration, tuya_pir_keep_time_lookup,
                           tuya_window_cover_motor_reversal)
 from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
                                tuya_siren2_alarm_melody,
@@ -195,6 +202,7 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
             set_poweron_afteroffon(self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
+
 def _check_attribute_exist( self, nwkid, ep, cluster, attribute):
     if ep not in self.ListOfDevices[nwkid]["Ep"]:
         self.log.logging("Heartbeat", "Debug", "No ep: %s" %ep, nwkid)
@@ -207,8 +215,7 @@ def _check_attribute_exist( self, nwkid, ep, cluster, attribute):
         return False
     return True
    
-
-
+   
 def ias_wd_sirene_max_alarm_dureation( self, nwkid, duration):
     if self.iaszonemgt:
         Epout = getEpForCluster(self, nwkid, "0502", strict=True)
@@ -216,6 +223,9 @@ def ias_wd_sirene_max_alarm_dureation( self, nwkid, duration):
         if Epout is not None and len(Epout) == 1:
             self.iaszonemgt.IAS_WD_Maximum_duration( nwkid, Epout[0], duration)
 
+def ias_sensitivity(self, nwkid, sensitivity):
+    if self.iaszonemgt:
+        self.iaszonemgt.ias_sensitivity(self, nwkid, sensitivity)
 
 DEVICE_PARAMETERS = {
     "HueLedIndication": philips_led_indication,
@@ -274,7 +284,19 @@ DEVICE_PARAMETERS = {
     "RTCZCGQ11LMApproachDistance": RTCZCGQ11LM_motion_opple_approach_distance,
     "RTCZCGQ11LMMonitoringMode": RTCZCGQ11LM_motion_opple_monitoring_mode,
     "ZG204Z_MotionSensivity": tuya_motion_zg204l_sensitivity,
-    "ZG204Z_MotionOccupancyTime": tuya_motion_zg204l_keeptime
+    "ZG204Z_MotionOccupancyTime": tuya_motion_zg204l_keeptime,
+    "AqaraOpple_switch_power_outage_memory": xiaomi_switch_power_outage_memory,
+    "AqaraOpple_led_disabled_night": xiaomi_led_disabled_night,
+    "AqaraOpple_flip_indicator_light": xiaomi_flip_indicator_light,
+    "AqaraOpple_switch_operation_mode_opple": xiaomi_switch_operation_mode_opple,
+    "AqaraOpple_aqara_switch_mode_switch": xiaomi_aqara_switch_mode_switch,
+    "AqaraOppleMode": xiaomi_opple_mode,
+    "TuyaPIRKeepTime": tuya_pir_keep_time_lookup,
+    "IASsensitivity": ias_sensitivity,
+    "RTCGQ14LMTriggerIndicator": RTCGQ14LM_trigger_indicator,
+    "AqaraDetectionInterval": aqara_detection_interval,
+    
+    
 }
 
 def sanity_check_of_param(self, NwkId):

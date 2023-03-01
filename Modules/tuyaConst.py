@@ -41,9 +41,11 @@ TUYA_MOTION = (
 )
 
 TUYA_TEMP_HUMI = ( 
+    "_TZE200_qyflbnbj"
     "_TZE200_bjawzodf", 
     "_TZE200_bq5c8xfe", 
-    "_TZE200_qoy0ekbd" 
+    "_TZE200_qoy0ekbd" ,
+    "_TZE200_whkgqxse"
 )
 
 TUYA_SIREN_MANUFACTURER = (
@@ -133,6 +135,20 @@ TUYA_eTRV1_MANUFACTURER = (
 TUYA_eTRV2_MANUFACTURER = (
     "_TZE200_ckud7u2l",
     "_TYST11_ckud7u2l",
+    "_TZE200_ckud7u2l",
+    "_TZE200_ywdxldoj",
+    "_TZE200_do5qy8zo",
+    "_TZE200_cwnjrr72",
+    "_TZE200_pvvbommb",
+    "_TZE200_9sfg7gm0", 
+    "_TZE200_2atgpdho", 
+    "_TZE200_cpmgn2cf",
+    "_TZE200_8thwkzxl",
+    "_TZE200_4eeyebrt",
+    "_TZE200_8whxpsiw",
+    "_TZE200_xby0s3ta", 
+    "_TZE200_7fqkphoq",
+    "_TZE200_gd4rvykv", 
 )
 TUYA_eTRV3_MANUFACTURER = (
     "_TZE200_c88teujp",

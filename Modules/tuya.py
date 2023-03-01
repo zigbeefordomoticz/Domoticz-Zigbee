@@ -173,51 +173,55 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     if len(MsgPayload) < 6:
         self.log.logging("Tuya", "Debug2", "tuyaReadRawAPS - MsgPayload %s too short" % (MsgPayload), NwkId)
         return
-
+    
     fcf = MsgPayload[:2]  # uint8
     sqn = MsgPayload[2:4]  # uint8
     updSQN(self, NwkId, sqn)
 
     cmd = MsgPayload[4:6]  # uint8
-
     # Send a Default Response ( why might check the FCF eventually )
     if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
         tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
 
-    # https://developer.tuya.com/en/docs/iot/tuuya-zigbee-door-lock-docking-access-standard?id=K9ik5898uzqrk
+    # https://developer.tuya.com/en/docs/iot/tuya-zigbee-module-uart-communication-protocol?id=K9ear5khsqoty
+    self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - %s/%s fcf: %s sqn: %s cmd: %s Payload: %s" % (
+        NwkId, srcEp, fcf, sqn, cmd, MsgPayload ), NwkId, )
     
-    if cmd == "01":  # TY_DATA_RESPONE
-        status = MsgPayload[6:8]  # uint8
-        transid = MsgPayload[8:10]  # uint8
-        dp = int(MsgPayload[10:12], 16)
-        datatype = int(MsgPayload[12:14], 16)
-        fn = MsgPayload[14:16]
-        len_data = MsgPayload[16:18]
-        data = MsgPayload[18:]
-        self.log.logging(
-            "Tuya",
-            "Debug2",
-            "tuyaReadRawAPS - command %s MsgPayload %s/ Data: %s" % (cmd, MsgPayload, MsgPayload[6:]),
-            NwkId,
-        )
-        tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+    # 0c/02/0004/00000046
+    # 0d/02/0004/00000014
+    # 11/02/0004/0000001e0
+    # 90/40/001/00
 
-    elif cmd == "02":  # TY_DATA_REPORT
+    if cmd in ( "01", "02",):  # TY_DATA_RESPONE, TY_DATA_REPORT
         status = MsgPayload[6:8]  # uint8
-        transid = MsgPayload[8:10]  # uint8
-        dp = int(MsgPayload[10:12], 16)
-        datatype = int(MsgPayload[12:14], 16)
-        fn = MsgPayload[14:16]
-        len_data = MsgPayload[16:18]
-        data = MsgPayload[18:]
-        self.log.logging(
-            "Tuya",
-            "Debug2",
-            "tuyaReadRawAPS - command %s MsgPayload %s/ Data: %s" % (cmd, MsgPayload, MsgPayload[6:]),
-            NwkId,
-        )
-        tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+        self.log.logging( "Tuya", "Debug", "    status: %s" % ( status ), NwkId, )
 
+        transid = MsgPayload[8:10]  # uint8
+        self.log.logging( "Tuya", "Debug", "    TransId: %s" % ( transid ), NwkId, )
+        idx = 10
+        while idx < len(MsgPayload):
+            self.log.logging( "Tuya", "Debug", "    working on remaining payload %s idx: %s" % ( MsgPayload[idx:], idx ), NwkId, )
+            
+            dp = int(MsgPayload[idx:idx + 2], 16)
+            idx += 2
+            self.log.logging( "Tuya", "Debug", "        dp: %s" % ( dp ), NwkId, )
+            
+            datatype = int(MsgPayload[idx:idx + 2], 16)
+            idx += 2
+            self.log.logging( "Tuya", "Debug", "        datatype: %s" % ( datatype ), NwkId, )
+            
+            len_data = 2 * int(MsgPayload[idx:idx + 4], 16)
+            idx += 4
+            self.log.logging( "Tuya", "Debug", "        len_data: %s" % ( len_data ), NwkId, )
+            
+            data = MsgPayload[idx:idx + len_data]
+            idx += len_data
+            self.log.logging( "Tuya", "Debug", "        data: %s" % ( data ), NwkId, )
+            
+            self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - command %s dp: %s dt: %s len: %s data: %s idx: %s" % (
+                cmd, dp, datatype, len_data, data, idx ), NwkId, )
+            tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
+            
     elif cmd == "06":  # TY_DATA_SEARCH
         status = MsgPayload[6:8]  # uint8
         transid = MsgPayload[8:10]  # uint8
@@ -256,24 +260,14 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         send_timesynchronisation(self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload[6:])
 
     else:
-        self.log.logging(
-            "Tuya",
-            "Log",
-            "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s"
-            % (_ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]),
-            NwkId,
-        )
+        self.log.logging( "Tuya", "Log", "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" % (
+            _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]), NwkId, )
 
 
 def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-    self.log.logging(
-        "Tuya",
-        "Debug",
-        "tuya_response - Model: %s Nwkid: %s/%s dp: %02x dt: %02x data: %s"
-        % (_ModelName, NwkId, srcEp, dp, datatype, data),
-        NwkId,
-    )
+    self.log.logging( "Tuya", "Debug", "tuya_response - Model: %s Nwkid: %s/%s dp: %02x dt: %02x data: %s" % (
+        _ModelName, NwkId, srcEp, dp, datatype, data), NwkId, )
 
     if _ModelName in ( "TS0202-_TZ3210_jijr1sss",):
         tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data)
@@ -858,7 +852,7 @@ def tuya_curtain_mode(self, nwkid, mode):
 
 def tuya_backlight_command(self, nwkid, mode):
     if int(mode) in {0, 1, 2}:
-        backlist_attribute = ( "5000" if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS130F-_TZ3000_1dd0d5yi",) else "8001"  )
+        backlist_attribute = ( "5000" if 'Model' in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Model"] in ("TS130F-_TZ3000_fvhunhxb", "TS130F-_TZ3000_1dd0d5yi",) else "8001"  )
         write_attribute( self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", backlist_attribute, "30", "%02x" % int(mode), ackIsDisabled=False )
 
 
@@ -1072,6 +1066,16 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
             NwkId,
         )
 
+def tuya_pir_keep_time_lookup( self, nwkid, keeptime):
+    keeptime = min( keeptime // 30, 2)
+    
+    self.log.logging("Tuya", "Debug", "tuya_pir_keep_time_lookup - keeptime duration %s secondes" % keeptime, nwkid)
+    EPout = "01"
+    
+    write_attribute(self, nwkid, ZIGATE_EP, EPout, "0500", "0000", "00", "f001", "20", "%02x" %keeptime, ackIsDisabled=False)
+    
+
+    
 def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     if dp == 0x01:
@@ -1263,11 +1267,15 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", int(data, 16))
        
     elif dp == 0x02:   # Humi
+        
         if (
             'Manufacturer Name' in self.ListOfDevices[ NwkId ]
-            and self.ListOfDevices[ NwkId ][ 'Manufacturer Name' ] not in ( '_TZE200_qoy0ekbd',)
+            and self.ListOfDevices[ NwkId ][ 'Manufacturer Name' ] not in ( '_TZE200_qoy0ekbd', '_TZE200_whkgqxse')
         ):
             humi = int(data, 16) // 10
+        else:
+            humi = int(data, 16)
+            
         store_tuya_attribute(self, NwkId, "Humi", humi)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0405", humi)
         checkAndStoreAttributeValue(self, NwkId, "01", "0405", "0000", humi)
@@ -1280,7 +1288,7 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         store_tuya_attribute(self, NwkId, "BatteryStatus", data)
         
     else:
-        self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Log", "tuya_temphumi_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
         
 

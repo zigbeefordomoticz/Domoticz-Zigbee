@@ -13,14 +13,13 @@ import time
 from math import atan, pi, sqrt
 
 import Domoticz
-
 from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
                                   write_attribute)
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.readAttributes import ReadAttributeRequest_0b04_050b
-from Modules.tools import (checkAndStoreAttributeValue, is_ack_tobe_disabled,
-                           voltage2batteryP)
+from Modules.tools import (checkAndStoreAttributeValue, getListOfEpForCluster,
+                           is_ack_tobe_disabled, voltage2batteryP)
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, SIZE_DATA_TYPE, ZIGATE_EP
 
 XIAOMI_POWERMETER_EP = {
@@ -33,6 +32,7 @@ XIAOMI_POWERMETER_EP = {
     "lumi.switch.n1aeu1": "15"   # Xiaomi Aqara H1 1-gang (neutral wire) WS-EUK03
 }
 
+XIAOMI_OPPLE_CLUSTER = "fcc0"
 
 def pollingLumiPower(self, key):
     """
@@ -102,63 +102,147 @@ def enableOppleSwitch(self, nwkid):
         self.ListOfDevices[nwkid]["Lumi"] = {"AqaraOppleBulbMode": True}
         return
 
-    manuf_id = "115f"
-    manuf_spec = "01"
-    cluster_id = "fcc0"
-    Hattribute = "0009"
-    data_type = "20"
-    Hdata = "01"
+    xiaomi_opple_mode(self, nwkid, mode=0x01)
 
-    self.log.logging("Lumi", "Debug", "Write Attributes LUMI Opple Magic Word Nwkid: %s" % nwkid, nwkid)
-    write_attribute(
-        self,
-        nwkid,
-        ZIGATE_EP,
-        "01",
-        cluster_id,
-        manuf_id,
-        manuf_spec,
-        Hattribute,
-        data_type,
-        Hdata,
-        ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
-    )
+def xiaomi_opple_mode(self, nwkid, mode=0x01):
 
-def enable_operation_mode_aqara( self, nwkid):
     if nwkid not in self.ListOfDevices:
         return
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0009"
     data_type = "20"
-    Hdata = "01"   # Event mode
+    Hdata = "%02x" %mode
 
-    self.log.logging("Lumi", "Debug", "Write enable_operation_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
+    self.log.logging("Lumi", "Debug", "Write xiaomi_opple_mode AQARA Wireless Switch: %s" % nwkid, nwkid)
+    write_attribute( 
+        self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
+        ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+    
+    
+def enable_click_mode_aqara(self, nwkid):
+    # 0x01: Fast
+    # 0x02: Multi
+    
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
+    Hattribute = "0125"
+    data_type = "20"
+    Hdata = "02"   # Multi-Click
+
+    self.log.logging("Lumi", "Debug", "Write enable_click_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
         self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
-    
-def enable_click_mode_aqara(self, nwkid):
+
+def xiaomi_switch_power_outage_memory(self, nwkid, mode):
+    # This recovers the on/off mode after power failure.
+    # Mode: 0x00 Off
+    #       0x01 On
     
     if nwkid not in self.ListOfDevices:
         return
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
-    Hattribute = "0125"
-    data_type = "20"
-    Hdata = "02"   # Multi-Click
+    cluster_id = XIAOMI_OPPLE_CLUSTER
+    Hattribute = "0201"
+    data_type = "10"
+    Hdata = "%02x" %mode
+
+    for _ep in getListOfEpForCluster(self, nwkid, "0006"):
+        self.log.logging("Lumi", "Debug", "Write xiaomi_switch_power_outage_memory AQARA Wireless Switch: %s/%s" % (nwkid, _ep), nwkid)
+        write_attribute( 
+            self, nwkid, ZIGATE_EP, _ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
+            ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+
+def xiaomi_led_disabled_night(self, nwkid, mode):
+    # Mode: 0x00
+    #       0x01
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
+    Hattribute = "0203"
+    data_type = "10"
+    Hdata = "%02x" %mode
 
     self.log.logging("Lumi", "Debug", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
         self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
-    
+
+def xiaomi_flip_indicator_light(self, nwkid, mode):
+    # Mode: 0x00 Off
+    #       0x01 On
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
+    Hattribute = "00f0"
+    data_type = "20"
+    Hdata = "%02x" %mode
+
+    self.log.logging("Lumi", "Debug", "Write enable_scene_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
+    write_attribute( 
+        self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
+        ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+   
+def xiaomi_switch_operation_mode_opple(self, nwkid, mode):   
+    # Mode: 0x00 Decoupled
+    #       0x01 Control_relay
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
+    Hattribute = "0200"
+    data_type = "20"
+    Hdata = "%02x" %mode
+
+    for _ep in getListOfEpForCluster(self, nwkid, "0006"):
+        self.log.logging("Lumi", "Debug", "Write xiaomi_switch_operation_mode_opple AQARA Wireless Switch: %s/%s" % (nwkid, _ep), nwkid)
+        write_attribute( 
+            self, nwkid, ZIGATE_EP, _ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
+            ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+
+def xiaomi_aqara_switch_mode_switch(self, nwkid, mode):
+    # Mode: 0x04 Anti Flicker mode
+    #       0x01 Quick mode
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
+    Hattribute = "0004"
+    data_type = "21"
+    Hdata = "%02x" %mode
+
+    for _ep in getListOfEpForCluster(self, nwkid, "0006"):
+        self.log.logging("Lumi", "Debug", "Write xiaomi_aqara_switch_mode_switch AQARA Wireless Switch: %s/%s" % (nwkid, _ep), nwkid)
+        write_attribute( 
+            self, nwkid, ZIGATE_EP, _ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
+            ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+
+
 def RTCZCGQ11LM_motion_opple_sensitivity(self, nwkid, param):
 
     if nwkid not in self.ListOfDevices:
@@ -166,14 +250,15 @@ def RTCZCGQ11LM_motion_opple_sensitivity(self, nwkid, param):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "010c"
     data_type = "20"
     Hdata = "%02x" %param
 
     self.log.logging("Lumi", "Debug", "Write Motion Sensitivity %s -> %s" % (nwkid, param), nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
-    
+
+  
 def RTCZCGQ11LM_motion_opple_monitoring_mode(self, nwkid, param):
 
     if nwkid not in self.ListOfDevices:
@@ -181,13 +266,14 @@ def RTCZCGQ11LM_motion_opple_monitoring_mode(self, nwkid, param):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0144"
     data_type = "20"
     Hdata = "%02x" %param
 
     self.log.logging("Lumi", "Debug", "Write Motion Monitoring Mode %s -> %s" % (nwkid, param), nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
 
 def RTCZCGQ11LM_motion_opple_approach_distance(self, nwkid, param):
 
@@ -196,7 +282,7 @@ def RTCZCGQ11LM_motion_opple_approach_distance(self, nwkid, param):
 
     manuf_id = "115f"
     manuf_spec = "01"
-    cluster_id = "fcc0"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0146"
     data_type = "20"
     Hdata = "%02x" %param
@@ -204,6 +290,33 @@ def RTCZCGQ11LM_motion_opple_approach_distance(self, nwkid, param):
     self.log.logging("Lumi", "Debug", "Write Motion Approach Distance %s -> %s" % (nwkid, param), nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
+def RTCGQ14LM_trigger_indicator(self, nwkid, param):
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
+    Hattribute = "0152"
+    data_type = "20"
+    Hdata = "%02x" %param
+
+    self.log.logging("Lumi", "Debug", "Write Motion Approach Distance %s -> %s" % (nwkid, param), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+  
+def aqara_detection_interval(self, nwkid, param):
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = "115f"
+    manuf_spec = "01"
+    cluster_id = XIAOMI_OPPLE_CLUSTER
+    Hattribute = "0102"
+    data_type = "20"
+    Hdata = "%02x" %param
+
+    self.log.logging("Lumi", "Debug", "Write Motion Approach Distance %s -> %s" % (nwkid, param), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
        
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
@@ -582,6 +695,31 @@ def readXiaomiCluster(
     sApproachDistance = retreive4Tag("6920", MsgClusterData)[:2]
     s6a = retreive4Tag("6a20", MsgClusterData)[:2]
     s6b = retreive4Tag("6b20", MsgClusterData)[:2]
+
+
+    if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac02":
+        # "lumi.motion.ac02"
+        sIllulminence = retreive4Tag("6521", MsgClusterData)[:4]
+        sDetectionInterval = retreive4Tag("6920", MsgClusterData)[:2]
+        sMotionSensitivity = retreive4Tag("6a20", MsgClusterData)[:2]
+        sTriggerIndicator = retreive4Tag("6b20", MsgClusterData)[:2]
+
+        if sIllulminence != "":
+            store_lumi_attribute(self, MsgSrcAddr, "Illuminance", sIllulminence)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", sIllulminence)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sIllulminence %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sIllulminence, int(sIllulminence,16)), MsgSrcAddr, )
+
+        if sDetectionInterval != "":
+            store_lumi_attribute(self, MsgSrcAddr, "DetectionInterval", sDetectionInterval)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sDetectionInterval %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sDetectionInterval, int(sDetectionInterval,16)), MsgSrcAddr, )
+
+        if sMotionSensitivity != "":
+            store_lumi_attribute(self, MsgSrcAddr, "MotionSensitivity", sMotionSensitivity)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s MotionSensitivity %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sMotionSensitivity, int(sMotionSensitivity,16)), MsgSrcAddr, )
+
+        if sTriggerIndicator != "":
+            store_lumi_attribute(self, MsgSrcAddr, "TriggerIndicator", sTriggerIndicator)
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s TriggerIndicator %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sTriggerIndicator, int(sTriggerIndicator,16)), MsgSrcAddr, )
 
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac01":

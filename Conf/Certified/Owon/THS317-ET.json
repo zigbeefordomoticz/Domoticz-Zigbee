@@ -1,0 +1,29 @@
+{
+    "_blakadder": "https://zigbee.blakadder.com/OWON_THS317-ET.html",
+    "_source": "https://easydomoticz.com/forum/viewtopic.php?t=13036",
+    "_description": "Model THS317-ET manufactured by OWON ",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0001": "",
+            "0402": "",
+            "Type": "Temp/Voltage"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0001", "0402" ],
+    "ConfigureReporting": {
+        "0402": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "003C", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0032" } } }
+    },
+    "ReadAttributes": {
+        "0000": [ "0004", "0005", "0006", "0007" ],
+        "0001": [ "0020" ],
+        "0402": [ "0000" ]
+    },
+    "VoltageConverter": 10,
+    "BatteryDevice": 1,
+    "BatteryPercentageConverter": 2,
+    "Param": {
+        "disableTrackingEraticValue": 0
+    }
+}

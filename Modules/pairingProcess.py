@@ -19,7 +19,7 @@ from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
 from Modules.domoTools import CLUSTER_TO_TYPE
 from Modules.livolo import livolo_bind
-from Modules.lumi import (enable_click_mode_aqara, enable_operation_mode_aqara,
+from Modules.lumi import (enable_click_mode_aqara, enableOppleSwitch,
                           enableOppleSwitch)
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_TUYA,
@@ -655,6 +655,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "TS130F-_TZ3000_8kzqqzu4",
         "TS130F-_TZ3000_1dd0d5yi",
         "TS130F-_TZ3000_zirycpws",
+        "TS130F-_TZ3000_fvhunhxb",
         "TS0601-temphumi",
     ):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
@@ -673,7 +674,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
 
     elif self.ListOfDevices[NWKID]["Model"] == "lumi.remote.b28ac1":
         enable_click_mode_aqara( self, NWKID )
-        enable_operation_mode_aqara( self, NWKID )
+        enableOppleSwitch( self, NWKID )
         
 def scan_device_for_group_memebership(self, NWKID):
     for ep in self.ListOfDevices[NWKID]["Ep"]:

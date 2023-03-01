@@ -1,0 +1,42 @@
+{
+    "_comment": "Single Color 4 Groups ZigBee Key Remote Controller",
+    "_version": "0.1",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0005": "",
+            "Type": "ColorControlFull"
+        },
+        "02": {
+            "0000": "",
+            "0001": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0006": "",
+            "0008": "",
+            "0019": "",
+            "0300": "",
+            "0b05": "",
+            "Type": "ColorControlFull"
+        },
+        "03": {
+            "0000": "",
+            "Type": "ColorControlFull"
+        },
+        "04": {
+            "0000": "",
+            "Type": "ColorControlFull"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": ["0000", "0005"],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": ["0000", "0001", "0002", "0003", "0004", "0005", "0007", "000a", "4000"],
+        "0001": ["0020", "0021", "0033"],
+        "0006": [],
+        "0008": [],
+        "0300": []
+    }
+}
