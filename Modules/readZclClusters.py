@@ -132,7 +132,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
 
 
 def _read_zcl_cluster( self, cluster_filename ):
-    with open(cluster_filename, "rt") as handle:
+    with open(cluster_filename, "rt", encoding='utf-8') as handle:
         try:
             return json.load(handle)
         except ValueError as e:
