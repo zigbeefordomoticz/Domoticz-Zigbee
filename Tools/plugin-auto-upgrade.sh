@@ -49,9 +49,9 @@ echo " "
 echo "(3) update python3 modules if needed"
 echo ""
 if [ "$(whoami)" == "root" ] ; then
-    python3 -m pip --no-input install -r requirements.txt --ignore-requires-python
+    python3 -m pip --no-input install -r requirements.txt --ignore-requires-python --upgrade
 else
-    sudo python3 -m pip --no-input install -r requirements.txt --ignore-requires-python
+    sudo python3 -m pip --no-input install -r requirements.txt --ignore-requires-python --upgrade
 fi
 
 ret="$?"
