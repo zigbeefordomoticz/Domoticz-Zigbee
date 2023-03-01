@@ -175,6 +175,7 @@ def _get_model_name( self, nwkid):
         return self.ListOfDevices[ nwkid ]["Model"]
     return None
 
+
 def _cluster_manufacturer_function(self, ep, cluster, attribute, model):
 
     if is_cluster_specific_config(self, model, ep, cluster):
