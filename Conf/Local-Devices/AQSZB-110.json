@@ -1,0 +1,45 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1448",
+    "_blakadder": "https://zigbee.blakadder.com/Aqara_AAQS-S01.html",
+    "Identifier" : [ 
+        ["AQSZB-110", "Develco Products A/S"] 
+    ],
+    "Ep": {
+        "0000": "",
+        "0001": "",
+        "0003": "",
+        "000a": "",
+        "0019": "",
+        "0020": "",
+        "0402": "",
+        "0405": "",
+        "fc03": { "Attributes": {
+            "0000": {
+                "Name": "VOC",
+                "DataType": "21",
+                "UpdDomoDeviceWithCluster": "000c",
+                "ActionList": [ "check_store_value", "upd_domo_device" ]
+            }}},
+        "Type": "Temp/Humi/Voc"
+    },
+    "Type": "",
+    "ClusterToBind": [ "0001", "0402", "0405", "fc03" ],
+    "ConfigureReporting": {
+        "0001": { "Attributes": { "0020": { "DataType": "20", "MinInterval": "012C", "MaxInterval": "A8C0", "TimeOut": "0000", "Change": "01" }}},
+        "0402": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "000a", "MaxInterval": "012c", "TimeOut": "0000", "Change": "0001" }}},
+        "0405": { "Attributes": { "0000": { "DataType": "21", "MinInterval": "000a", "MaxInterval": "012c", "TimeOut": "0000", "Change": "0001" }}},
+        "fc03": { "Attributes": { "0000": { "ManufSpecific": "1015", "DataType": "21", "MinInterval": "000a", "MaxInterval": "012c", "TimeOut": "0000", "Change": "0001" }}}
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0004", "0005", "0006", "0007" ],
+        "0001": [ "0020" ],
+        "0402": [ "0000", "0001", "0002" ],
+        "0405": [ "0000", "0001", "0002", "0003" ],
+        "fc03": [ ],
+        "0019": []
+    },
+    "BatteryDevice": 1,
+    "VoltageConverter": 10,
+    "Param": {
+    }
+}
