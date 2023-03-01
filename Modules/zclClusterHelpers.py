@@ -288,7 +288,7 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
         conso = raw_value
     else:
         # We assumed default as kW
-        self.log.logging("Cluster", "Log", "compute_metering_conso - Unknown %s/%s assuming kW" %( 
+        self.log.logging("ZclClusters", "Log", "compute_metering_conso - Unknown %s/%s assuming kW" %( 
             NwkId, MsgSrcEp ), NwkId)
         conso = raw_value * 1000
         
@@ -353,7 +353,7 @@ def compute_electrical_measurement_conso(self, NwkId, MsgSrcEp, MsgClusterId, Ms
     divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], custom)
     if divisor is not None:
         divisor = int(divisor )
-        self.log.logging("Cluster", "Debug", "compute_electrical_measurement_conso - %s/%s Custom Divisor: %s , raw: %s result: %s" % (
+        self.log.logging("ZclClusters", "Debug", "compute_electrical_measurement_conso - %s/%s Custom Divisor: %s , raw: %s result: %s" % (
             NwkId, MsgSrcEp, divisor, raw_value, conso), NwkId)
         return round( (( conso ) / divisor ), 3)
         
@@ -366,7 +366,7 @@ def compute_electrical_measurement_conso(self, NwkId, MsgSrcEp, MsgClusterId, Ms
     divisor = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId][ divisor_attribute ] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and divisor_attribute in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
  
     conso = round( (( conso * multiplier ) / divisor ), 3)
-    self.log.logging("Cluster", "Debug", "compute_electrical_measurement_conso - %s/%s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
+    self.log.logging("ZclClusters", "Debug", "compute_electrical_measurement_conso - %s/%s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
         NwkId, MsgSrcEp, multiplier, divisor, raw_value, conso), NwkId)
 
     return conso
