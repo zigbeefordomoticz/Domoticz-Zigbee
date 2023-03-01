@@ -361,7 +361,13 @@ class IAS_Zone_Management:
         raw_APS_request(self, NwkId, ep, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
         return sqn
 
-
+    def ias_sensitivity(self, nwkid, sensitivity):
+        
+        if sensitivity not in ( 0, 1, 2):
+            return
+        write_attribute(self, nwkid, ZIGATE_EP, "01", "0500", "0000", "00", "0013", "20", "%02x" %sensitivity, ackIsDisabled=False)
+        
+        
 
 def ias_sirene_mode( self, NwkId , mode, warning_duration ):
     strobe_mode = warning_mode = strobe_level = 0x00

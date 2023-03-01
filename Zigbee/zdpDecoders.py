@@ -345,7 +345,7 @@ def buildframe_match_description_response(self, SrcNwkId, SrcEndPoint, ClusterId
     status = Payload[2:4]
     if status != "00":
         return frame
-    NWKAddrOfInterest = Payload[4:8]
+    NWKAddrOfInterest = "%04x" % struct.unpack("H", struct.pack(">H", int(Payload[4:8], 16)))[0]
     matchLenght = Payload[8:10]
     matchList = Payload[10:]
     buildPayload = sqn + status + NWKAddrOfInterest + matchLenght + matchList

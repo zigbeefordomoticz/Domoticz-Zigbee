@@ -1369,7 +1369,7 @@ def Decode8015(self, Devices, MsgData, MsgLQI):  # Get device list ( following r
     self.log.logging(
         "Input",
         "Status",
-        "Number of devices recently active in Zigate = %s" % (str(round(numberofdev / 26))),
+        "Number of devices recently active in Coordinator = %s" % (str(round(numberofdev / 26))),
     )
     for idx in range(0, len(MsgData), 26):
         saddr = MsgData[idx + 2 : idx + 6]

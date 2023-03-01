@@ -1,0 +1,30 @@
+{
+    "_source": "https://easydomoticz.com/forum/viewtopic.php?t=13058",
+    "_blakadder": "https://zigbee.blakadder.com/Schneider_Electric_550B1021.html",
+    "_description": "LK Wiser Water Leak Sensor",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0001": "",
+            "0003": "",
+            "0020": "",
+            "0500": "",
+            "0b05": "",
+            "0019": "",
+            "Type": "Water"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0001", "0500" ],
+    "ConfigureReporting": { },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "000a", "4000" ],
+        "0001": [ "0021", "0100", "0033", "0035" ],
+        "0003": [],
+        "0500": [ "0000", "0001", "0002", "0010", "0011" ],
+        "0b05": [ "011b", "011c", "011d" ], 
+        "0019": []
+    },
+    "BatteryPercentageConverter": 2,
+    "VoltageConverter": 10
+}

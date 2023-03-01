@@ -280,14 +280,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
 
-            dzenv = {}
-            # dzenv['proto'] = self.pluginconf.pluginConf['proto']
-            # dzenv['host'] = self.pluginconf.pluginConf['host']
-            # dzenv["port"] = self.pluginconf.pluginConf["port"]
-
-            dzenv["WebUserName"] = self.WebUsername
-            dzenv["WebPassword"] = self.WebPassword
-
+            dzenv = {"WebUserName": self.WebUsername, "WebPassword": self.WebPassword}
             _response["Data"] = json.dumps(dzenv, sort_keys=True)
         return _response
 
@@ -296,8 +289,7 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            #Domoticz.Log("pluginParameters: %s" %self.pluginParameters)
-            _response["Data"] = json.dumps(self.pluginParameters)
+            _response["Data"] = json.dumps(get_plugin_parameters(self))
         return _response
 
     def rest_nwk_stat(self, verb, data, parameters):
@@ -1100,7 +1092,7 @@ class WebServer(object):
                 _response["Data"] = json.dumps(zdev_lst, sort_keys=False)
             elif len(parameters) == 1:
                 device_infos = {
-                    "PluginInfos": self.pluginParameters,
+                    "PluginInfos": get_plugin_parameters(self, filter=True),
                     "Analytics": self.pluginconf.pluginConf["PluginAnalytics"]
                 }
                 if parameters[0] in self.ListOfDevices:
@@ -1516,3 +1508,16 @@ def decode_device_param(self, nwkid, param):
         self.logging( "Error", "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for >%s< - %s.\n Make sure to use JSON syntax" % (
             _device_name, nwkid, param, e), )
     return {}
+
+
+def get_plugin_parameters(self, filter=False):
+    plugin_parameters = dict(self.pluginParameters)
+    if filter:
+        if "Mode5" in plugin_parameters:
+            del plugin_parameters[ "Mode5" ]
+        if "Username" in plugin_parameters:
+            del plugin_parameters[ "Username" ]
+        if "Password" in plugin_parameters:
+            del plugin_parameters[ "Password" ]
+    return plugin_parameters
+

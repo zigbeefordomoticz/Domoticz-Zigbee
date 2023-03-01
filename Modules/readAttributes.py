@@ -1585,7 +1585,7 @@ def ReadAttributeRequest_fcc0(self, key):
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "fcc0"):
             if iterAttr not in listAttributes:
-                if iterAttr in ( 0x010c, 0x01,42, 0x0144, 0x0146 ):
+                if iterAttr in ( 0x0102, 0x010c, 0x0152, 0x0142, 0x0144, 0x0146, 0x040a, 0xfff1 ):
                     read_attribute( self, key,ZIGATE_EP, "01", "fcc0", "00", "01", "115f", 0x01, "%04x" %iterAttr, ackIsDisabled=is_ack_tobe_disabled(self, key), )
                 else:
                     listAttributes.append(iterAttr)

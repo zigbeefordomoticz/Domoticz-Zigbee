@@ -1,4 +1,6 @@
 {
+    "_comment": "Tuya Motion Sensor IH012-RT01",
+    "_blakadder": "https://zigbee.blakadder.com/Tuya_ZM-35ZH-Q.html",
     "Ep":{
         "01":{
             "0000":"",
@@ -13,11 +15,13 @@
     "ReadAttributes": {
         "0000": [ "0004", "0005"],
         "0001": [ "0020", "0021" ],
-        "0500": [ ]
+        "0500": [ "0000", "0001", "0002", "0010", "0011", "0013", "f001"]
     },
     "BatteryDevice": 1,
     "BatteryPercentageConverter": 2,
     "Param": {
-        "MotionViaIASAlarm1": 1
+        "MotionViaIASAlarm1": 1,
+        "TuyaPIRKeepTime": 1,
+        "IASsensitivity": 1
     }
 }
