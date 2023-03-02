@@ -55,6 +55,8 @@ def rest_reload_device_conf(self, verb, data, parameters):
 
 def _reload_device_conf(self):
     
+    self.DeviceConf = {}
+    self.ModelManufMapping = {}
     import_local_device_conf(self)
     z4d_certified_devices_pathname = os.path.dirname( z4d_certified_devices.__file__ ) + "/"
     z4d_certified_devices.z4d_import_device_configuration(self, z4d_certified_devices_pathname )
