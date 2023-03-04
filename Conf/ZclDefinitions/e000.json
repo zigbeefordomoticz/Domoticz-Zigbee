@@ -1,0 +1,10 @@
+{
+    "ClusterId": "e000",
+    "Description": "Tuya E000 Private Cluster",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "d001": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d001", "DataType": "48", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d002": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d002", "DataType": "48", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] }
+    }
+}

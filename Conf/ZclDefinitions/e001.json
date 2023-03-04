@@ -1,0 +1,17 @@
+{
+    "ClusterId": "e001",
+    "Description": "Tuya E001 Private Cluster",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "d000": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d000", "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d001": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d001", "DataType": "1b", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d002": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d002", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d003": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d003", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d004": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d004", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d005": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d005", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d010": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d010", "DataType": "30", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d011": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d011", "DataType": "30", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d030": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d030", "DataType": "30", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] }
+    }
+}
