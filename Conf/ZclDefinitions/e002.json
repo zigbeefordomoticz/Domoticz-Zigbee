@@ -1,0 +1,15 @@
+{
+    "ClusterId": "e002",
+    "Description": "Tuya E002 Private Cluster",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "d00a": { "Enabled": true, "ManufRawData": true, "Name": "TuyaAlarmTempMax", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d00b": { "Enabled": true, "ManufRawData": true, "Name": "TuyaAlarmTempMin", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d00c": { "Enabled": true, "ManufRawData": true, "Name": "TuyaAlarmHumiMax", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d00e": { "Enabled": true, "ManufRawData": true, "Name": "TuyaAlarmHumiMin", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d00f": { "Enabled": true, "ManufRawData": true, "Name": "AlarmHumidity", "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d006": { "Enabled": true, "ManufRawData": true, "Name": "AlarmTemperature", "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d010": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d010", "DataType": "20", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] }
+    }
+}

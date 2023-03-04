@@ -10,8 +10,8 @@
         "d003": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d003", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
         "d004": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d004", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
         "d005": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d005", "DataType": "23", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
-        "d010": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d010", "DataType": "30", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
-        "d011": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d011", "DataType": "30", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
-        "d030": { "Enabled": true, "ManufRawData": true, "Name": "Tuya d030", "DataType": "30", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] }
+        "d010": { "Enabled": true, "ManufRawData": true, "Name": "TuyaPowerOnBehaviour", "DataType": "30", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d011": { "Enabled": true, "ManufRawData": true, "Name": "TuyaMagic", "DataType": "30", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "d030": { "Enabled": true, "ManufRawData": true, "Name": "TuyaExternalSwitchType", "DataType": "30", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] }
     }
 }
