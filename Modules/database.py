@@ -487,7 +487,7 @@ def import_local_device_conf(self):
 
 
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
-    self.log.logging("Database", "Status", "ModelManufMapping loaded - %s" %self.ModelManufMapping.keys())
+    self.log.logging("Database", "Debug", "Local-Device ModelManufMapping loaded - %s" %self.ModelManufMapping.keys())
     self.log.logging("Database", "Status", "Local-Device conf loaded - %s confs loaded" %len(self.DeviceConf))
 
 
