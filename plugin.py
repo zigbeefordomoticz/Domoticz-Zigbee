@@ -141,6 +141,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
+from importlib.metadata import version as import_version
 
 #from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
 #from Classes.ZigpyTransport.Transport import ZigpyTransport
@@ -593,9 +594,8 @@ class BasePlugin:
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
             self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-            # Hacking zigpy_znp version as the package doesn't provide the information anymore
-            #self.pythonModuleVersion["zigpy_znp"] = (zigpy_znp.__version__)
-            self.pythonModuleVersion["zigpy_znp"] = '0.9.3'
+            # https://github.com/zigpy/zigpy-znp/issues/205
+            self.pythonModuleVersion["zigpy_znp"] = import_version( 'zigpy-znp' )
             
             check_python_modules_version( self )
             self.zigbee_communication = "zigpy"
