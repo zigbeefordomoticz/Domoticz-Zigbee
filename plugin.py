@@ -274,7 +274,7 @@ class BasePlugin:
         
         # Zigpy
         self.zigbee_communication = None  # "zigpy" or "native"
-        self.pythonModuleVersion = {}
+        #self.pythonModuleVersion = {}
 
     def onStart(self):
         
@@ -576,8 +576,8 @@ class BasePlugin:
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
-            self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-            self.pythonModuleVersion["zigpy_zigate"] = (zigpy_zigate.__version__)
+            #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+            #self.pythonModuleVersion["zigpy_zigate"] = (zigpy_zigate.__version__)
             check_python_modules_version( self )
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
@@ -593,9 +593,9 @@ class BasePlugin:
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
-            self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+            #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
             # https://github.com/zigpy/zigpy-znp/issues/205
-            self.pythonModuleVersion["zigpy_znp"] = import_version( 'zigpy-znp' )
+            #self.pythonModuleVersion["zigpy_znp"] = import_version( 'zigpy-znp' )
             
             check_python_modules_version( self )
             self.zigbee_communication = "zigpy"
@@ -613,8 +613,8 @@ class BasePlugin:
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
-            self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-            self.pythonModuleVersion["zigpy_deconz"] = (zigpy_deconz.__version__)
+            #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+            #self.pythonModuleVersion["zigpy_deconz"] = (zigpy_deconz.__version__)
             check_python_modules_version( self )
             self.pluginParameters["Zigpy"] = True
             self.log.logging("Plugin", "Status","Start Zigpy Transport on deCONZ")            
@@ -629,8 +629,8 @@ class BasePlugin:
             from Classes.ZigpyTransport.Transport import ZigpyTransport
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
-            self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-            self.pythonModuleVersion["zigpy_ezsp"] = (bellows.__version__)
+            #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+            #self.pythonModuleVersion["zigpy_ezsp"] = (bellows.__version__)
             check_python_modules_version( self )
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
@@ -1499,22 +1499,15 @@ def check_python_modules_version( self ):
         "zigpy": "0.53.2",
         "zigpy_znp": "0.9.3",
         "zigpy_deconz": "0.19.2",
-        "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.34.9",
+        "bellows": "0.34.9",
         }
 
     flag = True
 
-    for x in self.pythonModuleVersion:
-        if x not in MODULES_VERSION:
-            self.log.logging("Plugin", "Error", "A python module has been loaded and is unknown : %s" %x)
-            flag = False
-            continue
-        
-        self.log.logging("Plugin", "Debug", "Python module %s loaded with version %s - %s" %( x, self.pythonModuleVersion[ x ], MODULES_VERSION[ x]))   
-        if self.pythonModuleVersion[ x ] != MODULES_VERSION[ x]:
+    for x in MODULES_VERSION:
+        if import_version( x ) != MODULES_VERSION[ x]:
             self.log.logging("Plugin", "Error", "The python module %s version %s loaded is not compatible as we are expecting this level %s" %(
-                x, self.pythonModuleVersion[ x ], MODULES_VERSION[ x] ))
+                x, import_version( x ), MODULES_VERSION[ x] ))
             flag = False
             
     return flag
