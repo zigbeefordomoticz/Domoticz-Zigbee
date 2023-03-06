@@ -93,6 +93,7 @@ import json
 import os
 import threading
 import time
+from importlib.metadata import version as import_version
 
 import z4d_certified_devices
 
@@ -141,12 +142,6 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
-from importlib.metadata import version as import_version
-
-#from zigpy_zigate.config import CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE
-#from Classes.ZigpyTransport.Transport import ZigpyTransport
-#import asyncio
-
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -159,8 +154,6 @@ STARTUP_TIMEOUT_DELAY_FOR_WARNING = 60
 STARTUP_TIMEOUT_DELAY_FOR_STOP = 120
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 110
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 160
-
-REQUIRES = ["aiohttp", "aiosqlite>=0.16.0", "crccheck", "pycryptodome", "voluptuous"]
 
 class BasePlugin:
     enabled = False
@@ -568,31 +561,13 @@ class BasePlugin:
             self.FirmwareVersion = "031c"
             self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
 
-        elif self.transport == "ZigpyZiGate":
-            # Zigpy related modules
-            import zigpy
-
-            import zigpy_zigate
-            from Classes.ZigpyTransport.Transport import ZigpyTransport
-            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
-                                             CONFIG_SCHEMA, SCHEMA_DEVICE)
-            #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-            #self.pythonModuleVersion["zigpy_zigate"] = (zigpy_zigate.__version__)
-            check_python_modules_version( self )
-            self.zigbee_communication = "zigpy"
-            self.pluginParameters["Zigpy"] = True
-            self.log.logging("Plugin", "Status", "Start Zigpy Transport on zigate")
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf, self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "zigate", Parameters["SerialPort"]) 
-            self.ControllerLink.open_cie_connection()
-            self.pluginconf.pluginConf["ControllerInRawMode"] = True
-            
         elif self.transport == "ZigpyZNP":
             import zigpy
             import zigpy_znp
+            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
 
             from Classes.ZigpyTransport.Transport import ZigpyTransport
-            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
-                                             CONFIG_SCHEMA, SCHEMA_DEVICE)
+
             #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
             # https://github.com/zigpy/zigpy-znp/issues/205
             #self.pythonModuleVersion["zigpy_znp"] = import_version( 'zigpy-znp' )
@@ -609,10 +584,10 @@ class BasePlugin:
         elif self.transport == "ZigpydeCONZ":
             import zigpy
             import zigpy_deconz
+            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
 
             from Classes.ZigpyTransport.Transport import ZigpyTransport
-            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
-                                             CONFIG_SCHEMA, SCHEMA_DEVICE)
+
             #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
             #self.pythonModuleVersion["zigpy_deconz"] = (zigpy_deconz.__version__)
             check_python_modules_version( self )
@@ -625,10 +600,10 @@ class BasePlugin:
         elif self.transport == "ZigpyEZSP":
             import bellows
             import zigpy
+            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
 
             from Classes.ZigpyTransport.Transport import ZigpyTransport
-            from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
-                                             CONFIG_SCHEMA, SCHEMA_DEVICE)
+
             #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
             #self.pythonModuleVersion["zigpy_ezsp"] = (bellows.__version__)
             check_python_modules_version( self )

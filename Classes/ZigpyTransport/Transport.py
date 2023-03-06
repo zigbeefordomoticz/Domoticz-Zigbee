@@ -11,6 +11,7 @@ from threading import Thread
 
 import zigpy.application
 import zigpy.types as t
+
 from Classes.ZigateTransport.sqnMgmt import sqn_init_stack
 from Classes.ZigpyTransport.forwarderThread import (forwarder_thread,
                                                     start_forwarder_thread,
