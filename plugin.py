@@ -593,7 +593,10 @@ class BasePlugin:
             from zigpy_zigate.config import (CONF_DEVICE, CONF_DEVICE_PATH,
                                              CONFIG_SCHEMA, SCHEMA_DEVICE)
             self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-            self.pythonModuleVersion["zigpy_znp"] = (zigpy_znp.__version__)
+            # Hacking zigpy_znp version as the package doesn't provide the information anymore
+            #self.pythonModuleVersion["zigpy_znp"] = (zigpy_znp.__version__)
+            self.pythonModuleVersion["zigpy_znp"] = '0.9.3'
+            
             check_python_modules_version( self )
             self.zigbee_communication = "zigpy"
             self.pluginParameters["Zigpy"] = True
@@ -1493,11 +1496,11 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.53.1",
-        "zigpy_znp": "0.9.2",
+        "zigpy": "0.53.2",
+        "zigpy_znp": "0.9.3",
         "zigpy_deconz": "0.19.2",
         "zigpy_zigate": "0.8.1.zigbeefordomoticz",
-        "zigpy_ezsp": "0.34.8",
+        "zigpy_ezsp": "0.34.9",
         }
 
     flag = True
