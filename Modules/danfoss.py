@@ -76,8 +76,6 @@ def danfoss_write_external_sensor_temp(self, NwkId, temp):
 
     # 0110 02 955e 01 01 0201 00 01 1246 01 4015 29 02bc
 
-    # Convert value to a 0.5 multiple
-
     temp = 50 * (temp // 50)
 
     manuf_id = "1246"
@@ -93,7 +91,7 @@ def danfoss_write_external_sensor_temp(self, NwkId, temp):
     data_type = "29"  # Int16
     self.log.logging("Danfoss", "Debug", "danfoss_write_external_sensor_temp: %s" % temp, nwkid=NwkId)
 
-    Hdata = "%04x" % temp
+    Hdata = "%04x" % int(temp)
 
     self.log.logging(
         "Danfoss",
