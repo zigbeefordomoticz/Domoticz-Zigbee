@@ -136,12 +136,7 @@ def danfoss_room_sensor_polling(self, NwkId):
     # This is expected for a eTRV which belongs to a Room for which an external Temp sensor exist
     # External Temp Sensor will only have the "DanfossRoom" parameter
 
-    self.log.logging(
-        "Danfoss",
-        "Debug",
-        "danfoss_room_sensor_polling - Triggered for Nwkid: %s" % (NwkId,),
-        nwkid=NwkId,
-    )
+    self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling - Triggered for Nwkid: %s" % (NwkId,), nwkid=NwkId, )
 
     if "Param" not in self.ListOfDevices[NwkId]:
         return
@@ -149,12 +144,7 @@ def danfoss_room_sensor_polling(self, NwkId):
         return
     room = self.ListOfDevices[NwkId]["Param"]["DanfossRoom"]
 
-    self.log.logging(
-        "Danfoss",
-        "Debug",
-        "danfoss_room_sensor_polling - Triggered for Nwkid: %s - room: %s" % (NwkId, room),
-        nwkid=NwkId,
-    )
+    self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling - Triggered for Nwkid: %s - room: %s" % (NwkId, room), nwkid=NwkId, )
 
     # Search for Temp Sensor for that Room
     for x in self.ListOfDevices:
@@ -167,7 +157,7 @@ def danfoss_room_sensor_polling(self, NwkId):
         if self.ListOfDevices[x]["Param"]["DanfossRoom"] != room:
             continue
 
-        ep_list = ListOfEp = getListOfEpForCluster(self, x, "0402")
+        ep_list = getListOfEpForCluster(self, x, "0402")
         if ep_list == []:
             continue
 
@@ -179,6 +169,9 @@ def danfoss_room_sensor_polling(self, NwkId):
         # At that stage we have found a Device which is in the same room and as the 0402 Cluster
         # Temp value is store in 0x0402/0x0000 is degrees
         temp_room = self.ListOfDevices[x]["Ep"][ep]["0402"]["0000"]
+        self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling - Found temp: %s from Nwkid: %s in Ep: %s against room %s" % (
+            temp_room, NwkId, ep, room), nwkid=NwkId, )
+        
         danfoss_write_external_sensor_temp(self, NwkId, temp_room)
 
 
