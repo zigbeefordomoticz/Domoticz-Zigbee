@@ -1,3 +1,0 @@
-[submodule "external/zigpy-zigate"]
-	path = external/zigpy-zigate
-	url = https://github.com/zigbeefordomoticz/zigpy-zigate
