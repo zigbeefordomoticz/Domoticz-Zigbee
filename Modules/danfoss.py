@@ -20,7 +20,7 @@ def danfoss_exercise_day_of_week(self, NwkId, week_num):
     manuf_spec = "01"
     cluster_id = "%04x" % 0x0201
 
-    EPout = ListOfEp = getListOfEpForCluster(self, NwkId, "0201")
+    EPout = getListOfEpForCluster(self, NwkId, "0201")
 
     Hattribute = "%04x" % 0x4010
     data_type = "30"  # enum8
@@ -72,33 +72,34 @@ def danfoss_exercise_trigger_time(self, NwkId, min_from_midnight):
     read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
 
 
-def danfoss_write_external_sensor_temp(self, NwkId, temp):
+def danfoss_write_external_sensor_temp(self, NwkId, external_temperature):
 
     # 0110 02 955e 01 01 0201 00 01 1246 01 4015 29 02bc
+    self.log.logging("Danfoss", "Debug", "danfoss_write_external_sensor_temp: %s %s" % (
+        NwkId, external_temperature), nwkid=NwkId)
 
-    temp = 50 * (temp // 50)
+    external_temperature = int( (50 * external_temperature) // 50)
 
     manuf_id = "1246"
     manuf_spec = "01"
     cluster_id = "%04x" % 0x0201
 
-    EPout = "01"
-    for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
-        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
-            EPout = tmpEp
-
+    EPout = next(
+        (
+            tmpEp
+            for tmpEp in self.ListOfDevices[NwkId]["Ep"]
+            if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]
+        ),
+        "01",
+    )
     Hattribute = "%04x" % 0x4015
     data_type = "29"  # Int16
-    self.log.logging("Danfoss", "Debug", "danfoss_write_external_sensor_temp: %s" % temp, nwkid=NwkId)
+    self.log.logging("Danfoss", "Debug", "danfoss_write_external_sensor_temp converted temp %s" % external_temperature, nwkid=NwkId)
 
-    Hdata = "%04x" % int(temp)
+    Hdata = "%04x" % external_temperature
 
-    self.log.logging(
-        "Danfoss",
-        "Debug",
-        "danfoss_write_external_sensor_temp - Trigger time for %s with value %s / cluster: %s, attribute: %s type: %s" % (NwkId, Hdata, cluster_id, Hattribute, data_type),
-        nwkid=NwkId,
-    )
+    self.log.logging( "Danfoss", "Debug", "danfoss_write_external_sensor_temp - Trigger time for %s with value %s / cluster: %s, attribute: %s type: %s" % (
+        NwkId, Hdata, cluster_id, Hattribute, data_type), nwkid=NwkId, )
 
     write_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=False)
     read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
@@ -117,12 +118,7 @@ def danfoss_external_sensor(self, NwkId, room, temp):
             continue
         if self.ListOfDevices[x]["Param"]["DanfossRoom"] != room:
             continue
-        self.log.logging(
-            "Danfoss",
-            "Debug",
-            "danfoss_external_sensor - Found device %s part of the same room %s" % (NwkId, room),
-            nwkid=NwkId,
-        )
+        self.log.logging( "Danfoss", "Debug", "danfoss_external_sensor - Found device %s part of the same room %s" % (NwkId, room), nwkid=NwkId, )
         if "01" not in self.ListOfDevices[x]["Ep"]:
             continue
         if "0201" not in self.ListOfDevices[x]["Ep"]["01"]:
@@ -158,6 +154,7 @@ def danfoss_room_sensor_polling(self, NwkId):
             continue
 
         ep_list = getListOfEpForCluster(self, x, "0402")
+        self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling possible Ep: %s" %str(ep_list), nwkid=NwkId, )
         if ep_list == []:
             continue
 
