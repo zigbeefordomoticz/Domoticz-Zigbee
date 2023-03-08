@@ -2018,6 +2018,7 @@ def iTRV_local_temperature(self, NwkId):
 
     if room_temperature is None:
         return 0x8000
+    
     return room_temperature
 
 def get_wiserroom(self, NwkId):
@@ -2060,6 +2061,8 @@ def get_local_temperature_from_wiserroom( self, NwkId, room=None):
                 continue
             self.log.logging("Schneider", "Debug", f'get_local_temperature_from_wiserroom for: {NwkId} and room: {room} confirmed candidat: {x} with temp: {self.ListOfDevices[x]["Ep"][y]["0402"]["0000"]}')
 
-            return self.ListOfDevices[x]["Ep"][y]["0402"]["0000"]
+            local_temp = self.ListOfDevices[x]["Ep"][y]["0402"]["0000"]
+            if isinstance(local_temp, 'int', 'float' ):
+                return int(local_temp * 100 )
 
     return None
