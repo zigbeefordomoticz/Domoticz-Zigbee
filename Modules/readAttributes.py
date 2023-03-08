@@ -204,12 +204,8 @@ def skipThisAttribute(self, addr, EpOut, Cluster, Attr):
 def retreive_attributes_from_zcl_standard( self, cluster):
     
     if cluster in self.readZclClusters and "Attributes" in self.readZclClusters[ cluster ]:
-        return list( self.readZclClusters[ cluster ]["Attributes"].keys() )
-
-    if cluster in ATTRIBUTES:
-        return ATTRIBUTES[ cluster ]
-    
-    return None
+        return [ int(str_att, 16) for str_att in list( self.readZclClusters[cluster]["Attributes"].keys()) ]
+    return ATTRIBUTES[ cluster ] if cluster in ATTRIBUTES else None
 
 
 def retreive_ListOfAttributesByCluster(self, key, Ep, cluster):
