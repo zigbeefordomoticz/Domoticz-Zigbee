@@ -16,6 +16,18 @@
                 "check_store_value"
             ]
         },
+        "0112": {
+            "Enabled": true,
+            "ManufRawData": true,
+            "Name": "Lumi 0112",
+            "DataType": "23",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+ 
+        },
         "0142": {
             "Enabled": true,
             "Name": "Presence",
