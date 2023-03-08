@@ -56,7 +56,7 @@ fi
 
 ret="$?"
 if [ "$ret" != "0" ] ; then
-    echo "ERROR while running command 'sudo python3 -m pip --ignore-requires-python --no-input install -r requirements.txt --upgrade'."
+    echo "ERROR while running command 'sudo python3 -m pip --no-input install -r requirements.txt --ignore-requires-python --upgrade'."
     echo "Is sudo available for this user without password ?"
     exit -2
 fi
