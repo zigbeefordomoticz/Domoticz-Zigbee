@@ -154,10 +154,10 @@ def danfoss_room_sensor_polling(self, NwkId):
             continue
         if "DanfossRoom" not in self.ListOfDevices[x]["Param"]:
             continue
-        if "DanfossFreq" in self.ListOfDevices[x]["Param"]:
-            self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling rejecting thermostat for ext temp")
-            continue
         if self.ListOfDevices[x]["Param"]["DanfossRoom"] != room:
+            continue
+        if "DanfossRoomFreq" in self.ListOfDevices[x]["Param"]:
+            self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling rejecting thermostat for ext temp")
             continue
 
         ep_list = getListOfEpForCluster(self, x, "0402")
