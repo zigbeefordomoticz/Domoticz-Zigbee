@@ -78,6 +78,10 @@ def danfoss_write_external_sensor_temp(self, NwkId, external_temperature):
     self.log.logging("Danfoss", "Debug", "danfoss_write_external_sensor_temp: %s %s" % (
         NwkId, external_temperature), nwkid=NwkId)
 
+    if isinstance(external_temperature, float):
+        self.log.logging("Danfoss", "Debug", "danfoss_write_external_sensor_temp float to int")
+        external_temperature = int (external_temperature*100)
+
     external_temperature = int( (50 * external_temperature) // 50)
 
     manuf_id = "1246"
@@ -149,6 +153,9 @@ def danfoss_room_sensor_polling(self, NwkId):
         if "Param" not in self.ListOfDevices[x]:
             continue
         if "DanfossRoom" not in self.ListOfDevices[x]["Param"]:
+            continue
+        if "DanfossFreq" in self.ListOfDevices[x]["Param"]:
+            self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling rejecting thermostat for ext temp")
             continue
         if self.ListOfDevices[x]["Param"]["DanfossRoom"] != room:
             continue
