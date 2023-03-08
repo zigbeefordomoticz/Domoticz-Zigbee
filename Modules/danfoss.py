@@ -75,11 +75,20 @@ def danfoss_exercise_trigger_time(self, NwkId, min_from_midnight):
 def danfoss_write_external_sensor_temp(self, NwkId, external_temperature):
 
     # 0110 02 955e 01 01 0201 00 01 1246 01 4015 29 02bc
+    # external temperature is provided in Celsius degree as a float
+    # We are rounding to the 1/2 degree and we have to provide the value to the device in centi-degree
+    
     self.log.logging("Danfoss", "Debug", "danfoss_write_external_sensor_temp: %s %s" % (
         NwkId, external_temperature), nwkid=NwkId)
+    
+    external_temperature = int( round( external_temperature * 2 ) * 50 )
 
-    external_temperature = int( (50 * external_temperature) // 50)
+    if 700 < external_temperature > 3000 and external_temperature < 700:
+        self.log.logging("Danfoss", "Error", "danfoss_write_external_sensor_temp: out of range external sensor temp %s %s" % (
+            NwkId, external_temperature / 100), nwkid=NwkId)
 
+        return
+        
     manuf_id = "1246"
     manuf_spec = "01"
     cluster_id = "%04x" % 0x0201
