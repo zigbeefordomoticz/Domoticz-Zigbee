@@ -883,6 +883,7 @@ def tuya_smartair_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         temp = int(data, 16) / 10
         store_tuya_attribute(self, NwkId, "Temp", temp)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0402", temp)
+        checkAndStoreAttributeValue(self, NwkId, srcEp, "0402", "0000", temp)
 
     elif dp == 0x13:  # Humidity %
         humi = int(data, 16) // 10
@@ -1041,6 +1042,7 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
     if dp == 0x6b:  # Temperature
         self.log.logging("Tuya", "Debug", "tuya_smart_motion_all_in_one - Temperature %s" % int(data, 16), NwkId)
         MajDomoDevice(self, Devices, NwkId, "02", "0402", (int(data, 16) / 10))
+        checkAndStoreAttributeValue(self, NwkId, srcEp, "0402", "0000", (int(data, 16) / 10))
         store_tuya_attribute(self, NwkId, "Temperature", data)
         
     elif dp == 0x6c:  # Humidity
@@ -1255,7 +1257,7 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
     if dp == 0x01:  # Temperature, 
         store_tuya_attribute(self, NwkId, "Temp", data)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0402", (int(data, 16) / 10))
-        checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", int(data, 16))
+        checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", (int(data, 16) / 10))
        
     elif dp == 0x02:   # Humi
         humi = int(data, 16)

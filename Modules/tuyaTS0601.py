@@ -113,6 +113,7 @@ def ts0601_illuminance(self, Devices, nwkid, ep, value):
 def ts0601_temperature(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya", "Debug", "ts0601_temperature - Temperature %s %s %s " % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Temp", value)
+    checkAndStoreAttributeValue(self, nwkid, "01", "0402", "0000", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0402", value)
     
     

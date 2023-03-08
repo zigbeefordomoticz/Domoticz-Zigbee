@@ -84,7 +84,7 @@ def receive_temperature(self, Devices, model_target, NwkId, srcEp, ClusterID, ds
         "Tuya", "Debug", "receive_temperature - Nwkid: %s/%s Temperature: %s" % (NwkId, srcEp, int(data, 16))
     )
     MajDomoDevice(self, Devices, NwkId, srcEp, "0402", (int(data, 16) / 10))
-    checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", int(data, 16))
+    checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", (int(data, 16) / 10))
     store_tuya_attribute(self, NwkId, "Temperature", data)
 
 def receive_onoff(self, Devices, model_target, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
