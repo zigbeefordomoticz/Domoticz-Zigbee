@@ -32,7 +32,7 @@
             "Enabled": true,
             "Name": "MainsAlarmMask" ,
             "DataType": "18",
-            "Range": [ "0000", "00xx" ],
+            "Range": [ "0000", "00ff" ],
             "Acc": "RW",
             "Default": "0",
             "Mandatory": false,
