@@ -707,20 +707,24 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         if sIllulminence != "":
             store_lumi_attribute(self, MsgSrcAddr, "Illuminance", sIllulminence)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", sIllulminence)
-            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sIllulminence %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sIllulminence, int(sIllulminence,16)), MsgSrcAddr, )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str( int(sIllulminence,16) ) )
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sIllulminence %s/%s" % (
+                MsgClusterId, MsgAttrID, MsgSrcAddr, sIllulminence, int(sIllulminence,16)), MsgSrcAddr, )
 
         if sDetectionInterval != "":
             store_lumi_attribute(self, MsgSrcAddr, "DetectionInterval", sDetectionInterval)
-            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sDetectionInterval %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sDetectionInterval, int(sDetectionInterval,16)), MsgSrcAddr, )
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sDetectionInterval %s/%s" % (
+                MsgClusterId, MsgAttrID, MsgSrcAddr, sDetectionInterval, int(sDetectionInterval,16)), MsgSrcAddr, )
 
         if sMotionSensitivity != "":
             store_lumi_attribute(self, MsgSrcAddr, "MotionSensitivity", sMotionSensitivity)
-            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s MotionSensitivity %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sMotionSensitivity, int(sMotionSensitivity,16)), MsgSrcAddr, )
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s MotionSensitivity %s/%s" % (
+                MsgClusterId, MsgAttrID, MsgSrcAddr, sMotionSensitivity, int(sMotionSensitivity,16)), MsgSrcAddr, )
 
         if sTriggerIndicator != "":
             store_lumi_attribute(self, MsgSrcAddr, "TriggerIndicator", sTriggerIndicator)
-            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s TriggerIndicator %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sTriggerIndicator, int(sTriggerIndicator,16)), MsgSrcAddr, )
+            self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s TriggerIndicator %s/%s" % (
+                MsgClusterId, MsgAttrID, MsgSrcAddr, sTriggerIndicator, int(sTriggerIndicator,16)), MsgSrcAddr, )
 
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac01":
@@ -892,7 +896,7 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             ValueTemp = round(Temp / 100, 1)
             self.log.logging( "Lumi", "Debug", "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp), MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
-            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", Temp)
+            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", ValueTemp)
 
     if sHumid != "":
         ValueHumid = struct.unpack("H", struct.pack(">H", int(sHumid, 16)))[0]
