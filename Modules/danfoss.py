@@ -151,6 +151,7 @@ def danfoss_room_sensor_polling(self, NwkId):
 
     self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling - Triggered for Nwkid: %s - room: %s" % (NwkId, room), nwkid=NwkId, )
 
+    external_sensor_temperature = 0
     # Search for Temp Sensor for that Room
     for x in self.ListOfDevices:
         if x == NwkId:
@@ -174,11 +175,17 @@ def danfoss_room_sensor_polling(self, NwkId):
 
         # At that stage we have found a Device which is in the same room and as the 0402 Cluster
         # Temp value is store in 0x0402/0x0000 is degrees
-        temp_room = self.ListOfDevices[x]["Ep"][ep]["0402"]["0000"]
-        self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling - Found temp: %s from Nwkid: %s in Ep: %s against room %s" % (
-            temp_room, NwkId, ep, room), nwkid=NwkId, )
-        
-        danfoss_write_external_sensor_temp(self, NwkId, temp_room)
+        temp_sensor = self.ListOfDevices[x]["Ep"][ep]["0402"]["0000"]
+        if external_sensor_temperature == 0:
+            external_sensor_temperature = temp_sensor
+        else:
+            external_sensor_temperature = ( external_sensor_temperature + temp_sensor ) / 2
+        self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling - Found temp: %s from Nwkid: %s in Ep: %s against room %s averagge: %s" % (
+            temp_sensor, NwkId, ep, room, external_sensor_temperature), nwkid=NwkId, )
+
+    self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling - Room temperature average : %s" % external_sensor_temperature)
+    if external_sensor_temperature != 0:
+        danfoss_write_external_sensor_temp(self, NwkId, external_sensor_temperature)
 
 
 def thermostat_Setpoint_Danfoss(self, NwkId, setpoint):
