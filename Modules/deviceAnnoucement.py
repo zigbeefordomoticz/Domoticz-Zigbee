@@ -376,8 +376,9 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
         self.ListOfDevices[NwkId]["DeviceType"] = "RFD"
 
     self.log.logging("DeviceAnnoucement", "Log", "--> Adding device %s in self.DevicesInPairingMode" % NwkId)
-    self.webserver.add_element_to_devices_in_pairing_mode( NwkId)
-    self.log.logging("DeviceAnnoucement", "Log", "--> %s" % str(self.webserver.DevicesInPairingMode))
+    if self.webserver:
+        self.webserver.add_element_to_devices_in_pairing_mode( NwkId)
+        self.log.logging("DeviceAnnoucement", "Log", "--> %s" % str(self.webserver.DevicesInPairingMode))
 
     self.log.logging( "DeviceAnnoucement", "Debug", "Decode004D - %s Infos: %s" % (
         NwkId, self.ListOfDevices[NwkId]), NwkId, )
