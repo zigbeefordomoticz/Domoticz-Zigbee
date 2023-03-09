@@ -9,7 +9,7 @@
             "ManufRawData": true,
             "ManufSpecificFunc": "Lumi_fcc0",
             "Name": "Lumi 00f7",
-            "DataType": "21",
+            "DataType": "41",
             "Acc": "R",
             "Mandatory": false,
             "ActionList": [
@@ -31,7 +31,7 @@
         "0142": {
             "Enabled": true,
             "Name": "Presence",
-            "DataType": "21",
+            "DataType": "20",
             "Acc": "R",
             "Mandatory": false,
             "SpecifStoragelvl1": "LUMI",
@@ -44,7 +44,7 @@
         "0143": {
             "Enabled": true,
             "Name": "PresenceEvent",
-            "DataType": "21",
+            "DataType": "20",
             "Acc": "R",
             "Mandatory": false,
             "SpecifStoragelvl1": "LUMI",
