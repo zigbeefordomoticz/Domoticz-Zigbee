@@ -17,6 +17,7 @@ from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   set_poweron_afteroffon)
 from Modules.danfoss import (danfoss_exercise_day_of_week,
                              danfoss_exercise_trigger_time,
+                             danfoss_covered,
                              danfoss_orientation, danfoss_viewdirection)
 from Modules.enki import enki_set_poweron_after_offon_device
 from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
@@ -261,6 +262,7 @@ DEVICE_PARAMETERS = {
     "TuyaCalibrationTime": tuya_window_cover_calibration,
     "eTRVExerciseDay": danfoss_exercise_day_of_week,
     "eTRVExerciseTime": danfoss_exercise_trigger_time,
+    "DanfossCovered": danfoss_covered,
     "DanfossTRVOrientation": danfoss_orientation,
     "DanfossViewDirection": danfoss_viewdirection,
     "TS004FMode": tuya_cmd_ts004F,
