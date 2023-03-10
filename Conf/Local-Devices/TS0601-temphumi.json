@@ -1,0 +1,37 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1561",
+    "_comment": "Tuya Temp/Humi sensor with LCD",
+    "_blakadder": "https://zigbee.blakadder.com/Tuya_ZG227C.html",
+    "Identifier": [
+        [ "TS0601", "_TZE200_qoy0ekbd"],
+        [ "TS0601", "_TZE200_znbl8dj5"],
+        [ "TS0601", "_TZE200_a8sdabtg"],
+        [ "TS0601", "_TZE200_qyflbnbj"],
+        [ "TS0601", "_TZE200_bjawzodf"],
+        [ "TS0601", "_TZE200_bq5c8xfe"],
+        [ "TS0601", "_TZE200_whkgqxse"],
+        [ "TS0601", "_TZE200_zl1kmjqx"]
+    ],
+
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "0019": "",
+            "Type": "Temp/Humi"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000"],
+    "ConfigureReporting": {
+    },
+    "ReadAttributes": {
+        "0000": [ "0004", "0005", "0000", "0001", "0007", "ffe2", "ffe4", "ffdf", "fffe" ],
+        "0019": [],
+        "ef00": []
+    },
+    "Param": {
+    },
+    "BatteryDevice": 1
+}
