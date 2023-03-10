@@ -72,6 +72,10 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         Update_Battery_Device(self, Devices, MsgSrcAddr, value)
         self.log.logging("Cluster", "Debug", f'readCluster 0001 - Device: {MsgSrcAddr} Model: {self.ListOfDevices[MsgSrcAddr]["Model"]} Updating battery to {value}', MsgSrcAddr)
 
+    if "IASBattery" in self.ListOfDevices[MsgSrcAddr]:
+        # Remove it as we rely on the Power Cluster instead
+        del self.ListOfDevices[MsgSrcAddr]["IASBattery"]
+
 
 def hack_battery(self, Nwkid):
 
