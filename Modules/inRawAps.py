@@ -17,7 +17,7 @@ from Modules.pollControl import receive_poll_cluster
 from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.tuya import tuyaReadRawAPS
 from Modules.heiman import heimanReadRawAPS
-from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
+from Modules.tuyaTools import tuya_manufacturer_device
 
 # Requires Zigate firmware > 3.1d
 CALLBACK_TABLE = {
@@ -29,7 +29,6 @@ CALLBACK_TABLE = {
     "115f": lumiReadRawAPS,
     "100b": philipsReadRawAPS,
     "1002": tuyaReadRawAPS,
-    "1141": tuyaReadRawAPS,
     CASAIA_MANUF_CODE: casaiaReadRawAPS,
 }
 
@@ -203,18 +202,15 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
         srcnwkid, srcep, cluster, ManufacturerCode, manuf, manuf_name, Command, Data), srcnwkid, )
 
     func = None
-    if model_name in self.DeviceConf and "TS0601_DP" in self.DeviceConf[ model_name ]:
-        func = tuyaReadRawAPS
-  
-    elif manuf in CALLBACK_TABLE:
+    if manuf in CALLBACK_TABLE:
         func = CALLBACK_TABLE[manuf]
 
     elif manuf_name in CALLBACK_TABLE2:
         func = CALLBACK_TABLE2[manuf_name]
 
-    elif manuf_name in TUYA_MANUFACTURER_NAME:
+    elif tuya_manufacturer_device(self, srcnwkid):
         func = tuyaReadRawAPS
-        
+
     else:
         self.log.logging( "inRawAPS", "Log", "inRawAps %s/%s Cluster %s Manuf: %s/%s Command: %s Data: %s Payload: %s not processed !!!" % (
             srcnwkid, srcep, cluster, manuf, manuf_name, Command, Data, payload), )

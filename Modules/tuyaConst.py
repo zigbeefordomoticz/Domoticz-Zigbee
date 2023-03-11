@@ -41,7 +41,7 @@ TUYA_MOTION = (
 )
 
 TUYA_TEMP_HUMI = ( 
-    "_TZE200_qyflbnbj"
+    "_TZE200_qyflbnbj",
     "_TZE200_bjawzodf", 
     "_TZE200_bq5c8xfe", 
     "_TZE200_qoy0ekbd" ,
@@ -66,7 +66,7 @@ TUYA_2GANGS_DIMMER_MANUFACTURER = (
 )
 TUYA_SWITCH_MANUFACTURER = ( "_TZE200_7tdtqgwv", "_TZE200_oisqyl4o", "_TZE200_amp6tsvy", )
 TUYA_2GANGS_SWITCH_MANUFACTURER = ("_TZE200_g1ib5ldv",)
-TUYA_3GANGS_SWITCH_MANUFACTURER = ("TZE200_oisqyl4o",)
+TUYA_3GANGS_SWITCH_MANUFACTURER = ("_TZE200_oisqyl4o",)
 
 TUYA_SMART_ALLIN1 = ( "_TZ3210_jijr1sss", )
 TUYA_CURTAIN_MAUFACTURER = (
