@@ -29,6 +29,7 @@ CALLBACK_TABLE = {
     "115f": lumiReadRawAPS,
     "100b": philipsReadRawAPS,
     "1002": tuyaReadRawAPS,
+    "1141": tuyaReadRawAPS,
     CASAIA_MANUF_CODE: casaiaReadRawAPS,
 }
 
