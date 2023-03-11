@@ -41,10 +41,10 @@ TUYA_MOTION = (
 )
 
 TUYA_TEMP_HUMI = ( 
-    "_TZE200_qyflbnbj"
+    "_TZE200_qyflbnbj",
     "_TZE200_bjawzodf", 
     "_TZE200_bq5c8xfe", 
-    "_TZE200_qoy0ekbd" ,
+    "_TZE200_qoy0ekbd",
     "_TZE200_whkgqxse"
 )
 
