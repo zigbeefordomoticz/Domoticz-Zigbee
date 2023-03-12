@@ -1,11 +1,7 @@
 {
-    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1561",
-    "_comment": "Tuya Temp/Humi sensor with LCD",
+    "_comment": "Tuya Temp/Humi sensor",
     "_blakadder": "https://zigbee.blakadder.com/Tuya_ZG227C.html",
     "Identifier": [
-        [ "TS0601", "_TZE200_qoy0ekbd"],
-        [ "TS0601", "_TZE200_znbl8dj5"],
-        [ "TS0601", "_TZE200_a8sdabtg"],
         [ "TS0601", "_TZE200_qyflbnbj"],
         [ "TS0601", "_TZE200_bjawzodf"],
         [ "TS0601", "_TZE200_bq5c8xfe"],
