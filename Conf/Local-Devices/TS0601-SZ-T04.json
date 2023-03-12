@@ -1,0 +1,34 @@
+{
+    "_comment": "Tuya Temp/Humi sensor with LCD ( Nous SZ-T04",
+    "Identifier": [
+        [ "TS0601", "_TZE200_lve3dvpy"],
+        [ "TS0601", "_TZE200_c7emyjom"],
+        [ "TS0601", "_TZE200_locansqn"]
+    ],
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "0019": "",
+            "Type": "Temp/Humi"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000"],
+    "ConfigureReporting": {
+    },
+    "ReadAttributes": {
+        "0000": [ "0004", "0005", "0000", "0001", "0007", "ffe2", "ffe4", "ffdf", "fffe" ],
+        "0019": [],
+        "ef00": []
+    },
+    "TS0601_DP": {
+        "01": { "sensor_type": "temperature", "EvalExp": "int(value/10)" },
+        "02": { "sensor_type": "humidity" },
+        "04": { "sensor_type": "battery", "EvalExp": "int(value/10)" }
+    },
+    "Param": {
+    },
+    "BatteryDevice": 1
+}
