@@ -162,6 +162,9 @@ def danfoss_room_sensor_polling(self, NwkId):
             continue
         if self.ListOfDevices[x]["Param"]["DanfossRoom"] != room:
             continue
+        if "DanfossCovered" in self.ListOfDevices[x]["Param"]:
+            self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling rejecting covered thermostat for ext temp")
+            continue
 
         ep_list = getListOfEpForCluster(self, x, "0402")
         self.log.logging( "Danfoss", "Debug", "danfoss_room_sensor_polling possible Ep: %s" %str(ep_list), nwkid=NwkId, )
@@ -270,6 +273,42 @@ def danfoss_control_algo(self, NwkId, mode):
         nwkid=NwkId,
     )
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+
+def danfoss_covered(self, NwkId, covered):
+
+    cover = 0
+    if covered == "T":
+        cover = 1
+    elif covered == "F":
+        cover = 0
+    else:
+        return
+
+    manuf_id = "1246"
+    manuf_spec = "01"
+    cluster_id = "%04x" % 0x0201
+
+    EPout = "01"
+    for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
+        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
+            EPout = tmpEp
+
+    Hattribute = "%04x" % 0x4016
+    data_type = "10"  # boolean
+    self.log.logging("Danfoss", "Debug", "danfoss_covered: %s" % cover, nwkid=NwkId)
+
+    Hdata = "%02x" % cover
+
+    self.log.logging(
+        "Danfoss",
+        "Debug",
+        "danfoss_covered for %s with value %s / cluster: %s, attribute: %s type: %s" % (NwkId, Hdata, cluster_id, Hattribute, data_type),
+        nwkid=NwkId,
+    )
+
+    write_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=False)
+    read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
 
 
 def danfoss_orientation(self, NwkId, orientation):
