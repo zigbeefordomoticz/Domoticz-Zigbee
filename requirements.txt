@@ -5,3 +5,4 @@ z4d-certified-devices
 zigpy==0.53.2
 zigpy_deconz==0.19.2
 zigpy_znp==0.9.3
+charset-normalizer==2.0.11
