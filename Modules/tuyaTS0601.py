@@ -35,12 +35,16 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
         if "store_tuya_attribute" not in dps_mapping[ str_dp ]:
             store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
         return True
-
+    divisor = dps_mapping[ str_dp ]["domo_divisor"] if "domo_divisor" in dps_mapping[ str_dp ] else 1
+    value = value / divisor
+    rounding = dps_mapping[ str_dp ]["domo_round"] if "domo_divisor" in dps_mapping[ str_dp ] else 0
+    value = round( value, rounding ) if rounding else int(value)
+    
     sensor_type = dps_mapping[ str_dp ][ "sensor_type"]
     if sensor_type in DP_SENSOR_FUNCTION:
         value = check_domo_format_req( self, dps_mapping[ str_dp ], value)
         func = DP_SENSOR_FUNCTION[ sensor_type ]
-        func(self, Devices, NwkId, Ep, value )
+        func(self, Devices, NwkId, Ep, value  )
         return True
     
     return False
