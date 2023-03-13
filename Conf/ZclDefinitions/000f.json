@@ -12,6 +12,31 @@
         "0055": { "Enabled": true, "Name": "PresentValue", "DataType": "10", "Acc": "R", "Default": "", "Mandatory": true, "ActionList": [ "check_store_value"] },
         "0067": { "Enabled": true, "Name": "Reliability", "DataType": "30", "Acc": "R", "Default": "", "Mandatory": false, "ActionList": [ "check_store_value"] },
         "006f": { "Enabled": true, "Name": "StatusFlags", "DataType": "18", "Acc": "R", "Default": "", "Range": [ "00", "0f" ], "Mandatory": false, "ActionList": [ "check_store_value"] },
-        "0100": { "Enabled": true, "Name": "ApplicationType", "DataType": "23", "Acc": "R", "Default": "", "Range": [ "00", "ffffffff" ], "Mandatory": false, "ActionList": [ "check_store_value"] }
+        "0100": { "Enabled": true, "Name": "ApplicationType", "DataType": "23", "Acc": "R", "Default": "", "Range": [ "00", "ffffffff" ], "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "fffd": {
+            "Enabled": true,
+            "Name": "ClusterRevision",
+            "DataType": "21",
+            "Acc": "R",
+            "Range": [ "0001", "fffe"],
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "fffe": {
+            "Enabled": true,
+            "Name": "AttributeReportingStatus",
+            "DataType": "30",
+            "Acc": "R",
+            "Range": [ "00", "ff"],
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
+
     }
 }

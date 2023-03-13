@@ -4,19 +4,6 @@
     "Version": 1,
     "Enabled": true,
     "Attributes": {
-        "4000": {
-            "Enabled": true,
-            "Name": "SWBuildID",
-            "DataType": "42",
-            "Acc": "R",
-            "Default": "",
-            "Mandatory": false,
-            "SpecifStoragelvl1": "SWBUILD_3",
-            "ActionList": [
-                "check_store_value",
-                "store_specif_attribute"
-            ]
-        },
         "0000": {
             "Enabled": true,
             "Name": "ZCLVersion",
@@ -277,6 +264,43 @@
             "DataType": "18",
             "Acc": "RW",
             "Default": 0,
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "4000": {
+            "Enabled": true,
+            "Name": "SWBuildID",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "SpecifStoragelvl1": "SWBUILD_3",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "fffd": {
+            "Enabled": true,
+            "Name": "ClusterRevision",
+            "DataType": "21",
+            "Acc": "R",
+            "Range": [ "0001", "fffe"],
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "fffe": {
+            "Enabled": true,
+            "Name": "AttributeReportingStatus",
+            "DataType": "30",
+            "Acc": "R",
+            "Range": [ "00", "ff"],
+            "Default": "",
             "Mandatory": false,
             "ActionList": [
                 "check_store_value"

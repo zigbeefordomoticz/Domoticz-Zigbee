@@ -141,6 +141,31 @@
             "ActionList": [
                 "check_store_value"
             ]
+        },
+        "fffd": {
+            "Enabled": true,
+            "Name": "ClusterRevision",
+            "DataType": "21",
+            "Acc": "R",
+            "Range": [ "0001", "fffe"],
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "fffe": {
+            "Enabled": true,
+            "Name": "AttributeReportingStatus",
+            "DataType": "30",
+            "Acc": "R",
+            "Range": [ "00", "ff"],
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
         }
+
     }
 }
