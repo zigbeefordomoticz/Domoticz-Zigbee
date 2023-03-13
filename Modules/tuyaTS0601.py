@@ -26,9 +26,7 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
     if "store_tuya_attribute" in dps_mapping[ str_dp ]:
         store_tuya_attribute(self, NwkId, dps_mapping[ str_dp ]["store_tuya_attribute"], data)
     
-    return_value = sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp )
-    
-    return return_value
+    return sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp )
     
 def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp ):
     if "sensor_type" not in dps_mapping[ str_dp ]:
@@ -49,6 +47,41 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
     
     return False
 
+def ts0601_actuator( self, NwkId, command, value=None):
+    
+    model_name = self.ListOfDevices[ NwkId ]["Model"] if "Model" in self.ListOfDevices[ NwkId ] else None
+    if model_name is None:
+        return
+    
+    dps_mapping = ts0601_extract_data_point_infos( self, model_name) 
+    if dps_mapping is None:
+        return False
+    
+    if command not in DP_ACTION_FUNCTION:
+        self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in core plugin" % command)
+        return False
+        
+    if command not in dps_mapping:
+        self.log.logging("Tuya", "Error", "ts0601_actuator - unknow data point for command %s in config file" %command)
+        return False
+    
+    dp = None
+    for x in dps_mapping:
+        if "action_type" not in dps_mapping[ x ]:
+            continue
+        dp = x
+        break
+    
+    if dp:
+        self.log.logging("Tuya", "Log", "ts0601_actuator - requesting %s %s %s" %(
+            command, dp, value))
+        func = DP_ACTION_FUNCTION[ command ]
+        if value:
+            func(self, NwkId, "01", dp, value )
+        else:
+            func(self, NwkId, "01", dp )
+
+    
 
 def action_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp):
     if "action_type" not in dps_mapping[ str_dp ]:
@@ -93,8 +126,6 @@ def ts0601_extract_data_point_infos( self, model_name):
     if "TS0601_DP" not in self.DeviceConf[model_name ]:
         return None
     return self.DeviceConf[model_name ][ "TS0601_DP" ]
-
-
 
 # Sensors responses
 
@@ -247,14 +278,26 @@ def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
     tuya_cmd(self, NwkId, Ep, cluster_frame, sqn, "00", action, data)
 
    
-def ts0601_action_setpoint(self, NwkId, Ep, dp, datatype, value):
+def ts0601_action_setpoint(self, NwkId, Ep, dp, value):
     self.log.logging("Tuya", "Debug", "ts0601_action_setpoint - %s Setpoint: %s" % (NwkId, value))
+    
     action = "%02x02" % dp
     data = "%08x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
    
-def ts0601_action_calibration(self, NwkId, Ep, dp, datatype, value):
+def ts0601_action_calibration(self, NwkId, Ep, dp, value=None):
     self.log.logging("Tuya", "Debug", "ts0601_action_calibration - %s Calibration: %s" % (NwkId, value))
+
+    target_calibration = 0
+    if (
+        "Param" in self.ListOfDevices[NwkId]
+        and "Calibration" in self.ListOfDevices[NwkId]["Param"]
+        and isinstance(self.ListOfDevices[NwkId]["Param"]["Calibration"], (float, int))
+    ):
+        target_calibration = int(self.ListOfDevices[NwkId]["Param"]["Calibration"])
+
+    value = target_calibration if value is None else value
+    
     action = "%02x02" % dp
     # determine which Endpoint
     if value < 0:
@@ -267,5 +310,4 @@ def ts0601_action_calibration(self, NwkId, Ep, dp, datatype, value):
 DP_ACTION_FUNCTION = {
     "setpoint": ts0601_action_setpoint,
     "calibration": ts0601_action_calibration,
-    
 }

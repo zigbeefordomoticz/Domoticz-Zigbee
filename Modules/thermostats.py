@@ -12,6 +12,7 @@ from Modules.danfoss import thermostat_Setpoint_Danfoss
 from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.schneider_wiser import schneider_setpoint
 from Modules.tuyaTRV import tuya_setpoint
+from Modules.tuyaTS0601 import ts0601_extract_data_point_infos, ts0601_actuator, ts0601_action_calibration
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 
 
@@ -49,44 +50,50 @@ def thermostat_Setpoint(self, NwkId, setpoint):
         casaia_check_irPairing(self, NwkId)
 
     if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] != {}:
-        if self.ListOfDevices[NwkId]["Model"] == "SPZB0001":
+        model_name = self.ListOfDevices[NwkId]["Model"]
+
+        if ts0601_extract_data_point_infos( self, model_name):
+            ts0601_actuator(self, NwkId, "calibration")
+            ts0601_actuator( self, NwkId, "setpoint", setpoint)
+            return
+
+        if model_name == "SPZB0001":
             # Eurotronic
-            self.log.logging(
-                "Thermostats",
-                "Debug",
-                "thermostat_Setpoint - calling SPZB for %s with value %s" % (NwkId, setpoint),
-                nwkid=NwkId,
-            )
+            self.log.logging( "Thermostats", "Debug", "thermostat_Setpoint - calling SPZB for %s with value %s" % (
+                NwkId, setpoint), nwkid=NwkId, )
             thermostat_Calibration(self, NwkId)
             thermostat_Setpoint_SPZB(self, NwkId, setpoint)
             return
-        if self.ListOfDevices[NwkId]["Model"] in ("EH-ZB-RTS", "EH-ZB-HACT", "EH-ZB-VACT", "Wiser2-Thermostat", "iTRV"):
+        if model_name in ("EH-ZB-RTS", "EH-ZB-HACT", "EH-ZB-VACT", "Wiser2-Thermostat", "iTRV"):
             # Schneider
-            self.log.logging( "Thermostats", "Debug", "thermostat_Setpoint - calling Schneider for %s with value %s" % (NwkId, setpoint), nwkid=NwkId, )
+            self.log.logging( "Thermostats", "Debug", "thermostat_Setpoint - calling Schneider for %s with value %s" % (
+                NwkId, setpoint), nwkid=NwkId, )
             schneider_setpoint(self, NwkId, setpoint)
             return
-        
-        if self.ListOfDevices[NwkId]["Model"] in (TUYA_eTRV_MODEL):
+
+        if model_name in (TUYA_eTRV_MODEL):
             # Tuya
-            self.log.logging(
-                "Thermostats",
-                "Debug",
-                "thermostat_Setpoint - calling Tuya for %s with value %s" % (NwkId, setpoint),
-                nwkid=NwkId,
-            )
+            self.log.logging( "Thermostats", "Debug", "thermostat_Setpoint - calling Tuya for %s with value %s" % (
+                NwkId, setpoint), nwkid=NwkId, )
             tuya_setpoint(self, NwkId, setpoint)
             return
-        if self.ListOfDevices[NwkId]["Model"] in ("AC201A",):
+
+        if model_name in ("AC201A",):
             casaia_setpoint(self, NwkId, setpoint)
             return
-        if self.ListOfDevices[NwkId]["Model"] in ("eTRV0100", "eT093WRO"):
-            if "Param" in self.ListOfDevices[NwkId] and "DanfossSetPointType" in self.ListOfDevices[NwkId]["Param"] and int(self.ListOfDevices[NwkId]["Param"]["DanfossSetPointType"]):
-                thermostat_Calibration(self, NwkId)
-                thermostat_Setpoint_Danfoss(self, NwkId, setpoint)
-                ReadAttributeRequest_0201(self, NwkId)
-                return
 
-    
+        if (
+            model_name in ("eTRV0100", "eT093WRO")
+            and "Param" in self.ListOfDevices[NwkId]
+            and "DanfossSetPointType" in self.ListOfDevices[NwkId]["Param"]
+            and int(self.ListOfDevices[NwkId]["Param"]["DanfossSetPointType"])
+        ):
+            thermostat_Calibration(self, NwkId)
+            thermostat_Setpoint_Danfoss(self, NwkId, setpoint)
+            ReadAttributeRequest_0201(self, NwkId)
+            return
+
+
 
     self.log.logging("Thermostats", "Debug", "thermostat_Setpoint - standard for %s with value %s" % (NwkId, setpoint), nwkid=NwkId)
 
@@ -124,13 +131,8 @@ def thermostat_Setpoint(self, NwkId, setpoint):
         Domoticz.Log("Patch Hdata  %s" % Hdata)
 
     EPout = "01"
-    self.log.logging(
-        "Thermostats",
-        "Deug",
-        "thermostat_Setpoint - for %s with value 0x%s / cluster: %s, attribute: %s type: %s"
-        % (NwkId, Hdata, cluster_id, Hattribute, data_type),
-        nwkid=NwkId,
-    )
+    self.log.logging( "Thermostats", "Deug", "thermostat_Setpoint - for %s with value 0x%s / cluster: %s, attribute: %s type: %s" % (
+        NwkId, Hdata, cluster_id, Hattribute, data_type), nwkid=NwkId, )
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
     ReadAttributeRequest_0201(self, NwkId)
