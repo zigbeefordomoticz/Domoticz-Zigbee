@@ -238,7 +238,7 @@ def ias_wd_sirene_max_alarm_dureation( self, nwkid, duration):
 
 def ias_sensitivity(self, nwkid, sensitivity):
     if self.iaszonemgt:
-        self.iaszonemgt.ias_sensitivity(self, nwkid, sensitivity)
+        self.iaszonemgt.ias_sensitivity( nwkid, sensitivity)
 
 DEVICE_PARAMETERS = {
     "HueLedIndication": philips_led_indication,
