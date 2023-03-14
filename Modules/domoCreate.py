@@ -349,13 +349,14 @@ def CreateDomoDevice(self, Devices, NWKID):
         if "ClusterType" not in self.ListOfDevices[NWKID]["Ep"][Ep]:
             self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"] = {}
 
+        # Create Combo Temp+Humi and/or Temp+Humi+Baro
         if "Humi" in Type and "Temp" in Type and "Baro" in Type:
-            # Detecteur temp + Hum + Baro
-            create_native_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Temp+Hum+Baro")
+            # Detecteur temp + Humi + Baro
+            create_native_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Temp+Humi+Baro")
 
         if "Humi" in Type and "Temp" in Type:
             # Temp + Hum
-            create_native_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Temp+Humo")
+            create_native_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Temp+Humi")
 
         for t in Type:
             self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" % (DeviceID_IEEE, Ep, t), NWKID )
@@ -547,8 +548,8 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
 
 
 SIMPLE_WIDGET = {
-    "Temp+Hum+Baro": { "widgetType": "Temp+Hum+Baro", },
-    "Temp+Hum": { "widgetType": "Temp+Hum", },
+    "Temp+Humi+Baro": { "widgetType": "Temp+Hum+Baro", },
+    "Temp+Humi": { "widgetType": "Temp+Hum", },
     "Temp": { "widgetType": "Temperature", },
     "Humi": { "widgetType": "Humidity", },
     "Baro": { "widgetType": "Barometer", },
