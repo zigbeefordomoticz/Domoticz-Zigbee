@@ -520,13 +520,12 @@ SWITCH_SELECTORS = {
     "ThermoMode_7": {
         2: (0, "00"),  # Off
         0: (1, "10"),  # Auto
-        1: (2, "20"),  # Heat
         "ForceUpdate": False,
         "OffHidden": False, 
         "SelectorStyle": 0,
-        "LevelNames": "Off|Auto|Heat",
+        "LevelNames": "Off|Auto",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Ventilateur"}},
+            "fr-FR": {"LevelNames": "Arrêt|Auto"}},
     },
 
     "HeatingStatus": {
