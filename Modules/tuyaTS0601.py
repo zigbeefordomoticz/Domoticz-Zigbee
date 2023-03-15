@@ -250,6 +250,10 @@ def ts0601_setpoint(self, Devices, nwkid, ep, value):
     checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", value)
     store_tuya_attribute(self, nwkid, "SetPoint", value)
 
+def ts0601_heatingstatus(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya", "Debug", "ts0601_heatingstatus - After Nwkid: %s/%s HeatingStatus: %s" % (nwkid, ep, value))
+    MajDomoDevice(self, Devices, nwkid, ep, "0201", value, Attribute_="0124")
+    store_tuya_attribute(self, nwkid, "HeatingMode", value)
 
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
@@ -269,7 +273,8 @@ DP_SENSOR_FUNCTION = {
     "mp25": ts0601_mp25,
     "metering": ts0601_summation_energy,
     "power": ts0601_instant_power,
-    "voltage": ts0601_voltage
+    "voltage": ts0601_voltage,
+    "heatingstatus": ts0601_heatingstatus
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
