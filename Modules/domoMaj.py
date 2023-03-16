@@ -758,22 +758,23 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         if ClusterType == "Temp" and WidgetType in ("Temp", "Temp+Hum", "Temp+Hum+Baro") and Attribute_ == "":  # temperature
             if check_erratic_value(self, NWKID, "Temp", value, -50, 100):
                 # We got an erratic value, no update to Domoticz
+                self.log.logging("Widget", "Error", "%s Receive an erratic Temp: %s, WidgetType: >%s<" % (
+                    NWKID, value, WidgetType), NWKID)
                 continue
 
             self.log.logging("Widget", "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
-                from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+                try:
+                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(Devices[DeviceUnit].ID), 1)
+                except Exception as e:
+                    self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
+                        NWKID, value, WidgetType, e), NWKID)
 
-                adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(Devices[DeviceUnit].ID), 1)
             CurrentnValue = Devices[DeviceUnit].nValue
             CurrentsValue = Devices[DeviceUnit].sValue
-            self.log.logging(
-                "Widget",
-                "Debug",
-                "------> Adj Value : %s from: %s to %s [%s]" % (adjvalue, value, (value + adjvalue), CurrentsValue),
-                NWKID,
-            )
+            self.log.logging( "Widget", "Debug", "------> Adj Value : %s from: %s to %s [%s]" % (
+                adjvalue, value, (value + adjvalue), CurrentsValue), NWKID, )
             if CurrentsValue == "":
                 # First time after device creation
                 CurrentsValue = "0;0;0;0;0"
@@ -786,7 +787,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Temp update: %s - %s" % (NewNvalue, NewSvalue))
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-#            elif WidgetType == "Temp+Hum":
             elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
                 NewNvalue = 0
                 NewSvalue = "%s;%s;%s" % (round(value + adjvalue, 1), SplitData[1], SplitData[2])
@@ -845,7 +845,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             self.log.logging("Widget", "Debug", "------>  Baro: %s, WidgetType: %s" % (value, WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
-                adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(Devices[DeviceUnit].ID), 1)
+                try:
+                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(Devices[DeviceUnit].ID), 1)
+                except Exception as e:
+                    self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
+                        NWKID, value, WidgetType, e), NWKID)
+
             baroValue = round((value + adjvalue), 1)
             self.log.logging("Widget", "Debug", "------> Adj Value : %s from: %s to %s " % (adjvalue, value, baroValue), NWKID)
 
