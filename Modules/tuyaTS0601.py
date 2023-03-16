@@ -7,7 +7,8 @@ from Modules.tuyaTools import store_tuya_attribute, tuya_cmd
 # Generic functions
 
 def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
-    self.log.logging("Tuya", "Debug", "ts0601_response - %s %s %s %s %s" % (NwkId, model_name, dp, datatype, data), NwkId)
+    self.log.logging("Tuya", "Debug", "ts0601_response - %s %s %s %s %s" % (
+        NwkId, model_name, dp, datatype, data), NwkId)
     
     dps_mapping = ts0601_extract_data_point_infos( self, model_name) 
     if dps_mapping is None:
@@ -15,7 +16,8 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
     
     str_dp = "%02x" %dp
     if str_dp not in dps_mapping:
-        self.log.logging("Tuya", "Log", "ts0601_response - unknow dp %s %s %s %s %s" % (NwkId, str_dp, datatype, data, str(dps_mapping)), NwkId)
+        self.log.logging("Tuya", "Log", "ts0601_response - unknow dp %s %s %s %s %s" % (
+            NwkId, str_dp, datatype, data, str(dps_mapping)), NwkId)
         store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
         return False
     
