@@ -15,33 +15,33 @@ from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
                                   set_PIROccupiedToUnoccupiedDelay,
                                   set_poweron_afteroffon)
-from Modules.danfoss import (danfoss_exercise_day_of_week,
+from Modules.danfoss import (danfoss_covered, danfoss_exercise_day_of_week,
                              danfoss_exercise_trigger_time,
-                             danfoss_covered,
                              danfoss_orientation, danfoss_viewdirection)
 from Modules.enki import enki_set_poweron_after_offon_device
 from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
                                      legrand_enable_Led_IfOn_by_nwkid,
                                      legrand_enable_Led_InDark_by_nwkid,
                                      legrand_enable_Led_Shutter_by_nwkid)
-from Modules.lumi import (RTCZCGQ11LM_motion_opple_approach_distance,
+from Modules.lumi import (RTCGQ14LM_trigger_indicator,
+                          RTCZCGQ11LM_motion_opple_approach_distance,
                           RTCZCGQ11LM_motion_opple_monitoring_mode,
                           RTCZCGQ11LM_motion_opple_sensitivity,
+                          aqara_detection_interval,
                           setXiaomiVibrationSensitivity,
                           xiaomi_aqara_switch_mode_switch,
                           xiaomi_flip_indicator_light,
                           xiaomi_led_disabled_night, xiaomi_opple_mode,
                           xiaomi_switch_operation_mode_opple,
-                          xiaomi_switch_power_outage_memory,
-                          RTCGQ14LM_trigger_indicator,
-                          aqara_detection_interval)
+                          xiaomi_switch_power_outage_memory)
 from Modules.philips import (philips_led_indication,
                              philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
 from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
                                     ReadAttributeRequest_0406_0010)
 from Modules.schneider_wiser import (iTRV_open_window_detection,
-                                     wiser_home_lockout_thermostat)
+                                     wiser_home_lockout_thermostat,
+                                     wiser_lift_duration)
 from Modules.tools import getEpForCluster
 from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           SmartRelayStatus03, SmartRelayStatus04,
@@ -50,6 +50,7 @@ from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           tuya_energy_childLock, tuya_external_switch_mode,
                           tuya_garage_run_time, tuya_motion_zg204l_keeptime,
                           tuya_motion_zg204l_sensitivity,
+                          tuya_pir_keep_time_lookup,
                           tuya_radar_motion_radar_detection_delay,
                           tuya_radar_motion_radar_fading_time,
                           tuya_radar_motion_radar_max_range,
@@ -57,7 +58,7 @@ from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           tuya_radar_motion_sensitivity,
                           tuya_switch_indicate_light, tuya_switch_relay_status,
                           tuya_TS0004_back_light, tuya_TS0004_indicate_light,
-                          tuya_window_cover_calibration, tuya_pir_keep_time_lookup,
+                          tuya_window_cover_calibration,
                           tuya_window_cover_motor_reversal)
 from Modules.tuyaSiren import (tuya_siren2_alarm_duration,
                                tuya_siren2_alarm_melody,
@@ -314,6 +315,7 @@ DEVICE_PARAMETERS = {
     "IASsensitivity": ias_sensitivity,
     "RTCGQ14LMTriggerIndicator": RTCGQ14LM_trigger_indicator,
     "AqaraDetectionInterval": aqara_detection_interval,
+    "WiserShutterDuration": wiser_lift_duration,
 }
 
 def sanity_check_of_param(self, NwkId):

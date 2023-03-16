@@ -1,0 +1,38 @@
+{
+    "_source": "https://easydomoticz.com/forum/viewtopic.php?t=13137",
+    "_blakadder": "https://zigbee.blakadder.com/Schneider_Electric_W50150.html",
+    "_comment": "Wiser Shades Control Model W50150 manufactured by Schneider Electric",
+    "_version": "1.0",
+    "Identifier": [ 
+        [ "PUCK/SHUTTER/1", "Schneider Electric" ],
+        [ "PUCKSHUTTER1", "Schneider Electric" ]
+    ],
+    "Ep": {
+        "05": {
+            "0000": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0102": "",
+            "0019": "",
+            "0b05": "",
+            "Type": "Blind"
+        },
+        "f2": {
+            "Type": ""
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000", "0102" ],
+    "ConfigureReporting": {
+        "0102": { "Attributes": { "0008": {"DataType": "20", "MinInterval": "0001", "MaxInterval": "0384", "TimeOut": "0000", "Change": "01"}}}
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "000a", "000f", "0010", "0015", "f000" ],
+        "0102": [ "0008", "e000" ],
+        "0019": []
+    },
+    "Param": {
+        "WiserShutterDuration": 120
+    }
+}

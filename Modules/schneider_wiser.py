@@ -2066,3 +2066,7 @@ def get_local_temperature_from_wiserroom( self, NwkId, room=None):
                 return int(local_temp * 100 )
 
     return None
+
+
+def wiser_lift_duration( self, nwkid, duration):
+    write_attribute( self, nwkid, ZIGATE_EP, "05", "0102", "105e", "01", "e000", "21", "%04x" % duration if 0 < duration < 300 else 120, ackIsDisabled=False)
