@@ -1,0 +1,33 @@
+{
+    "_comment": "Tuya Zigbee Tuya Clamp Meter",
+    "_source": "https://easydomoticz.com/forum/viewtopic.php?t=13142",
+    "_blakadder": "",
+    "_version": "1",
+    "Identifier": [
+        [ "TS0601", "_TZE204_cjbofhxw" ]
+    ],
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Meter/Power/Voltage/Ampere"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0019", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007" ]
+    },
+    "TS0601_DP": { 
+        "12": { "store_tuya_attribute": "Current", "sensor_type": "current", "EvalExp": "value / 1000"},
+        "13": { "store_tuya_attribute": "Power", "sensor_type": "power", "EvalExp": "value / 10"},
+        "14": { "store_tuya_attribute": "Voltage", "sensor_type": "voltage", "EvalExp": "value / 10"},
+        "65": { "store_tuya_attribute": "Meter", "sensor_type": "metering", "EvalExp": "value / 1000"}
+    },
+    "Param": {
+    }
+}

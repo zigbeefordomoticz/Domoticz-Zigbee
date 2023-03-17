@@ -228,6 +228,11 @@ def ts0601_ch20(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "CH2O ppm", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0402", value, Attribute_="0004")
 
+def ts0601_current(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_current - Current %s %s %s" % (nwkid, ep, value), nwkid, )
+    MajDomoDevice(self, Devices, nwkid, ep, "0b04", str(value), Attribute_="0508")
+    checkAndStoreAttributeValue(self, nwkid, ep, "0b04", "0508", value)  # Store int
+    store_tuya_attribute(self, nwkid, "Current", str(value))
 
 def ts0601_summation_energy(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya", "Debug", "ts0601_summation_energy - Summation %s %s %s" % (nwkid, ep, value), nwkid, )
@@ -310,6 +315,7 @@ DP_SENSOR_FUNCTION = {
     "voc": ts0601_voc,
     "ch20": ts0601_ch20,
     "mp25": ts0601_mp25,
+    "current": ts0601_current,
     "metering": ts0601_summation_energy,
     "power": ts0601_instant_power,
     "voltage": ts0601_voltage,
