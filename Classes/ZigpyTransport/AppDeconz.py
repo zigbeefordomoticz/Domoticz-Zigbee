@@ -133,7 +133,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     def get_device(self, ieee=None, nwk=None):
         return Classes.ZigpyTransport.AppGeneric.get_device(self, ieee, nwk)
 
-    def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
+    def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK, *, handle_rejoin: bool = True,) -> None:
         return Classes.ZigpyTransport.AppGeneric.handle_join(self, nwk, ieee, parent_nwk)
             
     def get_device_ieee(self, nwk):
