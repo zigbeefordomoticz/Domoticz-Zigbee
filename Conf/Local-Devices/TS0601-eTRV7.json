@@ -15,7 +15,7 @@
             "ef00": "",
             "000a": "",
             "0019": "",
-            "Type": "Temp/ThermoSetpoint/ThermoMode_7/HeatingStatus/Valve"
+            "Type": "Temp/ThermoSetpoint/ThermoMode_2/HeatingStatus/Valve/Door"
         }
     },
     "Type": "",
@@ -25,23 +25,33 @@
         "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
     },
     "TS0601_DP": { 
-	"01": { "store_tuya_attribute": "SystemMode"},
+        "01": { "store_tuya_attribute": "SystemMode", "sensor_type": "TRV7SystemMode", "action_type": "TRV7SystemMode"},
         "02": { "store_tuya_attribute": "SetPoint", "action_type": "setpoint", "sensor_type": "setpoint", "EvalExp": "int((value//10)*10)", "domo_divisor": 10, "domo_round": 2},
-        "03": { "store_tuya_attribute": "Temperature", "sensor_type": "temperature" , "EvalExp": "int((value//10)*10)", "domo_divisor": 10, "domo_round": 2},
-	"04": { "store_tuya_attribute": "BoostHeating"},
-	"05": { "store_tuya_attribute": "BoostTime"},
+        "03": { "store_tuya_attribute": "Temperature", "sensor_type": "temperature", "EvalExp": "int((value//10)*10)", "domo_divisor": 10, "domo_round": 2},
+        "04": { "store_tuya_attribute": "BoostHeating"},
+        "05": { "store_tuya_attribute": "BoostTime"},
         "06": { "store_tuya_attribute": "HeatingMode", "sensor_type": "heatingstatus"},
-        "07": { "store_tuya_attribute": "WindowOpen"},
-        "08": { "store_tuya_attribute": "WindowDetection"},
-        "0c": { "store_tuya_attribute": "ChildLock"},
-        "0d": { "store_tuya_attribute": "Battery"},
+        "07": { "store_tuya_attribute": "WindowOpen", "action_type": "TRV7WindowDetection"},
+        "08": { "store_tuya_attribute": "WindowDetection", "sensor_type": "windowsopened"},
+        "0c": { "store_tuya_attribute": "ChildLock", "action_type": "TRV7ChildLock"},
+        "0d": { "store_tuya_attribute": "Battery", "sensor_type": "battery"},
         "0e": { "store_tuya_attribute": "AlarmSwitch"},
         "0f": { "store_tuya_attribute": "TemperatureMin","EvalExp": "round(value/10,1)"},
         "10": { "store_tuya_attribute": "TemperatureMax", "EvalExp": "round(value/10,1)"},
         "65": { "store_tuya_attribute": "Calibration", "action_type": "calibration"},
-        "66": { "store_tuya_attribute": "ValvePosition", "sensor_type": "valveposition"}
+        "66": { "store_tuya_attribute": "ValvePosition", "sensor_type": "valveposition", "EvalExp": "int((value//10)*10)"},
+        "11": { "store_tuya_attribute": "ScheduleMonday"},
+        "12": { "store_tuya_attribute": "ScheduleTuesday"},
+        "13": { "store_tuya_attribute": "ScheduleWednesday"},
+        "14": { "store_tuya_attribute": "ScheduleThursday"},
+        "15": { "store_tuya_attribute": "ScheduleFriday"},
+        "16": { "store_tuya_attribute": "ScheduleSaturday"},
+        "17": { "store_tuya_attribute": "ScheduleSunday"}
     },
     "PollingEnabled": 1,
     "Param": {
+        "calibration": 0,
+        "TRV7WindowDetection": 1,
+        "TRV7ChildLock": 0
     }
 }

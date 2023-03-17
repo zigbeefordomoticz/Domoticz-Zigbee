@@ -73,6 +73,7 @@ from Modules.tuyaTRV import (tuya_trv_boost_time, tuya_trv_calibration,
                              tuya_trv_set_opened_window_temp,
                              tuya_trv_thermostat_sensor_mode,
                              tuya_trv_window_detection)
+from Modules.tuyaTS0601 import TS0601_COMMANDS, ts0601_actuator
 
 
 def Ballast_max_level(self, nwkid, max_level):
@@ -325,6 +326,12 @@ def sanity_check_of_param(self, NwkId):
         return
 
     for param in self.ListOfDevices[NwkId]["Param"]:
+        if param in TS0601_COMMANDS:
+            # We a Tuya TS0601 devices
+            value = self.ListOfDevices[NwkId]["Param"][param]
+            ts0601_actuator( self, NwkId, param, value=None)
+            continue
+
         if param in DEVICE_PARAMETERS:
             # Domoticz.Log("sanity_check_of_param - calling %s" %param)
             func = DEVICE_PARAMETERS[param]
@@ -342,7 +349,8 @@ def get_device_config_param( self, NwkId, config_parameter):
         return None
     if config_parameter not in self.ListOfDevices[NwkId]["Param"]:
         return None
-
+        
+        
     self.log.logging("Input", "Debug", "get_device_config_param: %s Config: %s return %s" %( 
         NwkId,config_parameter, self.ListOfDevices[NwkId]["Param"][ config_parameter ]))
 

@@ -59,7 +59,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
     if dps_mapping is None:
         return False
     
-    if command not in DP_ACTION_FUNCTION:
+    if command not in DP_ACTION_FUNCTION and command not in TS0601_COMMANDS:
         self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in core plugin" % command)
         return False
         
@@ -77,7 +77,10 @@ def ts0601_actuator( self, NwkId, command, value=None):
     if dp:
         self.log.logging("Tuya", "Log", "ts0601_actuator - requesting %s %s %s" %(
             command, dp, value))
-        func = DP_ACTION_FUNCTION[ command ]
+        if command in TS0601_COMMANDS:
+            func = TS0601_COMMANDS[ command ]
+        else:
+            func = DP_ACTION_FUNCTION[ command ]
         if value:
             func(self, NwkId, "01", dp, value )
         else:
@@ -245,6 +248,26 @@ def ts0601_voltage(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0001", str(value))
     store_tuya_attribute(self, nwkid, "Voltage", str(value))
 
+def ts0601_trv7_system_mode(self, Devices, nwkid, ep, value):
+    # Auto 0, Manual 1, Off 2
+    # Widget 0: Off, 1: Auto, 2: Manual
+    DEVICE_WIDGET_MAP = {
+        0: 1,
+        1: 2,
+        2: 0
+    }
+
+    self.log.logging("Tuya", "Debug", "ts0601_trv7_system_mode - After Nwkid: %s/%s SystemMode: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "SystemModel", value)
+    if value not in DEVICE_WIDGET_MAP:
+        self.log.logging("Tuya", "Error", "ts0601_trv7_system_mode - unexepected mode %s/%s mode: %s (%s)" %(
+            nwkid, ep, value, type(value))
+        )
+    widget_value = DEVICE_WIDGET_MAP[ value ]
+    MajDomoDevice(self, Devices, nwkid, ep, "0201", widget_value, Attribute_="0012")
+    checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", widget_value)
+    
+
 
 def ts0601_setpoint(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya", "Debug", "ts0601_setpoint - After Nwkid: %s/%s Setpoint: %s" % (nwkid, ep, value))
@@ -266,6 +289,10 @@ def ts0601_calibration(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya", "Debug", "ts0601_calibration - Nwkid: %s/%s Calibration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Calibration", value)
 
+def  ts0601_windowdetection(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya", "Debug", "receive_windowdetection - Nwkid: %s/%s Window Open: %s" % (nwkid, ep, value))
+    MajDomoDevice(self, Devices, nwkid, ep, "0500", value)
+    store_tuya_attribute(self, nwkid, "OpenWindow", value)
 
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
@@ -288,7 +315,9 @@ DP_SENSOR_FUNCTION = {
     "voltage": ts0601_voltage,
     "heatingstatus": ts0601_heatingstatus,
     "valveposition": ts0601_valveposition,
-    "calibration": ts0601_calibration
+    "calibration": ts0601_calibration,
+    "windowsopened": ts0601_windowdetection,
+    "TRV7SystemMode": ts0601_trv7_system_mode
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
@@ -299,7 +328,6 @@ def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
    
 def ts0601_action_setpoint(self, NwkId, Ep, dp, value):
     self.log.logging("Tuya", "Debug", "ts0601_action_setpoint - %s Setpoint: %s" % (NwkId, value))
-    
     action = "%02x02" % dp
     data = "%08x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
@@ -324,9 +352,45 @@ def ts0601_action_calibration(self, NwkId, Ep, dp, value=None):
         #calibration = abs(int(hex(-calibration - pow(2, 32)), 16))
     data = "%08x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
-    
+
+def ts0601_window_detection_mode( self, NwkId, Ep, dp, value=None):
+    self.log.logging("Tuya", "Debug", "ts0601_window_detection_mode - %s Window Detection mode: %s" % (NwkId, value))
+    action = "%02x01" % dp
+    data = "%02x" % value
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_child_lock_mode( self, NwkId, Ep, dp, value=None):
+    self.log.logging("Tuya", "Debug", "ts0601_child_lock_mode - %s ChildLock mode: %s" % (NwkId, value))
+    action = "%02x01" % dp
+    data = "%02x" % value
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+def ts0601_action_trv7_system_mode(self, NwkId, Ep, dp, value):
+    self.log.logging("Tuya", "Debug", "ts0601_action_trv7_system_mode - %s System mode: %s" % (NwkId, value))
+    WIDGET_DEVICE_MAP = {
+        1: 0,
+        2: 1,
+        0: 2
+    }
+    if value not in WIDGET_DEVICE_MAP:
+        self.log.logging("Tuya", "Error", "ts0601_trv7_system_mode - unexepected mode %s/%s mode: %s (%s)" %(
+            NwkId, Ep, value, type(value))
+        )
+    device_value = WIDGET_DEVICE_MAP[ value ]
+   
+    action = "%02x04" % dp  # Mode
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+TS0601_COMMANDS = {
+    "TRV7WindowDetection": ts0601_window_detection_mode,
+    "TRV7ChildLock": ts0601_child_lock_mode,
+}
 
 DP_ACTION_FUNCTION = {
     "setpoint": ts0601_action_setpoint,
     "calibration": ts0601_action_calibration,
+    "TRV7SystemMode": ts0601_action_trv7_system_mode
 }

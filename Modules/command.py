@@ -28,6 +28,7 @@ from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_hact_heater_type,
                                      schneider_set_contract,
                                      schneider_temp_Setcurrent)
+from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.thermostats import thermostat_Mode, thermostat_Setpoint
 from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_dimmer_dimmer, tuya_dimmer_onoff,
@@ -40,8 +41,7 @@ from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
                              tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
                              tuya_trv_mode, tuya_trv_onoff,
                              tuya_trv_switch_onoff)
-
-from Modules.switchSelectorWidgets import SWITCH_SELECTORS
+from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
 
@@ -237,9 +237,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             "0202",
         )
     self.log.logging("Command", "Debug", "--------->5   profalux: %s" % profalux, NWKID)
-    _model_name = ""
-    if "Model" in self.ListOfDevices[NWKID]:
-        _model_name = self.ListOfDevices[NWKID]["Model"]
+    _model_name = self.ListOfDevices[NWKID]["Model"] if "Model" in self.ListOfDevices[NWKID] else ""
     self.log.logging("Command", "Debug", "--------->6   Model Name: %s" % _model_name, NWKID)
 
     # If Health is Not Reachable, let's give it a chance to be updated
@@ -401,6 +399,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 NWKID,
             )
             self.log.logging("Command", "Debug", "ThermoMode - requested Level: %s" % Level, NWKID)
+            if ts0601_extract_data_point_infos( self, _model_name):
+                ts0601_actuator(self, NWKID, "TRV7SystemMode", 0)
+                return
 
             tuya_trv_mode(self, NWKID, 0)
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -1012,6 +1013,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         if DeviceType == "ThermoMode_2":
             self.log.logging( "Command", "Debug", "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (NWKID, EPout, Unit, DeviceType, Level), NWKID, )
             self.log.logging("Command", "Debug", "ThermoMode_2 - requested Level: %s" % Level, NWKID)
+            if ts0601_extract_data_point_infos( self, _model_name):
+                ts0601_actuator(self, NWKID, "TRV7SystemMode", int(Level // 10))
+                return
+
             tuya_trv_mode(self, NWKID, Level)
             UpdateDevice_v2( self, Devices, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
             return
