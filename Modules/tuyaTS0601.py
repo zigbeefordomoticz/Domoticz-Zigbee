@@ -257,6 +257,16 @@ def ts0601_heatingstatus(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0201", value, Attribute_="0124")
     store_tuya_attribute(self, nwkid, "HeatingMode", value)
 
+def ts0601_valveposition(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_valveposition - Nwkid: %s/%s Valve position: %s" % (nwkid, ep, value))
+    MajDomoDevice(self, Devices, nwkid, ep, "0201", value, Attribute_="026d")
+    store_tuya_attribute(self, nwkid, "ValvePosition", value)
+
+def ts0601_calibration(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya", "Debug", "ts0601_calibration - Nwkid: %s/%s Calibration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Calibration", value)
+
+
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
@@ -276,7 +286,9 @@ DP_SENSOR_FUNCTION = {
     "metering": ts0601_summation_energy,
     "power": ts0601_instant_power,
     "voltage": ts0601_voltage,
-    "heatingstatus": ts0601_heatingstatus
+    "heatingstatus": ts0601_heatingstatus,
+    "valveposition": ts0601_valveposition,
+    "calibration": ts0601_calibration
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):

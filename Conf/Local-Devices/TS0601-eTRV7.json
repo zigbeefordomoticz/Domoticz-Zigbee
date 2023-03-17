@@ -1,0 +1,47 @@
+{
+    "_comment": "Tuya TRV / GTZ06",
+    "_version": "0.10",
+    "Identifier": [
+        [ "TS0601", "_TZE200_a4bpgplm" ],
+        [ "TS0601", "_TZE200_dv8abrrz" ],
+        [ "TS0601", "_TZE200_z1tyspqw" ]  
+    ],
+
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Temp/ThermoSetpoint/ThermoMode_7/HeatingStatus/Valve"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+    },
+    "TS0601_DP": { 
+	"01": { "store_tuya_attribute": "SystemMode"},
+        "02": { "store_tuya_attribute": "SetPoint", "action_type": "setpoint", "sensor_type": "setpoint", "EvalExp": "int((value//10)*10)", "domo_divisor": 10, "domo_round": 2},
+        "03": { "store_tuya_attribute": "Temperature", "sensor_type": "temperature" , "EvalExp": "int((value//10)*10)", "domo_divisor": 10, "domo_round": 2},
+	"04": { "store_tuya_attribute": "BoostHeating"},
+	"05": { "store_tuya_attribute": "BoostTime"},
+        "06": { "store_tuya_attribute": "HeatingMode", "sensor_type": "heatingstatus"},
+        "07": { "store_tuya_attribute": "WindowOpen"},
+        "08": { "store_tuya_attribute": "WindowDetection"},
+        "0c": { "store_tuya_attribute": "ChildLock"},
+        "0d": { "store_tuya_attribute": "Battery"},
+        "0e": { "store_tuya_attribute": "AlarmSwitch"},
+        "0f": { "store_tuya_attribute": "TemperatureMin","EvalExp": "round(value/10,1)"},
+        "10": { "store_tuya_attribute": "TemperatureMax", "EvalExp": "round(value/10,1)"},
+        "65": { "store_tuya_attribute": "Calibration", "action_type": "calibration"},
+        "66": { "store_tuya_attribute": "ValvePosition", "sensor_type": "valveposition"}
+    },
+    "PollingEnabled": 1,
+    "Param": {
+    }
+}
