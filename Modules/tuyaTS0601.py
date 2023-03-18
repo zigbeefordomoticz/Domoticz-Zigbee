@@ -57,34 +57,28 @@ def ts0601_actuator( self, NwkId, command, value=None):
     
     dps_mapping = ts0601_extract_data_point_infos( self, model_name) 
     if dps_mapping is None:
+        self.log.logging("Tuya", "Error", "ts0601_actuator - No DPS stanza in config file for %s %s" %(NwkId, command))
         return False
     
     if command not in DP_ACTION_FUNCTION and command not in TS0601_COMMANDS:
         self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in core plugin" % command)
         return False
-        
-    if command not in dps_mapping:
-        self.log.logging("Tuya", "Error", "ts0601_actuator - unknow data point for command %s in config file" %command)
+    
+    dp = ts0601_actuator_dp( self, command, dps_mapping)
+    if dp is None:
+        self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in config file" % command)
         return False
-    
-    dp = None
-    for x in dps_mapping:
-        if "action_type" not in dps_mapping[ x ]:
-            continue
-        dp = x
-        break
-    
-    if dp:
-        self.log.logging("Tuya", "Log", "ts0601_actuator - requesting %s %s %s" %(
-            command, dp, value))
-        if command in TS0601_COMMANDS:
-            func = TS0601_COMMANDS[ command ]
-        else:
-            func = DP_ACTION_FUNCTION[ command ]
-        if value:
-            func(self, NwkId, "01", dp, value )
-        else:
-            func(self, NwkId, "01", dp )
+
+    self.log.logging("Tuya", "Log", "ts0601_actuator - requesting %s %s %s" %(
+        command, dp, value))
+    if command in TS0601_COMMANDS:
+        func = TS0601_COMMANDS[ command ]
+    else:
+        func = DP_ACTION_FUNCTION[ command ]
+    if value:
+        func(self, NwkId, "01", dp, value )
+    else:
+        func(self, NwkId, "01", dp )
 
     
 
@@ -132,6 +126,13 @@ def ts0601_extract_data_point_infos( self, model_name):
         return None
     return self.DeviceConf[model_name ][ "TS0601_DP" ]
 
+def ts0601_actuator_dp( self, command, dps_mapping):
+    for dp in dps_mapping:
+        if "action_type" not in dps_mapping[ dp ]:
+            continue
+        return dps_mapping[ dp ]["action_type"]
+    return None
+    
 # Sensors responses
 
 def ts0601_motion(self, Devices, nwkid, ep, value):
@@ -261,7 +262,10 @@ def ts0601_trv7_system_mode(self, Devices, nwkid, ep, value):
         1: 2,
         2: 0
     }
-
+    if value > 2:
+        self.log.logging("Tuya", "Error", "ts0601_trv7_system_mode - After Nwkid: %s/%s Invalid SystemMode: %s" % (nwkid, ep, value))
+        return
+    
     self.log.logging("Tuya", "Debug", "ts0601_trv7_system_mode - After Nwkid: %s/%s SystemMode: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "SystemModel", value)
     if value not in DEVICE_WIDGET_MAP:
