@@ -1141,7 +1141,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         WidgetType, value, len(SWITCH_SELECTORS[WidgetType])), NWKID, )
 
         if "WindowCovering" in ClusterType:  # 0x0102
-            if WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted"):
+            if WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind"):
                 _value = int(value, 16)
                 self.log.logging(
                     "Widget",
