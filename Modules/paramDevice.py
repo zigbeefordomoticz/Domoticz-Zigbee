@@ -329,7 +329,7 @@ def sanity_check_of_param(self, NwkId):
         if param in TS0601_COMMANDS:
             # We a Tuya TS0601 devices
             value = self.ListOfDevices[NwkId]["Param"][param]
-            ts0601_actuator( self, NwkId, param, value=None)
+            ts0601_actuator( self, NwkId, param, value)
             continue
 
         if param in DEVICE_PARAMETERS:
