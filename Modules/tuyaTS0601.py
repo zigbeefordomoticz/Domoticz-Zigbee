@@ -50,7 +50,9 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
     return False
 
 def ts0601_actuator( self, NwkId, command, value=None):
-    
+    self.log.logging("Tuya", "Log", "ts0601_actuator - requesting %s %s" %(
+        command, value))
+
     model_name = self.ListOfDevices[ NwkId ]["Model"] if "Model" in self.ListOfDevices[ NwkId ] else None
     if model_name is None:
         return
@@ -68,9 +70,10 @@ def ts0601_actuator( self, NwkId, command, value=None):
     if dp is None:
         self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in config file" % command)
         return False
-
+    
     self.log.logging("Tuya", "Log", "ts0601_actuator - requesting %s %s %s" %(
         command, dp, value))
+
     if command in TS0601_COMMANDS:
         func = TS0601_COMMANDS[ command ]
     else:
@@ -127,11 +130,14 @@ def ts0601_extract_data_point_infos( self, model_name):
     return self.DeviceConf[model_name ][ "TS0601_DP" ]
 
 def ts0601_actuator_dp( self, command, dps_mapping):
-    for dp in dps_mapping:
-        if "action_type" not in dps_mapping[ dp ]:
-            continue
-        return dps_mapping[ dp ]["action_type"]
-    return None
+    return next(
+        (
+            dps_mapping[dp]["action_type"]
+            for dp in dps_mapping
+            if "action_type" in dps_mapping[dp]
+        ),
+        None,
+    )
     
 # Sensors responses
 
