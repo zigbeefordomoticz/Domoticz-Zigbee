@@ -12,7 +12,7 @@
         "0005": { "Enabled": true, "Name": "NumberofActuationsLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
         "0006": { "Enabled": true, "Name": "NumberofActuationsTiltt", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
         "0007": { "Enabled": true, "Name": "ConfigStatus", "DataType": "18", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": true, "ActionList": [ "check_store_value" ] },
-        "0008": { "Enabled": true, "Name": "CurrentPositionLiftPercentage", "DataType": "20", "Range": [ 0, 100 ], "Acc": "R", "Mandatory": false, "DomoDeviceFormat": "str", "EvalFunc": "current_position_lift_percent", "ActionList": [ "check_store_value","upd_domo_device"] },
+        "0008": { "Enabled": true, "Name": "CurrentPositionLiftPercentage", "DataType": "20", "Range": [ 0, 100 ], "Acc": "R", "Mandatory": false, "DomoDeviceFormat": "strhex", "EvalFunc": "current_position_lift_percent", "ActionList": [ "check_store_value","upd_domo_device"] },
         "0009": { "Enabled": true, "Name": "CurrentPositionTiltPercentage", "DataType": "20", "Range": [ 0, 100 ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
         "0010": { "Enabled": true, "Name": "InstalledOpenLimitLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
         "0011": { "Enabled": true, "Name": "InstalledClosedLimitLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },

@@ -350,8 +350,12 @@ def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
         return
     
     majValue = value
-    if _majdomo_formater and _majdomo_formater == "str":
-        majValue = str( value )
+    if _majdomo_formater:
+        if _majdomo_formater == "str":
+            majValue = str( value )
+        elif  _majdomo_formater == "strhex":
+            majValue = "%x" %value
+
     
     _majdomo_cluster = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithCluster", model=device_model)
     self.log.logging( "ZclClusters", "Debug", "     _majdomo_cluster: %s" %_majdomo_cluster)
