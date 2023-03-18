@@ -5,7 +5,7 @@ from DevicesModules.custom_konke import konke_onoff
 from DevicesModules.custom_zlinky import zlinky_clusters
 from Modules.lumi import lumi_private_cluster
 from Modules.zclClusterHelpers import (compute_electrical_measurement_conso,
-                                       compute_metering_conso)
+                                       compute_metering_conso, CurrentPositionLiftPercentage)
 
 FUNCTION_WITH_ACTIONS_MODULE = {
     # Lumi 0xfcc
@@ -21,6 +21,9 @@ FUNCTION_MODULE = {
 
     # 0b04 helper
     "compute_electrical_measurement_conso": compute_electrical_measurement_conso,
+    
+    # 0102 helper
+    "current_position_lift_percent": CurrentPositionLiftPercentage,
 
     # Konke Switch
     "konke_onoff": konke_onoff,

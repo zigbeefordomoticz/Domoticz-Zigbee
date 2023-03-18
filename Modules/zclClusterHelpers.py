@@ -370,3 +370,27 @@ def compute_electrical_measurement_conso(self, NwkId, MsgSrcEp, MsgClusterId, Ms
         NwkId, MsgSrcEp, multiplier, divisor, raw_value, conso), NwkId)
 
     return conso
+
+# Used by Cluster 0x0102
+
+def CurrentPositionLiftPercentage(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
+    if isinstance( raw_value, str):
+        raw_value = int(raw_value,16)
+
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "IgnoreWindowsCoverringValue50"):
+        # TS0302
+        return
+    
+    value = raw_value
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "WindowsCoverringInverted"):
+        # "TS0302", "1GANGSHUTTER1", "NHPBSHUTTER1"
+        value = 0 if raw_value > 100 else 100 - raw_value
+        
+    if "Param" in self.ListOfDevices[NwkId] and "netatmoInvertShutter" in self.ListOfDevices[NwkId]["Param"] and self.ListOfDevices[NwkId]["Param"]["netatmoInvertShutter"]:
+        # "Shutter switch with neutral"
+        value = 0 if raw_value > 100 else 100 - raw_value
+
+    self.log.logging( "ZclClusters", "Debug", "CurrentPositionLiftPercentage - %s - %s/%s - Shutter after correction value: %s" % (
+        MsgClusterId, NwkId, MsgSrcEp, value), NwkId, )
+
+    return value

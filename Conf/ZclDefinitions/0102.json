@@ -1,0 +1,28 @@
+{
+    "ClusterId": "0102",
+    "Description": "Window Covering",
+    "Version": 1,
+    "Enabled": true,
+    "Attributes": {
+        "0000": { "Enabled": true, "Name": "WindowCoveringType", "DataType": "30", "Acc": "R", "Mandatory": true, "ActionList": [ "check_store_value" ] },
+        "0001": { "Enabled": true, "Name": "PhysicalClosedLimitLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0002": { "Enabled": true, "Name": "PhysicalClosedLimitTilt", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0003": { "Enabled": true, "Name": "CurrentPositionLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0004": { "Enabled": true, "Name": "CurrentPositionTilt", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0005": { "Enabled": true, "Name": "NumberofActuationsLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0006": { "Enabled": true, "Name": "NumberofActuationsTiltt", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0007": { "Enabled": true, "Name": "ConfigStatus", "DataType": "18", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": true, "ActionList": [ "check_store_value" ] },
+        "0008": { "Enabled": true, "Name": "CurrentPositionLiftPercentage", "DataType": "20", "Range": [ 0, 100 ], "Acc": "R", "Mandatory": false, "DomoDeviceFormat": "str", "EvalFunc": "current_position_lift_percent", "ActionList": [ "check_store_value","upd_domo_device"] },
+        "0009": { "Enabled": true, "Name": "CurrentPositionTiltPercentage", "DataType": "20", "Range": [ 0, 100 ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0010": { "Enabled": true, "Name": "InstalledOpenLimitLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0011": { "Enabled": true, "Name": "InstalledClosedLimitLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0012": { "Enabled": true, "Name": "InstalledOpenLimitTilt", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0013": { "Enabled": true, "Name": "InstalledClosedLimitTilt", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0014": { "Enabled": true, "Name": "VelocityLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0015": { "Enabled": true, "Name": "AccelerationTimeLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0016": { "Enabled": true, "Name": "DecelerationTimeLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0017": { "Enabled": true, "Name": "Mode", "DataType": "18", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0018": { "Enabled": true, "Name": "Intermediate SetpointsLift", "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0019": { "Enabled": true, "Name": "Intermediate SetpointsTilt", "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] }
+    }
+}
