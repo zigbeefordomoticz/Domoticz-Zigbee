@@ -46,7 +46,11 @@
         "14": { "store_tuya_attribute": "ScheduleThursday"},
         "15": { "store_tuya_attribute": "ScheduleFriday"},
         "16": { "store_tuya_attribute": "ScheduleSaturday"},
-        "17": { "store_tuya_attribute": "ScheduleSunday"}
+        "17": { "store_tuya_attribute": "ScheduleSunday"},
+        "74": { "store_tuya_attribute": "dp_7404"},
+        "96": { "store_tuya_attribute": "dp_9602"},
+        "97": { "store_tuya_attribute": "dp_9704"},
+        "98": { "store_tuya_attribute": "dp_9804"}
     },
     "PollingEnabled": 1,
     "Param": {
