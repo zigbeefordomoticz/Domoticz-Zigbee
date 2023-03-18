@@ -66,7 +66,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
         self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in core plugin" % command)
         return False
     
-    dp = ts0601_actuator_dp( self, command, dps_mapping)
+    dp = int(ts0601_actuator_dp( self, command, dps_mapping), 16)
     if dp is None:
         self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in config file" % command)
         return False
