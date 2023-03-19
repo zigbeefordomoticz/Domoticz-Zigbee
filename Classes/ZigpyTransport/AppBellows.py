@@ -9,16 +9,18 @@ import logging
 import bellows.config as bellows_conf
 import bellows.types as t
 import bellows.zigbee.application
-import Classes.ZigpyTransport.AppGeneric
 import zigpy.config as zigpy_conf
 import zigpy.device
+import zigpy.zdo.types as zdo_types
 from bellows.exception import EzspError
+from zigpy.types import Addressing
+
+import Classes.ZigpyTransport.AppGeneric
 from Classes.ZigpyTransport.firmwareversionHelper import \
     bellows_extract_versioning_for_plugin
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8010_frame_content, build_plugin_8015_frame_content)
 from Modules.zigbeeVersionTable import ZNP_MODEL
-from zigpy.types import Addressing
 
 LOGGER = logging.getLogger(__name__)
 
@@ -93,10 +95,32 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await self.disconnect()
 
     # Only needed if the device require simple node descriptor from the coordinator
-    async def register_endpoint(self, endpoint=1):
-        await super().add_endpoint(endpoint)
-
-
+    async def register_endpoints(self, endpoint=1):
+        self.log.logging("TransportZigpy", "Status", "Bellows Radio register default Ep")
+        await self.add_endpoint(
+            zdo_types.SimpleDescriptor(
+                endpoint=1,
+                profile=zigpy.profiles.zha.PROFILE_ID,
+                device_type=zigpy.profiles.zha.DeviceType.IAS_CONTROL,
+                device_version=0b0000,
+                input_clusters=[
+                    zigpy.zcl.clusters.general.Basic.cluster_id,
+                    zigpy.zcl.clusters.general.OnOff.cluster_id,
+                    zigpy.zcl.clusters.general.Groups.cluster_id,
+                    zigpy.zcl.clusters.general.Scenes.cluster_id,
+                    zigpy.zcl.clusters.general.Time.cluster_id,
+                    zigpy.zcl.clusters.general.Ota.cluster_id,
+                    zigpy.zcl.clusters.security.IasAce.cluster_id,
+                ],
+                output_clusters=[
+                    zigpy.zcl.clusters.general.PowerConfiguration.cluster_id,
+                    zigpy.zcl.clusters.general.PollControl.cluster_id,
+                    zigpy.zcl.clusters.security.IasZone.cluster_id,
+                    zigpy.zcl.clusters.security.IasWd.cluster_id,
+                ],
+            )
+        )
+        
     def get_device(self, ieee=None, nwk=None):
         return Classes.ZigpyTransport.AppGeneric.get_device(self, ieee, nwk)
 
