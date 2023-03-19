@@ -66,7 +66,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
         self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in core plugin" % command)
         return False
     
-    dp = int(ts0601_actuator_dp( self, command, dps_mapping), 16)
+    dp = int(ts0601_actuator_dp( command, dps_mapping), 16)
     if dp is None:
         self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in config file" % command)
         return False
@@ -129,15 +129,11 @@ def ts0601_extract_data_point_infos( self, model_name):
         return None
     return self.DeviceConf[model_name ][ "TS0601_DP" ]
 
-def ts0601_actuator_dp( self, command, dps_mapping):
+def ts0601_actuator_dp( command, dps_mapping):
     return next(
-        (
-            dps_mapping[dp]["action_type"]
-            for dp in dps_mapping
-            if "action_type" in dps_mapping[dp]
-        ),
-        None,
+        (dp for dp in dps_mapping if "action_type" in dps_mapping[dp]), None
     )
+
     
 # Sensors responses
 
