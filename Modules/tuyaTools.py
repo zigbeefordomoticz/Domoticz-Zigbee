@@ -17,16 +17,15 @@ from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
 
 def tuya_manufacturer_device(self, NwkId):
     " return True if the NwkId device is a Tuya device, otherwise return False"
-    
+    if not isinstance( self.DeviceConf, dict ):
+        return
+
     manuf_name = self.ListOfDevices[NwkId]["Manufacturer Name"] if "Manufacturer Name" in self.ListOfDevices[NwkId] else ""
     if manuf_name[:3] in ( "_TY", "_TZ") or manuf_name in TUYA_MANUFACTURER_NAME:
         return True
-    
+
     model_name = self.ListOfDevices[NwkId]["Model"] if "Model" in self.ListOfDevices[NwkId] else ""
-    if model_name in self.DeviceConf and "TS0601_DP" in self.DeviceConf[ model_name ]:
-        return True
-    
-    return False
+    return ( model_name in self.DeviceConf and "TS0601_DP" in self.DeviceConf[model_name] )
 
 
 def tuya_TS0121_registration(self, NwkId):

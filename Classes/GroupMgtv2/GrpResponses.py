@@ -105,7 +105,7 @@ def add_group_member_ship_response(self, MsgData):
 def check_group_member_ship_response(self, MsgData):
     " Decode 0x8061"
 
-    MsgSequenceNumber = MsgData[0:2]
+    MsgSequenceNumber = MsgData[:2]
     MsgEP = MsgData[2:4]
     MsgClusterID = MsgData[4:8]
     MsgStatus = MsgData[8:10]
@@ -121,8 +121,8 @@ def check_group_member_ship_response(self, MsgData):
     if MsgSrcAddr not in self.ListOfDevices:
         self.logging(
             "Error",
-            "check_group_member_ship_response Requesting to add group %s membership on non existing device %s"
-            % (MsgGroupID, MsgSrcAddr),
+            "check_group_member_ship_response status: %s Requesting to add group %s membership on non existing device %s"
+            % (MsgStatus, MsgGroupID, MsgSrcAddr),
         )
         return
 
