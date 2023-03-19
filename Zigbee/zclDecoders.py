@@ -538,6 +538,12 @@ def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkI
     #MsgSrcAddr = MsgData[lenMsgData - 4 : lenMsgData]
     self.log.logging("zclDecoder", "Debug", "buildframe8062_look_for_group_member_ship_response - Data: %s" % Data)
 
+    if len(Data) < 4:
+        self.log.logging("zclDecoder", "Debug", "buildframe8062_look_for_group_member_ship_response - Uncomplete Data: %s" % Data)
+        self.log.logging("zclDecoder", "Debug", "   Sqn %s, SrcNwkId %s, SrcEndPoint %s, TargetEp %s, ClusterId %s frame %s" %(
+            Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, frame))
+        return frame
+    
     capacity = Data[:2]
     group_count = Data[2:4]
     
