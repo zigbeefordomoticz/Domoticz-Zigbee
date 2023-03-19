@@ -10,11 +10,10 @@
 
 
 import Domoticz
-
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
-from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
+from Modules.tools import is_domoticz_new_blind
 
 
 def cleanup_widget_Type(widget_type_list):
@@ -517,16 +516,35 @@ def colorcontrol_if_undefinded( self, Nwkid ):
 
 
 def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
-    
-    if widget_name not in SIMPLE_WIDGET:
+    self.log.logging( "WidgetCreation", "Debug", "create_native_widget - NwkId: %s Ieee: %s Widget %s  Dz2023.1: %s" %(
+        NwkId, DeviceID_IEEE, widget_name, is_domoticz_new_blind(self)), NwkId)
+
+    if widget_name in SIMPLE_WIDGET:
+        widget_record = SIMPLE_WIDGET[ widget_name ]
+        if "widgetType" in widget_record:
+            self.log.logging( "WidgetCreation", "Debug", "create_native_widget - Type: %s Widget %s for %s" %(
+                widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
+            createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
+            return True
+
+    elif is_domoticz_new_blind(self) and widget_name in BLIND_DOMOTICZ_2023:
+        widget_record = BLIND_DOMOTICZ_2023[ widget_name ]
+        if "widgetType" in widget_record:
+            self.log.logging( "WidgetCreation", "Debug", "create_native_widget - BLIND_DOMOTICZ_2023 Type: %s Widget %s for %s" %(
+                widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
+            createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
+            return True
+        
+    elif widget_name in BLIND_DOMOTICZ_2022:
+        widget_record = BLIND_DOMOTICZ_2022[ widget_name ]
+        if "widgetType" in widget_record:
+            self.log.logging( "WidgetCreation", "Debug", "create_native_widget - BLIND_DOMOTICZ_2022 Type: %s Widget %s for %s" %(
+                widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
+            createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
+            return True
+ 
+    else:
         return False
-    
-    widget_record = SIMPLE_WIDGET[ widget_name ]
-    if "widgetType" in widget_record:
-        self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - Type: %s Widget %s for %s" %(
-            widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
-        createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
-        return True
     
     Type = widget_record[ "Type" ] if "Type" in widget_record else None
     Subtype = widget_record[ "Subtype" ] if "Subtype" in widget_record else None
@@ -605,16 +623,50 @@ SIMPLE_WIDGET = {
     "ColorControlRGBWZ": { "Type": 241, "Subtype": 0x02, "Switchtype": 7, },
     "ColorControlRGB": { "Type": 241, "Subtype": 1, "Switchtype": 7, },
     "LvlControl": { "Type": 244, "Subtype": 73, "Switchtype": 7 },
-    "VenetianInverted": { "Type": 244, "Subtype": 73, "Switchtype": 15 },
-    "Venetian": { "Type": 244, "Subtype": 73, "Switchtype": 15 },
-    "BSO-Volet": { "Type": 244, "Subtype": 73, "Switchtype": 16 },
-    "BSO-Orientation": { "Type": 244, "Subtype": 73, "Switchtype": 16 },
-    "VanneInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21 },
-    "CurtainInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21 },
-    "Vanne": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
-    "Curtain": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
-    "BlindInverted": { "Type": 244, "Subtype": 73, "Switchtype": 16, "ForceClusterType": "LvlControl", },
-    "Blind": { "Type": 244, "Subtype": 73, "Switchtype": 13, "ForceClusterType": "LvlControl", },
     "SwitchAlarm": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 13 },
     "Distance": { "Type": 243, "Subtype": 27, "Switchtype": 0},
+}
+
+BLIND_DOMOTICZ_2022 = {
+    # Blind old version before Domoticz 2023.1
+    "Blind": { "Type": 244, "Subtype": 73, "Switchtype": 13, "ForceClusterType": "LvlControl", },
+    
+    "VenetianInverted": { "Type": 244, "Subtype": 73, "Switchtype": 15 },
+    "Venetian": { "Type": 244, "Subtype": 73, "Switchtype": 15 },
+    
+    "BlindInverted": { "Type": 244, "Subtype": 73, "Switchtype": 16, "ForceClusterType": "LvlControl", },
+    "BSO-Volet": { "Type": 244, "Subtype": 73, "Switchtype": 16 },
+    "BSO-Orientation": { "Type": 244, "Subtype": 73, "Switchtype": 16 },
+    
+    "VanneInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21 },
+    "CurtainInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21 },
+    
+    "Vanne": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
+    "Curtain": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
+} 
+
+BLIND_DOMOTICZ_2023 = {
+    # Blinds new version after 2023.1
+    #                      Type   Subtype  Switchtype  Options
+    # Switch               244     73       0            ReversePosition: false ;ReverseState: false   
+    # Blinds               244     73       3            ReversePosition: false ;ReverseState: false   
+    # Blinds+Stop          244     73       21           ReversePosition: false ;ReverseState: false    
+    # Blinds+Percent       244     73       73           ReversePosition: false ;ReverseState: false   
+    # Blinds+Venetian EU   244     73       15           ReversePosition: false ;ReverseState: false   
+    # Blinds+Venetian US   244     73       14           ReversePosition: false ;ReverseState: false   
+
+    "Blind": { "Type": 244, "Subtype": 73, "Switchtype": 3, "Options": "ReversePosition: false ;ReverseState: false", "ForceClusterType": "LvlControl", },
+    "BlindInverted": { "Type": 244, "Subtype": 73, "Switchtype": 3, "Options": "ReversePosition: true  ;ReverseState: true", "ForceClusterType": "LvlControl", },
+    "BSO-Volet": { "Type": 244, "Subtype": 73, "Switchtype": 3, "Options": "ReversePosition: false ;ReverseState: false" },
+    
+    "Venetian": { "Type": 244, "Subtype": 73, "Switchtype": 15, "Options": "ReversePosition: false ;ReverseState: false" },
+    "VenetianInverted": { "Type": 244, "Subtype": 73, "Switchtype": 15, "Options": "ReversePosition: true  ;ReverseState: true" },
+    
+    "BSO-Orientation": { "Type": 244, "Subtype": 73, "Switchtype": 15, "Options": "ReversePosition: false ;ReverseState: false" },
+    
+    "Blind+Stop": { "Type": 244, "Subtype": 73, "Switchtype": 21, "Options": "ReversePosition: false ;ReverseState: false" },
+    "VanneInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21, "Options": "ReversePosition: false ;ReverseState: false" },
+    "CurtainInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21, "Options": "ReversePosition: false ;ReverseState: false" },
+    "Vanne": { "Type": 244, "Subtype": 73, "Switchtype": 21, "Options": "ReversePosition: true  ;ReverseState: true" },
+    "Curtain": { "Type": 244, "Subtype": 73, "Switchtype": 21, "Options": "ReversePosition: true  ;ReverseState: true" },
 }
