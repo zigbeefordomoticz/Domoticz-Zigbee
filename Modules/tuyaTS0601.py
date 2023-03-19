@@ -339,12 +339,16 @@ def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
 
    
 def ts0601_action_setpoint(self, NwkId, Ep, dp, value):
+    if value is None:
+        return
+
     self.log.logging("Tuya", "Debug", "ts0601_action_setpoint - %s Setpoint: %s" % (NwkId, value))
     action = "%02x02" % dp
     data = "%08x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
    
 def ts0601_action_calibration(self, NwkId, Ep, dp, value=None):
+    
     self.log.logging("Tuya", "Debug", "ts0601_action_calibration - %s Calibration: %s" % (NwkId, value))
 
     target_calibration = 0
@@ -366,6 +370,9 @@ def ts0601_action_calibration(self, NwkId, Ep, dp, value=None):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 def ts0601_window_detection_mode( self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
     self.log.logging("Tuya", "Debug", "ts0601_window_detection_mode - %s Window Detection mode: %s" % (NwkId, value))
     action = "%02x01" % dp
     data = "%02x" % value
@@ -373,12 +380,17 @@ def ts0601_window_detection_mode( self, NwkId, Ep, dp, value=None):
 
 
 def ts0601_child_lock_mode( self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
     self.log.logging("Tuya", "Debug", "ts0601_child_lock_mode - %s ChildLock mode: %s" % (NwkId, value))
     action = "%02x01" % dp
     data = "%02x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
-def ts0601_action_trv7_system_mode(self, NwkId, Ep, dp, value):
+def ts0601_action_trv7_system_mode(self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
     self.log.logging("Tuya", "Debug", "ts0601_action_trv7_system_mode - %s System mode: %s" % (NwkId, value))
     WIDGET_DEVICE_MAP = {
         1: 0,
