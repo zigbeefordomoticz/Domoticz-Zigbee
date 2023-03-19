@@ -91,6 +91,23 @@
             "Mandatory": false,
             "ActionList": [ "check_store_value", "update_battery"]
         },
+
+        "0030": { "Enabled": true, "Name": "BatteryManufacturer", "DataType": "41", "ActionList": [ "check_store_value"] },
+        "0031": { "Enabled": true, "Name": "BatterySize", "DataType": "30", "ActionList": [ "check_store_value"] },
+        "0032": { "Enabled": true, "Name": "BatteryAHrRating", "DataType": "21", "ActionList": [ "check_store_value"] },
+        "0033": { "Enabled": true, "Name": "BatteryQuantity", "DataType": "20", "ActionList": [ "check_store_value"] },
+        "0034": { "Enabled": true, "Name": "BatteryRatedVoltage", "DataType": "20", "ActionList": [ "check_store_value"] },
+        "0035": { "Enabled": true, "Name": "BatteryAlarmMask", "DataType": "18", "ActionList": [ "check_store_value"] },
+        "0036": { "Enabled": true, "Name": "BatteryVoltageMinThreshold", "DataType": "20", "ActionList": [ "check_store_value"] },
+        "0037": { "Enabled": true, "Name": "BatteryVoltageThreshold1", "DataType": "20", "ActionList": [ "check_store_value"] },
+        "0038": { "Enabled": true, "Name": "BatteryVoltageThreshold2", "DataType": "20", "ActionList": [ "check_store_value"] },
+        "0039": { "Enabled": true, "Name": "BatteryVoltageThreshold3", "DataType": "20", "ActionList": [ "check_store_value"] },
+        "003a": { "Enabled": true, "Name": "BatteryPercentageMinThreshold", "DataType": "20", "ActionList": [ "check_store_value"] },
+        "003b": { "Enabled": true, "Name": "BatteryPercentageThreshold1", "DataType": "20", "ActionList": [ "check_store_value"] },
+        "003c": { "Enabled": true, "Name": "BatteryPercentageThreshold2", "DataType": "20", "ActionList": [ "check_store_value"] },
+        "003d": { "Enabled": true, "Name": "BatteryPercentageThreshold3", "DataType": "20", "ActionList": [ "check_store_value"] },
+        "003e": { "Enabled": true, "Name": "BatteryAlarmState", "DataType": "1b", "ActionList": [ "check_store_value"] },  
+          
         "fffd": {
             "Enabled": true,
             "Name": "ClusterRevision",
