@@ -19,8 +19,7 @@ from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
 from Modules.domoTools import CLUSTER_TO_TYPE
 from Modules.livolo import livolo_bind
-from Modules.lumi import (enable_click_mode_aqara, enableOppleSwitch,
-                          enableOppleSwitch)
+from Modules.lumi import enable_click_mode_aqara, enableOppleSwitch
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_TUYA,
                                        PREFIX_MACADDR_WIZER_LEGACY,
@@ -35,7 +34,8 @@ from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
-from Modules.tools import getListOfEpForCluster, is_fake_ep, get_deviceconf_parameter_value
+from Modules.tools import (get_deviceconf_parameter_value,
+                           getListOfEpForCluster, is_fake_ep)
 from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
@@ -289,14 +289,8 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         return
 
     # Let's check if we have to disable the widget creation
-    if (
-        "Model" in self.ListOfDevices[NWKID]
-        and self.ListOfDevices[NWKID]["Model"] not in ( {}, "" )
-        and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf
-        and "CreateWidgetDomoticz"
-        in self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]
-        and not self.DeviceConf[self.ListOfDevices[NWKID]["Model"]][ "CreateWidgetDomoticz" ]
-    ):
+    create_widget = get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "CreateWidgetDomoticz")
+    if create_widget is not None and create_widget is False:
         create_device_without_Domoticz_Widgets( self, NWKID)
         return
 
