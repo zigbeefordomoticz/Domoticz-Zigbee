@@ -1505,7 +1505,7 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
         and self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"]
     ):
         # We have an Eratic value, but we don't want to handle it, nor tell anybody !!!
-        return True
+        return False
 
     if _attribute not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId][_attribute] = {}
