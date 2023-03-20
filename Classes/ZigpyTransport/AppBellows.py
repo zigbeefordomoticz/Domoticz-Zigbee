@@ -87,7 +87,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         #if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
         #    self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
-
+        # Makes 0x0000 default Lightlink group , used by Ikea
+        coordinator = self.get_device(self.ieee)
+        status = await coordinator.add_to_group( 0x0000, name="Default Lightlink Group", )
+        
     async def shutdown(self) -> None:
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
