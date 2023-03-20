@@ -89,8 +89,17 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
         # Makes 0x0000 default Lightlink group , used by Ikea
         coordinator = self.get_device(self.ieee)
-        status = await coordinator.add_to_group( 0x0000, name="Default Lightlink Group", )
-        
+        if self.pluginconf.pluginConf["zigatePartOfGroup0000"]:
+            # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
+            status = await coordinator.add_to_group( 0x0000, name="Default Lightlink Group", )
+
+        if self.pluginconf.pluginConf["zigatePartOfGroupTint"]:
+            # Tint Remote manage 4 groups and we will create with ZiGate attached.
+            status = await coordinator.add_to_group( 0x4003, name="Default Tint Group 4003", )
+            status = await coordinator.add_to_group( 0x4004, name="Default Tint Group 4004", )
+            status = await coordinator.add_to_group( 0x4005, name="Default Tint Group 4005", )
+            status = await coordinator.add_to_group( 0x4006, name="Default Tint Group 4006", )
+            
     async def shutdown(self) -> None:
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:

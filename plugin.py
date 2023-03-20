@@ -1315,11 +1315,11 @@ def start_GrpManagement(self, homefolder):
 
     if self.groupmgt:
         self.webserver.update_groupManagement(self.groupmgt)
-        if self.pluginconf.pluginConf["zigatePartOfGroup0000"]:
+        if self.zigbee_communication != "zigpy" and self.pluginconf.pluginConf["zigatePartOfGroup0000"]:
             # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
             self.groupmgt.addGroupMemberShip("0000", "01", "0000")
 
-        if self.pluginconf.pluginConf["zigatePartOfGroupTint"]:
+        if self.zigbee_communication != "zigpy" and self.pluginconf.pluginConf["zigatePartOfGroupTint"]:
             # Tint Remote manage 4 groups and we will create with ZiGate attached.
             self.groupmgt.addGroupMemberShip("0000", "01", "4003")
             self.groupmgt.addGroupMemberShip("0000", "01", "4004")
