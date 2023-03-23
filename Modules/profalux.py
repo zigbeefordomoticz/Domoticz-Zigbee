@@ -221,7 +221,10 @@ def profalux_MoveToLiftAndTilt(self, nwkid, level=None, tilt=None):
             and "0008" in self.ListOfDevices[nwkid]["Ep"]["01"]
             and "0000" in self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]
         ):
-            level = int(self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]["0000"], 16)
+            if isinstance(self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]["0000"], str ):
+                level = int(self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]["0000"], 16)
+            else:
+                level = self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]["0000"]
 
         return level
 
@@ -244,7 +247,7 @@ def profalux_MoveToLiftAndTilt(self, nwkid, level=None, tilt=None):
             self.ListOfDevices[nwkid]["Ep"]["01"] = {}
         if "0008" not in self.ListOfDevices[nwkid]["Ep"]["01"]:
             self.ListOfDevices[nwkid]["Ep"]["01"]["0008"] = {}
-        self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]["0000"] = "%02x" % level
+        self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]["0000"] = level
 
     def setTilt(self, nwkid, tilt):
         if "01" not in self.ListOfDevices[nwkid]["Ep"]:
