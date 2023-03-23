@@ -414,6 +414,7 @@ class BasePlugin:
             and self.zigbee_communication == "zigpy" 
             and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.multiinstances_z4d_plugin_instance())
         ):
+            # https://github.com/python/cpython/issues/91375
             self.log.logging("Plugin", "Status", "Multi instances plugin detected. Enable zigpy workaround")
             sys.modules["_asyncio"] = None
         
