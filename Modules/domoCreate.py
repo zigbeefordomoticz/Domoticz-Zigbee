@@ -947,7 +947,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             ):
                 self.log.logging("Widget", "Debug", "CreateDomoDevice - t: %s in Colorxxxx" % (t), NWKID)
                 # variateur de couleur/luminosite/on-off
-
+                Subtype_ = None
                 if t == "ColorControlRGB":
                     Subtype_ = 0x02  # RGB color palette / Dimable
                 elif t == "ColorControlRGBWW":
