@@ -1,0 +1,36 @@
+{
+    "_source": "https://www.domoticz.com/forum/viewtopic.php?t=39360&view=unread&sid=8408bcbdb10c57ded7fcbb2742b2cd57#unread",
+    "_blakadder": "https://zigbee.blakadder.com/Tuya_SML-04Z.html",
+    "_comment": "Tuya 4 Gangs Inching Relay command",
+    "_version": "1.0",
+    "Identifier": [
+        [ "TS0004", "_TZ3000_excgg5kb" ],
+        [ "TS0004", "_TZ3000_u3oupgdy" ],
+        [ "TS0004", "_TZ3000_ltt60asa" ]
+    ],
+    "Ep": {
+        "01": { "0000": "", "0003": "", "0004": "", "0005": "", "0006": "", "e000": "", "e001": "", "000a": "", "0019": "", "Type": "Switch" },
+        "02": { "0000": "", "0004": "", "0005": "", "0006": "", "e001": "", "Type": "Switch" },
+        "03": { "0000": "", "0004": "", "0005": "", "0006": "", "e001": "", "Type": "Switch" },
+        "04": { "0000": "", "0004": "", "0005": "", "0006": "", "e001": "", "Type": "Switch" },
+        "f2": { "0021": "", "Type": "" }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0006" ],
+    "ConfigureReporting": {
+    },
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe", "0002", "0003", "0004", "0006" ],
+        "0006": [ "0000", "4001", "4002", "5000", "8000", "8001", "8002" ],
+        "e000": [ "d001", "d002", "d003" ],
+        "e001": [ "d010" ],
+        "0019": [ "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009" ]
+    },
+    "PowerOnOffStateAttribute8002": true,
+    "Param": {
+        "TuyaSwitchMode": 2,
+        "SmartSwitchBackLight": 1,
+        "SmartSwitchIndicateLight": 1,
+        "PowerOnAfterOffOn": "0"
+    }
+}

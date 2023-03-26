@@ -15,28 +15,12 @@ import struct
 from datetime import datetime
 from time import time
 
-from Zigbee.encoder_tools import decode_endian_data
-from Zigbee.zclCommands import (zcl_attribute_discovery_request,
-                                zcl_get_list_attribute_extended_infos,
-                                zcl_identify_send, zcl_read_attribute,
-                                zcl_write_attribute,
-                                zcl_write_attributeNoResponse,
-                                zcl_identify_trigger_effect)
-from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
-                                zdp_IEEE_address_request,
-                                zdp_management_leave_request,
-                                zdp_management_network_update_request,
-                                zdp_many_to_one_route_request,
-                                zdp_permit_joining_request,
-                                zdp_raw_nwk_update_request, zdp_reset_device)
-from Zigbee.zdpRawCommands import (zdp_management_binding_table_request,
-                                   zdp_management_routing_table_request)
-
 from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
                                        send_zigatecmd_zcl_noack)
-from Modules.tools import (build_fcf, get_and_inc_ZDP_SQN,lookupForIEEE,
-                           getListOfEpForCluster, is_ack_tobe_disabled, is_hex,
+from Modules.tools import (build_fcf, get_and_inc_ZDP_SQN,
+                           get_deviceconf_parameter_value,
+                           getListOfEpForCluster, is_hex, lookupForIEEE,
                            mainPoweredDevice, set_isqn_datastruct,
                            set_request_datastruct, set_timestamp_datastruct)
 from Modules.zigateCommands import (zigate_blueled,
@@ -46,6 +30,21 @@ from Modules.zigateCommands import (zigate_blueled,
                                     zigate_set_extended_PanID, zigate_set_mode,
                                     zigate_set_time, zigate_start_nwk)
 from Modules.zigateConsts import ZIGATE_EP, ZLL_DEVICES
+from Zigbee.encoder_tools import decode_endian_data
+from Zigbee.zclCommands import (zcl_attribute_discovery_request,
+                                zcl_get_list_attribute_extended_infos,
+                                zcl_identify_send, zcl_identify_trigger_effect,
+                                zcl_read_attribute, zcl_write_attribute,
+                                zcl_write_attributeNoResponse)
+from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
+                                zdp_IEEE_address_request,
+                                zdp_management_leave_request,
+                                zdp_management_network_update_request,
+                                zdp_many_to_one_route_request,
+                                zdp_permit_joining_request,
+                                zdp_raw_nwk_update_request, zdp_reset_device)
+from Zigbee.zdpRawCommands import (zdp_management_binding_table_request,
+                                   zdp_management_routing_table_request)
 
 
 def ZigatePermitToJoin(self, permit):
@@ -650,9 +649,8 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
         self.log.logging("BasicOutput", "Error", "set_PowerOn_OnOff for %s not found" % (key), key)
         return
     
-    model_name = ""
-    if "Model" in self.ListOfDevices[key]:
-        model_name = self.ListOfDevices[key]["Model"]
+    model_name = self.ListOfDevices[key]["Model"] if "Model" in self.ListOfDevices[key] else ""
+    manuf_name = self.ListOfDevices[key]["Manufacturer Name"] if "Manufacturer Name" in self.ListOfDevices[key] else ""
         
     manuf_spec = "00"
     manuf_id = "0000"
@@ -662,12 +660,13 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
     attribute = "4003"
     data_type = "30"  #
 
-    if model_name in ( "TS0121", "TS0115", "TS011F-multiprise", "TS011F-2Gang-switches", "TS011F-plug" , "TS011F-din", "TS0004-_TZ3000_excgg5kb", "TS0001","TS0002", "TS0003", "TS0002_relay_switch", "TS0003_relay_switch"):
+    if get_deviceconf_parameter_value(self, model_name, "PowerOnOffStateAttribute8002", return_default=False):
         attribute = "8002"
         if OnOffMode == 0xFF:
             OnOffMode = 0x02
 
-    if model_name in ( "TS0004-_TZ3000_excgg5kb",):
+    if manuf_name == "TS0004-_TZ3000_excgg5kb":
+        # For to only 1 Ep
         ListOfEp = ( "01", )
         
     self.log.logging( "BasicOutput", "Debug", "set_PowerOn_OnOff for %s - OnOff: %s %s %s" % (key, OnOffMode, attribute, ListOfEp), key )

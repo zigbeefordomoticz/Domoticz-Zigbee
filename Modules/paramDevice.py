@@ -42,7 +42,7 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
 from Modules.schneider_wiser import (iTRV_open_window_detection,
                                      wiser_home_lockout_thermostat,
                                      wiser_lift_duration)
-from Modules.tools import getEpForCluster
+from Modules.tools import get_deviceconf_parameter_value, getEpForCluster
 from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           SmartRelayStatus03, SmartRelayStatus04,
                           get_tuya_attribute, tuya_backlight_command,
@@ -160,31 +160,16 @@ def param_PowerOnAfterOffOn(self, nwkid, mode):
             philips_set_poweron_after_offon_device(self, mode, nwkid)
             ReadAttributeRequest_0006_400x(self, nwkid)
 
-    elif model in (
-        "TS0121",
-        "TS0115",
-        "TS011F-multiprise",
-        "TS011F-2Gang-switches",
-        "TS011F-plug",
-        "TS0001",
-        "TS011F-din",
-        "TS0004",
-        "TS0004-_TZ3000_excgg5kb",
-        "TS0002", "TS0003", "TS0002_relay_switch", "TS0003_relay_switch"
-    ):
-        self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for %s mode: %s TUYA Manufacturer" % (nwkid, mode), nwkid)
-        
+    elif get_deviceconf_parameter_value(self, model, "PowerOnOffStateAttribute8002", return_default=False):
         if not _check_attribute_exist( self, nwkid, "01", "0006", "8002"):
             return
-
         if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["8002"] == "2" and str(mode) == "255":
             return
-
         if self.ListOfDevices[nwkid]["Ep"]["01"]["0006"]["8002"] != str(mode):
             self.log.logging("Heartbeat", "Debug", "param_PowerOnAfterOffOn for Tuya for %s mode: %s" % (nwkid, mode), nwkid)
             set_poweron_afteroffon(self, nwkid, mode)
             ReadAttributeRequest_0006_400x(self, nwkid)
-            
+ 
     elif self.ListOfDevices[nwkid]["Manufacturer"] == "1277":  # Enki Leroy Merlin
         if not _check_attribute_exist( self, nwkid, "01", "0006", "4003"):
             return
