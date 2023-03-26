@@ -28,7 +28,8 @@ def rest_plugin_upgrade(self, verb, data, parameters):
         universal_newlines=True,
         text=True,
         capture_output=True,
-        shell=True
+        shell=True,
+        errors='backslashreplace'
     )
     result = {"result": str(process.stdout), "ReturnCode": process.returncode }
     
@@ -73,7 +74,8 @@ def certified_devices_update(self):
         universal_newlines=True,
         text=True,
         capture_output=True,
-        shell=True
+        shell=True,
+        errors='backslashreplace'
     )
     result = {"result": str(process.stdout), "ReturnCode": process.returncode }
     Logging_mode = "Log" if result["ReturnCode"] == 0 else "Error"
