@@ -65,6 +65,7 @@ PREFIX_MACADDR_DEVELCO = ( "0015bc", )
 PREFIX_MACADDR_TUYA = ( 
     "588e81",
     "60a423",
+    "70ac08",
     "842e14",
     "847127",
     "84fd27",
