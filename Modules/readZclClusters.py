@@ -27,9 +27,9 @@ CHECK_AND_STORE_RAW = "check_store_raw_value"
 STORE_SPECIFIC_ATTRIBUTE = "store_specif_attribute"
 BASIC_MODEL_NAME = "basic_model_name"
 
-STORE_SPECIFIC_PLACE = "SpecifStoragelvl1"
-STORE_SPECIFIC_PLACE = "SpecifStoragelvl2"
-STORE_SPECIFIC_PLACE = "SpecifStoragelvl3"
+STORE_SPECIFIC_PLACE_LVL1 = "SpecifStoragelvl1"
+STORE_SPECIFIC_PLACE_LVL2 = "SpecifStoragelvl2"
+STORE_SPECIFIC_PLACE_LVL3 = "SpecifStoragelvl3"
 UPDATE_DOMO_DEVICE = "upd_domo_device"
 UPDATE_BATTERY = "update_battery"
 
@@ -122,9 +122,9 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )
             
         elif data_action == STORE_SPECIFIC_ATTRIBUTE:
-            _storage_specificlvl1 = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl1", model=device_model )
-            _storage_specificlvl2 = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl2", model=device_model )
-            _storage_specificlvl3 = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "SpecifStoragelvl3", model=device_model )
+            _storage_specificlvl1 = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, STORE_SPECIFIC_PLACE_LVL1, model=device_model )
+            _storage_specificlvl2 = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, STORE_SPECIFIC_PLACE_LVL2, model=device_model )
+            _storage_specificlvl3 = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, STORE_SPECIFIC_PLACE_LVL3, model=device_model )
             store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3)
             
         elif data_action == BASIC_MODEL_NAME:
