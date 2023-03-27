@@ -4,13 +4,16 @@
 from DevicesModules.custom_konke import konke_onoff
 from DevicesModules.custom_zlinky import zlinky_clusters
 from DevicesModules.custom_legrand import legrand_operating_time
-from Modules.lumi import lumi_private_cluster
+from Modules.lumi import lumi_private_cluster, lumi_lock
 from Modules.zclClusterHelpers import (compute_electrical_measurement_conso,
                                        compute_metering_conso, CurrentPositionLiftPercentage)
 
 FUNCTION_WITH_ACTIONS_MODULE = {
     # Lumi 0xfcc
     "Lumi_fcc0": lumi_private_cluster,
+    
+    # Lumi Lock Attribute
+    "Lumi_Lock": lumi_lock,
 
     # ZLinky
     "zlinky_clusters": zlinky_clusters

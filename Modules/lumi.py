@@ -602,11 +602,11 @@ def readXiaomiClusterv2(
 
             self.log.logging("Lumi", "Log", "-----  value: %s" % (value), MsgSrcAddr)
 
+def readLumiLock( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+    lumi_lock(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-def readLumiLock(
-    self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData
-):
 
+def lumi_lock(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData):
     #  11 01 ff ffffffffff  Clé non autorisée    #     #
     #  11 07 ff ffffffffff  Anomalie (forçage de la serrure / clé mal introduit)
 
