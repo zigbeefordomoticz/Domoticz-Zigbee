@@ -217,7 +217,7 @@
             "Acc": "RW",
             "Default": "",
             "Mandatory": false,
-            "SpecifStoragelvl1": "SWBUILD_1",
+            "SpecifStoragelvl1": "Location",
             "ActionList": [
                 "check_store_value",
                 "store_specif_attribute"
@@ -269,6 +269,32 @@
                 "check_store_value"
             ]
         },
+        "0015": {
+            "Enabled": true,
+            "Name": "SWBuildID2",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "SpecifStoragelvl1": "SWBUILD_2",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
+        "8000": {
+            "Enabled": true,
+            "Name": "SWBuildID3",
+            "DataType": "42",
+            "Acc": "R",
+            "Default": "",
+            "Mandatory": false,
+            "SpecifStoragelvl1": "SWBUILD_3",
+            "ActionList": [
+                "check_store_value",
+                "store_specif_attribute"
+            ]
+        },
         "4000": {
             "Enabled": true,
             "Name": "SWBuildID",
@@ -276,7 +302,7 @@
             "Acc": "R",
             "Default": "",
             "Mandatory": false,
-            "SpecifStoragelvl1": "SWBUILD_3",
+            "SpecifStoragelvl1": "SWBUILD",
             "ActionList": [
                 "check_store_value",
                 "store_specif_attribute"
