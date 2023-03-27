@@ -84,7 +84,7 @@
             "Enabled": true,
             "Name": "BatteryPercentageRemaining",
             "DataType": "20" ,
-            "Range": [ "00", "ff" ] ,
+            "Range": [ "00", "fe" ] ,
             "SpecialValues": { "ff": "invalid or unknown reading"},
             "Acc": "RP" ,
             "Default": "0",
