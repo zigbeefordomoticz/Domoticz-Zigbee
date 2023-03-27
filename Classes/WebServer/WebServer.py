@@ -1003,9 +1003,12 @@ class WebServer(object):
                         "Stack Version",
                         "HW Version",
                     ):
-                        if attribut == "Battery" and attribut in self.ListOfDevices[item] and self.ListOfDevices[item]["Battery"] in ( {}, ):
-                            if "IASBattery" in self.ListOfDevices[item]:
+                        if attribut == "Battery" and attribut in self.ListOfDevices[item]:
+                            if self.ListOfDevices[item]["Battery"] in ( {}, ) and "IASBattery" in self.ListOfDevices[item]:
                                 device[attribut] = str(self.ListOfDevices[item][ "IASBattery" ])
+                            elif isinstance( self.ListOfDevices[item]["Battery"], int):
+                                device[attribut] = self.ListOfDevices[item]["Battery"]
+                                device["BatteryInside"] = True
 
                         elif attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
