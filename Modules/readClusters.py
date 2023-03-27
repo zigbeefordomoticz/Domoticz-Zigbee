@@ -213,7 +213,8 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
             "MsgClusterData": str(MsgClusterData),
         }
 
-        self.log.logging( "Cluster", "Error", "ReadCluster - Error/unknow Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr), MsgSrcAddr, _context, )
+        self.log.logging(  "Cluster",  "Error",  "ReadCluster - Error/unknow %s/%s Cluster: %s Attribute: %s Status: %s DataType: %s DataSize: %s Data: %s" %(
+            MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, _context, )
 
 
 
