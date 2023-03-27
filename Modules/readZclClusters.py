@@ -78,7 +78,8 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     if _ranges is not None:
         checking_ranges = _check_range( self, value, MsgAttType, _ranges, )
         if checking_ranges is not None and not checking_ranges:
-            self.log.logging("ZclClusters", "Error", " . value out of ranges : %s -> %s" %( value, str(_ranges) ))
+            self.log.logging("ZclClusters", "Error", " %s/%s %s %s . value out of ranges : %s -> %s" %( 
+                MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, str(_ranges) ))
     
     _eval_inputs = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExpCustomVariables", model=device_model)
     _function = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalFunc", model=device_model)
@@ -427,25 +428,24 @@ def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_in
             return evaluation_result
 
         except NameError as e:
-            self.log.logging("ZclClusters", "Error", "Undefined variable, please check the formula")
-            self.log.logging("ZclClusters", "Error", "   - Error: %s" % e)
-            self.log.logging("ZclClusters", "Error", "   - formula: %s" % _eval_formula)
-            self.log.logging("ZclClusters", "Error", "   - variables: %s" % custom_variable)
+            self.log.logging("ZclClusters", "Error", "Undefined variable, please check the formula %s/%s %s %s" %(
+                nwkid, ep, cluster, attribut))
+            _log_error_formula( self, e, _eval_formula, custom_variable)
         
         except SyntaxError as e:
             self.log.logging("ZclClusters", "Error", "Syntax error, please check the formula")
-            self.log.logging("ZclClusters", "Error", "   - Error: %s" % e)
-            self.log.logging("ZclClusters", "Error", "   - formula: %s" % _eval_formula)
-            self.log.logging("ZclClusters", "Error", "   - variables: %s" % custom_variable)
-
+            _log_error_formula( self, e, _eval_formula, custom_variable)
             
         except ValueError as e:
             self.log.logging("ZclClusters", "Error", "Value Error, please check the formula")
-            self.log.logging("ZclClusters", "Error", "   - Error: %s" % e)
-            self.log.logging("ZclClusters", "Error", "   - formula: %s" % _eval_formula)
-            self.log.logging("ZclClusters", "Error", "   - variables: %s" % custom_variable)
+            _log_error_formula( self, e, _eval_formula, custom_variable)
             
     return None
+
+def _log_error_formula( self, e, _eval_formula, custom_variable):
+    self.log.logging("ZclClusters", "Error", "   - Error: %s" % e)
+    self.log.logging("ZclClusters", "Error", "   - formula: %s" % _eval_formula)
+    self.log.logging("ZclClusters", "Error", "   - variables: %s" % custom_variable)
 
 
 def store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3):
