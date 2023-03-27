@@ -1,0 +1,21 @@
+{
+    "ClusterId": "0019",
+    "Description": "OTA Upgrade",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { "Enabled": true, "Name": "UpgradeServerID", "DataType": "f0", "Mandatory": true, "ActionList": [ "check_store_value" ] },
+        "0001": { "Enabled": true, "Name": "FileOffset", "DataType": "23","Mandatory": true, "ActionList": [ "check_store_value" ] },
+        "0002": { "Enabled": true, "Name": "CurrentFileVersion", "DataType": "23","Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0003": { "Enabled": true, "Name": "CurrentZigBeeStackVersion", "DataType": "21","Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0004": { "Enabled": true, "Name": "DownloadedFileVersion", "DataType": "23","Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0005": { "Enabled": true, "Name": "DownloadedZigBeeStackVersion", "DataType": "21", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0006": { "Enabled": true, "Name": "ImageUpgradeStatus", "DataType": "30","Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0007": { "Enabled": true, "Name": "ManufacturerID", "DataType": "21","Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0008": { "Enabled": true, "Name": "ImageTypeID", "DataType": "21","Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "0009": { "Enabled": true, "Name": "MinimumBlockPeriod", "DataType": "21", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "000a": { "Enabled": true, "Name": "ImageStamp" , "DataType": "23", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "fffd": { "Enabled": true, "Name": "ClusterRevision", "DataType": "21", "Acc": "R", "Range": [ "0001", "fffe"], "Default": "", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "fffe": { "Enabled": true, "Name": "AttributeReportingStatus", "DataType": "30", "Acc": "R", "Range": [ "00", "ff"], "Default": "", "Mandatory": false, "ActionList": [ "check_store_value" ] }
+    }
+}
