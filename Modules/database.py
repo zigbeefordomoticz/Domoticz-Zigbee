@@ -12,6 +12,7 @@
 
 
 import json
+from pathlib import Path
 import os.path
 import time
 from typing import Dict
@@ -149,8 +150,9 @@ def LoadDeviceList(self):
         )
         res = "Success"
 
-    if os.path.isfile(self.pluginconf.pluginConf["pluginData"] + self.DeviceListName):
-        _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
+    _pluginConf = Path( self.pluginconf.pluginConf["pluginData"] )
+    _DeviceListFileName = _pluginConf / self.DeviceListName
+    if os.path.isfile(_DeviceListFileName):
         res = loadTxtDatabase(self, _DeviceListFileName)
     else:
         # Do not exist
@@ -169,7 +171,7 @@ def LoadDeviceList(self):
             ),
         )
 
-    self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : " + _DeviceListFileName)
+    self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % _DeviceListFileName)
     Modules.tools.helper_versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     # Keep the Size of the DeviceList in order to check changes
@@ -238,7 +240,7 @@ def LoadDeviceList(self):
 def loadTxtDatabase(self, dbName):
     res = "Success"
     with open(dbName, "r", encoding='utf-8') as myfile2:
-        self.log.logging("Database", "Debug", "Open : " + dbName)
+        self.log.logging("Database", "Debug", "Open : %s" % dbName)
         nb = 0
         for line in myfile2:
             if not line.strip():
@@ -361,7 +363,8 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
 
 def _write_DeviceList_txt(self):
     # Write in classic format ( .txt )
-    _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName
+    _pluginData = Path ( self.pluginconf.pluginConf["pluginData"] )
+    _DeviceListFileName = _pluginData / self.DeviceListName
     try:
         self.log.logging("Database", "Debug", "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
         with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
@@ -391,7 +394,8 @@ def _write_DeviceList_txt(self):
 
 
 def _write_DeviceList_json(self):
-    _DeviceListFileName = self.pluginconf.pluginConf["pluginData"] + self.DeviceListName[:-3] + "json"
+    _pluginData = Path ( self.pluginconf.pluginConf["pluginData"] )
+    _DeviceListFileName = _pluginData / self.DeviceListName[:-3] + "json"
     self.log.logging("Database", "Debug", "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
     with open(_DeviceListFileName, "wt") as file:
         json.dump(self.ListOfDevices, file, sort_keys=True, indent=2)
@@ -410,9 +414,10 @@ def importDeviceConf(self):
     # Import DeviceConf.txt
     tmpread = ""
     self.DeviceConf = {}
-
-    if os.path.isfile(self.pluginconf.pluginConf["pluginConfig"] + "DeviceConf.txt"):
-        with open(self.pluginconf.pluginConf["pluginConfig"] + "DeviceConf.txt", "r") as myfile:
+    _pluginConfig = Path ( self.pluginconf.pluginConf["pluginConfig"] )
+    _DeviceConf = _pluginConfig / "DeviceConf.txt"
+    if os.path.isfile(_DeviceConf):
+        with open(_DeviceConf, "r") as myfile:
             tmpread += myfile.read().replace("\n", "")
             try:
                 self.DeviceConf = eval(tmpread)
@@ -441,8 +446,8 @@ def import_local_device_conf(self):
 
     # Read DeviceConf for backward compatibility
     importDeviceConf(self)
-
-    model_directory = self.pluginconf.pluginConf["pluginConfig"] + "Local-Devices"
+    _pluginConfig = Path( self.pluginconf.pluginConf["pluginConfig"] )
+    model_directory = _pluginConfig / "Local-Devices"
 
     if os.path.isdir(model_directory):
         model_list = [f for f in listdir(model_directory) if isfile(join(model_directory, f))]
@@ -451,7 +456,7 @@ def import_local_device_conf(self):
             if model_device in ("README.md", ".PRECIOUS"):
                 continue
 
-            filename = str(model_directory + "/" + model_device)
+            filename = model_directory / model_device
             with open(filename, "rt", encoding='utf-8') as handle:
                 try:
                     model_definition = json.load(handle)
@@ -561,8 +566,8 @@ def checkListOfDevice2Devices(self, Devices):
 
 
 def saveZigateNetworkData(self, nkwdata):
-
-    json_filename = self.pluginconf.pluginConf["pluginData"] + "Zigate.json"
+    _pluginData = Path( self.pluginconf.pluginConf["pluginConfig"] )
+    json_filename = _pluginData / "Zigate.json"
     self.log.logging("Database", "Debug", "Write " + json_filename + " = " + str(self.ListOfDevices))
     try:
         with open(json_filename, "wt", encoding='utf-8') as json_file:

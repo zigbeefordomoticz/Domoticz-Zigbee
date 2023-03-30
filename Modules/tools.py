@@ -13,6 +13,7 @@
 import datetime
 import time
 import os.path
+from pathlib import Path
 
 import Domoticz
 
@@ -1590,6 +1591,7 @@ def helper_copyfile(source, dest, move=True):
 
 def helper_versionFile(source, nbversion):
 
+    source = str(source)
     if nbversion == 0:
         return
 

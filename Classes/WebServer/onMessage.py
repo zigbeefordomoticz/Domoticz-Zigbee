@@ -6,6 +6,7 @@
 import mimetypes
 import os
 import os.path
+from pathlib import Path
 from datetime import datetime
 from time import gmtime, strftime
 from urllib.parse import urlparse
@@ -75,11 +76,13 @@ def onMessage(self, Connection, Data):
 
     else:
         # Finaly we simply has to serve a File.
-        webFilename = self.homedirectory + "www" + url
+        _homedir = Path( self.homedirectory )
+        webFilename = _homedir / ("www" + url)
         self.logging("Debug", "webFilename: %s" % webFilename)
         
     if not os.path.isfile(webFilename):
-        webFilename = self.homedirectory + "www" + "/z4d/index.html"
+        _homedir = Path( self.homedirectory )
+        webFilename = _homedir / "www/z4d/index.html"
         self.logging("Debug", "Redirecting to /z4d/index.html")
 
     # We are ready to send the response

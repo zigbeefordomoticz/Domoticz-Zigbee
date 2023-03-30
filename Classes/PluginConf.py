@@ -13,6 +13,7 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 
 import json
 import os.path
+from pathlib import Path
 import time
 
 import Domoticz
@@ -422,8 +423,10 @@ class PluginConf:
 
         setup_folder_parameters(self, homedir)
 
-        self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % hardwareid
-        if os.path.isfile(self.pluginConf["filename"]):
+        #self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % hardwareid
+        _pluginConf = Path ( self.pluginConf["pluginConfig"] )
+        self.pluginConf["filename"] = str( _pluginConf / ("PluginConf-%02d.json" % hardwareid) )
+        if os.path.isfile( _pluginConf / ("PluginConf-%02d.json" % hardwareid)):
             _load_Settings(self)
 
         else:
@@ -448,8 +451,11 @@ class PluginConf:
         # serialize json format the pluginConf '
         # Only the arameters which are different than default '
 
-        self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % self.hardwareid
-        pluginConfFile = self.pluginConf["filename"]
+        #self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % self.hardwareid
+        _pluginConf = Path ( self.pluginConf["pluginConfig"] )
+        pluginConfFile = _pluginConf / ("PluginConf-%02d.json" % self.hardwareid)
+        self.pluginConf["filename"] = str(pluginConfFile)
+    
         write_pluginConf = {}
         for theme in SETTINGS:
             for param in SETTINGS[theme]["param"]:
@@ -460,7 +466,12 @@ class PluginConf:
                         write_pluginConf[param] = self.pluginConf[param]
 
         with open(pluginConfFile, "wt") as handle:
+            
+            for x in write_pluginConf:
+                Domoticz.Error( "%s %s %s" %( x , write_pluginConf[x], type( write_pluginConf[x])))
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
+
+            
 
         if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
             setConfigItem(Key="PluginConf", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
@@ -522,21 +533,22 @@ def _load_Settings(self):
 def _load_oldfashon(self, homedir, hardwareid):
     # Import PluginConf.txt
     # Migration
-    self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.txt" % hardwareid
-    if not os.path.isfile(self.pluginConf["filename"]):
-        self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%d.txt" % hardwareid
-        if not os.path.isfile(self.pluginConf["filename"]):
-            self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf.txt"
-            if not os.path.isfile(self.pluginConf["filename"]):
+    _filename = Path(self.pluginConf["pluginConfig"]) / ("PluginConf-%02d.txt" % hardwareid)
+    if not os.path.isfile(_filename):
+        _filename = Path(self.pluginConf["pluginConfig"]) / ("PluginConf-%2d.txt" % hardwareid)
+        if not os.path.isfile(_filename):
+            _filename = Path(self.pluginConf["pluginConfig"]) / "PluginConf.txt"
+            if not os.path.isfile(_filename):
                 self.write_Settings()
+                self.pluginConf["filename"] = str( _filename )
                 return
 
     tmpPluginConf = ""
-    if not os.path.isfile(self.pluginConf["filename"]):
+    if not os.path.isfile(_filename):
         return
-    with open(self.pluginConf["filename"], "r") as myPluginConfFile:
+    with open(_filename, "r") as myPluginConfFile:
         tmpPluginConf += myPluginConfFile.read().replace("\n", "")
-
+    self.pluginConf["filename"] = str( _filename )
     PluginConf = {}
     _import_oldfashon_param(self, tmpPluginConf, self.pluginConf["filename"])
 
@@ -619,23 +631,24 @@ def zigpy_setup(self):
                 }
                                 
 def setup_folder_parameters(self, homedir):
+
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
             if param == "pluginHome":
                 continue
             if param == "homedirectory":
-                self.pluginConf[param] = homedir
+                self.pluginConf[param] = str( Path(homedir) )
             elif param == "pluginConfig":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "Conf/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Conf")
             elif param == "pluginData":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "Data/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Data")
             elif param == "pluginLogs":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "Logs/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Logs")
             elif param == "pluginOTAFirmware":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "OTAFirmware/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "OTAFirmware")
             elif param == "pluginReports":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "Reports/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Reports")
             elif param == "pluginWWW":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "www/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "www")
             else:
                 self.pluginConf[param] = SETTINGS[theme]["param"][param]["default"]

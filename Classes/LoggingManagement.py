@@ -14,6 +14,8 @@
 import json
 import logging
 import os
+import os.path
+from pathlib import Path
 import threading
 import time
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
@@ -173,7 +175,8 @@ class LoggingManagement:
 
 
     def open_log_history(self):
-        jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + LOG_ERROR_HISTORY
+        _pluginlogs = Path( self.pluginconf.pluginConf["pluginLogs"] )
+        jsonLogHistory = _pluginlogs / LOG_ERROR_HISTORY
         try:
             handle = open(jsonLogHistory, "r", encoding="utf-8")
         except Exception as e:
@@ -406,7 +409,8 @@ def loggingBuildContext(self, thread_name, module, message, nwkid, context):
 
 
 def loggingWriteErrorHistory(self):
-    jsonLogHistory = self.pluginconf.pluginConf["pluginLogs"] + "/" + LOG_ERROR_HISTORY
+    _pluginlogs = Path( self.pluginconf.pluginConf["pluginLogs"] )
+    jsonLogHistory =_pluginlogs / LOG_ERROR_HISTORY
     with open(jsonLogHistory, "w", encoding="utf-8") as json_file:
         try:
             json.dump(dict(self.LogErrorHistory), json_file)
