@@ -415,7 +415,7 @@ class PluginConf:
         self.pluginConf = {}
         self.homedir = homedir
         self.hardwareid = hardwareid
-        self.pluginConf["pluginHome"] = homedir
+        self.pluginConf["pluginHome"] = homedir.rstrip('/').rstrip('\\')
         self.VersionNewFashion = VersionNewFashion
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
