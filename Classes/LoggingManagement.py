@@ -147,7 +147,7 @@ class LoggingManagement:
         if not self.pluginconf.pluginConf["enablePluginLogging"]:
             return
 
-        _pluginlogs =  Path( self.pluginconf.pluginConf["pluginLogs"] )
+        _pluginlogs = Path(self.pluginconf.pluginConf["pluginLogs"] )
         _logfilename = _pluginlogs / ( LOG_FILE + "%02d.log" % self.HardwareID) 
         
         _backupCount = 7  # Keep 7 days of Logging
