@@ -12,7 +12,7 @@ def handle_zigpy_backup(self, backup):
         return
 
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
-    _coordinator_backup = _pluginData /  ("Coordinator-%02d" %self.HardwareID + ".backup")
+    _coordinator_backup = _pluginData /  ("Coordinator-%02d.backup" %self.HardwareID )
     self.log.logging("TransportZigpy", "Debug", "Backups: %s" %backup)
 
     if os.path.exists(_coordinator_backup):
@@ -31,7 +31,7 @@ def handle_zigpy_retreive_last_backup( self ):
     
     # Return the last backup
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
-    _coordinator_backup = _pluginData /  ("Coordinator-%02d" %self.HardwareID + ".backup")
+    _coordinator_backup = _pluginData /  ("Coordinator-%02d.backup" %self.HardwareID)
     if not os.path.exists(_coordinator_backup):
         return None
 

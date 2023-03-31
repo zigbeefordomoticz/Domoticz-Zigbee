@@ -328,7 +328,8 @@ class BasePlugin:
         self.pluginParameters = dict(Parameters)
 
         # Open VERSION file in .hidden
-        with open( os.path.join( Parameters["HomeFolder"], VERSION_FILENAME), "rt") as versionfile:
+        version_filename = pathlib.Path(Parameters["HomeFolder"]) / VERSION_FILENAME
+        with open( version_filename, "rt") as versionfile:
             try:
                 _pluginversion = json.load(versionfile)
             except Exception as e:

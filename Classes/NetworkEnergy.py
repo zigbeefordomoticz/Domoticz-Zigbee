@@ -23,6 +23,7 @@
 
 import json
 import os.path
+from pathlib import Path
 from time import time
 
 import Domoticz
@@ -300,10 +301,8 @@ class NetworkEnergy:
 
         self.logging("Debug", "Network Energly Level Report: %s" % storeEnergy)
 
-        _filename = (
-            self.pluginconf.pluginConf["pluginReports"] + "NetworkEnergy-v3-" + "%02d" % self.HardwareID + ".json"
-        )
-        if os.path.isdir(self.pluginconf.pluginConf["pluginReports"]):
+        _filename = Path( self.pluginconf.pluginConf["pluginReports"] ) / ("NetworkEnergy-v3-" + "%02d.json" % self.HardwareID)
+        if os.path.isdir( Path(self.pluginconf.pluginConf["pluginReports"]) ):
 
             nbentries = 0
             if os.path.isfile(_filename):

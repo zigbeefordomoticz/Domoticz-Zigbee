@@ -366,18 +366,20 @@ def _write_DeviceList_txt(self):
     _pluginData = Path ( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginData / self.DeviceListName
     try:
-        self.log.logging("Database", "Debug", "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+        self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
         with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
             for key in self.ListOfDevices:
                 try:
                     file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
                     
                 except UnicodeEncodeError:
-                    self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( key, self.ListOfDevices[key]))
+                    self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( 
+                                                                                                                     key, self.ListOfDevices[key]))
                     continue
 
                 except ValueError:
-                    self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( key, self.ListOfDevices[key]))
+                    self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( 
+                                                                                                       key, self.ListOfDevices[key]))
                     continue
                 
                 except IOError:
@@ -396,7 +398,7 @@ def _write_DeviceList_txt(self):
 def _write_DeviceList_json(self):
     _pluginData = Path ( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginData / self.DeviceListName[:-3] + "json"
-    self.log.logging("Database", "Debug", "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+    self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
     with open(_DeviceListFileName, "wt") as file:
         json.dump(self.ListOfDevices, file, sort_keys=True, indent=2)
     self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)

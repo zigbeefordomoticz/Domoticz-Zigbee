@@ -24,7 +24,7 @@ from queue import PriorityQueue, Queue
 import Domoticz
 
 LOG_ERROR_HISTORY = "PluginZigbee_log_error_history.json"
-LOG_FILE = "/PluginZigbee_"
+LOG_FILE = "PluginZigbee_"
 
 class LoggingManagement:
     def __init__(self, pluginconf, PluginHealth, HardwareID, ListOfDevices, permitTojoin):
@@ -147,30 +147,32 @@ class LoggingManagement:
         if not self.pluginconf.pluginConf["enablePluginLogging"]:
             return
 
-        logfilename = self.pluginconf.pluginConf["pluginLogs"] + LOG_FILE + "%02d" % self.HardwareID + ".log"
+        _pluginlogs =  Path( self.pluginconf.pluginConf["pluginLogs"] )
+        _logfilename = _pluginlogs / ( LOG_FILE + "%02d.log" % self.HardwareID) 
+        
         _backupCount = 7  # Keep 7 days of Logging
         _maxBytes = 0
         if "loggingBackupCount" in self.pluginconf.pluginConf:
             _backupCount = int(self.pluginconf.pluginConf["loggingBackupCount"])
         if "loggingMaxMegaBytes" in self.pluginconf.pluginConf:
             _maxBytes = int(self.pluginconf.pluginConf["loggingMaxMegaBytes"]) * 1024 * 1024
-        Domoticz.Status("Please watch plugin log into %s" % logfilename)
+        Domoticz.Status("Please watch plugin log into %s" % _logfilename)
         if _maxBytes == 0:
             # Enable TimedRotating
             logging.basicConfig(
                 level=logging.DEBUG,
                 format="%(asctime)s %(levelname)-8s:%(message)s",
-                handlers=[TimedRotatingFileHandler(logfilename, when="midnight", interval=1, backupCount=_backupCount)],
+                handlers=[TimedRotatingFileHandler(_logfilename, when="midnight", interval=1, backupCount=_backupCount)],
             )
         else:
             # Enable RotatingFileHandler
             logging.basicConfig(
                 level=logging.DEBUG,
                 format="%(asctime)s %(levelname)-8s:%(message)s",
-                handlers=[RotatingFileHandler(logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
+                handlers=[RotatingFileHandler(_logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
             )
         if "PluginLogMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["PluginLogMode"] in ( 0o640, 0o640, 0o644 ):
-                os.chmod(logfilename, self.pluginconf.pluginConf["PluginLogMode"])
+                os.chmod(_logfilename, self.pluginconf.pluginConf["PluginLogMode"])
 
 
 
