@@ -55,9 +55,7 @@ def process_frame(self, decoded_frame):
     if MsgType == "0302":  # PDM loaded, ZiGate ready (after an internal error, but also after an ErasePDM)
         self.logging_proto("Status", "ZiGate PDM loaded")
         if self.statistics.get_pdm_loaded() > 0:
-            self.logging_proto( "Error",
-                "Detected a PDM load, result of a ZiGate reset of (crash): #%s" % self.statistics.get_pdm_loaded(),
-            )
+            self.logging_proto( "Error", "Detected a PDM load, result of a ZiGate reset of (crash): #%s" % self.statistics.get_pdm_loaded(),)
         self.statistics.pdm_loaded()
 
         for x in list(self.ListOfCommands):
