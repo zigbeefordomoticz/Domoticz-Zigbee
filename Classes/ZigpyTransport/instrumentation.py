@@ -5,6 +5,7 @@
 
 import time
 import os.path
+from pathlib import Path
 
 instrument_time = True
 
@@ -45,7 +46,7 @@ def open_capture_rx_frames(self):
     if "CaptureRxFrames" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf[ "CaptureRxFrames" ]:
         return
     
-    captureRxFrame_filename = self.pluginconf.pluginConf["pluginLogs"] + "/Capture-Zigbee-Rx-Frames-" + "%02d" % self.hardwareid + ".csv"
+    captureRxFrame_filename = Path( self.pluginconf.pluginConf["pluginLogs"]) / ("Capture-Zigbee-Rx-Frames-%02d.csv" % self.hardwareid)
     header = (
         None
         if os.path.isfile(captureRxFrame_filename)
@@ -60,7 +61,7 @@ def instrument_log_command_open( self):
     if "CaptureTxFrames" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["CaptureTxFrames"]:
         return
     
-    captureTxFrame_filename = self.pluginconf.pluginConf["pluginLogs"] + "/Capture-Zigbee-Tx-Frames-" + "%02d" % self.hardwareid + ".csv"
+    captureTxFrame_filename = Path( self.pluginconf.pluginConf["pluginLogs"]) / ("Capture-Zigbee-Tx-Frames-%02d.csv" % self.hardwareid)
     header = (
         None
         if os.path.isfile(captureTxFrame_filename)
