@@ -169,34 +169,7 @@ def NXP_Extended_Error_Code(self, MsgData):
 
 def NXP_log_message(self, decoded_frame):  # Reception log Level
 
-    LOG_FILE = "ZiGate"
-
-    # self.logging_proto( 'Debug' , "8001 - %s" %decoded_frame )
-    MsgData = decoded_frame[12 : len(decoded_frame) - 2]
-    MsgLogLvl = MsgData[0:2]
-    try:
-        log_message = binascii.unhexlify(MsgData[2:]).decode("utf-8")
-    except:
-        log_message = binascii.unhexlify(MsgData[2:]).decode("utf-8", errors="ignore")
-        log_message = log_message.replace("\x00", "")
-
-    logfilename = self.pluginconf.pluginConf["pluginLogs"] + "/" + LOG_FILE + "_" + "%02d" % self.hardwareid + "_" + ".log"
-    try:
-        with open(logfilename, "at", encoding="utf-8") as file:
-            try:
-                if self.newline_required:
-                    file.write("\n%s %s" % (str(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]), MsgLogLvl))
-                self.newline_required = False
-
-                file.write(" " + log_message)
-
-                if decoded_frame[len(decoded_frame) - 4 : len(decoded_frame) - 2] == "20":
-                    self.newline_required = True
-
-            except IOError:
-                self.logging_proto("Error", "Error while writing to ZiGate log file %s" % logfilename)
-    except IOError:
-        self.logging_proto("Error", "Error while Opening ZiGate log file %s" % logfilename)
+    return
 
 
 def Akila_debuging(self, MsgType, MsgData):
