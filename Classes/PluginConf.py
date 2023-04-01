@@ -448,6 +448,7 @@ class PluginConf:
         _path_check(self)
         _param_checking(self)
 
+
     def write_Settings(self):
         # serialize json format the pluginConf '
         # Only the arameters which are different than default '
@@ -588,7 +589,7 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
 
 
 def _path_check(self):
-
+    update_done = False
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
             if SETTINGS[theme]["param"][param]["type"] != "path":
@@ -597,17 +598,18 @@ def _path_check(self):
                 # this is a url
                 continue
             _path_name = Path( self.pluginConf[param] )
-
             if not os.path.exists(_path_name):
                 Domoticz.Error("Cannot access path: %s" % _path_name)
-
             if self.pluginConf[param] != str( _path_name ):
                 if self.pluginConf["PosixPathUpdate"]:
                     Domoticz.Status("Updating path from %s to %s" %( self.pluginConf[param], _path_name))
                     self.pluginConf[param] = str( _path_name )
+                    update_done = True
                 else:
                     Domoticz.Error("Updating path from %s to %s is required, but no backward compatibility" %( self.pluginConf[param], _path_name))
 
+    if update_done:
+        self.write_Settings()
 
 def _param_checking(self):
     # Let's check the Type
