@@ -290,6 +290,7 @@ def update_domoticz_group_device(self, GroupId):
     """
     
     if int(GroupId,16) == self.pluginconf.pluginConf["pingViaGroup"]:
+        self.logging("Debug", "update_domoticz_group_device - Skip PingViaGroup: %s" % GroupId)
         return
 
     #####
@@ -298,16 +299,12 @@ def update_domoticz_group_device(self, GroupId):
         return
 
     if "Devices" not in self.ListOfGroups[GroupId]:
-        self.logging(
-            "Debug", "update_domoticz_group_device - no Devices for that group: %s" % self.ListOfGroups[GroupId]
-        )
+        self.logging( "Debug", "update_domoticz_group_device - no Devices for that group: %s" % self.ListOfGroups[GroupId])
         return
 
     unit = unit_for_widget(self, GroupId)
     if unit is None:
-        self.logging(
-            "Debug", "update_domoticz_group_device - no unit found for GroupId: %s" % self.ListOfGroups[GroupId]
-        )
+        self.logging( "Debug", "update_domoticz_group_device - no unit found for GroupId: %s" % self.ListOfGroups[GroupId])
         return
 
     Cluster = None
@@ -315,20 +312,23 @@ def update_domoticz_group_device(self, GroupId):
         Cluster = self.ListOfGroups[GroupId]["Cluster"]
 
     countOn = countOff = 0
-    if self.pluginconf.pluginConf["OnIfOneOn"]:
-        # If one device is on, then the group is on. If all devices are off, then the group is off
-        nValue = 0
-        sValue = level = None
-    else:
-        # If ALL devices are on, then the group is On, otherwise it remains Off (Philips behaviour)
-        nValue = 1
-        sValue = level = None
-
+    nValue = 0 if self.pluginconf.pluginConf["OnIfOneOn"] else 1
+    sValue = level = None
     for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]["Devices"]:
         if NwkId not in self.ListOfDevices:
-            return
+            self.logging( "Debug", "update_domoticz_group_device - Nwkid: %s/%s not found for GroupId: %s" %(
+                NwkId, IEEE, GroupId))
+
+            if check_and_fix_missing_device(self, GroupId, NwkId, IEEE) is None:
+                self.logging( "Error", "update_domoticz_group_device - Nwkid: %s/%s not found for GroupId: %s" %(
+                    NwkId, IEEE, GroupId))
+            # If we have updated the NwkId, then let's skip this and count on the next cycle to have the Group correctly updated.
+            continue
+
         if Ep not in self.ListOfDevices[NwkId]["Ep"]:
-            return
+            self.logging( "Debug", "update_domoticz_group_device - Nwkid: %s Ep: %s not found for GroupId: %s" %(
+                NwkId, Ep, GroupId))
+            continue
         if "Model" in self.ListOfDevices[NwkId]:
             if self.ListOfDevices[NwkId]["Model"] in ("TRADFRI remote control", "Remote Control N2"):
                 continue
@@ -336,57 +336,55 @@ def update_domoticz_group_device(self, GroupId):
                 continue
 
         # Cluster ON/OFF
-        if Cluster and Cluster in ("0006", "0008", "0300") and "0006" in self.ListOfDevices[NwkId]["Ep"][Ep]:
-            if "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]:
-                if str(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]).isdigit():
-                    if int(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) != 0:
-                        countOn += 1
-                    else:
-                        countOff += 1
+        if (
+            Cluster 
+            and Cluster in ("0006", "0008", "0300") 
+            and "0006" in self.ListOfDevices[NwkId]["Ep"][Ep]
+            and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]
+            and str(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]).isdigit()
+        ):
+            self.logging( "Debug", "update_domoticz_group_device - Cluster ON/OFF Group: %s NwkId: %s Ep: %s Value: %s" %( 
+                GroupId, NwkId, Ep, self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]))
+            if int(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) != 0:
+                countOn += 1
+            else:
+                countOff += 1
 
         # Cluster Level Control
-        if Cluster and Cluster in ("0008", "0300") and "0008" in self.ListOfDevices[NwkId]["Ep"][Ep]:
-            if "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]:
-                if (
-                    self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] != ""
-                    and self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] != {}
-                ):
-                    lvl_value = self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] if isinstance( self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], int ) else int(self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], 16)
-                    if level is None:
-                        level = lvl_value
-                    else:
-                        level = round((level + lvl_value) / 2)
-
+        if (
+            Cluster 
+            and Cluster in ("0008", "0300") 
+            and "0008" in self.ListOfDevices[NwkId]["Ep"][Ep] 
+            and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]
+            and self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] not in ( "", {} )
+        ):
+            lvl_value = self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"] if isinstance( self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], int ) else int(self.ListOfDevices[NwkId]["Ep"][Ep]["0008"]["0000"], 16)
+            self.logging( "Debug", "update_domoticz_group_device - Cluster Level Control Group: %s NwkId: %s Ep: %s Value: %s" %(
+                GroupId, NwkId, Ep, lvl_value))
+            level = lvl_value if level is None else (level + lvl_value) // 2
         # Cluster Window Covering
-        if Cluster and Cluster == "0102" and "0102" in self.ListOfDevices[NwkId]["Ep"][Ep]:
-            if "0008" in self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]:
-                if (
-                    self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]["0008"] != ""
-                    and self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]["0008"] != {}
-                ):
-                    if level is None:
-                        level = int(self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]["0008"])
-                    else:
-                        level = round((level + int(self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]["0008"])) / 2)
+        if (
+            Cluster 
+            and Cluster == "0102" and "0102" in self.ListOfDevices[NwkId]["Ep"][Ep]
+            and "0008" in self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]
+            and self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]["0008"] not in ( "", {} )
+        ):
+            lvl_value = int(self.ListOfDevices[NwkId]["Ep"][Ep]["0102"]["0008"])
+            self.logging( "Debug", "update_domoticz_group_device - Cluster Window Covering Group: %s NwkId: %s Ep: %s Value: %s" %(
+                GroupId, NwkId, Ep, lvl_value))
+            level = lvl_value if level is None else (level + lvl_value) // 2
+            nValue, sValue = ValuesForVenetian(level)
 
-                    nValue, sValue = ValuesForVenetian(level)
-
-        self.logging(
-            "Debug",
-            "update_domoticz_group_device - Processing: Group: %s %s/%s On: %s, Off: %s level: %s"
-            % (GroupId, NwkId, Ep, countOn, countOff, level),
-        )
+        self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s %s/%s On: %s, Off: %s level: %s" % (
+            GroupId, NwkId, Ep, countOn, countOff, level), )
 
     if self.pluginconf.pluginConf["OnIfOneOn"]:
         if countOn > 0:
             nValue = 1
-    else:
-        if countOff > 0:
-            nValue = 0
-    self.logging(
-        "Debug",
-        "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" % (GroupId, nValue, level),
-    )
+    elif countOff > 0:
+        nValue = 0
+    self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" % (
+        GroupId, nValue, level), )
 
     # At that stage
     # nValue == 0 if Off
