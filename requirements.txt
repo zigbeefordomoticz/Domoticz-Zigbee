@@ -1,8 +1,8 @@
-bellows==0.34.10
+bellows==0.35.0
 dnspython==2.3.0
 pyserial>=3.5
 z4d-certified-devices
-zigpy==0.53.3
-zigpy_deconz==0.19.2
-zigpy_znp==0.9.3
+zigpy==0.54.0
+zigpy_deconz==0.20.0
+zigpy_znp==0.10.0
 charset-normalizer==2.0.11
