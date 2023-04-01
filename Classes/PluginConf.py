@@ -463,7 +463,10 @@ class PluginConf:
             for param in SETTINGS[theme]["param"]:
                 if self.pluginConf[param] != SETTINGS[theme]["param"][param]["default"]:
                     if SETTINGS[theme]["param"][param]["type"] == "hex":
-                        write_pluginConf[param] = "%X" % self.pluginConf[param]
+                        if isinstance( self.pluginConf[param], str):
+                            write_pluginConf[param] = "%X" % int(self.pluginConf[param],16)
+                        else:
+                            write_pluginConf[param] = "%X" % self.pluginConf[param]
                     else:
                         write_pluginConf[param] = self.pluginConf[param]
 
