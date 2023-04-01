@@ -321,6 +321,7 @@ SETTINGS = {
     "Experimental": {
         "Order": 16,
         "param": {
+            "PosixPathUpdate": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "readZclClusters": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "reconnectonIEEEaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "reconnectonNWKaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
@@ -424,7 +425,7 @@ class PluginConf:
         setup_folder_parameters(self, homedir)
 
         #self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % hardwareid
-        _pluginConf = Path ( self.pluginConf["pluginConfig"] )
+        _pluginConf = Path(self.pluginConf["pluginConfig"] )
         self.pluginConf["filename"] = str( _pluginConf / ("PluginConf-%02d.json" % hardwareid) )
         if os.path.isfile( _pluginConf / ("PluginConf-%02d.json" % hardwareid)):
             _load_Settings(self)
@@ -452,7 +453,7 @@ class PluginConf:
         # Only the arameters which are different than default '
 
         #self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % self.hardwareid
-        _pluginConf = Path ( self.pluginConf["pluginConfig"] )
+        _pluginConf = Path(self.pluginConf["pluginConfig"] )
         pluginConfFile = _pluginConf / ("PluginConf-%02d.json" % self.hardwareid)
         self.pluginConf["filename"] = str(pluginConfFile)
     
@@ -466,9 +467,6 @@ class PluginConf:
                         write_pluginConf[param] = self.pluginConf[param]
 
         with open(pluginConfFile, "wt") as handle:
-            
-            for x in write_pluginConf:
-                Domoticz.Error( "%s %s %s" %( x , write_pluginConf[x], type( write_pluginConf[x])))
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
             
@@ -598,8 +596,17 @@ def _path_check(self):
             if self.pluginConf[param].find("http") != -1:
                 # this is a url
                 continue
-            if not os.path.exists(self.pluginConf[param]):
-                Domoticz.Error("Cannot access path: %s" % self.pluginConf[param])
+            _path_name = Path( self.pluginConf[param] )
+
+            if not os.path.exists(_path_name):
+                Domoticz.Error("Cannot access path: %s" % _path_name)
+
+            if self.pluginConf[param] != str( _path_name ):
+                if self.pluginConf["PosixPathUpdate"]:
+                    Domoticz.Status("Updating path from %s to %s" %( self.pluginConf[param], _path_name))
+                    self.pluginConf[param] = str( _path_name )
+                else:
+                    Domoticz.Error("Updating path from %s to %s is required, but no backward compatibility" %( self.pluginConf[param], _path_name))
 
 
 def _param_checking(self):
