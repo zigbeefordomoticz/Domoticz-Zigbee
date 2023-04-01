@@ -4,6 +4,7 @@ import json
 
 from os import listdir
 from os.path import isdir, isfile, join
+from pathlib import Path
 
 from DevicesModules import FUNCTION_MODULE, FUNCTION_WITH_ACTIONS_MODULE
 from Modules.domoMaj import MajDomoDevice
@@ -244,7 +245,7 @@ def _update_eval_formula( self, formula, input_variable, variable_name):
 
     
 def load_zcl_cluster(self):
-    zcl_cluster_path = self.pluginconf.pluginConf["pluginConfig"] + "ZclDefinitions"
+    zcl_cluster_path = Path( self.pluginconf.pluginConf["pluginConfig"]) / "ZclDefinitions"
     if not isdir(zcl_cluster_path):
         return
 
@@ -252,7 +253,7 @@ def load_zcl_cluster(self):
 
     zcl_cluster_definition = [f for f in listdir(zcl_cluster_path) if isfile(join(zcl_cluster_path, f))]
     for cluster_definition in sorted(zcl_cluster_definition):
-        cluster_filename = str(zcl_cluster_path + "/" + cluster_definition)
+        cluster_filename = zcl_cluster_path / cluster_definition
         cluster_definition = _read_zcl_cluster( self, cluster_filename )
 
         if (
