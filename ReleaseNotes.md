@@ -18,14 +18,20 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-##    March. 2023 - stable6 - 6.3.011 ( 2023.3 )
+## April 2023 - stable6 - 6.3.012 ( 2023.4 / Easter version )
+
+- [Hardware] - One more Tuya SMart Plug 16A EU manufacturer
+- [Issue] - Fixing issue preventing creation of the Temp+Humi widget
+- [Issue] - Fixing several issues
+
+## March. 2023 - stable6 - 6.3.011 ( 2023.3 )
 
 - [Hardware] - Heiman/Wiser SmartPlug device
 - [Hardware] - Additional Tuya Thermostat devices
 - [Hardware] - Tuya LCD Temp Humi device
 - [Hardware] - Device Owon THS317-ET
 - [Hardware] - Tuya Smart Curtain TS130F model
-- [Hardware] - Wiser Water leak sensor 
+- [Hardware] - Wiser Water leak sensor
 - [Hardware] - Wiser Micro dimmer
 - [Hardware] - Wiser Micro Switch
 - [Hardware] - Orvibo 3 dry switch
@@ -42,7 +48,7 @@ Release Numbering
 - [WebUI] - Dashboard optimization
 - [WebUI] - Dashboard display 4 battery levels
 
-##    Feb. 2023 - stable6 - 6.3.010 ( 2023.2 )
+## Feb. 2023 - stable6 - 6.3.010 ( 2023.2 )
 
 - [Hardware] - New flavor of TS011F Tuya plug
 - [Hardware] - Smart Air Detector 6 in 1 manufactured by Tuya
@@ -54,12 +60,12 @@ Release Numbering
 - [Hardware] - Ikea_LED1924G9
 - [Hardware] - Lonsonho_QS-Zigbee-D02-TRIAC-L
 - [Hardware] - Lonsonho_QS-Zigbee-D02-TRIAC-LN
-- [Hardware] - LEDVANCE Ampoule LED E14 5W 
+- [Hardware] - LEDVANCE Ampoule LED E14 5W
 - [Hardware] - Paulmann 50052 SmartHome Zigbee LED
 - [Hardware] - KAIYE Tuya Smart Zigbee Ampoule LED
 - [Technical] - Unclassified fixes
 
-##    Jan. 2023 - stable6 - 6.3.009 ( 2023.1 )
+## Jan. 2023 - stable6 - 6.3.009 ( 2023.1 )
 
 - [Hardware] - Managing Power state for TS0001 smart relay
 - [Hardware] - Integrating Ikea Air Purifier (@rhuijben)
@@ -72,8 +78,8 @@ Release Numbering
 - [Hardware] - Aqara Smoke sensor JY-GZ-01AQ
 - [Hardware] - Heiman Scene controler
 - [Hardware] - Tuya Motion + Lux PIR ZG-204Z
-- [Hardware] - Philips LOM008 
-- [Hardware] - Nodon Window Covering 
+- [Hardware] - Philips LOM008
+- [Hardware] - Nodon Window Covering
 
 - [WebUI] - Angular15
 - [WebUI] - Responsive version ( work with mobile and tablets)
@@ -872,4 +878,3 @@ Mainly a technical version in order to split the code in pieces.
 - Bug fixing
 
 ## 8 September 2018 - 2.4.0 <https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/2.4.0>
-
