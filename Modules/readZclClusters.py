@@ -200,11 +200,15 @@ def _cluster_zcl_attribute_retrieval( self, cluster, attribute, parameter ):
     #self.log.logging("ZclClusters", "Debug", " . _cluster_zcl_attribute_retrieval %s %s %s" %(
         # cluster, attribute, parameter))
 
+    if cluster not in self.readZclClusters:
+        self.log.logging("ZclClusters", "Error", " . _cluster_zcl_attribute_retrieval %s not found in %s" %(
+            cluster, str(self.readZclClusters)))
+        return None
+    
     if (
         attribute in self.readZclClusters[ cluster ]["Attributes"] 
         and parameter in self.readZclClusters[ cluster ]["Attributes"][ attribute ]
     ):
-
         #self.log.logging("ZclClusters", "Debug", " . %s %s %s --> %s" %(
             # cluster, attribute, parameter, self.readZclClusters[ cluster ]["Attributes"][ attribute ][ parameter ])) 
         return self.readZclClusters[ cluster ]["Attributes"][ attribute ][ parameter ]
