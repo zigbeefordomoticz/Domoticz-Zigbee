@@ -198,6 +198,8 @@ SETTINGS = {
     "PluginConfiguration": {
         "Order": 12,
         "param": {
+            "PosixPathUpdate": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "storeDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "PluginLogMode": {"type": "list","list": { "system default": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},"default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "numDeviceListVersion": {"type": "int","default": 12,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "filename": { "type": "path", "default": "", "current": None, "restart": 1, "hidden": True, "Advanced": True, },
@@ -209,7 +211,6 @@ SETTINGS = {
             "pluginReports": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginWWW": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginLogs": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
-            "storeDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
         },
     },
     # Verbose
@@ -321,7 +322,7 @@ SETTINGS = {
     "Experimental": {
         "Order": 16,
         "param": {
-            "PosixPathUpdate": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            
             "readZclClusters": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "reconnectonIEEEaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "reconnectonNWKaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
