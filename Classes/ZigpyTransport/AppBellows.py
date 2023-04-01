@@ -88,7 +88,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         #    self.callBackBackup( await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
         # Makes 0x0000 default Lightlink group , used by Ikea
-        coordinator = self.get_device(self.ieee)
+        coordinator = self.get_device(self.state.node_info.ieee)
         if self.pluginconf.pluginConf["zigatePartOfGroup0000"]:
             # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
             status = await coordinator.add_to_group( 0x0000, name="Default Lightlink Group", )
