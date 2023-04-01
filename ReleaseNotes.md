@@ -18,6 +18,12 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## April 2023 - stable6 - 6.3.012 ( 2023.4 / Easter version )
+
+- [Hardware] - One more Tuya SMart Plug 16A EU manufacturer
+- [Issue] - Fixing issue preventing creation of the Temp+Humi widget
+- [Issue] - Fixing several issues
+
 ## March. 2023 - stable6 - 6.3.011 ( 2023.3 )
 
 - [Hardware] - Heiman/Wiser SmartPlug device

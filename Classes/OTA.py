@@ -1418,5 +1418,6 @@ def _load_json_from_url( self, url ):
         time.sleep(1)
         retry -= 1
 
-    logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %reason)
+    logging(self, "Error", "loading_zigbee_ota_index: Unable to access %s Reason: %s" %(
+        url, reason))
     return []

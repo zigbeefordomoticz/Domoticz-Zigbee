@@ -484,6 +484,7 @@ def colorcontrol_if_undefinded( self, Nwkid ):
     self.log.logging("WidgetCreation", "Debug", "colorcontrol_if_undefinded %s" % (Nwkid), Nwkid)
     # variateur de couleur/luminosite/on-off
     # Generic ColorControl, let's try to find a better one.
+    Subtype_ = None
     if "Epv2" in self.ListOfDevices[Nwkid]:
         Subtype_ = subtypeRGB_FromProfile_Device_IDs_onEp2(self.ListOfDevices[Nwkid]["Epv2"])
 

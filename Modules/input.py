@@ -1077,7 +1077,10 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Firmware Version
     
     if self.FirmwareBranch in FIRMWARE_BRANCH:
         if int(self.FirmwareBranch) in ( 98, 99):
-            self.log.logging("Input", "Error", "Untested Zigbee adapater model, please report to the Zigbee for Domoticz team")
+            self.log.logging(
+                "Input", 
+                "Status", 
+                "Untested Zigbee adaptater model. If this is a Sonoff USB Dongle E that is known issue, otherwise please report to the Zigbee for Domoticz team")
             self.pluginParameters["CoordinatorModel"] = FIRMWARE_BRANCH[ self.FirmwareBranch ]
            
         elif int(self.FirmwareBranch) == 11:
