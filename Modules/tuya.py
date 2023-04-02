@@ -251,7 +251,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
         # 0x01: The gateway is connected to the internet.
         # 0x02: The request timed out after three seconds.
         in_payload = MsgPayload[6:]
-        self.log.logging( "Tuya", "Log", "tuyaReadRawAPS - Model: %s CHECK_ZIGBEE_GATEWAY_STATUS_CMD Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" % (
+        self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - Model: %s CHECK_ZIGBEE_GATEWAY_STATUS_CMD Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" % (
             _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]), NwkId, )
 
         sqn_out = get_and_inc_ZCL_SQN(self, NwkId)
