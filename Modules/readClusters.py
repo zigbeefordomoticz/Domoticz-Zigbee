@@ -189,9 +189,6 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
         process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
     
     elif MsgClusterId in DECODE_CLUSTER:
-        self.log.logging( "Cluster", "Log", "ReadCluster - Cluster %s/%s %s not yet ready for ZclCluster %s/%s " %(
-            MsgClusterId, MsgAttrID, MsgAttType, MsgSrcAddr, MsgSrcEp))
-    
         storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
 
         _func = DECODE_CLUSTER[MsgClusterId]
