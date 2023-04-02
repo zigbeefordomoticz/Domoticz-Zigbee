@@ -26,6 +26,7 @@
 
 import json
 import os.path
+from pathlib import Path
 import time
 from datetime import datetime
 
@@ -270,9 +271,8 @@ def finish_scan(self):
     del self.ListOfDevices["0000"]["TopologyStartTime"]
     
 def save_report_to_file(self, storeLQI):
-    _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkTopology-v3-" + "%02d" % self.HardwareID + ".json"
-    if os.path.isdir(self.pluginconf.pluginConf["pluginReports"]):
-
+    _filename = Path( self.pluginconf.pluginConf["pluginReports"] ) / ("NetworkTopology-v3-" + "%02d.json" % self.HardwareID)
+    if os.path.isdir( Path(self.pluginconf.pluginConf["pluginReports"]) ):
         nbentries = 0
         if os.path.isfile(_filename):
             with open(_filename, "r") as fin:

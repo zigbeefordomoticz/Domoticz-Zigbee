@@ -33,6 +33,7 @@ import time
 from datetime import datetime
 from os import listdir
 from os.path import isfile, join, exists
+from pathlib import Path
 
 import Domoticz
 from Modules.sendZigateCommand import sendZigateCmd
@@ -914,7 +915,7 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
 
 def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
     # Load headers from the image
-    ota_image = _open_image_file(self, self.pluginconf.pluginConf["pluginOTAFirmware"] + subfolder + "/" + image)
+    ota_image = _open_image_file(self, Path( self.pluginconf.pluginConf["pluginOTAFirmware"]) / subfolder / image)
     if ota_image is None:
         logging( self, "Error", "ota_extract_image_headers - unable to open file %s" % (self.pluginconf.pluginConf["pluginOTAFirmware"] + subfolder + "/" + image), )
         return None

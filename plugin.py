@@ -87,10 +87,10 @@ try:
     from Domoticz import Devices, Images, Parameters, Settings
 except ImportError:
     pass
-
 import gc
 import json
 import os
+import os.path
 import threading
 import time
 from importlib.metadata import version as import_version
@@ -328,7 +328,8 @@ class BasePlugin:
         self.pluginParameters = dict(Parameters)
 
         # Open VERSION file in .hidden
-        with open(Parameters["HomeFolder"] + VERSION_FILENAME, "rt") as versionfile:
+        version_filename = pathlib.Path(Parameters["HomeFolder"]) / VERSION_FILENAME
+        with open( version_filename, "rt") as versionfile:
             try:
                 _pluginversion = json.load(versionfile)
             except Exception as e:
@@ -565,7 +566,8 @@ class BasePlugin:
         elif self.transport == "ZigpyZNP":
             import zigpy
             import zigpy_znp
-            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                      CONFIG_SCHEMA, SCHEMA_DEVICE)
 
             from Classes.ZigpyTransport.Transport import ZigpyTransport
 
@@ -585,7 +587,8 @@ class BasePlugin:
         elif self.transport == "ZigpydeCONZ":
             import zigpy
             import zigpy_deconz
-            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                      CONFIG_SCHEMA, SCHEMA_DEVICE)
 
             from Classes.ZigpyTransport.Transport import ZigpyTransport
 
@@ -601,7 +604,8 @@ class BasePlugin:
         elif self.transport == "ZigpyEZSP":
             import bellows
             import zigpy
-            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH,
+                                      CONFIG_SCHEMA, SCHEMA_DEVICE)
 
             from Classes.ZigpyTransport.Transport import ZigpyTransport
 
@@ -1494,7 +1498,8 @@ def check_requirements( self ):
 
     import pkg_resources
 
-    _filename = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
+    _homefolder = pathlib.Path( Parameters[ "HomeFolder"] )
+    _filename = _homefolder / "requirements.txt"
 
     Domoticz.Status("Checking Python modules %s" %_filename)
     requirements = pkg_resources.parse_requirements(_filename.open())
@@ -1610,7 +1615,8 @@ def install_Z4D_to_domoticz_custom_ui():
     #line5 = 'document.getElementById(\'%s\').src' %Parameters['Name'] + ' = location.protocol + "/z4d/";\n' 
     line6 = '</script>\n'
 
-    custom_file = Parameters['StartupFolder'] + 'www/templates/' + f"{Parameters['Name']}" + '.html'
+    _startupfolder = pathlib.Path( Parameters['StartupFolder'] )
+    custom_file = _startupfolder / 'www/templates' / f"{Parameters['Name']}.html"
     Domoticz.Log(f"Installing plugin custom page {custom_file} ")
 
     try:

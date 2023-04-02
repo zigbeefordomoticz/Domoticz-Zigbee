@@ -2,7 +2,7 @@
 import Domoticz
 import os.path
 import json
-
+from pathlib import Path
 import Modules.tools
 
 def handle_zigpy_backup(self, backup):
@@ -11,8 +11,8 @@ def handle_zigpy_backup(self, backup):
         self.log.logging("TransportZigpy", "Log","Backup is incomplete, it is not possible to restore")
         return
 
-    _coordinator_backup = self.pluginconf.pluginConf["pluginData"] + "/Coordinator-%02d" %self.HardwareID + ".backup"
-
+    _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
+    _coordinator_backup = _pluginData / ("Coordinator-%02d.backup" %self.HardwareID )
     self.log.logging("TransportZigpy", "Debug", "Backups: %s" %backup)
 
     if os.path.exists(_coordinator_backup):
@@ -30,12 +30,13 @@ def handle_zigpy_backup(self, backup):
 def handle_zigpy_retreive_last_backup( self ):
     
     # Return the last backup
-    _coordinator_backup = self.pluginconf.pluginConf["pluginData"] + "/Coordinator-%02d" %self.HardwareID + ".backup"
+    _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
+    _coordinator_backup = _pluginData / ("Coordinator-%02d.backup" %self.HardwareID)
     if not os.path.exists(_coordinator_backup):
         return None
 
     with open(_coordinator_backup, "r") as _coordinator:
-        self.log.logging("TransportZigpy", "Debug", "Open : " + _coordinator_backup)
+        self.log.logging("TransportZigpy", "Debug", "Open : %s" % _coordinator_backup)
         try:
             return json.load(_coordinator)
         except json.JSONDecodeError:

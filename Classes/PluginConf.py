@@ -13,6 +13,7 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 
 import json
 import os.path
+from pathlib import Path
 import time
 
 import Domoticz
@@ -197,6 +198,8 @@ SETTINGS = {
     "PluginConfiguration": {
         "Order": 12,
         "param": {
+            "PosixPathUpdate": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "storeDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "PluginLogMode": {"type": "list","list": { "system default": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},"default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "numDeviceListVersion": {"type": "int","default": 12,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "filename": { "type": "path", "default": "", "current": None, "restart": 1, "hidden": True, "Advanced": True, },
@@ -208,7 +211,6 @@ SETTINGS = {
             "pluginReports": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginWWW": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginLogs": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
-            "storeDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
         },
     },
     # Verbose
@@ -320,6 +322,7 @@ SETTINGS = {
     "Experimental": {
         "Order": 16,
         "param": {
+            
             "readZclClusters": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "reconnectonIEEEaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "reconnectonNWKaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
@@ -414,7 +417,7 @@ class PluginConf:
         self.pluginConf = {}
         self.homedir = homedir
         self.hardwareid = hardwareid
-        self.pluginConf["pluginHome"] = homedir
+        self.pluginConf["pluginHome"] = homedir.rstrip('/').rstrip('\\')
         self.VersionNewFashion = VersionNewFashion
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
@@ -422,8 +425,10 @@ class PluginConf:
 
         setup_folder_parameters(self, homedir)
 
-        self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % hardwareid
-        if os.path.isfile(self.pluginConf["filename"]):
+        #self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % hardwareid
+        _pluginConf = Path(self.pluginConf["pluginConfig"] )
+        self.pluginConf["filename"] = str( _pluginConf / ("PluginConf-%02d.json" % hardwareid) )
+        if os.path.isfile( _pluginConf / ("PluginConf-%02d.json" % hardwareid)):
             _load_Settings(self)
 
         else:
@@ -444,23 +449,32 @@ class PluginConf:
         _path_check(self)
         _param_checking(self)
 
+
     def write_Settings(self):
         # serialize json format the pluginConf '
         # Only the arameters which are different than default '
 
-        self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % self.hardwareid
-        pluginConfFile = self.pluginConf["filename"]
+        #self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % self.hardwareid
+        _pluginConf = Path(self.pluginConf["pluginConfig"] )
+        pluginConfFile = _pluginConf / ("PluginConf-%02d.json" % self.hardwareid)
+        self.pluginConf["filename"] = str(pluginConfFile)
+    
         write_pluginConf = {}
         for theme in SETTINGS:
             for param in SETTINGS[theme]["param"]:
                 if self.pluginConf[param] != SETTINGS[theme]["param"][param]["default"]:
                     if SETTINGS[theme]["param"][param]["type"] == "hex":
-                        write_pluginConf[param] = "%X" % self.pluginConf[param]
+                        if isinstance( self.pluginConf[param], str):
+                            write_pluginConf[param] = "%X" % int(self.pluginConf[param],16)
+                        else:
+                            write_pluginConf[param] = "%X" % self.pluginConf[param]
                     else:
                         write_pluginConf[param] = self.pluginConf[param]
 
         with open(pluginConfFile, "wt") as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
+
+            
 
         if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
             setConfigItem(Key="PluginConf", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
@@ -522,21 +536,22 @@ def _load_Settings(self):
 def _load_oldfashon(self, homedir, hardwareid):
     # Import PluginConf.txt
     # Migration
-    self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.txt" % hardwareid
-    if not os.path.isfile(self.pluginConf["filename"]):
-        self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%d.txt" % hardwareid
-        if not os.path.isfile(self.pluginConf["filename"]):
-            self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf.txt"
-            if not os.path.isfile(self.pluginConf["filename"]):
+    _filename = Path(self.pluginConf["pluginConfig"]) / ("PluginConf-%02d.txt" % hardwareid)
+    if not os.path.isfile(_filename):
+        _filename = Path(self.pluginConf["pluginConfig"]) / ("PluginConf-%2d.txt" % hardwareid)
+        if not os.path.isfile(_filename):
+            _filename = Path(self.pluginConf["pluginConfig"]) / "PluginConf.txt"
+            if not os.path.isfile(_filename):
                 self.write_Settings()
+                self.pluginConf["filename"] = str( _filename )
                 return
 
     tmpPluginConf = ""
-    if not os.path.isfile(self.pluginConf["filename"]):
+    if not os.path.isfile(_filename):
         return
-    with open(self.pluginConf["filename"], "r") as myPluginConfFile:
+    with open(_filename, "r") as myPluginConfFile:
         tmpPluginConf += myPluginConfFile.read().replace("\n", "")
-
+    self.pluginConf["filename"] = str( _filename )
     PluginConf = {}
     _import_oldfashon_param(self, tmpPluginConf, self.pluginConf["filename"])
 
@@ -578,7 +593,7 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
 
 
 def _path_check(self):
-
+    update_done = False
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
             if SETTINGS[theme]["param"][param]["type"] != "path":
@@ -586,9 +601,19 @@ def _path_check(self):
             if self.pluginConf[param].find("http") != -1:
                 # this is a url
                 continue
-            if not os.path.exists(self.pluginConf[param]):
-                Domoticz.Error("Cannot access path: %s" % self.pluginConf[param])
+            _path_name = Path( self.pluginConf[param] )
+            if not os.path.exists(_path_name):
+                Domoticz.Error("Cannot access path: %s" % _path_name)
+            if self.pluginConf[param] != str( _path_name ):
+                if self.pluginConf["PosixPathUpdate"]:
+                    Domoticz.Status("Updating path from %s to %s" %( self.pluginConf[param], _path_name))
+                    self.pluginConf[param] = str( _path_name )
+                    update_done = True
+                else:
+                    Domoticz.Error("Updating path from %s to %s is required, but no backward compatibility" %( self.pluginConf[param], _path_name))
 
+    if update_done:
+        self.write_Settings()
 
 def _param_checking(self):
     # Let's check the Type
@@ -619,23 +644,24 @@ def zigpy_setup(self):
                 }
                                 
 def setup_folder_parameters(self, homedir):
+
     for theme in SETTINGS:
         for param in SETTINGS[theme]["param"]:
             if param == "pluginHome":
                 continue
             if param == "homedirectory":
-                self.pluginConf[param] = homedir
+                self.pluginConf[param] = str( Path(homedir) )
             elif param == "pluginConfig":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "Conf/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Conf")
             elif param == "pluginData":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "Data/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Data")
             elif param == "pluginLogs":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "Logs/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Logs")
             elif param == "pluginOTAFirmware":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "OTAFirmware/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "OTAFirmware")
             elif param == "pluginReports":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "Reports/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Reports")
             elif param == "pluginWWW":
-                self.pluginConf[param] = self.pluginConf["pluginHome"] + "www/"
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "www")
             else:
                 self.pluginConf[param] = SETTINGS[theme]["param"][param]["default"]
