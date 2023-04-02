@@ -19,7 +19,7 @@ def rest_plugin_upgrade(self, verb, data, parameters):
         return _response
     
     pluginFolder = Path(self.pluginParameters["HomeFolder"])
-    upgrade_script = pluginFolder / PLUGIN_UPGRADE_SCRIPT
+    upgrade_script = str( pluginFolder / PLUGIN_UPGRADE_SCRIPT)
 
     self.logging("Log", "Plugin Upgrade starting: %s" %(upgrade_script))
     
