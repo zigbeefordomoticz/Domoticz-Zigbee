@@ -28,10 +28,10 @@
     "Type": "",
     "ClusterToBind": [ "0402", "0405", "042a", "fc7e" ],
     "ConfigureReporting": {
-        "0402": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }}},
-        "0405": { "Attributes": { "0000": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }}},
-        "042a": { "Attributes": { "0000": { "DataType": "39", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "00000001" }}},
-        "fc7e": { "Attributes": { "0000": { "ManufSpecific": "117c", "DataType": "39", "MinInterval": "0001", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "00000001" }}}
+        "0402": { "Attributes": { "0000": { "DataType": "29", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }}},
+        "0405": { "Attributes": { "0000": { "DataType": "21", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }}},
+        "042a": { "Attributes": { "0000": { "DataType": "39", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "00000002" }}},
+        "fc7e": { "Attributes": { "0000": { "ManufSpecific": "117c", "DataType": "39", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "00000001" }}}
     },
     "ReadAttributes": {
         "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007", "000a", "4000" ],
