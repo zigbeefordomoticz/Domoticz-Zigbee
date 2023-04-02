@@ -22,8 +22,11 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
         return False
     
     value = int(data, 16)
+    self.log.logging("Tuya", "Debug", "                - value: %s" % (value), NwkId)
+    
     if "EvalExp" in dps_mapping[ str_dp ]:
         value = evaluate_expression_with_data(self, dps_mapping[ str_dp ][ "EvalExp"], value)
+    self.log.logging("Tuya", "Debug", "                - after evaluate_expression_with_data() value: %s" % (value), NwkId)
 
     if "store_tuya_attribute" in dps_mapping[ str_dp ]:
         store_tuya_attribute(self, NwkId, dps_mapping[ str_dp ]["store_tuya_attribute"], data)
@@ -35,11 +38,14 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
         if "store_tuya_attribute" not in dps_mapping[ str_dp ]:
             store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
         return True
+    
     divisor = dps_mapping[ str_dp ]["domo_divisor"] if "domo_divisor" in dps_mapping[ str_dp ] else 1
     value = value / divisor
-    rounding = dps_mapping[ str_dp ]["domo_round"] if "domo_divisor" in dps_mapping[ str_dp ] else 0
+    rounding = dps_mapping[ str_dp ]["domo_round"] if "domo_round" in dps_mapping[ str_dp ] else 0
     value = round( value, rounding ) if rounding else int(value)
-    
+
+    self.log.logging("Tuya", "Debug", "                - after sensor_type() value: %s divisor: %s rounding: %s" % (value, divisor, rounding), NwkId)
+   
     sensor_type = dps_mapping[ str_dp ][ "sensor_type"]
     if sensor_type in DP_SENSOR_FUNCTION:
         value = check_domo_format_req( self, dps_mapping[ str_dp ], value)
@@ -50,7 +56,7 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
     return False
 
 def ts0601_actuator( self, NwkId, command, value=None):
-    self.log.logging("Tuya", "Log", "ts0601_actuator - requesting %s %s" %(
+    self.log.logging("Tuya", "Debug", "ts0601_actuator - requesting %s %s" %(
         command, value))
 
     model_name = self.ListOfDevices[ NwkId ]["Model"] if "Model" in self.ListOfDevices[ NwkId ] else None
@@ -72,7 +78,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
         return False
     dp = int(dp, 16)
     
-    self.log.logging("Tuya", "Log", "ts0601_actuator - requesting %s %s %s" %(
+    self.log.logging("Tuya", "Debug", "ts0601_actuator - requesting %s %s %s" %(
         command, dp, value))
 
     if command in TS0601_COMMANDS:
