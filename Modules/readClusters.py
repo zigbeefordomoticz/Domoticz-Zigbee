@@ -168,10 +168,6 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
         self.log.logging("Command", "Debug", "disabled device: %s/%s droping message " % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr)
         return
     
-    # Can we receive a Custer while the Device is not yet in the ListOfDevices ??????
-    # This looks not possible to me !!!!!!!
-    # This could be in the case of Xiaomi sending Cluster 0x0000 before anything is done on the plugin.
-    # I would consider this doesn't make sense, and we should simply return a warning, that we receive a message from an unknown device !
     if "Ep" not in self.ListOfDevices[MsgSrcAddr]:
         return
     if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Ep"]:
@@ -182,8 +178,6 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
     self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s" % (
         MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),MsgSrcAddr,)
 
-    storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
-
     if MsgAttrStatus != "00" and MsgClusterId != "0500":
         # We receive a Read Attribute response or a Report with a status error.
         self.log.logging( "Cluster", "Debug", "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" % (
@@ -191,13 +185,14 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
         self.statistics._clusterKO += 1
         return
 
-    if self.pluginconf.pluginConf["readZclClusters"] and is_cluster_zcl_config_available( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, attribute=MsgAttrID):
+    if is_cluster_zcl_config_available( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, attribute=MsgAttrID):
         process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
     
     elif MsgClusterId in DECODE_CLUSTER:
-        if self.pluginconf.pluginConf["readZclClusters"] and MsgClusterId not in ( "0000", "0201", "0b04", ):
-            self.log.logging( "Cluster", "Log", "ReadCluster - Cluster %s/%s %s not yet ready for ZclCluster %s/%s " %(
-                MsgClusterId, MsgAttrID, MsgAttType, MsgSrcAddr, MsgSrcEp))
+        self.log.logging( "Cluster", "Log", "ReadCluster - Cluster %s/%s %s not yet ready for ZclCluster %s/%s " %(
+            MsgClusterId, MsgAttrID, MsgAttType, MsgSrcAddr, MsgSrcEp))
+    
+        storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
 
         _func = DECODE_CLUSTER[MsgClusterId]
         _func( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
@@ -213,7 +208,7 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
             "MsgClusterData": str(MsgClusterData),
         }
 
-        self.log.logging(  "Cluster",  "Error",  "ReadCluster - Error/unknow %s/%s Cluster: %s Attribute: %s Status: %s DataType: %s DataSize: %s Data: %s" %(
+        self.log.logging( "Cluster", "Error", "ReadCluster - Error/unknow %s/%s Cluster: %s Attribute: %s Status: %s DataType: %s DataSize: %s Data: %s" %(
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, _context, )
 
 
