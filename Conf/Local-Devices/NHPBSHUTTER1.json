@@ -38,6 +38,6 @@
     },
     "WindowsCoverringInverted": 1,
     "Param": {
-        "WiserShutterDuration": 60
+        "WiserShutterDuration": 5
     }
 }
