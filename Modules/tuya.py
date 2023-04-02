@@ -246,6 +246,22 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     elif cmd == "24":  # Time Synchronisation
         send_timesynchronisation(self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload[6:])
 
+    elif cmd == "25":  # CHECK_ZIGBEE_GATEWAY_STATUS_CMD 
+        # 0x00: The gateway is not connected to the internet.
+        # 0x01: The gateway is connected to the internet.
+        # 0x02: The request timed out after three seconds.
+        in_payload = MsgPayload[6:]
+        self.log.logging( "Tuya", "Log", "tuyaReadRawAPS - Model: %s CHECK_ZIGBEE_GATEWAY_STATUS_CMD Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" % (
+            _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]), NwkId, )
+
+        sqn_out = get_and_inc_ZCL_SQN(self, NwkId)
+        EPout = "01"
+        cluster_frame = "11"
+        cmd = "25"  # Command
+        payload = cluster_frame + sqn_out + cmd + in_payload + "01"
+        raw_APS_request(self, NwkId, srcEp, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
+
+    
     else:
         self.log.logging( "Tuya", "Log", "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" % (
             _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]), NwkId, )
