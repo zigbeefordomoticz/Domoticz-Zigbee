@@ -480,5 +480,5 @@ def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, de
         return
 
     cluster_description = self.readZclClusters[ cluster ]["Description"] if cluster in self.readZclClusters else "Unknown cluster"
-    self.log.logging( "ZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s" %(
-        nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, value ))        
+    self.log.logging( "ZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s" %(
+        nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, d, value ))        
