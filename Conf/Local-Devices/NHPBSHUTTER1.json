@@ -36,7 +36,6 @@
         "0102": [ "0008", "0009", "e000" ],
         "0019": []
     },
-    "WindowsCoverringInverted": 1,
     "Param": {
         "WiserShutterDuration": 5
     }
