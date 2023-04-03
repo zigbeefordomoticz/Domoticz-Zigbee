@@ -262,25 +262,25 @@ def extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType):
     if "Type" in self.ListOfDevices[NWKID]["Ep"][Ep]:
         if self.ListOfDevices[NWKID]["Ep"][Ep]["Type"] == "":
             _Type = GetType(self, NWKID, Ep).split("/")
-            self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - Type via GetType: %s Ep: %s" %( 
+            self.log.logging( "WidgetCreation", "Debug", "extract_key_infos - Type via GetType: %s Ep: %s" %( 
                 str(_Type) , str(Ep)), NWKID )
         else:
             _dType = self.ListOfDevices[NWKID]["Ep"][Ep]["Type"]
             _aType = str(_dType)
             _Type = _aType.split("/")
-            self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - Type via ListOfDevice: %s Ep: %s" %( 
+            self.log.logging( "WidgetCreation", "Debug", "extract_key_infos - Type via ListOfDevice: %s Ep: %s" %( 
                 str(_Type), str(Ep)), NWKID, )
             
     elif self.ListOfDevices[NWKID]["Type"] in [{}, ""]:
         _Type = GetType(self, NWKID, Ep).split("/")
-        self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - Type via GetType: %s Ep: %s" %( 
+        self.log.logging( "WidgetCreation", "Debug", "extract_key_infos - Type via GetType: %s Ep: %s" %( 
             str(_Type), str(Ep)), NWKID )
         
     else:
         GlobalEP = True
         if "Type" in self.ListOfDevices[NWKID]:
-            Type = self.ListOfDevices[NWKID]["Type"].split("/")
-            self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Type : %s " %(str(_Type)), NWKID)
+            _Type = self.ListOfDevices[NWKID]["Type"].split("/")
+            self.log.logging("WidgetCreation", "Debug", "extract_key_infos - Type : %s " %(str(_Type)), NWKID)
 
     # Check if Type is known
     if len(_Type) == 1 and _Type[0] == "":
@@ -318,11 +318,11 @@ def CreateDomoDevice(self, Devices, NWKID):
     GlobalEP = False
     GlobalType = []
 
-    self.log.logging( "WidgetCreation", "Debug", "CreatDomoDevice - Ep to be processed : %s " % self.ListOfDevices[NWKID]["Ep"].keys(), NWKID )
+    self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - Ep to be processed : %s " % self.ListOfDevices[NWKID]["Ep"].keys(), NWKID )
     for Ep in self.ListOfDevices[NWKID]["Ep"]:
 
         # Use 'type' at level EndPoint if existe
-        self.log.logging("WidgetCreation", "Debug", "CreatDomoDevice - Process EP : %s GlobalEP: %s GlobalType: %s" %( 
+        self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Process EP : %s GlobalEP: %s GlobalType: %s" %( 
             Ep, GlobalEP, str(GlobalType)), NWKID)
    
         if GlobalEP:
@@ -330,7 +330,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             break
         
         Type, GlobalEP, GlobalType = extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType)
-        self.log.logging("WidgetCreation", "Debug", "CreatDomoDevice - Type: >%s< GlobalEp: >%s< GlobalType: >%s<" %( 
+        self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Type: >%s< GlobalEp: >%s< GlobalType: >%s<" %( 
             Type, GlobalEP, str(GlobalType)), NWKID)
         
         if Type is None or Type in ( "", {} ):
