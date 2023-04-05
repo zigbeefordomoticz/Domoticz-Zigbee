@@ -155,7 +155,7 @@ PLUGIN_MODELS_MATRIX = [
     { "Model": TUYA_TS0601_MODEL_NAME, 
         "Manufacturer": TUYA_DIMMER_MANUFACTURER, 
         "ManufId": [],
-        "PluginModelName": "TS0601-sirene",},
+        "PluginModelName": "TS0601-dimmer",},
   
     # TS601 - 2 Gangs Dimmer
     { "Model":TUYA_TS0601_MODEL_NAME, 
