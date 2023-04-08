@@ -1489,53 +1489,47 @@ def getDimmerLevelOfColor(self, value):
 
 
 def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_max):
+    """
+    check if the value is in the range or not. If out range and disableTrackingValue not set, will check for 5 consecutive errors to log as an error.
+    return False if the value is in the range
+    return True if the value is out of range
+    """
 
+    valid_value = False
     _attribute = "Erratic_" + value_type
+    tracking_disable = self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"] if "Param" in self.ListOfDevices[NwkId] and "disableTrackingEraticValue" in self.ListOfDevices[NwkId]["Param"] else False
+
     if expected_min < value < expected_max:
         # Value is in the threasholds, every thing fine
-        if _attribute in self.ListOfDevices[NwkId]:
-            # Remove the attribute if we had a previous erratic value
-            del self.ListOfDevices[NwkId][_attribute]
+        valid_value = True
+
+    if valid_value and _attribute in self.ListOfDevices[NwkId]:
+        # Remove the attribute if we had a previous erratic value
+        del self.ListOfDevices[NwkId][_attribute]
+    return False
+
+    if valid_value:
         return False
 
-    # The provided value is not in the expected range. We have an Eratic value.
-    if ( 
-        "Param" in self.ListOfDevices[NwkId] 
-        and "disableTrackingEraticValue" in self.ListOfDevices[NwkId]["Param"] 
-        and self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"]
-    ):
-        # We have an Eratic value, but we don't want to handle it, nor tell anybody !!!
-        return False
+    if tracking_disable:
+        return True
 
+    # Let's try to handle some eratics value
     if _attribute not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId][_attribute] = {}
         self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] = 1
 
     self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] += 1
     if self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] > 5:
-        self.log.logging(
-            "Widget",
-            "Error",
-            "Aberrant %s: %s (below %s or above %s) for device: %s" % (value_type, value, expected_min, expected_max, NwkId),
-            NwkId,
-        )
+        self.log.logging( "Widget", "Error", "Aberrant %s: %s (below %s or above %s) for device: %s" % (
+            value_type, value, expected_min, expected_max, NwkId), NwkId,)
         del self.ListOfDevices[NwkId][_attribute]
-    else:
-        self.log.logging(
-            "Widget",
-            "Debug",
-            "Aberrant %s: %s (below % or above %s) for device: %s [%s]"
-            % (
-                value_type,
-                value,
-                expected_min,
-                expected_max,
-                NwkId,
-                self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"],
-            ),
-            NwkId,
-        )
+        return True
+
+    self.log.logging( "Widget", "Debug", "Aberrant %s: %s (below % or above %s) for device: %s [%s]" % (
+                value_type, value, expected_min, expected_max, NwkId, self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"],), NwkId,)
     return True
+
 
 def check_set_meter_widget( Devices, Unit, mode):
     # Mode = 0 - From device (default)
