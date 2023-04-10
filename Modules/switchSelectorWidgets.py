@@ -641,6 +641,11 @@ SWITCH_SELECTORS = {
         "04": (4, "Critical"),
         "ForceUpdate": True,
     },
+    "SOS": {
+        "00": (0, "No Alert"),
+        "01": (4, "Critical"),
+        "ForceUpdate": True,
+    },
     "Tamper": {
         "00": (0, "No Alert"),
         "01": (1, "Tamper "),
