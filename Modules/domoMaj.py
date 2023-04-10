@@ -758,9 +758,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         if ClusterType == "Temp" and WidgetType in ("Temp", "Temp+Hum", "Temp+Hum+Baro") and Attribute_ == "":  # temperature
             if check_erratic_value(self, NWKID, "Temp", value, -50, 100):
                 # We got an erratic value, no update to Domoticz
-                self.log.logging("Widget", "Debug", "%s Receive an erratic Temp: %s, WidgetType: >%s<" % (
+                self.log.logging("Widget", "Log", "%s Receive an erratic Temp: %s, WidgetType: >%s<" % (
                     NWKID, value, WidgetType), NWKID)
-                continue
+                return
 
             self.log.logging("Widget", "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NWKID)
             adjvalue = 0
@@ -1503,18 +1503,16 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
         # Value is in the threasholds, every thing fine
         valid_value = True
 
-    if valid_value and _attribute in self.ListOfDevices[NwkId]:
-        # Remove the attribute if we had a previous erratic value
-        del self.ListOfDevices[NwkId][_attribute]
-    return False
-
     if valid_value:
+        if  _attribute in self.ListOfDevices[NwkId]:
+            # Remove the attribute if we had a previous erratic value
+            del self.ListOfDevices[NwkId][_attribute]
         return False
 
-    if tracking_disable:
+    elif tracking_disable:
         return True
 
-    # Let's try to handle some eratics value
+    # We have an erratic value and we have to track Let's try to handle some eratics value
     if _attribute not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId][_attribute] = {}
         self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] = 1
