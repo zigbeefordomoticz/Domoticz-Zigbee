@@ -58,7 +58,7 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            retreive_cmd_payload_from_8002,
                            set_request_phase_datastruct, set_status_datastruct,
                            timeStamped, updLQI, updSQN,
-                           zigpy_plugin_sanity_check)
+                           zigpy_plugin_sanity_check, get_deviceconf_parameter_value)
 from Modules.zb_tables_management import (mgmt_rtg_rsp,
                                           store_NwkAddr_Associated_Devices)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
@@ -4205,14 +4205,12 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         elif MsgCmd == "01":
             MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "01")
 
-    elif _ModelName in ("TS0041", "TS0043", "TS0044", "TS0042", "TS004F", "TS004F-_TZ3000_xabckq1v"):  # Tuya remote
-        self.log.logging(
-            "Input",
-            "Debug",
-            "Decode8095 - Tuya %s  Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, MsgPayload: %s "
-            % (_ModelName, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload),
-            MsgSrcAddr,
-        )
+    elif ( 
+          get_deviceconf_parameter_value(self, _ModelName, "TUYA_REMOTE", return_default=None)  
+          or _ModelName in ("TS0041", "TS0043", "TS0044", "TS0042", "TS004F", "TS004F-_TZ3000_xabckq1v")
+    ):  # Tuya remote
+        self.log.logging( "Input", "Debug", "Decode8095 - Tuya %s  Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, MsgPayload: %s " % (
+            _ModelName, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload), MsgSrcAddr, )
         if MsgCmd[:2] == "fd" and MsgPayload:
             if MsgPayload == "00":
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "0006", "01")  # Click

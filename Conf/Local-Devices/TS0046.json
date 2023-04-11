@@ -1,0 +1,47 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1577",
+    "_blakadder": "https://zigbee.blakadder.com/LoraTap_SS9600ZB.html",
+    "_comment": "Wireless 6 Button Remote EU",
+    "_version": "1.0",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0001": "",
+            "0004": "",
+            "0005": "",
+            "0006": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Button_3"
+        },
+        "02": {
+            "0006": "",
+            "Type": "Button_3"
+        },
+        "03": {
+            "0006": "",
+            "Type": "Button_3"
+        },
+        "04": {
+            "0006": "",
+            "Type": "Button_3"
+        },
+        "05": {
+            "0006": "",
+            "Type": "Button_3"
+        },
+        "06": {
+            "0006": "",
+            "Type": "Button_3"
+        }
+
+    },
+    "TUYA_REMOTE": true,
+    "Type": "",
+    "ClusterToBind": [ "0006", "0001" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007", "0006", "0007", "ffe2", "ffdf" ],
+        "0006": []
+    }
+}
