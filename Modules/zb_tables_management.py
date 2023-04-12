@@ -131,7 +131,11 @@ def get_latest_table_entry(self, nwkid, tablename):
     
     if len(self.ListOfDevices[nwkid][tablename]) > 0:
         return self.ListOfDevices[nwkid][tablename][(len(self.ListOfDevices[nwkid][tablename] ) - 1)]
-    return []
+    
+    # We have an empty list
+    _create_empty_entry(self, nwkid, tablename)
+    return self.ListOfDevices[nwkid][tablename][(len(self.ListOfDevices[nwkid][tablename] ) - 1)]
+
 
 def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
     
@@ -303,7 +307,11 @@ def mgmt_routingtable_response( self, srcnwkid, MsgSourcePoint, MsgClusterID, ds
         RoutingTableListCount, 
         RoutingTableListRecord  ,  
     ))
-    get_latest_table_entry(self, srcnwkid, "RoutingTable")["TimeStamp"] = time.time()
+    latest_table_entry = get_latest_table_entry(self, srcnwkid, "RoutingTable")
+    if latest_table_entry == []:
+        return
+        
+    latest_table_entry["TimeStamp"]  = time.time()
     get_latest_table_entry(self, srcnwkid, "RoutingTable")[ "RoutingTable" + "TableSize"] = int(RoutingTableSize, 16)
     if Status in STATUS_CODE:
         get_latest_table_entry(self, srcnwkid, "RoutingTable")["Status"] = STATUS_CODE[Status]
