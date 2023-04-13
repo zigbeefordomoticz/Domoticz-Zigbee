@@ -34,6 +34,9 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
     return sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp )
     
 def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp ):
+    self.log.logging("Tuya", "Debug", "sensor_type - %s %s %s %s %s %s %s %s" % (
+        NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp), NwkId)
+
     if "sensor_type" not in dps_mapping[ str_dp ]:
         if "store_tuya_attribute" not in dps_mapping[ str_dp ]:
             store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
@@ -72,11 +75,17 @@ def ts0601_actuator( self, NwkId, command, value=None):
         self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in core plugin" % command)
         return False
     
-    dp = ts0601_actuator_dp( command, dps_mapping)
-    if dp is None:
+    str_dp = ts0601_actuator_dp( command, dps_mapping)
+    if str_dp is None:
         self.log.logging("Tuya", "Error", "ts0601_actuator - unknow command %s in config file" % command)
         return False
-    dp = int(dp, 16)
+    
+    if "action_Exp" in dps_mapping[ str_dp ]:
+        # Correct Value to proper format
+        value = evaluate_expression_with_data(self, dps_mapping[ str_dp ]["action_Exp"], value)
+        self.log.logging("Tuya", "Debug", "      corrected value: %s" % ( value ))
+        
+    dp = int(str_dp, 16)
     
     self.log.logging("Tuya", "Debug", "ts0601_actuator - requesting %s %s %s" %(
         command, dp, value))
@@ -90,19 +99,6 @@ def ts0601_actuator( self, NwkId, command, value=None):
     else:
         func(self, NwkId, "01", dp )
 
-    
-
-def action_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp):
-    if "action_type" not in dps_mapping[ str_dp ]:
-        return False
-    action_type = dps_mapping[ str_dp ][ "action_type"]
-    if action_type in DP_ACTION_FUNCTION:
-        value = check_domo_format_req( self, dps_mapping[ str_dp ], value)
-        func = DP_ACTION_FUNCTION[ action_type ]
-        func(self, NwkId, Ep, dp, datatype, value )
-        return True
-
-    return False
     
         
 # Helpers        
@@ -142,7 +138,7 @@ def ts0601_extract_data_point_infos( self, model_name):
     return self.DeviceConf[model_name ][ "TS0601_DP" ]
 
 def ts0601_actuator_dp( command, dps_mapping):
-    next( ( dp for dp in dps_mapping if "action_type" in dps_mapping[dp] and command == dps_mapping[dp]["action_type"] ), None, )
+    return next( ( dp for dp in dps_mapping if "action_type" in dps_mapping[dp] and command == dps_mapping[dp]["action_type"] ), None, )
 
     
 # Sensors responses
@@ -350,16 +346,19 @@ DP_SENSOR_FUNCTION = {
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
+    self.log.logging("Tuya", "Debug", "ts0601_tuya_cmd - %s %s %s %s" % (NwkId, Ep, action, data))
+    
     cluster_frame = "11"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     tuya_cmd(self, NwkId, Ep, cluster_frame, sqn, "00", action, data)
-
    
 def ts0601_action_setpoint(self, NwkId, Ep, dp, value):
+    # The Setpoint is coming in centi-degre (default)
     if value is None:
         return
 
     self.log.logging("Tuya", "Debug", "ts0601_action_setpoint - %s Setpoint: %s" % (NwkId, value))
+    
     action = "%02x02" % dp
     data = "%08x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)

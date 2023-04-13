@@ -57,6 +57,8 @@ def tuya_read_attribute(self, nwkid, EPout, cluster_frame, sqn, cmd, action, dat
 
 
 def tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None):
+    self.log.logging("Tuya", "Debug", "tuya_cmd - %s/%s cmd: %s action: %s data: %s" % (nwkid, EPout, cmd, action, data))
+    
     if nwkid not in self.ListOfDevices:
         return
     transid = "%02x" % get_next_tuya_transactionId(self, nwkid)

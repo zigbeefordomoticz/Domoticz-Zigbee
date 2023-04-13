@@ -26,7 +26,7 @@
     },
     "TS0601_DP": { 
         "01": { "store_tuya_attribute": "SystemMode", "sensor_type": "TRV7SystemMode", "action_type": "TRV7SystemMode"},
-        "02": { "store_tuya_attribute": "SetPoint", "action_type": "setpoint", "sensor_type": "setpoint", "EvalExp": "int((value//10)*10)", "domo_divisor": 10, "domo_round": 2},
+        "02": { "store_tuya_attribute": "SetPoint", "sensor_type": "setpoint", "EvalExp": "int((value//10)*10)", "domo_divisor": 10, "domo_round": 2, "action_type": "setpoint", "action_Exp": "int(( ( value / 10) // 10 ) * 10)"},
         "03": { "store_tuya_attribute": "Temperature", "sensor_type": "temperature", "EvalExp": "int((value//10)*10)", "domo_divisor": 10, "domo_round": 2},
         "04": { "store_tuya_attribute": "BoostHeating"},
         "05": { "store_tuya_attribute": "BoostTime"},
