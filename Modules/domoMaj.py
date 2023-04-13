@@ -658,7 +658,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  Thermostat Mode 4 %s %s:%s" % (value, nValue, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType in ("ThermoMode_5", "ThermoMode_6",) and Attribute_ == "001c":
+            elif WidgetType in ("ThermoMode_5", "ThermoMode_6") and Attribute_ == "001c":
                 # Use by Tuya TRV
                 nValue = value
                 sValue = '%02d' %( nValue * 10)
@@ -932,6 +932,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 or (ClusterType == "FanControl" and WidgetType == "FanControl")
                 or ("ThermoMode" in ClusterType and WidgetType == "ACMode_2")
                 or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00")
+                or ("ThermoMode" in ClusterType and WidgetType == "ThermoMode_7" and Attribute_ == "001c")
                 or (WidgetType == "KF204Switch" and ClusterType in ("Switch", "Door"))
                 or (WidgetType == "Valve" and Attribute_ == "0014")
                 or ("ThermoMode" in ClusterType and WidgetType == "ThermoOnOff")

@@ -284,9 +284,24 @@ def ts0601_trv7_system_mode(self, Devices, nwkid, ep, value):
             nwkid, ep, value, type(value))
         )
     widget_value = DEVICE_WIDGET_MAP[ value ]
-    MajDomoDevice(self, Devices, nwkid, ep, "0201", widget_value, Attribute_="0012")
+    MajDomoDevice(self, Devices, nwkid, ep, "0201", widget_value, Attribute_="001c")
     checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", widget_value)
     
+def ts0601_trv6_system_mode(self, Devices, nwkid, ep, value):
+    # Auto 0, Manual 1, Off 2
+    # Widget 0: Off, 1: Auto, 2: Manual
+    
+    if value > 2:
+        self.log.logging("Tuya", "Error", "ts0601_trv6_system_mode - After Nwkid: %s/%s Invalid SystemMode: %s" % (nwkid, ep, value))
+        return
+    
+    self.log.logging("Tuya", "Debug", "ts0601_trv6_system_mode - After Nwkid: %s/%s SystemMode: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "SystemModel", value)
+   
+    MajDomoDevice(self, Devices, nwkid, ep, "0201", value, Attribute_="001c")
+    checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", value)
+
+
 
 def ts0601_setpoint(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya", "Debug", "ts0601_setpoint - After Nwkid: %s/%s Setpoint: %s" % (nwkid, ep, value))
@@ -342,6 +357,7 @@ DP_SENSOR_FUNCTION = {
     "valveposition": ts0601_valveposition,
     "calibration": ts0601_calibration,
     "windowsopened": ts0601_windowdetection,
+    "TRV6SystemMode": ts0601_trv6_system_mode,
     "TRV7SystemMode": ts0601_trv7_system_mode
 }
 
