@@ -94,7 +94,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
         func = TS0601_COMMANDS[ command ]
     else:
         func = DP_ACTION_FUNCTION[ command ]
-    if value:
+    if value is not None:
         func(self, NwkId, "01", dp, value )
     else:
         func(self, NwkId, "01", dp )
@@ -438,6 +438,26 @@ def ts0601_action_trv7_system_mode(self, NwkId, Ep, dp, value=None):
     action = "%02x04" % dp  # Mode
     data = "%02x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+    
+def ts0601_action_trv6_system_mode(self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya", "Debug", "ts0601_action_trv6_system_mode - %s System mode: %s" % (NwkId, value))
+    WIDGET_DEVICE_MAP = {
+        0: 2,
+        1: 1,
+        2: 0
+    }
+    if value not in WIDGET_DEVICE_MAP:
+        self.log.logging("Tuya", "Error", "ts0601_action_trv6_system_mode - unexepected mode %s/%s mode: %s (%s)" %(
+            NwkId, Ep, value, type(value))
+        )
+    device_value = WIDGET_DEVICE_MAP[ value ]
+   
+    action = "%02x04" % dp  # Mode
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
 TS0601_COMMANDS = {
@@ -448,5 +468,6 @@ TS0601_COMMANDS = {
 DP_ACTION_FUNCTION = {
     "setpoint": ts0601_action_setpoint,
     "calibration": ts0601_action_calibration,
+    "TRV6SystemMode": ts0601_action_trv6_system_mode,
     "TRV7SystemMode": ts0601_action_trv7_system_mode
 }

@@ -119,6 +119,7 @@ ACTIONATORS = [
     "ThermoMode_4",
     "ThermoMode_5",
     "ThermoMode_6",
+    "ThermoMode_7",
     "ThermoModeEHZBRTS",
     "AirPurifierMode",
     "FanSpeed",
@@ -407,11 +408,16 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
         
-        if DeviceType in ("ThermoMode_4", "ThermoMode_5", "ThermoMode_6"):
+        if DeviceType in ("ThermoMode_4", "ThermoMode_5", "ThermoMode_6", "ThermoMode_7"):
             self.log.logging( "Command", "Debug", "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (
                 NWKID, EPout, Unit, DeviceType, Level), NWKID, )
             self.log.logging("Command", "Debug", "ThermoMode - requested Level: %s" % Level, NWKID)
             
+            if DeviceType == "ThermoMode_7" and ts0601_extract_data_point_infos( self, _model_name):
+                ts0601_actuator(self, NWKID, "TRV6SystemMode", 0)
+                UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+                return
+
             if _model_name in ( "TS0601-_TZE200_dzuqwsyg", "TS0601-eTRV5"):
                 tuya_trv_onoff(self, NWKID, 0x01)
                 UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -1037,6 +1043,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 UpdateDevice_v2(self, Devices, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
                 return
 
+        if DeviceType == "ThermoMode_7" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "TRV6SystemMode", int(Level // 10))
+            return
+   
         if DeviceType in ("ThermoMode_5", "ThermoMode_6"):
             self.log.logging(
                 "Command",
