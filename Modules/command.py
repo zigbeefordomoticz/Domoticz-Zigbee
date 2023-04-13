@@ -415,7 +415,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             
             if DeviceType == "ThermoMode_7" and ts0601_extract_data_point_infos( self, _model_name):
                 ts0601_actuator(self, NWKID, "TRV6SystemMode", 0)
-                UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
                 return
 
             if _model_name in ( "TS0601-_TZE200_dzuqwsyg", "TS0601-eTRV5"):
