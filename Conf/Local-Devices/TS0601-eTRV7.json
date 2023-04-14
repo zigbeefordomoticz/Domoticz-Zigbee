@@ -39,7 +39,7 @@
         "0f": { "store_tuya_attribute": "TemperatureMin","EvalExp": "round(value/10,1)"},
         "10": { "store_tuya_attribute": "TemperatureMax", "EvalExp": "round(value/10,1)"},
         "65": { "store_tuya_attribute": "Calibration", "action_type": "calibration"},
-        "66": { "store_tuya_attribute": "ValvePosition", "sensor_type": "valveposition", "EvalExp": "int((value//10)*10)"},
+        "66": { "store_tuya_attribute": "ValvePosition", "sensor_type": "valveposition", "EvalExp": "int(value/10)"},
         "11": { "store_tuya_attribute": "ScheduleMonday"},
         "12": { "store_tuya_attribute": "ScheduleTuesday"},
         "13": { "store_tuya_attribute": "ScheduleWednesday"},
