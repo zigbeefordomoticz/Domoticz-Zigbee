@@ -14,7 +14,7 @@ from math import atan, pi, sqrt
 
 import Domoticz
 from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
-                                  write_attribute)
+                                  read_attribute, write_attribute)
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.readAttributes import ReadAttributeRequest_0b04_050b
@@ -257,6 +257,7 @@ def RTCZCGQ11LM_motion_opple_sensitivity(self, nwkid, param):
 
     self.log.logging("Lumi", "Debug", "Write Motion Sensitivity %s -> %s" % (nwkid, param), nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+    read_attribute( self, nwkid,ZIGATE_EP, "01", cluster_id, "00", manuf_spec, manuf_id, 0x01, "%04x" %int(Hattribute,16), ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
   
 def RTCZCGQ11LM_motion_opple_monitoring_mode(self, nwkid, param):
@@ -303,7 +304,8 @@ def RTCGQ14LM_trigger_indicator(self, nwkid, param):
 
     self.log.logging("Lumi", "Debug", "Write Motion Approach Distance %s -> %s" % (nwkid, param), nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
-  
+    read_attribute( self, nwkid,ZIGATE_EP, "01", cluster_id, "00", manuf_spec, manuf_id, 0x01, "%04x" %int(Hattribute,16), ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+    
 def aqara_detection_interval(self, nwkid, param):
     if nwkid not in self.ListOfDevices:
         return
@@ -317,6 +319,7 @@ def aqara_detection_interval(self, nwkid, param):
 
     self.log.logging("Lumi", "Debug", "Write Motion Approach Distance %s -> %s" % (nwkid, param), nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+    read_attribute( self, nwkid,ZIGATE_EP, "01", cluster_id, "00", manuf_spec, manuf_id, 0x01, "%04x" %int(Hattribute,16), ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
        
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
@@ -647,7 +650,13 @@ def lumi_lock(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgC
     checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
     store_lumi_attribute(self, MsgSrcAddr, "LumiLock", lumilockData)
 
-    
+def Lumi_lumi_motion_ac02(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData):
+    # Provides luminance and motion in the same message
+    _motion = int(MsgClusterData[:4],16)
+    _luminance = int(MsgClusterData[4:8],16)
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(_luminance) )
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", str(_motion) )
+        
 def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
     
