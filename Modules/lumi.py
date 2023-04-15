@@ -10,7 +10,7 @@
 """
 import struct
 import time
-from math import atan, pi, sqrt
+from math import atan, pi, sqrt, log10
 
 import Domoticz
 from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
@@ -652,10 +652,14 @@ def lumi_lock(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgC
 
 def Lumi_lumi_motion_ac02(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData):
     # Provides luminance and motion in the same message
-    _motion = int(MsgClusterData[:4],16)
-    _luminance = int(MsgClusterData[4:8],16)
-    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(_luminance) )
-    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", str(_motion) )
+    # When receiving message, this is because we got a motion
+    
+    _lux = int(MsgClusterData[4:8],16)
+
+    self.log.logging( "Lumi", "Debug", "Lumi_lumi_motion_ac02 %s - %s/%s luminence: %s/%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, _lux), MsgSrcAddr, )
+
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(_lux) )
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", "01" )
         
 def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
@@ -965,19 +969,15 @@ def lumi_cluster_fcc0(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttr
 
     if MsgAttrID == "0112":   # Motion
         store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+        self.log.logging( "Lumi", "Debug", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         if "Model" in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]["Model"] == 'lumi.motion.ac02':
-            # Provides luminance and motion in the same message
-            _motion = int(MsgClusterData[:4],16)
-            _luminance = int(MsgClusterData[4:8],16)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(_luminance) )
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", str(_motion) )
+            Lumi_lumi_motion_ac02(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         else: 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
 
     elif MsgAttrID == "0142":   # Presence
         store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+        self.log.logging( "Lumi", "Debug", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
 
     elif MsgAttrID == "0143":   # Presence Event
@@ -987,11 +987,11 @@ def lumi_cluster_fcc0(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttr
         
     elif MsgAttrID == "0144":   # Monitoring mode
         store_lumi_attribute(self, MsgSrcAddr, "Monitoring_mode", MsgClusterData)
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Monitoring Mode: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+        self.log.logging( "Lumi", "Debug", "ReadCluster %s - %s/%s Monitoring Mode: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
 
     elif MsgAttrID == "0146":   # Approching distance
         store_lumi_attribute(self, MsgSrcAddr, "Approching_distance", MsgClusterData)
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Approching distance: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+        self.log.logging( "Lumi", "Debug", "ReadCluster %s - %s/%s Approching distance: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
 
     elif MsgAttrID == "0151":  # Event in a region
         # Region Manned (labelled "People exists" on the choose trigger condition selection);
@@ -1001,7 +1001,7 @@ def lumi_cluster_fcc0(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttr
         # 01 In, 02 Leave, 04: Manned, 08 Unmanned
         store_lumi_attribute(self, MsgSrcAddr, "Event_in_region" , MsgClusterData)
     else:
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Unknown attribute: %s value %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )
+        self.log.logging( "Lumi", "Debug", "ReadCluster %s - %s/%s Unknown attribute: %s value %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )
         store_lumi_attribute(self, MsgSrcAddr, MsgAttrID , MsgClusterData)
     
     
