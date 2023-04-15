@@ -669,6 +669,9 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     self.log.logging( "Lumi", "Debug", "   readXiaomiCluster %s/%s cluster: %s attribut: %s data: %s" %(
         MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData), MsgSrcAddr)
     
+    if MsgClusterId == "fcc0" and MsgAttrID != "00f7":
+        return lumi_cluster_fcc0(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+    
     # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
     # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
     
@@ -958,6 +961,51 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0008", "0000", sLevel)
 
 
+def lumi_cluster_fcc0(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData):
+
+    if MsgAttrID == "0112":   # Motion
+        store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
+        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+        if "Model" in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]["Model"] == 'lumi.motion.ac02':
+            # Provides luminance and motion in the same message
+            _motion = int(MsgClusterData[:4],16)
+            _luminance = int(MsgClusterData[4:8],16)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(_luminance) )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", str(_motion) )
+        else: 
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
+
+    elif MsgAttrID == "0142":   # Presence
+        store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
+        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
+
+    elif MsgAttrID == "0143":   # Presence Event
+        # enter, leave, left_enter, right_leave, right_enter, left_leave, approach, away.
+        store_lumi_attribute(self, MsgSrcAddr, "Presence_event", MsgClusterData)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "000c", int(MsgClusterData,16))
+        
+    elif MsgAttrID == "0144":   # Monitoring mode
+        store_lumi_attribute(self, MsgSrcAddr, "Monitoring_mode", MsgClusterData)
+        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Monitoring Mode: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+
+    elif MsgAttrID == "0146":   # Approching distance
+        store_lumi_attribute(self, MsgSrcAddr, "Approching_distance", MsgClusterData)
+        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Approching distance: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+
+    elif MsgAttrID == "0151":  # Event in a region
+        # Region Manned (labelled "People exists" on the choose trigger condition selection);
+        # Region Unmanned (also labelled "People exists" on the selection);
+        # Region In;
+        # Region Leave.
+        # 01 In, 02 Leave, 04: Manned, 08 Unmanned
+        store_lumi_attribute(self, MsgSrcAddr, "Event_in_region" , MsgClusterData)
+    else:
+        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Unknown attribute: %s value %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )
+        store_lumi_attribute(self, MsgSrcAddr, MsgAttrID , MsgClusterData)
+    
+    
+    
 def cube_decode(self, value, MsgSrcAddr):
     "https://github.com/sasu-drooz/Domoticz-Zigate/wiki/Aqara-Cube-decoding"
     value = int(value, 16)

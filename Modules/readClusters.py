@@ -2124,62 +2124,6 @@ def Clusterfc7d(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
     ikea_air_purifier_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
-    self.log.logging( "Cluster", "Error", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (
-        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
-
-    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (
-        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr,)
-    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
-
-    if MsgAttrID == "00f7":
-        readXiaomiCluster(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
-
-    elif MsgAttrID == "0112":   # Motion
-        store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
-        if "Model" in self.ListOfDevices[ MsgSrcAddr ] and self.ListOfDevices[ MsgSrcAddr ]["Model"] == 'lumi.motion.ac02':
-            # Provides luminance and motion in the same message
-            _motion = int(MsgClusterData[:4],16)
-            _luminance = int(MsgClusterData[4:8],16)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(_luminance) )
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", str(_motion) )
-        else: 
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
-
-    elif MsgAttrID == "0142":   # Presence
-        store_lumi_attribute(self, MsgSrcAddr, "Presence", MsgClusterData)
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Presence: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", MsgClusterData)
-
-    elif MsgAttrID == "0143":   # Presence Event
-        # enter, leave, left_enter, right_leave, right_enter, left_leave, approach, away.
-        store_lumi_attribute(self, MsgSrcAddr, "Presence_event", MsgClusterData)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "000c", int(MsgClusterData,16))
-        
-    elif MsgAttrID == "0144":   # Monitoring mode
-        store_lumi_attribute(self, MsgSrcAddr, "Monitoring_mode", MsgClusterData)
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Monitoring Mode: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
-
-    elif MsgAttrID == "0146":   # Approching distance
-        store_lumi_attribute(self, MsgSrcAddr, "Approching_distance", MsgClusterData)
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Approching distance: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
-
-    elif MsgAttrID == "0151":  # Event in a region
-        # Region Manned (labelled "People exists" on the choose trigger condition selection);
-        # Region Unmanned (also labelled "People exists" on the selection);
-        # Region In;
-        # Region Leave.
-        # 01 In, 02 Leave, 04: Manned, 08 Unmanned
-        store_lumi_attribute(self, MsgSrcAddr, "Event_in_region" , MsgClusterData)
-    else:
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Unknown attribute: %s value %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )
-        store_lumi_attribute(self, MsgSrcAddr, MsgAttrID , MsgClusterData)
-
-def Clusterff66(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
-    self.log.logging( "Cluster", "Error", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (
-        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
-
 
 DECODE_CLUSTER = {
     "0006": Cluster0006,
@@ -2197,7 +2141,6 @@ DECODE_CLUSTER = {
     "fc03": Clusterfc03,
     "fc7d": Clusterfc7d,
     "fc21": Clusterfc21,
-    "fcc0": Clusterfcc0,
     "fc40": Clusterfc40,
-    "ff66": Clusterff66,
+
 }
