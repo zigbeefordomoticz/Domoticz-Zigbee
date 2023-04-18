@@ -301,6 +301,23 @@ def ts0601_trv6_system_mode(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0201", value, Attribute_="001c")
     checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", value)
 
+def ts0601_sirene_switch(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya", "Debug", "ts0601_sirene_switch - After Nwkid: %s/%s Alarm: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Alarm", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0006", value)
+
+def ts0601_sirene_level(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya", "Debug", "ts0601_sirene_level - Sound Level: %s" % value, nwkid)
+    store_tuya_attribute(self, nwkid, "AlarmLevel", value)
+
+
+def ts0601_sirene_duration(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya", "Debug", "ts0601_sirene_duration - After Nwkid: %s/%s Alarm: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "AlarmDuration", value)
+    
+def ts0601_sirene_melody(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya", "Debug", "ts0601_sirene_melody - After Nwkid: %s/%s Alarm: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "AlarmMelody", value)
 
 
 def ts0601_setpoint(self, Devices, nwkid, ep, value):
@@ -358,7 +375,11 @@ DP_SENSOR_FUNCTION = {
     "calibration": ts0601_calibration,
     "windowsopened": ts0601_windowdetection,
     "TRV6SystemMode": ts0601_trv6_system_mode,
-    "TRV7SystemMode": ts0601_trv7_system_mode
+    "TRV7SystemMode": ts0601_trv7_system_mode,
+    "TuyaAlarmDuration": ts0601_sirene_duration,
+    "TuyaAlarmMelody": ts0601_sirene_melody,
+    "TuyaAlarmLevel": ts0601_sirene_level,
+    "TuyaAlarmSwitch": ts0601_sirene_switch
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
@@ -459,6 +480,18 @@ def ts0601_action_trv6_system_mode(self, NwkId, Ep, dp, value=None):
     data = "%02x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
+def ts0601_action_siren_switch(self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya", "Debug", "ts0601_action_siren_switch - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, value))
+    device_value = value
+   
+    action = "%02x01" % dp  # Mode
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
 
 TS0601_COMMANDS = {
     "TRV7WindowDetection": ts0601_window_detection_mode,
@@ -469,5 +502,6 @@ DP_ACTION_FUNCTION = {
     "setpoint": ts0601_action_setpoint,
     "calibration": ts0601_action_calibration,
     "TRV6SystemMode": ts0601_action_trv6_system_mode,
-    "TRV7SystemMode": ts0601_action_trv7_system_mode
+    "TRV7SystemMode": ts0601_action_trv7_system_mode,
+    "TuyaAlarmSwitch": ts0601_action_siren_switch
 }
