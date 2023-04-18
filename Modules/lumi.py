@@ -655,8 +655,9 @@ def Lumi_lumi_motion_ac02(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     # When receiving message, this is because we got a motion
     
     _lux = int(MsgClusterData[4:8],16)
-
-    self.log.logging( "Lumi", "Debug", "Lumi_lumi_motion_ac02 %s - %s/%s luminence: %s/%s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, _lux), MsgSrcAddr, )
+    _lux = 0 if _lux > 0xffdc else _lux
+    self.log.logging( "Lumi", "Debug", "Lumi_lumi_motion_ac02 %s - %s/%s luminence: %s/%s" % (
+        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, _lux), MsgSrcAddr, )
 
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str(_lux) )
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0406", "01" )
@@ -722,10 +723,13 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         sTriggerIndicator = retreive4Tag("6b20", MsgClusterData)[:2]
 
         if sIlluminence != "":
-            store_lumi_attribute(self, MsgSrcAddr, "Illuminance", sIlluminence)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str( int(sIlluminence,16) ) )
+            illuminance = int(sIlluminence,16)
+            illuminance = 0 if illuminance > 0xffdc else illuminance
+            
+            store_lumi_attribute(self, MsgSrcAddr, "Illuminance", illuminance)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str( illuminance ) )
             self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s sIlluminence %s/%s" % (
-                MsgClusterId, MsgAttrID, MsgSrcAddr, sIlluminence, int(sIlluminence,16)), MsgSrcAddr, )
+                MsgClusterId, MsgAttrID, MsgSrcAddr, sIlluminence, illuminance), MsgSrcAddr, )
 
         if sDetectionInterval != "":
             store_lumi_attribute(self, MsgSrcAddr, "DetectionInterval", sDetectionInterval)
