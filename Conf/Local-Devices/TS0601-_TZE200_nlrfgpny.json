@@ -1,0 +1,27 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1581",
+    "_comment": "NEO - Sirène intelligente extérieure Zigbee Tuya (alimentation 5V/1A ou batterie + panneau solaire)",
+    "_version": "1.0",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "SwitchAlarm"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+    },
+    "BatteryDevice": 1,
+    "Param": {
+        "TuyaAlarmDuration": 10,
+        "TuyaAlarmLevel": 0,
+        "TuyaAlarmMelody": 1
+    }
+}
