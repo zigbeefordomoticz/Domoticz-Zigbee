@@ -723,9 +723,8 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         sTriggerIndicator = retreive4Tag("6b20", MsgClusterData)[:2]
 
         if sIlluminence != "":
-            illuminance = int(sIlluminence,16)
+            illuminance = struct.unpack("h", struct.pack(">H", int(sIlluminence, 16)))[0] 
             illuminance = 0 if illuminance > 0xffdc else illuminance
-            
             store_lumi_attribute(self, MsgSrcAddr, "Illuminance", illuminance)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str( illuminance ) )
             self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s sIlluminence %s/%s" % (
