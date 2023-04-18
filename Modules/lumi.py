@@ -705,8 +705,8 @@ def readXiaomiCluster(
         sTriggerIndicator = retreive4Tag("6b20", MsgClusterData)[:2]
 
         if sIllulminence != "":
-            store_lumi_attribute(self, MsgSrcAddr, "Illuminance", sIllulminence)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", sIllulminence)
+            store_lumi_attribute(self, MsgSrcAddr, "Illuminance", str( int(sIllulminence,16)) )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0400", str( int(sIllulminence,16) ))
             self.log.logging( "Lumi", "Debug", "ReadCluster - %s/%s Saddr: %s sIllulminence %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sIllulminence, int(sIllulminence,16)), MsgSrcAddr, )
 
         if sDetectionInterval != "":
