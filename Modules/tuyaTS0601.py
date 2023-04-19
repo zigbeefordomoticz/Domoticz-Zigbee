@@ -349,6 +349,15 @@ def  ts0601_windowdetection(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0500", value)
     store_tuya_attribute(self, nwkid, "OpenWindow", value)
 
+def ts0601_smoke_detection(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya", "Debug", "ts0601_smoke_detection - Nwkid: %s/%s WSmoke State: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "SmokeState", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0500", value)
+
+def ts0601_smoke_concentration(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya", "Debug", "ts0601_smoke_concentration - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "SmokePPM", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "042a", value)
 
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
@@ -379,7 +388,9 @@ DP_SENSOR_FUNCTION = {
     "TuyaAlarmDuration": ts0601_sirene_duration,
     "TuyaAlarmMelody": ts0601_sirene_melody,
     "TuyaAlarmLevel": ts0601_sirene_level,
-    "TuyaAlarmSwitch": ts0601_sirene_switch
+    "TuyaAlarmSwitch": ts0601_sirene_switch,
+    "smoke_state": ts0601_smoke_detection,
+    "smoke_ppm": ts0601_smoke_concentration
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):

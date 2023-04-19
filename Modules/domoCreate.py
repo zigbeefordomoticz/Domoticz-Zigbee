@@ -579,6 +579,7 @@ SIMPLE_WIDGET = {
     "Voc": { "widgetType": "Custom", "Options": "1;ppm" },
     "PM25": { "widgetType": "Custom", "Options": "1;ppm" },
     "CH2O": { "widgetType": "Custom", "Options": "1;ppm" },
+    "SmokePPM": { "widgetType": "Custom", "Options": "1;ppm" },
     "CarbonDioxyde": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;ppm", },
     "CarbonMonoxyde": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;ppm", },
     "Analog": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;tbd", },

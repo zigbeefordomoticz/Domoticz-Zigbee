@@ -1,0 +1,34 @@
+{
+    "_comment": "Photoelectric smoke detector",
+    "_source": "https://easydomoticz.com/forum/viewtopic.php?t=13227&sid=ced00fc3ee586d9d518151f9a3fcbb2f",
+    "_blakadder": "https://zigbee.blakadder.com/Tuya_smoke.html",
+    "_version": "1",
+    "Identifier": [
+        [ "TS0601", "_TZE200_m9skfctm" ]
+    ],
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Smoke/SmokePPM"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+    },
+    "TS0601_DP": { 
+        "01": { "store_tuya_attribute": "SmokeState", "sensor_type": "smoke_state", "domo_divisor": 10, "domo_round": 0},
+        "02": { "store_tuya_attribute": "SmokeConcentration", "sensor_type": "smoke_ppm"},
+        "0b": { "store_tuya_attribute": "device_fault"},
+        "0f": { "store_tuya_attribute": "battery"},
+        "65": { "store_tuya_attribute": "test"}
+    }
+
+}

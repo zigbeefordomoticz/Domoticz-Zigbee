@@ -706,6 +706,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             svalue = "%s" % (nvalue,)
             UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
 
+        if ClusterType == "PM25" and WidgetType == "SmokePPM":
+            nvalue = int(value)
+            svalue = "%s" % (nvalue,)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
+
+            
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
             nValue = 0
             sValue = "%s %% used" %( value, )
@@ -1526,7 +1532,7 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
         return True
 
     self.log.logging( "Widget", "Debug", "Aberrant %s: %s (below % or above %s) for device: %s [%s]" % (
-                value_type, value, expected_min, expected_max, NwkId, self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"],), NwkId,)
+        value_type, value, expected_min, expected_max, NwkId, self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"],), NwkId,)
     return True
 
 
