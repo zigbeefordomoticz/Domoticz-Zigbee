@@ -339,7 +339,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             return
 
         if DeviceType == "SwitchAlarm" and _model_name == "TS0601-Solar-Siren":
-            ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 0)
+            if ts0601_extract_data_point_infos( self, _model_name):
+                ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 0)
+                UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+                return
             
         if _model_name in ("TS0601-Energy",):
             tuya_energy_onoff(self, NWKID, "00")
@@ -588,8 +591,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             return
         
         if DeviceType == "SwitchAlarm" and _model_name == "TS0601-Solar-Siren":
-            ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 1)
-            return
+            if ts0601_extract_data_point_infos( self, _model_name):
+                ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 1)
+                UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+                return
     
         if _model_name in ("TS0601-_TZE200_nklqjk62", ):
             self.log.logging("Command", "Debug", "mgtCommand : On for Tuya Garage Door %s" % NWKID)

@@ -23,6 +23,7 @@
     },
     "TUYA_REGISTRATION": 19,
     "TS0601_DP": { 
+        "01": { "store_tuya_attribute": "dp_01_dt_4"},
         "05": { "store_tuya_attribute": "TuyaAlarmDuration"},
         "07": { "store_tuya_attribute": "TuyaAlarmDuration"},
         "15": { "store_tuya_attribute": "TuyaAlarmMelody"},
