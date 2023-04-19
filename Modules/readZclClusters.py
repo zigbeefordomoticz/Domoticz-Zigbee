@@ -111,6 +111,8 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         return
     
     for data_action in _action_list:
+        self.log.logging("ZclClusters", "Debug", "---> Data Action: %s" %data_action)
+        
         if data_action == CHECK_AND_STORE_RAW:
             # This is particularly true for Battery Voltage, where the UpdateBatteryAttribute() relys on deci-volts
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value)
@@ -460,18 +462,27 @@ def store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
         MsgSrcAddr, MsgSrcEp, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3, value))
     if _storage_specificlvl1 is None:
         return
+    
     if _storage_specificlvl1 not in self.ListOfDevices[ MsgSrcAddr ]:
         self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ] = {}
     if _storage_specificlvl2 is None:
+        self.log.logging( "ZclClusters", "Debug", "     store_value_in_specif_storage  [%s] = %s" %(
+            _storage_specificlvl1, value))
         self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ] = value
         return
+    
     if _storage_specificlvl2 not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ]:
         self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ] = {}
     if _storage_specificlvl3 is None:
+        self.log.logging( "ZclClusters", "Debug", "     store_value_in_specif_storage  [%s][%s] = %s" %( 
+            _storage_specificlvl1, _storage_specificlvl2, value))
         self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ] = value
         return
+    
     if _storage_specificlvl3 not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ]:
-        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = {}    
+        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = {}
+    self.log.logging( "ZclClusters", "Debug", "     store_value_in_specif_storage  [%s][%s][%s] = %s" %( 
+        _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3, value))
     self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = value
 
  

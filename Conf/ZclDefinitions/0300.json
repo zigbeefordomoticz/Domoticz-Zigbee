@@ -4,111 +4,6 @@
     "Version": "1",
     "Enabled": true,
     "Attributes": {
-        "4000": {
-            "Enabled": true,
-            "Name": "EnhancedCurrentHue",
-            "DataType": "21",
-            "Range": [
-                "0000",
-                "ffff"
-            ],
-            "Acc": "RS",
-            "Default": 0,
-            "Mandatory": true,
-            "ActionList": [
-                "check_store_value"
-            ]
-        },
-        "4001": {
-            "Enabled": true,
-            "Name": "EnhancedColorMode",
-            "DataType": "30",
-            "Range": [
-                "00",
-                "ff"
-            ],
-            "Acc": "R",
-            "Default": 0,
-            "Mandatory": true,
-            "ActionList": [
-                "check_store_value"
-            ]
-        },
-        "4002": {
-            "Enabled": true,
-            "Name": "ColorLoopActive",
-            "DataType": "20",
-            "Range": [
-                "00",
-                "ff"
-            ],
-            "Acc": "RS",
-            "Default": 0,
-            "Mandatory": true,
-            "ActionList": [
-                "check_store_value"
-            ]
-        },
-        "4003": {
-            "Enabled": true,
-            "Name": "ColorLoopDirection",
-            "DataType": "20",
-            "Range": [
-                "00",
-                "ff"
-            ],
-            "Acc": "RS",
-            "Default": 0,
-            "Mandatory": true,
-            "ActionList": [
-                "check_store_value"
-            ]
-        },
-        "4004": {
-            "Enabled": true,
-            "Name": "ColorLoopTime",
-            "DataType": "21",
-            "Range": [
-                "0000",
-                "ffff"
-            ],
-            "Acc": "RS",
-            "Default": 0,
-            "Mandatory": true,
-            "ActionList": [
-                "check_store_value"
-            ]
-        },
-        "4005": {
-            "Enabled": true,
-            "Name": "ColorLoopStartEnhancedHue",
-            "DataType": "21",
-            "Range": [
-                "0000",
-                "ffff"
-            ],
-            "Acc": "R",
-            "Default": 0,
-            "Mandatory": true,
-            "ActionList": [
-                "check_store_value"
-            ]
-        },
-        "4006": {
-            "Enabled": true,
-            "Name": "ColorLoopStoredEnhancedHue",
-            "DataType": "21",
-            "Range": [
-                "0000",
-                "ffff"
-            ],
-            "Acc": "R",
-            "Default": 0,
-            "Mandatory": true,
-            "ActionList": [
-                "check_store_value"
-            ]
-        },
         "0000": {
             "Enabled": true,
             "Name": "CurrentHue",
@@ -120,7 +15,7 @@
             "Acc": "RP",
             "Default": 0,
             "Mandatory": true,
-            "SpecifStoragelvl1": "ColorInfos",
+            "SpecifStoragelvl1": "ColorInfos", 
             "SpecifStoragelvl2": "Hue",
             "ActionList": [
                 "check_store_value",
@@ -271,6 +166,111 @@
                 "ff"
             ],
             "Acc": "RW",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "4000": {
+            "Enabled": true,
+            "Name": "EnhancedCurrentHue",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "RS",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "4001": {
+            "Enabled": true,
+            "Name": "EnhancedColorMode",
+            "DataType": "30",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "4002": {
+            "Enabled": true,
+            "Name": "ColorLoopActive",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "RS",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "4003": {
+            "Enabled": true,
+            "Name": "ColorLoopDirection",
+            "DataType": "20",
+            "Range": [
+                "00",
+                "ff"
+            ],
+            "Acc": "RS",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "4004": {
+            "Enabled": true,
+            "Name": "ColorLoopTime",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "RS",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "4005": {
+            "Enabled": true,
+            "Name": "ColorLoopStartEnhancedHue",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
+            "Default": 0,
+            "Mandatory": true,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "4006": {
+            "Enabled": true,
+            "Name": "ColorLoopStoredEnhancedHue",
+            "DataType": "21",
+            "Range": [
+                "0000",
+                "ffff"
+            ],
+            "Acc": "R",
             "Default": 0,
             "Mandatory": true,
             "ActionList": [
