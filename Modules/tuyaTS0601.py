@@ -187,6 +187,10 @@ def ts0601_battery(self, Devices, nwkid, ep, value ):
     Update_Battery_Device(self, Devices, nwkid, value)
     store_tuya_attribute(self, nwkid, "BatteryStatus", value)
 
+def ts0601_battery_state(self, Devices, nwkid, ep, value ):
+    self.log.logging("Tuya", "Debug", "ts0601_battery_state - Battery %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "BatteryState", value)
+
 
 def ts0601_tamper(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya", "Debug", "ts0601_tamper - Tamper %s %s %s" % (nwkid, ep, value), nwkid)
@@ -367,6 +371,7 @@ DP_SENSOR_FUNCTION = {
     "humidity": ts0601_humidity,
     "distance": ts0601_distance,
     "battery": ts0601_battery,
+    "batteryState": ts0601_battery_state,
     "tamper": ts0601_tamper,
     "switch": ts0601_switch,
     "door": ts0601_door,

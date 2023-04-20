@@ -1,0 +1,38 @@
+{
+    "_comment": "Smoke Sensor",
+    "_source": "https://www.domoticz.com/forum/viewtopic.php?t=40276",
+    "_blakadder": "https://zigbee.blakadder.com/Smart9_S9ZB-SA02.html",
+    "_version": "1",
+    "Identifier": [
+        [ "TS0601", "_TZE200_m9skfctm" ],
+        [ "TS0601", "_TZE200_t5p1vj8r" ],
+        [ "TS0601", "_TZE200_uebojraa" ],
+        [ "TS0601", "_TZE200_vzekyi4c" ],
+        [ "TS0601", "_TZE200_yh7aoahi" ],
+        [ "TS0601", "_TZE200_dnz6yvl2" ],
+        [ "TS0601", "_TZE200_dq1mfjug" ]
+    ],
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Smoke"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+    },
+    "TS0601_DP": { 
+        "01": { "store_tuya_attribute": "SmokeState", "sensor_type": "smoke_state" },
+        "0e": { "store_tuya_attribute": "batteryState"},
+        "0f": { "store_tuya_attribute": "battery"}
+    }
+
+}

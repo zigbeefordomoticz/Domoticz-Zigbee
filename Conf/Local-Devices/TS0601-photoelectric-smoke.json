@@ -24,8 +24,8 @@
         "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
     },
     "TS0601_DP": { 
-        "01": { "store_tuya_attribute": "SmokeState", "sensor_type": "smoke_state", "domo_divisor": 10, "domo_round": 0},
-        "02": { "store_tuya_attribute": "SmokeConcentration", "sensor_type": "smoke_ppm"},
+        "01": { "store_tuya_attribute": "SmokeState", "sensor_type": "smoke_state"},
+        "02": { "store_tuya_attribute": "SmokeConcentration", "sensor_type": "smoke_ppm", "domo_divisor": 10, "domo_round": 0},
         "0b": { "store_tuya_attribute": "device_fault"},
         "0f": { "store_tuya_attribute": "battery"},
         "65": { "store_tuya_attribute": "test"}
