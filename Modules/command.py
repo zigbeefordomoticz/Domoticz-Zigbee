@@ -724,7 +724,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 UpdateDevice_v2(self, Devices, Unit, 1, str(percentage_level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             else:
                 percentage_level = int(( (previous_level * 100 )/ 255))
-                self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s and Subtype %sr" %(previous_level, Devices[Unit].Subtype))
+                self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s and Subtype %sr" %(previous_level, Devices[Unit].SubType))
                 UpdateDevice_v2(self, Devices, Unit, 2, str(percentage_level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
                 
         # Let's force a refresh of Attribute in the next Heartbeat
