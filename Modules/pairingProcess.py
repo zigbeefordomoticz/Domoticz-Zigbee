@@ -252,7 +252,11 @@ def request_next_Ep(self, Nwkid):
             continue
 
         # Let's request only 1 Ep, in order wait for the response and then request the next one
-        if iterEp not in self.ListOfDevices[Nwkid]["Ep"] or not self.ListOfDevices[Nwkid]["Ep"][ iterEp ] or self.ListOfDevices[Nwkid]["Ep"][ iterEp ] in ( "", {}):
+        if (
+            iterEp not in self.ListOfDevices[Nwkid]["Epv2"] 
+            or not self.ListOfDevices[Nwkid]["Ep"][ iterEp ] 
+            or self.ListOfDevices[Nwkid]["Ep"][ iterEp ] in ( "", {})
+        ):
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", Nwkid, iterEp))
             zdp_simple_descriptor_request(self, Nwkid, iterEp)
             return False
