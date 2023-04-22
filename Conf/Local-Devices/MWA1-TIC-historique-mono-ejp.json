@@ -20,13 +20,13 @@
             "0705": "",
             "0b01": {
                 "Attributes": {
-                   "000d": { "Name": "ISOUSC", "DataType": "25", "ActionList": [ "check_store_value" ] }
+                    "000d": { "Name": "ISOUSC", "DataType": "25", "ActionList": [ "check_store_value" ] }
                 }
             },
             "0b04": {
                 "Attributes": {
                     "0508": { "Name": "RMSCurrent", "DataType": "21", "ActionList": [ "check_store_value", "upd_domo_device" ] },
-                    "0304": { "Name": "Total Active Power", "DataType": "2b",  "ActionList": [ "check_store_value" ] }
+                    "0304": { "Name": "Total Active Power", "DataType": "2b", "ActionList": [ "check_store_value" ] }
                 }
             },
             "0b05": "",
