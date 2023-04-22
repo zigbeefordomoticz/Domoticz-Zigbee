@@ -4,6 +4,19 @@
     "Version": "1",
     "Enabled": true,
     "Attributes": {
+        "00ee": {
+            "Enabled": true,
+            "ManufRawData": true,
+            "ManufSpecificFunc": "Lumi_fcc0",
+            "Name": "Lumi 00ee",
+            "DataType": "23",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+
         "00f7": {
             "Enabled": true,
             "ManufRawData": true,
