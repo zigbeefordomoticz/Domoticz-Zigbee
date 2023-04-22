@@ -711,9 +711,22 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         if Devices[Unit].SwitchType in (13, 14, 15, 16):
             UpdateDevice_v2(self, Devices, Unit, 1, "100", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         else:
-            UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            previous_level = get_previous_switch_level(self, NWKID, EPout)
+            self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s" % (
+                previous_level), NWKID, )
 
+            if previous_level is None:
+                self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was None!!!!")
+                UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            elif Devices[Unit].SubType in (1,2,4,6,7,8):
+                self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s and Subtype Color" %previous_level)
+                UpdateDevice_v2(self, Devices, Unit, 1, str(previous_level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            else:
+                self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s and Subtype %sr" %(previous_level, Devices[Unit].Subtype))
+                UpdateDevice_v2(self, Devices, Unit, 2, str(previous_level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+                
         # Let's force a refresh of Attribute in the next Heartbeat
+        self.log.logging( "Command", "Debug", "mgtCommand : request_read_device_status()")
         request_read_device_status(self, NWKID)
 
     if Command == "Set Level":
@@ -1347,6 +1360,17 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         UpdateDevice_v2(self, Devices, Unit, 1, str(Level), BatteryLevel, SignalLevel, str(Color))
 
+def get_previous_switch_level(self, NwkId, Ep):
+    
+    if NwkId not in self.ListOfDevices:
+        return None
+    if Ep not in self.ListOfDevices[ NwkId ][ 'Ep']:
+        return None
+    if "0008" not in self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep]:
+        return None
+    if "0000" not in self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]:
+        return None
+    return self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"]
 
 def request_read_device_status(self, Nwkid):
     # Purpose is to reset the Heartbeat in order to trigger a readattribute
