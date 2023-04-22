@@ -354,7 +354,7 @@ def  ts0601_windowdetection(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "OpenWindow", value)
 
 def ts0601_smoke_detection(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya", "Debug", "ts0601_smoke_detection - Nwkid: %s/%s WSmoke State: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya", "Debug", "ts0601_smoke_detection - Nwkid: %s/%s Smoke State: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "SmokeState", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0500", value)
 
