@@ -1023,14 +1023,19 @@ def checkValidValue(self, MsgSrcAddr, AttType, Data ):
 def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 
     if MsgSrcAddr not in self.ListOfDevices:
+        self.log.logging("Input", "Debug", "getAttributeValue - Unknown %s" % (MsgSrcAddr))
         return None
     if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Ep"]:
+        self.log.logging("Input", "Debug", "getAttributeValue - Unknown %s/%s" % (MsgSrcAddr, MsgSrcEp))
         return None
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
+        self.log.logging("Input", "Debug", "getAttributeValue - Unknown %s/%s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId))
         return None
     if not isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId], dict):
+        self.log.logging("Input", "Debug", "getAttributeValue - Not dict %s/%s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId))
         return None
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
+        self.log.logging("Input", "Debug", "getAttributeValue - Unknown %s/%s %s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID))
         return None
     return self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID]
 
