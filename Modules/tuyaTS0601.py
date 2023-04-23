@@ -255,7 +255,8 @@ def ts0601_summation_energy(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
     previous_summation = getAttributeValue(self, nwkid, ep, "0702", "0000")
     current_summation = (previous_summation + value) if previous_summation else value
-    self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s Total Summation %s" % (nwkid, ep, value, current_summation), nwkid, )
+    self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s Prev Summation %s Total Summation %s" % (
+        nwkid, ep, value, previous_summation, current_summation), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", current_summation, Attribute_="0000")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", current_summation)  # Store int
     store_tuya_attribute(self, nwkid, "Energy", value)
