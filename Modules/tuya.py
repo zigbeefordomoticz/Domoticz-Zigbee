@@ -271,7 +271,9 @@ def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, 
 
     self.log.logging( "Tuya", "Debug", "tuya_response - Model: %s Nwkid: %s/%s dp: %02x dt: %02x data: %s" % (
         _ModelName, NwkId, srcEp, dp, datatype, data), NwkId, )
-    
+    self.log.logging( "Tuya0601", "Debug", "tuya_response - Model: %s Nwkid: %s/%s dp: %02x dt: %02x data: %s" % (
+        _ModelName, NwkId, srcEp, dp, datatype, data), NwkId, )
+
     if ts0601_response(self, Devices, _ModelName, NwkId, srcEp, dp, datatype, data):
         # This is a generic a new fashion to handle the Tuya TS0601 Data Point.
         return
