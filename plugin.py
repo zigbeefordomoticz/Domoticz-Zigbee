@@ -1375,7 +1375,9 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         webserver_port,
         self.log,
         self.transport,
-        self.ModelManufMapping
+        self.ModelManufMapping,
+        self.DomoticzMajor,
+        self.DomoticzMinor
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
