@@ -971,14 +971,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             elif ClusterType == "Switch" and WidgetType == "Alarm":
                 pass
             
-            elif ClusterType == "Door" and WidgetType == "DoorSensor":
+            elif ClusterType == "Door" and WidgetType in ( "Smoke", "DoorSensor"):
                 nValue = int(value)
                 if nValue == 0:
                     sValue = "Off"
                 else:
                     sValue = "On"
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-                
+
             elif WidgetType == "DSwitch":
                 # double switch avec EP different
                 _value = int(value)
