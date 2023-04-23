@@ -1,7 +1,8 @@
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
-from Modules.tools import checkAndStoreAttributeValue, get_and_inc_ZCL_SQN
+from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
+                           getAttributeValue)
 from Modules.tuyaTools import store_tuya_attribute, tuya_cmd
 
 # Generic functions
@@ -251,9 +252,11 @@ def ts0601_current(self, Devices, nwkid, ep, value):
 
 
 def ts0601_summation_energy(self, Devices, nwkid, ep, value):
-    self.log.logging( "Tuya", "Debug", "ts0601_summation_energy - Summation %s %s %s" % (nwkid, ep, value), nwkid, )
-    MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0000") 
-    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", value)  # Store int
+    self.log.logging( "Tuya", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
+    previous_summation = getAttributeValue(self, nwkid, ep, "0702", "0000")
+    current_summation = (previous_summation + value) if previous_summation else value
+    MajDomoDevice(self, Devices, nwkid, ep, "0702", current_summation, Attribute_="0000")
+    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", current_summation)  # Store int
     store_tuya_attribute(self, nwkid, "Energy", value)
 
 
