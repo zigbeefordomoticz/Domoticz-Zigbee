@@ -131,8 +131,13 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             }
         
         if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
+            self.log.logging("TransportZigpy", "Status", "Set The maximum number of end device children that Coordinater will support to 0")
             config[conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
             
+        if self.pluginconf.pluginConf["TXpower_set"]:
+            self.log.logging("TransportZigpy", "Status", "Enables boost power mode and the alternate transmitter output.")
+            config[conf.CONF_EZSP_CONFIG]["CONFIG_TX_POWER_MODE"] = 0x3
+        
         self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
     elif radiomodule =="zigate":
@@ -169,6 +174,10 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
             self.log.logging("%s" %traceback.format_exc())
 
+        if "TXpower_set" in self.pluginconf.pluginConf:
+            config[conf.CONF_ZNP_CONFIG]["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
+
+
     elif radiomodule =="deCONZ":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
         try:
@@ -191,12 +200,6 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         config[zigpy.config.CONF_NWK_BACKUP_PERIOD] = self.pluginconf.pluginConf["autoBackup"]
     else:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = False
-   
-    if "TXpower_set" in self.pluginconf.pluginConf:
-        if radiomodule == "znp":
-            config[conf.CONF_ZNP_CONFIG]["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
-        else:
-            config["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
 
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % (
