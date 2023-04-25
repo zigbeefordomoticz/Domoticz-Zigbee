@@ -651,7 +651,13 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                     
                 if _ieee not in self._currently_not_reachable:
                     self._currently_not_reachable.append( _ieee )
-            
+                    
+            except Exception as e:
+                result = 0xB6
+                self.log.logging( "TransportZigpy", "Debug", "transport_request: request %s %04x %04x %s %s %s %s failed with error %s" % (
+                    destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout, e), _nwkid, )
+                break
+                
             if result == 0x00:
                 break
                  
