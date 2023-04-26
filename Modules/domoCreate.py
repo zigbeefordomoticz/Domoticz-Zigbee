@@ -390,7 +390,7 @@ def update_widget_type_if_possible( self, Nwkid, widget_type):
     if ( widget_type == "WindowCovering" and self.ListOfDevices[Nwkid]["ProfileID"] == "0104" ):
         if self.ListOfDevices[Nwkid]["ZDeviceID"] == "0202": 
             # Blind Percentage Inverted
-            return "BlindInverted"
+            return "WindowCovering"
             
         elif self.ListOfDevices[Nwkid]["ZDeviceID"] == "0200":
             return "VenetianInverted"
@@ -632,17 +632,19 @@ SIMPLE_WIDGET = {
 BLIND_DOMOTICZ_2022 = {
     # Blind old version before Domoticz 2023.1
     "Blind": { "Type": 244, "Subtype": 73, "Switchtype": 13, "ForceClusterType": "LvlControl", },
-    
+
     "VenetianInverted": { "Type": 244, "Subtype": 73, "Switchtype": 15 },
     "Venetian": { "Type": 244, "Subtype": 73, "Switchtype": 15 },
-    
+
+    "WindowCovering": { "Type": 244, "Subtype": 73, "Switchtype": 16 },
+
     "BlindInverted": { "Type": 244, "Subtype": 73, "Switchtype": 16, "ForceClusterType": "LvlControl", },
     "BSO-Volet": { "Type": 244, "Subtype": 73, "Switchtype": 16 },
     "BSO-Orientation": { "Type": 244, "Subtype": 73, "Switchtype": 16 },
-    
+
     "VanneInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21 },
     "CurtainInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21 },
-    
+
     "Vanne": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
     "Curtain": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
 } 
@@ -658,14 +660,17 @@ BLIND_DOMOTICZ_2023 = {
     # Blinds+Venetian US   244     73       14           ReversePosition: false ;ReverseState: false   
 
     "Blind": { "Type": 244, "Subtype": 73, "Switchtype": 3, "Options": "ReversePosition: false ;ReverseState: false", "ForceClusterType": "LvlControl", },
+
+    "WindowCovering": { "Type": 244, "Subtype": 73, "Switchtype": 3, "Options": "ReversePosition: true; ReverseState: true", },
+
     "BlindInverted": { "Type": 244, "Subtype": 73, "Switchtype": 3, "Options": "ReversePosition: true  ;ReverseState: true", "ForceClusterType": "LvlControl", },
     "BSO-Volet": { "Type": 244, "Subtype": 73, "Switchtype": 3, "Options": "ReversePosition: false ;ReverseState: false" },
-    
+
     "Venetian": { "Type": 244, "Subtype": 73, "Switchtype": 15, "Options": "ReversePosition: false ;ReverseState: false" },
     "VenetianInverted": { "Type": 244, "Subtype": 73, "Switchtype": 15, "Options": "ReversePosition: true  ;ReverseState: true" },
-    
+
     "BSO-Orientation": { "Type": 244, "Subtype": 73, "Switchtype": 15, "Options": "ReversePosition: false ;ReverseState: false" },
-    
+
     "Blind+Stop": { "Type": 244, "Subtype": 73, "Switchtype": 21, "Options": "ReversePosition: false ;ReverseState: false" },
     "VanneInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21, "Options": "ReversePosition: false ;ReverseState: false" },
     "CurtainInverted": { "Type": 244, "Subtype": 73, "Switchtype": 21, "Options": "ReversePosition: false ;ReverseState: false" },
