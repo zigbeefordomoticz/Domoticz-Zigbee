@@ -8,25 +8,25 @@
             "0700": "",
             "0701": "",
             "0702": { "Attributes": {
-                "0020": { "Name": "NTARF", "DataType": "21", "ActionList": [ "check_store_value" ] },
-                "0100": { "Name": "EJPHN", "DataType": "21", "ActionList": [ "check_store_value" ] },
-                "0102": { "Name": "EJPHPM", "DataType": "21", "ActionList": [ "check_store_value" ] },
-                "0308": { "Name": "ADSC", "DataType": "21", "ActionList": [ "check_store_value" ] },
-                "030f": { "Name": "OPTARIF", "DataType": "21", "ActionList": [ "check_store_value" ] },
-                "0400": { "Name": "PAPP", "DataType": "21", "ActionList": [ "check_store_value" ] }
+                "0020": { "Name": "NTARF", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "0100": { "Name": "EJPHN", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "0102": { "Name": "EJPHPM", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "0308": { "Name": "ADSC", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "030f": { "Name": "OPTARIF", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "0400": { "Name": "PAPP", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device"  ] }
                 }
             },
             "0703": "",
             "0705": "",
             "0b01": {
                 "Attributes": {
-                    "000d": { "Name": "ISOUSC", "DataType": "25", "ActionList": [ "check_store_value" ] }
+                    "000d": { "Name": "ISOUSC", "DataType": "25", "ActionList": [ "check_store_value", "store_specif_attribute" ] }
                 }
             },
             "0b04": {
                 "Attributes": {
-                    "0508": { "Name": "RMSCurrent", "DataType": "21", "ActionList": [ "check_store_value", "upd_domo_device" ] },
-                    "0304": { "Name": "Total Active Power", "DataType": "2b", "ActionList": [ "check_store_value" ] }
+                    "0508": { "Name": "RMSCurrent", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device" ] },
+                    "0304": { "Name": "Total Active Power", "DataType": "2b", "ActionList": [ "check_store_value", "store_specif_attribute" ] }
                 }
             },
             "0b05": "",

@@ -129,7 +129,8 @@ MANUFACTURER_ATTRIBUTES = (
     "LUMI", 
     "CASA.IA", 
     "Tuya", 
-    "ZLinky"
+    "ZLinky",
+    "Chameleon"
     )
 
 

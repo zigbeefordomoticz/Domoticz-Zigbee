@@ -64,7 +64,7 @@ def decoding_attribute_data( AttType, attribute_value, handleErrors=False):
     if int(AttType, 16) == 0x39:  # Xiaomi Float
         return struct.unpack("f", struct.pack("I", int(attribute_value, 16)))[0]
 
-    if int(AttType, 16) in {0x42, 0x43}:  # CharacterString
+    if int(AttType, 16) in {0x41, 0x42, 0x43}:  # CharacterString
         return _decode_caracter_string( attribute_value, handleErrors)
     return attribute_value
 

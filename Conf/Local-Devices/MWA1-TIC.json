@@ -5,6 +5,10 @@
             "0000": "",
             "0003": "",
             "000a": "",
+            "0006": {
+                "Attributes": {
+                    "0000": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "ContactSec", "Name": "IRM", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device" ] }
+            },
             "0700": "",
             "0701": "",
             "0702": { 
@@ -64,7 +68,7 @@
                 }
             },
             "0019": "",
-            "Type": "Meter/Power/P1Meter/Voltage/Ampere"
+            "Type": "Switch/Meter/Power/P1Meter/Voltage/Ampere"
         }
     },
     "Type": "",
