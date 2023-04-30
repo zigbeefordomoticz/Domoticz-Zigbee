@@ -140,7 +140,8 @@ ACTIONATORS = [
     "TuyaSirenTemp",
     "ThermoOnOff",
     "ShutterCalibration",
-    "SwitchAlarm"
+    "SwitchAlarm",
+    "TS0601_IrrigationValve"
 ]
 
 
@@ -333,6 +334,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
+
+            
         if DeviceType == "SwitchAlarm" and _model_name == "SMSZB-120" and self.iaszonemgt:
             self.iaszonemgt.iaswd_develco_warning(NWKID, EPout, "00")
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -1318,6 +1321,16 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         elif _model_name == "TS0601-curtain":
             tuya_curtain_lvl(self, NWKID, (Level))
+
+        elif DeviceType == "TS0601_IrrigationValve" and ts0601_extract_data_point_infos( self, _model_name):
+            self.log.logging( "Command", "Debug", "mgtCommand : TS0601_IrrigationValve Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" % (
+                NWKID, EPout, Unit, DeviceType, Level, Color), NWKID,
+            )
+
+            if Level >= 10:
+                ts0601_actuator(self, NWKID, "TS0601_IrrigationValve", (Level // 10) - 1)
+                UpdateDevice_v2(self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+                return
 
         else:
             if profalux:

@@ -368,6 +368,16 @@ def ts0601_smoke_concentration(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "SmokePPM", value)
     MajDomoDevice(self, Devices, nwkid, ep, "042a", value)
 
+def ts0601_water_consumption(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_smoke_concentration - Nwkid: %s/%s Consumption: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "WaterConsumtpion", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "WaterCounter", value)
+
+def ts0601_sensor_irrigation_mode(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_sensor_irrigation_mode - Nwkid: %s/%s Mode: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Mode", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0008", value)
+    
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
@@ -400,7 +410,9 @@ DP_SENSOR_FUNCTION = {
     "TuyaAlarmLevel": ts0601_sirene_level,
     "TuyaAlarmSwitch": ts0601_sirene_switch,
     "smoke_state": ts0601_smoke_detection,
-    "smoke_ppm": ts0601_smoke_concentration
+    "smoke_ppm": ts0601_smoke_concentration,
+    "water_consumption": ts0601_water_consumption,
+    "TS0601_IrrigationValve": ts0601_sensor_irrigation_mode,
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
@@ -513,13 +525,39 @@ def ts0601_action_siren_switch(self, NwkId, Ep, dp, value=None):
     data = "%02x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
+def ts0601_action_switch(self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, value))
+    device_value = value
+   
+    action = "%02x01" % dp  # State
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, value))
+    device_value = value
+   
+    action = "%02x01" % dp  # Mode
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+    
 
 TS0601_COMMANDS = {
     "TRV7WindowDetection": ts0601_window_detection_mode,
     "TRV7ChildLock": ts0601_child_lock_mode,
+    "TS0601_IrrigationValve": ts0601_irrigation_mode,
 }
 
 DP_ACTION_FUNCTION = {
+    "switch": ts0601_action_switch,
     "setpoint": ts0601_action_setpoint,
     "calibration": ts0601_action_calibration,
     "TRV6SystemMode": ts0601_action_trv6_system_mode,

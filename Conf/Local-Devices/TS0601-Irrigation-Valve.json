@@ -1,0 +1,45 @@
+{
+    "_comment": "Parkside Smart Watering Timer",
+    "_version": "0.10",
+    "Identifier": [
+        [ "TS0601", "_TZE200_sh1btabb" ],
+        [ "TS0601", "_TZE200_a7sghmms" ]
+    ],
+
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "0004": "",
+            "0006": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "TS0601_IrrigationValve/Switch/WaterCounter"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [],
+    "ConfigureReporting": {
+    },
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0002", "0004", "0005", "0007", "fffe" ],
+        "0006": [ "0000" ]
+    },
+    "TS0601_DP": { 
+        "01": { "sensor_type": "TS0601_IrrigationValve", "action_type": "TS0601_IrrigationValve"},
+        "02": { "store_tuya_attribute": "state", "sensor_type": "switch", "action_type": "switch"},
+        "65": { "store_tuya_attribute": "irrigationStartTime"},
+        "66": { "store_tuya_attribute": "irrigationEndTime"},
+        "67": { "store_tuya_attribute": "cycleIrrigationNumTimes"},
+        "68": { "store_tuya_attribute": "irrigationTarget"},
+        "69": { "store_tuya_attribute": "cycleIrrigationInterval"},
+        "6a": { "sensor_type": "temperature"},
+        "6c": {  "sensor_type": "battery" },
+        "6f": { "sensor_type": "water_consumption"},
+        "72": { "store_tuya_attribute": "lastIrrigationDuration"}
+    },
+    "Param": {
+        "TuyaPing": 0
+    }
+}

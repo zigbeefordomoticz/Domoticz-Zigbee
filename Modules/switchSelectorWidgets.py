@@ -806,4 +806,15 @@ SWITCH_SELECTORS = {
             "fr-FR": { "Off|Movie|At Home|Sleep|Go Out"}
         },
     },
+    "TS0601_IrrigationValve": {
+        0xff: (0, "Off"),
+        0: (1, "10"),
+        1: (2, "20"),
+        "ForceUpdate": True,
+        "OffHidden": True, 
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Capacity|Duration",
+
+        
+    }
 }
