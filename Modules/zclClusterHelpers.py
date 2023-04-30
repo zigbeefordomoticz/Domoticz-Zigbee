@@ -66,6 +66,9 @@ def decoding_attribute_data( AttType, attribute_value, handleErrors=False):
 
     if int(AttType, 16) in {0x41, 0x42, 0x43}:  # CharacterString
         return _decode_caracter_string( attribute_value, handleErrors)
+    
+    if int(AttType, 16) in { 0xe1, 0xe2, 0xe3 } :  # UTC
+        return struct.unpack("i", struct.pack("I", int(attribute_value[:8], 16)))[0]
     return attribute_value
 
 
