@@ -120,7 +120,9 @@ class WebServer(object):
         httpPort,
         log,
         transport,
-        ModelManufMapping
+        ModelManufMapping,
+        DomoticzMajor,
+        DomoticzMinor
     ):
         self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
@@ -165,6 +167,11 @@ class WebServer(object):
         self.restart_needed = {"RestartNeeded": 0}
         self.homedirectory = HomeDirectory
         self.hardwareID = hardwareID
+        
+        self.DomoticzMajor = DomoticzMajor
+        self.DomoticzMinor = DomoticzMinor
+
+
         mimetypes.init()
 
         self.FirmwareVersion = None
@@ -1544,4 +1551,3 @@ def get_plugin_parameters(self, filter=False):
         if "Password" in plugin_parameters:
             del plugin_parameters[ "Password" ]
     return plugin_parameters
-

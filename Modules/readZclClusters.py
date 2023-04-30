@@ -64,8 +64,8 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
             value = MsgClusterData
         func = FUNCTION_WITH_ACTIONS_MODULE[ _manuf_specific_cluster ]
         func( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value )
+        formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, "", "", "", _manuf_specific_cluster, "", "", value)
         return
-
 
     # More standard
     _force_value = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ValueOverwrite", model=device_model)
@@ -491,6 +491,7 @@ def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, de
     if not self.pluginconf.pluginConf["trackZclClusters"]:
         return
 
+    lqi = self.ListOfDevices[nwkid]["LQI"] if "LQI" in self.ListOfDevices[nwkid] else 0
     cluster_description = self.readZclClusters[ cluster ]["Description"] if cluster in self.readZclClusters else "Unknown cluster"
-    self.log.logging( "ZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s" %(
-        nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, d, value ))        
+    self.log.logging( "ZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s " %(
+        nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, d, value, lqi ))        

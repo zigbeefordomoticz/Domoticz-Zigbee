@@ -168,10 +168,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # 0x02: Enable the alternate transmitter output.
         # 0x03: Both 0x01 & 0x02
         if power > 0:
-            await self._ezsp.setConfigurationValue(t.EzspConfigId.CONFIG_TX_POWER_MODE,1)    
+            await self._ezsp.setConfigurationValue(0x17,0x03)    
             self.log.logging("TransportZigpy", "Debug", "set_tx_power: boost power mode")
         else:
-            await self._ezsp.setConfigurationValue(t.EzspConfigId.CONFIG_TX_POWER_MODE,0)
+            await self._ezsp.setConfigurationValue(0x17,0)
             self.log.logging("TransportZigpy", "Debug", "set_tx_power: normal mode")
 
     async def set_led(self, mode):

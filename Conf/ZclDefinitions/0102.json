@@ -23,6 +23,30 @@
         "0016": { "Enabled": true, "Name": "DecelerationTimeLift", "DataType": "21", "Range": [ "0000", "ffff" ], "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
         "0017": { "Enabled": true, "Name": "Mode", "DataType": "18", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
         "0018": { "Enabled": true, "Name": "Intermediate SetpointsLift", "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
-        "0019": { "Enabled": true, "Name": "Intermediate SetpointsTilt", "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] }
+        "0019": { "Enabled": true, "Name": "Intermediate SetpointsTilt", "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" ] },
+        "fffd": {
+            "Enabled": true,
+            "Name": "ClusterRevision",
+            "DataType": "21",
+            "Acc": "R",
+            "Range": [ "0001", "fffe"],
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "fffe": {
+            "Enabled": true,
+            "Name": "AttributeReportingStatus",
+            "DataType": "30",
+            "Acc": "R",
+            "Range": [ "00", "ff"],
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
     }
 }
