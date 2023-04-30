@@ -8,6 +8,7 @@
             "0006": {
                 "Attributes": {
                     "0000": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "ContactSec", "Name": "IRM", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device" ] }
+                }
             },
             "0700": "",
             "0701": "",
@@ -27,7 +28,7 @@
                     "010e": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "EASF08", "Name": "EASF08", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
                     "0110": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "EASF09", "Name": "EASF09", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
                     "0112": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "EASF10", "Name": "EASF10", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
-                    "0200": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "STG", "Name": "STG", "DataType": "21", "EvalFunc": "chameleon_stge",  "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                    "0200": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "STG", "Name": "STG", "DataType": "21", "EvalFunc": "chameleon_stge", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
                     "0204": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "STGE", "Name": "STGE", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
                     "0307": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "PRM", "Name": "PRM", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
                     "0308": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "ADSC", "Name": "ADSC", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
