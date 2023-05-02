@@ -802,3 +802,20 @@ def remove_bad_cluster_type_entry(self, NwkId, Ep, clusterID, WidgetId ):
         del self.ListOfDevices[ NwkId ][ "Ep"][ Ep ][ "ClusterType" ][ WidgetId ]
         return True
     return False
+
+def remove_widget( self, Devices, Unit):
+    Devices[Unit].Delete()
+    
+def remove_all_widgets( self, Devices, NwkId):
+    
+    if 'IEEE' not in self.ListOfDevices[ NwkId ]:
+        return
+    ieee = self.ListOfDevices[ NwkId ]['IEEE']
+
+    for _unit in list(Devices):
+        if Devices[_unit].DeviceID == ieee:
+            remove_widget( self, Devices, _unit)
+        
+def update_model_name( self, nwkid, new_model ):
+    
+    self.ListOfDevices[ nwkid ]["Model"] = new_model

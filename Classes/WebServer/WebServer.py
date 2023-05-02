@@ -70,6 +70,7 @@ class WebServer(object):
                                                rest_casa_device_list)
     from Classes.WebServer.rest_CfgReporting import (
         rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config)
+    from Classes.WebServer.rest_change_ModelName import rest_change_model_name
     from Classes.WebServer.rest_Energy import (rest_req_nwk_full,
                                                rest_req_nwk_inter)
     from Classes.WebServer.rest_Groups import (rest_rescan_group,
