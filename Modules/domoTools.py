@@ -12,11 +12,12 @@
 import time
 
 import Domoticz
-
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
-from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.tools import (is_domoticz_touch,
-                           is_domoticz_update_SuppressTriggers, lookupForIEEE)
+                           is_domoticz_update_SuppressTriggers, lookupForIEEE,
+                           removeDeviceInList)
+from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
+
 
 def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):
     """
@@ -803,9 +804,6 @@ def remove_bad_cluster_type_entry(self, NwkId, Ep, clusterID, WidgetId ):
         return True
     return False
 
-def remove_widget( self, Devices, Unit):
-    Devices[Unit].Delete()
-    
 def remove_all_widgets( self, Devices, NwkId):
     
     if 'IEEE' not in self.ListOfDevices[ NwkId ]:
@@ -814,7 +812,14 @@ def remove_all_widgets( self, Devices, NwkId):
 
     for _unit in list(Devices):
         if Devices[_unit].DeviceID == ieee:
-            remove_widget( self, Devices, _unit)
+            Devices[_unit].Delete()
+        
+    if "ClusterType" in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]["ClusterType"] = {}
+    for _ep in self.ListOfDevices[NwkId]["Ep"]:
+        if "ClusterType" in self.ListOfDevices[NwkId]["Ep"][ _ep ]:
+            self.ListOfDevices[NwkId]["Ep"][ _ep ]["ClusterType"] = {}
+    
         
 def update_model_name( self, nwkid, new_model ):
     
