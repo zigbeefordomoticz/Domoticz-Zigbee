@@ -36,9 +36,12 @@
             "0b05": "",
             "070d": "",
             "0019": "",
-            "Type": "Meter/Power/P1Meter_ZL/Ampere3/Alarm_ZL/Alarm_ZL2/Alarm_ZL3"
-        }
+            "Type": "Switch/Meter/Power/P1Meter/Ampere"
+        },
+        "f2": { "Type": "P1Meter_ZL" },
+        "f3": { "Type": "P1Meter_ZL" }
     },
+    "FakeEp": [ "f2", "f3" ],
     "Type": "",
     "ClusterToBind": [ "0702", "0b04" ],
     "ConfigureReporting": {

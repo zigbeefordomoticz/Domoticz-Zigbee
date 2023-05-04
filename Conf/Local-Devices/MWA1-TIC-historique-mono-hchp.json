@@ -32,7 +32,7 @@
             "0b05": "",
             "070d": "",
             "0019": "",
-            "Type": "Meter/Power/P1Meter"
+            "Type": "Switch/Meter/Power/P1Meter/Ampere"
         }
     },
     "Type": "",
