@@ -243,26 +243,32 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
     return "0043" if request_next_Ep(self, NWKID) else "0045"
 
 def request_next_Ep(self, Nwkid):
-    for iterEp in self.ListOfDevices[Nwkid]["Ep"]:
+    if "ReqEpv2" not in self.ListOfDevices[Nwkid]:
+        self.ListOfDevices[Nwkid]["ReqEpv2"] = {}
+        
+    for iterEp in list(self.ListOfDevices[Nwkid]["Ep"]):
         if is_fake_ep(self, Nwkid, iterEp):
             continue
 
         # Skip Green Zigbee EndPoint
-        if iterEp == 'f2' and self.zigbee_communication == 'zigpy':
+        if iterEp == 'f2':
+            continue
+        
+        if iterEp in self.ListOfDevices[Nwkid]["Epv2"] and self.ListOfDevices[Nwkid]["Ep"][ iterEp ] not in ( "", {}):
+            continue
+        
+        if iterEp in self.ListOfDevices[Nwkid]["ReqEpv2"] and self.ListOfDevices[Nwkid]["ReqEpv2"][ iterEp ] < ( time.time() + 120 ):
             continue
 
         # Let's request only 1 Ep, in order wait for the response and then request the next one
-        if (
-            iterEp not in self.ListOfDevices[Nwkid]["Epv2"] 
-            or not self.ListOfDevices[Nwkid]["Ep"][ iterEp ] 
-            or self.ListOfDevices[Nwkid]["Ep"][ iterEp ] in ( "", {})
-        ):
-            self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", Nwkid, iterEp))
-            zdp_simple_descriptor_request(self, Nwkid, iterEp)
-            return False
-    else:
-        # We have been all Ep, and so nothing else to do
-        return True
+        self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" % ("-", Nwkid, iterEp))
+        self.ListOfDevices[Nwkid]["ReqEpv2"][ iterEp ] = time.time()
+        zdp_simple_descriptor_request(self, Nwkid, iterEp)
+        return False
+        
+    # We have been all Ep, and so nothing else to do
+
+    return True
 
    
 def interview_timeout(self, Devices, NWKID, RIA, status):
@@ -275,6 +281,9 @@ def interview_timeout(self, Devices, NWKID, RIA, status):
     Domoticz.Error("processNotinDB - Collected Infos are : %s" % (str(self.ListOfDevices[NWKID])))
     self.adminWidgets.updateNotificationWidget(Devices, "Unable to collect all informations for enrollment of this devices. See Logs")
     self.CommiSSionning = False
+    if "ReqEpv2" in self.ListOfDevices[NWKID]:
+        del self.ListOfDevices[NWKID]["ReqEpv2"]
+
     return "UNKNOW"
 
 
@@ -448,6 +457,9 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
     # 6- Updating the Certified devices list
     self.ListOfDevices[ NWKID ]["CertifiedDevice"] = modelName in self.DeviceConf
 
+    # Cleanup if needed
+    if "ReqEpv2" in self.ListOfDevices[NWKID]:
+        del self.ListOfDevices[NWKID]["ReqEpv2"]
 
 
 def binding_needed_clusters_with_zigate(self, NWKID):

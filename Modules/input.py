@@ -2160,7 +2160,7 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
         while i <= int(MsgDataInClusterCount, 16):
             MsgDataCluster = MsgData[idx + ((i - 1) * 4) : idx + (i * 4)]
             self.log.logging( "Input", "Debug", "[%s]    NEW OBJECT: %s Extracted cluster: %s" % (
-                    "-", MsgDataShAddr, MsgDataCluster), )
+                "-", MsgDataShAddr, MsgDataCluster), )
 
             if not configSourceAvailable:
                 self.ListOfDevices[MsgDataShAddr]["ConfigSource"] = "8043"
@@ -2302,11 +2302,9 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
         if not self.ListOfDevices[MsgDataShAddr]["Ep"].get(tmpEp):
             self.ListOfDevices[MsgDataShAddr]["Ep"][tmpEp] = {}
 
-        #### Endpoint v2, we store ProfileId, ZDeviceId, Cluster In and Cluster Out
+        # Endpoint v2, we store ProfileId, ZDeviceId, Cluster In and Cluster Out
         if not self.ListOfDevices[MsgDataShAddr].get("Epv2"):
             self.ListOfDevices[MsgDataShAddr]["Epv2"] = {}
-        ###if not self.ListOfDevices[MsgDataShAddr]["Epv2"].get(tmpEp):
-        ###    self.ListOfDevices[MsgDataShAddr]["Epv2"][tmpEp] = {"ClusterIn": {}, "ClusterOut": {}, "ProfileID": {}, "ZDeviceID": {}}
 
         self.log.logging( "Input", "Status", "[%s] NEW OBJECT: %s Active Endpoint Response Ep: %s LQI: %s" % (
             "-", MsgDataShAddr, tmpEp, int(MsgLQI, 16)), )
@@ -3247,7 +3245,46 @@ def Decode8139(self, Devices, MsgData, MsgLQI):
     )
 
 
+def zigpy_Decode8140(self, Devices, MsgData, MsgLQI):
+    
+    MsgComplete = MsgData[:2]
+    MsgSrcAddr = MsgData[2:6]
+    MsgSrcEp = MsgData[6:8]
+    MsgClusterID = MsgData[8:12]
+    
+    if "Attributes List" not in self.ListOfDevices[MsgSrcAddr]:
+        self.ListOfDevices[MsgSrcAddr]["Attributes List"] = {"Ep": {}}
+        
+    if "Ep" not in self.ListOfDevices[MsgSrcAddr]["Attributes List"]:
+        self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"] = {}
+        
+    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"]:
+        self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp] = {}
+        
+    if MsgClusterID not in self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp]:
+        self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][MsgClusterID] = {}
+
+    idx = 12
+    while idx < len( MsgData ):
+        Attribute = MsgData[idx : idx + 4]
+        idx += 4
+        Attribute_type = MsgData[idx : idx + 2]
+        idx += 2
+        self.ListOfDevices[MsgSrcAddr]["Attributes List"]["Ep"][MsgSrcEp][MsgClusterID][Attribute] = Attribute_type
+
+    if MsgComplete != "01":
+        next_start = "%04x" % (int(Attribute, 16) + 1)
+        getListofAttribute( self, MsgSrcAddr, MsgSrcEp, MsgClusterID, start_attribute=next_start, )
+
+    
 def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
+    
+    self.log.logging( "Input", "Debug", "Decode8140 - Attribute Discovery Response - Data: %s LQI: %s" % ( MsgData, MsgLQI))
+    
+    if MsgData[:2] == "f7":
+        # Zigpy decoding
+        return zigpy_Decode8140(self, Devices, MsgData[2:], MsgLQI)
+        
     MsgComplete = MsgData[:2]
     MsgAttType = MsgData[2:4]
     MsgAttID = MsgData[4:8]
@@ -3260,13 +3297,8 @@ def Decode8140(self, Devices, MsgData, MsgLQI):  # Attribute Discovery response
         MsgSrcEp = MsgData[12:14]
         MsgClusterID = MsgData[14:18]
 
-        self.log.logging(
-            "Input",
-            "Debug",
-            "Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Complete: %s"
-            % (MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgComplete),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Input", "Debug", "Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Complete: %s" % (
+            MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgComplete), MsgSrcAddr, )
 
         if MsgSrcAddr not in self.ListOfDevices:
             if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
@@ -4118,9 +4150,9 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
         elif MsgCmd == "01":
             MajDomoDevice(self, Devices, MsgSrcAddr, "01", "0006", "01")
 
-    elif ( 
-          get_deviceconf_parameter_value(self, _ModelName, "TUYA_REMOTE", return_default=None)  
-          or _ModelName in ("TS0041", "TS0043", "TS0044", "TS0042", "TS004F", "TS004F-_TZ3000_xabckq1v")
+    elif (
+        get_deviceconf_parameter_value(self, _ModelName, "TUYA_REMOTE", return_default=None) 
+        or _ModelName in ("TS0041", "TS0043", "TS0044", "TS0042", "TS004F", "TS004F-_TZ3000_xabckq1v")
     ):  # Tuya remote
         self.log.logging( "Input", "Debug", "Decode8095 - Tuya %s  Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, MsgPayload: %s " % (
             _ModelName, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload), MsgSrcAddr, )
