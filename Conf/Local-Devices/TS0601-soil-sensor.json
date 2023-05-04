@@ -1,0 +1,36 @@
+{
+    "_comment": "Tuya Soil sensor",
+    "_blakadder": "",
+    "Identifier": [
+        [ "TS0601", "_TZE200_myd45weu"]
+    ],
+
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "0005": "",
+            "0019": "",
+            "Type": "Temp/Humi"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0000"],
+    "ConfigureReporting": {
+    },
+    "ReadAttributes": {
+        "0000": [ "0004", "0005", "0000", "0001", "0007", "ffe2", "ffe4", "ffdf", "fffe" ],
+        "0019": [],
+        "ef00": []
+    },
+    "TS0601_DP": { 
+        "03": { "store_tuya_attribute": "soil_moisture", "sensor_type": "humidity"},
+        "05": { "sensor_type": "temperature"},
+        "09": { "store_tuya_attribute": "temp_unit"},
+        "0e": { "store_tuya_attribute": "battery_state"},
+        "0f": { "sensor_type": "battery"}
+    },
+    "BatteryDevice": 1,
+    "Param": {
+    }
+}
