@@ -33,14 +33,16 @@
         "65": { "store_tuya_attribute": "irrigationStartTime"},
         "66": { "store_tuya_attribute": "irrigationEndTime"},
         "67": { "store_tuya_attribute": "cycleIrrigationNumTimes"},
-        "68": { "store_tuya_attribute": "irrigationTarget"},
+        "68": { "store_tuya_attribute": "irrigationTarget", "action_type": "TuyaIrrigationTarget"},
         "69": { "store_tuya_attribute": "cycleIrrigationInterval"},
         "6a": { "sensor_type": "temperature"},
-        "6c": {  "sensor_type": "battery" },
+        "6b": { "store_tuya_attribute": "Irrigation_6b_04"},
+        "6c": { "sensor_type": "battery" },
         "6f": { "sensor_type": "water_consumption"},
         "72": { "store_tuya_attribute": "lastIrrigationDuration"}
     },
     "Param": {
-        "TuyaPing": 0
+        "TuyaPing": 0,
+        "TuyaIrrigationTarget": 15
     }
 }

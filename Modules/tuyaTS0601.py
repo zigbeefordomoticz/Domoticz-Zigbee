@@ -549,11 +549,25 @@ def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
     data = "%02x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
     
+def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_irrigation_valve_target - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, value))
+
+    device_value = max(value, 10)
+
+    action = "%02x02" % dp  # Mode
+    data = "%08x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+    
 
 TS0601_COMMANDS = {
     "TRV7WindowDetection": ts0601_window_detection_mode,
     "TRV7ChildLock": ts0601_child_lock_mode,
     "TS0601_IrrigationValve": ts0601_irrigation_mode,
+    "TuyaIrrigationTarget": ts0601_irrigation_valve_target,
 }
 
 DP_ACTION_FUNCTION = {
