@@ -19,6 +19,7 @@ from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                    rawaps_read_attribute_req,
                                    rawaps_write_attribute_req,
                                    zcl_raw_add_group_membership,
+                                   zcl_raw_attribute_discovery_request,
                                    zcl_raw_check_group_member_ship,
                                    zcl_raw_configure_reporting_requestv2,
                                    zcl_raw_default_response,
@@ -154,16 +155,15 @@ def zcl_read_report_config_request(self, nwkid, epin, epout, cluster, manuf_spec
     return zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list, ackIsDisabled)
 
 
-def zcl_attribute_discovery_request(self, nwkid, EpIn, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000"):
+def zcl_attribute_discovery_request(self, nwkid, EpIn, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000", ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zdpCommand", "Debug", "zcl_attribute_discovery_request %s %s %s %s %s %s %s" % (nwkid, EpIn, EpOut, cluster, start_attribute, manuf_specific, manuf_code))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        self.log.logging("zclCommand", "Error", "zcl_attribute_discovery_request not implemented for RAW mode")
-        return
+        return zcl_raw_attribute_discovery_request(self, nwkid, EpIn, EpOut, cluster, start_attribute, manuf_specific, manuf_code, ackIsDisabled )
 
     return send_zigatecmd_raw(self, nwkid, "0140", EpIn + EpOut + cluster + start_attribute + "00" + manuf_specific + manuf_code + "01")
 
 
-def zcl_get_list_attribute_extended_infos(self, nwkid, EpIn, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000"):
+def zcl_get_list_attribute_extended_infos(self, nwkid, EpIn, EpOut, cluster, start_attribute="0000", manuf_specific="00", manuf_code="0000", ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zdpCommand", "Debug", "zcl_get_list_attribute_extended_infos %s %s %s %s %s %s %s" % (nwkid, EpIn, EpOut, cluster, start_attribute, manuf_specific, manuf_code))
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         self.log.logging("zclCommand", "Error", "zcl_get_list_attribute_extended_infos not implemented for RAW mode")

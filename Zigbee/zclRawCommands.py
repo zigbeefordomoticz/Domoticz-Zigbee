@@ -188,7 +188,7 @@ def zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_s
         nwkid, epin, epout, cluster, manuf_specific, manuf_code, attribute_list))
 
     cmd = "08"  # 
-    cluster_frame = 0b00010000
+    cluster_frame = 0b00000000
     if manuf_specific == "01":
         cluster_frame += 0b00000100
 
@@ -207,7 +207,32 @@ def zcl_raw_read_report_config_request(self,nwkid, epin, epout, cluster, manuf_s
     return sqn
 
 # Discover Attributes
+def zcl_raw_attribute_discovery_request(self, nwkid, epin, epout, cluster, start_attribute, manuf_specific, manuf_code, ackIsDisabled):
+    
+    self.log.logging("zclCommand", "Debug", "zcl_raw_attribute_discovery_request %s %s %s %s %s %s %s" % (
+        nwkid, epin, epout, cluster, manuf_specific, manuf_code, start_attribute))
 
+    cmd = "0c"  # 
+    cluster_frame = 0b00
+    if manuf_specific == "01":
+        cluster_frame += 0b00000100
+    fcf = "%02x" % cluster_frame
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = fcf
+    if manuf_specific == "01":
+        payload += "%04x" % struct.unpack(">H", struct.pack("H", int(manuf_code, 16)))[0]
+    payload += sqn + cmd
+    # Start attribute
+    payload += "%04x" % struct.unpack(">H", struct.pack("H", int(start_attribute, 16)))[0]
+    
+    # nb Attribute
+    payload += "%02x" %0xff
+    
+    self.log.logging("zclCommand", "Debug", "zcl_raw_attribute_discovery_request  payload: %s" % payload)
+
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=ackIsDisabled)
+
+    
 # Cluster 0004: Identify
 
 def zcl_raw_identify(self, nwkid, epin, epout, command, identify_time=None, identify_effect=None, identify_variant=None, groupaddrmode=False, ackIsDisabled=DEFAULT_ACK_MODE):
