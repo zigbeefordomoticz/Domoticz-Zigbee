@@ -176,6 +176,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, text, BatteryLevel, SignalLevel)
 
         if ClusterType == "Alarm" and WidgetType == "Alarm_ZL3" and Attribute_ == "0020":
+            if value is None or len(value) == 0:
+                return
             # Notification Day Color and Peak
             if value == "TH..":
                 # Toutes Heures

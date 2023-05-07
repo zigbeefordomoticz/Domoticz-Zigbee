@@ -21,7 +21,9 @@ echo " "
 /usr/bin/whoami
 echo " "
 
-
+echo "Current version  : $(cat .hidden/VERSION)"
+echo "latest git commit: $(git log --pretty=oneline -1)"
+echo ""
 
 echo "(1) git config --global --add safe.directory"
 git config  --global --add safe.directory $(pwd)
