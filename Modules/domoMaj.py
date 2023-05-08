@@ -405,7 +405,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # Water (reports m3), give COUNTER value in liter (1000 liter = 1 m³), integer
                 sValue = "%s" % int(value)
                 self.log.logging("Widget", "Log", "WaterCounter ------>  : %s" %sValue, NWKID)
-                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, DeviceUnit, int(value), sValue, BatteryLevel, SignalLevel)
   
         if "Voltage" in ClusterType:  # Volts
             # value is str
