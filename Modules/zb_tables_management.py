@@ -56,9 +56,7 @@ def start_new_table_scan(self, nwkid, tablename):
         self.ListOfDevices[nwkid][tablename] = []
     table_entry_cleanup( self, nwkid, tablename)
         
-    time_stamp = None  
-    if "0000" in self.ListOfDevices and "TopologyStartTime" in self.ListOfDevices["0000"]:
-        time_stamp = self.ListOfDevices["0000"]["TopologyStartTime"]
+    time_stamp = is_timestamp_current_topology_in_progress( self )  
         
     self.log.logging("NetworkMap", "Debug", "start_new_table_scan %s/%s/%s" %( nwkid, tablename, time_stamp))
     _create_empty_entry(self, nwkid, tablename, time_stamp)
@@ -131,14 +129,15 @@ def get_latest_table_entry(self, nwkid, tablename):
     
     if len(self.ListOfDevices[nwkid][tablename]) > 0:
         return self.ListOfDevices[nwkid][tablename][(len(self.ListOfDevices[nwkid][tablename] ) - 1)]
-    
-    # We have an empty list
-    _create_empty_entry(self, nwkid, tablename)
-    return self.ListOfDevices[nwkid][tablename][(len(self.ListOfDevices[nwkid][tablename] ) - 1)]
+    return []
 
 
 def update_merge_new_device_to_last_entry(self, nwkid, tablename, record ):
     
+    latest_table_entry = get_latest_table_entry(self, nwkid, tablename)
+    if latest_table_entry == []:
+        return
+
     new_routing_record = get_latest_table_entry(self, nwkid, tablename)["Devices"]
     if isinstance( record, dict):
         for x in record:
@@ -164,7 +163,9 @@ def get_list_of_timestamps( self, nwkid, tablename):
                 continue
 
             for x in self.ListOfDevices[nwkid][tablename]:
-                #if isinstance(x["Time"], int) and not is_timestamp_current_topology_in_progress(self, x["Time"]):
+                self.log.logging("NetworkMap", "Debug", "get_list_of_timestamps_Table timestamp found %s %d" %(
+                    tablename, int(x["Time"])))
+                
                 if isinstance(x["Time"], int) and int(x["Time"]) not in timestamp and not is_timestamp_current_topology_in_progress(self, x["Time"]):
                     timestamp.append( int(x["Time"]))
 
@@ -175,19 +176,34 @@ def get_list_of_timestamps( self, nwkid, tablename):
 def is_timestamp_current_topology_in_progress( self, timestamp=None):
     if timestamp:
         return "TopologyStartTime" in self.ListOfDevices["0000"] and self.ListOfDevices["0000"]["TopologyStartTime"] == timestamp
-    if "TopologyStartTime" in self.ListOfDevices["0000"]:
+    if "0000" in self.ListOfDevices and "TopologyStartTime" in self.ListOfDevices["0000"]:
         return self.ListOfDevices["0000"]["TopologyStartTime"]
+    return None
     
 def remove_entry_from_all_tables( self, time_stamp ):
 
-    if "TopologyStartTime" in self.ListOfDevices["0000"]:
+    if is_timestamp_current_topology_in_progress( self):
         self.log.logging("NetworkMap", "Error", "remove_entry_from_all_tables cannot remove table while a scan is in progress")
         return
-   
+    
+    force_erase_all = False
     for x in self.ListOfDevices:
         for table in ( "Neighbours", "AssociatedDevices", "RoutingTable"):
             if table in self.ListOfDevices[ x ]:
                 remove_table_entry(self, x, table, time_stamp)
+            if get_list_of_timestamps( self, x, table) == []:
+                force_erase_all = True
+    
+    if not force_erase_all:
+        return
+
+    # If we have at least one Object with no table, we should remove ALL for ALL
+    for x in self.ListOfDevices:
+        for table in ( "Neighbours", "AssociatedDevices", "RoutingTable"):
+            if table in self.ListOfDevices[ x ]:
+                del self.ListOfDevices[ x ][ table ]
+                self.ListOfDevices[ x ][ table ] = {}
+
 
     
 def remove_table_entry(self, nwkid, tablename, time_stamp):
@@ -245,7 +261,7 @@ def mgmt_rtg(self, nwkid, table):
         return
 
     if "TimeStamp" not in get_latest_table_entry(self, nwkid, table):
-        get_latest_table_entry(self, nwkid, table)["TimeStamp"] = time.time()
+        get_latest_table_entry(self, nwkid, table)["TimeStamp"] = is_timestamp_current_topology_in_progress( self) or time.time()
         func(self, nwkid, "00")
         return
 
@@ -300,18 +316,12 @@ def mgmt_routingtable_response( self, srcnwkid, MsgSourcePoint, MsgClusterID, ds
     RoutingTableListRecord = MsgPayload[10:]     
 
     self.log.logging("NetworkMap", "Debug", "mgmt_routingtable_response %s - %s %s %s %s %s" %(
-        srcnwkid,
-        Status,
-        RoutingTableSize,
-        RoutingTableIndex,
-        RoutingTableListCount, 
-        RoutingTableListRecord  ,  
-    ))
+        srcnwkid, Status, RoutingTableSize, RoutingTableIndex, RoutingTableListCount, RoutingTableListRecord,))
     latest_table_entry = get_latest_table_entry(self, srcnwkid, "RoutingTable")
     if latest_table_entry == []:
         return
         
-    latest_table_entry["TimeStamp"]  = time.time()
+    latest_table_entry["TimeStamp"] = is_timestamp_current_topology_in_progress( self) or time.time()
     get_latest_table_entry(self, srcnwkid, "RoutingTable")[ "RoutingTable" + "TableSize"] = int(RoutingTableSize, 16)
     if Status in STATUS_CODE:
         get_latest_table_entry(self, srcnwkid, "RoutingTable")["Status"] = STATUS_CODE[Status]
