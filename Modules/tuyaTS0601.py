@@ -3,7 +3,8 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            getAttributeValue)
-from Modules.tuyaTools import store_tuya_attribute, tuya_cmd
+from Modules.tuyaTools import store_tuya_attribute, tuya_cmd, get_tuya_attribute
+
 
 # Generic functions
 
@@ -548,6 +549,15 @@ def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
     action = "%02x01" % dp  # Mode
     data = "%02x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+SAFETY_MIN_SECS = 10
+DURATION = 1
+   
+def check_irrigation_valve_target_value(value, mode):
+    if value > 0 and value < SAFETY_MIN_SECS and mode == DURATION:
+        return SAFETY_MIN_SECS
+    else:
+        return value
     
 def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
     if value is None:
@@ -556,9 +566,12 @@ def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
     self.log.logging("Tuya0601", "Debug", "ts0601_irrigation_valve_target - %s Switch Action: dp:%s value: %s" % (
         NwkId, dp, value))
 
-    device_value = max(value, 10)
+    mode = get_tuya_attribute(self, NwkId, 'Mode')
+    if mode:
+        mode = 1
+    device_value = check_irrigation_valve_target_value(value, mode)
 
-    action = "%02x02" % dp  # Mode
+    action = "%02x02" % dp  # Irrigation Target (Time or Litters)
     data = "%08x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
     
