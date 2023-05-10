@@ -261,7 +261,7 @@ def mgmt_rtg(self, nwkid, table):
         return
 
     if "TimeStamp" not in get_latest_table_entry(self, nwkid, table):
-        get_latest_table_entry(self, nwkid, table)["TimeStamp"] = is_timestamp_current_topology_in_progress( self) or time.time()
+        get_latest_table_entry(self, nwkid, table)["TimeStamp"] = is_timestamp_current_topology_in_progress( self) or int(time.time())
         func(self, nwkid, "00")
         return
 
@@ -321,7 +321,7 @@ def mgmt_routingtable_response( self, srcnwkid, MsgSourcePoint, MsgClusterID, ds
     if latest_table_entry == []:
         return
         
-    latest_table_entry["TimeStamp"] = is_timestamp_current_topology_in_progress( self) or time.time()
+    latest_table_entry["TimeStamp"] = is_timestamp_current_topology_in_progress( self) or int(time.time())
     get_latest_table_entry(self, srcnwkid, "RoutingTable")[ "RoutingTable" + "TableSize"] = int(RoutingTableSize, 16)
     if Status in STATUS_CODE:
         get_latest_table_entry(self, srcnwkid, "RoutingTable")["Status"] = STATUS_CODE[Status]
