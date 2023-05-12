@@ -268,6 +268,7 @@ def finish_scan(self):
 
     if not self.pluginconf.pluginConf["TopologyV2"]:
         save_report_to_file(self, storeLQI)
+        
     del self.ListOfDevices["0000"]["TopologyStartTime"]
     
 def save_report_to_file(self, storeLQI):
