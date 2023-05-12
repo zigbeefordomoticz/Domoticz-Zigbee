@@ -370,17 +370,17 @@ def ts0601_smoke_concentration(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "042a", value)
 
 def ts0601_water_consumption(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Debug", "ts0601_water_consumption - Nwkid: %s/%s WaterConsumtpion: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Log", "ts0601_water_consumption - Nwkid: %s/%s WaterConsumtpion: %s" % (nwkid, ep, value))
     last_water_consumption = get_tuya_attribute(self, nwkid, 'WaterConsumtpion')
     current_water_consumption = last_water_consumption + value if last_water_consumption else value
     store_tuya_attribute(self, nwkid, "WaterConsumtpion", current_water_consumption)
     MajDomoDevice(self, Devices, nwkid, ep, "WaterCounter", current_water_consumption)
 
 def ts0601_sensor_irrigation_mode(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Debug", "ts0601_sensor_irrigation_mode - Nwkid: %s/%s Mode: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Log", "ts0601_sensor_irrigation_mode - Nwkid: %s/%s Mode: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Mode", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0008", value)
-    
+   
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
@@ -565,7 +565,7 @@ def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
     if value is None:
         return
 
-    self.log.logging("Tuya0601", "Debug", "ts0601_irrigation_valve_target - %s Switch Action: dp:%s value: %s" % (
+    self.log.logging("Tuya0601", "Log", "ts0601_irrigation_valve_target - %s Switch Action: dp:%s value: %s" % (
         NwkId, dp, value))
 
     mode = get_tuya_attribute(self, NwkId, 'Mode')
