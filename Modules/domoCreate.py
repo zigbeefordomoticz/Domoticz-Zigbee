@@ -627,7 +627,7 @@ SIMPLE_WIDGET = {
     "LvlControl": { "Type": 244, "Subtype": 73, "Switchtype": 7 },
     "SwitchAlarm": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 13 },
     "Distance": { "Type": 243, "Subtype": 27, "Switchtype": 0},
-    "WaterCounter": { "Type": 243, "Subtype": 28, "Switchtype": 2, "Image": 22, "AddjValue2": "1000.0"},
+    "WaterCounter": { "Type": 243, "Subtype": 28, "Switchtype": 2, "Image": 22},
 }
 
 BLIND_DOMOTICZ_2022 = {
