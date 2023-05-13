@@ -371,10 +371,14 @@ def ts0601_smoke_concentration(self, Devices, nwkid, ep, value):
 
 def ts0601_water_consumption(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Log", "ts0601_water_consumption - Nwkid: %s/%s WaterConsumtpion: %s" % (nwkid, ep, value))
-    last_water_consumption = get_tuya_attribute(self, nwkid, 'WaterConsumtpion')
-    current_water_consumption = last_water_consumption + value if last_water_consumption else value
-    store_tuya_attribute(self, nwkid, "WaterConsumtpion", current_water_consumption)
-    MajDomoDevice(self, Devices, nwkid, ep, "WaterCounter", current_water_consumption)
+    store_tuya_attribute(self, nwkid, "WaterConsumtpion", value)
+    # The counter will be treated with the divider which is defined in the parameters in the application settings 
+    # (menu setup-settings, tab counters). 
+    # For example if the counter is set to "Water" and the value is passed as liters, 
+    # the divider must set to 1000 (as the unit is m3). The device displays 2 values:
+    # The status is the overall total volume (or counter).
+    # The volume (or counter) of the day (in the top right corner).
+    MajDomoDevice(self, Devices, nwkid, ep, "WaterCounter", value)
 
 def ts0601_sensor_irrigation_mode(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Log", "ts0601_sensor_irrigation_mode - Nwkid: %s/%s Mode: %s" % (nwkid, ep, value))

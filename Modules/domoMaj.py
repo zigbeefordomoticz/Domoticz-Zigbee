@@ -402,10 +402,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
 
         if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
-            # Water (reports m3), give COUNTER value in liter (1000 liter = 1 m³), integer
-                sValue = "%s" % int(value)
+            # /json.htm?type=command&param=udevice&idx=IDX&nvalue=0&svalue=INCREMENT
+            # INCREMENT = Integer of the increment of the counter. 
+            # For Counters the standard counter dividers apply (menu setup - settings - tab counters)
+            # will increment the counter value by 1. 
+            # To reset an incremental counter, set the svalue to a negative integer equal to the current total of the counter. 
+                sValue = "%s" %value 
                 self.log.logging("Widget", "Log", "WaterCounter ------>  : %s" %sValue, NWKID)
-                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
   
         if "Voltage" in ClusterType:  # Volts
             # value is str
