@@ -286,7 +286,8 @@ def _loggingLog(self, thread_name, message):
         message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info( message)
-    Domoticz.Log(message)
+    else:
+        Domoticz.Log(message)
 
 
 def _loggingDebug(self, thread_name, message):
@@ -294,7 +295,8 @@ def _loggingDebug(self, thread_name, message):
         message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info(message)
-    Domoticz.Log(message)
+    else:
+        Domoticz.Log(message)
 
 
 def _logginfilter(self, thread_name, message, nwkid):
