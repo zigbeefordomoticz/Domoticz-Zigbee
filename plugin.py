@@ -642,7 +642,7 @@ class BasePlugin:
         if self.iaszonemgt is None:
             # Create IAS Zone object
             # Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ControllerLink)
-            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communication, self.FirmwareVersion)
+            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communication, self.readZclClusters, self.FirmwareVersion)
 
             # Starting WebServer
         if self.webserver is None:
@@ -1208,7 +1208,8 @@ def zigateInit_Phase3(self):
                 self.busy,
                 self.FirmwareVersion,
                 self.IEEE2NWK,
-                self.ControllerIEEE
+                self.ControllerIEEE,
+                self.readZclClusters
             )
         if self.configureReporting:
             self.webserver.update_configureReporting(self.configureReporting )
@@ -1314,6 +1315,7 @@ def start_GrpManagement(self, homefolder):
         self.IEEE2NWK,
         self.DeviceConf, 
         self.log,
+        self.readZclClusters
     )
     if self.groupmgt and self.ControllerIEEE:
         self.groupmgt.updateZigateIEEE(self.ControllerIEEE)
@@ -1346,6 +1348,7 @@ def start_OTAManagement(self, homefolder):
         self.IEEE2NWK,
         self.log,
         self.PluginHealth,
+        self.readZclClusters
     )
     if self.OTA:
         self.webserver.update_OTA(self.OTA)

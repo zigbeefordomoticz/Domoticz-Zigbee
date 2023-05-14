@@ -63,6 +63,7 @@ class ConfigureReporting:
         FirmwareVersion,
         IEEE2NWK,
         ZigateIEEE,
+        readZclClusters
     ):
 
         self.zigbee_communication = zigbee_communitation
@@ -74,6 +75,7 @@ class ConfigureReporting:
         self.log = log
         self.busy = busy
         self.FirmwareVersion = FirmwareVersion
+        self.readZclClusters = readZclClusters
 
         # Needed for bind
         self.IEEE2NWK = IEEE2NWK
