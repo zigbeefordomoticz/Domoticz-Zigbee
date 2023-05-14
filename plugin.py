@@ -93,6 +93,8 @@ import json
 import os
 import threading
 import time
+from pathlib import Path
+import pkg_resources
 
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
@@ -386,8 +388,8 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s started"
-            % (self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
+        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s started" % (
+            self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
         if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
             self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
                 _current_python_version_major , _current_python_version_minor))
@@ -1490,10 +1492,6 @@ def check_python_modules_version( self ):
   
 def check_requirements( self ):
 
-    from pathlib import Path
-
-    import pkg_resources
-
     _filename = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
 
     Domoticz.Status("Checking Python modules %s" %_filename)
@@ -1502,10 +1500,10 @@ def check_requirements( self ):
         req = str(requirements)
         try:
             pkg_resources.require(req)
-        except DistributionNotFound:
-            Domoticz.Error("Looks like %s python module is not installed. Make sure to install the required python3 module" %req)
+        except pkg_resources.DistributionNotFound as e:
+            Domoticz.Error("Looks like %s python module is not installed (error: %s). Make sure to install the required python3 module" %(req, e))
             Domoticz.Error("Use the command:")
-            Domoticz.Error("sudo pip3 install -r requirements.txt")
+            Domoticz.Error("sudo python3 -m pip install -r requirements.txt")
             return True
     return False          
                      
