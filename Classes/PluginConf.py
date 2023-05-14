@@ -219,8 +219,11 @@ SETTINGS = {
         "param": {
             "enablePluginLogging": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": False,},
             "logDeviceUpdate": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            
             "trackZclClustersIn": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "trackZclClustersOut": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            "trackZdpClustersIn": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
+            "trackZdpClustersOut": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             
             "logThreadName": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "trackTransportError": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
