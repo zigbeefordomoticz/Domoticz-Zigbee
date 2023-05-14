@@ -1066,7 +1066,7 @@ def retreive_cmd_payload_from_8002(Payload):
     # Domoticz.Log("retreive_cmd_payload_from_8002 ======> Payload: %s " %Data)
     return (zbee_zcl_ddr, GlobalCommand, Sqn, ManufacturerCode, Command, Data)
 
-def direction(fcf):
+def fcf_direction(fcf):
     # If direction = 1 Server to Client
     # If direction = 0 Client to Server
 
@@ -1078,10 +1078,10 @@ def disable_default_response(fcf):
     return (int(fcf,16) & 0x10) >> 4
 
 def is_direction_to_client(fcf):
-    return direction(fcf) == 0x1
+    return fcf_direction(fcf) == 0x1
 
 def is_direction_to_server(fcf):
-    return direction(fcf) == 0x0
+    return fcf_direction(fcf) == 0x0
 
 def is_golbalcommand(fcf):
     return None if not is_hex(fcf) or len(fcf) != 2 else (int(fcf, 16) & 0b00000011) == 0

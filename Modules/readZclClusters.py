@@ -488,10 +488,10 @@ def store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
  
 def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, device_model, attr_name, exp_dt, _ranges, _special_values, eval_formula, action_list, eval_inputs, force_value, value):
 
-    if not self.pluginconf.pluginConf["trackZclClusters"]:
+    if not self.pluginconf.pluginConf["trackZclClustersIn"]:
         return
 
     lqi = self.ListOfDevices[nwkid]["LQI"] if "LQI" in self.ListOfDevices[nwkid] else 0
-    cluster_description = self.readZclClusters[ cluster ]["Description"] if cluster in self.readZclClusters else "Unknown cluster"
+    cluster_description = self.readZclClusters[ cluster ]["Description"] if self.readZclClusters and cluster in self.readZclClusters else "Unknown cluster"
     self.log.logging( "ZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s " %(
         nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, d, value, lqi ))        
