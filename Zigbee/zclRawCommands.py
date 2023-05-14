@@ -831,4 +831,4 @@ def zcl_command_formated_logging( self, command, nwkid, ep, cluster, *args):
         for arg in args:
             formatted_message += "| %s" %arg
         
-    self.log.logging( "ZclClusters", "Log", formatted_message)
+    self.log.logging( "zclCommand", "Log", formatted_message)
