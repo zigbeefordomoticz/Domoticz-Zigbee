@@ -78,11 +78,7 @@
 
 import pathlib
 import sys
-
-from pkg_resources import DistributionNotFound
-
 import Domoticz
-
 try:
     from Domoticz import Devices, Images, Parameters, Settings
 except ImportError:
@@ -94,9 +90,7 @@ import os.path
 import threading
 import time
 from importlib.metadata import version as import_version
-
-import z4d_certified_devices
-
+import pkg_resources
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
 from Classes.DomoticzDB import (DomoticzDB_DeviceStatus, DomoticzDB_Hardware,
@@ -142,6 +136,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
+import z4d_certified_devices
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -390,8 +385,8 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s [Certified Devices: %s] started" % (
-            self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"], self.pluginParameters["CertifiedDbVersion"] ), )
+        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s started" % (
+            self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
         if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
             self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
                 _current_python_version_major , _current_python_version_minor))
@@ -1499,12 +1494,7 @@ def check_python_modules_version( self ):
   
 def check_requirements( self ):
 
-    from pathlib import Path
-
-    import pkg_resources
-
-    _homefolder = pathlib.Path( Parameters[ "HomeFolder"] )
-    _filename = _homefolder / "requirements.txt"
+    _filename = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
 
     Domoticz.Status("Checking Python modules %s" %_filename)
     requirements = pkg_resources.parse_requirements(_filename.open())
@@ -1512,10 +1502,10 @@ def check_requirements( self ):
         req = str(requirements)
         try:
             pkg_resources.require(req)
-        except DistributionNotFound:
-            Domoticz.Error("Looks like %s python module is not installed. Make sure to install the required python3 module" %req)
+        except pkg_resources.DistributionNotFound as e:
+            Domoticz.Error("Looks like %s python module is not installed (error: %s). Make sure to install the required python3 module" %(req, e))
             Domoticz.Error("Use the command:")
-            Domoticz.Error("sudo pip3 install -r requirements.txt")
+            Domoticz.Error("sudo python3 -m pip install -r requirements.txt")
             return True
     return False          
                      
