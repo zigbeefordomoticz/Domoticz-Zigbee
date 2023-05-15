@@ -6,7 +6,6 @@
 """
     Module : logging.py
 
-
     Description: Plugin logging routines
 
 """
