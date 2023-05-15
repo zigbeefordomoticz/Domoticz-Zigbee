@@ -18,6 +18,11 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## May 2023 - stable6 - 6.3.013 ( 2023.5 )
+- [Issue] - for Illuminence (LUMI) make sure to use an int (and not hex)
+- [Issue] - Fix illuminence calculation for Aqara RTCGQ11LM
+- [Issue] - Fix check_requirements()
+
 ## April 2023 - stable6 - 6.3.012 ( 2023.4 / Easter version )
 
 - [Hardware] - One more Tuya SMart Plug 16A EU manufacturer
