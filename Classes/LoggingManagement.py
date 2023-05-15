@@ -274,35 +274,27 @@ class LoggingManagement:
 
 
 def _loggingStatus(self, thread_name, message):
-
+    if self.pluginconf.pluginConf["logThreadName"]:
+        message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.info(" [%17s] " % thread_name + message)
-        Domoticz.Status(message)
-
-    elif self.pluginconf.pluginConf["logThreadName"]:
-        Domoticz.Status(" [%17s] " % thread_name + message)
-    else:
-        Domoticz.Status(message)
+        logging.info(message)
+    Domoticz.Status(message)
 
 
 def _loggingLog(self, thread_name, message):
-
+    if self.pluginconf.pluginConf["logThreadName"]:
+        message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.info(" [%17s] " % thread_name + message)
-
-    elif self.pluginconf.pluginConf["logThreadName"]:
-        Domoticz.Log(" [%17s] " % thread_name + message)
+        logging.info( message)
     else:
         Domoticz.Log(message)
 
 
 def _loggingDebug(self, thread_name, message):
+    if self.pluginconf.pluginConf["logThreadName"]:
+        message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.debug(" [%17s] " % thread_name + message)
-
-    elif self.pluginconf.pluginConf["logThreadName"]:
-        Domoticz.Log(" [%17s] " % thread_name + message)
-        
+        logging.info(message)
     else:
         Domoticz.Log(message)
 

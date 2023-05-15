@@ -19,8 +19,9 @@ from Modules.tools import get_and_inc_ZDP_SQN
 
 def zdp_raw_NWK_address_request(self, router, ieee, u8RequestType, u8StartIndex):
     # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
-
+    
     Cluster = "0000"
+    zdp_command_formated_logging( self, "NWK_addr_req (raw)", router, Cluster, ieee, u8RequestType, u8StartIndex)
     sqn = get_and_inc_ZDP_SQN(self, router)
     payload = sqn + "%016x" % struct.unpack("Q", struct.pack(">Q", int(ieee, 16)))[0] + u8RequestType + u8StartIndex
     if self.pluginconf.pluginConf["coordinatorCmd"]:
@@ -49,6 +50,8 @@ def zdp_raw_IEEE_address_request(self, router, nwkid, u8RequestType, u8StartInde
     # sourcery skip: replace-interpolation-with-fstring, use-fstring-for-concatenation
     
     Cluster = "0001"
+    zdp_command_formated_logging( self, "IEEE_addr_req (raw)", router, Cluster, nwkid, u8RequestType, u8StartIndex)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0] + u8RequestType + u8StartIndex
     if self.pluginconf.pluginConf["coordinatorCmd"]:
@@ -76,6 +79,8 @@ def zdp_raw_IEEE_address_request(self, router, nwkid, u8RequestType, u8StartInde
 def zdp_raw_node_descriptor_request(self, nwkid):
     self.log.logging("zdpCommand", "Debug", "zdp_raw_node_descriptor_request %s" % (nwkid,))
     Cluster = "0002"
+    zdp_command_formated_logging( self, "Node_Descriptor_req (raw)", nwkid, Cluster)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
     if self.pluginconf.pluginConf["coordinatorCmd"]:
@@ -99,6 +104,8 @@ def zdp_raw_node_descriptor_request(self, nwkid):
 def zdp_power_descriptor_request(self, nwkid):
     self.log.logging("zdpCommand", "Debug", "zdp_power_descriptor_request %s" % (nwkid,))
     Cluster = "0003"
+    zdp_command_formated_logging( self, "Power_Descriptor_req (raw)", nwkid, Cluster)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
     if self.pluginconf.pluginConf["coordinatorCmd"]:
@@ -123,6 +130,8 @@ def zdp_power_descriptor_request(self, nwkid):
 def zdp_raw_simple_descriptor_request(self, nwkid, endpoint):
     self.log.logging("zdpCommand", "Debug", "zdp_raw_simple_descriptor_request %s %s" % (nwkid, endpoint))
     Cluster = "0004"
+    zdp_command_formated_logging( self, "Simple_Descriptor_req (raw)", nwkid, Cluster, endpoint)
+
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0] + endpoint
     if self.pluginconf.pluginConf["coordinatorCmd"]:
@@ -150,6 +159,8 @@ def zdp_raw_active_endpoint_request(
 ):
     self.log.logging("zdpCommand", "Debug", "zdp_raw_active_endpoint_request %s" % (nwkid,))
     Cluster = "0005"
+    zdp_command_formated_logging( self, "Active_Endpoint_req (raw)", nwkid, Cluster)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
     if self.pluginconf.pluginConf["coordinatorCmd"]:
@@ -172,8 +183,10 @@ def zdp_raw_active_endpoint_request(
 
 
 def zdp_raw_match_desc_req_0500(self, nwkid):
-    self.log.logging("zdpCommand", "Debug", "zdp_raw_match_desc_req %s" % ("NOT IMPLEMENTED",))
+    
     cluster = "0006"
+    zdp_command_formated_logging( self, "Match_Descriptor_req (raw)", nwkid, cluster)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     nwkid_of_interest = "%04x" %struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
     profileid = "%04x" %struct.unpack(">H", struct.pack("H", int("0104", 16)))[0]
@@ -209,6 +222,8 @@ def zdp_raw_complex_descriptor_request(
 ):
     self.log.logging("zdpCommand", "Debug", "zdp_raw_active_endpoint_request %s" % (nwkid,))
     Cluster = "0010"
+    zdp_command_formated_logging( self, "Active_Endpoint_req (raw)", nwkid, Cluster)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
     if self.pluginconf.pluginConf["coordinatorCmd"]:
@@ -234,8 +249,10 @@ def zdp_raw_user_descriptor_request(
     self,
     nwkid,
 ):
-    self.log.logging("zdpCommand", "Debug", "zdp_raw_active_endpoint_request %s" % (nwkid,))
+    self.log.logging("zdpCommand", "Debug", "zdp_raw_user_descriptor_request %s" % (nwkid,))
     Cluster = "0011"
+    zdp_command_formated_logging( self, "User_Descriptor_req (raw)", nwkid, Cluster)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + "%04x" % struct.unpack(">H", struct.pack("H", int(nwkid, 16)))[0]
     if self.pluginconf.pluginConf["coordinatorCmd"]:
@@ -275,6 +292,8 @@ def zdp_raw_binding_device(self, source, src_ep, cluster, addrmode, destination,
         self.log.logging("zdpCommand", "Debug", "zdp_raw_unbinding_device %s not found in IEEE2NWK" % (source))
         return
     Cluster = "0021"
+    zdp_command_formated_logging( self, "Bind_Req (raw)", nwkid, Cluster, src_ep, cluster, addrmode, destination, dst_ep)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn
     payload += "%016x" % struct.unpack("Q", struct.pack(">Q", int(source, 16)))[0]
@@ -312,6 +331,8 @@ def zdp_raw_unbinding_device(self, source, src_ep, cluster, addrmode, destinatio
         self.log.logging("zdpCommand", "Debug", "zdp_raw_unbinding_device %s not found in IEEE2NWK" % (source))
         return
     Cluster = "0022"
+    zdp_command_formated_logging( self, "Unbind_Req (raw)", nwkid, Cluster, src_ep, cluster, addrmode, destination, dst_ep)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn
     payload += "%016x" % struct.unpack("Q", struct.pack(">Q", int(source, 16)))[0]
@@ -346,6 +367,8 @@ def zdp_raw_unbinding_device(self, source, src_ep, cluster, addrmode, destinatio
 def zdp_raw_nwk_lqi_request(self, nwkid, start_index):
     self.log.logging("zdpCommand", "Debug", "zdp_raw_nwk_lqi_request %s" % (start_index,))
     Cluster = "0031"
+    zdp_command_formated_logging( self, "LQI_Req (raw)", nwkid, Cluster, start_index)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + start_index
     if self.pluginconf.pluginConf["coordinatorCmd"]:
@@ -370,6 +393,8 @@ def zdp_raw_nwk_lqi_request(self, nwkid, start_index):
 def zdp_management_routing_table_request(self, nwkid, payload):
     self.log.logging("zdpCommand", "Debug", "zdp_management_routing_table_request %s" % (payload,))
     Cluster = "0032"
+    zdp_command_formated_logging( self, "Routing_Table_Req (raw)", nwkid, Cluster, payload)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     if self.pluginconf.pluginConf["coordinatorCmd"]:
         self.log.logging( "zdpCommand", "Log", "zdp_management_routing_table_request  - [%s] %s Queue Length: %s" % (
@@ -393,6 +418,8 @@ def zdp_management_routing_table_request(self, nwkid, payload):
 def zdp_management_binding_table_request(self, nwkid, payload):
     self.log.logging("zdpCommand", "Debug", "zdp_management_binding_table_request %s" % (payload,))
     Cluster = "0033"
+    zdp_command_formated_logging( self, "Binding_Table_Req (raw)", nwkid, Cluster, payload)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     if self.pluginconf.pluginConf["coordinatorCmd"]:
         self.log.logging( "zdpCommand", "Log", "zdp_management_binding_table_request  - [%s] %s Queue Length: %s" % (
@@ -436,6 +463,8 @@ def zdp_raw_management_permit_joining_req(self, nwkid, duration, significance):
 def zdp_raw_leave_request(self, nwkid, ieee, rejoin="01", remove_children="00"):
     self.log.logging("zdpCommand", "Debug", "zdp_raw_leave_request %s %s" % (nwkid, ieee))
     Cluster = "0034"
+    zdp_command_formated_logging( self, "Leave_Req (raw)", nwkid, Cluster, ieee, rejoin, remove_children)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
 
     if rejoin == "00" and remove_children == "00":
@@ -471,6 +500,8 @@ def zdp_raw_nwk_update_request(self, nwkid, scanchannel, scanduration, scancount
         nwkid, scanchannel, scanduration, scancount, nwkupdateid, nwkmanageraddr))
 
     Cluster = "0038"
+    zdp_command_formated_logging( self, "NWK_Update_Req (raw)", nwkid, Cluster, scanchannel, scanduration, scancount, nwkupdateid, nwkmanageraddr)
+    
     sqn = get_and_inc_ZDP_SQN(self, nwkid)
     payload = sqn + scanchannel + scanduration 
     
@@ -511,3 +542,17 @@ def zdp_raw_nwk_update_request(self, nwkid, scanchannel, scanduration, scancount
         )
 
     return sqn
+
+
+def zdp_command_formated_logging( self, command, nwkid, cluster, *args):
+
+    if not self.pluginconf.pluginConf["trackZdpClustersOut"]:
+        return
+
+    formatted_message = "Zdp Command | %s | %s | %s " %(
+        command, nwkid, cluster)
+    if args:
+        for arg in args:
+            formatted_message += "| %s" %arg
+        
+    self.log.logging( "zdpCommand", "Log", formatted_message)

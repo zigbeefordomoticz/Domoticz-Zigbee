@@ -43,9 +43,9 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
 
  
     if self.zigbee_communication == "zigpy" and not default_response_disable:
-        if self.zigbee_communication == "zigpy" and is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn):
-            self.log.logging("zclDecoder", "Debug", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
-            return None
+        #if self.zigbee_communication == "zigpy" and is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn):
+        #    self.log.logging("zclDecoder", "Debug", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
+        #    return None
 
         # Let's answer
         self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
@@ -184,21 +184,21 @@ def buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPo
 
 
 def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-
+    # 01 0000f0010023020023030021040023050021060030070021080021090021fdff21
     self.log.logging("zclDecoder", "Debug", "buildframe_discover_attribute_response - Data: %s" % Data)
+    
     discovery_complete = Data[:2]
-    if discovery_complete == "01":
-        Attribute_type = "00"
-        Attribute = "0000"
-    else:
-        # It is assumed that only one attribute at a time is requested (this is not the standard)
-        idx = 2
-        Attribute_type = Data[idx : idx + 2]
-        idx += 2
+    buildPayload = "f7" + discovery_complete
+    buildPayload += SrcNwkId + SrcEndPoint + ClusterId
+    
+    idx = 2
+    while idx < len( Data ):
         Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
         idx += 4
-
-    buildPayload = discovery_complete + Attribute_type + Attribute + SrcNwkId + SrcEndPoint + ClusterId
+        Attribute_type = Data[idx : idx + 2]
+        idx += 2
+        buildPayload += Attribute + Attribute_type
+    
     return encapsulate_plugin_frame("8140", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 

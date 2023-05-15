@@ -86,6 +86,7 @@ class OTAManagement(object):
         IEEE2NWK,
         log,
         PluginHealth,
+        readZclClusters
     ):
         self.zigbee_communication = zigbee_communitation
         self.HB = 0
@@ -99,6 +100,7 @@ class OTAManagement(object):
         self.homeDirectory = HomeDirectory
         self.log = log
         self.PluginHealth = PluginHealth
+        self.readZclClusters = readZclClusters
 
         self.ListOfImages = {}  # List of available firmware loaded at plugin startup
 

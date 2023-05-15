@@ -78,11 +78,7 @@
 
 import pathlib
 import sys
-
-from pkg_resources import DistributionNotFound
-
 import Domoticz
-
 try:
     from Domoticz import Devices, Images, Parameters, Settings
 except ImportError:
@@ -94,9 +90,7 @@ import os.path
 import threading
 import time
 from importlib.metadata import version as import_version
-
-import z4d_certified_devices
-
+import pkg_resources
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
 from Classes.DomoticzDB import (DomoticzDB_DeviceStatus, DomoticzDB_Hardware,
@@ -142,6 +136,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
+import z4d_certified_devices
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -390,8 +385,8 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s [Certified Devices: %s] started" % (
-            self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"], self.pluginParameters["CertifiedDbVersion"] ), )
+        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s started" % (
+            self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
         if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
             self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
                 _current_python_version_major , _current_python_version_minor))
@@ -642,7 +637,7 @@ class BasePlugin:
         if self.iaszonemgt is None:
             # Create IAS Zone object
             # Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ControllerLink)
-            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communication, self.FirmwareVersion)
+            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communication, self.readZclClusters, self.FirmwareVersion)
 
             # Starting WebServer
         if self.webserver is None:
@@ -1208,7 +1203,8 @@ def zigateInit_Phase3(self):
                 self.busy,
                 self.FirmwareVersion,
                 self.IEEE2NWK,
-                self.ControllerIEEE
+                self.ControllerIEEE,
+                self.readZclClusters
             )
         if self.configureReporting:
             self.webserver.update_configureReporting(self.configureReporting )
@@ -1314,6 +1310,7 @@ def start_GrpManagement(self, homefolder):
         self.IEEE2NWK,
         self.DeviceConf, 
         self.log,
+        self.readZclClusters
     )
     if self.groupmgt and self.ControllerIEEE:
         self.groupmgt.updateZigateIEEE(self.ControllerIEEE)
@@ -1346,6 +1343,7 @@ def start_OTAManagement(self, homefolder):
         self.IEEE2NWK,
         self.log,
         self.PluginHealth,
+        self.readZclClusters
     )
     if self.OTA:
         self.webserver.update_OTA(self.OTA)
@@ -1496,12 +1494,7 @@ def check_python_modules_version( self ):
   
 def check_requirements( self ):
 
-    from pathlib import Path
-
-    import pkg_resources
-
-    _homefolder = pathlib.Path( Parameters[ "HomeFolder"] )
-    _filename = _homefolder / "requirements.txt"
+    _filename = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
 
     Domoticz.Status("Checking Python modules %s" %_filename)
     requirements = pkg_resources.parse_requirements(_filename.open())
@@ -1509,10 +1502,10 @@ def check_requirements( self ):
         req = str(requirements)
         try:
             pkg_resources.require(req)
-        except DistributionNotFound:
-            Domoticz.Error("Looks like %s python module is not installed. Make sure to install the required python3 module" %req)
+        except pkg_resources.DistributionNotFound as e:
+            Domoticz.Error("Looks like %s python module is not installed (error: %s). Make sure to install the required python3 module" %(req, e))
             Domoticz.Error("Use the command:")
-            Domoticz.Error("sudo pip3 install -r requirements.txt")
+            Domoticz.Error("sudo python3 -m pip install -r requirements.txt")
             return True
     return False          
                      
