@@ -419,7 +419,6 @@ DP_SENSOR_FUNCTION = {
     "smoke_state": ts0601_smoke_detection,
     "smoke_ppm": ts0601_smoke_concentration,
     "water_consumption": ts0601_water_consumption,
-    "TS0601_IrrigationValve": ts0601_sensor_irrigation_mode,
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
@@ -545,6 +544,9 @@ def ts0601_action_switch(self, NwkId, Ep, dp, value=None):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
+    # 0 Capacity ( Litter )
+    # 1 Duration ( Seconds)
+
     if value is None:
         return
 
@@ -585,8 +587,8 @@ def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
 TS0601_COMMANDS = {
     "TRV7WindowDetection": ts0601_window_detection_mode,
     "TRV7ChildLock": ts0601_child_lock_mode,
-    "TS0601_IrrigationValve": ts0601_irrigation_mode,
     "TuyaIrrigationTarget": ts0601_irrigation_valve_target,
+    "TuyaIrrigationMode": ts0601_irrigation_mode
 }
 
 DP_ACTION_FUNCTION = {

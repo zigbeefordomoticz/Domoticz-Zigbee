@@ -16,7 +16,7 @@
             "ef00": "",
             "000a": "",
             "0019": "",
-            "Type": "TS0601_IrrigationValve/Switch"
+            "Type": "Switch"
         }
     },
     "Type": "",
@@ -28,7 +28,7 @@
         "0006": [ "0000" ]
     },
     "TS0601_DP": { 
-        "01": { "sensor_type": "TS0601_IrrigationValve", "action_type": "TS0601_IrrigationValve"},
+        "01": { "store_tuya_attribute": "irrigationMode", "action_type": "TuyaIrrigationMode"},
         "02": { "store_tuya_attribute": "state", "sensor_type": "switch", "action_type": "switch"},
         "65": { "store_tuya_attribute": "irrigationStartTime"},
         "66": { "store_tuya_attribute": "irrigationEndTime"},
@@ -43,6 +43,7 @@
     },
     "Param": {
         "TuyaPing": 0,
+        "TuyaIrrigationMode": 1,
         "TuyaIrrigationTarget": 15
     }
 }
