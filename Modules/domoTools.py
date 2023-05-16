@@ -641,6 +641,7 @@ CLUSTER_TO_TYPE = {
     "LumiLock": "LumiLock", 
     "Strenght": "Strenght",
     "Orientation": "Orientation", 
+    "WaterCounter": "WaterCounter",
     "fc40": "ThermoMode", 
     "ff66": "DEMAIN",
     "fc80": "Heiman",

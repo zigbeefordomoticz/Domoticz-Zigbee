@@ -140,7 +140,7 @@ ACTIONATORS = [
     "TuyaSirenTemp",
     "ThermoOnOff",
     "ShutterCalibration",
-    "SwitchAlarm"
+    "SwitchAlarm",
 ]
 
 
@@ -333,6 +333,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
+
+            
         if DeviceType == "SwitchAlarm" and _model_name == "SMSZB-120" and self.iaszonemgt:
             self.iaszonemgt.iaswd_develco_warning(NWKID, EPout, "00")
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -520,6 +522,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.log.logging("Command", "Debug", "mgtCommand : Disable Window Cover Calibration")
             tuya_window_cover_calibration(self, NWKID, "01")
 
+        elif DeviceType == "Switch" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "switch", 0)
+
         else:
             # Remaining Slider widget
             if profalux:  # Profalux are define as LvlControl but should be managed as Blind Inverted
@@ -671,7 +676,6 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 # Refresh will be done via the Report Attribute
                 return
 
-
         elif DeviceType in ("Venetian", "Vanne", "Curtain"):
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("PR412", "CPR412", "CPR412-E"):
                 actuator_on(self, NWKID, EPout, "Light")
@@ -698,6 +702,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         elif DeviceType == "ShutterCalibration":
             self.log.logging("Command", "Debug", "mgtCommand : Enable Window Cover Calibration")
             tuya_window_cover_calibration(self, NWKID, "00")
+
+        elif DeviceType == "Switch" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "switch", 1)
 
         else:
             # Remaining Slider widget

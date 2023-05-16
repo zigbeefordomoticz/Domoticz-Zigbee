@@ -3,7 +3,8 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            getAttributeValue)
-from Modules.tuyaTools import store_tuya_attribute, tuya_cmd
+from Modules.tuyaTools import store_tuya_attribute, tuya_cmd, get_tuya_attribute
+
 
 # Generic functions
 
@@ -368,6 +369,22 @@ def ts0601_smoke_concentration(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "SmokePPM", value)
     MajDomoDevice(self, Devices, nwkid, ep, "042a", value)
 
+def ts0601_water_consumption(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Log", "ts0601_water_consumption - Nwkid: %s/%s WaterConsumtpion: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "WaterConsumtpion", value)
+    # The counter will be treated with the divider which is defined in the parameters in the application settings 
+    # (menu setup-settings, tab counters). 
+    # For example if the counter is set to "Water" and the value is passed as liters, 
+    # the divider must set to 1000 (as the unit is m3). The device displays 2 values:
+    # The status is the overall total volume (or counter).
+    # The volume (or counter) of the day (in the top right corner).
+    MajDomoDevice(self, Devices, nwkid, ep, "WaterCounter", value)
+
+def ts0601_sensor_irrigation_mode(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Log", "ts0601_sensor_irrigation_mode - Nwkid: %s/%s Mode: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Mode", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0008", value)
+   
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
@@ -400,7 +417,8 @@ DP_SENSOR_FUNCTION = {
     "TuyaAlarmLevel": ts0601_sirene_level,
     "TuyaAlarmSwitch": ts0601_sirene_switch,
     "smoke_state": ts0601_smoke_detection,
-    "smoke_ppm": ts0601_smoke_concentration
+    "smoke_ppm": ts0601_smoke_concentration,
+    "water_consumption": ts0601_water_consumption,
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
@@ -513,13 +531,68 @@ def ts0601_action_siren_switch(self, NwkId, Ep, dp, value=None):
     data = "%02x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
+def ts0601_action_switch(self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, value))
+    device_value = value
+   
+    action = "%02x01" % dp  # State
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
+    # 0 Capacity ( Litter )
+    # 1 Duration ( Seconds)
+
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, value))
+    device_value = value
+   
+    action = "%02x01" % dp  # Mode
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+SAFETY_MIN_SECS = 10
+DURATION = 1
+   
+def check_irrigation_valve_target_value(value, mode):
+    if value > 0 and value < SAFETY_MIN_SECS and mode == DURATION:
+        return SAFETY_MIN_SECS
+    else:
+        return value
+    
+def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Log", "ts0601_irrigation_valve_target - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, value))
+
+    mode = get_tuya_attribute(self, NwkId, 'Mode')
+    if mode:
+        mode = 1
+    device_value = check_irrigation_valve_target_value(value, mode)
+
+    action = "%02x02" % dp  # Irrigation Target (Time or Litters)
+    data = "%08x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+    
 
 TS0601_COMMANDS = {
     "TRV7WindowDetection": ts0601_window_detection_mode,
     "TRV7ChildLock": ts0601_child_lock_mode,
+    "TuyaIrrigationTarget": ts0601_irrigation_valve_target,
+    "TuyaIrrigationMode": ts0601_irrigation_mode
 }
 
 DP_ACTION_FUNCTION = {
+    "switch": ts0601_action_switch,
     "setpoint": ts0601_action_setpoint,
     "calibration": ts0601_action_calibration,
     "TRV6SystemMode": ts0601_action_trv6_system_mode,
