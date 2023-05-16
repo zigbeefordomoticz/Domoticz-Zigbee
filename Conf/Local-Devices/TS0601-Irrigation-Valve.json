@@ -16,7 +16,7 @@
             "ef00": "",
             "000a": "",
             "0019": "",
-            "Type": "Switch"
+            "Type": "Switch/WaterCounter"
         }
     },
     "Type": "",
@@ -44,6 +44,6 @@
     "Param": {
         "TuyaPing": 0,
         "TuyaIrrigationMode": 1,
-        "TuyaIrrigationTarget": 15
+        "TuyaIrrigationTarget": 60
     }
 }
