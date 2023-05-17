@@ -279,7 +279,7 @@ def _loggingStatus(self, thread_name, message):
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.info(message)
+        logging.info(message.encode('utf-8'))
     Domoticz.Status(message)
 
 
@@ -287,7 +287,7 @@ def _loggingLog(self, thread_name, message):
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.info( message)
+        logging.info( message.encode('utf-8'))
     else:
         Domoticz.Log(message)
 
@@ -296,7 +296,7 @@ def _loggingDebug(self, thread_name, message):
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.info(message)
+        logging.info(message.encode('utf-8'))
     else:
         Domoticz.Log(message)
 
