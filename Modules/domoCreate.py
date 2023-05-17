@@ -11,7 +11,7 @@
 
 import Domoticz
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
-                               subtypeRGB_FromProfile_Device_IDs_onEp2)
+                               subtypeRGB_FromProfile_Device_IDs_onEp2, UpdateDevice_v2)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import is_domoticz_new_blind
 
@@ -168,13 +168,8 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     unit = FreeUnit(self, Devices)
     self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - unit: %s" % unit, nwkid)
 
-    self.log.logging(
-        "WidgetCreation",
-        "Debug",
-        "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s"
-        % (cType, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, Image, ForceClusterType),
-        nwkid,
-    )
+    self.log.logging( "WidgetCreation", "Debug", "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s" % (
+        cType, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, Image, ForceClusterType), nwkid, )
 
     widgetName = deviceName(self, nwkid, cType, ieee, ep)
     # oldFashionWidgetName = cType + "-" + ieee + "-" + ep
@@ -210,9 +205,11 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     if myDev.ID == -1:
         self.ListOfDevices[nwkid]["Status"] = "failDB"
         Domoticz.Error("Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev)
-    else:
-        self.ListOfDevices[nwkid]["Status"] = "inDB"
-        self.ListOfDevices[nwkid]["Ep"][ep]["ClusterType"][str(ID)] = ( ForceClusterType or cType )
+        return None
+
+    self.ListOfDevices[nwkid]["Status"] = "inDB"
+    self.ListOfDevices[nwkid]["Ep"][ep]["ClusterType"][str(ID)] = ( ForceClusterType or cType )
+    return unit
 
 
 def over_write_type_from_deviceconf( self, Devices, NwkId):
@@ -475,6 +472,7 @@ def create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     _num_level = number_switch_selectors( t )
     Options = createSwitchSelector(self, _num_level, DeviceType=t, OffHidden=_OffHidden, SelectorStyle=_SelectorStyle)
     createDomoticzWidget(self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions=Options)
+    
     self.log.logging("WidgetCreation", "Debug", "create_switch_selector_widget - t: %s Levels: %s Off: %s Style: %s " % (
         t, _num_level, _OffHidden, _SelectorStyle), NWKID)
     return True
@@ -525,7 +523,10 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
         if "widgetType" in widget_record:
             self.log.logging( "WidgetCreation", "Debug", "create_native_widget - Type: %s Widget %s for %s" %(
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
-            createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
+            unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
+            if unit:
+                set_default_value( self, Devices, unit, widget_record)
+
             return True
 
     elif is_domoticz_new_blind(self) and widget_name in BLIND_DOMOTICZ_2023:
@@ -533,7 +534,10 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
         if "widgetType" in widget_record:
             self.log.logging( "WidgetCreation", "Debug", "create_native_widget - BLIND_DOMOTICZ_2023 Type: %s Widget %s for %s" %(
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
-            createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
+            unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
+            if unit:
+                set_default_value( self, Devices, unit, widget_record)
+
             return True
         
     elif widget_name in BLIND_DOMOTICZ_2022:
@@ -541,7 +545,10 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
         if "widgetType" in widget_record:
             self.log.logging( "WidgetCreation", "Debug", "create_native_widget - BLIND_DOMOTICZ_2022 Type: %s Widget %s for %s" %(
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
-            createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
+            unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
+            if unit:
+                set_default_value( self, Devices, unit, widget_record)
+
             return True
  
     else:
@@ -553,7 +560,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
     Image = widget_record[ "Image" ] if "Image" in widget_record else None
     ForceClusterType = widget_record[ "ForceClusterType" ] if "ForceClusterType" in widget_record else None
 
-    createDomoticzWidget( 
+    unit = createDomoticzWidget( 
         self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, 
         Type_=Type, 
         Subtype_=Subtype, 
@@ -562,9 +569,17 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
         Image=Image, 
         ForceClusterType=ForceClusterType
     )
-    
+    if unit:
+        set_default_value( self, Devices, unit, widget_record)
     return True
 
+def set_default_value( self, Devices, unit, widget_record):
+    # Check if we need to initialize the Widget immediatly
+    if unit and "sValue" in widget_record and "nValue" in widget_record:
+        sValue = widget_record["sValue"] 
+        nValue = widget_record["nValue"] 
+        UpdateDevice_v2(self, Devices, unit, nValue, sValue, 0, 0, ForceUpdate_=True)
+   
 
 SIMPLE_WIDGET = {
     "Temp+Hum+Baro": { "widgetType": "Temp+Hum+Baro", },
@@ -627,7 +642,7 @@ SIMPLE_WIDGET = {
     "LvlControl": { "Type": 244, "Subtype": 73, "Switchtype": 7 },
     "SwitchAlarm": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 13 },
     "Distance": { "Type": 243, "Subtype": 27, "Switchtype": 0},
-    "WaterCounter": { "Type": 243, "Subtype": 28, "Switchtype": 2, "Image": 22},
+    "WaterCounter": { "Type": 243, "Subtype": 28, "Switchtype": 2, "Image": 22, "sValue": "0", "nValue": 0},
 }
 
 BLIND_DOMOTICZ_2022 = {
