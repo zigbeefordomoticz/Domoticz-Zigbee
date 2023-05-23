@@ -355,7 +355,8 @@ def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
     nbAttribute = 0
     idx = 0
-    while idx < len(Data):
+    while idx < len(Data) and len(Data[idx:]) >= 8:
+        # We need to make sure that the remaining is still able to contain Attribute, Data Type and Value
         nbAttribute += 1
         Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
         idx += 4
