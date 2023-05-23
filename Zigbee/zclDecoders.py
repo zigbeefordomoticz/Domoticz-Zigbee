@@ -246,27 +246,15 @@ def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
 
         DType = Data[idx : idx + 2]
         idx += 2
-        if DType in SIZE_DATA_TYPE:
-            size = SIZE_DATA_TYPE[DType] * 2
-        elif DType in ("48", "4c"):
-            nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
-            idx += 4
-            # Today found for attribute 0xff02 Xiaomi, just take all data
-            size = len(Data) - idx
-
-        elif DType in ("41", "42"):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
-            size = int(Data[idx : idx + 2], 16) * 2
-            idx += 2
-        else:
-            self.log.logging("zclDecoder", "Error", "buildframe_write_attribute_request - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
-            self.log.logging("zclDecoder", "Error", "buildframe_write_attribute_request - ClusterId: %s Attribute: %s Data: %s" % (ClusterId, Attribute, Data))
+        
+        idx, size, value = extract_value_size(self, Data, idx, DType )
+        if value is None and idx is None:
+            decoding_error(self, "buildframe_write_attribute_request", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
-        data = Data[idx : idx + size]
-        idx += size
-        value = decode_endian_data(data, DType)
         lenData = "%04x" % (size // 2)
         payloadOfAttributes += Attribute + DType + lenData + value
+        idx += size
 
     buildPayload += "%02x" % (nbAttribute) + payloadOfAttributes
     return encapsulate_plugin_frame("0110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
@@ -292,59 +280,20 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
         idx += 4
         Status = Data[idx : idx + 2]
         idx += 2
-        if Status == "00":
-            DType = Data[idx : idx + 2]
-            idx += 2
-            if DType in ("48", "4c"):
-                nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
-                idx += 4
-                # Today found for attribute 0xff02 Xiaomi, just take all data
-                size = len(Data) - idx
-                data = Data[idx : idx + size]
-                idx += size
-                value = decode_endian_data(data, DType)
-                lenData = "%04x" % (size // 2)
-
-            elif DType in ("41", "42", ):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42 
-                size = int(Data[idx : idx + 2], 16) * 2
-                idx += 2
-                if size > 0:
-                    data = Data[idx : idx + size]
-                    idx += size
-                    value = decode_endian_data(data, DType, size)
-                else:
-                    value = ""
-                lenData = "%04x" % (size // 2)
-
-            elif DType in ("43", ):  # Long Octet 
-                size = (struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0] ) * 2
-                idx += 4
-                if size > 0:
-                    data = Data[idx : idx + size]
-                    idx += size
-                    value = decode_endian_data(data, DType, size)
-                else:
-                    value = ""
-                lenData = "%04x" % (size // 2)
-
-            elif DType in SIZE_DATA_TYPE:
-                size = SIZE_DATA_TYPE[DType] * 2
-                data = Data[idx : idx + size]
-                idx += size
-                value = decode_endian_data(data, DType)
-                lenData = "%04x" % (size // 2)
-
-
-            else:
-                self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
-                self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" % (ClusterId, Attribute, Data))
-                self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - frame: %s" % (frame,))
-                return frame
-
-            buildPayload += Attribute + Status + DType + lenData + value
-        else:
-            # Status != 0x00
+        if Status != "00":
             buildPayload += Attribute + Status
+            continue
+        
+        DType = Data[idx : idx + 2]
+        idx += 2
+        idx, size, value = extract_value_size(self, Data, idx, DType )
+        if value is None and idx is None:
+            decoding_error(self, "buildframe_read_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            return frame
+
+        lenData = "%04x" % (size // 2)
+        buildPayload += Attribute + Status + DType + lenData + value
+        idx += size
 
     return encapsulate_plugin_frame("8100", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
@@ -361,49 +310,19 @@ def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint
         idx += 4
         DType = Data[idx : idx + 2]
         idx += 2
-        if DType in SIZE_DATA_TYPE:
-            size = SIZE_DATA_TYPE[DType] * 2
-
-        elif DType in ("48", "4c"):
-            # Today found for attribute 0xff02 Xiaomi, just take all data
-            nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
-            idx += 4
-            size = len(Data) - idx
-
-        elif DType in ("41", "42"):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
-            size = int(Data[idx : idx + 2], 16) * 2
-            idx += 2
-
-        elif DType == "00":
-            self.log.logging( "zclDecoder", "Error", "buildframe_report_attribute_response %s/%s Cluster: %s nbAttribute: %s Attribute: %s DType: %s idx: %s frame: %s" % (
-                SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Attribute, DType, idx, frame) )
+        idx, size, value = extract_value_size(self, Data, idx, DType )
+        if value is None and idx is None:
+            decoding_error(self, "buildframe_report_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
-        else:
-            _context = {
-                "Sqn": Sqn,
-                "NwkId": SrcNwkId,
-                "Ep": SrcEndPoint,
-                "Cluster": ClusterId,
-                "Attribute": Attribute,
-                "DType": DType,
-                "BuildPayload": buildPayload,
-                "Frame": frame,
-                "Data": Data,
-                "Idx": idx,
-            }
-            self.log.logging("zclDecoder", "Error", "buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " % (
-                DType, str(SIZE_DATA_TYPE)), nwkid=SrcNwkId, context=_context)
-            return frame
-
-        data = Data[idx : idx + size]
-        idx += size
-        value = decode_endian_data(data, DType)
         lenData = "%04x" % (size // 2)
         buildPayload += Attribute + "00" + DType + lenData + value
+        idx += size
 
     return encapsulate_plugin_frame("8102", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
+
+    
 
 def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
@@ -719,8 +638,6 @@ def buildframe_8400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Target
     buildPayload = Sqn + zonetype + ManufacturerCode + SrcNwkId + SrcEndPoint
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
     
-    
-
 def buildframe_8401_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_8401_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
     # Zone status change
@@ -735,3 +652,61 @@ def buildframe_8401_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Target
     
     
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+
+# Helpers
+def extract_value( Data, DType, idx, size):
+    data = Data[idx : idx + size]
+    if DType in ( "43",):
+        return decode_endian_data(data, DType, size)
+        
+    return decode_endian_data(data, DType)
+
+
+def extract_value_size(self, Data, idx, DType ):
+
+    if DType in ("41", "42"):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
+        size = int(Data[idx : idx + 2], 16) * 2
+        idx += 2
+        if len(Data[idx:]) >= size:
+            value = extract_value( Data, DType, idx, size)
+            return idx, size, value
+
+    if DType in ("43", ):  # Long Octet 
+        size = (struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0] ) * 2
+        idx += 4
+        value = extract_value( Data, DType, idx, size) if size > 0 else ""
+        idx += size
+        return idx, size, value
+
+    if DType in ("48", "4c"):
+        # Today found for attribute 0xff02 Xiaomi, just take all data
+        nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
+        idx += 4
+        size = len(Data) - idx
+        value = extract_value( Data, DType, idx, size)
+        return idx, size, value
+    
+    if DType in SIZE_DATA_TYPE:
+        size = SIZE_DATA_TYPE[DType] * 2
+        value = extract_value( Data, DType, idx, size)
+        return idx, size, value
+
+    return None, None, None
+
+
+def decoding_error(self, source, sqn, nwkid, ep, cluster, attribute, DType, idx=None, buildPayload=None, frame=None, Data=None):
+    _context = {
+        "Sqn": sqn,
+        "NwkId": nwkid,
+        "Ep": ep,
+        "Cluster": cluster,
+        "Attribute": attribute,
+        "DType": DType,
+        "BuildPayload": buildPayload,
+        "Frame": frame,
+        "Data": Data,
+        "Idx": idx,
+    }
+    self.log.logging("zclDecoder", "Error", "%s - decoding_error - Unknown DataType size: >%s< vs. %s " % (
+        source, DType, str(SIZE_DATA_TYPE)), nwkid=nwkid, context=_context)
