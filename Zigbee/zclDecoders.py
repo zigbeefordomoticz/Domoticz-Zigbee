@@ -355,7 +355,8 @@ def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
     nbAttribute = 0
     idx = 0
-    while idx < len(Data):
+    while idx < len(Data) and len(Data[idx:]) >= 8:
+        # We need to make sure that the remaining is still able to contain Attribute, Data Type and Value
         nbAttribute += 1
         Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
         idx += 4
@@ -375,14 +376,25 @@ def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint
             idx += 2
 
         elif DType == "00":
-            self.log.logging(
-                "zclDecoder", "Error", "buildframe_report_attribute_response %s/%s Cluster: %s nbAttribute: %s Attribute: %s DType: %s idx: %s frame: %s" % (SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Attribute, DType, idx, frame)
-            )
+            self.log.logging( "zclDecoder", "Error", "buildframe_report_attribute_response %s/%s Cluster: %s nbAttribute: %s Attribute: %s DType: %s idx: %s frame: %s" % (
+                SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Attribute, DType, idx, frame) )
             return frame
 
         else:
-            self.log.logging("zclDecoder", "Error", "buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
-            self.log.logging("zclDecoder", "Error", "buildframe_report_attribute_response - NwkId: %s ClusterId: %s Attribute: %s Frame: %s" % (SrcNwkId, ClusterId, Attribute, frame))
+            _context = {
+                "Sqn": Sqn,
+                "NwkId": SrcNwkId,
+                "Ep": SrcEndPoint,
+                "Cluster": ClusterId,
+                "Attribute": Attribute,
+                "DType": DType,
+                "BuildPayload": buildPayload,
+                "Frame": frame,
+                "Data": Data,
+                "Idx": idx,
+            }
+            self.log.logging("zclDecoder", "Error", "buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " % (
+                DType, str(SIZE_DATA_TYPE)), nwkid=SrcNwkId, context=_context)
             return frame
 
         data = Data[idx : idx + size]

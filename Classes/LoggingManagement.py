@@ -160,6 +160,7 @@ class LoggingManagement:
             # Enable TimedRotating
             logging.basicConfig(
                 level=logging.DEBUG,
+                encoding='utf-8',
                 format="%(asctime)s %(levelname)-8s:%(message)s",
                 handlers=[TimedRotatingFileHandler(_logfilename, when="midnight", interval=1, backupCount=_backupCount)],
             )
@@ -167,6 +168,7 @@ class LoggingManagement:
             # Enable RotatingFileHandler
             logging.basicConfig(
                 level=logging.DEBUG,
+                encoding='utf-8',
                 format="%(asctime)s %(levelname)-8s:%(message)s",
                 handlers=[RotatingFileHandler(_logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
             )
@@ -276,7 +278,7 @@ def _loggingStatus(self, thread_name, message):
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.info(message)
+        logging.info(message.encode('utf-8'))
     Domoticz.Status(message)
 
 
@@ -284,7 +286,7 @@ def _loggingLog(self, thread_name, message):
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.info( message)
+        logging.info( message.encode('utf-8'))
     else:
         Domoticz.Log(message)
 
@@ -293,7 +295,7 @@ def _loggingDebug(self, thread_name, message):
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.info(message)
+        logging.info(message.encode('utf-8'))
     else:
         Domoticz.Log(message)
 
