@@ -1379,6 +1379,8 @@ def get_previous_switch_level(self, NwkId, Ep):
         return None
     if "0000" not in self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]:
         return None
+    if self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"] in ( '', {} ):
+        return None
     return self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"]
 
 def request_read_device_status(self, Nwkid):
