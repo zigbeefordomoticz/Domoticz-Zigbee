@@ -719,11 +719,11 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 1, "100", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         else:
             previous_level = get_previous_switch_level(self, NWKID, EPout)
-            self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s" % (
+            self.log.logging( "Command", "Log", "mgtCommand : Previous Level was %s" % (
                 previous_level), NWKID, )
 
-            if previous_level is None:
-                self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was None!!!!")
+            if previous_level is None or not isinstance( previous_level, int):
+                self.log.logging( "Command", "Error", "mgtCommand : Previous Level was None or not int!!!! previous_level >%s<" %previous_level)
                 UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             elif Devices[Unit].SubType in (1,2,4,6,7,8):
                 percentage_level = int(( (previous_level * 100 )/ 255))
@@ -1378,6 +1378,8 @@ def get_previous_switch_level(self, NwkId, Ep):
     if "0008" not in self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep]:
         return None
     if "0000" not in self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]:
+        return None
+    if self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"] in ( '', {} ):
         return None
     return self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"]
 
