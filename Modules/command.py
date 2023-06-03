@@ -722,8 +722,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.log.logging( "Command", "Log", "mgtCommand : Previous Level was %s" % (
                 previous_level), NWKID, )
 
-            if previous_level is None or not isinstance( previous_level, int):
-                self.log.logging( "Command", "Error", "mgtCommand : Previous Level was None or not int!!!! previous_level >%s<" %previous_level)
+            if previous_level is None:
                 UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             elif Devices[Unit].SubType in (1,2,4,6,7,8):
                 percentage_level = int(( (previous_level * 100 )/ 255))
@@ -1381,7 +1380,19 @@ def get_previous_switch_level(self, NwkId, Ep):
         return None
     if self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"] in ( '', {} ):
         return None
-    return self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"]
+    switch_level = self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"] 
+    if switch_level is None:
+        return None
+    if self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"] in ( '', {} ):
+        return None
+    if isinstance( self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"], str):
+        return int( self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"], 16)
+    if isinstance( self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"], int):
+        return self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"]
+
+    self.log.logging( "Command", "Error", "get_previous_switch_level : level is bizarre >%s<" % (
+        self.ListOfDevices[ NwkId ][ 'Ep' ][ Ep][ "0008" ]["0000"]), NwkId, )
+    return None
 
 def request_read_device_status(self, Nwkid):
     # Purpose is to reset the Heartbeat in order to trigger a readattribute
