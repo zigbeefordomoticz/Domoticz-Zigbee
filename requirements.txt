@@ -6,5 +6,5 @@ zigpy==0.54.1
 zigpy_deconz==0.20.0
 zigpy_znp==0.10.0
 charset-normalizer==2.0.11
-cryptography<=40.0.2
+cryptography<=38.0.4
 setuptools
