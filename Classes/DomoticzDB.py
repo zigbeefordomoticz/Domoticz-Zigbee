@@ -22,12 +22,29 @@ import Domoticz
 
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Classes.LoggingManagement import LoggingManagement
+from Modules.tools import is_domoticz_new_API
 
 CACHE_TIMEOUT = (15 * 60) + 15  # num seconds
 
-DOMOTICZ_SETTINGS_API = "type=settings"
-DOMOTICZ_HARDWARE_API = "type=hardware"
-DOMOTICZ_DEVICEST_API = "type=devices&rid="
+def init_domoticz_api(self):
+    
+    if is_domoticz_new_API(self):
+        init_domoticz_api_settings(
+            self,
+            "type=command&param=getsettings",
+            "type=command&param=gethardware",
+            "type=command&param=getdevices&rid=",
+        )
+    else:
+        init_domoticz_api_settings(
+            self, "type=settings", "type=hardware", "type=devices&rid="
+        )
+        
+def init_domoticz_api_settings(self, settings_api, hardware_api, devices_api):
+    self.DOMOTICZ_SETTINGS_API = settings_api
+    self.DOMOTICZ_HARDWARE_API = hardware_api
+    self.DOMOTICZ_DEVICEST_API = devices_api
+
 
 def isBase64( sb ):    
     try:
@@ -167,13 +184,17 @@ def domoticz_base_url(self):
 class DomoticzDB_Preferences:
     # sourcery skip: replace-interpolation-with-fstring
     
-    def __init__(self, api_base_url, pluginconf, log):
+    def __init__(self, api_base_url, pluginconf, log, DomoticzBuild, DomoticzMajor, DomoticzMinor):
         self.api_base_url = api_base_url
         self.preferences = {}
         self.pluginconf = pluginconf
         self.log = log
         self.authentication_str = None
         self.url_ready = None
+        self.DomoticzBuild = DomoticzBuild
+        self.DomoticzMajor = DomoticzMajor
+        self.DomoticzMinor = DomoticzMinor
+        init_domoticz_api(self)
         self.load_preferences()
 
 
@@ -182,7 +203,7 @@ class DomoticzDB_Preferences:
         url = domoticz_base_url(self)
         if url is None:
             return
-        url += DOMOTICZ_HARDWARE_API
+        url += self.DOMOTICZ_HARDWARE_API
 
         dz_response = domoticz_request( self, url)
         if dz_response is None:
@@ -210,7 +231,7 @@ class DomoticzDB_Preferences:
         return webUserName, webPassword
 
 class DomoticzDB_Hardware:
-    def __init__(self, api_base_url, pluginconf, hardwareID, log, pluginParameters):
+    def __init__(self, api_base_url, pluginconf, hardwareID, log, pluginParameters, DomoticzBuild, DomoticzMajor, DomoticzMinor):
         self.api_base_url = api_base_url
         self.authentication_str = None
         self.url_ready = None
@@ -219,6 +240,11 @@ class DomoticzDB_Hardware:
         self.pluginconf = pluginconf
         self.log = log
         self.pluginParameters = pluginParameters
+        self.DomoticzBuild = DomoticzBuild
+        self.DomoticzMajor = DomoticzMajor
+        self.DomoticzMinor = DomoticzMinor
+
+        init_domoticz_api(self)
         self.load_hardware()
 
     def load_hardware(self):  
@@ -226,7 +252,7 @@ class DomoticzDB_Hardware:
         url = domoticz_base_url(self)
         if url is None:
             return
-        url += DOMOTICZ_HARDWARE_API
+        url += self.DOMOTICZ_HARDWARE_API
 
         dz_result = domoticz_request( self, url)
         if dz_result is None:
@@ -265,13 +291,18 @@ class DomoticzDB_Hardware:
         return False
 
 class DomoticzDB_DeviceStatus:
-    def __init__(self, api_base_url, pluginconf, hardwareID, log):
+    def __init__(self, api_base_url, pluginconf, hardwareID, log, DomoticzBuild, DomoticzMajor, DomoticzMinor):
         self.api_base_url = api_base_url
         self.HardwareID = hardwareID
         self.pluginconf = pluginconf
         self.log = log
         self.authentication_str = None
         self.url_ready = None
+        self.DomoticzBuild = DomoticzBuild
+        self.DomoticzMajor = DomoticzMajor
+        self.DomoticzMinor = DomoticzMinor
+
+        init_domoticz_api(self)
 
     def logging(self, logType, message):
         # sourcery skip: replace-interpolation-with-fstring
@@ -283,7 +314,7 @@ class DomoticzDB_DeviceStatus:
         url = domoticz_base_url(self)
         if url is None:
             return
-        url += DOMOTICZ_DEVICEST_API + "%s" %ID
+        url += self.DOMOTICZ_DEVICEST_API + "%s" %ID
 
         dz_result = domoticz_request( self, url)
         if dz_result is None:

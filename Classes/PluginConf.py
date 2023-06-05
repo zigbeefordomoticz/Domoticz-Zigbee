@@ -429,7 +429,6 @@ class PluginConf:
 
         setup_folder_parameters(self, homedir)
 
-        #self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % hardwareid
         _pluginConf = Path(self.pluginConf["pluginConfig"] )
         self.pluginConf["filename"] = str( _pluginConf / ("PluginConf-%02d.json" % hardwareid) )
         if os.path.isfile( _pluginConf / ("PluginConf-%02d.json" % hardwareid)):
