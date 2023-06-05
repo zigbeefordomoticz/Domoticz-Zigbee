@@ -68,7 +68,13 @@
         <param field="Mode6" label="Debugging" width="150px"  default="None" required="true">
             <description><br/><h3>Plugin debug</h3>This debugging option has been moved to the WebUI > Tools > Debug<br/></description>
                 <options>
-                            <option label="None" value="2"  default="true"/>
+                    <option label="None" value="0"  default="true" />
+                    <option label="Python Only" value="2"/>
+                    <option label="Basic Debugging" value="62"/>
+                    <option label="Basic+Messages" value="126"/>
+                    <option label="Connections Only" value="16"/>
+                    <option label="Connections+Queue" value="144"/>
+                    <option label="All" value="-1"/>
                 </options>
         </param>
             
@@ -222,6 +228,7 @@ class BasePlugin:
         # self.ForceCreationDevice = None   #
 
         self.VersionNewFashion = None
+        self.DomoticzBuild = None
         self.DomoticzMajor = None
         self.DomoticzMinor = None
 
@@ -265,8 +272,7 @@ class BasePlugin:
         #self.pythonModuleVersion = {}
 
     def onStart(self):
-        
-        Domoticz.Status( "Zigbee for Domoticz plugin started!")
+        Domoticz.Status( "Zigbee for Domoticz plugin starting")
         
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
@@ -400,10 +406,27 @@ class BasePlugin:
  
         self.StartupFolder = Parameters["StartupFolder"]
 
-        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log )
+        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( 
+            Parameters["Mode5"], 
+            self.pluginconf, 
+            self.HardwareID, 
+            self.log,
+            self.DomoticzBuild,
+            self.DomoticzMajor,
+            self.DomoticzMinor,
+)
 
         self.log.logging("Plugin", "Debug", "   - Hardware table")
-        self.domoticzdb_Hardware = DomoticzDB_Hardware( Parameters["Mode5"], self.pluginconf, self.HardwareID, self.log, self.pluginParameters )
+        self.domoticzdb_Hardware = DomoticzDB_Hardware(
+            Parameters["Mode5"], 
+            self.pluginconf, 
+            self.HardwareID, 
+            self.log, 
+            self.pluginParameters ,
+            self.DomoticzBuild,
+            self.DomoticzMajor,
+            self.DomoticzMinor,
+            )
         
         if (
             self.zigbee_communication 
@@ -422,7 +445,14 @@ class BasePlugin:
                 
         self.log.logging("Plugin", "Debug", "   - Preferences table")
         
-        self.domoticzdb_Preferences = DomoticzDB_Preferences(Parameters["Mode5"], self.pluginconf, self.log)
+        self.domoticzdb_Preferences = DomoticzDB_Preferences(
+            Parameters["Mode5"], 
+            self.pluginconf, 
+            self.log,
+            self.DomoticzBuild,
+            self.DomoticzMajor,
+            self.DomoticzMinor,
+            )
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
         # Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
 
@@ -1053,11 +1083,6 @@ def get_domoticz_version( self ):
         self.DomoticzMajor = int(major)
         self.DomoticzMinor = int(minor)
         self.VersionNewFashion = True
-        
-    #Domoticz.Log( "DomoticzBuild : %s" %self.DomoticzBuild) 
-    #Domoticz.Log( "DomoticzMajor : %s" %self.DomoticzMajor) 
-    #Domoticz.Log( "DomoticzMinor : %s" %self.DomoticzMinor) 
-    #Domoticz.Log( "VersionNewFashion : %s" %self.VersionNewFashion) 
         
     return True
 

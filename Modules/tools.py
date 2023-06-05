@@ -1684,24 +1684,44 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
 def is_domoticz_bellow_2020(self):
     return self.DomoticzMajor < 2020
 
-
 def is_domoticz_bellow_2021(self):
     return self.DomoticzMajor < 2021
 
+def is_domoticz_below_2022(self):
+    return self.DomoticzMajor < 2022
+
+def is_domoticz_below_2023(self):
+    return self.DomoticzMajor < 2023
 
 def is_domoticz_above_2022(self):
     return self.DomoticzMajor > 2022
-
 
 def is_domoticz_above_2022_2(self):
     if self.DomoticzMajor > 2022:
         return True
     return self.DomoticzMajor == 2022 and self.DomoticzMinor >= 2
 
+def is_domoticz_2023(self):
+    if self.DomoticzMajor == 2023:
+        return True
+    
+def is_domoticz_above_2023(self):
+    return self.DomoticzMajor > 2023
+    
+def is_domoticz_new_API(self):
+    
+    if is_domoticz_below_2023(self):
+        return False
+    
+    if is_domoticz_2023(self):
+        return self.DomoticzMinor > 1 and self.DomoticzBuild >= 15326
+        
+    # Domoticz 2024 !
+    return True
+
 
 def is_domoticz_new_blind(self):
     return is_domoticz_above_2022_2(self)
-
 
 def is_domoticz_update_SuppressTriggers( self ):
     
