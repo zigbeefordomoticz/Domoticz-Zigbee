@@ -492,7 +492,8 @@ def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
     timeStamped(self, MsgSrcAddr, 0x0110)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
-    for idx in range(24, len(MsgData), 4):
+    idx = 24
+    while idx < len(MsgData):
         Attribute = MsgData[idx : idx + 4]
         idx += 4
         DataType = MsgData[idx : idx + 2]
@@ -500,6 +501,7 @@ def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
         lendata = MsgData[idx : idx + 4]
         idx += 4
         DataValue = MsgData[idx : idx + int(lendata,16) * 2]
+        idx += int(lendata, 16) * 2
 
         self.log.logging( "Input", "Debug", "Decode0110 - Sqn: %s NwkId: %s Ep: %s Cluster: %s Manuf: %s Attribute: %s Type: %s Value: %s" % (
             MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufCode, Attribute, DataType, DataValue), )
