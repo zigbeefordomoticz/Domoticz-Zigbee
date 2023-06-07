@@ -12,13 +12,14 @@
 import os
 import platform
 import sys
+import distro
 
 import Domoticz
 
 
 def linux_distribution():
     try:
-        return platform.linux_distribution()
+        return [distro.id(), distro.version(), distro.codename()]
     except:
         return "N/A"
 
@@ -30,10 +31,10 @@ def switchPiZigate_mode(self, mode="run"):
 
     try:
         Domoticz.Status(
-            """Python version: %s dist: %s linux_distribution: %s system: %s machine: %s platform: %s uname: %s version: %s mac_ver: %s """
+            """Python version: %s dist info: %s linux_distribution: %s system: %s machine: %s platform: %s uname: %s version: %s mac_ver: %s """
             % (
                 sys.version.split("\n"),
-                str(platform.dist()),
+                str(distro.info()),
                 linux_distribution(),
                 platform.system(),
                 platform.machine(),
@@ -49,10 +50,10 @@ def switchPiZigate_mode(self, mode="run"):
         runmode_with_gpiomodule()
         return
 
-    if platform.dist()[0] in ("fedora"):
+    if distro.id() in ("fedora"):
         runmode_with_gpiomodule()
 
-    if platform.dist()[0] in ("debian"):
+    if distro.id() in ("debian", "raspbian"):
         runmode_with_gpiocommand()
 
 
