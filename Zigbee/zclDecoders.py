@@ -41,12 +41,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
     fcf = Payload[:2]
     default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
 
- 
     if self.zigbee_communication == "zigpy" and not default_response_disable:
-        #if self.zigbee_communication == "zigpy" and is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn):
-        #    self.log.logging("zclDecoder", "Debug", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
-        #    return None
-
         # Let's answer
         self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
         zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf )
@@ -67,42 +62,13 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         return buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
 
     if ClusterId == "0006":
-        # Remote report
         return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint,TargetEp, ClusterId, ManufacturerCode, Command, Data)
 
     if ClusterId == "0008":
-        # Remote report
         return buildframe_80x5_message(self, "8085", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
 
     if ClusterId == "0019":
-        # OTA Upgrade
-        OTA_UPGRADE_COMMAND = {
-            "00": "Image Notify",
-            "01": "Query Next Image Request",
-            "02": "Query Next Image response",
-            "03": "Image Block Request",  # 8501
-            "04": "Image Page request",   # 8502
-            "05": "Image Block Response",
-            "06": "Upgrade End Request",  # 8503
-            "07": "Upgrade End response",
-            "08": "Query Device Specific File Request",
-            "09": "Query Device Specific File response",
-        }
-        if Command == "03":
-            # Image Block request,
-            return buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
-        
-        if Command == "04":
-            # Image Page request
-            self.log.logging("zclDecoder", "Log", "Image Page request from '%s' for which no tests have been done so far. Please contact us" %SrcNwkId)
-            return buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
-            
-        if Command == "06":
-            return buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
-            
-        elif Command in OTA_UPGRADE_COMMAND:
-            self.log.logging("zclDecoder", "Debug", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
-            return frame
+        return buildframe_for_cluster_0019(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
         
     if ClusterId == "0020":
         return buildframe_for_cluster_0020(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
@@ -122,33 +88,18 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
 
     if ClusterId in ( "ef00", "ff00"):
         # Do not log a message as this will be handled by the inRawAPS and delegated.
-        self.log.logging(
-            "zclDecoder",
-            "Debug",
-            "zcl_decoders do not handle that Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s"
-            % ( Command, SrcNwkId, SrcEndPoint, ClusterId, Data, GlobalCommand, Sqn, ManufacturerCode, ),)
+        self.log.logging( "zclDecoder", "Debug", "zcl_decoders do not handle that Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s" % (
+            Command, SrcNwkId, SrcEndPoint, ClusterId, Data, GlobalCommand, Sqn, ManufacturerCode, ),)
         return frame
     
     if ClusterId == "fc00" and ManufacturerCode == "100b":
         return frame
     
-    self.log.logging(
-        "zclDecoder",
-        "Log",
-        "zcl_decoders Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s"
-        % (
-            Command,
-            SrcNwkId,
-            SrcEndPoint,
-            ClusterId,
-            Data,
-            GlobalCommand,
-            Sqn,
-            ManufacturerCode,
-        ),
-    )
+    self.log.logging( "zclDecoder", "Log", "zcl_decoders Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s" % (
+        Command, SrcNwkId, SrcEndPoint, ClusterId, Data, GlobalCommand, Sqn, ManufacturerCode, ), )
 
     return frame
+
 
 def buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data ):
     self.log.logging("zclDecoder", "Debug", "zcl_decoders Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
@@ -192,7 +143,7 @@ def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoi
     buildPayload += SrcNwkId + SrcEndPoint + ClusterId
     
     idx = 2
-    while idx < len( Data ):
+    while idx < len( Data ) and len(Data[idx:]) >= 6:
         Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
         idx += 4
         Attribute_type = Data[idx : idx + 2]
@@ -217,7 +168,7 @@ def buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, T
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + TargetEp + ClusterId + "01" + ManufSpec + ManufCode
     idx = nbAttribute = 0
     payloadOfAttributes = ""
-    while idx < len(Data):
+    while idx < len(Data) and len(Data[idx:]) >= 4:
         nbAttribute += 1
         Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
         idx += 4
@@ -239,34 +190,22 @@ def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + TargetEp + ClusterId + "01" + ManufSpec + ManufCode
     idx = nbAttribute = 0
     payloadOfAttributes = ""
-    while idx < len(Data):
+    while idx < len(Data) and len(Data[idx:]) >= 8:
         nbAttribute += 1
         Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
         idx += 4
 
         DType = Data[idx : idx + 2]
         idx += 2
-        if DType in SIZE_DATA_TYPE:
-            size = SIZE_DATA_TYPE[DType] * 2
-        elif DType in ("48", "4c"):
-            nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
-            idx += 4
-            # Today found for attribute 0xff02 Xiaomi, just take all data
-            size = len(Data) - idx
-
-        elif DType in ("41", "42"):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
-            size = int(Data[idx : idx + 2], 16) * 2
-            idx += 2
-        else:
-            self.log.logging("zclDecoder", "Error", "buildframe_write_attribute_request - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
-            self.log.logging("zclDecoder", "Error", "buildframe_write_attribute_request - ClusterId: %s Attribute: %s Data: %s" % (ClusterId, Attribute, Data))
+        
+        idx, size, value = extract_value_size(self, Data, idx, DType )
+        if value is None and idx is None:
+            decoding_error(self, "buildframe_write_attribute_request", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
-        data = Data[idx : idx + size]
-        idx += size
-        value = decode_endian_data(data, DType)
         lenData = "%04x" % (size // 2)
         payloadOfAttributes += Attribute + DType + lenData + value
+        idx += size
 
     buildPayload += "%02x" % (nbAttribute) + payloadOfAttributes
     return encapsulate_plugin_frame("0110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
@@ -286,65 +225,26 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
     nbAttribute = 0
     idx = 0
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
-    while idx < len(Data):
+    while idx < len(Data) and len(Data[idx:]) >= 8:
         nbAttribute += 1
         Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
         idx += 4
         Status = Data[idx : idx + 2]
         idx += 2
-        if Status == "00":
-            DType = Data[idx : idx + 2]
-            idx += 2
-            if DType in ("48", "4c"):
-                nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
-                idx += 4
-                # Today found for attribute 0xff02 Xiaomi, just take all data
-                size = len(Data) - idx
-                data = Data[idx : idx + size]
-                idx += size
-                value = decode_endian_data(data, DType)
-                lenData = "%04x" % (size // 2)
-
-            elif DType in ("41", "42", ):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42 
-                size = int(Data[idx : idx + 2], 16) * 2
-                idx += 2
-                if size > 0:
-                    data = Data[idx : idx + size]
-                    idx += size
-                    value = decode_endian_data(data, DType, size)
-                else:
-                    value = ""
-                lenData = "%04x" % (size // 2)
-
-            elif DType in ("43", ):  # Long Octet 
-                size = (struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0] ) * 2
-                idx += 4
-                if size > 0:
-                    data = Data[idx : idx + size]
-                    idx += size
-                    value = decode_endian_data(data, DType, size)
-                else:
-                    value = ""
-                lenData = "%04x" % (size // 2)
-
-            elif DType in SIZE_DATA_TYPE:
-                size = SIZE_DATA_TYPE[DType] * 2
-                data = Data[idx : idx + size]
-                idx += size
-                value = decode_endian_data(data, DType)
-                lenData = "%04x" % (size // 2)
-
-
-            else:
-                self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - Unknown DataType size: >%s< vs. %s " % (DType, str(SIZE_DATA_TYPE)))
-                self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - ClusterId: %s Attribute: %s Data: %s" % (ClusterId, Attribute, Data))
-                self.log.logging("zclDecoder", "Error", "buildframe_read_attribute_response - frame: %s" % (frame,))
-                return frame
-
-            buildPayload += Attribute + Status + DType + lenData + value
-        else:
-            # Status != 0x00
+        if Status != "00":
             buildPayload += Attribute + Status
+            continue
+        
+        DType = Data[idx : idx + 2]
+        idx += 2
+        idx, size, value = extract_value_size(self, Data, idx, DType )
+        if value is None and idx is None:
+            decoding_error(self, "buildframe_read_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
+            return frame
+
+        lenData = "%04x" % (size // 2)
+        buildPayload += Attribute + Status + DType + lenData + value
+        idx += size
 
     return encapsulate_plugin_frame("8100", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
@@ -362,46 +262,14 @@ def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint
         idx += 4
         DType = Data[idx : idx + 2]
         idx += 2
-        if DType in SIZE_DATA_TYPE:
-            size = SIZE_DATA_TYPE[DType] * 2
-
-        elif DType in ("48", "4c"):
-            # Today found for attribute 0xff02 Xiaomi, just take all data
-            nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
-            idx += 4
-            size = len(Data) - idx
-
-        elif DType in ("41", "42"):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
-            size = int(Data[idx : idx + 2], 16) * 2
-            idx += 2
-
-        elif DType == "00":
-            self.log.logging( "zclDecoder", "Error", "buildframe_report_attribute_response %s/%s Cluster: %s nbAttribute: %s Attribute: %s DType: %s idx: %s frame: %s" % (
-                SrcNwkId, SrcEndPoint, ClusterId, nbAttribute, Attribute, DType, idx, frame) )
+        idx, size, value = extract_value_size(self, Data, idx, DType )
+        if value is None and idx is None:
+            decoding_error(self, "buildframe_report_attribute_response", Sqn, SrcNwkId, SrcEndPoint, ClusterId, Attribute, DType, idx=idx, buildPayload=buildPayload, frame=frame, Data=Data)
             return frame
 
-        else:
-            _context = {
-                "Sqn": Sqn,
-                "NwkId": SrcNwkId,
-                "Ep": SrcEndPoint,
-                "Cluster": ClusterId,
-                "Attribute": Attribute,
-                "DType": DType,
-                "BuildPayload": buildPayload,
-                "Frame": frame,
-                "Data": Data,
-                "Idx": idx,
-            }
-            self.log.logging("zclDecoder", "Error", "buildframe_report_attribute_response - Unknown DataType size: >%s< vs. %s " % (
-                DType, str(SIZE_DATA_TYPE)), nwkid=SrcNwkId, context=_context)
-            return frame
-
-        data = Data[idx : idx + size]
-        idx += size
-        value = decode_endian_data(data, DType)
         lenData = "%04x" % (size // 2)
         buildPayload += Attribute + "00" + DType + lenData + value
+        idx += size
 
     return encapsulate_plugin_frame("8102", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
@@ -419,7 +287,7 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
         idx = 0
         nbAttribute = 0
         buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
-        while idx < len(Data):
+        while idx < len(Data) and len(Data[idx:]) >= 8:
             nbAttribute += 1
             Status = Data[idx : idx + 2]
             idx += 2
@@ -431,6 +299,7 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
 
     return encapsulate_plugin_frame("8120", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
+
 def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - %s %s %s Data: %s" % (
         SrcNwkId, SrcEndPoint, ClusterId, Data))
@@ -438,7 +307,7 @@ def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, Src
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId  
     
     idx = 0
-    while idx < len(Data):
+    while idx < len(Data) and len(Data[idx:]) >= 8:
         status = Data[idx:idx + 2]
         buildPayload += status
         idx += 2
@@ -540,6 +409,7 @@ def buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId,
     buildPayload = Sqn + SrcEndPoint + "0004" + status + groupid + SrcNwkId
     return encapsulate_plugin_frame("8061", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
+
 def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     #MsgSequenceNumber = MsgData[0:2]
     #MsgEP = MsgData[2:4]
@@ -601,7 +471,6 @@ def buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     return frame
              
 
-
 # Cluster 0x0006
 
 def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
@@ -618,6 +487,38 @@ def buildframe_80x5_message(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Ta
 
 
 # Cluster: 0x0019
+def buildframe_for_cluster_0019(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+    # OTA Upgrade
+    OTA_UPGRADE_COMMAND = {
+        "00": "Image Notify",
+        "01": "Query Next Image Request",
+        "02": "Query Next Image response",
+        "03": "Image Block Request",  # 8501
+        "04": "Image Page request",   # 8502
+        "05": "Image Block Response",
+        "06": "Upgrade End Request",  # 8503
+        "07": "Upgrade End response",
+        "08": "Query Device Specific File Request",
+        "09": "Query Device Specific File response",
+    }
+    if Command == "03":
+        # Image Block request,
+        return buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+    
+    if Command == "04":
+        # Image Page request
+        self.log.logging("zclDecoder", "Log", "Image Page request from '%s' for which no tests have been done so far. Please contact us" %SrcNwkId)
+        return buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+        
+    if Command == "06":
+        return buildframe_for_cluster_8503(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+        
+    elif Command in OTA_UPGRADE_COMMAND:
+        self.log.logging("zclDecoder", "Debug", "zcl_decoders OTA Upgrade Command %s/%s data: %s" % (Command, OTA_UPGRADE_COMMAND[Command], Data))
+        return frame
+    return frame
+
+
 def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
 
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
@@ -642,6 +543,7 @@ def buildframe_for_cluster_8501(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
     buildPayload += ImageOffset + ImageVersion + ImageType + ManufCode + MinBlockPeriod + MaxDataSize + FieldControl
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8501 payload: %s" %buildPayload)
     return encapsulate_plugin_frame("8501", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
 
 def buildframe_for_cluster_8502(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_for_cluster_8503 Building %s message : Cluster: %s Command: >%s< Data: >%s< (Frame: %s)" % (
@@ -712,6 +614,7 @@ def buildframe_0400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Target
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + enroll_response_code + zone_id
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
+
 def buildframe_8400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
     # IAS Zone Enroll request
     self.log.logging("zclDecoder", "Debug", "buildframe_8400_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
@@ -719,8 +622,7 @@ def buildframe_8400_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Target
     ManufacturerCode = decode_endian_data( Data[4:8], '21' )
     buildPayload = Sqn + zonetype + ManufacturerCode + SrcNwkId + SrcEndPoint
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
-    
-    
+
 
 def buildframe_8401_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_8401_cmd - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
@@ -736,3 +638,61 @@ def buildframe_8401_cmd(self, MsgType, frame, Sqn, SrcNwkId, SrcEndPoint, Target
     
     
     return encapsulate_plugin_frame(MsgType, buildPayload, frame[len(frame) - 4 : len(frame) - 2])
+
+
+# Helpers
+def extract_value( Data, DType, idx, size):
+    data = Data[idx : idx + size]
+    if DType in ( "43",):
+        return decode_endian_data(data, DType, size)
+        
+    return decode_endian_data(data, DType)
+
+
+def extract_value_size(self, Data, idx, DType ):
+
+    if DType in ("41", "42"):  # ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42
+        size = int(Data[idx : idx + 2], 16) * 2
+        idx += 2
+        if len(Data[idx:]) >= size:
+            value = extract_value( Data, DType, idx, size)
+            return idx, size, value
+
+    if DType in ("43", ):  # Long Octet 
+        size = (struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0] ) * 2
+        idx += 4
+        value = extract_value( Data, DType, idx, size) if size > 0 else ""
+        idx += size
+        return idx, size, value
+
+    if DType in ("48", "4c"):
+        # Today found for attribute 0xff02 Xiaomi, just take all data
+        nbElement = Data[idx + 2 : idx + 4] + Data[idx : idx + 2]
+        idx += 4
+        size = len(Data) - idx
+        value = extract_value( Data, DType, idx, size)
+        return idx, size, value
+    
+    if DType in SIZE_DATA_TYPE:
+        size = SIZE_DATA_TYPE[DType] * 2
+        value = extract_value( Data, DType, idx, size)
+        return idx, size, value
+
+    return None, None, None
+
+
+def decoding_error(self, source, sqn, nwkid, ep, cluster, attribute, DType, idx=None, buildPayload=None, frame=None, Data=None):
+    _context = {
+        "Sqn": sqn,
+        "NwkId": nwkid,
+        "Ep": ep,
+        "Cluster": cluster,
+        "Attribute": attribute,
+        "DType": DType,
+        "BuildPayload": buildPayload,
+        "Frame": frame,
+        "Data": Data,
+        "Idx": idx,
+    }
+    self.log.logging("zclDecoder", "Error", "%s - decoding_error - Unknown DataType size: >%s< vs. %s " % (
+        source, DType, str(SIZE_DATA_TYPE)), nwkid=nwkid, context=_context)
