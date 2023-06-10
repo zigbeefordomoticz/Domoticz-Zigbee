@@ -1,0 +1,55 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1607",
+    "_blakadder": "https://zigbee.blakadder.com/Aqara_ZNJLBL01LM.html ",
+    "Ep": {
+        "01": {
+            "0000": { 
+                "Attributes": {
+                    "fff0": { "Enabled": true, "Name": "Aqara_0000_fff0", "DataType": "42" , "ManufRawData": true, "ManufSpecificFunc": "Lumi_fcc0", "ActionList": [ "check_store_value"]},
+                    "ff01": { "Enabled": true, "Name": "Aqara_0000_ff01", "DataType": "42" , "ManufRawData": true, "ManufSpecificFunc": "Lumi_fcc0", "ActionList": [ "check_store_value"]},
+                    "ff02": { "Enabled": true, "Name": "Aqara_0000_ff02", "DataType": "4c" , "ManufRawData": true, "ManufSpecificFunc": "Lumi_fcc0", "ActionList": [ "check_store_value"]}  
+                }
+            },
+            "0002": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0006": "",
+            "0009": "",
+            "000a": "",
+            "000d": {
+                "Attributes": {
+                    "0055": {  
+                        "Enabled": true, 
+                        "Name": "CurtainPosition", 
+                        "DataType": "39" , 
+                        "Acc": "RW" , 
+                        "Mandatory": false, 
+                        "EvalExp": "(100 - value)", 
+                        "UpdDomoDeviceWithCluster": "0102",
+                        "UpdDomoDeviceWithAttribute": "0008",
+                        "ActionList": [ "check_store_value", "upd_domo_device"] }
+                }
+            },
+            "0013": "",
+            "0019": "",
+            "0102": "",
+            "Type": "Temp/Curtain"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ ],
+    "ConfigureReporting": {
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "000a", "4000"],
+        "0006": [],
+        "000d": [ "0055" ],
+        "0013": [],
+        "0019": [],
+        "0102": [ "0000", "0007", "0008" ]
+
+    },
+    "BatteryDevice": 1,
+    "BatteryPoweredDevice": 1
+}
