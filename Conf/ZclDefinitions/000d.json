@@ -1,0 +1,10 @@
+{
+    "ClusterId": "000d",
+    "Description": "Analog Output",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0055": {  "Enabled": true, "Name": "PresentValue", "DataType": "39" , "Acc": "RW" , "Mandatory": false, "ActionList": [ "check_store_value"] }
+
+    }
+}

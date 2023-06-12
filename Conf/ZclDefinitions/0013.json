@@ -1,0 +1,9 @@
+{
+    "ClusterId": "0013",
+    "Description": "Multistate Output",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0055": {  "Enabled": true, "Name": "PresentValue", "DataType": "21" , "Acc": "RW" , "Mandatory": false, "ActionList": [ "check_store_value"] }
+    }
+}

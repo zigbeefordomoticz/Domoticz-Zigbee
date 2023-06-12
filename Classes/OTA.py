@@ -1109,12 +1109,11 @@ def async_request(  # OK 24/10
         MsgSrcAddr, self.ListInUpdate["AuthorizedForUpdate"]))
 
     if MsgSrcAddr not in self.ListInUpdate["AuthorizedForUpdate"]:
+        if ( "autoServeOTA" in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["autoServeOTA"] ):
+            return False
+        
         # We need to prevent looping on serving if it is not expected!
-        logging(
-            self,
-            "Error",
-            "async_request: There is no upgrade plan for that device, drop request from %s" % (MsgSrcAddr),
-        )
+        logging( self, "Error", "async_request: There is no upgrade plan for that device, drop request from %s" % (MsgSrcAddr), )
         return False
 
     if self.ListInUpdate["NwkId"]:

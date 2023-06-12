@@ -86,13 +86,11 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         # Handle in inRawAPS
         return frame
 
-    if ClusterId in ( "ef00", "ff00"):
-        # Do not log a message as this will be handled by the inRawAPS and delegated.
-        self.log.logging( "zclDecoder", "Debug", "zcl_decoders do not handle that Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s" % (
-            Command, SrcNwkId, SrcEndPoint, ClusterId, Data, GlobalCommand, Sqn, ManufacturerCode, ),)
-        return frame
-    
-    if ClusterId == "fc00" and ManufacturerCode == "100b":
+    if (
+        ClusterId in ( "ef00", "ff00")    # Do not log a message as this will be handled by the inRawAPS and delegated.
+        or ( ClusterId == "fc00" and ManufacturerCode == "100b")
+        or ( ClusterId == "ffac" and ManufacturerCode == "113c")
+    ):
         return frame
     
     self.log.logging( "zclDecoder", "Log", "zcl_decoders Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s" % (
@@ -657,6 +655,9 @@ def extract_value_size(self, Data, idx, DType ):
         if len(Data[idx:]) >= size:
             value = extract_value( Data, DType, idx, size)
             return idx, size, value
+        value = extract_value( Data, DType, idx, len(Data[idx:]))
+        idx += size
+        return idx, size, value
 
     if DType in ("43", ):  # Long Octet 
         size = (struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0] ) * 2
@@ -694,5 +695,5 @@ def decoding_error(self, source, sqn, nwkid, ep, cluster, attribute, DType, idx=
         "Data": Data,
         "Idx": idx,
     }
-    self.log.logging("zclDecoder", "Error", "%s - decoding_error - Unknown DataType size: >%s< vs. %s " % (
-        source, DType, str(SIZE_DATA_TYPE)), nwkid=nwkid, context=_context)
+    self.log.logging("zclDecoder", "Error", "%s - decoding_error - %s %s %s %s %s %s %s %s %s %s" % (
+        source, sqn, nwkid, ep, cluster, attribute, DType, idx, buildPayload, frame, Data ), nwkid=nwkid, context=_context)

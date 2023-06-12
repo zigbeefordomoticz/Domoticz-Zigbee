@@ -782,7 +782,11 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s ApprochingDistance %s/%s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sApproachDistance, MsgClusterData), MsgSrcAddr, )
             if int(sApproachDistance,16) in _APPROCHING_DISTANCE:
                 self.log.logging( "Lumi", "Debug", "%s/%s RTCZCGQ11LM (lumi.motion.ac01) Approaching distance : %s" %(MsgSrcAddr, MsgSrcEp,_APPROCHING_DISTANCE[ int(sApproachDistance,16) ]) )
-        
+
+    if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.curtain.acn002":
+        sBatteryLvl = retreive4Tag("6521", MsgClusterData)
+        sHumid = ""
+            
     if sCountEvent != "":
         value = int(sCountEvent, 16)
         store_lumi_attribute(self, MsgSrcAddr, "EventCounter", value)

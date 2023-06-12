@@ -719,7 +719,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 1, "100", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         else:
             previous_level = get_previous_switch_level(self, NWKID, EPout)
-            self.log.logging( "Command", "Log", "mgtCommand : Previous Level was %s" % (
+            self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s" % (
                 previous_level), NWKID, )
 
             if previous_level is None:
