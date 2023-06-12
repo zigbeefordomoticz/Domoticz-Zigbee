@@ -179,11 +179,8 @@ class LoggingManagement:
 
 
     def open_log_history(self):
-        Domoticz.Log("open_log_history %s" % (self.HardwareID))
-        
         _pluginlogs = Path( self.pluginconf.pluginConf["pluginLogs"] )
         jsonLogHistory = _pluginlogs / ( LOG_ERROR_HISTORY + "%02d.json" % self.HardwareID) 
-        Domoticz.Log("open_log_history %s" % (jsonLogHistory))
         try:
             handle = open(jsonLogHistory, "r", encoding="utf-8")
         except Exception as e:
@@ -410,7 +407,6 @@ def loggingBuildContext(self, thread_name, module, message, nwkid, context):
 def loggingWriteErrorHistory(self):
     _pluginlogs = Path( self.pluginconf.pluginConf["pluginLogs"] )
     jsonLogHistory = _pluginlogs / ( LOG_ERROR_HISTORY + "%02d.json" % self.HardwareID) 
-    Domoticz.Log("open_log_history %s" % (jsonLogHistory))
     
     with open(jsonLogHistory, "w", encoding="utf-8") as json_file:
         try:
