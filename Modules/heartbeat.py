@@ -46,12 +46,13 @@ from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
                            get_device_nickname, getListOfEpForCluster, is_hex,
                            is_time_to_perform_work, mainPoweredDevice,
-                           night_shift_jobs, removeNwkInList)
+                           night_shift_jobs, removeNwkInList, getAttributeValue)
 from Modules.tuyaTRV import tuya_switch_online
 from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 from Zigbee.zdpCommands import (zdp_node_descriptor_request,
                                 zdp_NWK_address_request)
+from Modules.readAttributes import ReadAttributeReq
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -135,6 +136,79 @@ def attributeDiscovery(self, NwkId):
     return rescheduleAction
 
 
+def DeviceCustomPolling(self, NwkId, HB):
+    # "CustomPolling": {
+    #     "EPin": "01",
+    #     "EPout": "01",
+    #     "Frequency": 60,
+    #     "ManufCode": "1234"
+    #     "ClusterAttributesList": {
+    #         "0702": [ "0000","0100","0102","0104","0106","0108","010a","0400" ],
+    #         "0b01": [ "000a", "000c", "000d", "000e" ],
+    #         "0b04": [ "0508", "0505" ],
+    #     }
+    # },
+    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  %s " % (NwkId,), NwkId, )
+
+    if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+        return True
+
+    last_custom_polling = self.ListOfDevices[ NwkId ][ "LastCustomPolling"] if "LastCustomPolling" in self.ListOfDevices[ NwkId ] else None
+    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  %s %s %s" % (NwkId, last_custom_polling, HB), NwkId, )
+    if last_custom_polling == HB:
+        return False
+    model_name = self.ListOfDevices[ NwkId ]["Model"] if "Model" in self.ListOfDevices[ NwkId ] else None
+    
+    if "Param" in self.ListOfDevices[ NwkId ] and "CustomPolling" in self.ListOfDevices[ NwkId ][ "Param" ]:
+        custom_polling = self.ListOfDevices[ NwkId ][ "Param" ][ "CustomPolling" ]
+        
+    elif model_name and "CustomPolling" in self.DeviceConf[model_name ]:
+        custom_polling = self.DeviceConf[model_name ][ "CustomPolling" ]
+        
+    else:
+        return False
+
+    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  %s  %s" % (NwkId,custom_polling), NwkId, )
+
+    EpIn = custom_polling[ "EPin"] if "EPin" in custom_polling else "01"
+    EpOut = custom_polling[ "EPout"] if "EPout" in custom_polling else "01"
+    
+    if "Frequency" not in custom_polling:
+        return False
+    if "ClusterAttributesList" not in custom_polling:
+        return False
+    
+    frequency = int( custom_polling[ "Frequency" ]) // HEARTBEAT
+    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  Frequency: %s %s / %s" % (
+        NwkId, frequency , HB ), NwkId, )
+
+    if frequency == 0:  # Disable
+        return False
+    if (HB % frequency) != 0:
+        return False
+
+    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  Poll attributes: %s " % (
+        NwkId,), NwkId, )
+
+    self.ListOfDevices[ NwkId ]["LastCustomPolling"] = HB
+    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  Ready to poll %s %s" % (
+        NwkId, self.ListOfDevices[ NwkId ]["LastCustomPolling"]), NwkId, )
+
+    manuf_specif = "00"
+    manuf_code = "0000"
+    if "ManufCode" in custom_polling:
+        manuf_specif = "01"
+        manuf_code = custom_polling[ "ManufCode"]
+
+    for cluster in custom_polling["ClusterAttributesList"]:
+        str_attribute_lst = custom_polling["ClusterAttributesList"][ cluster ]
+        ListOfAttributes = [int( x, 16) for x in str_attribute_lst]
+        self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  %s Cluster: %s Attributes: %s Manuf: %s/%s " % (
+            NwkId, cluster, str_attribute_lst, manuf_specif, manuf_code ), NwkId, )
+        ReadAttributeReq( self, NwkId, EpIn, EpOut, cluster, ListOfAttributes, manufacturer_spec=manuf_specif, manufacturer=manuf_code)
+
+    return False
+
 def ManufSpecOnOffPolling(self, NwkId):
     ReadAttributeRequest_0006_0000(self, NwkId)
     ReadAttributeRequest_0008_0000(self, NwkId)
@@ -203,7 +277,7 @@ def check_delay_binding( self, NwkId, model ):
         self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"] = "Completed"
 
         
-    
+
 def pollingManufSpecificDevices(self, NwkId, HB):
 
     FUNC_MANUF = {
@@ -232,25 +306,18 @@ def pollingManufSpecificDevices(self, NwkId, HB):
     if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
         return True
 
-    self.log.logging(
-        "Heartbeat",
-        "Debug",
-        "++ pollingManufSpecificDevices -  %s " % (NwkId,),
-        NwkId,
-    )
+    if "LastPollingManufSpecificDevices" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ][ "LastPollingManufSpecificDevices"] == HB:
+        return False
+
+    self.log.logging( "Heartbeat", "Debug", "++ pollingManufSpecificDevices -  %s " % (NwkId,), NwkId, )
 
     for param in self.ListOfDevices[NwkId]["Param"]:
         if param == "ZLinkyPollingPTEC":
             # We are requesting to execute at a particular time
             _current_time = datetime.datetime.now().strftime("%H:%M" )
             _target_time = self.ListOfDevices[NwkId]["Param"][ param ]
-            self.log.logging(
-                "Heartbeat",
-                "Debug",
-                "++ pollingManufSpecificDevices -  %s ScheduledZLinkyRead: Current: %s Target: %s"
-                % (NwkId,_current_time, _target_time  ),
-                NwkId,
-            )
+            self.log.logging( "Heartbeat", "Debug", "++ pollingManufSpecificDevices -  %s ScheduledZLinkyRead: Current: %s Target: %s" % (
+                NwkId,_current_time, _target_time  ), NwkId, )
 
             if _current_time == _target_time and "ScheduledZLinkyRead" not in self.ListOfDevices[ NwkId ]:
                 self.ListOfDevices[ NwkId ][ "ScheduledZLinkyRead" ] = True
@@ -263,21 +330,12 @@ def pollingManufSpecificDevices(self, NwkId, HB):
             _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
             if _FEQ == 0:  # Disable
                 continue
-            self.log.logging(
-                "Heartbeat",
-                "Debug",
-                "++ pollingManufSpecificDevices -  %s Found: %s=%s HB: %s FEQ: %s Cycle: %s"
-                % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param], HB, _FEQ, (HB % _FEQ)),
-                NwkId,
-            )
+            self.log.logging( "Heartbeat", "Debug", "++ pollingManufSpecificDevices -  %s Found: %s=%s HB: %s FEQ: %s Cycle: %s" % (
+                NwkId, param, self.ListOfDevices[NwkId]["Param"][param], HB, _FEQ, (HB % _FEQ)), NwkId, )
             if _FEQ and ((HB % _FEQ) != 0):
                 continue
-            self.log.logging(
-                "Heartbeat",
-                "Debug",
-                "++ pollingManufSpecificDevices -  %s Found: %s=%s" % (NwkId, param, self.ListOfDevices[NwkId]["Param"][param]),
-                NwkId,
-            )
+            self.log.logging( "Heartbeat", "Debug", "++ pollingManufSpecificDevices -  %s Found: %s=%s" % (
+                NwkId, param, self.ListOfDevices[NwkId]["Param"][param]), NwkId, )
 
             func = FUNC_MANUF[param]
             func(self, NwkId)
@@ -292,6 +350,7 @@ def pollingDeviceStatus(self, NwkId):
 
     if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
         return True
+    
     self.log.logging("Heartbeat", "Debug", "--------> pollingDeviceStatus Device %s" % NwkId, NwkId)
     if len(getListOfEpForCluster(self, NwkId, "0006")) != 0:
         ReadAttributeRequest_0006_0000(self, NwkId)
@@ -594,6 +653,9 @@ def processKnownDevices(self, Devices, NWKID):
         # Priority on getting the status, nothing more to be done!
         return
 
+    # Device Custom defined Polling
+    rescheduleAction = rescheduleAction or DeviceCustomPolling(self, NWKID, intHB)
+    
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = rescheduleAction or pollingManufSpecificDevices(self, NWKID, intHB)
 
@@ -621,6 +683,7 @@ def processKnownDevices(self, Devices, NWKID):
             NWKID,
         )
 
+        
         # Read Attributes if enabled
         now = int(time.time())  # Will be used to trigger ReadAttributes
         for tmpEp in self.ListOfDevices[NWKID]["Ep"]:
@@ -711,6 +774,12 @@ def processKnownDevices(self, Devices, NWKID):
     
     if rescheduleAction and intHB != 0:  # Reschedule is set because Zigate was busy or Queue was too long to process
         self.ListOfDevices[NWKID]["Heartbeat"] = str(intHB - 1)  # So next round it trigger again
+    else: 
+        if "LastPollingManufSpecificDevices" in self.ListOfDevices[ NWKID ]:
+            del self.ListOfDevices[ NWKID ][ "LastPollingManufSpecificDevices"]
+        if "LastCustomPolling" in self.ListOfDevices[ NWKID ]:
+            del self.ListOfDevices[ NWKID ][ "LastCustomPolling"]
+
 
     return
 

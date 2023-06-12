@@ -26,6 +26,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "cfgrpt-ondemand": {"Name": "cfgrpt-ondemand", "Verbs": {"GET"}, "function": self.rest_cfgrpt_ondemand},
         "cfgrpt-ondemand-config": {"Name": "cfgrpt-ondemand-config", "Verbs": { "GET", "PUT", "DELETE" }, "function": self.rest_cfgrpt_ondemand_with_config},
         "change-channel": {"Name": "change-channel", "Verbs": {"PUT"}, "function": self.rest_change_channel},
+        "change-model": {"Name": "change-model", "Verbs": {"PUT"}, "function": self.rest_change_model_name},
         "clear-error-history": { "Name": "clear-error-history", "Verbs": {"GET"}, "function": self.rest_logErrorHistoryClear },
         "dev-cap": {"Name": "dev-cap", "Verbs": {"GET"}, "function": self.rest_dev_capabilities},
         "dev-command": {"Name": "dev-command", "Verbs": {"PUT"}, "function": self.rest_dev_command},
@@ -84,10 +85,10 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
     HTTPresponse = {}
 
     if command not in REST_COMMANDS:
-        self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
+        self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !" % (verb, command, parameters))
     
     elif verb not in REST_COMMANDS[command]["Verbs"]:
-        self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!!" % (verb, command, parameters))
+        self.logging("Error", "do_rest - Verb: %s, Command: %s, Param: %s not found !!" % (verb, command, parameters))
 
     elif command in REST_COMMANDS and verb in REST_COMMANDS[command]["Verbs"]:
         self.logging("Debug", "do_rest - Verb: %s, Command: %s, Param: %s found ready to execute" % (verb, command, parameters))

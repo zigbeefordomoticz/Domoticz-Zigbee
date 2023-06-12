@@ -1,0 +1,64 @@
+{
+    "_comment": "Chameleon TIC for Linky Historique Mono HC/HP",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "000a": "",
+            "0700": "",
+            "0701": "",
+            "0702": { "Attributes": {
+                "0020": { "Name": "NTARF", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "0100": { "Name": "HCHC", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "0102": { "Name": "HCHP", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "0308": { "Name": "ADSC", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "030f": { "Name": "OPTARIF", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "0400": { "Name": "PAPP", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device"  ] }
+                }
+            },
+            "0703": "",
+            "0705": "",
+            "0b01": {
+                "Attributes": {
+                    "000d": { "Name": "ISOUSC", "DataType": "25", "ActionList": [ "check_store_value", "store_specif_attribute" ] }
+                }
+            },
+            "0b04": {
+                "Attributes": {
+                    "0508": { "Name": "RMSCurrent", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device" ] },
+                    "0304": { "Name": "Total Active Power", "DataType": "2b", "ActionList": [ "check_store_value", "store_specif_attribute" ] }
+                }
+            },
+            "0b05": "",
+            "070d": "",
+            "0019": "",
+            "Type": "Switch/Meter/Power/P1Meter/Ampere"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0702", "0b04" ],
+    "ConfigureReporting": {
+        "0702": {
+            "Attributes": {
+                "0100": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" },
+                "0102": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" }
+            }
+        },
+        "0b04": {
+            "Attributes": {
+                "0508": { "DataType": "21", "MinInterval": "000A", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
+                "050f": { "DataType": "21", "MinInterval": "000E", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }
+            }
+        }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006" ],
+        "0b01": [ "000d" ],
+        "0702": [ "0300", "0301", "0302", "0020", "0100", "0102", "0308", "030f", "0400" ],
+        "0b04": [ "0600", "0601", "0602", "0603", "0604", "0605", "0508", "050f" ],
+        "0019": []
+    },
+    "PollingEnabled": 1,
+    "Param": {
+    }
+}

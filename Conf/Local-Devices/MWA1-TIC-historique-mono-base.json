@@ -1,0 +1,76 @@
+{
+    "_comment": "Chameleon TIC for Linky Historique Mono Base",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "0006": {
+                "Attributes": {
+                    "0000": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "ContactSec", "Name": "IRM", "DataType": "21", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device" ] }
+                }
+            },
+            "000a": "",
+            "0700": "",
+            "0701": "",
+            "0702": { "Attributes": {
+                "0000": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "BASE", "Name": "BASE", "DataType": "25", "EvalFunc": "compute_metering_conso", "UpdDomoDeviceWithAttribute": "0000", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device" ] },
+                "0020": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "NTARF", "Name": "NTARF", "DataType": "30", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "0308": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "ADSC", "Name": "ADSC", "DataType": "41", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "030f": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "OPTARIF", "Name": "OPTARIF", "DataType": "41", "ActionList": [ "check_store_value", "store_specif_attribute" ] },
+                "0400": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "PAPP", "Name": "PAPP", "DataType": "2a", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device"  ] }
+                }
+            },
+            "0703": "",
+            "0705": "",
+            "0b01": { 
+                "Attributes": { 
+                    "000d": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "ISOUSC", "Name": "ISOUSC", "DataType": "2a", "ActionList": [ "check_store_value", "store_specif_attribute" ] }
+                }
+            },
+            "0b04": {
+                "Attributes": {
+                    "0508": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "RMSCurrent", "Name": "RMSCurrent", "DataType": "21", "EvalFunc": "compute_electrical_measurement_conso", "UpdDomoDeviceWithAttribute": "0508", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device" ] },
+                    "0304": { "SpecifStoragelvl1": "Chameleon", "SpecifStoragelvl2": "SINSTS", "Name": "SINSTS", "DataType": "2b", "ActionList": [ "check_store_value", "store_specif_attribute" ] }
+                }
+            },
+            "0b05": "",
+            "070d": "",
+            "0019": "",
+            "Type": "Switch/Meter/Power/P1Meter/Voltage/Ampere"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0702", "0b04" ],
+    "ConfigureReporting": {
+        "0702": {
+            "Attributes": {
+                "0000": { "DataType": "25", "MinInterval": "003C", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "000000000001" }
+            }
+        },
+        "0b04": {
+            "Attributes": {
+                "0508": { "DataType": "21", "MinInterval": "000A", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" },
+                "050f": { "DataType": "21", "MinInterval": "000E", "MaxInterval": "0E10", "TimeOut": "0000", "Change": "0001" }
+            }
+        }
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006" ],
+        "0b01": [ "000d" ],
+        "0702": [ "0300", "0301", "0302", "0000", "0020", "0308", "030f", "0400"],
+        "0b04": [ "0600", "0601", "0602", "0603", "0604", "0605", "0508", "0304" ],
+        "0019": []
+    },
+    "PollingEnabled": 1,
+    "CustomPolling": {
+        "EPin": "01",
+        "EPout": "01",
+        "Frequency": 30,
+        "ClusterAttributesList": {
+            "0702": [ "0000", "0020", "0308", "030f", "0400" ],    
+            "0b04": [ "0508", "0304" ]
+        }
+    },
+    "Param": {
+    }
+}
