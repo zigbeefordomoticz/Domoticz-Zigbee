@@ -162,7 +162,7 @@ def DeviceCustomPolling(self, NwkId, HB):
     if "Param" in self.ListOfDevices[ NwkId ] and "CustomPolling" in self.ListOfDevices[ NwkId ][ "Param" ]:
         custom_polling = self.ListOfDevices[ NwkId ][ "Param" ][ "CustomPolling" ]
         
-    elif model_name and "CustomPolling" in self.DeviceConf[model_name ]:
+    elif model_name and model_name in self.DeviceConf and "CustomPolling" in self.DeviceConf[model_name ]:
         custom_polling = self.DeviceConf[model_name ][ "CustomPolling" ]
         
     else:
