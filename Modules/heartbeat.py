@@ -392,25 +392,15 @@ def checkHealth(self, NwkId):
         self.ListOfDevices[NwkId]["Health"] = "unknown"
 
     if (
-        int(time.time())
-        > (self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] + 21200)
+        int(time.time()) > (self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] + 21200)
         and self.ListOfDevices[NwkId]["Health"] == "Live"
     ):
         if "ZDeviceName" in self.ListOfDevices[NwkId]:
-            Domoticz.Error(
-                "Device Health - %s Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network"
-                % (
-                    self.ListOfDevices[NwkId]["ZDeviceName"],
-                    NwkId,
-                    self.ListOfDevices[NwkId]["IEEE"],
-                    self.ListOfDevices[NwkId]["Model"],
-                )
-            )
+            self.log.logging("Heartbeat", "Debug", "Device Health - %s Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" % (
+                self.ListOfDevices[NwkId]["ZDeviceName"], NwkId, self.ListOfDevices[NwkId]["IEEE"], self.ListOfDevices[NwkId]["Model"],))
         else:
-            Domoticz.Error(
-                "Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network"
-                % (NwkId, self.ListOfDevices[NwkId]["IEEE"], self.ListOfDevices[NwkId]["Model"])
-            )
+            self.log.logging("Heartbeat", "Debug", "Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" % (
+                NwkId, self.ListOfDevices[NwkId]["IEEE"], self.ListOfDevices[NwkId]["Model"]) )
         self.ListOfDevices[NwkId]["Health"] = "Not seen last 24hours"
 
     # If device flag as Not Reachable, don't do anything
