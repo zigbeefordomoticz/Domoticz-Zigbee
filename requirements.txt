@@ -3,6 +3,6 @@ dnspython==2.3.0
 pyserial>=3.5
 z4d-certified-devices
 zigpy==0.56.0
-zigpy_deconz==0.20.0
+zigpy_deconz==0.21.0
 zigpy_znp==0.10.0
 charset-normalizer==2.0.11

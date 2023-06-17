@@ -201,7 +201,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.config[bellows_conf.CONF_NWK][bellows_conf.CONF_NWK_CHANNEL] = channel
         await self._ezsp.leaveNetwork()
         await super().form_network()
-            
+
     async def remove_ieee(self, ieee):
         await self.remove( ieee )
 

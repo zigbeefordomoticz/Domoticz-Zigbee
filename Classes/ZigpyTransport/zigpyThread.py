@@ -401,8 +401,11 @@ async def dispatch_command(self, data):
         await self.app.set_time_server(data["datas"]["Param1"])
     elif data["cmd"] == "SET-EXTPANID":
         self.app.set_extended_pan_id(data["datas"]["Param1"])
+        
     elif data["cmd"] == "SET-CHANNEL":
-        self.app.set_channel(data["datas"]["Param1"])
+        await self.app.move_network_to_channel( data["datas"]["Param1"])
+        #self.app.set_channel(data["datas"]["Param1"])
+        
     elif data["cmd"] == "REMOVE-DEVICE":
         ieee = data["datas"]["Param1"]
         await self.app.remove_ieee(t.EUI64(t.uint64_t(ieee).serialize()))
