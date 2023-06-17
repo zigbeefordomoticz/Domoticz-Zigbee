@@ -793,6 +793,10 @@ def mgt_binding_table_req( self, nwkid, start_index="00"):
 def initiate_change_channel(self, new_channel):
 
     self.log.logging("BasicOutput", "Debug", "initiate_change_channel - channel: %s" % new_channel)
+    
+    if self.zigbee_communication == "zigpy":
+        zigpy_initiate_change_channel(self, new_channel)
+        
     scanDuration = "fe"  # Initiate a change
  
     channel_mask = "%08x" % maskChannel(self, new_channel)
@@ -807,3 +811,10 @@ def initiate_change_channel(self, new_channel):
     zigate_get_nwk_state(self)
     if "0000" in self.ListOfDevices:
         self.ListOfDevices["0000"]["CheckChannel"] = new_channel
+
+def zigpy_initiate_change_channel(self, new_channel):
+    
+        self.ControllerLink.sendData( "SET-CHANNEL", {"Param1": new_channel}) 
+        zigate_get_nwk_state(self)
+        if "0000" in self.ListOfDevices:
+            self.ListOfDevices["0000"]["CheckChannel"] = new_channel
