@@ -29,7 +29,7 @@ CACHE_TIMEOUT = (15 * 60) + 15  # num seconds
 def init_domoticz_api(self):
     
     if is_domoticz_new_API(self):
-        self.logging("Log", 'Init domoticz api based on new api')
+        self.logging("Debug", 'Init domoticz api based on new api')
         init_domoticz_api_settings(
             self,
             "type=command&param=getsettings",
@@ -37,7 +37,7 @@ def init_domoticz_api(self):
             "type=command&param=getdevices&rid=",
         )
     else:
-        self.logging("Log", 'Init domoticz api based on old api')
+        self.logging("Debug", 'Init domoticz api based on old api')
         init_domoticz_api_settings(
             self, "type=settings", "type=hardware", "type=devices&rid="
         )
