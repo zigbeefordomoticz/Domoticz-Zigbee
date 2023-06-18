@@ -1709,6 +1709,9 @@ def is_domoticz_above_2023(self):
     return self.DomoticzMajor > 2023
     
 def is_domoticz_new_API(self):
+
+    self.log.logging("Input", "Log", "is_domoticz_new_API() %s %s %s %s" %(
+        is_domoticz_below_2023(self), is_domoticz_2023(self), self.DomoticzMinor, self.DomoticzBuild))
     
     if is_domoticz_below_2023(self):
         return False
