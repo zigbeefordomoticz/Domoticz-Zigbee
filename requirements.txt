@@ -1,4 +1,4 @@
-bellows==0.35.5
+bellows==0.35.6
 dnspython==2.3.0
 pyserial>=3.5
 z4d-certified-devices

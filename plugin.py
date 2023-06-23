@@ -414,7 +414,7 @@ class BasePlugin:
             self.DomoticzBuild,
             self.DomoticzMajor,
             self.DomoticzMinor,
-)
+        )
 
         self.log.logging("Plugin", "Debug", "   - Hardware table")
         self.domoticzdb_Hardware = DomoticzDB_Hardware(
@@ -1504,7 +1504,7 @@ def check_python_modules_version( self ):
         "zigpy": "0.56.1",
         "zigpy_znp": "0.11.2",
         "zigpy_deconz": "0.21.0",
-        "bellows": "0.35.5",
+        "bellows": "0.35.6",
         }
 
     flag = True
