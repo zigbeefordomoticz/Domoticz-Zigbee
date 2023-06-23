@@ -461,9 +461,12 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     payload = bytes.fromhex(data["payload"])
     sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
-    #extended_timeout = not data["RxOnIdle"] if "RxOnIdle" in data else False    # In case the device do not Rx on Idle, then we set extended_timeout to True if Ack expected
-    extended_timeout = False
     result = None
+    
+    # extended_timeout managed the retry at zigpy level ( instruct the radio to use slower APS retries )
+    # If the device is not listening on Idle ( end device ), enable the retry
+    # However if PluginRetrys enabled, then we disable the slower APS retry as the plugin will do.
+    extended_timeout = not data["RxOnIdle"] if ("RxOnIdle" in data and not self.pluginconf.pluginConf["PluginRetrys"]) else False
 
     delay = data["Delay"] if "Delay" in data else None
     self.log.logging(
