@@ -414,7 +414,7 @@ class BasePlugin:
             self.DomoticzBuild,
             self.DomoticzMajor,
             self.DomoticzMinor,
-)
+        )
 
         self.log.logging("Plugin", "Debug", "   - Hardware table")
         self.domoticzdb_Hardware = DomoticzDB_Hardware(
