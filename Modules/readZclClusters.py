@@ -51,7 +51,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     _datatype = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DataType", model=device_model)
     _manuf_specific_cluster = _cluster_manufacturer_function(self, MsgSrcEp, MsgClusterId, MsgAttrID, model=device_model)
     
-    if _manuf_specific_cluster is None and _datatype != MsgAttType:
+    if _manuf_specific_cluster is None and _datatype and _datatype != MsgAttType:
         # When ManufSpecificCluster, do not check DataType as we don't have the info
         self.log.logging("ZclClusters", "Log", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with expected %s" %( 
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ))
