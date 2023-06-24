@@ -6,3 +6,4 @@ zigpy==0.56.1
 zigpy_deconz==0.21.0
 zigpy_znp==0.11.2
 charset-normalizer==2.0.11
+distro
