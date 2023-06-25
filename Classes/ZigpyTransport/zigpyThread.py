@@ -613,7 +613,6 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
     # AckIsDisable ( we do not want Ack, so expect_reply to be set to True)
     # not AckIsDisable ( we want Ack, so expect_reply to be set to False )
 
- 
     _nwkid = destination.nwk.serialize()[::-1].hex()
     _ieee = str(destination.ieee)
     if not check_transport_readiness:
@@ -643,37 +642,33 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
         for attempt in range(max_retry):  
             try:   
                 result, msg = await self.app.request( destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout )
+                # Slow down the through put when too many commands. Try to not overload the coordinators
+                multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
+                await asyncio.sleep( multi * WAITING_TIME_BETWEEN_COMMANDS)
 
             except DeliveryError as e:
+                # Error when sending the request
                 # This could be relevant to APS NACK after retry
                 # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
-                if attempt == max_retry - 1:
-                    self.log.logging("TransportError", "Debug", "| %s | %s | %04x | %04x | %s | %s | %s | %s" %( 
-                        e, destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout), _nwkid )
+
+                self.log.logging("TransportError", "Debug", "transport_request failed | %s | %s | %04x | %04x | %s | %s | %s | %s" %(
+                    e, destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout), _nwkid )
+
+                if attempt != ( max_retry - 1):
+                    await asyncio.sleep( WAITING_TIME_BETWEEN_ATTEMPS )
+                    self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s) RETRY: %s due to %s" %(
+                        _ieee, Profile, type(Profile), Cluster, type(Cluster), (attempt + 1), result,))
+                    continue
+
+                # This is the last attemp, then we will trigger a failure
                 try:
                     result = int(e.status)
                 except Exception as _:
+                    self.log.logging("TransportError", "Debug", "Error while converting e.status: %s - %s" %( e, _))
                     result = 0xB6
-                    
+
                 if _ieee not in self._currently_not_reachable:
                     self._currently_not_reachable.append( _ieee )
-                    
-            except Exception as e:
-                result = 0xB6
-                self.log.logging( "TransportZigpy", "Debug", "transport_request: request %s %04x %04x %s %s %s %s failed with error %s" % (
-                    destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout, e), _nwkid, )
-                break
-                
-            if result == 0x00:
-                break
-                 
-            self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command  %s %s (%s) %s (%s) RETRY: %s due to %s" %( 
-                _ieee, Profile, type(Profile), Cluster, type(Cluster), (attempt + 1), result,))
-            await asyncio.sleep( WAITING_TIME_BETWEEN_ATTEMPS )
-            
-            # Slow down the through put when too many commands. Try to not overload the coordinators
-            multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
-            await asyncio.sleep( multi * WAITING_TIME_BETWEEN_COMMANDS)
 
     if not ack_is_disable:
         push_APS_ACK_NACKto_plugin(self, _nwkid, result, destination.lqi)
