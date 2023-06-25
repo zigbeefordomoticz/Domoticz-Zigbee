@@ -641,7 +641,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                 # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
 
                 self.log.logging("TransportError", "Debug", "transport_request failed | %s | %s | %04x | %04x | %s | %s | %s | %s" %( 
-                        e, destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout), _nwkid )
+                    e, destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout), _nwkid )
 
                 if attempt != ( max_retry - 1):
                     await asyncio.sleep( WAITING_TIME_BETWEEN_ATTEMPS )
@@ -656,7 +656,7 @@ async def transport_request( self, destination, Profile, Cluster, sEp, dEp, sequ
                     result = int(e.status)
                     
                 except Exception as _:
-                    self.log.logging("TransportError", "Debug", "Error while converting e.status: % - %s" %( e, _))
+                    self.log.logging("TransportError", "Debug", "Error while converting e.status: %s - %s" %( e, _))
                     result = 0xB6
 
                 if _ieee not in self._currently_not_reachable:
