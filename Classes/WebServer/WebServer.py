@@ -332,10 +332,12 @@ class WebServer(object):
 
     def rest_nwk_stat(self, verb, data, parameters):
 
+        self.logging("Debug", "rest_nwk_stat(self, %s, %s, %s)" % (verb, data, parameters))
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkEnergy-v3-" + "%02d" % self.hardwareID + ".json"
+        _filename = self.pluginconf.pluginConf["pluginReports"] + "/NetworkEnergy-v3-" + "%02d" % self.hardwareID + ".json"
 
+        self.logging("Debug", "filename %s" % (_filename))
         _timestamps_lst = []  # Just the list of Timestamps
         _scan = {}
         if os.path.isfile(_filename):
