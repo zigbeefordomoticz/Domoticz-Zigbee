@@ -3941,7 +3941,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, step_mod, step_size, up_down),
         )
 
-    elif _ModelName in ( "RWL021", ):
+    elif get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "HUE_RWL"):
         self.log.logging( "Input", "Log", "Decode8085 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
             _ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
 
@@ -4200,7 +4200,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
             ),
         )
 
-    elif _ModelName in ( "RWL021", ):
+    elif get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "HUE_RWL"):
         self.log.logging( "Input", "Log", "Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " % (
             _ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr, )
         if MsgCmd == "40":

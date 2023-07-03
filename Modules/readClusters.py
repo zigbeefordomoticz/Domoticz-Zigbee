@@ -1977,7 +1977,7 @@ def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0008", "movedown")
         return
 
-    if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "RWL021":      
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "HUE_RWL"):
         philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
     
     

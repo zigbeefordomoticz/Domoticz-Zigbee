@@ -15,7 +15,7 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0006_400x,
                                     ReadAttributeRequest_0008_0000,
                                     ReadAttributeRequest_0406_philips_0030)
-from Modules.tools import (checkAndStoreAttributeValue, is_hex,
+from Modules.tools import (checkAndStoreAttributeValue, is_hex, get_deviceconf_parameter_value,
                            retreive_cmd_payload_from_8002)
 from Modules.zigateConsts import ZIGATE_EP
 
@@ -92,10 +92,10 @@ def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
 
     default_response, GlobalCommand, sqn, ManufacturerCode, cmd, data = retreive_cmd_payload_from_8002(MsgPayload)
 
-    if self.zigbee_communication == "native" and _ModelName == "RWL021" and cmd == "00" and ClusterID == "fc00":
+    if self.zigbee_communication == "native" and get_deviceconf_parameter_value(self, self.ListOfDevices[srcNWKID]["Model"], "HUE_RWL") and cmd == "00" and ClusterID == "fc00":
         # This is handle by the firmware
         return
-    elif self.zigbee_communication == "zigpy" and _ModelName == "RWL021" and cmd == "00" and ClusterID == "fc00":
+    elif self.zigbee_communication == "zigpy" and get_deviceconf_parameter_value(self, self.ListOfDevices[srcNWKID]["Model"], "HUE_RWL") and cmd == "00" and ClusterID == "fc00":
         zigpy_philips_dimmer_switch(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload)
     self.log.logging(
         "Philips",
