@@ -18,6 +18,21 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## July 2023 - stable7 - 7.1.001 ( 2034.7)
+
+- [Technical] - Refactoring of the ReadCluster layer, and make it more open for easy device integration
+- [Technical] - split the device configuration file to a dedicated python module ( z4d-certified-devices), which allow easy update
+- [Technical] - implement Attribute Discovery when on zigpy mode.
+- [Technical] - review Topology calculations
+- [Technical] - enable tracking Zcl and Zdp incoming and outgoing messages in a structured way.
+
+- [zigpy] - Upgrade to latest zigpy radio library level
+
+
+## June 2023 - stable6 - 6.0.014 ( 2023.6 )
+
+- [Issue] - Zigpy, make sure we leave a minimum elapse time before 2 commands to the same device. (regression from a 6.3.008)
+
 ## May 2023 - stable6 - 6.3.013 ( 2023.5 )
 - [Issue] - for Illuminence (LUMI) make sure to use an int (and not hex)
 - [Issue] - Fix illuminence calculation for Aqara RTCGQ11LM

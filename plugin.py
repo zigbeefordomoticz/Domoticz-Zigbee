@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="7.0">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="7.1">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -277,16 +277,12 @@ class BasePlugin:
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
-        Domoticz.Status( "Python3 requires 3.8 or above and you are running %s.%s" %(
+        Domoticz.Status( "Z4D plugin requires python3 3.8 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
         # TODO put the check of python3.8 on hold
-        assert sys.version_info >= (3, 6)  # nosec
+        assert sys.version_info >= (3, 8)  # nosec
         
-        if check_requirements( self ):
-            self.onStop()
-            return
-
         if check_requirements( self ):
             self.onStop()
             return
