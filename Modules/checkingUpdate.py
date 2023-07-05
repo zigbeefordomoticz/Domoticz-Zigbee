@@ -69,7 +69,7 @@ def checkPluginVersion(zigbee_communitation, branch, zigate_model):
     if zigbee_communitation == "zigpy" and branch in pluginVersion:
         return (pluginVersion[branch], 0, 0)
 
-    Domoticz.Error("checkPluginVersion - Unknown branch: >%s< %s %s %s" % (branch,zigate_model, pluginVersion, firmwareVersion ))
+    Domoticz.Error("You are running %s-%s, a NOT SUPPORTED version. Please refer to https://github.com/zigbeefordomoticz/Domoticz-Zigbee to get the latest informations" % (branch, pluginVersion ))
     return (0, 0, 0)
 
 
