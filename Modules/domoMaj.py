@@ -340,8 +340,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
 
         if "Meter" in ClusterType:  # Meter Usage.
+            
+            if WidgetType == "GazMeter" and Attribute_ == "0000":
+                # Gaz Meter 
+                sValue = "%s" %value
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+                
             # value is string an represent the Instant Usage
-            if (
+            elif (
                 "Model" in self.ListOfDevices[ NWKID ] 
                 and self.ListOfDevices[ NWKID ]["Model"] in ZLINK_CONF_MODEL
                 and WidgetType == "Meter" 
