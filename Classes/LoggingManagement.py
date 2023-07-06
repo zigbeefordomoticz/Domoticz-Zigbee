@@ -161,7 +161,7 @@ class LoggingManagement:
         Domoticz.Status("Please watch plugin log into %s" % _logfilename)
         if _maxBytes == 0:
             # Enable TimedRotating
-            if sys.version_info >= (3, 8):
+            if sys.version_info >= (3, 9):
                 logging.basicConfig(
                     level=logging.DEBUG,
                     encoding='utf-8',
@@ -175,7 +175,7 @@ class LoggingManagement:
                     handlers=[TimedRotatingFileHandler(_logfilename, when="midnight", interval=1, backupCount=_backupCount)],
                 )
 
-        elif sys.version_info >= (3, 8):
+        elif sys.version_info >= (3, 9):
             logging.basicConfig(
                 level=logging.DEBUG,
                 encoding='utf-8',
