@@ -39,6 +39,7 @@ In case you are still on a PI with Buster, this is not compatible and you must m
 
 ## Features
 
+* Around of 500 devices certified with the plugin. This means that we have a dedicated configuration file for each of them, so their integration is optimized. However the plugin is capable to manage any Zigbee 3.0 which comply with the standard without any specific configuration file.
 * Use of latest zigpy radio libraries
 * split between Device configuration files and plugin core engine
 * More open way to configure/integrate non-standard Zigbee devices, [how-to](https://zigbeefordomoticz.github.io/wiki/en-eng/HowTo_Device-Customization.html).
