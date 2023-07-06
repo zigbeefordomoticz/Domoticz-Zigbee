@@ -162,6 +162,7 @@ class LoggingManagement:
         if _maxBytes == 0:
             # Enable TimedRotating
             if sys.version_info >= (3, 9):
+                # encoding is supported only since python3.9
                 logging.basicConfig(
                     level=logging.DEBUG,
                     encoding='utf-8',
@@ -169,6 +170,8 @@ class LoggingManagement:
                     handlers=[TimedRotatingFileHandler(_logfilename, when="midnight", interval=1, backupCount=_backupCount)],
                 )
             else:
+                # In case we have again an encoding issue and we must force the utf-8, we will have to re-factor and stop using basicConfig and use the alternate way.
+                # as suggested here: https://stackoverflow.com/questions/10706547/add-encoding-parameter-to-logging-basicconfig
                 logging.basicConfig(
                     level=logging.DEBUG,
                     format="%(asctime)s %(levelname)-8s:%(message)s",
