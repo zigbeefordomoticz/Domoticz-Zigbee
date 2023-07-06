@@ -25,6 +25,8 @@ In case you are still on a PI with Buster, this is not compatible and you must m
     git pull
     ```
 
+    you might have to use `sudo`in order to execure the above commands with the root privileges.
+
 1. Install and update the required python3 modules
 
     from the plugin home directory `plugins/Domoticz-Zigbee`
