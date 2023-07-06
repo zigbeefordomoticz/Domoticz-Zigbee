@@ -354,7 +354,7 @@ def ts0601_calibration(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "Calibration", value)
 
 
-def  ts0601_windowdetection(self, Devices, nwkid, ep, value):
+def ts0601_windowdetection(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "receive_windowdetection - Nwkid: %s/%s Window Open: %s" % (nwkid, ep, value))
     MajDomoDevice(self, Devices, nwkid, ep, "0500", value)
     store_tuya_attribute(self, nwkid, "OpenWindow", value)

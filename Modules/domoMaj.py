@@ -437,7 +437,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
         if "Analog" in ClusterType:
-            if  WidgetType == "Voc" and Attribute_ == "":
+            if WidgetType == "Voc" and Attribute_ == "":
                 sValue = str( value )
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
@@ -1530,7 +1530,7 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
         valid_value = True
 
     if valid_value:
-        if  _attribute in self.ListOfDevices[NwkId]:
+        if _attribute in self.ListOfDevices[NwkId]:
             # Remove the attribute if we had a previous erratic value
             del self.ListOfDevices[NwkId][_attribute]
         return False
