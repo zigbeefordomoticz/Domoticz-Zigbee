@@ -5,6 +5,10 @@
 The purpose is to document key features of plugin version 7.1 and also the requirements to move to that version.
 Because 7.1 requires a minimum version of python3, you won't have any automatic update from the latest 6.3 version, but you'll required to have an active action to upgrade.
 
+## IMPORTANT
+
+Once move to 7.1, you cannot fall back to a previous version. If you still need to do, you have to use your backup, and restore Domoticz and the Plugin environment
+
 ## Pre-requisities
 
 Python3.8 is required to run the plugin in version 7.1.
