@@ -12,6 +12,10 @@ In case you are still on a PI with Buster, this is not compatible and you must m
 
 ## How-to upgrade to 7.1
 
+1. Make the necessary backup before doing any update. This could save you a lot of time, headaches.
+
+   * To backup the plugin refer to the [wiki](https://github.com/zigbeefordomoticz/wiki/blob/master/en-eng/Plugin_Backup.md), and don't forget that you should backup Domoticz and the plugin in the same time window to prevent any miss-match.
+
 1. Make sure you run python3.8 or above. If you are on buster, you have to upgrade to Bullseye first
 
     `python3 --version`
