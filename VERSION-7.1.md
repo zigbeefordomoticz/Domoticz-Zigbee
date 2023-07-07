@@ -7,7 +7,7 @@ Because 7.1 requires a minimum version of python3, you won't have any automatic 
 
 ## IMPORTANT
 
-Once move to 7.1, you cannot fall back to a previous version. If you still need to do, you have to use your backup, and restore Domoticz and the Plugin environment
+Once move to 7.1, you cannot fall back to a previous version via a simple `git checkout xxxx`. If you need to switch back to a previous version, you have to restore your backup, and restore Domoticz and the Plugin environment.
 
 ## Pre-requisities
 
