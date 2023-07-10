@@ -40,8 +40,11 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
 
     fcf = Payload[:2]
     default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
-
     if self.zigbee_communication == "zigpy" and not default_response_disable:
+        if self.pluginconf["enableZclDuplicatecheck"] and self.zigbee_communication == "zigpy" and is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn):
+            self.log.logging("zclDecoder", "Debug", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
+            return None
+
         # Let's answer
         self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
         zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf )
