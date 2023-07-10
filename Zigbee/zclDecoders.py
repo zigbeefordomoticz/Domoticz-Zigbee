@@ -18,7 +18,7 @@ from Zigbee.encoder_tools import decode_endian_data, encapsulate_plugin_frame
 from Zigbee.zclRawCommands import zcl_raw_default_response
 
 
-def is_duplicate_zcl_frame(self, Nwkid, ClusterId, Sqn):
+def is_duplicate_zcl_frame(self, Nwkid, ClusterId, Sqn, frame=None):
 
     if self.zigbee_communication != "zigpy":
         return False
@@ -31,18 +31,19 @@ def is_duplicate_zcl_frame(self, Nwkid, ClusterId, Sqn):
         self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ] = Sqn
         return False
     if Sqn == self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ]:
+        self.log.logging("zclDecoder", "Error", "zcl_decoders duplicate frame detected  %s %s %s %s" %(
+            Nwkid,ClusterId, Sqn, frame))
         return True
     self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ] = Sqn
     return False
-    
+
+
 def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame):
     # We are receiving an ZCL message
 
     fcf = Payload[:2]
     default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
-
-    if self.zigbee_communication == "zigpy" and not default_response_disable:
-        # Let's answer
+    if self.zigbee_communication == "zigpy" and not default_response_disable and (not is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn, frame) or ClusterId not in ("0019",)):
         self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
         zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf )
 
@@ -69,7 +70,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
 
     if ClusterId == "0019":
         return buildframe_for_cluster_0019(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
-        
+
     if ClusterId == "0020":
         return buildframe_for_cluster_0020(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
@@ -81,7 +82,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
 
     if ClusterId == "0500" and is_direction_to_client(fcf) and Command == "01":
         return buildframe_8400_cmd(self, "8400", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
-    
+
     if ClusterId == "0501":
         # Handle in inRawAPS
         return frame
@@ -92,7 +93,7 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         or ( ClusterId == "ffac" and ManufacturerCode == "113c")
     ):
         return frame
-    
+
     self.log.logging( "zclDecoder", "Log", "zcl_decoders Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s" % (
         Command, SrcNwkId, SrcEndPoint, ClusterId, Data, GlobalCommand, Sqn, ManufacturerCode, ), )
 
