@@ -14,10 +14,11 @@ import json
 import logging
 import os
 import os.path
-from pathlib import Path
+
 import threading
 import time
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
+from pathlib import Path
 from queue import PriorityQueue, Queue
 
 import Domoticz
@@ -143,12 +144,14 @@ class LoggingManagement:
         self.open_log_history()
 
     def open_logging_mode(self):
+        import sys
+        
         if not self.pluginconf.pluginConf["enablePluginLogging"]:
             return
 
         _pluginlogs = Path(self.pluginconf.pluginConf["pluginLogs"] )
         _logfilename = _pluginlogs / ( LOG_FILE + "%02d.log" % self.HardwareID) 
-        
+
         _backupCount = 7  # Keep 7 days of Logging
         _maxBytes = 0
         if "loggingBackupCount" in self.pluginconf.pluginConf:
@@ -158,20 +161,37 @@ class LoggingManagement:
         Domoticz.Status("Please watch plugin log into %s" % _logfilename)
         if _maxBytes == 0:
             # Enable TimedRotating
-            logging.basicConfig(
-                level=logging.DEBUG,
-                encoding='utf-8',
-                format="%(asctime)s %(levelname)-8s:%(message)s",
-                handlers=[TimedRotatingFileHandler(_logfilename, when="midnight", interval=1, backupCount=_backupCount)],
-            )
-        else:
-            # Enable RotatingFileHandler
+            if sys.version_info >= (3, 9):
+                # encoding is supported only since python3.9
+                logging.basicConfig(
+                    level=logging.DEBUG,
+                    encoding='utf-8',
+                    format="%(asctime)s %(levelname)-8s:%(message)s",
+                    handlers=[TimedRotatingFileHandler(_logfilename, when="midnight", interval=1, backupCount=_backupCount)],
+                )
+            else:
+                # In case we have again an encoding issue and we must force the utf-8, we will have to re-factor and stop using basicConfig and use the alternate way.
+                # as suggested here: https://stackoverflow.com/questions/10706547/add-encoding-parameter-to-logging-basicconfig
+                logging.basicConfig(
+                    level=logging.DEBUG,
+                    format="%(asctime)s %(levelname)-8s:%(message)s",
+                    handlers=[TimedRotatingFileHandler(_logfilename, when="midnight", interval=1, backupCount=_backupCount)],
+                )
+
+        elif sys.version_info >= (3, 9):
             logging.basicConfig(
                 level=logging.DEBUG,
                 encoding='utf-8',
                 format="%(asctime)s %(levelname)-8s:%(message)s",
                 handlers=[RotatingFileHandler(_logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
             )
+        else:
+            logging.basicConfig(
+                level=logging.DEBUG,
+                format="%(asctime)s %(levelname)-8s:%(message)s",
+                handlers=[RotatingFileHandler(_logfilename, maxBytes=_maxBytes, backupCount=_backupCount)],
+            )
+
         if "PluginLogMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["PluginLogMode"] in ( 0o640, 0o640, 0o644 ):
                 os.chmod(_logfilename, self.pluginconf.pluginConf["PluginLogMode"])
 

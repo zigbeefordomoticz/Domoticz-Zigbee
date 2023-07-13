@@ -340,8 +340,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
 
         if "Meter" in ClusterType:  # Meter Usage.
+            
+            if WidgetType == "GazMeter" and Attribute_ == "0000":
+                # Gaz Meter 
+                sValue = "%s" %value
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+                
             # value is string an represent the Instant Usage
-            if (
+            elif (
                 "Model" in self.ListOfDevices[ NWKID ] 
                 and self.ListOfDevices[ NWKID ]["Model"] in ZLINK_CONF_MODEL
                 and WidgetType == "Meter" 
@@ -431,7 +437,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
         if "Analog" in ClusterType:
-            if  WidgetType == "Voc" and Attribute_ == "":
+            if WidgetType == "Voc" and Attribute_ == "":
                 sValue = str( value )
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
@@ -1524,7 +1530,7 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
         valid_value = True
 
     if valid_value:
-        if  _attribute in self.ListOfDevices[NwkId]:
+        if _attribute in self.ListOfDevices[NwkId]:
             # Remove the attribute if we had a previous erratic value
             del self.ListOfDevices[NwkId][_attribute]
         return False

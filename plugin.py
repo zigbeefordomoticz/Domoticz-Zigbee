@@ -833,9 +833,8 @@ class BasePlugin:
 
     def onMessage(self, Connection, Data):
         # self.log.logging( 'Plugin', 'Debug', "onMessage called on Connection " + " Data = '" +str(Data) + "'")
-        if isinstance(Data, dict):
-            if self.webserver:
-                self.webserver.onMessage(Connection, Data)
+        if self.webserver and isinstance(Data, dict):
+            self.webserver.onMessage(Connection, Data)
             return
 
         if len(Data) == 0:

@@ -362,7 +362,7 @@ def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     if _majdomo_formater:
         if _majdomo_formater == "str":
             majValue = str( value )
-        elif  _majdomo_formater == "strhex":
+        elif _majdomo_formater == "strhex":
             majValue = "%x" %value
 
     
