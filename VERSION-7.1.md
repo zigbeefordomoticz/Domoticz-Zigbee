@@ -2,12 +2,11 @@
 
 ## Objective
 
-The purpose is to document key features of plugin version 7.1 and also the requirements to move to that version.
-Because 7.1 requires a minimum version of python3, you won't have any automatic update from the latest 6.3 version, but you'll required to have an active action to upgrade.
+This documentation aims to provide an overview of the key features found in version 7.1 of the plugin. Additionally, it outlines the requirements for migrating to this version. Notably, as version 7.1 necessitates a minimum Python 3 version, automatic updates from the previous 6.3 version will not be available. Users will need to actively engage in the upgrade process to transition to the latest version.
 
 ## IMPORTANT
 
-Once move to 7.1, you cannot fall back to a previous version via a simple `git checkout xxxx`. If you need to switch back to a previous version, you have to restore your backup, and restore Domoticz and the Plugin environment.
+Once you have upgraded to version 7.1, please note that reverting to a previous version using a simple git checkout xxxx is not possible. In the event that you need to switch back to a previous version, it will be necessary to restore your backup and carefully reinstate both the Domoticz environment and the Plugin setup.
 
 ## Pre-requisities
 
@@ -47,7 +46,10 @@ In case you are still on a PI with Buster, this is not compatible and you must m
 
 ## Features
 
-* Around of 500 devices certified with the plugin. This means that we have a dedicated configuration file for each of them, so their integration is optimized. However the plugin is capable to manage any Zigbee 3.0 which comply with the standard without any specific configuration file.
-* Use of latest zigpy radio libraries
-* split between Device configuration files and plugin core engine. The certified devices are know handle on [z4d-certified-devices repository](https://github.com/zigbeefordomoticz/z4d-certified-devices)
-* More open way to configure/integrate non-standard Zigbee devices, [how-to](https://zigbeefordomoticz.github.io/wiki/en-eng/HowTo_Device-Customization.html).
+* Extensive Device Certification: The plugin boasts compatibility with approximately 500 certified devices. Each device has its dedicated configuration file, ensuring optimized integration. Moreover, the plugin has the capability to manage any Zigbee 3.0 compliant device without requiring a specific configuration file.
+
+* Utilization of Latest Zigpy Radio Libraries: The plugin incorporates the use of cutting-edge Zigpy radio libraries, ensuring enhanced performance and reliability.
+
+* Clear Separation of Device Configuration and Plugin Core Engine: The plugin's architecture distinguishes between device configuration files and the core engine. This separation allows for efficient management and scalability of certified devices, which are meticulously handled and maintained in the [z4d-certified-devices repository](https://github.com/zigbeefordomoticz/z4d-certified-devices).
+
+* Enhanced Flexibility for Non-Standard Zigbee Devices: The plugin provides an open and adaptable approach for configuring and integrating non-standard Zigbee devices. Detailed instructions and guidelines can be found in the how-to](https://zigbeefordomoticz.github.io/wiki/en-eng/HowTo_Device-Customization.html) section, empowering users to customize their device integrations to meet specific requirements.
