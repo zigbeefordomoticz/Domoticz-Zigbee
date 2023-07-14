@@ -1,4 +1,4 @@
-# ZigBeeForDomoticz plugin : Connect all your Zigbee devices to DomoticZ
+# Seamlessly Integrate and Empower Your Zigbee Devices with DomoticZ Using the ZigBeeForDomoticz Plugin
 
 ![Zigbee for Domoticz](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/stable6/images/Z4D-200.png?raw=true )
 
