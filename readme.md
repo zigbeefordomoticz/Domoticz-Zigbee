@@ -23,12 +23,14 @@ Der wiki ist auf [Deutsch](https://zigbeefordomoticz.github.io/wiki/nl-dut/) ver
 
 ### The main branches
 
-* `stable6` branch at `origin`, This is where you should find the most stable environment.
-* `dev`is a parallel branch to `stable6` which is the main branch for the developpement, this is where you can find the latest features , but also potentials bugs.
+* Support for `stable5` is deprecated.
+* Support for `stable6` is deprecated. We recommend upgrading to the latest version, stable7.
+* The `stable7` branch is located at origin and represents the most stable environment for the plugin.
+* The `develop` branch runs parallel to `stable7` and serves as the primary branch for ongoing development. This is where you can access the latest features, but please be aware that potential bugs may also be present.
 
 ### Working branches
 
-Branches made out of `develop`are used for paralell development and will be merged back to `dev`when ready.
+Branches made out of `develop` are used for paralell development and will be merged back to `deevelop`when ready.
 
 # Compatible hardware
 
