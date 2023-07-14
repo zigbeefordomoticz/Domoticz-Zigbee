@@ -18,7 +18,7 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-## July 2023 - stable7 - 7.1.001 ( 2034.7)
+## July 2023 - stable7 - 7.1.001 ( 2023.7)
 
 - [Technical] - Refactoring of the ReadCluster layer, and make it more open for easy device integration
 - [Technical] - split the device configuration file to a dedicated python module ( z4d-certified-devices), which allow easy update
