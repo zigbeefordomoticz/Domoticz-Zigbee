@@ -31,7 +31,7 @@ Der wiki ist auf [Deutsch](https://zigbeefordomoticz.github.io/wiki/nl-dut/) ver
 
 ### Working branches
 
-Branches made out of `develop` are used for paralell development and will be merged back to `deevelop`when ready.
+Branches made out of `develop` are used for paralell development and will be merged back to `develop`when ready.
 
 # Compatible hardware
 
