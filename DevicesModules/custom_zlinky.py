@@ -1,4 +1,4 @@
-import binascii
+import binascii 
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.tools import checkAndStoreAttributeValue

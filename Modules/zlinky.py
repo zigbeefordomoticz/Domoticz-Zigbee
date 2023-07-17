@@ -182,10 +182,10 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
 def linky_mode( self, nwkid , protocol=False):
     
     if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
-        return 
+        return None
     
     if 'PROTOCOL Linky' not in self.ListOfDevices[ nwkid ]['ZLinky']:
-        return
+        return get_linky_mode_from_ep(self, nwkid )
     
     if self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] in ZLINKY_MODE and not protocol:
         return ZLINKY_MODE[ self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ]["Mode"]
@@ -194,24 +194,31 @@ def linky_mode( self, nwkid , protocol=False):
 
     return None
 
+def get_linky_mode_from_ep(self, nwkid ):
+    if "Ep" not in self.ListOfDevices[ nwkid ]:
+        return None
+    if "01" not in self.ListOfDevices[ nwkid ]["Ep"]:
+        return None
+    if "ff66" not in self.ListOfDevices[ nwkid ]["Ep"]["01"]:
+        return None
+    if "0300" not in self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]:
+        return None
+    if self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"] not in ZLINKY_MODE:
+        return None
+    return self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"]
+    
 def linky_device_conf(self, nwkid):
 
     if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
+        mode = get_linky_mode_from_ep(self, nwkid )
         # Let check if we have in the Cluster infos
-        if "Ep" not in self.ListOfDevices[ nwkid ]:
-            return "ZLinky_TIC"
-        if "01" not in self.ListOfDevices[ nwkid ]["Ep"]:
-            return "ZLinky_TIC"
-        if "ff66" not in self.ListOfDevices[ nwkid ]["Ep"]["01"]:
-            return "ZLinky_TIC"
-        if "0300" not in self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]:
-            return "ZLinky_TIC"
-        if self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"] not in ZLINKY_MODE:
+        if mode is None:
             return "ZLinky_TIC"
 
-        self.log.logging( "Cluster", "Status", "linky_device_conf %s found 0xff66/0x0300: %s" %( nwkid, self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"] ))
+        self.log.logging( "Cluster", "Status", "linky_device_conf %s found 0xff66/0x0300: %s" %( nwkid, mode ))
 
-        mode = self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"]
+        # Fix ZLinky data structure
+        self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] = mode
         return ZLINKY_MODE[ mode ]["Conf"]
 
     if 'PROTOCOL Linky' not in self.ListOfDevices[ nwkid ]['ZLinky']:
@@ -222,14 +229,14 @@ def linky_device_conf(self, nwkid):
     
     self.log.logging( "Cluster", "Status", "linky_device_conf %s found Protocol Linky: %s" %( nwkid, self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ))
 
-
     return ZLINKY_MODE[ self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ]["Conf"]
     
 def linky_upgrade_authorized( current_model, new_model ):
 
-    if current_model in ZLINKY_UPGRADE_PATHS and new_model in ZLINKY_UPGRADE_PATHS[ current_model ]:
-        return True
-    return False
+    return (
+        current_model in ZLINKY_UPGRADE_PATHS
+        and new_model in ZLINKY_UPGRADE_PATHS[current_model]
+    )
 
 def update_zlinky_device_model_if_needed( self, nwkid ):
     
