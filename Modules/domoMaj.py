@@ -216,6 +216,28 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # Red
                 nValue = 4
                 sValue = "RED Hours"
+            
+            # Standard Tempo
+            elif value == "BHC":
+                nValue = 1
+                sValue = "Bleu HC"
+            elif value == "BHP":
+                sValue = "Bleu HP"
+                
+            elif value == "WHC":
+                nValue = 2
+                sValue = "Blanc HC"
+            elif value == "WHP":
+                nValue = 2
+                sValue = "Blanc HP"
+                
+            elif value == "RHC":
+                nValue = 4
+                sValue = "Rouge HC"
+            elif value == "RHP":
+                nValue = 4
+                sValue = "Rouge HP"
+                
             else:
                 # Unknow
                 nValue = 3

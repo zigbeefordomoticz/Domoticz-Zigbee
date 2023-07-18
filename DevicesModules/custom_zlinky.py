@@ -510,16 +510,22 @@ def zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, va
         
     elif attribut in ( "0201", ):
         # Standard : NTARF
+        s_tarif = ""
         if "BLEU" in value:
             # HC BLUE
-            MajDomoDevice(self, Devices, nwkid, ep, "0009", "B", Attribute_="0020")
+            s_tarif = "B"
         elif "BLAN" in value:
             # HC BLANC
-            MajDomoDevice(self, Devices, nwkid, ep, "0009", "W", Attribute_="0020")
+            s_tarif = "W"
         elif "ROUG" in value:
             # HC ROUGE
-            MajDomoDevice(self, Devices, nwkid, ep, "0009", "R", Attribute_="0020")
+            s_tarif = "R"
+        if "HP" in value:
+            s_tarif += "HP"
+        elif "HC" in value:
+            s_tarif += "HC"
 
+        MajDomoDevice(self, Devices, nwkid, ep, "0009", s_tarif, Attribute_="0020")
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'NTARF', value)
         
