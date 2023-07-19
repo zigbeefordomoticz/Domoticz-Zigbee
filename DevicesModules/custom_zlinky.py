@@ -503,13 +503,13 @@ def zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, va
         # Isse Current on the corresponding Ampere
         MajDomoDevice(self, Devices, nwkid, ep, "0b04", str(value), Attribute_=_tmpattr)
 
-    elif attribut == "0200":
-        # Standard : LTARF
+    elif attribut == "0201":
+        # Standard : NTARF
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'LTARF', value)
         
-    elif attribut in ( "0201", ):
-        # Standard : NTARF
+    elif attribut in ( "0200", ):
+        # Standard : LTARF
         s_tarif = ""
         if "BLEU" in value:
             # HC BLUE
