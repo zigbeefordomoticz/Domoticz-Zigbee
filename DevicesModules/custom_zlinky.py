@@ -168,7 +168,11 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         store_ZLinky_infos( self, nwkid, 'EASF10', value)
 
     elif attribut == "0307":  # PRM
-        store_ZLinky_infos( self, nwkid, 'PRM', binascii.unhexlify(value).decode("utf-8"))
+        try:
+            store_ZLinky_infos( self, nwkid, 'PRM', binascii.unhexlify(value).decode("utf-8"))
+        except Exception as e:
+            self.log.logging( "ZLinky", "Log", "Cluster0702 - 0x0307 - PRM %s - unable to decode" % (value), nwkid, )
+            store_ZLinky_infos( self, nwkid, 'PRM', value)
         
     elif attribut == "0308":  # Serial Number
         value = binascii.unhexlify(value).decode("utf-8")
