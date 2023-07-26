@@ -227,7 +227,7 @@ def linky_device_conf(self, nwkid):
     if self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] not in ZLINKY_MODE:
         return "ZLinky_TIC"
     
-    self.log.logging( "Cluster", "Status", "linky_device_conf %s found Protocol Linky: %s" %( nwkid, self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ))
+    self.log.logging( "Cluster", "Debug", "linky_device_conf %s found Protocol Linky: %s" %( nwkid, self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ))
 
     return ZLINKY_MODE[ self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ]["Conf"]
     
