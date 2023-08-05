@@ -2,6 +2,7 @@
     "_source": "https://easydomoticz.com/forum/viewtopic.php?t=13440",
     "_blakadder": "https://zigbee.blakadder.com/Aqara_WXKG16LM.html",
     "_description": "E1 Wireless Remote Switch (Single Rocker)",
+    "MinPluginVersion": "7.1.002",
     "Ep": {
         "01": {
             "0000": { 
