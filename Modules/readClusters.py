@@ -768,6 +768,7 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         "lumi.remote.b186acn02",
         "lumi.remote.b286acn01",
         "lumi.remote.b286acn02",
+        "lumi.remote.acn003"
     ):
         # 0 -> Hold
         # 1 -> Short Release
