@@ -46,7 +46,7 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
 
     for dps_mapping_item in dps_mapping[ str_dp ]:
         process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, dps_mapping_item, value)
-        
+    return True 
 
 def process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, dps_mapping_item, value):
     if "EvalExp" in dps_mapping_item:
