@@ -683,6 +683,7 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     sBatteryLvl = retreive4Tag("0121", MsgClusterData)  # 16BitUint
     sTemp2 = retreive4Tag("0328", MsgClusterData)  # Device Temperature (int8)
+    sModeSwitch = retreive4Tag("0421", MsgClusterData)  # Mode Switch4: 'anti_flicker_mode', 1: 'quick_mode'
     stag04 = retreive4Tag("0424", MsgClusterData)
     sRSSI = retreive4Tag("0521", MsgClusterData)  # RSSI (16BitUint)
     sCountEvent = retreive4Tag("0541", MsgClusterData)
