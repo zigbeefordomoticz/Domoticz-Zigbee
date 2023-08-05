@@ -27,7 +27,7 @@ from Modules.lumi import (RTCGQ14LM_trigger_indicator,
                           RTCZCGQ11LM_motion_opple_approach_distance,
                           RTCZCGQ11LM_motion_opple_monitoring_mode,
                           RTCZCGQ11LM_motion_opple_sensitivity,
-                          aqara_detection_interval,
+                          aqara_detection_interval, enable_click_mode_aqara,
                           setXiaomiVibrationSensitivity,
                           xiaomi_aqara_switch_mode_switch,
                           xiaomi_flip_indicator_light,
@@ -302,6 +302,8 @@ DEVICE_PARAMETERS = {
     "RTCGQ14LMTriggerIndicator": RTCGQ14LM_trigger_indicator,
     "AqaraDetectionInterval": aqara_detection_interval,
     "WiserShutterDuration": wiser_lift_duration,
+    "OppleMultiClick": enable_click_mode_aqara
+    
 }
 
 def sanity_check_of_param(self, NwkId):

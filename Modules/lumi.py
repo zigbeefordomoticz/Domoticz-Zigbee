@@ -122,10 +122,10 @@ def xiaomi_opple_mode(self, nwkid, mode=0x01):
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
     
     
-def enable_click_mode_aqara(self, nwkid):
+def enable_click_mode_aqara(self, nwkid, value=None):
     # 0x01: Fast
     # 0x02: Multi
-    
+
     if nwkid not in self.ListOfDevices:
         return
 
@@ -134,8 +134,7 @@ def enable_click_mode_aqara(self, nwkid):
     cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0125"
     data_type = "20"
-    Hdata = "02"   # Multi-Click
-
+    Hdata = "%02x" %value if value else "02"
     self.log.logging("Lumi", "Debug", "Write enable_click_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
         self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
