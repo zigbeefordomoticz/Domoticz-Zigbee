@@ -302,8 +302,7 @@ DEVICE_PARAMETERS = {
     "RTCGQ14LMTriggerIndicator": RTCGQ14LM_trigger_indicator,
     "AqaraDetectionInterval": aqara_detection_interval,
     "WiserShutterDuration": wiser_lift_duration,
-    "OppleMultiClick": enable_click_mode_aqara
-    
+    "AqaraMultiClick": enable_click_mode_aqara,
 }
 
 def sanity_check_of_param(self, NwkId):

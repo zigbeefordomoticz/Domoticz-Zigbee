@@ -630,7 +630,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
     if self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
-    elif  get_device_config_param( self, NWKID, "OppleMultiClick"):
+    elif  get_device_config_param( self, NWKID, "AqaraMultiClick"):
         enable_click_mode_aqara( self, NWKID)
 
     elif ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY and WISER_LEGACY_MODEL_NAME_PREFIX in self.ListOfDevices[NWKID]["Model"] ):

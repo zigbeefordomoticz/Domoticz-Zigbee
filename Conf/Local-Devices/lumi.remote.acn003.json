@@ -31,6 +31,8 @@
     },
     "BatteryDevice": 1,
     "Param": {
-        "OppleMultiClick": 2
+        "BindingTableRequest": 0,
+        "AqaraOppleMode": 1,
+        "AqaraMultiClick": 2
     }
 }
