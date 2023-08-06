@@ -16,7 +16,7 @@
             <br/><h2>Parameters</h2>
     </description>
     <params>
-        <param field="Mode1" label="Coordinator Model" width="50px" required="true" default="None">
+        <param field="Mode1" label="Coordinator Model" width="200px" required="true" default="None">
             <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP, Silicon Labs EZSP or ConBee/RasBee</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
