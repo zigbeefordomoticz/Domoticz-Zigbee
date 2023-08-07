@@ -122,10 +122,10 @@ def xiaomi_opple_mode(self, nwkid, mode=0x01):
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
     
     
-def enable_click_mode_aqara(self, nwkid):
+def enable_click_mode_aqara(self, nwkid, value=None):
     # 0x01: Fast
     # 0x02: Multi
-    
+
     if nwkid not in self.ListOfDevices:
         return
 
@@ -134,8 +134,7 @@ def enable_click_mode_aqara(self, nwkid):
     cluster_id = XIAOMI_OPPLE_CLUSTER
     Hattribute = "0125"
     data_type = "20"
-    Hdata = "02"   # Multi-Click
-
+    Hdata = "%02x" %value if value else "02"
     self.log.logging("Lumi", "Debug", "Write enable_click_mode_aqara AQARA Wireless Switch: %s" % nwkid, nwkid)
     write_attribute( 
         self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
@@ -684,6 +683,7 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     sBatteryLvl = retreive4Tag("0121", MsgClusterData)  # 16BitUint
     sTemp2 = retreive4Tag("0328", MsgClusterData)  # Device Temperature (int8)
+    sModeSwitch = retreive4Tag("0421", MsgClusterData)  # Mode Switch4: 'anti_flicker_mode', 1: 'quick_mode'
     stag04 = retreive4Tag("0424", MsgClusterData)
     sRSSI = retreive4Tag("0521", MsgClusterData)  # RSSI (16BitUint)
     sCountEvent = retreive4Tag("0541", MsgClusterData)

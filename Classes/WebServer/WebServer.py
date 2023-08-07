@@ -129,7 +129,8 @@ class WebServer(object):
         self.httpServerConn = None
         self.httpClientConn = None
         self.httpServerConns = {}
-        self.httpPort = httpPort
+        self.httpIp = None
+        self.httpPort = None
         self.log = log
         self.ModelManufMapping = ModelManufMapping
 
@@ -172,6 +173,11 @@ class WebServer(object):
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
 
+        # httpPort could have 2 formats. port number only or IP:port
+        if ':' in httpPort:
+            self.httpIp, self.httpPort = httpPort.split(':')
+        else:
+            self.httpPort = httpPort
 
         mimetypes.init()
 

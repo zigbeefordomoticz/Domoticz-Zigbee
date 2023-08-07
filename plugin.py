@@ -16,7 +16,7 @@
             <br/><h2>Parameters</h2>
     </description>
     <params>
-        <param field="Mode1" label="Coordinator Model" width="75px" required="true" default="None">
+        <param field="Mode1" label="Coordinator Model" width="200px" required="true" default="None">
             <description><br/><h3>Zigbee Coordinator definition</h3><br/>Select the Zigbee radio Coordinator version : ZiGate (V1), ZiGate+ (V2), Texas Instrument ZNP, Silicon Labs EZSP or ConBee/RasBee</description>
             <options>
                 <option label="ZiGate"  value="V1"/>
@@ -37,13 +37,13 @@
                 <option label="None"  value="None"/>
             </options>
         </param>
-        <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0" >
+        <param field="SerialPort" label="Serial Port" width="200px" required="true" default="/dev/ttyUSB0" >
             <description><br/>Set the serial port where the Radio Coordinator is connected (/dev/ttyUSB0 for example)</description>
         </param>
         <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0">
             <description><br/>Set the Radio Coordinator IP adresse (0.0.0.0 if not applicable)</description>
         </param>
-        <param field="Port" label="Port" width="150px" required="true" default="9999">
+        <param field="Port" label="Port" width="75px" required="true" default="9999">
             <description><br/>Set the Radio Coordinator Port (9999 by default)</description>
         </param>
         <param field="Mode5" label="API base url <br/>(http://username:password@127.0.0.1:port)" width="250px" default="http://127.0.0.1:8080" required="true" >
@@ -51,8 +51,9 @@
                 <br/><h3>Domoticz Json/API base ( http://127.0.0.1:8080 should be the default)</h3>In case Domoticz listen to an other port change 8080 by what ever is the port, 
                 and if you have setup an authentication please add the username:password</description>
         </param>
-        <param field="Mode4" label="WebUI port" width="75px" required="true" default="9440" >
+        <param field="Mode4" label="WebUI port" width="150px" required="true" default="9440" >
             <description><br/><h3>Plugin definition</h3><br/>Set the plugin Dashboard port (9440 by default, None to disable)<br/>
+            In case you would like to restrict the interface and to secure the access to the dashboard , you can also add use the format IP:PORT ( 127.0.0.1:9440)<br/> 
             To access the plugin WebUI, replace your DomoticZ port (8080 by default) in your web adress by your WebUI port (9440 by default).</description>
         </param>
         <param field="Mode3" label="Initialize Coordinator" width="75px" required="true" default="False" >
@@ -667,7 +668,7 @@ class BasePlugin:
 
             # Starting WebServer
         if self.webserver is None:
-            if Parameters["Mode4"].isdigit():
+            if Parameters["Mode4"].isdigit() or ':' in Parameters["Mode4"]:
                 start_web_server(self, Parameters["Mode4"], Parameters["HomeFolder"])
             else:
                 self.log.logging(

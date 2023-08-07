@@ -1,4 +1,16 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+"""
+    Module: tuyaTS0601.py
 
+    Description: play around the Config file.
+
+"""
+
+import struct
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
@@ -26,34 +38,46 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
     value = int(data, 16)
     self.log.logging("Tuya0601", "Debug", "                - value: %s" % (value), NwkId)
     
-    if "EvalExp" in dps_mapping[ str_dp ]:
-        value = evaluate_expression_with_data(self, dps_mapping[ str_dp ][ "EvalExp"], value)
+    self.log.logging("Tuya0601", "Debug", "                - dps_mapping[ %s ]: %s (%s)" % (
+        str_dp, dps_mapping[ str_dp ], type(dps_mapping[ str_dp ])), NwkId)
+    if not isinstance( dps_mapping[ str_dp ], list):
+        # We complex data point which provide multiple value
+        return process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, dps_mapping[ str_dp ], value)
+
+    for dps_mapping_item in dps_mapping[ str_dp ]:
+        process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, dps_mapping_item, value)
+    return True 
+
+def process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, dps_mapping_item, value):
+    if "EvalExp" in dps_mapping_item:
+        value = evaluate_expression_with_data(self, dps_mapping_item[ "EvalExp"], value)
     self.log.logging("Tuya0601", "Debug", "                - after evaluate_expression_with_data() value: %s" % (value), NwkId)
 
-    if "store_tuya_attribute" in dps_mapping[ str_dp ]:
-        store_tuya_attribute(self, NwkId, dps_mapping[ str_dp ]["store_tuya_attribute"], data)
+    if "store_tuya_attribute" in dps_mapping_item:
+        store_tuya_attribute(self, NwkId, dps_mapping_item["store_tuya_attribute"], data)
     
-    return sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp )
+    return sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping_item )
+   
     
-def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp ):
-    self.log.logging("Tuya0601", "Debug", "sensor_type - %s %s %s %s %s %s %s %s" % (
-        NwkId, Ep, value, dp, datatype, data, dps_mapping, str_dp), NwkId)
+def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping_item ):
+    self.log.logging("Tuya0601", "Debug", "sensor_type - %s %s %s %s %s %s %s" % (
+        NwkId, Ep, value, dp, datatype, data, dps_mapping_item), NwkId)
 
-    if "sensor_type" not in dps_mapping[ str_dp ]:
-        if "store_tuya_attribute" not in dps_mapping[ str_dp ]:
+    if "sensor_type" not in dps_mapping_item:
+        if "store_tuya_attribute" not in dps_mapping_item:
             store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
         return True
     
-    divisor = dps_mapping[ str_dp ]["domo_divisor"] if "domo_divisor" in dps_mapping[ str_dp ] else 1
+    divisor = dps_mapping_item["domo_divisor"] if "domo_divisor" in dps_mapping_item else 1
     value = value / divisor
-    rounding = dps_mapping[ str_dp ]["domo_round"] if "domo_round" in dps_mapping[ str_dp ] else 0
+    rounding = dps_mapping_item["domo_round"] if "domo_round" in dps_mapping_item else 0
     value = round( value, rounding ) if rounding else int(value)
 
     self.log.logging("Tuya0601", "Debug", "                - after sensor_type() value: %s divisor: %s rounding: %s" % (value, divisor, rounding), NwkId)
    
-    sensor_type = dps_mapping[ str_dp ][ "sensor_type"]
+    sensor_type = dps_mapping_item[ "sensor_type"]
     if sensor_type in DP_SENSOR_FUNCTION:
-        value = check_domo_format_req( self, dps_mapping[ str_dp ], value)
+        value = check_domo_format_req( self, dps_mapping_item, value)
         func = DP_SENSOR_FUNCTION[ sensor_type ]
         func(self, Devices, NwkId, Ep, value  )
         return True
@@ -101,9 +125,16 @@ def ts0601_actuator( self, NwkId, command, value=None):
     else:
         func(self, NwkId, "01", dp )
 
-    
-        
+
 # Helpers        
+def read_uint16_be(data, offset):
+    # Use the format '>H' to specify big-endian (>) and 'H' for 16-bit unsigned integer.
+    return struct.unpack_from('>H', data, offset)[0]
+
+def read_uint8(data, offset):
+    # Use indexing to get the byte at the specified offset
+    # and convert it to an unsigned integer using ord().
+    return ord(data[offset])
 
 def evaluate_expression_with_data(self, expression, value):
     try:

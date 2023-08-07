@@ -1,4 +1,4 @@
-import binascii
+import binascii 
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.tools import checkAndStoreAttributeValue
@@ -168,7 +168,10 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         store_ZLinky_infos( self, nwkid, 'EASF10', value)
 
     elif attribut == "0307":  # PRM
-        store_ZLinky_infos( self, nwkid, 'PRM', binascii.unhexlify(value).decode("utf-8"))
+        try:
+            store_ZLinky_infos( self, nwkid, 'PRM', binascii.unhexlify(value).decode("utf-8"))
+        except Exception as e:
+            store_ZLinky_infos( self, nwkid, 'PRM', value)
         
     elif attribut == "0308":  # Serial Number
         value = binascii.unhexlify(value).decode("utf-8")
@@ -418,6 +421,7 @@ def zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, va
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0001":
+        # Histo : DEMAIN
         value = ''.join(map(lambda x: x if ord(x) in range(128) else ' ', value))
         tarif = None
         if (
@@ -443,14 +447,15 @@ def zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, va
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0002":
-        # HHPHC
+        # Histo : HHPHC
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0003":
-        # PPOT
+        # Histo : PPOT
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0004":
+        # Histo : PEJP
         tarif = None
         if (
             "ff66" in self.ListOfDevices[nwkid]["Ep"][ep]
@@ -473,6 +478,10 @@ def zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, va
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut in ("0005", "0006", "0007", "0008"):
+        # Histo : ADPS
+        # Histo : ADIR1 (Triphasé)
+        # Histo : ADIR2 (Triphasé)
+        # Histo : ADIR3 (Triphasé)
         # It is understood that the Attribute represent also the Instant Current, so we will update accordingly the P1Meter
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         # Alarm
@@ -497,14 +506,162 @@ def zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, va
         # Isse Current on the corresponding Ampere
         MajDomoDevice(self, Devices, nwkid, ep, "0b04", str(value), Attribute_=_tmpattr)
 
+    elif attribut == "0201":
+        # Standard : NTARF
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, 'LTARF', value)
+        
+    elif attribut in ( "0200", ):
+        # Standard : LTARF
+        s_tarif = ""
+        if "BLEU" in value:
+            # HC BLUE
+            s_tarif = "B"
+        elif "BLAN" in value:
+            # HC BLANC
+            s_tarif = "W"
+        elif "ROUG" in value:
+            # HC ROUGE
+            s_tarif = "R"
+        if "HP" in value:
+            s_tarif += "HP"
+        elif "HC" in value:
+            s_tarif += "HC"
+
+        MajDomoDevice(self, Devices, nwkid, ep, "0009", s_tarif, Attribute_="0020")
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, 'NTARF', value)
+        
+    elif attribut in ( "0202", ):
+        # Standard : DATE
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, 'DATE', value)
+        
+    elif attribut in ( "0203", ):
+        # Standard : EASD01
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, 'EASD01', value)
+        
+    elif attribut in ( "0204", ):
+        # Standard : EASD02
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, 'EASD02', value)
+        
+    elif attribut in ( "0205", ):
+        # Standard : EASD03
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, 'EASD03', value)
+        
+    elif attribut in ( "0206", ):
+        # Standard : EASD04
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, 'EASD04', value)
+        
     elif attribut in ( "0207", ):
+        # Standard : SINSTI (Production)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+
+    elif attribut in ( "0208", ):
+        # Standard : SMAXIN (Production)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+
+    elif attribut in ( "0209", ):
+        # Standard : SMAXIN-1 (Production)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+
+    elif attribut in ( "0210", ):
+        # Standard : CCAIN (Production)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+
+    elif attribut in ( "0211", ):
+        # Standard : CCAIN-1 (Production)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+
+    elif attribut in ( "0212", ):
+        # Standard :
+        # - SMAXN-1 (Monophasé)
+        # - SMAXN1-1 (Triphasé)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+
+    elif attribut in ( "0213", ):
+        # Standard : SMAXN2-1 (Triphasé)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+
+    elif attribut in ( "0214", ):
+        # Standard : SMAXN3-1 (Triphasé)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+
+    elif attribut in ( "0215", ):
+        # Standard : MSG1
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+
+    elif attribut in ( "0216", ):
+        # Standard : MSG2
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0217":
-        # STGE
+        # Standard : STGE
+        self.log.logging( "ZLinky", "Log", "STGE raw Value: %s" % ( value ))
         stge = binascii.unhexlify( value ).decode("utf-8")
+        self.log.logging( "ZLinky", "Log", "STGE unhexlify Value: %s" % ( stge ))
+        self.log.logging( "ZLinky", "Log", "STGE decoded : %s" % ( decode_STEG( stge ) ))
         store_ZLinky_infos( self, nwkid, "STGE", decode_STEG( stge ))
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, stge)
+
+    elif attribut in ( "0218", ):
+        # Standard : DPM1
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "DPM1", value)
+
+    elif attribut in ( "0219", ):
+        # Standard : FPM1
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "FPM1", value)
+
+    elif attribut in ( "0220", ):
+        # Standard : DPM2
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "DPM2", value)
+
+    elif attribut in ( "0221", ):
+        # Standard : FPM2
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "FPM2", value)
+
+    elif attribut in ( "0222", ):
+        # Standard : DPM3
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "DPM3", value)
+
+    elif attribut in ( "0223", ):
+        # Standard : FPM3
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "FPM3", value)
+
+    elif attribut in ( "0224", ):
+        # Standard : RELAIS
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "RELAIS", value)
+
+    elif attribut in ( "0225", ):
+        # Standard : NJOURF
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "NJOURF", value)
+
+    elif attribut in ( "0226", ):
+        # Standard : NJOURF+1
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "NJOURF+1", value)
+
+    elif attribut in ( "0227", ):
+        # Standard : PJOURF+1
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "PJOURF+1", value)
+
+    elif attribut in ( "0228", ):
+        # Standard : PPOINTE1
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        store_ZLinky_infos( self, nwkid, "PPOINTE1", value)
 
     elif attribut == "0300":
         # Linky Mode

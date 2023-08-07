@@ -10,11 +10,32 @@ import Domoticz
 def startWebServer(self):
 
     # self.httpPort = '9440'
-    self.httpServerConn = Domoticz.Connection(
-        Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port=self.httpPort
-    )
+    # self.httpIp = None or IP Adress to be bind
+    # self.httpPort = httpPort
+
+    if self.httpIp is None:
+        self.httpServerConn = Domoticz.Connection(
+            Name="Zigate Server Connection",
+            Transport="TCP/IP",
+            Protocol="HTTP",
+            Port=self.httpPort
+        )
+    else:
+        self.httpServerConn = Domoticz.Connection(
+            Name="Zigate Server Connection",
+            Transport="TCP/IP",
+            Protocol="HTTP",
+            Address=str(self.httpIp),
+            Port=self.httpPort
+        )
+
     self.httpServerConn.Listen()
-    self.logging("Status", "Web backend for Web User Interface started on port: %s" % self.httpPort)
+    if self.httpIp is None:
+        self.logging("Status", "Web backend for Web User Interface started on port: %s" % self.httpPort)
+    else:
+        self.logging("Status", "Web backend for Web User Interface started on port: %s:%s" % (self.httpIp, self.httpPort))
+
+    self.logging("Debug", "%s" %( self.httpServerConn))
 
     # self.httpsPort = '9443'
     # self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)

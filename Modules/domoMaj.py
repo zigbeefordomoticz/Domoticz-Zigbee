@@ -203,7 +203,29 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # Pointe Mobile
                 nValue = 4
                 sValue = "Mobile peak Hours"
-
+                
+            # Standard Tempo
+            elif value == "BHC":
+                nValue = 1
+                sValue = "Bleu HC"
+            elif value == "BHP":
+                nValue = 1
+                sValue = "Bleu HP"
+                
+            elif value == "WHC":
+                nValue = 2
+                sValue = "Blanc HC"
+            elif value == "WHP":
+                nValue = 2
+                sValue = "Blanc HP"
+                
+            elif value == "RHC":
+                nValue = 4
+                sValue = "Rouge HC"
+            elif value == "RHP":
+                nValue = 4
+                sValue = "Rouge HP"
+                
             elif value[0] == "B":
                 # Blue
                 nValue = 1
@@ -216,6 +238,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # Red
                 nValue = 4
                 sValue = "RED Hours"
+                
             else:
                 # Unknow
                 nValue = 3

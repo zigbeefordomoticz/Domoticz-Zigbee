@@ -25,6 +25,7 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_WIZER_LEGACY,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.orvibo import OrviboRegistration
+from Modules.paramDevice import get_device_config_param
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
@@ -628,6 +629,9 @@ def handle_device_specific_needs(self, Devices, NWKID):
     MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
     if self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
         wiser_home_lockout_thermostat(self, NWKID, 0)
+
+    elif  get_device_config_param( self, NWKID, "AqaraMultiClick"):
+        enable_click_mode_aqara( self, NWKID)
 
     elif ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY and WISER_LEGACY_MODEL_NAME_PREFIX in self.ListOfDevices[NWKID]["Model"] ):
         self.log.logging("Pairing", "Debug", "Wiser Legacy registration needed for %s" %NWKID)
