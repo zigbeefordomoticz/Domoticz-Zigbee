@@ -18,6 +18,13 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## August 2023 - stable7 - 7.1.002 ( 2023.2)
+
+- [Technical] - make the Hardware fields a bit bigger
+- [Hardware] - Integrate Tuya Zgmismart Smart Counter
+- [Hardware] - Integrate Lumi Remote Switch E1
+- [Hardware] - ZLinky integration for Standard + Tempo
+
 ## July 2023 - stable7 - 7.1.001 ( 2023.7)
 
 - [Technical] - Refactoring of the ReadCluster layer, and make it more open for easy device integration
