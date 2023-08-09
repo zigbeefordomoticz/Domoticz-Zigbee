@@ -1494,3 +1494,19 @@ def tuya_smart_door_lock(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
         store_tuya_attribute(self, NwkId, "App Unlock-%s" %(datatype), data)
     elif dp == 101:
         store_tuya_attribute(self, NwkId, "Auxiliary opening/locking-%s" %(datatype), data)
+
+
+def ts110e_light_type( self, NwkId, mode):
+    # led: 0, incandescent: 1, halogen: 2
+    self.log.logging("Tuya", "Debug", "ts110e_light_type - mode %s" % mode, NwkId)
+    EPout = "01"
+    mode = "%02x" %mode
+    write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
+
+
+def ts110e_switch_type( self, NwkId, mode):
+    # momentary: 0, toggle: 1, state: 2
+    self.log.logging("Tuya", "Debug", "ts110e_switch_type - mode %s" % mode, NwkId)
+    EPout = "01"
+    mode = "%02x" %mode
+    write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
