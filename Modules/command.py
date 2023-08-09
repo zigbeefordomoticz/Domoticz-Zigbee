@@ -29,6 +29,7 @@ from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_set_contract,
                                      schneider_temp_Setcurrent)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
+from Modules.tools import get_deviceconf_parameter_value
 from Modules.thermostats import thermostat_Mode, thermostat_Setpoint
 from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_dimmer_dimmer, tuya_dimmer_onoff,
@@ -1330,6 +1331,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 actuator_setlevel(self, NWKID, EPout, Level, "Light", "0000", withOnOff=False)
                 #sendZigateCmd(self, "0081", "02" + NWKID + ZIGATE_EP + EPout + OnOff + value + "0000")
             else:
+                if Level > 1 and get_deviceconf_parameter_value(self, _model_name, "ForceSwitchOnformoveToLevel", return_default=False):
+                    actuator_on(self, NWKID, EPout, "Light")
                 transitionMoveLevel = "0010"  # Compatibility. It was 0010 before
                 if "Param" in self.ListOfDevices[NWKID] and "moveToLevel" in self.ListOfDevices[NWKID]["Param"]:
                     transitionMoveLevel = "%04x" % int(self.ListOfDevices[NWKID]["Param"]["moveToLevel"])
