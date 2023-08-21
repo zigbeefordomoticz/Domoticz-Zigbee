@@ -180,6 +180,7 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
 
     if MsgAttrStatus != "00" and MsgClusterId != "0500":
         # We receive a Read Attribute response or a Report with a status error.
+        storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
         self.log.logging( "Cluster", "Debug", "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" % (
             MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID), nwkid=MsgSrcAddr, )
         self.statistics._clusterKO += 1
