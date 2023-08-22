@@ -453,6 +453,8 @@ def cable_connected_mode(self, nwkid, Mode):
     ReadAttributeRequest_0006_0000(self, nwkid)
     ReadAttributeRequest_0b04_050b(self, nwkid)
     ReadAttributeRequest_fc40(self, nwkid)
+    # Function cable_connected_mode Cluster fc01 is not reported even if binded Attribute fc01/0000 is not refreshed after change in domoticz ---> Add Force read
+    ReadAttributeRequest_fc01(self, nwkid)
 
 
 def legrand_fc40(self, nwkid, Mode):
