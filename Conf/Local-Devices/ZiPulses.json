@@ -6,7 +6,16 @@
             "0001": "",
             "0003": "",
             "0019": "",
-            "0702": "",
+            "0702": {
+                "Attributes": {
+                    "0000": {
+                        "Enabled": true,
+                        "Name": "Summation",
+                        "DataType": "25" ,
+                        "EvalExp": "value/1000",
+                        "ActionList": [ "check_store_value", "upd_domo_device"] }
+                }
+            },
             "Type": "Counter"
         }
     },
