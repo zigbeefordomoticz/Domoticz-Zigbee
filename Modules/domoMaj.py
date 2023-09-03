@@ -370,7 +370,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
                 
             elif WidgetType == "Counter" and Attribute_ == "0000":
-                sValue = "%s" %value
+                sValue = "%s" %int(value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
                 
