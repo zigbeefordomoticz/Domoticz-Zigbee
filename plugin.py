@@ -1526,7 +1526,7 @@ def check_requirements( self ):
         except pkg_resources.DistributionNotFound as e:
             Domoticz.Error("Looks like %s python module is not installed (error: %s). Make sure to install the required python3 module" %(req, e))
             Domoticz.Error("Use the command:")
-            Domoticz.Error("sudo python3 -m pip install -r requirements.txt")
+            Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
             return True
     return False          
                      

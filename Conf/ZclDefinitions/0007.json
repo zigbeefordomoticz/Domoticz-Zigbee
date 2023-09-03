@@ -1,0 +1,52 @@
+{
+    "ClusterId": "0007",
+    "Description": "On/Off Switch Configuration",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "0000": { 
+            "Enabled": true,
+            "Name": "SwitchType",
+            "DataType": "30" ,
+            "Acc": "R" ,
+            "Default": "0",
+            "Mandatory": true,
+            "ActionList": [ "check_store_value"]
+        },
+        "0010": { 
+            "Enabled": true,
+            "Name": "SwitchActions",
+            "DataType": "30" ,
+            "Acc": "RW",
+            "Range": [ "01", "02"],
+            "Default": "1",
+            "Mandatory": false,
+            "ActionList": [ "check_store_value"]
+        },
+        "fffd": {
+            "Enabled": true,
+            "Name": "ClusterRevision",
+            "DataType": "21",
+            "Acc": "R",
+            "Range": [ "0001", "fffe"],
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        },
+        "fffe": {
+            "Enabled": true,
+            "Name": "AttributeReportingStatus",
+            "DataType": "30",
+            "Acc": "R",
+            "Range": [ "00", "ff"],
+            "Default": "",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
+
+    }
+}

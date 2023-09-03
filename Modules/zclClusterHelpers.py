@@ -315,6 +315,7 @@ def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_v
     if divisor is None:
         # By default Multiplier is assumed to be 1
         divisor = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0302"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
+    # mulCheck if we have a Device configuration overwrite      
  
     conso = round( (( conso * multiplier ) / divisor ), 3)
     self.log.logging("ZclClusters", "Debug", "compute_metering_conso - %s/%s Unit: %s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
@@ -354,7 +355,7 @@ def compute_electrical_measurement_conso(self, NwkId, MsgSrcEp, MsgClusterId, Ms
     # Check if we have a Custom divisor, we assumed multiplier = 1
     custom = MULTIPLIER_DIVISOR_MATRIX[ MsgAttrID ]['custom']
     divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], custom)
-    if divisor is not None:
+    if divisor is not None and int(divisor ) != 0:
         divisor = int(divisor )
         self.log.logging("ZclClusters", "Debug", "compute_electrical_measurement_conso - %s/%s Custom Divisor: %s , raw: %s result: %s" % (
             NwkId, MsgSrcEp, divisor, raw_value, conso), NwkId)
@@ -367,8 +368,14 @@ def compute_electrical_measurement_conso(self, NwkId, MsgSrcEp, MsgClusterId, Ms
     multiplier = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId][ multiplier_attribute ] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and multiplier_attribute in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
     # By default Multiplier is assumed to be 1
     divisor = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId][ divisor_attribute ] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and divisor_attribute in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
- 
+
+    # compute_electrical_measurement_conso Sometimes device Attributes are 0 Exemple Legrand Cable outlet Attributes 0600,0601,0602,0603 Default to 1 to avoid conso=0 or division by 0
+    if multiplier==0:
+        multiplier=1
+    if divisor==0:
+        divisor=1
     conso = round( (( conso * multiplier ) / divisor ), 3)
+
     self.log.logging("ZclClusters", "Debug", "compute_electrical_measurement_conso - %s/%s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
         NwkId, MsgSrcEp, multiplier, divisor, raw_value, conso), NwkId)
 
