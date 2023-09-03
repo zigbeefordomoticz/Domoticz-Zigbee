@@ -18,7 +18,14 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-## August 2023 - stable7 - 7.1.002 ( 2023.2)
+## Septembre 2023 - stable7 - 7.1.003 ( 2023.9)
+
+- [Technical] - Compatible Debian12 and python3.11
+- [Hardware] - ZiPulse with Simple Counter (instead of Gaz)
+- [Technical] - Prevent some divison by 0 in ZclCluster (@tempgm5)
+- [Hardware] - Tuya TS11OE 2 Gang
+
+## August 2023 - stable7 - 7.1.002 ( 2023.8)
 
 - [Technical] - make the Hardware fields a bit bigger
 - [Hardware] - Integrate Tuya Zgmismart Smart Counter
