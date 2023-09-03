@@ -412,7 +412,7 @@ def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_in
     if _eval_inputs is not None:
         for idx, x in enumerate(_eval_inputs):
             #  "EvalExpCustomVariables": {"scale": { "ClusterId": "0403", "AttributeId": "0014"}},
-            if "Cluster" in _eval_inputs[x] and "Attribute" in _eval_inputs[x]:
+            if "ClusterId" in _eval_inputs[x] and "AttributeId" in _eval_inputs[x]:
                 cluster = _eval_inputs[x][ "ClusterId" ]
                 attribute = _eval_inputs[x][ "AttributeId" ]
                 custom_value = getAttributeValue(self, nwkid, ep, cluster, attribute)

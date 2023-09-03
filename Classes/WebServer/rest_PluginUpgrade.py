@@ -5,6 +5,7 @@ import subprocess  # nosec
 import os
 import z4d_certified_devices
 from pathlib import Path
+import distro
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
@@ -65,7 +66,10 @@ def _reload_device_conf(self):
 
 def certified_devices_update(self):
 
-    CERTIFIED_DEVICES_UPGRADE_CMD = "python3 -m pip install z4d-certified-devices --upgrade"
+    if distro.id() in ("debian", "raspbian") and distro.version() >= '12':
+        CERTIFIED_DEVICES_UPGRADE_CMD = "python3 -m pip install z4d-certified-devices --upgrade --break-system-packages"
+    else:
+        CERTIFIED_DEVICES_UPGRADE_CMD = "python3 -m pip install z4d-certified-devices --upgrade"
 
     self.logging("Status", "Plugin looks to upgrade the Certified Device package")
     
