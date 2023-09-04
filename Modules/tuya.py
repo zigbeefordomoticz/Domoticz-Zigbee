@@ -1503,10 +1503,14 @@ def ts110e_light_type( self, NwkId, mode):
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
 
+def ts110e_switch01_type( self, NwkId, mode):
+    ts110e_switch_type( self, NwkId, "01", mode)
 
-def ts110e_switch_type( self, NwkId, mode):
+def ts110e_switch02_type( self, NwkId, mode):
+    ts110e_switch_type( self, NwkId, "02", mode)
+
+def ts110e_switch_type( self, NwkId, EPout, mode):
     # momentary: 0, toggle: 1, state: 2
     self.log.logging("Tuya", "Debug", "ts110e_switch_type - mode %s" % mode, NwkId)
-    EPout = "01"
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)

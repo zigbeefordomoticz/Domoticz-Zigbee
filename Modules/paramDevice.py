@@ -46,7 +46,7 @@ from Modules.tools import get_deviceconf_parameter_value, getEpForCluster
 from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           SmartRelayStatus03, SmartRelayStatus04,
                           get_tuya_attribute, ts110e_light_type,
-                          ts110e_switch_type, tuya_backlight_command,
+                          ts110e_switch01_type, ts110e_switch02_type, tuya_backlight_command,
                           tuya_cmd_ts004F, tuya_curtain_mode,
                           tuya_energy_childLock, tuya_external_switch_mode,
                           tuya_garage_run_time, tuya_motion_zg204l_keeptime,
@@ -305,7 +305,8 @@ DEVICE_PARAMETERS = {
     "WiserShutterDuration": wiser_lift_duration,
     "AqaraMultiClick": enable_click_mode_aqara,
     "TS110ELightType": ts110e_light_type,
-    "TS110ESwitchType": ts110e_switch_type
+    "TS110ESwitch01Type": ts110e_switch01_type,
+    "TS110ESwitch02Type": ts110e_switch02_type
 }
 
 def sanity_check_of_param(self, NwkId):
