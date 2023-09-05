@@ -58,9 +58,11 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False, tuya_regi
     if parkside:
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "0d", ackIsDisabled=False)
 
+    # if tuya_registration_value:
+    #     write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", TUYA_MANUF_CODE, "01", "ffde", "20", "%02x" %tuya_registration_value, ackIsDisabled=False)
     if tuya_registration_value:
-        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", TUYA_MANUF_CODE, "01", "ffde", "20", "%02x" %tuya_registration_value, ackIsDisabled=False)
-    
+        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "%02x" %tuya_registration_value, ackIsDisabled=False)
+
     elif _ModelName == "TS0216":
         # Heiman like siren
         # Just do the Regitsration
