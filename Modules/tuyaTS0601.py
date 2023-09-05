@@ -141,13 +141,16 @@ def evaluate_expression_with_data(self, expression, value):
         return eval( expression )
         
     except NameError as e:
-        self.log.logging("ZclClusters", "Error", "Undefined variable, please check the formula %s" %expression)
+        self.log.logging("ZclClusters", "Error", "Undefined variable, please check the formula %s or value %s" %(
+            expression, value))
     
     except SyntaxError as e:
-        self.log.logging("ZclClusters", "Error", "Syntax error, please check the formula %s" %expression)
+        self.log.logging("ZclClusters", "Error", "Syntax error, please check the formula %s or value %s" %(
+            expression, value))
 
     except ValueError as e:
-        self.log.logging("ZclClusters", "Error", "Value Error, please check the formula %s %s" %(expression, e))
+        self.log.logging("ZclClusters", "Error", "Value Error, please check the formula %s or value %s. Error: %s" %(
+            expression, value, e))
         
     return value
 
