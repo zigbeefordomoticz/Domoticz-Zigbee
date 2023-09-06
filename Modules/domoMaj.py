@@ -369,6 +369,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 sValue = "%s" %value
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
                 
+            elif WidgetType == "Counter" and Attribute_ == "0000":
+                sValue = "%s" %int(value)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+
+                
             # value is string an represent the Instant Usage
             elif (
                 "Model" in self.ListOfDevices[ NWKID ] 
