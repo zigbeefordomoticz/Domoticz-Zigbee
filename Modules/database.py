@@ -398,7 +398,9 @@ def _write_DeviceList_txt(self):
 
 def _write_DeviceList_json(self):
     _pluginData = Path ( self.pluginconf.pluginConf["pluginData"] )
-    _DeviceListFileName = _pluginData / self.DeviceListName[:-3] + "json"
+# Incorrect error issue    
+#    _DeviceListFileName = _pluginData / self.DeviceListName[:-3] + "json"
+    _DeviceListFileName = _pluginData / (self.DeviceListName[:-3] + "json")
     self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
     with open(_DeviceListFileName, "wt") as file:
         json.dump(self.ListOfDevices, file, sort_keys=True, indent=2)
