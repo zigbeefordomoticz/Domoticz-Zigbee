@@ -741,7 +741,9 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
         # Livol Switch, must be converted to Main Powered
         # Patch some status as Device Annouced doesn't provide much info
         self.ListOfDevices[nwkid]["LogicalType"] = "Router"
-        self.ListOfDevices[nwkid]["DevideType"] = "FFD"
+    # Not DevideType but DeviceType    
+    #    self.ListOfDevices[nwkid]["DevideType"] = "FFD"
+        self.ListOfDevices[nwkid]["DeviceType"] = "FFD"
         self.ListOfDevices[nwkid]["MacCapa"] = "8e"
         self.ListOfDevices[nwkid]["PowerSource"] = "Main"
         return "8e"
@@ -806,7 +808,9 @@ def mainPoweredDevice(self, nwkid):
     ):
         mainPower = True
         self.ListOfDevices[nwkid]["LogicalType"] = "End Device"
-        self.ListOfDevices[nwkid]["DevideType"] = "RFD"
+    # Not DevideType but DeviceType    
+    #    self.ListOfDevices[nwkid]["DevideType"] = "RFD"
+        self.ListOfDevices[nwkid]["DeviceType"] = "RFD"
 
     if not mainPower and "PowerSource" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PowerSource"] != {}:
         mainPower = self.ListOfDevices[nwkid]["PowerSource"] == "Main"
