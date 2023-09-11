@@ -16,8 +16,6 @@ import struct
 import time
 from datetime import datetime
 
-import Domoticz
-
 from Modules.basicOutputs import mgt_binding_table_req, mgt_routing_req
 from Modules.tools import get_device_nickname
 

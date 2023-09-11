@@ -14,7 +14,6 @@
 import time
 from datetime import datetime, timedelta
 
-import Domoticz
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
@@ -146,7 +145,7 @@ def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
     This is fonction is call when receiving a message from a Manufacturer battery based device.
     The function is called after processing the readCluster part
     """
-    Domoticz.Log("callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
+    self.log.logging( "Tuya", "Log", "callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
 
 
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
@@ -240,7 +239,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             version = MsgPayload[10:12]  # int8
             store_tuya_attribute(self, NwkId, "TUYA_MCU_VERSION_RSP", version)
         except Exception as e:
-            Domoticz.Error("tuyaReadRawAPS - MCU_VERSION_RSP error on Payload: %s reason %s" % (MsgPayload,e))
+            self.log.logging( "Tuya", "Error", "tuyaReadRawAPS - MCU_VERSION_RSP error on Payload: %s reason %s" % (MsgPayload,e))
 
     elif cmd == "23":  # TUYA_REPORT_LOG
         pass
