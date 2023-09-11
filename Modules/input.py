@@ -484,6 +484,10 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
 
     self.log.logging("Input", "Debug", "Decode0110 - message: %s" % MsgData)
+    if len(MsgData) < 24:
+        self.log.logging( "Input", "Error", "Decode0110 - Message too short %s" % (MsgData), )
+        return
+
     MsgSqn = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
@@ -507,12 +511,8 @@ def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
         idx += 4
         DataValue = MsgData[idx : idx + int(lendata,16) * 2]
 
-        self.log.logging(
-            "Input",
-            "Debug",
-            "Decode0110 - Sqn: %s NwkId: %s Ep: %s Cluster: %s Manuf: %s Attribute: %s Type: %s Value: %s"
-            % (MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufCode, Attribute, DataType, DataValue),
-        )
+        self.log.logging( "Input", "Debug", "Decode0110 - Sqn: %s NwkId: %s Ep: %s Cluster: %s Manuf: %s Attribute: %s Type: %s Value: %s" % (
+            MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufCode, Attribute, DataType, DataValue), )
 
 
 def Decode0302(self, Devices, MsgData, MsgLQI):  # PDM Load
@@ -672,8 +672,6 @@ def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
     except IOError:
         Domoticz.Error("Error while Opening ZiGate log file %s" % logfilename)
 
-    
-    
 
 def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     # MsgLogLvl = MsgData[:2]
