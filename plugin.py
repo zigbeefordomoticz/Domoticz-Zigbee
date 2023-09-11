@@ -281,7 +281,6 @@ class BasePlugin:
         Domoticz.Status( "Z4D plugin requires python3 3.8 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
-        # TODO put the check of python3.8 on hold
         assert sys.version_info >= (3, 8)  # nosec
         
         if check_requirements( self ):
@@ -469,7 +468,6 @@ class BasePlugin:
         import_local_device_conf(self)
         z4d_certified_devices.z4d_import_device_configuration(self, z4d_certified_devices_pathname )
         
-
         # if type(self.DeviceConf) is not dict:
         if not isinstance(self.DeviceConf, dict):
             self.log.logging("Plugin", "Error", "DeviceConf initialisation failure!!! %s" % type(self.DeviceConf))
@@ -654,7 +652,6 @@ class BasePlugin:
             self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
             self.onStop()
             return
-            
 
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
