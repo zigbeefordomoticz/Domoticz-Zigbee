@@ -143,9 +143,11 @@ def check_group_member_ship_response(self, MsgData):
 
 # Status 8b NetId not in GrpId ---> Must delete group data (should not happen)
     if MsgStatus == "8b":
-      if MsgGroupID in self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]:del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP][MsgGroupID]
-      if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP])==0:del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]
-      if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"])==0:del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"]
+      if "GroupMemberShip" in self.ListOfDevices[MsgSrcAddr]:
+        if MsgGroupID in self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]:del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP][MsgGroupID]
+        if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP])==0:del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]
+        if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"])==0:del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"]
+      checkToRemoveGroup(self,MsgSrcAddr,MsgEP,MsgGroupID)
 
 def look_for_group_member_ship_response(self, MsgData):
     """
