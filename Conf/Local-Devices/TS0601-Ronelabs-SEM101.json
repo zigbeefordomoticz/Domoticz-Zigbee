@@ -1,0 +1,40 @@
+{
+    "_comment": "Tuya Zigbee Ronelabs - SEM 101",
+    "_source": "Casaia",
+    "_blakadder": "",
+    "_version": "1",
+    "MinPluginVersion": "7.1.002",
+    "Identifier": [
+        [ "TS0601", "_TZE200_aiuxoqra" ]
+    ],
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Meter/Power/Voltage/Ampere"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [ "0019", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007" ]
+    },
+    "TUYA_REGISTRATION": 19,
+    "TS0601_DP": { 
+        "01": { "store_tuya_attribute": "Meter", "sensor_type": "metering", "EvalExp": "value / 1000"},
+        "02": { "store_tuya_attribute": "ProducedEnergy", "EvalExp": "value" },
+        "06": [ 
+            { "store_tuya_attribute": "Voltage", "EvalExp": "((value & 0xFFFF000000000000) >> 48)/10", "sensor_type": "voltage", "domo_round": 2}, 
+            { "store_tuya_attribute": "Current", "EvalExp": "((value & 0x0000FFFFFF000000) >> 24)/1000", "sensor_type": "current", "domo_round": 2 },
+            { "store_tuya_attribute": "Power", "EvalExp": "(value & 0x0000000000FFFFFF)", "sensor_type": "power", "domo_round": 2 }
+        ],
+        "0d": { "store_tuya_attribute": "Unknown0D_02"},
+        "11": { "store_tuya_attribute": "Unknown11_00"}
+    },
+    "Param": {
+    }
+}
