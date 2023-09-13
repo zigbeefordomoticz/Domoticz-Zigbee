@@ -141,12 +141,17 @@ def check_group_member_ship_response(self, MsgData):
         self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP][MsgGroupID]["Status"] = "OK"
         checkToCreateOrUpdateGroup(self, MsgSrcAddr, MsgEP, MsgGroupID)
 
-# Status 8b NetId not in GrpId ---> Must delete group data (should not happen)
-    if MsgStatus == "8b":
-      if "GroupMemberShip" in self.ListOfDevices[MsgSrcAddr]:
-        if MsgGroupID in self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]:del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP][MsgGroupID]
-        if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP])==0:del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]
-        if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"])==0:del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"]
+    # Status 8b NetId not in GrpId ---> Must delete group data (should not happen)
+    elif MsgStatus == "8b" and "GroupMemberShip" in self.ListOfDevices[MsgSrcAddr]:
+        if MsgGroupID in self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]:
+            del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP][MsgGroupID]
+            
+        if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]) == 0:
+            del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]
+            
+        if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"]) == 0:
+            del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"]
+            
       checkToRemoveGroup(self,MsgSrcAddr,MsgEP,MsgGroupID)
 
 def look_for_group_member_ship_response(self, MsgData):
