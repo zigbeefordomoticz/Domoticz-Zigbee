@@ -452,10 +452,10 @@ def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId,
     #MsgGroupID = MsgData[10:14]
     #MsgSrcAddr = MsgData[14:18]
     self.log.logging("zclDecoder", "Debug", "buildframe8063_remove_group_member_ship_response - Data: %s" % Data)
-    
-    buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data( Data[ 2:6 ], "21")
+# SrcNwkId is not passed ----> Causes a false Error in GrpResponses.py function remove_group_member_ship_response
+#    buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data( Data[ 2:6 ], "21")
+    buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data( Data[ 2:6 ], "21")+SrcNwkId
     return encapsulate_plugin_frame("8063", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
-
 
 # Cluster 0x0005 - Scenes
 
