@@ -152,7 +152,7 @@ def check_group_member_ship_response(self, MsgData):
         if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"]) == 0:
             del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"]
             
-      checkToRemoveGroup(self,MsgSrcAddr,MsgEP,MsgGroupID)
+        checkToRemoveGroup(self,MsgSrcAddr,MsgEP,MsgGroupID)
 
 def look_for_group_member_ship_response(self, MsgData):
     """
