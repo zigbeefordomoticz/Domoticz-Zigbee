@@ -36,8 +36,8 @@ def add_group_member_ship_response(self, MsgData):
 
     Status:
     0x00:  Ok
-    0x8a:  The device does not have storage space to support the requested operation.
-    0x8b:  The device is not in the proper state to support the requested operation.
+    0x8a:  Duplicate entry ---> Already exists in the group
+    0x8b:  Entry not found ---> Not in the group
     """
 
     self.logging("Debug", "add_group_member_ship_response - MsgData: %s (%s)" % (MsgData, len(MsgData)))
@@ -79,7 +79,8 @@ def add_group_member_ship_response(self, MsgData):
         )
         return
 
-    if MsgStatus == "00":
+    # Status 8a is duplicate ---> Seen as success for update of data (if not exits that should not happen)
+    if MsgStatus == "00" or MsgStatus == "8a":
         # Success
         if "GroupMemberShip" not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"] = {}
@@ -140,8 +141,18 @@ def check_group_member_ship_response(self, MsgData):
         self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP][MsgGroupID]["Status"] = "OK"
         checkToCreateOrUpdateGroup(self, MsgSrcAddr, MsgEP, MsgGroupID)
 
-    # If we have receive a MsgStatus error, we cannot conclude, so we consider the membership to that group, not existing
-
+    # Status 8b NetId not in GrpId ---> Must delete group data (should not happen)
+    elif MsgStatus == "8b" and "GroupMemberShip" in self.ListOfDevices[MsgSrcAddr]:
+        if MsgGroupID in self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]:
+            del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP][MsgGroupID]
+            
+        if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]) == 0:
+            del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"][MsgEP]
+            
+        if len(self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"]) == 0:
+            del self.ListOfDevices[MsgSrcAddr]["GroupMemberShip"]
+            
+      checkToRemoveGroup(self,MsgSrcAddr,MsgEP,MsgGroupID)
 
 def look_for_group_member_ship_response(self, MsgData):
     """
