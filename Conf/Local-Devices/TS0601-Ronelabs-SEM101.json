@@ -14,7 +14,7 @@
             "ef00": "",
             "000a": "",
             "0019": "",
-            "Type": "Switch/Meter/Power/Voltage/Ampere"
+            "Type": "Switch/ProdMeter/Meter/Power/Voltage/Ampere"
         }
     },
     "Type": "",
@@ -26,14 +26,14 @@
     "TUYA_REGISTRATION": 19,
     "TS0601_DP": { 
         "01": { "store_tuya_attribute": "Meter", "sensor_type": "metering", "EvalExp": "value / 1000"},
-        "02": { "store_tuya_attribute": "ProducedEnergy", "EvalExp": "value" },
+        "02": { "store_tuya_attribute": "ProducedEnergy", "sensor_type": "prod_metering", "EvalExp": "value / 1000" },
         "06": [ 
             { "store_tuya_attribute": "Voltage", "EvalExp": "((value & 0xFFFF000000000000) >> 48)/10", "sensor_type": "voltage", "domo_round": 2}, 
             { "store_tuya_attribute": "Current", "EvalExp": "((value & 0x0000FFFFFF000000) >> 24)/1000", "sensor_type": "current", "domo_round": 2 },
             { "store_tuya_attribute": "Power", "EvalExp": "(value & 0x0000000000FFFFFF)", "sensor_type": "power", "domo_round": 2 }
         ],
         "0d": { "store_tuya_attribute": "Unknown0D_02"},
-	"10": { "store_tuya_attribute": "State", "sensor_type": "switch", "action_type": "switch" }
+        "10": { "store_tuya_attribute": "State", "sensor_type": "switch", "action_type": "switch" }
     },
     "Param": {
     }
