@@ -1720,15 +1720,16 @@ def _check_plugin_version( self ):
             self.pluginParameters["available"],
             self.pluginParameters["available-firmMajor"],
             self.pluginParameters["available-firmMinor"],
-        ) = checkPluginVersion(self.zigbee_communication, self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
+        ) = checkPluginVersion(self, self.zigbee_communication, self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
         self.pluginParameters["FirmwareUpdate"] = False
         self.pluginParameters["PluginUpdate"] = False
 
-        if checkPluginUpdate(self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
+        if checkPluginUpdate(self, self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
             self.log.logging("Plugin", "Status", "*** A recent plugin version (%s) is waiting for you on gitHub. You are on (%s) ***" %(
                 self.pluginParameters["available"], self.pluginParameters["PluginVersion"] ))
             self.pluginParameters["PluginUpdate"] = True
         if checkFirmwareUpdate(
+            self,
             self.FirmwareMajorVersion,
             self.FirmwareVersion,
             self.pluginParameters["available-firmMajor"],

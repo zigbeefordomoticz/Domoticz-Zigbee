@@ -12,12 +12,11 @@
 
 
 import json
-from pathlib import Path
 import os.path
 import time
+from pathlib import Path
 from typing import Dict
 
-import Domoticz
 import Modules.tools
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
@@ -256,37 +255,23 @@ def loadTxtDatabase(self, dbName):
             try:
                 dlVal = eval(val)
             except (SyntaxError, NameError, TypeError, ZeroDivisionError):
-                Domoticz.Error("LoadDeviceList failed on %s" % val)
+                self.log.logging("Database", "Error", "LoadDeviceList failed on %s" % val)
                 continue
             self.log.logging("Database", "Debug", "LoadDeviceList - " + str(key) + " => dlVal " + str(dlVal), key)
             if not dlVal.get("Version"):
                 if key == "0000":  # Bug fixed in later version
                     continue
-                Domoticz.Error("LoadDeviceList - entry " + key + " not loaded - not Version 3 - " + str(dlVal))
+                self.log.logging("Database", "Error", "LoadDeviceList - entry " + key + " not loaded - not Version 3 - " + str(dlVal))
                 res = "Failed"
                 continue
             if dlVal["Version"] != "3":
-                Domoticz.Error("LoadDeviceList - entry " + key + " not loaded - not Version 3 - " + str(dlVal))
+                self.log.logging("Database", "Error", "LoadDeviceList - entry " + key + " not loaded - not Version 3 - " + str(dlVal))
                 res = "Failed"
                 continue
             else:
                 nb += 1
                 CheckDeviceList(self, key, val)
     return res
-
-
-#def loadJsonDatabase(self, dbName):
-#    res = "Success"
-#    with open(dbName, "rt") as handle:
-#        _listOfDevices = {}
-#        try:
-#            _listOfDevices = json.load(handle)
-#        except json.decoder.JSONDecodeError as e:
-#            res = "Failed"
-#            Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
-#    for key in _listOfDevices:
-#        CheckDeviceList(self, key, str(_listOfDevices[key]))
-#    return res
 
 
 def _read_DeviceList_Domoticz(self):
@@ -340,10 +325,8 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
 
     self.log.logging("Database", "Debug", "WriteDeviceList %s %s" %(self.HBcount, count))
     if self.pluginconf.pluginConf["pluginData"] is None or self.DeviceListName is None:
-        Domoticz.Error(
-            "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s"
-            % (self.pluginconf.pluginConf["pluginData"], self.DeviceListName)
-        )
+        self.log.logging("Database", "Error", "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
+            self.pluginconf.pluginConf["pluginData"], self.DeviceListName))
         return
 
     if self.pluginconf.pluginConf["expJsonDatabase"]:
@@ -364,7 +347,7 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
 
 def _write_DeviceList_txt(self):
     # Write in classic format ( .txt )
-    _pluginData = Path ( self.pluginconf.pluginConf["pluginData"] )
+    _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginData / self.DeviceListName
     try:
         self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
@@ -375,12 +358,12 @@ def _write_DeviceList_txt(self):
                     
                 except UnicodeEncodeError:
                     self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( 
-                                                                                                                     key, self.ListOfDevices[key]))
+                        key, self.ListOfDevices[key]))
                     continue
 
                 except ValueError:
                     self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( 
-                                                                                                       key, self.ListOfDevices[key]))
+                        key, self.ListOfDevices[key]))
                     continue
                 
                 except IOError:
@@ -397,7 +380,7 @@ def _write_DeviceList_txt(self):
 
 
 def _write_DeviceList_json(self):
-    _pluginData = Path ( self.pluginconf.pluginConf["pluginData"] )
+    _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
 # Incorrect error issue    
 #    _DeviceListFileName = _pluginData / self.DeviceListName[:-3] + "json"
     _DeviceListFileName = _pluginData / (self.DeviceListName[:-3] + "json")
@@ -419,7 +402,7 @@ def importDeviceConf(self):
     # Import DeviceConf.txt
     tmpread = ""
     self.DeviceConf = {}
-    _pluginConfig = Path ( self.pluginconf.pluginConf["pluginConfig"] )
+    _pluginConfig = Path( self.pluginconf.pluginConf["pluginConfig"] )
     _DeviceConf = _pluginConfig / "DeviceConf.txt"
     if os.path.isfile(_DeviceConf):
         with open(_DeviceConf, "r") as myfile:
@@ -427,10 +410,8 @@ def importDeviceConf(self):
             try:
                 self.DeviceConf = eval(tmpread)
             except (SyntaxError, NameError, TypeError, ZeroDivisionError):
-                Domoticz.Error(
-                    "Error while loading %s in line : %s"
-                    % (self.pluginconf.pluginConf["pluginConfig"] + "DeviceConf.txt", tmpread)
-                )
+                self.log.logging("Database", "Error", "Error while loading %s in line : %s" % (
+                    self.pluginconf.pluginConf["pluginConfig"] + "DeviceConf.txt", tmpread) )
                 return
 
     # Remove comments
@@ -466,11 +447,11 @@ def import_local_device_conf(self):
                 try:
                     model_definition = json.load(handle)
                 except ValueError as e:
-                    Domoticz.Error("--> JSON ConfFile: %s load failed with error: %s" % (filename, str(e)))
+                    self.log.logging("Database", "Error","--> JSON ConfFile: %s load failed with error: %s" % (filename, str(e)))
 
                     continue
                 except Exception as e:
-                    Domoticz.Error("--> JSON ConfFile: %s load general error: %s" % (filename, str(e)))
+                    self.log.logging("Database", "Error","--> JSON ConfFile: %s load general error: %s" % (filename, str(e)))
 
                     continue
 
@@ -493,7 +474,7 @@ def import_local_device_conf(self):
                         "--> Config for %s not loaded as already defined" % (str(device_model_name)),
                     )
             except Exception:
-                Domoticz.Error("--> Unexpected error when loading a configuration file")
+                self.log.logging("Database", "Error","--> Unexpected error when loading a configuration file")
 
 
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
@@ -561,13 +542,7 @@ def checkListOfDevice2Devices(self, Devices):
                 NWKID,
             )
         else:
-            Domoticz.Error(
-                "loadListOfDevices -  : "
-                + Devices[x].Name
-                + " with IEEE = "
-                + str(ID)
-                + " not found in Zigate plugin Database!"
-            )
+            self.log.logging("Database", "Error", "loadListOfDevices -  : " + Devices[x].Name + " with IEEE = " + str(ID) + " not found in Zigate plugin Database!")
 
 
 def saveZigateNetworkData(self, nkwdata):
@@ -578,7 +553,7 @@ def saveZigateNetworkData(self, nkwdata):
         with open(json_filename, "wt", encoding='utf-8') as json_file:
             json.dump(nkwdata, json_file, indent=4, sort_keys=True)
     except IOError:
-        Domoticz.Error("Error while writing Zigate Network Details%s" % json_filename)
+        self.log.logging("Database", "Error", "Error while writing Zigate Network Details%s" % json_filename)
 
 
 def CheckDeviceList(self, key, val):
@@ -652,9 +627,8 @@ def CheckDeviceList(self, key, val):
             OldModel = self.ListOfDevices[key][attribute]
             self.ListOfDevices[key][attribute] = self.ListOfDevices[key][attribute].replace("/", "")
             if OldModel != self.ListOfDevices[key][attribute]:
-                Domoticz.Status(
-                    "Model adjustement during import from %s to %s" % (OldModel, self.ListOfDevices[key][attribute])
-                )
+                self.log.logging("Database", "Status", "Model adjustement during import from %s to %s" % (
+                    OldModel, self.ListOfDevices[key][attribute]))
 
     self.ListOfDevices[key]["Health"] = ""
 
@@ -697,7 +671,7 @@ def check_and_update_ForceAckCommands(self):
         if "ForceAckCommands" not in self.DeviceConf[model]:
             self.ListOfDevices[x]["ForceAckCommands"] = []
             continue
-        Domoticz.Log(" Set: %s for device %s " % (self.DeviceConf[model]["ForceAckCommands"], x))
+        self.log.logging("Database", "Log"," Set: %s for device %s " % (self.DeviceConf[model]["ForceAckCommands"], x))
         self.ListOfDevices[x]["ForceAckCommands"] = list(self.DeviceConf[model]["ForceAckCommands"])
 
 
@@ -716,13 +690,13 @@ def fixing_Issue566(self, key):
         return False
 
     if "Cluster Revision" in self.ListOfDevices[key]["Ep"]:
-        Domoticz.Log("++++Issue #566: Fixing Cluster Revision for NwkId: %s" % key)
+        self.log.logging("Database", "Log", "++++Issue #566: Fixing Cluster Revision for NwkId: %s" % key)
         del self.ListOfDevices[key]["Ep"]["Cluster Revision"]
         res = True
 
     for ep in self.ListOfDevices[key]["Ep"]:
         if "Cluster Revision" in self.ListOfDevices[key]["Ep"][ep]:
-            Domoticz.Log("++++Issue #566 Cluster Revision NwkId: %s Ep: %s" % (key, ep))
+            self.log.logging("Database", "Log","++++Issue #566 Cluster Revision NwkId: %s Ep: %s" % (key, ep))
             del self.ListOfDevices[key]["Ep"][ep]["Cluster Revision"]
             res = True
 
@@ -734,7 +708,7 @@ def fixing_Issue566(self, key):
         and "ClusterType" in self.ListOfDevices[key]["Ep"]["01"]
         and len(self.ListOfDevices[key]["Ep"]["01"]["ClusterType"]) == 0
     ):
-        Domoticz.Log("++++Issue #566 ClusterType mixing NwkId: %s Ep 01 and 02" % key)
+        self.log.logging("Database", "Log","++++Issue #566 ClusterType mixing NwkId: %s Ep 01 and 02" % key)
         self.ListOfDevices[key]["Ep"]["01"]["ClusterType"] = dict(self.ListOfDevices[key]["Ep"]["02"]["ClusterType"])
         self.ListOfDevices[key]["Ep"]["02"]["ClusterType"] = {}
         res = True
@@ -832,7 +806,7 @@ def load_new_param_definition(self):
 
                 if plugin_generic_param is None:
                     return False
-                Domoticz.Log("--->PluginConf %s <-- %s" % (param, plugin_generic_param))
+                self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
             elif param in ("OnOffPollingFreq",):
@@ -858,7 +832,7 @@ def load_new_param_definition(self):
 
                 if plugin_generic_param is None:
                     return False
-                Domoticz.Log("--->PluginConf %s <-- %s" % (param, plugin_generic_param))
+                self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
             elif param in ("AC201Polling",):
@@ -883,7 +857,7 @@ def load_new_param_definition(self):
 
                 if plugin_generic_param is None:
                     return False
-                Domoticz.Log("--->PluginConf %s <-- %s" % (param, plugin_generic_param))
+                self.log.logging("Database", "Log","--->PluginConf %s <-- %s" % (param, plugin_generic_param))
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf[plugin_generic_param]
 
             elif param == "netatmoLedIfOn":

@@ -12,6 +12,11 @@
 
 import json
 
+from Modules.basicOutputs import set_poweron_afteroffon
+from Modules.readAttributes import ReadAttributeRequest_0006_400x
+from Modules.thermostats import thermostat_Setpoint
+from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
+from Modules.zigateConsts import ZIGATE_EP
 from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
                                 zcl_level_move_to_level,
                                 zcl_move_hue_and_saturation,
@@ -22,16 +27,11 @@ from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
                                 zcl_onoff_off_noeffect,
                                 zcl_onoff_off_witheffect, zcl_onoff_on,
                                 zcl_onoff_stop, zcl_toggle,
+                                zcl_window_covering_level,
                                 zcl_window_covering_off,
                                 zcl_window_covering_on,
-                                zcl_window_covering_stop,
-                                zcl_window_covering_level, zcl_window_covering_percentage)
-
-from Modules.basicOutputs import set_poweron_afteroffon
-from Modules.readAttributes import ReadAttributeRequest_0006_400x
-from Modules.thermostats import thermostat_Setpoint
-from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
-from Modules.zigateConsts import ZIGATE_EP
+                                zcl_window_covering_percentage,
+                                zcl_window_covering_stop)
 
 
 def actuators(self, action, nwkid, epout, DeviceType, cmd=None, value=None, color=None):

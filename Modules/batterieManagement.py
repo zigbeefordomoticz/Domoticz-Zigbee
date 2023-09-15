@@ -10,10 +10,10 @@
 
 """
 
-from Modules.domoTools import Update_Battery_Device
-from Modules.tools import voltage2batteryP, get_deviceconf_parameter_value
-
 from time import time
+
+from Modules.domoTools import Update_Battery_Device
+from Modules.tools import get_deviceconf_parameter_value, voltage2batteryP
 
 
 def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):

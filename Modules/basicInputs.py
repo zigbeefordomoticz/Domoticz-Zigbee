@@ -4,7 +4,6 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
 import struct
 
 from Modules.basicOutputs import raw_APS_request
@@ -13,26 +12,20 @@ from Modules.zigateConsts import SIZE_DATA_TYPE, ZIGATE_EP
 
 def encode_endian_data(data, datatype):
     if datatype in ("10", "18", "20", "28", "30"):
-        value = data
+        return data
 
     elif datatype in ("09", "19", "21", "29", "31"):
-        value = "%04x" % struct.unpack(">H", struct.pack("H", int(data, 16)))[0]
+        return "%04x" % struct.unpack(">H", struct.pack("H", int(data, 16)))[0]
 
     elif datatype in ("22", "2a"):
-        value = "%06x" % struct.unpack(">I", struct.pack("I", int(data, 16)))[0]
+        return "%06x" % struct.unpack(">I", struct.pack("I", int(data, 16)))[0]
 
     elif datatype in ("23", "2b", "39", "e2"):
-        value = "%08x" % struct.unpack(">I", struct.pack("I", int(data, 16)))[0]
+        return "%08x" % struct.unpack(">I", struct.pack("I", int(data, 16)))[0]
 
     elif datatype in ("00", "41", "42", "4c"):
-        value = data
-
-    else:
-        value = data
-        Domoticz.Log("-------> Data not decoded Type: %s Value: %s " % (datatype, value))
-
-    # self.log.logging( None, 'Log', "encode_endian %s -> %s" %(data, value))
-    return value
+        return data
+    return data
 
 
 def read_attribute_response(self, nwkid, ep, sqn, cluster, status, data_type, attribute, value, manuf_code="0000"):
