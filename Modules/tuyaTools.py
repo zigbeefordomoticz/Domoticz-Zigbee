@@ -12,8 +12,9 @@
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.tools import is_ack_tobe_disabled
-from Modules.zigateConsts import ZIGATE_EP
 from Modules.tuyaConst import TUYA_MANUFACTURER_NAME
+from Modules.zigateConsts import ZIGATE_EP
+
 
 def tuya_manufacturer_device(self, NwkId):
     " return True if the NwkId device is a Tuya device, otherwise return False"

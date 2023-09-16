@@ -32,10 +32,11 @@ import struct
 import time
 from datetime import datetime
 from os import listdir
-from os.path import isfile, join, exists
+from os.path import exists, isfile, join
 from pathlib import Path
 
-import Domoticz
+from Classes.AdminWidgets import AdminWidgets
+from Classes.LoggingManagement import LoggingManagement
 from Modules.sendZigateCommand import sendZigateCmd
 from Modules.tools import get_device_nickname
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
@@ -43,9 +44,6 @@ from Zigbee.zclRawCommands import (zcl_raw_ota_image_block_response_success,
                                    zcl_raw_ota_image_notify,
                                    zcl_raw_ota_query_next_image_response,
                                    zcl_raw_ota_upgrade_end_response)
-
-from Classes.AdminWidgets import AdminWidgets
-from Classes.LoggingManagement import LoggingManagement
 
 # This file is hosted on @koenkk repository.
 # This file is maintained from the community, so make sure what you do.
@@ -509,11 +507,11 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
 
     logging(self, "Debug", "ota_send_block - Addr: %s/%s Type: 0x%X" % (dest_addr, dest_ep, image_type))
     if image_type not in self.ListOfImages["ImageType"]:
-        Domoticz.Error("ota_send_block - unknown image_type %s" % image_type)
+        logging(self, "Error", "ota_send_block - unknown image_type %s" % image_type)
         return False
 
     if image_type != int(self.ListInUpdate["ImageType"], 16):
-        Domoticz.Error("ota_send_block - inconsistent ImageType Received: %s Expecting: %s" % (image_type, self.ListInUpdate["ImageType"]))
+        logging(self, "Error", "ota_send_block - inconsistent ImageType Received: %s Expecting: %s" % (image_type, self.ListInUpdate["ImageType"]))
         return False
 
     _status = 0x00
@@ -742,19 +740,19 @@ def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_updat
         return False
 
     if brand not in self.ListOfImages["Brands"]:
-        Domoticz.Error("restapi_firmware_update Brands %s unknown" % brand)
+        logging(self, "Error", "restapi_firmware_update Brands %s unknown" % brand)
         return False
 
     if file_name not in self.ListOfImages["Brands"][brand]:
-        Domoticz.Error("restapi_firmware_update FileName %s unknown in this Brand %s" % (file_name, brand))
+        logging(self, "Error", "restapi_firmware_update FileName %s unknown in this Brand %s" % (file_name, brand))
         return False
 
     if target_nwkid not in self.ListOfDevices:
-        Domoticz.Error("restapi_firmware_update NwkId: %s unknown" % target_nwkid)
+        logging(self, "Error", "restapi_firmware_update NwkId: %s unknown" % target_nwkid)
         return False
 
     if target_ep not in self.ListOfDevices[target_nwkid]["Ep"]:
-        Domoticz.Error("restapi_firmware_update NwkId: %s Ep: %s unknown" % (target_nwkid, target_ep))
+        logging(self, "Error", "restapi_firmware_update NwkId: %s Ep: %s unknown" % (target_nwkid, target_ep))
         return False
 
     image_type = self.ListOfImages["Brands"][brand][file_name]["ImageType"]
@@ -929,7 +927,7 @@ def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
 
     logging(self, "Debug", "ota_extract_image_headers - offset:%s ..." % offset)
     ota_image = ota_image[offset:]
-    headers = unpack_headers(ota_image)
+    headers = unpack_headers(self, ota_image)
     _logging_headers(self, headers)
 
     logging(
@@ -961,12 +959,12 @@ def offset_start_firmware(ota_image):  # OK 13/10
             return i
     return None
 
-def unpack_headers(ota_image):  # OK 13/10
+def unpack_headers(self, ota_image):  # OK 13/10
 
     try:
         header_data = list(struct.unpack("<LHHHHHLH32BLBQHH", ota_image[:69]))
     except struct.error:
-        Domoticz.Error("ota_extract_image_headers - Error when unpacking: %s" % ota_image[:69])
+        logging(self, "Error", "ota_extract_image_headers - Error when unpacking: %s" % ota_image[:69])
         return None
 
     for i in range(8, 40):

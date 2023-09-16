@@ -11,11 +11,9 @@
 """
 
 import datetime
-import time
 import os.path
+import time
 from pathlib import Path
-
-import Domoticz
 
 from Modules.database import WriteDeviceList
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
@@ -188,7 +186,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
                 return found
             # We are in situation where we found the device in ListOfDevices but not in IEEE2NWK.
             # this is not expected
-            self.log.logging("Input", "Error", "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s" % (
+            self.log.logging("PluginTools", "Error", "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s" % (
                 found, lookupNwkId, lookupIEEE, ieee_from_nwkid))
             return found
 
@@ -205,7 +203,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             # in ListOfDevices !!
             # Let's cleanup
             del self.IEEE2NWK[lookupIEEE]
-            self.log.logging("Input", "Error", "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)" % (
+            self.log.logging("PluginTools", "Error", "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)" % (
                 exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
@@ -218,7 +216,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             del self.IEEE2NWK[ lookupIEEE ]
             # Delete the all Data Structure
             del self.ListOfDevices[ exitsingNwkId ]
-            self.log.logging("Input", "Error", "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)" % (
+            self.log.logging("PluginTools", "Error", "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)" % (
                 exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
@@ -232,7 +230,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
             del self.IEEE2NWK[lookupIEEE]
             # Delete the all Data Structure
             del self.ListOfDevices[exitsingNwkId]
-            self.log.logging("Input", "Status", "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !" % (
+            self.log.logging("PluginTools", "Status", "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !" % (
                 lookupIEEE, exitsingNwkId, lookupNwkId))
             return False
 
@@ -262,7 +260,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
         return True
 
     if new_NwkId == "0000" or old_NwkId == "0000":
-        self.log.logging("Input", "Log", "reconnectNWkDevice - Looks like we have an IEEE matching a Coordinator nwkid , this is not possible by definition New: %s Old: %s IEEE: %s !!!" % (
+        self.log.logging("PluginTools", "Log", "reconnectNWkDevice - Looks like we have an IEEE matching a Coordinator nwkid , this is not possible by definition New: %s Old: %s IEEE: %s !!!" % (
             new_NwkId, old_NwkId, IEEE))
         return False
     
@@ -274,7 +272,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
 
     # MostLikely exitsingKey(the old NetworkID) is not needed any more
     if removeNwkInList(self, old_NwkId) is None:
-        self.log.logging("Input", "Error", "reconnectNWkDevice - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s" % (
+        self.log.logging("PluginTools", "Error", "reconnectNWkDevice - something went wrong in the reconnect New NwkId: %s Old NwkId: %s IEEE: %s" % (
             new_NwkId, old_NwkId, IEEE))
 
     if self.groupmgt:
@@ -285,7 +283,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
     if self.ListOfDevices[new_NwkId]["Status"] in ( "Leave", ):
         self.ListOfDevices[new_NwkId]["Status"] = "inDB"
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
-        self.log.logging("Input", "Status", "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s" % (
+        self.log.logging("PluginTools", "Status", "reconnectNWkDevice - Update Status from %s to 'inDB' for NetworkID : %s" % (
             self.ListOfDevices[new_NwkId]["Status"], new_NwkId))
 
     # We will also reset ReadAttributes
@@ -297,7 +295,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
 
     WriteDeviceList(self, 0)
-    self.log.logging("Input", "Status", "NetworkID: %s is replacing %s for object: %s" % (new_NwkId, old_NwkId, IEEE))
+    self.log.logging("PluginTools", "Status", "NetworkID: %s is replacing %s for object: %s" % (new_NwkId, old_NwkId, IEEE))
     return True
 
 
@@ -329,13 +327,11 @@ def removeDeviceInList(self, Devices, IEEE, Unit):
     key = self.IEEE2NWK[IEEE]
     ID = Devices[Unit].ID
 
-    #Domoticz.Log("removeDeviceInList - request to remove Device: %s with IEEE: %s " % (key, IEEE))
-
     if ( "ClusterTye" in self.ListOfDevices[key] ):  
         # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
         if str(ID) in self.ListOfDevices[key]["ClusterType"]:
             del self.ListOfDevices[key]["ClusterType"][ID]  # Let's remove that entry
-            Domoticz.Log("removeDeviceInList - removing : %s in %s" % (ID, str(self.ListOfDevices[key]["ClusterType"])))
+            self.log.logging("PluginTools", "Log", "removeDeviceInList - removing : %s in %s" % (ID, str(self.ListOfDevices[key]["ClusterType"])))
             
     else:
         for tmpEp in list(self.ListOfDevices[key]["Ep"].keys()):
@@ -345,20 +341,18 @@ def removeDeviceInList(self, Devices, IEEE, Unit):
                 and str(ID) in self.ListOfDevices[key]["Ep"][tmpEp]["ClusterType"]
             ):
                 del self.ListOfDevices[key]["Ep"][tmpEp]["ClusterType"][str(ID)]
-                Domoticz.Log(
-                    "removeDeviceInList - removing : %s with Ep: %s in - %s"
-                    % (ID, tmpEp, str(self.ListOfDevices[key]["Ep"][tmpEp]["ClusterType"]))
-                )
+                self.log.logging("PluginTools", "Log", "removeDeviceInList - removing : %s with Ep: %s in - %s" % (
+                    ID, tmpEp, str(self.ListOfDevices[key]["Ep"][tmpEp]["ClusterType"])) )
 
     # Finaly let's see if there is any Devices left in this .
     emptyCT = True
     if "ClusterType" in self.ListOfDevices[key]:  # Empty or Doesn't exist
-        Domoticz.Log("removeDeviceInList - existing Global 'ClusterTpe'")
+        self.log.logging("PluginTools", "Log", "removeDeviceInList - existing Global 'ClusterTpe'")
         if self.ListOfDevices[key]["ClusterType"] != {}:
             emptyCT = False
     for tmpEp in list(self.ListOfDevices[key]["Ep"].keys()):
         if "ClusterType" in self.ListOfDevices[key]["Ep"][tmpEp]:
-            Domoticz.Log("removeDeviceInList - existing Ep 'ClusterTpe'")
+            self.log.logging("PluginTools", "Log", "removeDeviceInList - existing Ep 'ClusterTpe'")
             if self.ListOfDevices[key]["Ep"][tmpEp]["ClusterType"] != {}:
                 emptyCT = False
 
@@ -370,7 +364,7 @@ def removeDeviceInList(self, Devices, IEEE, Unit):
         self.adminWidgets.updateNotificationWidget(
             Devices, "Device fully removed %s with IEEE: %s" % (Devices[Unit].Name, IEEE)
         )
-        Domoticz.Status("Device %s with IEEE: %s fully removed from the system." % (Devices[Unit].Name, IEEE))
+        self.log.logging("PluginTools", "Status", "Device %s with IEEE: %s fully removed from the system." % (Devices[Unit].Name, IEEE))
         return True
     return False
 
@@ -458,7 +452,6 @@ def updSQN(self, key, newSQN):
     if newSQN is None:
         return
 
-    # Domoticz.Log("-->SQN updated %s from %s to %s" %(key, self.ListOfDevices[key]['SQN'], newSQN))
     self.ListOfDevices[key]["SQN"] = newSQN
     return
 
@@ -549,7 +542,7 @@ def getListofClusterbyModel(self, Model, InOut):
     if InOut == "" or InOut is None:
         return listofCluster
     if InOut not in ["Epin", "Epout"]:
-        Domoticz.Error("getListofClusterbyModel - Argument error : " + Model + " " + InOut)
+        self.log.logging("PluginTools", "Error", "getListofClusterbyModel - Argument error : " + Model + " " + InOut)
         return ""
 
     if Model in self.DeviceConf and InOut in self.DeviceConf[Model]:
@@ -727,7 +720,7 @@ def ReArrangeMacCapaBasedOnModel(self, nwkid, inMacCapa):
     Return the old or the revised MacCapa and eventually fix some Attributes
     """
     if nwkid not in self.ListOfDevices:
-        Domoticz.Error("%s not known !!!" % nwkid)
+        self.log.logging("PluginTools", "Error", "%s not known !!!" % nwkid)
         return inMacCapa
 
     if "Model" not in self.ListOfDevices[nwkid]:
@@ -776,7 +769,7 @@ def mainPoweredDevice(self, nwkid):
     """
 
     if nwkid not in self.ListOfDevices:
-        Domoticz.Log("mainPoweredDevice - Unknown Device: %s" % nwkid)
+        self.log.logging("PluginTools", "Debug", "mainPoweredDevice - Unknown Device: %s" % nwkid)
         return False
 
     model_name = ""
@@ -840,10 +833,8 @@ def loggingMessages(self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
     if sAddr in self.ListOfDevices and "ZDeviceName" in self.ListOfDevices[sAddr]:
         zdevname = self.ListOfDevices[sAddr]["ZDeviceName"]
 
-    Domoticz.Log(
-        "Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |"
-        % (msgtype, zdevname, sAddr, ieee, int(LQI, 16), SQN)
-    )
+    self.log.logging("PluginTools", "Log", "Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" % (
+        msgtype, zdevname, sAddr, ieee, int(LQI, 16), SQN) )
 
 def try_to_reconnect_via_neighbours(self, old_nwkid):
     
@@ -874,7 +865,7 @@ def try_to_reconnect_via_neighbours(self, old_nwkid):
                     new_nwkid = x
                     if new_nwkid != old_nwkid:
                         reconnectNWkDevice(self, new_nwkid, ieee, old_nwkid)
-                        Domoticz.Log("try_to_reconnect_via_neighbours found %s as replacement of %s" % (new_nwkid, old_nwkid))
+                        self.log.logging("PluginTools", "Log", "try_to_reconnect_via_neighbours found %s as replacement of %s" % (new_nwkid, old_nwkid))
                     return new_nwkid
 
 def chk_and_update_IEEE_NWKID(self, nwkid, ieee):
@@ -890,7 +881,7 @@ def chk_and_update_IEEE_NWKID(self, nwkid, ieee):
         return
 
     old_nwkid = self.IEEE2NWK[ ieee ]
-    self.log.logging("Input", "Log", "chk_and_update_IEEE_NWKID - update %s %s -> %s" %(ieee, old_nwkid, nwkid))
+    self.log.logging("PluginTools", "Log", "chk_and_update_IEEE_NWKID - update %s %s -> %s" %(ieee, old_nwkid, nwkid))
     reconnectNWkDevice(self, nwkid, ieee, old_nwkid)
         
 def lookupForIEEE(self, nwkid, reconnect=False):
@@ -899,7 +890,6 @@ def lookupForIEEE(self, nwkid, reconnect=False):
     # This is used when receiving a message from an unknown device !
     # """
 
-    # Domoticz.Log("lookupForIEEE - looking for %s in Neighbourgs table" %nwkid)
     for key in list(self.ListOfDevices.keys()):
         if "Neighbours" not in self.ListOfDevices[key]:
             continue
@@ -920,15 +910,13 @@ def lookupForIEEE(self, nwkid, reconnect=False):
             old_NwkId = self.IEEE2NWK[ieee]
             if old_NwkId not in self.ListOfDevices:
                 del self.IEEE2NWK[ieee]
-                Domoticz.Error(
-                    "lookupForIEEE found an inconsitency %s not existing but pointed by %s, cleanup" % (old_NwkId, ieee)
-                )
+                self.log.logging("PluginTools", "Error", "lookupForIEEE found an inconsitency %s not existing but pointed by %s, cleanup" % (
+                    old_NwkId, ieee) )
                 continue
 
             if reconnect:
                 reconnectNWkDevice(self, nwkid, ieee, old_NwkId)
-            Domoticz.Log(
-                "lookupForIEEE found a matching IEEE: %s in the Router Neighbours %s with Nwkid: %s (old Nwkid was %s)" %(
+                self.log.logging("PluginTools", "Status", "lookupForIEEE found a matching IEEE: %s in the Router Neighbours %s with Nwkid: %s (old Nwkid was %s)" %(
                     ieee, key, nwkid, old_NwkId))
             return ieee
     return None
@@ -944,7 +932,7 @@ def zigpy_plugin_sanity_check(self, nwkid):
     if self.IEEE2NWK[ ieee ] == nwkid and nwkid in self.ListOfDevices:
         if "Status" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Status"] in ( 'Leave', ):
             # the device is alive and ieee/nwkid is correct
-            self.log.logging("Input", "Status", "zigpy_plugin_sanity_check - Update Status from %s to 'inDB' for NetworkID : %s" % (
+            self.log.logging("PluginTools", "Status", "zigpy_plugin_sanity_check - Update Status from %s to 'inDB' for NetworkID : %s" % (
                 self.ListOfDevices[nwkid]["Status"], nwkid), nwkid)
             self.ListOfDevices[ nwkid ]["Status"] = 'inDB'
             self.ListOfDevices[nwkid]["Heartbeat"] = "0"
@@ -1027,25 +1015,25 @@ def checkValidValue(self, MsgSrcAddr, AttType, Data ):
 def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 
     if MsgSrcAddr not in self.ListOfDevices:
-        self.log.logging("Input", "Debug", "getAttributeValue - Unknown %s" % (MsgSrcAddr))
+        self.log.logging("PluginTools", "Debug", "getAttributeValue - Unknown %s" % (MsgSrcAddr))
         return None
     if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Ep"]:
-        self.log.logging("Input", "Debug", "getAttributeValue - Unknown %s/%s" % (MsgSrcAddr, MsgSrcEp))
+        self.log.logging("PluginTools", "Debug", "getAttributeValue - Unknown %s/%s" % (MsgSrcAddr, MsgSrcEp))
         return None
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
-        self.log.logging("Input", "Debug", "getAttributeValue - Unknown %s/%s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId))
+        self.log.logging("PluginTools", "Debug", "getAttributeValue - Unknown %s/%s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId))
         return None
     if not isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId], dict):
-        self.log.logging("Input", "Debug", "getAttributeValue - Not dict %s/%s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId))
+        self.log.logging("PluginTools", "Debug", "getAttributeValue - Not dict %s/%s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId))
         return None
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-        self.log.logging("Input", "Debug", "getAttributeValue - Unknown %s/%s %s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID))
+        self.log.logging("PluginTools", "Debug", "getAttributeValue - Unknown %s/%s %s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID))
         return None
     return self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID]
 
 
 # Function to manage 0x8002 payloads
-def retreive_cmd_payload_from_8002(Payload):
+def retreive_cmd_payload_from_8002( Payload):
 
     ManufacturerCode = None
     fcf = Payload[:2]
@@ -1054,7 +1042,6 @@ def retreive_cmd_payload_from_8002(Payload):
     zbee_zcl_ddr = disable_default_response(fcf)
 
     if GlobalCommand is None:
-        Domoticz.Error("Strange payload: %s" % Payload)
         return (None, None, None, None, None, None)
 
     if is_manufspecific_8002_payload(fcf):
@@ -1067,7 +1054,6 @@ def retreive_cmd_payload_from_8002(Payload):
         Command = Payload[4:6]
         Data = Payload[6:]
 
-    # Domoticz.Log("retreive_cmd_payload_from_8002 ======> Payload: %s " %Data)
     return (zbee_zcl_ddr, GlobalCommand, Sqn, ManufacturerCode, Command, Data)
 
 def fcf_direction(fcf):
@@ -1104,8 +1090,6 @@ def build_fcf(frame_type, manuf_spec, direction, disabled_default):
         fcf |= 0b1000
     if int(disabled_default, 16):
         fcf |= 0b10000
-    # Domoticz.Log("build_fcf FrameType: %s Manuf: %s Direction: %s DisabledDefault: %s ==> 0x%02x/%s" %(
-    #    frame_type, manuf_spec, direction, disabled_default, fcf, bin(fcf)))
     return "%02x" % fcf
 
 def get_cluster_attribute_value( self, key, endpoint, clusterId, AttributeId):
@@ -1312,9 +1296,7 @@ def is_attr_unvalid_datastruct(self, DeviceAttribute, key, endpoint, clusterId, 
     lastStatus = get_status_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId)
     if lastStatus is None:
         return False
-    if lastStatus in ("86", "8c"):
-        return True
-    return lastStatus != "00"
+    return True if lastStatus in ("86", "8c") else lastStatus != "00"
 
 
 def reset_attr_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId):
@@ -1370,108 +1352,21 @@ def is_ack_tobe_disabled(self, key):
     )
 
 
-def instrument_timing(module, timing, cnt_timing, cumul_timing, aver_timing, max_timing):
-
-    cumul_timing += timing
-    cnt_timing += 1
-    aver_timing = int(cumul_timing / cnt_timing)
-    if timing > max_timing:
-        Domoticz.Log("%s report a timing %s ms greated than the current max %s ms" % (module, timing, max_timing))
-        max_timing = timing
-
-    return cnt_timing, cumul_timing, aver_timing, max_timing
-
-
-# Configuration Helpers
-def setConfigItem(Key=None, Attribute="", Value=None):
-
-    Domoticz.Log("Saving %s - %s into Domoticz sqlite Db" %( Key, Attribute))
-    
-    Config = {}
-    if not isinstance(Value, (str, int, float, bool, bytes, bytearray, list, dict)):
-        Domoticz.Error("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
-        return Config
-
-    if isinstance(Value, dict):
-        # There is an issue that Configuration doesn't allow None value in dictionary !
-        # Replace none value to 'null'
-        Value = prepare_dict_for_storage(Value, Attribute)
-
-    try:
-        Config = Domoticz.Configuration()
-        if Key is None:
-            Config = Value  # set whole configuration if no key specified
-        else:
-            Config[Key] = Value
-
-        Config = Domoticz.Configuration(Config)
-    except Exception as inst:
-        Domoticz.Error("setConfigItem - Domoticz.Configuration operation failed: '" + str(inst) + "'")
-        return None
-    return Config
-
-
-def getConfigItem(Key=None, Attribute="", Default=None):
-    
-    Domoticz.Log("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
-    
-    if Default is None:
-        Default = {}
-    Value = Default
-    try:
-        Config = Domoticz.Configuration()
-        Value = Config if Key is None else Config[Key]
-    except KeyError:
-        Value = Default
-    except Exception as inst:
-        Domoticz.Error(
-            "getConfigItem - Domoticz.Configuration read failed: '"
-            + str(inst)
-            + "'"
-        )
-
-    return repair_dict_after_load(Value, Attribute)
-
-
-def prepare_dict_for_storage(dict_items, Attribute):
-
-    from base64 import b64encode
-
-    if Attribute in dict_items:
-        dict_items[Attribute] = b64encode(str(dict_items[Attribute]).encode("utf-8"))
-    dict_items["Version"] = 1
-    return dict_items
-
-
-def repair_dict_after_load(b64_dict, Attribute):
-    if b64_dict in ("", {}):
-        return {}
-    if "Version" not in b64_dict:
-        Domoticz.Log("repair_dict_after_load - Not supported storage")
-        return {}
-    if Attribute in b64_dict:
-        from base64 import b64decode
-
-        b64_dict[Attribute] = eval(b64decode(b64_dict[Attribute]))
-    return b64_dict
-
-
 def is_domoticz_db_available(self):
     #  Domoticz 2021.1 build 13495
 
     if not self.VersionNewFashion:
-        #Domoticz.Log("is_domoticz_db_available: %s due to Fashion" % False)
+        self.log.logging("PluginTools", "Debug", "is_domoticz_db_available: %s due to Fashion" % False)
         return False
 
     if self.DomoticzMajor < 2021:
-        #Domoticz.Log("is_domoticz_db_available: %s due to Major" % False)
+        self.log.logging("PluginTools", "Debug", "is_domoticz_db_available: %s due to Major" % False)
         return False
 
     if self.DomoticzMajor == 2021 and self.DomoticzMinor < 1:
-        # Domoticz.Log("is_domoticz_db_available: %s due to Minor" % False)
+        self.log.logging("PluginTools", "Debug", "is_domoticz_db_available: %s due to Minor" % False)
         return False
 
-    #Domoticz.Log("is_domoticz_db_available: %s" % True)
     return True
 
 def get_device_nickname( self, NwkId=None, Ieee=None):
@@ -1546,7 +1441,7 @@ def night_shift_jobs( self ):
     # Otherwise return True only if between midnight and 6am
 
     if not self.pluginconf.pluginConf["NightShift"]:
-        # Domoticz.Log("Always On" )
+        #self.log.logging("PluginTools", "Debug", "Always On" )
         return True
 
     current = datetime.datetime.now().time()
@@ -1556,17 +1451,17 @@ def night_shift_jobs( self ):
     end = datetime.time(23,59,59)
 
     if start <= current <= end:
-        #Domoticz.Log("Inside of Night Shift period %s %s %s" %( start, current, end))
+        self.log.logging("PluginTools", "Debug", "Inside of Night Shift period %s %s %s" %( start, current, end))
         return True
 
     # Check against the second part of the night
     start = datetime.time(0, 0,0)
     end = datetime.time(6,0,0)
     if start <= current <= end:
-        #Domoticz.Log("Inside of Night Shift period %s %s %s" %( start, current, end))
+        self.log.logging("PluginTools", "Debug","Inside of Night Shift period %s %s %s" %( start, current, end))
         return True
 
-    #Domoticz.Log("Outside of Night Shift period %s %s %s" %( start, current, end))
+    self.log.logging("PluginTools", "Debug", "Outside of Night Shift period %s %s %s" %( start, current, end))
     return False
 
 
@@ -1575,11 +1470,11 @@ def print_stack( self ):
     try:
         import inspect
     except Exception as e:
-        self.log.logging( "Zigpy", "Error", "Cannot import python module inspect")
+        self.log.logging( "PluginTools", "Error", "Cannot import python module inspect")
         return
     
     for x in inspect.stack():
-        self.log.logging( "Zigpy", "Error", "[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
+        self.log.logging( "PluginTools", "Error", "[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
 
 
 
@@ -1715,7 +1610,7 @@ def is_domoticz_above_2023(self):
 def is_domoticz_new_API(self):
 
     'is_domoticz_new_API() False True 1 15356'
-    self.log.logging("Input", "Debug", "is_domoticz_new_API() %s %s %s %s" %(
+    self.log.logging("PluginTools", "Debug", "is_domoticz_new_API() %s %s %s %s" %(
         is_domoticz_below_2023(self), is_domoticz_2023(self), self.DomoticzMinor, self.DomoticzBuild))
     
     if is_domoticz_below_2023(self):

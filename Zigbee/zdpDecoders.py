@@ -5,7 +5,9 @@
 #
 
 import struct
+
 from Zigbee.encoder_tools import encapsulate_plugin_frame
+
 
 def is_duplicate_zdp_frame(self, Nwkid, ClusterId, Sqn):
     

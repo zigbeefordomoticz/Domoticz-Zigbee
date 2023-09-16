@@ -7,7 +7,6 @@
 
 from Modules.tools import lookupForIEEE
 from Modules.zigateConsts import ADDRESS_MODE
-
 from Zigbee.zclDecoders import zcl_decoders
 from Zigbee.zdpDecoders import zdp_decoders
 

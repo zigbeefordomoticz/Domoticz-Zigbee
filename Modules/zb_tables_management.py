@@ -11,10 +11,10 @@
 """
 
 
-from sqlite3 import Timestamp
 import struct
 import time
 from datetime import datetime
+from sqlite3 import Timestamp
 
 from Modules.basicOutputs import mgt_binding_table_req, mgt_routing_req
 from Modules.tools import get_device_nickname

@@ -5,8 +5,10 @@
 #
 
 import struct
+
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import get_and_inc_ZCL_SQN, fcf_direction, build_fcf, is_ack_tobe_disabled
+from Modules.tools import (build_fcf, fcf_direction, get_and_inc_ZCL_SQN,
+                           is_ack_tobe_disabled)
 from Zigbee.encoder_tools import decode_endian_data
 
 DEFAULT_ACK_MODE = False

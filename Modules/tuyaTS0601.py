@@ -11,12 +11,13 @@
 """
 
 import struct
+
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            getAttributeValue)
-from Modules.tuyaTools import store_tuya_attribute, tuya_cmd, get_tuya_attribute
-
+from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
+                               tuya_cmd)
 
 # Generic functions
 

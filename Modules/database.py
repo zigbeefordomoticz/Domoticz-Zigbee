@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Dict
 
 import Modules.tools
+from Modules.domoticzAPI import setConfigItem, getConfigItem
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
@@ -276,7 +277,7 @@ def loadTxtDatabase(self, dbName):
 
 def _read_DeviceList_Domoticz(self):
 
-    ListOfDevices_from_Domoticz = Modules.tools.getConfigItem(Key="ListOfDevices", Attribute="Devices")
+    ListOfDevices_from_Domoticz = getConfigItem(Key="ListOfDevices", Attribute="Devices")
     time_stamp = 0
     if "TimeStamp" in ListOfDevices_from_Domoticz:
         time_stamp = ListOfDevices_from_Domoticz["TimeStamp"]
@@ -393,9 +394,7 @@ def _write_DeviceList_json(self):
 def _write_DeviceList_Domoticz(self):
     ListOfDevices_for_save = self.ListOfDevices.copy()
     self.log.logging("Database", "Log", "WriteDeviceList - flush Plugin db to %s" % "Domoticz")
-    return Modules.tools.setConfigItem(
-        Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save}
-    )
+    return setConfigItem( Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save} )
 
 
 def importDeviceConf(self):

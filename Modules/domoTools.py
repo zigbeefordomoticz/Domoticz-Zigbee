@@ -825,3 +825,4 @@ def remove_all_widgets( self, Devices, NwkId):
 def update_model_name( self, nwkid, new_model ):
     
     self.ListOfDevices[ nwkid ]["Model"] = new_model
+    

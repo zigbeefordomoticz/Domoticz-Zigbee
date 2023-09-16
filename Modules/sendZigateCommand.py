@@ -10,10 +10,11 @@
 
 """
 
-from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_COMMANDS, ZIGATE_EP
-
 import sys
 import time
+
+from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_COMMANDS, ZIGATE_EP
+
 
 def add_Last_Cmds(self, isqn, address_mode, nwkid, cmd, datas):
 

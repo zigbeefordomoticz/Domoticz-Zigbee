@@ -12,16 +12,16 @@
 # https://github.com/zigpy/zha-device-handlers/issues/357
 
 import binascii
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            is_ack_tobe_disabled, voltage2batteryP)
+from Modules.tuyaConst import eTRV_MODELS
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
-from Modules.tuyaConst import eTRV_MODELS
 from Modules.zigateConsts import ZIGATE_EP
 
 
