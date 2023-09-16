@@ -12,9 +12,8 @@
 import os
 import platform
 import sys
-import distro
 
-import Domoticz
+import distro
 
 
 def linux_distribution():
