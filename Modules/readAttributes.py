@@ -13,7 +13,6 @@
 
 import time
 
-import Domoticz
 import Modules.paramDevice
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
@@ -188,13 +187,8 @@ def skipThisAttribute(self, addr, EpOut, Cluster, Attr):
     if Cluster not in self.DeviceConf[model]["ReadAttributes"]:
         return False
     if Attr in self.DeviceConf[model]["ReadAttributes"][Cluster]:
-        Domoticz.Log("Skip Attribute 6 %s/%s %s %s" % (addr, EpOut, Cluster, Attr))
-        self.log.logging(
-            "ReadAttributes",
-            "Debug",
-            "normalizedReadAttrReq - Skip Read Attribute due to DeviceConf Nwkid: %s Cluster: %s Attribute: %s" % (addr, Cluster, Attr),
-            nwkid=addr,
-        )
+        self.log.logging( "ReadAttributes", "Debug", "Skip Attribute 6 %s/%s %s %s" % (addr, EpOut, Cluster, Attr))
+        self.log.logging( "ReadAttributes", "Debug", "normalizedReadAttrReq - Skip Read Attribute due to DeviceConf Nwkid: %s Cluster: %s Attribute: %s" % (addr, Cluster, Attr), nwkid=addr, )
         return False
     return True
 
@@ -500,7 +494,6 @@ def ReadAttributeRequest_0000_for_general(self, key):
             or ("Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("EH-ZB-VAC"))
         ):
             # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
-            # Domoticz.Log("Specific Manufacturer !!!!")
             manufacturer_code = "105e"
             for _attr in list(listAttributes):
                 if _attr in (0xE000, 0xE001, 0xE002):
@@ -520,9 +513,6 @@ def ReadAttributeRequest_0000_for_general(self, key):
             del listAttributes
             listAttributes = listAttrGeneric
 
-
-        # Domoticz.Log("List Attributes: " + " ".join("0x{:04x}".format(num) for num in listAttributes) )
-
         if listAttributes:
             # self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
             self.log.logging(
@@ -534,7 +524,6 @@ def ReadAttributeRequest_0000_for_general(self, key):
             )
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key), checkTime=False, )
 
-        # Domoticz.Log("List Attributes Manuf Spec: " + " ".join("0x{:04x}".format(num) for num in listAttrSpecific) )
         if listAttrSpecific:
             # self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttrSpecific)), nwkid=key)
             self.log.logging(
@@ -896,8 +885,6 @@ def ReadAttributeRequest_0201(self, key):
             del listAttributes
             listAttributes = listAttrGeneric
 
-        # Domoticz.Log("List Attributes: " + " ".join("0x{:04x}".format(num) for num in listAttributes) )
-
         if listAttributes:
             # self.log.logging( "ReadAttributes", 'Debug', "Request 0201 %s/%s 0201 %s " %(key, EPout, listAttributes), nwkid=key)
             self.log.logging(
@@ -918,7 +905,6 @@ def ReadAttributeRequest_0201(self, key):
                 checkTime=False,
             )
 
-        # Domoticz.Log("List Attributes Manuf Spec: " + " ".join("0x{:04x}".format(num) for num in listAttrSpecific) )
         if listAttrSpecific:
             # self.log.logging( "ReadAttributes", 'Debug', "Request Thermostat info via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttrSpecific)), nwkid=key)
             self.log.logging(
