@@ -13,8 +13,6 @@
 import struct
 from time import time
 
-import Domoticz
-
 from Modules.basicOutputs import (read_attribute, write_attribute,
                                   write_attributeNoResponse)
 from Modules.bindings import bindDevice, unbindDevice
@@ -54,9 +52,6 @@ def callbackDeviceAwake_Legrand(self, Devices, NwkId, EndPoint, cluster):
     This is fonction is call when receiving a message from a Manufacturer battery based device.
     The function is called after processing the readCluster part
     """
-
-    # Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" \
-    #        %(NwkId, EndPoint, cluster))
 
     return
 
@@ -242,11 +237,8 @@ def sendFC01Command(self, sqn, nwkid, ep, ClusterID, cmd, data):
             ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
             highpriority=True,
         )
-        self.log.logging(
-            "Legrand",
-            "Log",
-            "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" % (nwkid, ep, ClusterID, cmd, data),
-        )
+        self.log.logging( "Legrand", "Log", "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" % (
+            nwkid, ep, ClusterID, cmd, data), )
         return
 
 
@@ -263,7 +255,7 @@ def rejoin_legrand_reset(self):
         return
 
     # Send a Write Attributes no responses
-    Domoticz.Status("Detected Legrand IEEE, broadcast Write Attribute 0x0000/0xf000")
+    self.log.logging( "Legrand", "Status", "Detected Legrand IEEE, broadcast Write Attribute 0x0000/0xf000")
     write_attributeNoResponse(self, "ffff", ZIGATE_EP, "01", "0000", "1021", "01", "f000", "23", "00000000")
 
 
@@ -282,7 +274,7 @@ def legrand_fc01(self, nwkid, command, OnOff):
         return
 
     if command not in LEGRAND_COMMAND_NAME:
-        Domoticz.Error("Unknown Legrand command %s" % command)
+        self.log.logging( "Legrand", "Error", "Unknown Legrand command %s" % command)
         return
     if "Model" not in self.ListOfDevices[nwkid]:
         return
@@ -470,7 +462,7 @@ def legrand_fc40(self, nwkid, Mode):
     }
 
     if Mode not in CABLE_OUTLET_MODE:
-        Domoticz.Error(" Bad Mode : %s for %s" % (Mode, nwkid))
+        self.log.logging( "Legrand", "Error", " Bad Mode : %s for %s" % (Mode, nwkid))
         return
 
     Hattribute = "0000"
@@ -823,7 +815,7 @@ def legrand_remote_switch_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, M
     elif TYPE_ACTIONS[step_mod] == "stop":
         selector = TYPE_ACTIONS[step_mod]
     else:
-        Domoticz.Error("Decode8085 - Unknown state for %s step_mod: %s up_down: %s" % (MsgSrcAddr, step_mod, up_down))
+        self.log.logging( "Legrand", "Error", "Decode8085 - Unknown state for %s step_mod: %s up_down: %s" % (MsgSrcAddr, step_mod, up_down))
         return
 
     self.log.logging("Input", "Debug", "Decode8085 - Legrand selector: %s" % selector, MsgSrcAddr)

@@ -4,9 +4,6 @@
 # Author: zaraki673 & pipiche38
 #
 
-
-import Domoticz
-
 from Modules.basicOutputs import write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.tools import is_ack_tobe_disabled
@@ -29,51 +26,23 @@ def callbackDeviceAwake_Orvibo(self, Devices, NwkId, EndPoint, cluster):
     The function is called after processing the readCluster part
     """
 
-    # Domoticz.Log("callbackDeviceAwake_Orvibo - Nwkid: %s, EndPoint: %s cluster: %s" \
-    #        %(NwkId, EndPoint, cluster))
-
     return
 
 
 def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
-    # Domoticz.Log("OrviboReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
-    #        %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
-
-    BUTTON_MAP = {
-        # d0d2422bbf3a4982b31ea843bfedb559
-        "d0d2422bbf3a4982b31ea843bfedb559": {
-            "01": 1,  # Top
-            "02": 2,  # Middle
-            "03": 3,  # Bottom
-        },
-        # Interupteur Autocolalant /
-        "3c4e4fc81ed442efaf69353effcdfc5f": {
-            "03": 10,  # Top Left,
-            "0b": 20,  # Middle Left
-            "07": 30,  # Top Right
-            "0f": 40,  # Mddle Right
-        },
-    }
-
-    ACTIONS_MAP = {
-        "00": 1,  # Click
-        "02": 2,  # Long Click
-        "03": 3,  # Release
-    }
-
     if srcNWKID not in self.ListOfDevices:
-        Domoticz.Error("%s not found in Database")
+        self.log.logging("Orvibo", "Error", "%s not found in Database" %srcNWKID)
         return
     if "Model" not in self.ListOfDevices[srcNWKID]:
         return
 
     _Model = self.ListOfDevices[srcNWKID]["Model"]
     if ClusterID != "0017":
-        Domoticz.Error("orviboReadRawAPS - unexpected ClusterId %s for NwkId: %s" % (ClusterID, srcNWKID))
+        self.log.logging("Orvibo", "Error", "orviboReadRawAPS - unexpected ClusterId %s for NwkId: %s" % (ClusterID, srcNWKID))
         return
 
-    FrameControlFiled = MsgPayload[0:2]
+    FrameControlFiled = MsgPayload[:2]
 
     if FrameControlFiled == "19":
         sqn = MsgPayload[2:4]
@@ -81,14 +50,36 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
         data = MsgPayload[6:]
 
     if cmd == "08":
-        button = data[0:2]
+        button = data[:2]
         action = data[4:6]
 
-        # Domoticz.Log("button: %s, action: %s" %(button, action))
+        BUTTON_MAP = {
+            # d0d2422bbf3a4982b31ea843bfedb559
+            "d0d2422bbf3a4982b31ea843bfedb559": {
+                "01": 1,  # Top
+                "02": 2,  # Middle
+                "03": 3,  # Bottom
+            },
+            # Interupteur Autocolalant /
+            "3c4e4fc81ed442efaf69353effcdfc5f": {
+                "03": 10,  # Top Left,
+                "0b": 20,  # Middle Left
+                "07": 30,  # Top Right
+                "0f": 40,  # Mddle Right
+            },
+        }
+
+        ACTIONS_MAP = {
+            "00": 1,  # Click
+            "02": 2,  # Long Click
+            "03": 3,  # Release
+        }
+
+        self.log.logging("Orvibo", "Debug", "button: %s, action: %s" %(button, action))
 
         if action in ACTIONS_MAP and button in BUTTON_MAP[_Model]:
             selector = BUTTON_MAP[_Model][button] + ACTIONS_MAP[action]
-            # Domoticz.Log("---> Selector: %s" %selector)
+            self.log.logging("Orvibo", "Debug", "---> Selector: %s" %selector)
             MajDomoDevice(self, Devices, srcNWKID, "01", "0006", selector)
 
 
@@ -112,7 +103,7 @@ def OrviboRegistration(self, nwkid):
     data_type = "20"  # Bool
     data = "01"
 
-    Domoticz.Log("Orvibo registration for %s" % nwkid)
+    self.log.logging("Orvibo", "Debug", "Orvibo registration for %s" % nwkid)
     write_attribute(
         self,
         nwkid,

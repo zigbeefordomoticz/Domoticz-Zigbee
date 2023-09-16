@@ -12,7 +12,6 @@
 
 import time
 
-import Domoticz
 from Modules.basicOutputs import getListofAttribute, identifyEffect
 from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice
 from Modules.casaia import casaia_pairing
@@ -275,11 +274,11 @@ def request_next_Ep(self, Nwkid):
 def interview_timeout(self, Devices, NWKID, RIA, status):
     self.log.logging( "Pairing", "Debug", "interview_timeout - NWKID: %s, Status: %s, RIA: %s," % ( NWKID, status, RIA, ), )
 
-    Domoticz.Error("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" % (RIA, NWKID))
+    self.log.logging("Pairing", "Error", "[%s] NEW OBJECT: %s Not able to get all needed attributes on time" % (RIA, NWKID))
     self.ListOfDevices[NWKID]["Status"] = "UNKNOW"
     self.ListOfDevices[NWKID]["ConsistencyCheck"] = "Bad Pairing"
-    Domoticz.Error("processNotinDB - not able to find response from " + str(NWKID) + " stop process at " + str(status))
-    Domoticz.Error("processNotinDB - Collected Infos are : %s" % (str(self.ListOfDevices[NWKID])))
+    self.log.logging("Pairing", "Error", "processNotinDB - not able to find response from " + str(NWKID) + " stop process at " + str(status))
+    self.log.logging("Pairing", "Error", "processNotinDB - Collected Infos are : %s" % (str(self.ListOfDevices[NWKID])))
     self.adminWidgets.updateNotificationWidget(Devices, "Unable to collect all informations for enrollment of this devices. See Logs")
     self.CommiSSionning = False
     if "ReqEpv2" in self.ListOfDevices[NWKID]:
@@ -335,12 +334,10 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
     IsCreated = False
     # Let's check if the IEEE is not known in Domoticz
     for x in Devices:
-        if self.ListOfDevices[NWKID].get("IEEE") and Devices[
-            x
-        ].DeviceID == str(self.ListOfDevices[NWKID]["IEEE"]):
+        if self.ListOfDevices[NWKID].get("IEEE") and Devices[ x ].DeviceID == str(self.ListOfDevices[NWKID]["IEEE"]):
             IsCreated = True
-            Domoticz.Error("processNotinDBDevices - Devices already exist. " + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]))
-            Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
+            self.log.logging("Pairing", "Error", "processNotinDBDevices - Devices already exist. " + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]))
+            self.log.logging("Pairing", "Error", "processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
             break
 
     if not IsCreated:
@@ -369,7 +366,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
     CreateDomoDevice(self, Devices, NWKID)
     if self.ListOfDevices[NWKID]["Status"] not in ("inDB", "failDB"):
         # Something went wrong in the Widget creation
-        Domoticz.Error("processNotinDBDevices - Creat Domo Device Failed !!! for %s status: %s" % (NWKID, self.ListOfDevices[NWKID]["Status"]))
+        self.log.logging("Pairing", "Error","processNotinDBDevices - Creat Domo Device Failed !!! for %s status: %s" % (NWKID, self.ListOfDevices[NWKID]["Status"]))
         self.ListOfDevices[NWKID]["Status"] = "UNKNOW"
         self.CommiSSionning = False
         return
@@ -377,11 +374,11 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
     self.ListOfDevices[ NWKID ]["PairingTime"] = time.time()
     # Don't know why we need as this seems very weird
     if NWKID not in self.ListOfDevices:
-        Domoticz.Error("processNotinDBDevices - %s doesn't exist in Post creation widget" % NWKID)
+        self.log.logging("Pairing", "Error","processNotinDBDevices - %s doesn't exist in Post creation widget" % NWKID)
         self.CommiSSionning = False
         return
     if "Ep" not in self.ListOfDevices[NWKID]:
-        Domoticz.Error("processNotinDBDevices - %s doesn't have Ep in Post creation widget" % NWKID)
+        self.log.logging("Pairing", "Error","processNotinDBDevices - %s doesn't have Ep in Post creation widget" % NWKID)
         self.CommiSSionning = False
         return
 
@@ -604,7 +601,7 @@ def create_group_if_required(self, NWKID):
                 if len(groupToAdd) == 2:
                     self.groupmgt.addGroupMemberShip(NWKID, groupToAdd[0], groupToAdd[1])
                 else:
-                    Domoticz.Error("Uncorrect GroupMembership definition %s" % str(self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["GroupMembership"]))
+                    self.log.logging("Pairing", "Error","Uncorrect GroupMembership definition %s" % str(self.DeviceConf[self.ListOfDevices[NWKID]["Model"]]["GroupMembership"]))
 
     if self.groupmgt and "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] == "tint-Remote-white":
         # Tint Remote manage 4 groups and we will create with ZiGate attached.

@@ -8,16 +8,15 @@
     Description: Update of Domoticz Widget
 """
 import Domoticz
-from Zigbee.zdpCommands import zdp_IEEE_address_request
-
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                UpdateDevice_v2, remove_bad_cluster_type_entry)
-from Modules.tools import zigpy_plugin_sanity_check
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
+from Modules.tools import zigpy_plugin_sanity_check
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
                             get_tarif_color, zlinky_sum_all_indexes)
+from Zigbee.zdpCommands import zdp_IEEE_address_request
 
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):

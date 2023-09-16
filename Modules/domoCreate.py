@@ -10,8 +10,9 @@
 
 
 import Domoticz
-from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
-                               subtypeRGB_FromProfile_Device_IDs_onEp2, UpdateDevice_v2)
+from Modules.domoTools import (GetType, UpdateDevice_v2,
+                               subtypeRGB_FromProfile_Device_IDs,
+                               subtypeRGB_FromProfile_Device_IDs_onEp2)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import is_domoticz_new_blind
 

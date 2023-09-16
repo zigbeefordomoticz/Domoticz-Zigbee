@@ -12,7 +12,8 @@ import struct
 from Modules.basicOutputs import write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import get_and_inc_ZCL_SQN, is_ack_tobe_disabled, retreive_cmd_payload_from_8002
+from Modules.tools import (get_and_inc_ZCL_SQN, is_ack_tobe_disabled,
+                           retreive_cmd_payload_from_8002)
 from Modules.zigateConsts import ZIGATE_EP
 
 CASAIA_MANUF_CODE = "113c"

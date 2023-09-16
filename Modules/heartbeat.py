@@ -13,7 +13,6 @@
 import datetime
 import time
 
-import Domoticz
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
@@ -710,10 +709,8 @@ def processKnownDevices(self, Devices, NWKID):
                 if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
                     timing = self.pluginconf.pluginConf[READ_ATTRIBUTES_REQUEST[Cluster][1]]
                 else:
-                    Domoticz.Error(
-                        "processKnownDevices - missing timing attribute for Cluster: %s - %s"
-                        % (Cluster, READ_ATTRIBUTES_REQUEST[Cluster][1])
-                    )
+                    self.log.logging( "Heartbeat", "Error", "processKnownDevices - missing timing attribute for Cluster: %s - %s" % (
+                        Cluster, READ_ATTRIBUTES_REQUEST[Cluster][1]) )
                     continue
 
                 # Let's check the timing
@@ -917,22 +914,19 @@ def processListOfDevices(self, Devices):
                         break
                 else:  # We browse the all Devices and didn't find any IEEE.
                     if "IEEE" in self.ListOfDevices[NWKID]:
-                        Domoticz.Log(
-                            "processListOfDevices - No corresponding device in Domoticz for %s/%s"
-                            % (NWKID, str(self.ListOfDevices[NWKID]["IEEE"]))
-                        )
+                        self.log.logging( "Heartbeat", "Log", "processListOfDevices - No corresponding device in Domoticz for %s/%s" % (
+                            NWKID, str(self.ListOfDevices[NWKID]["IEEE"])) )
                     else:
-                        Domoticz.Log("processListOfDevices - No corresponding device in Domoticz for %s" % (NWKID))
+                        self.log.logging( "Heartbeat", "Log", "processListOfDevices - No corresponding device in Domoticz for %s" % (NWKID))
                     fnd = False
 
                 if not fnd:
                     # Not devices found in Domoticz, so we are safe to remove it from Plugin
                     if self.ListOfDevices[NWKID]["IEEE"] in self.IEEE2NWK:
-                        Domoticz.Status(
-                            "processListOfDevices - Removing %s / %s from IEEE2NWK." % (self.ListOfDevices[NWKID]["IEEE"], NWKID)
-                        )
+                        self.log.logging( "Heartbeat", "Status", "processListOfDevices - Removing %s / %s from IEEE2NWK." % (
+                            self.ListOfDevices[NWKID]["IEEE"], NWKID) )
                         del self.IEEE2NWK[self.ListOfDevices[NWKID]["IEEE"]]
-                    Domoticz.Status("processListOfDevices - Removing the entry %s from ListOfDevice" % (NWKID))
+                    self.log.logging( "Heartbeat", "Status", "processListOfDevices - Removing the entry %s from ListOfDevice" % (NWKID))
                     removeNwkInList(self, NWKID)
 
         elif status not in ("inDB", "UNKNOW", "erasePDM"):
@@ -957,11 +951,8 @@ def processListOfDevices(self, Devices):
         del self.ListOfDevices[iterDevToBeRemoved]
 
     if self.CommiSSionning or self.busy:
-        self.log.logging(
-            "Heartbeat",
-            "Debug",
-            "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" % (self.busy, self.CommiSSionning),
-        )
+        self.log.logging( "Heartbeat", "Debug", "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" % (
+            self.busy, self.CommiSSionning), )
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
     # Network Topology
