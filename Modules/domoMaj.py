@@ -17,6 +17,7 @@ from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
                             get_tarif_color, zlinky_sum_all_indexes)
 from Zigbee.zdpCommands import zdp_IEEE_address_request
+from Modules.domoticzAbstractLayer import find_widget_unit
 
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
@@ -112,11 +113,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             continue
 
         DeviceUnit = 0
-        for x in Devices:  # Found the Device Unit
-            if Devices[x].ID == int(WidgetId):
-                DeviceUnit = x
-                break
-        if DeviceUnit == 0:
+        DeviceUnit = find_widget_unit(self, Devices, WidgetId )
+        if DeviceUnit is None:
             self.log.logging( "Widget", "Error", "Device %s not found !!!" % WidgetId, NWKID)
             # House keeping, we need to remove this bad clusterType
             if remove_bad_cluster_type_entry(self, NWKID, Ep, clusterID, WidgetId ):

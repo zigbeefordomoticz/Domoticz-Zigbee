@@ -185,15 +185,7 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
             Type_ = 244
             Subtype_ = 62
             Switchtype_ = 18
-        myDev = Domoticz.Device(
-            DeviceID=ieee,
-            Name=widgetName,
-            Unit=unit,
-            Type=Type_,
-            Subtype=Subtype_,
-            Switchtype=Switchtype_,
-            Options=widgetOptions,
-        )
+        myDev = Domoticz.Device( DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_, Options=widgetOptions, )
     elif Image:
         myDev = Domoticz.Device( DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_, Image=Image )
     elif Switchtype_:

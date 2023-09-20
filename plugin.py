@@ -144,6 +144,7 @@ from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 import z4d_certified_devices
+from Modules.domoticzAbstractLayer import load_list_of_domoticz_widget
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -473,8 +474,10 @@ class BasePlugin:
             self.log.logging("Plugin", "Error", "DeviceConf initialisation failure!!! %s" % type(self.DeviceConf))
             self.onStop()
             return
-            
-
+        
+        # Import List of Domoticz Widgets
+        load_list_of_domoticz_widget(self, Devices)
+        
         # Import DeviceList.txt Filename is : DeviceListName
         self.log.logging("Plugin", "Status", "load ListOfDevice")
         if LoadDeviceList(self) == "Failed":
