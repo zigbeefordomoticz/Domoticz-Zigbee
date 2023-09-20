@@ -12,6 +12,11 @@ import Domoticz
 DOMOTICZ_EXTENDED_API = False
 
 def load_list_of_domoticz_widget(self, Devices):
+    """Use at plugin start to creat an index of Domoticz Widget. It is also called after a Widget removal and when a new device has been paired.
+
+    Args:
+        Devices (dictionary): Devices dictionary provided by the Domoticz framework
+    """
 
     for x in list(Devices):
         if DOMOTICZ_EXTENDED_API:
@@ -40,8 +45,18 @@ def load_list_of_domoticz_widget(self, Devices):
 
 
 def find_widget_unit_from_WidgetID(self, Devices, WidgetID ):
-    # Should be used in domoMaj, when looking for the 'DeviceUnit'
-    # In legacy 'DeviceUnit' will be a Number, while in Extended, it will be a Tupple of DeviceID and Unit
+    """Find the Widget Unit with Legay framework, the tuple ( DeviceID, Unit ) with the Extended Framework
+
+    Args:
+        Devices (dict): Devices dictionary provided by the Domoticz framework
+        WidgetID (str): Domoticz Widget Idx, usally store in the "ClusterType" attribute associated to each Ep
+        Should be used in domoMaj, when looking for the 'DeviceUnit'
+
+    Returns:
+        _type_: Widget Unit with Legay framework, the tuple ( DeviceID, Unit ) with the Extended Framework
+        In legacy 'DeviceUnit' will be a Number, while in Extended, it will be a Tupple of DeviceID and Unit
+        
+    """
     
     self.log.logging( "AbstractDz", "Debug", "find_widget_unit - WidgetId: %s (%s)" % (WidgetID, type(WidgetID)))
     WidgetID = int(WidgetID)
@@ -74,6 +89,15 @@ def find_widget_unit_from_WidgetID(self, Devices, WidgetID ):
 
 
 def how_many_slot_available( Devices, DeviceId=None):
+    """Return the number of unit slot available
+
+    Args:
+        Devices (dictionary): Devices dictionary provided by the Domoticz framework
+        DeviceId (str, optional): DeviceID (ieee). Defaults to None (means Legacy framework)
+
+    Returns:
+        int: number of available unit slot
+    """
     # If DeviceId is None, then we are in Legacy mode
     if DeviceId is None:
         return sum(x not in Devices for x in range( 1, 255 ))
@@ -86,10 +110,17 @@ def how_many_slot_available( Devices, DeviceId=None):
 
 
 def FreeUnit(self, Devices, DeviceId, nbunit_=1):
+    """Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
+
+    Args:
+        Devices (dictionary): Devices dictionary provided by the Domoticz framework
+        DeviceId (str): DeviceID (ieee). Defaults to None (means Legacy framework)
+        nbunit_ (int, optional): Number of consecutive unit required. Defaults to 1.
+
+    Returns:
+        int: unit number
     """
-    FreeUnit
-    Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
-    """
+    
     
     def _log_message(count):
         messages = {
@@ -129,8 +160,23 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
 
 
 def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Type_=None, Subtype_=None, Switchtype_=None, widgetOptions=None, Image=None):
-    # Should be used in domoCreate
-    # to substitute the Create() and Unit() calls
+    """abstract layer to be used for Legacy or Extended framework in order to create a Domoticz Widget
+
+    Args:
+        Devices (dictionary): Devices dictionary provided by the Domoticz framework
+        DeviceID_ (str): DeviceID (ieee). Defaults to None (means Legacy framework)
+        Unit_ (_type_): Unit number found with FreeUnit()
+        Name_ (str): Widget name
+        widgetType (str, optional): _description_. Defaults to None.
+        Type_ (int, optional): Device Type. Defaults to None.
+        Subtype_ (int, optional): device subtype . Defaults to None.
+        Switchtype_ (int, optional): device switchtype . Defaults to None.
+        widgetOptions (dict, optional): Device options. Defaults to None.
+        Image (int, optional): image number. Defaults to None.
+
+    Returns:
+        _type_: return the Domoticz Widget IDX
+    """
     
     # Create the device
     self.log.logging("AbstractDz", "Debug", "domo_create_api DeviceID: %s,Name: %s,Unit: %s,TypeName: %s,Type: %s,Subtype: %s,Switchtype: %s,Image: %s" %(
