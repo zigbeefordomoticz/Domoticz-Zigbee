@@ -149,14 +149,11 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010", 
         value = "%02x" % value
         zcl_window_covering_percentage(self, nwkid, EPout, value)
     else:
-        if value == 100:
-            value = 255
-        elif value == 0:
-            value = 0
-        else:
-            value = round((value * 255) / 100)
-            if value > 0 and value == 0:
-                value = 1
+        value = round((value * 255) / 100)
+        if value >= 100:
+            value = 254
+        elif value <= 0:
+            value = 1
 
         value = Hex_Format(2, value)
         if withOnOff:
