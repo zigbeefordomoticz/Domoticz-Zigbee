@@ -121,7 +121,7 @@ from Modules.command import mgtCommand
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
-from Modules.domoCreate import how_many_slot_available
+from Modules.domoticzAbstractLayer import how_many_slot_available, load_list_of_domoticz_widget
 from Modules.domoTools import ResetDevice
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
@@ -144,7 +144,6 @@ from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 import z4d_certified_devices
-from Modules.domoticzAbstractLayer import load_list_of_domoticz_widget
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -172,6 +171,7 @@ class BasePlugin:
         self.DeviceConf = {}  # Store DeviceConf.txt, all known devices configuration
         self.ModelManufMapping = {}
         self.readZclClusters = {}
+        self.ListOfDomoticzWidget = {}
 
         # Objects from Classe
         self.configureReporting = None
@@ -476,6 +476,7 @@ class BasePlugin:
             return
         
         # Import List of Domoticz Widgets
+        self.ListOfDomoticzWidget = {}
         load_list_of_domoticz_widget(self, Devices)
         
         # Import DeviceList.txt Filename is : DeviceListName
@@ -779,6 +780,8 @@ class BasePlugin:
                     )
 
             self.log.logging("Plugin", "Debug", "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
+            self.ListOfDomoticzWidget = {}
+            load_list_of_domoticz_widget(self, Devices)
             return
 
         if self.groupmgt and Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
@@ -1006,6 +1009,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
+            load_list_of_domoticz_widget(self, Devices)
   
         _trigger_coordinator_backup( self )
 

@@ -15,6 +15,7 @@ from Modules.domoTools import (GetType, UpdateDevice_v2,
                                subtypeRGB_FromProfile_Device_IDs_onEp2)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import is_domoticz_new_blind
+from Modules.domoticzAbstractLayer import domo_create_api, FreeUnit
 
 
 def cleanup_widget_Type(widget_type_list):
@@ -65,41 +66,6 @@ def deviceName(self, NWKID, DeviceType, IEEE_, EP_):
     self.log.logging("WidgetCreation", "Debug", "deviceName - Dev Name: %s" % devName, NWKID)
 
     return devName
-
-
-def how_many_slot_available( Devices ):
-    return sum(x not in Devices for x in range( 1, 255 ))
-
-
-def FreeUnit(self, Devices, nbunit_=1):
-    """
-    FreeUnit
-    Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
-    """
-    if how_many_slot_available( Devices ) <= 5:
-        self.log.logging("WidgetCreation", "Status", "It seems that you can create only 5 Domoticz widgets more !!!")
-    elif how_many_slot_available( Devices ) <= 15:
-        self.log.logging("WidgetCreation", "Status", "It seems that you can create only 15 Domoticz widgets more !!")
-    elif how_many_slot_available( Devices ) <= 30:
-        self.log.logging("WidgetCreation", "Status", "It seems that you can create only 30 Domoticz widgets more !")
-        
-    for x in range(1, 255):
-        if x not in Devices:
-            if nbunit_ == 1:
-                return x
-            nb = 1
-            for y in range(x + 1, 255):
-                if y not in Devices:
-                    nb += 1
-                else:
-                    break
-                if nb == nbunit_:  # We have found nbunit consecutive slots
-                    self.log.logging("WidgetCreation", "Debug", "FreeUnit - device " + str(x) + " available")
-                    return x
-
-    self.log.logging("WidgetCreation", "Debug", "FreeUnit - device " + str(len(Devices) + 1))
-    return len(Devices) + 1
-
 
 def createSwitchSelector(self, nbSelector, DeviceType=None, OffHidden=False, SelectorStyle=0):
     """
@@ -166,8 +132,8 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     forceClusterType if you want to overwrite the ClusterType usally based with cType
     """
 
-    unit = FreeUnit(self, Devices)
-    self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - unit: %s" % unit, nwkid)
+    unit = FreeUnit(self, Devices, ieee)
+    self.log.logging("WidgetCreation", "Debug", "createDomoticzWidget - unit: %s" % unit, nwkid)
 
     self.log.logging( "WidgetCreation", "Debug", "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s" % (
         cType, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, Image, ForceClusterType), nwkid, )
@@ -175,33 +141,15 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     widgetName = deviceName(self, nwkid, cType, ieee, ep)
     # oldFashionWidgetName = cType + "-" + ieee + "-" + ep
 
-    if widgetType:
-        # We only base the creation on widgetType
-        myDev = Domoticz.Device(DeviceID=ieee, Name=widgetName, Unit=unit, TypeName=widgetType)
-
-    elif widgetOptions:
-        # In case of widgetOptions, we have a Selector widget
-        if Type_ is None and Subtype_ is None and Switchtype_ is None:
-            Type_ = 244
-            Subtype_ = 62
-            Switchtype_ = 18
-        myDev = Domoticz.Device( DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_, Options=widgetOptions, )
-    elif Image:
-        myDev = Domoticz.Device( DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_, Image=Image )
-    elif Switchtype_:
-        myDev = Domoticz.Device( DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_ )
-    else:
-        myDev = Domoticz.Device(DeviceID=ieee, Name=widgetName, Unit=unit, Type=Type_, Subtype=Subtype_)
-
-    myDev.Create()
-    ID = myDev.ID
-    if myDev.ID == -1:
+    myDev_ID = domo_create_api(self, Devices, ieee, unit, widgetName, widgetType=widgetType, Type_=Type_, Subtype_=Subtype_, Switchtype_=Switchtype_, widgetOptions=widgetOptions, Image=Image)
+    
+    if myDev_ID == -1:
         self.ListOfDevices[nwkid]["Status"] = "failDB"
-        Domoticz.Error("Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev)
+        Domoticz.Error("Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev_ID)
         return None
 
     self.ListOfDevices[nwkid]["Status"] = "inDB"
-    self.ListOfDevices[nwkid]["Ep"][ep]["ClusterType"][str(ID)] = ( ForceClusterType or cType )
+    self.ListOfDevices[nwkid]["Ep"][ep]["ClusterType"][str(myDev_ID)] = ( ForceClusterType or cType )
     return unit
 
 
