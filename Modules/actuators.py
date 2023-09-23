@@ -34,6 +34,22 @@ from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
                                 zcl_window_covering_stop)
 
 
+def lightning_percentage_to_analog( percentage_value ):
+    """convert a percentage value (0-100) into an analog value ( 0-255)
+
+    Args:
+        percentage_value (int): a value from 0 to 100, which represent a % 
+
+    Returns:
+        _type_: a value from 1 to 254
+    """
+    if percentage_value > 99:
+        return 254
+    elif percentage_value < 1:
+        return 1
+    return round((percentage_value * 255) / 100)
+
+
 def actuators(self, action, nwkid, epout, DeviceType, cmd=None, value=None, color=None):
 
     self.log.logging(
@@ -149,13 +165,7 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010", 
         value = "%02x" % value
         zcl_window_covering_percentage(self, nwkid, EPout, value)
     else:
-        value = round((value * 255) / 100)
-        if value >= 100:
-            value = 254
-        elif value <= 0:
-            value = 1
-
-        value = Hex_Format(2, value)
+        value = Hex_Format(2, lightning_percentage_to_analog( value ))
         if withOnOff:
             zcl_move_to_level_with_onoff( self, nwkid, EPout, "01", value, transition)   
         else:
@@ -193,8 +203,6 @@ def actuator_setalarm(self, nwkid, EPout, value):
         self.iaszonemgt.write_IAS_WD_Squawk(nwkid, EPout, "armed")
     elif value == 50:  # Disarmed
         self.iaszonemgt.write_IAS_WD_Squawk(nwkid, EPout, "disarmed")
-
-
 
 def get_all_transition_mode( self, Nwkid):
 
@@ -235,7 +243,7 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
         transitionMoveLevel = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToLevel"])
         
     if Hue_List["m"] or Hue_List["m"] != 9998:
-        value = int(1 + value * 254 / 100)  # To prevent off state
+        value = lightning_percentage_to_analog( value )
         self.log.logging("Command", "Debug", "---------- Set Level: %s" % (value), nwkid)
         actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)
 
