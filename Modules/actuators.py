@@ -166,6 +166,8 @@ def actuator_setlevel(self, nwkid, EPout, value, DeviceType, transition="0010", 
         zcl_window_covering_percentage(self, nwkid, EPout, value)
     else:
         value = Hex_Format(2, lightning_percentage_to_analog( value ))
+        self.log.logging("Command", "Debug", "---------- actuator_setlevel Set Level: %s" % (value), nwkid)
+        
         if withOnOff:
             zcl_move_to_level_with_onoff( self, nwkid, EPout, "01", value, transition)   
         else:
