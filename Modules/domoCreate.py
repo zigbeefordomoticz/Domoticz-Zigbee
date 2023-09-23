@@ -589,8 +589,10 @@ SIMPLE_WIDGET = {
     "Baro": { "widgetType": "Barometer", },
     "AirQuality": { "widgetType": "Air Quality", },
     "Power": { "widgetType": "Usage", },
-    "PowerNegative": { "widgetType": "Usage", },
     "Meter": { "widgetType": "kWh", },
+    "ConsoMeter": { "Type": 113, "Subtype": 0, "Switchtype": 4, "sValue": "0", "nValue": 0},
+    "ProdMeter": { "Type": 113, "Subtype": 0, "Switchtype": 4, "sValue": "0", "nValue": 0},
+    "ProdPower": { "widgetType": "Usage", },
     "Voltage": { "widgetType": "Voltage", },
     "Voc": { "widgetType": "Custom", "Options": "1;ppm" },
     "PM25": { "widgetType": "Custom", "Options": "1;ppm" },
@@ -646,7 +648,6 @@ SIMPLE_WIDGET = {
     "WaterCounter": { "Type": 243, "Subtype": 28, "Switchtype": 2, "Image": 22, "sValue": "0", "nValue": 0},
     "GazMeter": { "Type": 251, "Subtype": 2, "Switchtype": 0, "sValue": "0", "nValue": 0},
     "Counter": { "Type": 113, "Subtype": 0, "Switchtype": 0, "sValue": "0", "nValue": 0},
-    "ProdMeter": { "Type": 113, "Subtype": 0, "Switchtype": 4, "sValue": "0", "nValue": 0},
 }
 
 BLIND_DOMOTICZ_2022 = {

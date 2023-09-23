@@ -302,6 +302,22 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  P1Meter : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
+            if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
+                if value < 0 and is_PowerNegative_widget( ClusterTypeList):
+                    self.log.logging("Widget", "Log", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
+                    continue
+
+                nValue = round(float(value), 2)
+                sValue = value
+                self.log.logging("Widget", "Debug", "------>Power  : %s" % sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
+
+            if WidgetType == "ProdMeter" and Attribute_ == "" and value < 0:
+                nValue = abs( round(float(value), 2) )
+                sValue = abs(value)
+                self.log.logging("Widget", "Debug", "------>PowerNegative  : %s" % sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
+
             if (
                 WidgetType == "P1Meter_ZL" 
                 and "Model" in self.ListOfDevices[NWKID] 
@@ -359,21 +375,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-            if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
-                nValue = round(float(value), 2)
-                sValue = value
-                self.log.logging("Widget", "Debug", "------>Power  : %s" % sValue, NWKID)
-                if nValue < 0 and is_PowerNegative_widget( ClusterTypeList):
-                    self.log.logging("Widget", "Log", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
-                    continue    
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
-                
-            if WidgetType == "PowerNegative" and Attribute_ == "":  # 
-                nValue = abs( round(float(value), 2) )
-                sValue = abs(value)
-                self.log.logging("Widget", "Debug", "------>PowerNegative  : %s" % sValue, NWKID)
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
-
         if "Meter" in ClusterType:  # Meter Usage.
             
             if WidgetType == "GazMeter" and Attribute_ == "0000":
@@ -385,11 +386,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 sValue = "%s" %int(value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
+
+            elif WidgetType == "ConsoMeter" and Attribute_ == "0000":
+                # Consummed Energy
+                sValue = "%s" %int(value)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+
             elif WidgetType == "ProdMeter" and Attribute_ == "0001":
                 # Produced Energy injected
                 sValue = "%s" %int(value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
-               
+
             # value is string an represent the Instant Usage
             elif (
                 "Model" in self.ListOfDevices[ NWKID ] 
@@ -448,6 +455,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     # correctly set to 1 (compute), if not adjust
 
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == "ProdMeter" and Attribute_ == "0001":
+                # Produced Energy injected
+                sValue = "%s" %int(value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
 

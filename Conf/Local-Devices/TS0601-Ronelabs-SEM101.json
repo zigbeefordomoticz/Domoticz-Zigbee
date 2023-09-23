@@ -14,7 +14,7 @@
             "ef00": "",
             "000a": "",
             "0019": "",
-            "Type": "Switch/ProdMeter/Meter/Power/Voltage/Ampere/PowerNegative"
+            "Type": "Switch/Power/Voltage/Ampere/ConsoMeter/ProdPower/ProdMeter"
         }
     },
     "Type": "",
