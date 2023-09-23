@@ -313,7 +313,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>Power  : %s" % sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
 
-            if WidgetType == "ProdPower" and Attribute_ == "" and value < 0:
+            if WidgetType == "ProdPower" and Attribute_ == "":
+                if value > 0:
+                    self.log.logging("Widget", "Log", "------>the value is Positive. Skiping here", NWKID)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
+                    continue
+
                 nValue = abs( round(float(value), 2) )
                 sValue = abs(value)
                 self.log.logging("Widget", "Debug", "------>PowerNegative  : %s" % sValue, NWKID)
