@@ -20,6 +20,9 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
                             get_tarif_color, zlinky_sum_all_indexes)
 
 
+def is_PowerNegative_widget( ClusterTypeList):
+    return any( _widget_type == "PowerNegative" for _, _, _widget_type in ClusterTypeList )
+
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
     """
     MajDomoDevice
@@ -359,7 +362,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
                 nValue = round(float(value), 2)
                 sValue = value
-                self.log.logging("Widget", "Debug", "------>  : %s" % sValue, NWKID)
+                self.log.logging("Widget", "Debug", "------>Power  : %s" % sValue, NWKID)
+                if nValue < 0 and is_PowerNegative_widget( ClusterTypeList):
+                    self.log.logging("Widget", "Log", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
+                    continue    
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
+                
+            if WidgetType == "PowerNegative" and Attribute_ == "":  # 
+                nValue = abs( round(float(value), 2) )
+                sValue = abs(value)
+                self.log.logging("Widget", "Debug", "------>PowerNegative  : %s" % sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
 
         if "Meter" in ClusterType:  # Meter Usage.
