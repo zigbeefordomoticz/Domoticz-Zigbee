@@ -590,7 +590,7 @@ SIMPLE_WIDGET = {
     "AirQuality": { "widgetType": "Air Quality", },
     "Power": { "widgetType": "Usage", },
     "Meter": { "widgetType": "kWh", },
-    "ConsoMeter": { "Type": 113, "Subtype": 0, "Switchtype": 4, "sValue": "0", "nValue": 0},
+    "ConsoMeter": { "Type": 113, "Subtype": 0, "Switchtype": 0, "sValue": "0", "nValue": 0},
     "ProdMeter": { "Type": 113, "Subtype": 0, "Switchtype": 4, "sValue": "0", "nValue": 0},
     "ProdPower": { "widgetType": "Usage", },
     "Voltage": { "widgetType": "Voltage", },
