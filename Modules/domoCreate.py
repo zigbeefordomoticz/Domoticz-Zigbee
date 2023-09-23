@@ -589,6 +589,7 @@ SIMPLE_WIDGET = {
     "Baro": { "widgetType": "Barometer", },
     "AirQuality": { "widgetType": "Air Quality", },
     "Power": { "widgetType": "Usage", },
+    "PowerNegative": { "widgetType": "Usage", },
     "Meter": { "widgetType": "kWh", },
     "Voltage": { "widgetType": "Voltage", },
     "Voc": { "widgetType": "Custom", "Options": "1;ppm" },
