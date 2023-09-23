@@ -47,8 +47,12 @@ def decoding_attribute_data( AttType, attribute_value, handleErrors=False):
         return struct.unpack("h", struct.pack("H", int(attribute_value[:4], 16)))[0]
 
     if int(AttType, 16) == 0x2A:  # ZigBee_24BitInt
-        return struct.unpack("i", struct.pack("I", int("0" + attribute_value, 16)))[0]
-
+        signed_int = struct.unpack("i", struct.pack("I", int("0" + attribute_value, 16)))[0]
+        # Given Zigbee 24-bit integer and tuya store in two's complement form
+        if (signed_int & 0x00800000) != 0:  # Check the sign bit
+            signed_int -= 0x01000000  # If negative, adjust to two's complement
+        return signed_int
+    
     if int(AttType, 16) == 0x2B:  # 32Bitint
         return struct.unpack("i", struct.pack("I", int(attribute_value[:8], 16)))[0]
 

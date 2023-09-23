@@ -302,9 +302,6 @@ def ts0601_production_energy(self, Devices, nwkid, ep, value):
 
 def ts0601_instant_power(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power %s %s %s" % (nwkid, ep, value), nwkid, )
-    # Given Zigbee 24-bit integer and tuya store in two's complement form
-    if (value & 0x00800000) != 0:  # Check the sign bit
-        value -= 0x01000000  # If negative, adjust to two's complement
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0702", value)
     store_tuya_attribute(self, nwkid, "InstantPower", value)  # Store str
