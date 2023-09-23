@@ -390,11 +390,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             elif WidgetType == "ConsoMeter" and Attribute_ == "0000":
                 # Consummed Energy
                 sValue = "%s" %int(value)
+                self.log.logging("Widget", "Debug", "------>ConsoMeter  : %s" % sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "ProdMeter" and Attribute_ == "0001":
                 # Produced Energy injected
                 sValue = "%s" %int(value)
+                self.log.logging("Widget", "Debug", "------>ProdMeter  : %s" % sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
             # value is string an represent the Instant Usage
