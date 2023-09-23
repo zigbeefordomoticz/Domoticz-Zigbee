@@ -307,9 +307,9 @@ def ts0601_instant_power(self, Devices, nwkid, ep, value):
     if (signed_int & 0x00800000) != 0:  # Check the sign bit
         signed_int -= 0x01000000  # If negative, adjust to two's complement
 
-    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", value)
-    MajDomoDevice(self, Devices, nwkid, ep, "0702", value)
-    store_tuya_attribute(self, nwkid, "InstantPower", value)  # Store str
+    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", signed_int)
+    MajDomoDevice(self, Devices, nwkid, ep, "0702", signed_int)
+    store_tuya_attribute(self, nwkid, "InstantPower", signed_int)  # Store str
 
 
 def ts0601_voltage(self, Devices, nwkid, ep, value):

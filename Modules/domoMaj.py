@@ -21,7 +21,7 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
 
 
 def is_PowerNegative_widget( ClusterTypeList):
-    return any( _widget_type == "PowerNegative" for _, _, _widget_type in ClusterTypeList )
+    return any( _widget_type == "ProdMeter" for _, _, _widget_type in ClusterTypeList )
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
     """
@@ -305,6 +305,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
                 if value < 0 and is_PowerNegative_widget( ClusterTypeList):
                     self.log.logging("Widget", "Log", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
                     continue
 
                 nValue = round(float(value), 2)
@@ -312,7 +313,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>Power  : %s" % sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
 
-            if WidgetType == "ProdMeter" and Attribute_ == "" and value < 0:
+            if WidgetType == "ProdPower" and Attribute_ == "" and value < 0:
                 nValue = abs( round(float(value), 2) )
                 sValue = abs(value)
                 self.log.logging("Widget", "Debug", "------>PowerNegative  : %s" % sValue, NWKID)
