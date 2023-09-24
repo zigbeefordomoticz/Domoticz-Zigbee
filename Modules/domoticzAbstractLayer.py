@@ -223,3 +223,46 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
 
     self.log.logging("AbstractDz", "Debug", "domo_create_api status %s" %myDev.ID)
     return myDev.ID
+
+
+def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel=None, BatteryLevel=None, TimedOut=None, Color="",):
+    """
+    Does a widget (domoticz device) value update ( nValue,sValue, Color, Battery and Signal Level)
+    Calls from UpdateDevice_v2  
+    Args:
+        Devices (dictionary): Devices dictionary provided by the Domoticz framework
+        DeviceID_ (str): DeviceID (ieee). Defaults to None (means Legacy framework)
+        Unit_ (int): Unit number found with FreeUnit()
+        nValue (int): numeric Value
+        sValue (str): String Value
+        SignalLevel (int, optional): Signal Level. Defaults to None.
+        BatteryLevel (int, optional): Battery Level 255 for main powered devices . Defaults to None.
+        TimedOut (int, optional): Timeoud flag 0 to unset the Timeout. Defaults to None.
+        Color (str, optional): Color . Defaults to "".
+    """
+    self.log.logging("AbstractDz", "Debug", "write_attribute_device: %s %s %s %s %s %s %s %s" %(
+        DeviceID_, Unit_, nValue, sValue,  SignalLevel, BatteryLevel, TimedOut, Color))
+
+    if DOMOTICZ_EXTENDED_API:
+        Devices[DeviceID_].Units[Unit_].nValue = nValue
+        Devices[DeviceID_].Units[Unit_].sValue = sValue
+        if Color != "":
+            Devices[DeviceID_].Units[Unit_].Color = Color
+        if BatteryLevel is not None:
+            Devices[DeviceID_].Units[Unit_].BatteryLevel = BatteryLevel
+        if SignalLevel is not None:
+            Devices[DeviceID_].Units[Unit_].SignalLevel = SignalLevel  
+        if TimedOut is not None:
+            Devices[DeviceID_].Units[Unit_].SignalLevel = TimedOut        
+        Devices[DeviceID_].Units[Unit_].Update(Log=True)
+        return
+
+    # Legacy
+    if SignalLevel is None and BatteryLevel is None:
+        Devices[Unit_].Update(nValue=nValue, sValue=sValue)
+        
+    elif Color != "":
+        Devices[Unit_].Update( nValue=int(nValue), sValue=str(sValue), Color=Color, SignalLevel=int(SignalLevel), BatteryLevel=int(BatteryLevel), TimedOut=TimedOut, )
+    else:
+        Devices[Unit_].Update( nValue=int(nValue), sValue=str(sValue), SignalLevel=int(SignalLevel), BatteryLevel=int(BatteryLevel), TimedOut=TimedOut, )
+

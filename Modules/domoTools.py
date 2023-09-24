@@ -11,12 +11,12 @@
 
 import time
 
-import Domoticz
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (is_domoticz_touch,
                            is_domoticz_update_SuppressTriggers, lookupForIEEE,
                            removeDeviceInList)
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
+from Modules.domoticzAbstractLayer import domo_update_api
 
 
 def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):
@@ -265,26 +265,18 @@ def resetSwitchSelectorPushButton( self, Devices, NwkId, WidgetType, unit, Signa
     self.log.logging( "Widget", "Debug", "Last update of the devices %s WidgetType: %s was %s ago" % (unit, WidgetType, (now - lastupdate)), NwkId, )
     # Domoticz.Log(" Update nValue: %s sValue: %s" %(nValue, sValue))
 
-
 def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_="", ForceUpdate_=False):
 
     if Unit not in Devices:
-        Domoticz.Error("Droping Update to Device due to Unit %s not found" % Unit)
+        self.log.logging("Widget", "Error", "Droping Update to Device due to Unit %s not found" % Unit)
         return
     if Devices[Unit].DeviceID not in self.IEEE2NWK:
-        Domoticz.Error(
-            "Droping Update to Device due to DeviceID %s not found in IEEE2NWK %s"
-            % (Devices[Unit].DeviceID, str(self.IEEE2NWK))
-        )
+        self.log.logging("Widget", "Error", "Droping Update to Device due to DeviceID %s not found in IEEE2NWK %s" % (
+            Devices[Unit].DeviceID, str(self.IEEE2NWK)) )
         return
 
-    self.log.logging(
-        "Widget",
-        "Debug",
-        "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)"
-        % (nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name),
-        self.IEEE2NWK[Devices[Unit].DeviceID],
-    )
+    self.log.logging( "Widget", "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" % (
+        nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID], )
 
     # Make sure that the Domoticz device still exists (they can be deleted) before updating it
     if Unit not in Devices:
@@ -299,6 +291,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         or Devices[Unit].TimedOut
     ):
 
+        DeviceID_ = None    # This is required when we will use The Extended Framework
         if (
             self.pluginconf.pluginConf["forceSwitchSelectorPushButton"]
             and ForceUpdate_
@@ -313,36 +306,14 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
                 LevelOffHidden = Devices[Unit].Options["LevelOffHidden"]
                 if LevelOffHidden == "false":
                     sReset = "00"
-            Devices[Unit].Update(nValue=nReset, sValue=sReset)
+            domo_update_api(self, Devices, DeviceID_, Unit, nReset, sReset)
 
-        if Color_:
-            Devices[Unit].Update(
-                nValue=int(nValue),
-                sValue=str(sValue),
-                Color=Color_,
-                SignalLevel=int(SignalLvl),
-                BatteryLevel=int(BatteryLvl),
-                TimedOut=0,
-            )
-        else:
-            Devices[Unit].Update(
-                nValue=int(nValue),
-                sValue=str(sValue),
-                SignalLevel=int(SignalLvl),
-                BatteryLevel=int(BatteryLvl),
-                TimedOut=0,
-            )
+        domo_update_api(self, Devices, DeviceID_, Unit, nValue, sValue, SignalLevel=SignalLvl, BatteryLevel=BatteryLvl, TimedOut=0, Color=Color_,)
 
         if self.pluginconf.pluginConf["logDeviceUpdate"]:
-            Domoticz.Log("UpdateDevice - (%15s) %s:%s" % (Devices[Unit].Name, nValue, sValue))
-        self.log.logging(
-            "Widget",
-            "Debug",
-            "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)"
-            % (Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name),
-            self.IEEE2NWK[Devices[Unit].DeviceID],
-        )
-
+            self.log.logging( "Widget", "Log", "UpdateDevice - (%15s) %s:%s" % (Devices[Unit].Name, nValue, sValue))
+        self.log.logging( "Widget", "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" % (
+            Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID], )
 
 def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
 
