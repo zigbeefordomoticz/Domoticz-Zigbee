@@ -1400,7 +1400,8 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.transport,
         self.ModelManufMapping,
         self.DomoticzMajor,
-        self.DomoticzMinor
+        self.DomoticzMinor,
+        self.readZclClusters
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
