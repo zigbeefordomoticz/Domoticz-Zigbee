@@ -241,7 +241,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         Color (str, optional): Color . Defaults to "".
     """
     self.log.logging("AbstractDz", "Debug", "write_attribute_device: %s %s %s %s %s %s %s %s" %(
-        DeviceID_, Unit_, nValue, sValue,  SignalLevel, BatteryLevel, TimedOut, Color))
+        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color))
 
     if DOMOTICZ_EXTENDED_API:
         Devices[DeviceID_].Units[Unit_].nValue = nValue
@@ -266,3 +266,76 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
     else:
         Devices[Unit_].Update( nValue=int(nValue), sValue=str(sValue), SignalLevel=int(SignalLevel), BatteryLevel=int(BatteryLevel), TimedOut=TimedOut, )
 
+
+def _is_meter_widget( self, Devices,DeviceID_, Unit_):
+    self.log.logging("AbstractDz", "Debug", "_is_meter_widget: %s %s" %(DeviceID_, Unit_))
+    if DOMOTICZ_EXTENDED_API:
+        return (
+            Devices[DeviceID_].Units[Unit_].SwitchType == 0
+            and Devices[DeviceID_].Units[Unit_].SubType == 29
+            and Devices[DeviceID_].Units[Unit_].Type == 243
+        )
+    return (
+        Devices[Unit_].SwitchType == 0
+        and Devices[Unit_].SubType == 29
+        and Devices[Unit_].Type == 243
+    )
+
+
+def _is_device_tobe_switched_off(self, Devices,DeviceID_, Unit_):
+    self.log.logging("AbstractDz", "Debug", "is_device_tobe_switched_off: %s %s" %(DeviceID_, Unit_))
+    if DOMOTICZ_EXTENDED_API:
+        return (
+            (Devices[DeviceID_].Units[Unit_].Type == 244 and Devices[DeviceID_].Units[Unit_].SubType == 73 and Devices[DeviceID_].Units[Unit_].SwitchType == 7) 
+            or (Devices[DeviceID_].Units[Unit_].Type == 241 and Devices[DeviceID_].Units[Unit_].SwitchType == 7)
+        )
+    return (
+        (Devices[Unit_].Type == 244 and Devices[Unit_].SubType == 73 and Devices[Unit_].SwitchType == 7)
+        or (Devices[Unit_].Type == 241 and Devices[Unit_].SwitchType == 7)
+    )
+    
+
+    
+def device_touch_api( self, Devices, DeviceId_, Unit_):
+    self.log.logging("AbstractDz", "Debug", "device_touch: %s %s" %(DeviceId_, Unit_))
+    
+    # In case of Meter Device ( kWh ), we must not touch it, otherwise it will destroy the metering
+    # Type, Subtype, SwitchType 
+    # 243|29|0
+
+    if _is_meter_widget( self, Devices, DeviceId_, Unit_):
+        return
+    if DOMOTICZ_EXTENDED_API:
+        Devices[DeviceId_].Units[Unit_].Touch()
+        return
+    # Legacy
+    Devices[Unit_].Touch()
+    
+    
+def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
+    if _is_meter_widget( self, Devices, Unit_):
+        return
+    
+    if DOMOTICZ_EXTENDED_API:
+        _nValue = Devices[DeviceId_].Units[Unit_].nValue
+        _sValue = Devices[DeviceId_].Units[Unit_].sValue
+        _TimedOut = Devices[DeviceId_].Units[Unit_].TimedOut
+    else:
+
+        _nValue = Devices[Unit_].nValue
+        _sValue = Devices[Unit_].sValue
+        _TimedOut = Devices[Unit_].TimedOut
+    
+    self.log.logging("Widget", "Log", "timeout_widget unit %s -> %s from %s:%s" % (Devices[Unit_].Name, bool(timeout_value), _nValue, _sValue))
+    if _TimedOut != timeout_value:
+        # Update is required
+        if (
+            timeout_value == 1
+            and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]
+            and ( (_nValue == 1 and _sValue == "On") or _is_device_tobe_switched_off(self, Devices,DeviceId_, Unit_) )
+        ):
+            # Then we will switch off as per User setting
+            domo_update_api(self, Devices, DeviceId_, Unit_, 0, "Off", TimedOut=timeout_value)
+        else:
+            domo_update_api(self, Devices, DeviceId_, Unit_, _nValue, _sValue, TimedOut=timeout_value)
+    self.log.logging("Widget", "Debug", "timeout_widget DeviceId %s unit %s -> %s " % (DeviceId_, Unit_, bool(timeout_value)))

@@ -16,7 +16,7 @@ from Modules.tools import (is_domoticz_touch,
                            is_domoticz_update_SuppressTriggers, lookupForIEEE,
                            removeDeviceInList)
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
-from Modules.domoticzAbstractLayer import domo_update_api
+from Modules.domoticzAbstractLayer import domo_update_api, device_touch_api, timeout_widget_api
 
 
 def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):
@@ -349,11 +349,12 @@ def timedOutDevice(self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
     _Unit = _nValue = _sValue = None
 
     if Unit:
+        DeviceID = None
         if MarkTimedOut and not Devices[Unit].TimedOut:
-            timeout_widget(self, Devices, Unit, 1)
+            timeout_widget_api(self, Devices, DeviceID, Unit, 1)
 
         elif not MarkTimedOut and Devices[Unit].TimedOut:
-            timeout_widget(self, Devices, Unit, 0)
+            timeout_widget_api(self, Devices, DeviceID, Unit, 0)
 
     elif NwkId:
         if NwkId not in self.ListOfDevices:
@@ -371,48 +372,14 @@ def timedOutDevice(self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
             if Devices[x].TimedOut:
                 if MarkTimedOut:
                     continue
-                timeout_widget(self, Devices, x, 0)
-                self.log.logging(
-                    "Widget",
-                    "Debug",
-                    "reset timedOutDevice unit %s nwkid: %s " % (Devices[x].Name, NwkId),
-                    NwkId,
-                )
+                timeout_widget_api(self, Devices, _IEEE, x, 0)
+                self.log.logging( "Widget", "Debug", "reset timedOutDevice unit %s nwkid: %s " % (
+                    Devices[x].Name, NwkId), NwkId, )
 
             elif MarkTimedOut:
-                timeout_widget(self, Devices, x, 1)
-                self.log.logging(
-                    "Widget",
-                    "Debug",
-                    "timedOutDevice unit %s nwkid: %s " % (Devices[x].Name, NwkId),
-                    NwkId,
-                )
-
-
-def timeout_widget(self, Devices, unit, timeout_value):
-
-    if is_meter_widget( self, Devices, unit):
-        return
-        
-    _nValue = Devices[unit].nValue
-    _sValue = Devices[unit].sValue
-    self.log.logging("Widget", "Log", "timeout_widget unit %s -> %s from %s:%s" % (Devices[unit].Name, bool(timeout_value), _nValue, _sValue))
-    if Devices[unit].TimedOut != timeout_value:
-        # Update is required
-        if (
-            timeout_value == 1
-            and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]
-            and (
-                (_nValue == 1 and _sValue == "On")
-                or (Devices[unit].Type == 244 and Devices[unit].SubType == 73 and Devices[unit].SwitchType == 7)
-                or (Devices[unit].Type == 241 and Devices[unit].SwitchType == 7)
-            )
-        ):
-            # Then we will switch off as per User setting
-            Devices[unit].Update(nValue=0, sValue="Off", TimedOut=timeout_value)
-        else:
-            Devices[unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=timeout_value)
-    self.log.logging("Widget", "Debug", "timeout_widget unit %s -> %s " % (Devices[unit].Name, bool(timeout_value)))
+                timeout_widget_api(self, Devices, x, 1)
+                self.log.logging( "Widget", "Debug", "timedOutDevice unit %s nwkid: %s " % (
+                    Devices[x].Name, NwkId), NwkId, )
 
 
 def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
@@ -431,7 +398,7 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
         if Devices[Unit].TimedOut:
             timedOutDevice(self, Devices, Unit=Unit, MarkTimedOut=0)
         else:
-            device_touch( self, Devices, Unit)
+            device_touch_api( self, Devices, IEEE, Unit)
         if NwkId is None and "IEEE" in self.IEEE2NWK:
             NwkId = self.IEEE2NWK[IEEE]
 
@@ -460,28 +427,8 @@ def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
                 if Devices[x].TimedOut:
                     timedOutDevice(self, Devices, Unit=x, MarkTimedOut=0)
                 else:
-                    device_touch( self, Devices, x)
+                    device_touch_api( self, Devices, _IEEE, x)
 
-
-def is_meter_widget( self, Devices, unit):
-    _Type = Devices[unit].Type 
-    _Switchtype = Devices[unit].SwitchType
-    _Subtype = Devices[unit].SubType
-
-    if _Switchtype == 0 and _Subtype == 29 and _Type == 243:
-        return True
-    return False
-    
-def device_touch( self, Devices, unit):
-
-    # In case of Meter Device ( kWh ), we must not touch it, otherwise it will destroy the metering
-    # Type, Subtype, SwitchType 
-    # 243|29|0
-
-    if is_meter_widget( self, Devices, unit):
-        return
-
-    Devices[unit].Touch()
 
 def GetType(self, Addr, Ep):
     Type = ""
@@ -693,9 +640,8 @@ def subtypeRGB_FromProfile_Device_IDs(EndPoints, Model, ProfileID, ZDeviceID, Co
     ZLL_Commissioning = False
 
     ColorMode = 0
-    if ColorInfos:
-        if "ColorMode" in ColorInfos:
-            ColorMode = ColorInfos["ColorMode"]
+    if ColorInfos and "ColorMode" in ColorInfos:
+        ColorMode = ColorInfos["ColorMode"]
 
     for iterEp in EndPoints:
         if "1000" in iterEp:
@@ -703,14 +649,12 @@ def subtypeRGB_FromProfile_Device_IDs(EndPoints, Model, ProfileID, ZDeviceID, Co
             break
 
     # Device specifics section
-    if Model:
-        if Model == "lumi.light.aqcn02":  # Aqara Bulb White Dim
-            Subtype = ColorControlWW
+    if Model and Model == "lumi.light.aqcn02":
+        Subtype = ColorControlWW
 
     # Philipps Hue
-    if Subtype is None and ProfileID == "a1e0":
-        if ZDeviceID == "0061":
-            Subtype = ColorControlRGBWW
+    if Subtype is None and ProfileID == "a1e0" and ZDeviceID == "0061":
+        Subtype = ColorControlRGBWW
 
     # ZLL LightLink
     if Subtype is None and ProfileID == "c05e":
@@ -794,6 +738,4 @@ def remove_all_widgets( self, Devices, NwkId):
     
         
 def update_model_name( self, nwkid, new_model ):
-    
     self.ListOfDevices[ nwkid ]["Model"] = new_model
-    
