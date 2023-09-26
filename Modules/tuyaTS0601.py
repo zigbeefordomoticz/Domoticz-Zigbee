@@ -293,6 +293,12 @@ def ts0601_summation_energy(self, Devices, nwkid, ep, value):
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", current_summation)  # Store int
     store_tuya_attribute(self, nwkid, "Energy", value)
 
+def ts0601_summation_energy_raw(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
+    MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0000")
+    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", value)  # Store int
+    store_tuya_attribute(self, nwkid, "ConsumedEnergy", value)
+
 def ts0601_production_energy(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_production_energy - Production Energy %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0001")
@@ -446,6 +452,7 @@ DP_SENSOR_FUNCTION = {
     "mp25": ts0601_mp25,
     "current": ts0601_current,
     "metering": ts0601_summation_energy,
+    "cons_metering": ts0601_summation_energy_raw,
     "prod_metering": ts0601_production_energy,
     "power": ts0601_instant_power,
     "voltage": ts0601_voltage,
