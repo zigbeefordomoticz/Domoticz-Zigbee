@@ -297,13 +297,29 @@ def ts0601_summation_energy(self, Devices, nwkid, ep, value):
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", current_summation)  # Store int
     store_tuya_attribute(self, nwkid, "Energy", value)
 
+def ts0601_summation_energy_raw(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
+    MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0000")
+    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", value)  # Store int
+    store_tuya_attribute(self, nwkid, "ConsumedEnergy", value)
+
+def ts0601_production_energy(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya0601", "Debug", "ts0601_production_energy - Production Energy %s %s %s" % (nwkid, ep, value), nwkid, )
+    MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0001")
+    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0001", value)  # Store int
+    store_tuya_attribute(self, nwkid, "ProducedEnergy", value)
+
 
 def ts0601_instant_power(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power %s %s %s" % (nwkid, ep, value), nwkid, )
-    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", value)
-    MajDomoDevice(self, Devices, nwkid, ep, "0702", value)
-    store_tuya_attribute(self, nwkid, "InstantPower", value)  # Store str
+    # Given Zigbee 24-bit integer and tuya store in two's complement form
+    signed_int = int( value )
+    if (signed_int & 0x00800000) != 0:  # Check the sign bit
+        signed_int -= 0x01000000  # If negative, adjust to two's complement
 
+    checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", signed_int)
+    MajDomoDevice(self, Devices, nwkid, ep, "0702", signed_int)
+    store_tuya_attribute(self, nwkid, "InstantPower", signed_int)  # Store str
 
 def ts0601_voltage(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_voltage - Voltage %s %s %s" % (nwkid, ep, value), nwkid, )
@@ -439,6 +455,8 @@ DP_SENSOR_FUNCTION = {
     "mp25": ts0601_mp25,
     "current": ts0601_current,
     "metering": ts0601_summation_energy,
+    "cons_metering": ts0601_summation_energy_raw,
+    "prod_metering": ts0601_production_energy,
     "power": ts0601_instant_power,
     "voltage": ts0601_voltage,
     "heatingstatus": ts0601_heatingstatus,

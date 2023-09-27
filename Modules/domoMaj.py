@@ -19,6 +19,8 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
 from Zigbee.zdpCommands import zdp_IEEE_address_request
 from Modules.domoticzAbstractLayer import find_widget_unit_from_WidgetID
 
+def is_PowerNegative_widget( ClusterTypeList):
+    return any( _widget_type == "ProdMeter" for _, _, _widget_type in ClusterTypeList )
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
     """
@@ -274,6 +276,29 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # it is assumed that if there is also summation provided by the device, that
             # such information is stored on the data structuture and here we will retreive it.
             # value is expected as String
+
+            if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
+                if value < 0 and is_PowerNegative_widget( ClusterTypeList):
+                    self.log.logging("Widget", "Log", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
+                    continue
+
+                nValue = round(float(value), 2)
+                sValue = value
+                self.log.logging("Widget", "Debug", "------>Power  : %s" % sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
+
+            if WidgetType == "ProdPower" and Attribute_ == "":
+                if value > 0:
+                    self.log.logging("Widget", "Log", "------>the value is Positive. Skiping here", NWKID)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
+                    continue
+
+                nValue = abs( round(float(value), 2) )
+                sValue = abs(value)
+                self.log.logging("Widget", "Debug", "------>PowerNegative  : %s" % sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
+
             if WidgetType == "P1Meter" and Attribute_ == "0000":
                 self.log.logging("Widget", "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
@@ -353,11 +378,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-            if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
-                nValue = round(float(value), 2)
-                sValue = value
-                self.log.logging("Widget", "Debug", "------>  : %s" % sValue, NWKID)
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
+
 
         if "Meter" in ClusterType:  # Meter Usage.
             
@@ -369,8 +390,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             elif WidgetType == "Counter" and Attribute_ == "0000":
                 sValue = "%s" %int(value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
-
-                
+   
             # value is string an represent the Instant Usage
             elif (
                 "Model" in self.ListOfDevices[ NWKID ] 
@@ -401,8 +421,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
-
-            if (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and clusterID == "000c"):  # kWh
+            elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and clusterID == "000c"):  # kWh
                 # We receive Instant
                 # Let's check if we have Summation in the datastructutre
                 summation = 0
@@ -431,6 +450,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
+            elif WidgetType == "ProdMeter" and Attribute_ == "0001":
+                # Produced Energy injected
+                sValue = "%s" %int(value)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
         if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
             # /json.htm?type=command&param=udevice&idx=IDX&nvalue=0&svalue=INCREMENT
