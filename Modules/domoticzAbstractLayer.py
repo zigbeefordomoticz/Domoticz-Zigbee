@@ -313,7 +313,7 @@ def device_touch_api( self, Devices, DeviceId_, Unit_):
     
     
 def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
-    if _is_meter_widget( self, Devices, Unit_):
+    if _is_meter_widget( self, Devices, DeviceId_, Unit_):
         return
     
     if DOMOTICZ_EXTENDED_API:
