@@ -1033,14 +1033,17 @@ def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 
 
 # Function to manage 0x8002 payloads
-def retreive_cmd_payload_from_8002( Payload):
+def retreive_cmd_payload_from_8002(Payload):
 
     ManufacturerCode = None
     fcf = Payload[:2]
 
-    GlobalCommand = is_golbalcommand(fcf)
-    zbee_zcl_ddr = disable_default_response(fcf)
-
+    try:
+        GlobalCommand = is_globalcommand(fcf)
+        zbee_zcl_ddr = disable_default_response(fcf)
+    except Exception as e:
+        return (None, None, None, None, None, None)
+                  
     if GlobalCommand is None:
         return (None, None, None, None, None, None)
 
@@ -1073,7 +1076,7 @@ def is_direction_to_client(fcf):
 def is_direction_to_server(fcf):
     return fcf_direction(fcf) == 0x0
 
-def is_golbalcommand(fcf):
+def is_globalcommand(fcf):
     return None if not is_hex(fcf) or len(fcf) != 2 else (int(fcf, 16) & 0b00000011) == 0
 
 def frame_type(fcf):

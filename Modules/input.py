@@ -660,6 +660,12 @@ def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
 
 
 def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
+    
+    if len(MsgData) < 22:
+        # Not good
+        self.log.logging( "Input", "Error", "Invalid frame %s too short" % MsgData)
+        return
+        
     # MsgLogLvl = MsgData[:2]
     MsgProfilID = MsgData[2:6]
     MsgClusterID = MsgData[6:10]
@@ -668,63 +674,66 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     MsgSourceAddressMode = MsgData[14:16]
 
 
-    if int(MsgSourceAddressMode, 16) in [
-        ADDRESS_MODE["short"],
-        ADDRESS_MODE["group"],
-    ]:
+    if int(MsgSourceAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
         MsgSourceAddress = MsgData[16:20]  # uint16_t
         MsgDestinationAddressMode = MsgData[20:22]
-        if int(MsgDestinationAddressMode, 16) in [
-            ADDRESS_MODE["short"],
-            ADDRESS_MODE["group"],
-        ]:
+        if int(MsgDestinationAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
+            if len(MsgData) < 26:
+                # Not good
+                self.log.logging( "Input", "Error", "Invalid frame %s too short" % MsgData)
+                return
             # Short Address
             MsgDestinationAddress = MsgData[22:26]  # uint16_t
             MsgPayload = MsgData[26 :]
 
         elif int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["ieee"]:  # uint32_t
+            if len(MsgData) < 38:
+                # Not good
+                self.log.logging( "Input", "Error", "Invalid frame %s too short" % MsgData)
+                return
             # IEEE
             MsgDestinationAddress = MsgData[22:38]  # uint32_t
             MsgPayload = MsgData[38 :]
 
         else:
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
-                % (MsgDestinationAddressMode, MsgData),
-            )
+            self.log.logging( "Input", "Log", "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" % (
+                MsgDestinationAddressMode, MsgData), )
             return
 
     elif int(MsgSourceAddressMode, 16) == ADDRESS_MODE["ieee"]:
+        if len(MsgData) < 38:
+            # Not good
+            self.log.logging( "Input", "Error", "Invalid frame %s too short" % MsgData)
+            return
+
         MsgSourceAddress = MsgData[16:32]  # uint32_t
         MsgDestinationAddressMode = MsgData[32:34]
-        if int(MsgDestinationAddressMode, 16) in [
-            ADDRESS_MODE["short"],
-            ADDRESS_MODE["group"],
-        ]:
+        if int(MsgDestinationAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
             MsgDestinationAddress = MsgData[34:38]  # uint16_t
             MsgPayload = MsgData[38 :]
 
         elif int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["ieee"]:
+            if len(MsgData) < 40:
+                # Not good
+                self.log.logging( "Input", "Error", "Invalid frame %s too short" % MsgData)
+                return
+
             # IEEE
             MsgDestinationAddress = MsgData[34:40]  # uint32_t
             MsgPayload = MsgData[40 :]
         else:
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
-                % (MsgDestinationAddressMode, MsgData),
-            )
+            self.log.logging( "Input", "Log", "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" % (
+                MsgDestinationAddressMode, MsgData), )
             return
 
     else:
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s" % (MsgSourceAddressMode, MsgData),
-        )
+        self.log.logging( "Input", "Log", "Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s" % (
+            MsgSourceAddressMode, MsgData), )
+        return
+
+    if len(MsgPayload) < 4 :
+        # Not good
+        self.log.logging( "Input", "Error", "Invalid frame %s, Payload %s too short" % (MsgData, MsgPayload))
         return
 
     self.log.logging(
