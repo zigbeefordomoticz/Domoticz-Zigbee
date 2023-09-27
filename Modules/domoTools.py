@@ -346,6 +346,9 @@ def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
 
 def timedOutDevice(self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
 
+    self.log.logging( "Widget", "Debug", "timedOutDevice unit %s nwkid: %s MarkTimedOut: %s" % (
+        Unit, NwkId, MarkTimedOut), NwkId, )
+
     _Unit = _nValue = _sValue = None
 
     if Unit:
