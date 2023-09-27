@@ -379,7 +379,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
 
-
         if "Meter" in ClusterType:  # Meter Usage.
             
             if WidgetType == "GazMeter" and Attribute_ == "0000":
@@ -390,7 +389,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             elif WidgetType == "Counter" and Attribute_ == "0000":
                 sValue = "%s" %int(value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
-   
+
+            elif WidgetType == "ConsoMeter" and Attribute_ == "0000":
+                # Consummed Energy
+                sValue = "%s" %int(value)
+                self.log.logging("Widget", "Debug", "------>ConsoMeter  : %s" % sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == "ProdMeter" and Attribute_ == "0001":
+                # Produced Energy injected
+                sValue = "%s" %int(value)
+                self.log.logging("Widget", "Debug", "------>ProdMeter  : %s" % sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
+
             # value is string an represent the Instant Usage
             elif (
                 "Model" in self.ListOfDevices[ NWKID ] 
@@ -448,11 +459,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     # correctly set to 1 (compute), if not adjust
 
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
-                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "ProdMeter" and Attribute_ == "0001":
-                # Produced Energy injected
-                sValue = "%s" %int(value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
         if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
