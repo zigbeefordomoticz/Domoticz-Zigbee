@@ -25,8 +25,8 @@
     },
     "TUYA_REGISTRATION": 19,
     "TS0601_DP": { 
-        "01": { "store_tuya_attribute": "Meter", "sensor_type": "cons_metering", "EvalExp": "value * 10"},
-        "02": { "store_tuya_attribute": "ProducedEnergy", "sensor_type": "prod_metering", "EvalExp": "value * 10" },
+        "01": { "store_tuya_attribute": "Meter", "sensor_type": "cons_metering", "EvalExp": "value * 10", "domo_round": 3},
+        "02": { "store_tuya_attribute": "ProducedEnergy", "sensor_type": "prod_metering", "EvalExp": "value * 10", "domo_round": 3},
         "06": [ 
             { "store_tuya_attribute": "Voltage", "EvalExp": "((value & 0xFFFF000000000000) >> 48)/10", "sensor_type": "voltage", "domo_round": 2}, 
             { "store_tuya_attribute": "Current", "EvalExp": "((value & 0x0000FFFFFF000000) >> 24)/1000", "sensor_type": "current", "domo_round": 2 },
