@@ -36,7 +36,7 @@
     "BatteryDevice": 1,
     "Param": {
         "TuyaAlarmMelody": 0,
-        "TuyaAlarmMode": 0,
+        "TuyaAlarmMode": 2,
         "TuyaAlarmDuration": 1
     }
 }
