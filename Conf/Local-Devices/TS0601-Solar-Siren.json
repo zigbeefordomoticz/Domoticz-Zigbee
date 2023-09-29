@@ -12,14 +12,15 @@
             "ef00": "",
             "000a": "",
             "0019": "",
-            "Type": "SwitchAlarm/TamperSwitch/Tamper"
+            "Type": "SwitchAlarm/TamperSwitch/Tamper/Notification"
         }
     },
     "Type": "",
     "ClusterToBind": [],
     "ConfigureReporting": {},
     "ReadAttributes": {
-        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ]
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ],
+        "0009": []
     },
     "TUYA_REGISTRATION": 19,
     "TS0601_DP": { 
@@ -30,7 +31,7 @@
 	    "66": { "store_tuya_attribute": "TuyaAlarmMode", "action_type": "TuyaAlarmMode"},
         "15": { "store_tuya_attribute": "TuyaAlarmMelody", "action_type": "TuyaAlarmMelody"},
         "07": { "store_tuya_attribute": "TuyaAlarmDuration", "action_type": "TuyaAlarmDuration"},
-	    "06": { "store_tuya_attribute": "Charging"},
+	    "06": { "store_tuya_attribute": "Charging", "sensor_type": "charging_mode"},
 	    "0e": { "store_tuya_attribute": "Battery", "sensor_type": "battery"}
     },
     "BatteryDevice": 1,

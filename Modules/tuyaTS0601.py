@@ -234,8 +234,16 @@ def ts0601_tamper(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "Tamper", value)
     state = "01" if value != 0 else "00"
     MajDomoDevice(self, Devices, nwkid, ep, "0009", state)
-
-
+    
+def ts0601_charging_mode(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_charging_mode - Charging %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Tamper", value)
+    state = "01" if value != 0 else "00"
+    if state == "01":
+        MajDomoDevice(self, Devices, nwkid, ep, "Notification", "Charging On")
+    else:
+        MajDomoDevice(self, Devices, nwkid, ep, "Notification", "Charging Off")
+        
 def ts0601_switch(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_switch - Switch%s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Switch", value)
@@ -451,6 +459,7 @@ DP_SENSOR_FUNCTION = {
     "battery": ts0601_battery,
     "batteryState": ts0601_battery_state,
     "tamper": ts0601_tamper,
+    "charging_mode": ts0601_charging_mode,
     "switch": ts0601_switch,
     "door": ts0601_door,
     "lvl_percentage": ts0601_level_percentage,

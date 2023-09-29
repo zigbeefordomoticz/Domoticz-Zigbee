@@ -590,6 +590,7 @@ SIMPLE_WIDGET = {
     "WaterCounter": { "Type": 243, "Subtype": 28, "Switchtype": 2, "Image": 22, "sValue": "0", "nValue": 0},
     "GazMeter": { "Type": 251, "Subtype": 2, "Switchtype": 0, "sValue": "0", "nValue": 0},
     "Counter": { "Type": 113, "Subtype": 0, "Switchtype": 0, "sValue": "0", "nValue": 0},
+    "Notification": {"Type":243, "Subtype":19, "Switchtype":0,}
 }
 
 BLIND_DOMOTICZ_2022 = {
