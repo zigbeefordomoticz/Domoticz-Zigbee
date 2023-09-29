@@ -290,7 +290,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             if WidgetType == "ProdPower" and Attribute_ == "":
                 if value > 0:
-                    self.log.logging("Widget", "Log", "------>the value is Positive. Skiping here", NWKID)
+                    self.log.logging("Widget", "Debug", "------>the value is Positive. Skiping here", NWKID)
                     UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
                     continue
 
@@ -984,7 +984,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             sValue = "%02x" %nValue
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
             
-            
+        if ClusterType == "TamperSwitch" and WidgetType == "SwitchAlarm":
+            nValue = value
+            sValue = "%02x" %nValue
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+                       
         if ClusterType in ( "Motion", "Door",) and WidgetType == "Motion":
             self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NWKID)
             if isinstance(value, str):

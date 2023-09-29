@@ -585,6 +585,7 @@ SIMPLE_WIDGET = {
     "ColorControlRGB": { "Type": 241, "Subtype": 1, "Switchtype": 7, },
     "LvlControl": { "Type": 244, "Subtype": 73, "Switchtype": 7 },
     "SwitchAlarm": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 13 },
+    "TamperSwitch": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
     "Distance": { "Type": 243, "Subtype": 27, "Switchtype": 0},
     "WaterCounter": { "Type": 243, "Subtype": 28, "Switchtype": 2, "Image": 22, "sValue": "0", "nValue": 0},
     "GazMeter": { "Type": 251, "Subtype": 2, "Switchtype": 0, "sValue": "0", "nValue": 0},

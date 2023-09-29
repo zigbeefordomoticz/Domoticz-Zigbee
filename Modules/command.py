@@ -129,6 +129,7 @@ ACTIONATORS = [
     "ThermoOnOff",
     "ShutterCalibration",
     "SwitchAlarm",
+    "TamperSwitch"
 ]
 
 
@@ -319,18 +320,20 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
-
-            
         if DeviceType == "SwitchAlarm" and _model_name == "SMSZB-120" and self.iaszonemgt:
             self.iaszonemgt.iaswd_develco_warning(NWKID, EPout, "00")
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
-        if DeviceType == "SwitchAlarm" and _model_name == "TS0601-Solar-Siren":
-            if ts0601_extract_data_point_infos( self, _model_name):
-                ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 0)
-                UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-                return
+        if DeviceType == "SwitchAlarm" and _model_name == "TS0601-Solar-Siren" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 0)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+            
+        if DeviceType == "TamperSwitch" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "TuyaTamperSwitch", 0)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
             
         if _model_name in ("TS0601-Energy",):
             tuya_energy_onoff(self, NWKID, "00")
@@ -581,11 +584,15 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.iaszonemgt.iaswd_develco_warning(NWKID, EPout, "01")
             return
         
-        if DeviceType == "SwitchAlarm" and _model_name == "TS0601-Solar-Siren":
-            if ts0601_extract_data_point_infos( self, _model_name):
-                ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 1)
-                UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-                return
+        if DeviceType == "SwitchAlarm" and _model_name == "TS0601-Solar-Siren" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 1)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+
+        if DeviceType == "TamperSwitch" and _model_name == "TS0601-Solar-Siren" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "TuyaTamperSwitch", 1)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
     
         if _model_name in ("TS0601-_TZE200_nklqjk62", ):
             self.log.logging("Command", "Debug", "mgtCommand : On for Tuya Garage Door %s" % NWKID)
