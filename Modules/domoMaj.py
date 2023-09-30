@@ -278,7 +278,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # value is expected as String
 
             if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
-                if value < 0 and is_PowerNegative_widget( ClusterTypeList):
+                if int(value) < 0 and is_PowerNegative_widget( ClusterTypeList):
                     self.log.logging("Widget", "Log", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
                     UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
                     continue
