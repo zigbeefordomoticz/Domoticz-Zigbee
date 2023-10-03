@@ -77,7 +77,8 @@ def createSwitchSelector(self, nbSelector, DeviceType=None, OffHidden=False, Sel
     """
 
     Options = {}
-    # Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
+    self.log.logging("WidgetCreation", "Debug", "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(
+        nbSelector,DeviceType,OffHidden,SelectorStyle))
     if nbSelector <= 1:
         return Options
 
@@ -103,7 +104,7 @@ def createSwitchSelector(self, nbSelector, DeviceType=None, OffHidden=False, Sel
 
             if Options["LevelNames"] != "":
                 count = sum(map(lambda x: 1 if "|" in x else 0, Options["LevelNames"]))
-                # Domoticz.Log("----> How many Levels: %s" %count)
+                self.log.logging("WidgetCreation", "Debug", "----> How many Levels: %s" %count)
                 for _ in range(count):
                     Options["LevelActions"] += "|"
     else:
@@ -120,7 +121,7 @@ def createSwitchSelector(self, nbSelector, DeviceType=None, OffHidden=False, Sel
     if OffHidden:
         Options["LevelOffHidden"] = "true"
 
-    # Domoticz.Log(" --> Options: %s" %str(Options))
+    self.log.logging("WidgetCreation", "Debug", " --> Options: %s" %str(Options))
     return Options
 
 

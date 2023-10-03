@@ -179,8 +179,8 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
     """
     
     # Create the device
-    self.log.logging("AbstractDz", "Debug", "domo_create_api DeviceID: %s,Name: %s,Unit: %s,TypeName: %s,Type: %s,Subtype: %s,Switchtype: %s,Image: %s" %(
-        DeviceID_, Name_, Unit_, widgetType, Type_, Subtype_, Switchtype_, Image,))
+    self.log.logging("AbstractDz", "Debug", "domo_create_api DeviceID: %s,Name: %s,Unit: %s,TypeName: %s,Type: %s,Subtype: %s,Switchtype: %s, widgetOptions= %s, Image: %s" %(
+        DeviceID_, Name_, Unit_, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, Image,))
 
     # Determine the correct class to use based on the API type
     domoticz_device_api_class = Domoticz.Unit if DOMOTICZ_EXTENDED_API else Domoticz.Device
@@ -200,7 +200,14 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
             Type_ = 244
             Subtype_ = 62
             Switchtype_ = 18
-        myDev = domoticz_device_api_class( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_ )
+        myDev = domoticz_device_api_class( 
+            DeviceID=DeviceID_, 
+            Name=Name_, 
+            Unit=Unit_, 
+            Type=Type_, 
+            Subtype=Subtype_, 
+            Switchtype=Switchtype_,
+            Options=widgetOptions,)
                
     elif Image:     
         self.log.logging("AbstractDz", "Debug", "- based on Image %s" %Image)     
