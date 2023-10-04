@@ -240,6 +240,10 @@ def best_group_widget(self, GroupId):
                 GroupWidgetType = WidgetType
                 continue
 
+            if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
+                GroupWidgetType = "LvlControl"
+                continue
+
             if WidgetType in ("Venetian", "VenetianInverted", "WindowCovering", "BlindPercentInverted"):
                 GroupWidgetType = WidgetType
 
