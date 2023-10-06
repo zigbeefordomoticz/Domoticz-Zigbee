@@ -207,6 +207,11 @@ def best_group_widget(self, GroupId):
             WidgetType = self.ListOfDevices[NwkId]["Ep"][devEp]["ClusterType"][DomoDeviceUnit]
             self.logging("Debug", "------------ GroupWidget: %s WidgetType: %s" % (GroupWidgetType, WidgetType))
 
+            if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
+                # Those widgets are commanded via cluster Level Control
+                GroupWidgetType = "LvlControl"
+                continue
+
             if GroupWidgetType is None and WidgetType in WIDGET_STYLE:
                 GroupWidgetType = WidgetType
                 continue
@@ -240,11 +245,8 @@ def best_group_widget(self, GroupId):
                 GroupWidgetType = WidgetType
                 continue
 
-            if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
-                GroupWidgetType = "LvlControl"
-                continue
 
-            if WidgetType in ("Venetian", "VenetianInverted", "WindowCovering", "BlindPercentInverted"):
+            if WidgetType in ("Venetian", "WindowCovering", "BlindPercentInverted"):
                 GroupWidgetType = WidgetType
 
     if GroupWidgetType is None:
