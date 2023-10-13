@@ -1036,6 +1036,9 @@ def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 def retreive_cmd_payload_from_8002(Payload):
 
     ManufacturerCode = None
+    if len(Payload) < 2:
+        return (None, None, None, None, None, None)
+    
     fcf = Payload[:2]
 
     try:
@@ -1045,6 +1048,9 @@ def retreive_cmd_payload_from_8002(Payload):
         return (None, None, None, None, None, None)
                   
     if GlobalCommand is None:
+        return (None, None, None, None, None, None)
+
+    if len(Payload) < 6:
         return (None, None, None, None, None, None)
 
     if is_manufspecific_8002_payload(fcf):
