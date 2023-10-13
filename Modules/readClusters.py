@@ -14,9 +14,6 @@ import binascii
 # import time
 import struct
 from time import time
-
-import Domoticz
-
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice
@@ -187,6 +184,7 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
         return
 
     if is_cluster_zcl_config_available( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, attribute=MsgAttrID):
+        storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
         process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, )
     
     elif MsgClusterId in DECODE_CLUSTER:
@@ -269,7 +267,6 @@ def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             elif MsgClusterData == "cd":  # short reset , a short click on the reset button
                 return
             else:
-                # Domoticz.Log("Konke Multi Purpose Switch - Unknown Value: %s" %MsgClusterData)
                 return
             self.log.logging(
                 "Cluster",
@@ -951,7 +948,7 @@ def Cluster0101(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
         if len(MsgClusterData) != 12:
             # https://github.com/fairecasoimeme/ZiGate/issues/229
-            Domoticz.Log("Needs Firmware 3.1b to decode this data")
+            self.log.logging( "Cluster", "Debug", "Needs Firmware 3.1b to decode this data")
 
         angleX, angleY, angleZ = decode_vibrAngle(MsgClusterData)
 

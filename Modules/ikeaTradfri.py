@@ -10,10 +10,11 @@
 
 """
 
+from Modules.basicOutputs import write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate
-from Modules.tools import updSQN, extract_info_from_8085, get_cluster_attribute_value
-from Modules.basicOutputs import write_attribute
+from Modules.tools import (extract_info_from_8085, get_cluster_attribute_value,
+                           updSQN)
 from Modules.zigateConsts import ZIGATE_EP
 
 

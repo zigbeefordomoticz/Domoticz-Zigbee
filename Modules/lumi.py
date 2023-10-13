@@ -10,9 +10,8 @@
 """
 import struct
 import time
-from math import atan, pi, sqrt, log10
+from math import atan, log10, pi, sqrt
 
-import Domoticz
 from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
                                   read_attribute, write_attribute)
 from Modules.domoMaj import MajDomoDevice
@@ -569,15 +568,15 @@ def readXiaomiClusterv2(
             dtype = MsgClusterData[idx + 2 : idx + 4]
             infos = XIAOMI_TAGS[(TagXiaomi, dtype)]
 
-            Domoticz.Log("Infos: %s Tag: %s Dtype: %s" % (infos, TagXiaomi, dtype))
+            self.log.logging( "Lumi", "Log", "Infos: %s Tag: %s Dtype: %s" % (infos, TagXiaomi, dtype))
             if dtype not in SIZE_DATA_TYPE:
-                Domoticz.Log("Unknown DType: %s for Tage: %s" % (dtype, TagXiaomi))
+                self.log.logging( "Lumi", "Log", "Unknown DType: %s for Tage: %s" % (dtype, TagXiaomi))
                 continue
 
             nbByteToRead = 2 * SIZE_DATA_TYPE[dtype]
             svalue = MsgClusterData[idx + 4 : idx + 4 + nbByteToRead]
 
-            Domoticz.Log("----- svalue: %s" % (svalue))
+            self.log.logging( "Lumi", "Log", "----- svalue: %s" % (svalue))
 
             if dtype == "10":
                 value = svalue
@@ -639,11 +638,7 @@ def lumi_lock(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgC
     if lumilockData in LUMI_LOCK_KEY:
         lumilockData += MsgClusterData[4:6]
 
-    self.log.logging(
-        "Lumi",
-        "Debug",
-        "lumi_private_cluster - %s/%s  LUMI LOCK %s lumilockData: %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterData, lumilockData),
-    )
+    self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s  LUMI LOCK %s lumilockData: %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterData, lumilockData), )
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "LumiLock", lumilockData)
 
     checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)

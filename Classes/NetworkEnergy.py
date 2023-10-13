@@ -26,7 +26,6 @@ import os.path
 from pathlib import Path
 from time import time
 
-import Domoticz
 from Modules.basicOutputs import maskChannel
 from Zigbee.zdpCommands import zdp_management_network_update_request
 
@@ -88,7 +87,7 @@ class NetworkEnergy:
                         if nwkid == r:
                             continue
                         if "Health" in self.ListOfDevices[nwkid]:
-                            Domoticz.Log("_initNwkEnrgy %s - >%s<" % (nwkid, self.ListOfDevices[nwkid]["Health"]))
+                            self.logging("Debug", "_initNwkEnrgy %s - >%s<" % (nwkid, self.ListOfDevices[nwkid]["Health"]))
                             if self.ListOfDevices[nwkid]["Health"] == "Not Reachable":
                                 self.logging("Log", "_initNwkEnrgy - skiping device %s which is Not Reachable" % nwkid)
                                 continue
@@ -128,13 +127,13 @@ class NetworkEnergy:
 
         for r in self.EnergyLevel:
             for i in self.EnergyLevel[r]:
-                Domoticz.Log("%s <-> %s : %s" % (r, i, self.EnergyLevel[r][i]["Status"]))
+                self.logging("Log", "%s <-> %s : %s" % (r, i, self.EnergyLevel[r][i]["Status"]))
                 if self.EnergyLevel[i]["Status"] == "Completed":
-                    Domoticz.Log("---> Tx: %s" % (self.EnergyLevel[r][i]["Tx"]))
-                    Domoticz.Log("---> Failure: %s" % (self.EnergyLevel[r][i]["Failure"]))
+                    self.logging("Log","---> Tx: %s" % (self.EnergyLevel[r][i]["Tx"]))
+                    self.logging("Log","---> Failure: %s" % (self.EnergyLevel[r][i]["Failure"]))
                     for c in self.EnergyLevel[r][i]["Channels"]:
-                        Domoticz.Log("---> %s: %s" % (c, self.EnergyLevel[r][i]["Channels"][c]))
-        self.logging("Debug", "")
+                        self.logging("Log", "---> %s: %s" % (c, self.EnergyLevel[r][i]["Channels"][c]))
+        self.logging("Log", "")
 
     def NwkScanReq(self, root, target, channels):
 
@@ -162,7 +161,7 @@ class NetworkEnergy:
 
         self.logging("Debug", "start_scan")
         if self.ScanInProgress:
-            Domoticz.Log("a Scan is already in progress")
+            self.logging("Log", "a Scan is already in progress")
             return
         self.ScanInProgress = True
 
@@ -213,7 +212,7 @@ class NetworkEnergy:
                         if len(self.nwkidInQueue) > 0:
                             root, entry = self.nwkidInQueue.pop()
                             if r != root and i != entry:
-                                Domoticz.Error("Mismatch %s versus %s" % (i, entry))
+                                self.logging("Error", "Mismatch %s versus %s" % (i, entry))
                     continue
                 elif self.EnergyLevel[r][i]["Status"] == "ScanRequired":
                     _channels = []
@@ -241,12 +240,10 @@ class NetworkEnergy:
         storeEnergy = {}
         storeEnergy[stamp] = []
         for r in self.EnergyLevel:
-            Domoticz.Status("Network Energy Level Report: %s" % r)
-            Domoticz.Status("-----------------------------------------------")
-            Domoticz.Status(
-                "%6s <- %5s %6s %8s %4s %4s %4s %4s %4s %4s"
-                % ("router", "nwkid", "Tx", "Failure", "11", "15", "19", "20", "25", "26")
-            )
+            self.logging("Status", "Network Energy Level Report: %s" % r)
+            self.logging("Status", "-----------------------------------------------")
+            self.logging("Status", "%6s <- %5s %6s %8s %4s %4s %4s %4s %4s %4s" % (
+                "router", "nwkid", "Tx", "Failure", "11", "15", "19", "20", "25", "26"))
             router = {}
             router["_NwkId"] = r
             router["MeshRouters"] = []
@@ -296,7 +293,7 @@ class NetworkEnergy:
                         entry["Channels"].append(channels)
                         toprint += " %4s" % self.EnergyLevel[r][nwkid]["Channels"][c]
                 router["MeshRouters"].append(entry)
-                Domoticz.Status(toprint)
+                self.logging("Status", toprint)
             storeEnergy[stamp].append(router)
 
         self.logging("Debug", "Network Energly Level Report: %s" % storeEnergy)
@@ -324,10 +321,8 @@ class NetworkEnergy:
                 fout.write("\n")
                 json.dump(storeEnergy, fout)
         else:
-            Domoticz.Error(
-                "Unable to get access to directory %s, please check PluginConf.txt"
-                % (self.pluginconf.pluginConf["pluginReports"])
-            )
+            self.logging("Error", "Unable to get access to directory %s, please check PluginConf.txt" % (
+                self.pluginconf.pluginConf["pluginReports"]) )
 
     def NwkScanResponse(self, MsgData):
 
@@ -374,7 +369,7 @@ class NetworkEnergy:
         }
 
         if MsgDataStatus != "00":
-            Domoticz.Error("NwkScanResponse - Status: %s with Data: %s" % (MsgDataStatus, MsgData))
+            self.logging("Error", "NwkScanResponse - Status: %s with Data: %s" % (MsgDataStatus, MsgData))
             return
 
         if len(self.nwkidInQueue) == 0 and MsgSrc:
@@ -389,9 +384,8 @@ class NetworkEnergy:
             root, entry = self.nwkidInQueue.pop()
             self.logging("Debug", "NwkScanResponse - Root: %s, Entry: %s, MsgSrc: %s" % (root, entry, MsgSrc))
             if entry != MsgSrc:
-                Domoticz.Log(
-                    "NwkScanResponse - Unexpected message >%s< from %s, expecting %s" % (MsgData, MsgSrc, entry)
-                )
+                self.logging("Log", "NwkScanResponse - Unexpected message >%s< from %s, expecting %s" % (
+                    MsgData, MsgSrc, entry) )
 
         elif len(self.nwkidInQueue) > 0:
             root, entry = self.nwkidInQueue.pop()

@@ -4,16 +4,15 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
-
 from Modules.basicOutputs import write_attribute
 from Modules.casaia import casaia_check_irPairing, casaia_setpoint
 from Modules.danfoss import thermostat_Setpoint_Danfoss
 from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.schneider_wiser import schneider_setpoint
-from Modules.tuyaTRV import tuya_setpoint
-from Modules.tuyaTS0601 import ts0601_extract_data_point_infos, ts0601_actuator, ts0601_action_calibration
 from Modules.tuyaConst import TUYA_eTRV_MODEL
+from Modules.tuyaTRV import tuya_setpoint
+from Modules.tuyaTS0601 import (ts0601_action_calibration, ts0601_actuator,
+                                ts0601_extract_data_point_infos)
 
 
 def thermostat_Setpoint_SPZB(self, NwkId, setpoint):
@@ -126,9 +125,9 @@ def thermostat_Setpoint(self, NwkId, setpoint):
 
     if self.zigbee_communication == "native" and self.ZiGateModel == 2 and int(self.FirmwareVersion, 16) < 0x0320:
         # Bug on ZiGate V2 - firmware 0x320 fix it
-        Domoticz.Log("---Zigate Model: %s  Version: %s" % (self.ZiGateModel, self.FirmwareVersion))
+        self.log.logging("Thermostats", "Debug", "---Zigate Model: %s  Version: %s" % (self.ZiGateModel, self.FirmwareVersion))
         Hdata = Hdata[2:4] + Hdata[:2]
-        Domoticz.Log("Patch Hdata  %s" % Hdata)
+        self.log.logging("Thermostats", "Debug", "Patch Hdata  %s" % Hdata)
 
     EPout = "01"
     self.log.logging( "Thermostats", "Deug", "thermostat_Setpoint - for %s with value 0x%s / cluster: %s, attribute: %s type: %s" % (
@@ -258,7 +257,7 @@ def thermostat_Mode(self, NwkId, mode):
     }
 
     if mode not in SYSTEM_MODE:
-        Domoticz.Error("thermostat_Mode - unknown system mode: %s" % mode)
+        self.log.logging("Thermostats", "Error", "thermostat_Mode - unknown system mode: %s" % mode)
         return
 
     if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):

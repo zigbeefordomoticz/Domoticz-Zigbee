@@ -13,7 +13,6 @@
 
 from time import time
 
-import Domoticz
 from Modules.casaia import restart_plugin_reset_ModuleIRCode
 from Modules.domoTools import lastSeenUpdate
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
@@ -325,7 +324,7 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
 
     # I wonder if this code makes sense ? ( PP 02/05/2020 ), This should not happen!
     if MsgIEEE in self.IEEE2NWK:
-        Domoticz.Error("Decode004d - New Device %s %s already exist in IEEE2NWK" % (NwkId, MsgIEEE))
+        self.log.logging("DeviceAnnoucement", "Error", "Decode004d - New Device %s %s already exist in IEEE2NWK" % (NwkId, MsgIEEE))
         self.log.logging(
             "DeviceAnnoucement",
             "Debug",

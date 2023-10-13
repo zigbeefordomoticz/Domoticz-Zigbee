@@ -15,26 +15,25 @@ import struct
 import time
 from datetime import datetime
 
-import Domoticz
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                              sqn_get_internal_sqn_from_app_sqn,
                                              sqn_get_internal_sqn_from_aps_sqn)
 from Modules.basicInputs import read_attribute_response
-from Modules.basicOutputs import (getListofAttribute, send_default_response,handle_unknow_device,
-                                  setTimeServer)
+from Modules.basicOutputs import (getListofAttribute, handle_unknow_device,
+                                  send_default_response, setTimeServer)
 from Modules.callback import callbackDeviceAwake
 from Modules.deviceAnnoucement import device_annoucementv2
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.errorCodes import DisplayStatusCode
 from Modules.ikeaTradfri import (ikea_motion_sensor_8095,
+                                 ikea_remote_control_80A7,
                                  ikea_remote_control_8085,
                                  ikea_remote_control_8095,
                                  ikea_remote_switch_8085,
                                  ikea_remote_switch_8095,
-                                 ikea_wireless_dimer_8085,
-                                 ikea_remote_control_80A7,
-                                 ikea_remoteN2_control_80A7)
+                                 ikea_remoteN2_control_80A7,
+                                 ikea_wireless_dimer_8085)
 from Modules.inRawAps import inRawAps
 from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
                                      legrand_remote_switch_8085,
@@ -52,13 +51,14 @@ from Modules.sendZigateCommand import raw_APS_request
 from Modules.timeServer import timeserver_read_attribute_request
 from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            checkAndStoreAttributeValue, decodeMacCapa,
-                           extract_info_from_8085, get_isqn_datastruct,
+                           extract_info_from_8085,
+                           get_deviceconf_parameter_value, get_isqn_datastruct,
                            get_list_isqn_attr_datastruct, getSaddrfromIEEE,
                            loggingMessages, lookupForIEEE, mainPoweredDevice,
                            retreive_cmd_payload_from_8002,
                            set_request_phase_datastruct, set_status_datastruct,
                            timeStamped, updLQI, updSQN,
-                           zigpy_plugin_sanity_check, get_deviceconf_parameter_value)
+                           zigpy_plugin_sanity_check)
 from Modules.zb_tables_management import (mgmt_rtg_rsp,
                                           store_NwkAddr_Associated_Devices)
 from Modules.zigateConsts import (ADDRESS_MODE, LEGRAND_REMOTE_MOTION,
@@ -155,32 +155,22 @@ def ZigateRead(self, Devices, Data):
     FrameStart = Data[:2]
     FrameStop = Data[len(Data) - 2 :]
     if FrameStart != "01" and FrameStop != "03":
-        Domoticz.Error(
-            "ZigateRead received a non-zigate frame Data: "
-            + str(Data)
-            + " FS/FS = "
-            + str(FrameStart)
-            + "/"
-            + str(FrameStop)
-        )
+        self.log.logging( "Input", "Error", "ZigateRead received a non-zigate frame Data: " + str(Data) + " FS/FS = " + str(FrameStart) + "/" + str(FrameStop) )
         return
 
 
-    MsgType, MsgData, MsgLQI = extract_messge_infos( Data)
+    MsgType, MsgData, MsgLQI = extract_messge_infos( self, Data)
     self.Ping["Nb Ticks"] = 0  # We receive a valid packet 
     
-    self.log.logging(
-        "Input",
-        "Debug",
-        "ZigateRead - MsgType: %s,  Data: %s, LQI: %s" % (MsgType, MsgData, int(MsgLQI, 16)),
-    )
+    self.log.logging( "Input", "Debug", "ZigateRead - MsgType: %s,  Data: %s, LQI: %s" % (
+        MsgType, MsgData, int(MsgLQI, 16)), )
 
     if MsgType == "8002":
         # Let's try to see if we can decode it, and then get a new MsgType
         decoded_frame = decode8002_and_process( self, Data)
         if decoded_frame is None:
             return
-        MsgType, MsgData, MsgLQI = extract_messge_infos( decoded_frame)
+        MsgType, MsgData, MsgLQI = extract_messge_infos( self, decoded_frame)
 
     if MsgType in DECODERS:
         _decoding = DECODERS[MsgType]
@@ -199,11 +189,11 @@ def ZigateRead(self, Devices, Data):
             "ZigateRead - Decoder not found for %s" % (MsgType),
         )
 
-def extract_messge_infos( Data):
+def extract_messge_infos( self, Data):
     FrameStart = Data[:2]
     FrameStop = Data[len(Data) - 2 :]
     if FrameStart != "01" and FrameStop != "03":
-        Domoticz.Error("ZigateRead received a non-zigate frame Data: " + str(Data) + " FS/FS = " + str(FrameStart) + "/" + str(FrameStop))
+        self.log.logging( "Input", "Error", "ZigateRead received a non-zigate frame Data: " + str(Data) + " FS/FS = " + str(FrameStart) + "/" + str(FrameStop))
         return None, None, None
     MsgType = Data[2:6]
     MsgType = MsgType.lower()
@@ -484,6 +474,10 @@ def Decode0100(self, Devices, MsgData, MsgLQI):  # Read Attribute request
 def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
 
     self.log.logging("Input", "Debug", "Decode0110 - message: %s" % MsgData)
+    if len(MsgData) < 24:
+        self.log.logging( "Input", "Error", "Decode0110 - Message too short %s" % (MsgData), )
+        return
+
     MsgSqn = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     MsgSrcEp = MsgData[6:8]
@@ -507,12 +501,8 @@ def Decode0110(self, Devices, MsgData, MsgLQI):  # Write Attribute request
         idx += 4
         DataValue = MsgData[idx : idx + int(lendata,16) * 2]
 
-        self.log.logging(
-            "Input",
-            "Debug",
-            "Decode0110 - Sqn: %s NwkId: %s Ep: %s Cluster: %s Manuf: %s Attribute: %s Type: %s Value: %s"
-            % (MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufCode, Attribute, DataType, DataValue),
-        )
+        self.log.logging( "Input", "Debug", "Decode0110 - Sqn: %s NwkId: %s Ep: %s Cluster: %s Manuf: %s Attribute: %s Type: %s Value: %s" % (
+            MsgSqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgManufCode, Attribute, DataType, DataValue), )
 
 
 def Decode0302(self, Devices, MsgData, MsgLQI):  # PDM Load
@@ -632,12 +622,8 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):  # Status
         self.groupmgt.statusGroupRequest(MsgData)
 
     if MsgData[:2] != "00":
-        self.log.logging(
-            "Input",
-            "Error",
-            "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] "
-            % (PacketType, type_sqn, sqn_app, sqn_aps, Status),
-        )
+        self.log.logging( "Input", "Error", "Decode8000 - PacketType: %s TypeSqn: %s sqn_app: %s sqn_aps: %s Status: [%s] " % (
+            PacketType, type_sqn, sqn_app, sqn_aps, Status), )
         # Hack to reboot Zigate
         if MsgData[:2] not in ("01", "02", "03", "04", "05"):
             self.internalError += 1
@@ -668,14 +654,18 @@ def Decode8001(self, Decode, MsgData, MsgLQI):  # Reception log Level
                     + "\n"
                 )
             except IOError:
-                Domoticz.Error("Error while writing to ZiGate log file %s" % logfilename)
+                self.log.logging( "Input", "Error","Error while writing to ZiGate log file %s" % logfilename)
     except IOError:
-        Domoticz.Error("Error while Opening ZiGate log file %s" % logfilename)
+        self.log.logging( "Input", "Error", "Error while Opening ZiGate log file %s" % logfilename)
 
-    
-    
 
 def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
+    
+    if len(MsgData) < 22:
+        # Not good
+        self.log.logging( "Input", "Error", "Invalid frame %s too short" % MsgData)
+        return
+        
     # MsgLogLvl = MsgData[:2]
     MsgProfilID = MsgData[2:6]
     MsgClusterID = MsgData[6:10]
@@ -684,66 +674,66 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     MsgSourceAddressMode = MsgData[14:16]
 
 
-    # Domoticz.Log("Decode8002 - MsgLogLvl: %s , MsgProfilID: %s, MsgClusterID: %s MsgSourcePoint: %s, MsgDestPoint: %s, MsgSourceAddressMode: %s" \
-    #        %(MsgLogLvl, MsgProfilID, MsgClusterID, MsgSourcePoint, MsgDestPoint, MsgSourceAddressMode))
-
-    if int(MsgSourceAddressMode, 16) in [
-        ADDRESS_MODE["short"],
-        ADDRESS_MODE["group"],
-    ]:
+    if int(MsgSourceAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
         MsgSourceAddress = MsgData[16:20]  # uint16_t
         MsgDestinationAddressMode = MsgData[20:22]
-        if int(MsgDestinationAddressMode, 16) in [
-            ADDRESS_MODE["short"],
-            ADDRESS_MODE["group"],
-        ]:
+        if int(MsgDestinationAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
+            if len(MsgData) < 26:
+                # Not good
+                self.log.logging( "Input", "Error", "Invalid frame %s too short" % MsgData)
+                return
             # Short Address
             MsgDestinationAddress = MsgData[22:26]  # uint16_t
             MsgPayload = MsgData[26 :]
 
         elif int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["ieee"]:  # uint32_t
+            if len(MsgData) < 38:
+                # Not good
+                self.log.logging( "Input", "Error", "Invalid frame %s too short" % MsgData)
+                return
             # IEEE
             MsgDestinationAddress = MsgData[22:38]  # uint32_t
             MsgPayload = MsgData[38 :]
 
         else:
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
-                % (MsgDestinationAddressMode, MsgData),
-            )
+            self.log.logging( "Input", "Log", "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" % (
+                MsgDestinationAddressMode, MsgData), )
             return
 
     elif int(MsgSourceAddressMode, 16) == ADDRESS_MODE["ieee"]:
+        if len(MsgData) < 38:
+            # Not good
+            self.log.logging( "Input", "Error", "Invalid frame %s too short" % MsgData)
+            return
+
         MsgSourceAddress = MsgData[16:32]  # uint32_t
         MsgDestinationAddressMode = MsgData[32:34]
-        if int(MsgDestinationAddressMode, 16) in [
-            ADDRESS_MODE["short"],
-            ADDRESS_MODE["group"],
-        ]:
+        if int(MsgDestinationAddressMode, 16) in [ ADDRESS_MODE["short"], ADDRESS_MODE["group"], ]:
             MsgDestinationAddress = MsgData[34:38]  # uint16_t
             MsgPayload = MsgData[38 :]
 
         elif int(MsgDestinationAddressMode, 16) == ADDRESS_MODE["ieee"]:
+            if len(MsgData) < 40:
+                # Not good
+                self.log.logging( "Input", "Error", "Invalid frame %s too short" % MsgData)
+                return
+
             # IEEE
             MsgDestinationAddress = MsgData[34:40]  # uint32_t
             MsgPayload = MsgData[40 :]
         else:
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s"
-                % (MsgDestinationAddressMode, MsgData),
-            )
+            self.log.logging( "Input", "Log", "Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" % (
+                MsgDestinationAddressMode, MsgData), )
             return
 
     else:
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s" % (MsgSourceAddressMode, MsgData),
-        )
+        self.log.logging( "Input", "Log", "Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s" % (
+            MsgSourceAddressMode, MsgData), )
+        return
+
+    if len(MsgPayload) < 4 :
+        # Not good
+        self.log.logging( "Input", "Error", "Invalid frame %s, Payload %s too short" % (MsgData, MsgPayload))
         return
 
     self.log.logging(
@@ -765,7 +755,7 @@ def Decode8002(self, Devices, MsgData, MsgLQI):  # Data indication
     # Let's check if this is an Schneider related APS. In that case let's process
     srcnwkid = dstnwkid = None
     if len(MsgDestinationAddress) != 4:
-        Domoticz.Error("not handling IEEE address")
+        self.log.logging( "Input", "Error", "not handling IEEE address")
         return
 
     srcnwkid = MsgSourceAddress
@@ -1012,7 +1002,6 @@ def Decode8009(self, Devices, MsgData, MsgLQI):  # Network State response (Firm 
     self.currentChannel = int(Channel, 16)
 
     if self.iaszonemgt:
-        # Domoticz.Log("Update IAS Zone - IEEE: %s" %extaddr)
         self.iaszonemgt.setZigateIEEE(extaddr)
 
     if self.groupmgt:
@@ -1059,7 +1048,7 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Firmware Version
     else:
         # Zigpy 20/21/1217/20211217
         self.log.logging("Input", "Log", "Decode8010 %s" %MsgData)
-        self.FirmwareMajorVersion = MsgData[0:2]
+        self.FirmwareMajorVersion = MsgData[:2]
         FirmwareMinorVersion = MsgData[4:8]
         self.FirmwareVersion = MsgData[8:]
         self.log.logging("Input", "Log", "Decode8010 Major: %s Minor: %s Full: %s" %(
@@ -1310,7 +1299,7 @@ def Decode8014(self, Devices, MsgData, MsgLQI):  # "Permit Join" status response
         if prev != "On":
             self.log.logging("Input", "Status", "Accepting new Hardware: Enable (On)")
     else:
-        Domoticz.Error("Decode8014 - Unexpected value " + str(MsgData))
+        self.log.logging("Input", "Error","Decode8014 - Unexpected value " + str(MsgData))
 
     self.log.logging(
         "Input",
@@ -1414,7 +1403,7 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
     MsgLen = len(MsgData)
     MsgDataStatus = MsgData[:2]
 
-    Domoticz.Log("Decode8024: Status: %s" % MsgDataStatus)
+    self.log.logging("Input", "Log", "Decode8024: Status: %s" % MsgDataStatus)
 
     if MsgDataStatus == "00":
         self.log.logging("Input", "Status", "Start Network - Success")
@@ -1467,10 +1456,8 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
             and not self.startZigateNeeded
             and str(int(MsgChannel, 16)) != self.pluginconf.pluginConf["channel"]
         ):
-            Domoticz.Status(
-                "Updating Channel in Plugin Configuration from: %s to: %s"
-                % (self.pluginconf.pluginConf["channel"], int(MsgChannel, 16))
-            )
+            self.log.logging("Input", "Status", "Updating Channel in Plugin Configuration from: %s to: %s" % (
+                self.pluginconf.pluginConf["channel"], int(MsgChannel, 16)) )
             self.pluginconf.pluginConf["channel"] = str(int(MsgChannel, 16))
             self.pluginconf.write_Settings()
 
@@ -1501,10 +1488,8 @@ def Decode8024(self, Devices, MsgData, MsgLQI):  # Network joined / formed
             ),
         )
     else:
-        Domoticz.Error(
-            "Coordinator initialisation failed IEEE: %s, Nwkid: %s, Channel: %s"
-            % (MsgExtendedAddress, MsgShortAddress, MsgChannel)
-        )
+        self.log.logging("Input", "Error", "Coordinator initialisation failed IEEE: %s, Nwkid: %s, Channel: %s" % (
+            MsgExtendedAddress, MsgShortAddress, MsgChannel) )
 
 
 def Decode8028(self, Devices, MsgData, MsgLQI):  # Authenticate response
@@ -1607,7 +1592,7 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
         MsgSrcAddr = MsgData[6:14]
         self.log.logging("Input", "Debug", "Decode8030 - Bind reponse for %s" % (MsgSrcAddr))
         if MsgSrcAddr not in self.IEEE2NWK:
-            Domoticz.Error("Decode8030 - Do no find %s in IEEE2NWK" % MsgSrcAddr)
+            self.log.logging("Input", "Error", "Decode8030 - Do no find %s in IEEE2NWK" % MsgSrcAddr)
             return
         nwkid = self.IEEE2NWK[MsgSrcAddr]
 
@@ -1617,7 +1602,7 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
         nwkid = MsgSrcAddr
 
     else:
-        Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" % (MsgSrcAddrMode, MsgData))
+        self.log.logging("Input", "Error", "Decode8030 - Unknown addr mode %s in %s" % (MsgSrcAddrMode, MsgData))
         return
 
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSequenceNumber, TYPE_APP_ZDP)
@@ -1640,10 +1625,8 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
             for Ep in list(self.ListOfDevices[nwkid]["Bind"]):
                 if Ep not in self.ListOfDevices[nwkid]["Ep"]:
                     # Bad hack - Root cause not identify. Suspition of back and fourth move between stable and beta branch
-                    Domoticz.Error(
-                        "Decode8030 --> %s Found an inconstitent Ep: %s in %s"
-                        % (nwkid, Ep, str(self.ListOfDevices[nwkid]["Bind"]))
-                    )
+                    self.log.logging("Input", "Error", "Decode8030 --> %s Found an inconstitent Ep: %s in %s" % (
+                        nwkid, Ep, str(self.ListOfDevices[nwkid]["Bind"])) )
                     del self.ListOfDevices[nwkid]["Bind"][Ep]
                     continue
 
@@ -1670,10 +1653,8 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
             for Ep in list(self.ListOfDevices[nwkid]["WebBind"]):
                 if Ep not in self.ListOfDevices[nwkid]["Ep"]:
                     # Bad hack - Root cause not identify. Suspition of back and fourth move between stable and beta branch
-                    Domoticz.Error(
-                        "Decode8030 --> %s Found an inconstitent Ep: %s in %s"
-                        % (nwkid, Ep, str(self.ListOfDevices[nwkid]["WebBind"]))
-                    )
+                    self.log.logging("Input", "Error", "Decode8030 --> %s Found an inconstitent Ep: %s in %s" % (
+                        nwkid, Ep, str(self.ListOfDevices[nwkid]["WebBind"])) )
                     del self.ListOfDevices[nwkid]["WebBind"][Ep]
                     continue
 
@@ -1688,7 +1669,7 @@ def Decode8030(self, Devices, MsgData, MsgLQI):  # Bind response
                             "Phase",
                             "Status",
                         ):  # delete old mechanism
-                            Domoticz.Error("---> delete  destNwkid: %s" % (destNwkid))
+                            self.log.logging("Input", "Error", "---> delete  destNwkid: %s" % (destNwkid))
                             del self.ListOfDevices[nwkid]["WebBind"][Ep][cluster][destNwkid]
 
                         if (
@@ -1730,9 +1711,9 @@ def Decode8031(self, Devices, MsgData, MsgLQI):  # Unbind response
         self.log.logging("Input", "Debug", "Decode8031 - UnBind reponse for %s" % (MsgSrcAddr))
         if MsgSrcAddr in self.IEEE2NWK:
             nwkid = self.IEEE2NWK[MsgSrcAddr]
-            Domoticz.Error("Decode8031 - Do no find %s in IEEE2NWK" % MsgSrcAddr)
+            self.log.logging("Input", "Error", "Decode8031 - Do no find %s in IEEE2NWK" % MsgSrcAddr)
     else:
-        Domoticz.Error("Decode8031 - Unknown addr mode %s in %s" % (MsgSrcAddrMode, MsgData))
+        self.log.logging("Input", "Error", "Decode8031 - Unknown addr mode %s in %s" % (MsgSrcAddrMode, MsgData))
         return
 
     self.log.logging(
@@ -2095,7 +2076,7 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
         return
 
     if MsgDataShAddr not in self.ListOfDevices:
-        Domoticz.Error("Decode8043 - receive message for non existing device")
+        self.log.logging("Input", "Error", "Decode8043 - receive message for non existing device")
         return
 
     if int(MsgDataProfile, 16) == 0xC05E and int(MsgDataDeviceId, 16) == 0xE15E:
@@ -2285,7 +2266,7 @@ def Decode8045(self, Devices, MsgData, MsgLQI):  # Reception Active endpoint res
 
     if not DeviceExist(self, Devices, MsgDataShAddr):
         # Pas sur de moi, mais si le device n'existe pas, je vois pas pkoi on continuerait
-        Domoticz.Error("Decode8045 - KeyError: MsgDataShAddr = " + MsgDataShAddr)
+        self.log.logging("Input", "Error", "Decode8045 - KeyError: MsgDataShAddr = " + MsgDataShAddr)
         return
 
     if self.ListOfDevices[MsgDataShAddr]["Status"] == "inDB":
@@ -2405,8 +2386,6 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
     elif self.ListOfDevices[sAddr]["Status"] == "inDB":
         self.ListOfDevices[sAddr]["Status"] = "Leave"
         self.ListOfDevices[sAddr]["Heartbeat"] = 0
-        # Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
-        # leaveMgtReJoin( self, sAddr, MsgExtAddress )
 
     elif self.ListOfDevices[sAddr]["Status"] in ( "004d", "0043", "8043", "0045", "8045", ):
         if MsgExtAddress in self.IEEE2NWK:
@@ -2908,56 +2887,12 @@ def scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, M
                 # crap, lets finish it
                 # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
                 idx += 6
-        self.log.logging(
-            "Input",
-            "Debug",
-            "scan_attribute_reponse - %s idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
-            % (
-                msgtype,
-                idx,
-                MsgSrcAddr,
-                MsgSrcEp,
-                MsgClusterId,
-                MsgSQN,
-                i_sqn,
-                MsgAttrID,
-                MsgAttStatus,
-                MsgAttType,
-                MsgAttSize,
-                MsgClusterData,
-            ),
-            MsgSrcAddr,
-        )
-        read_report_attributes(
-            self,
-            Devices,
-            msgtype,
-            MsgSQN,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            MsgAttStatus,
-            MsgAttType,
-            MsgAttSize,
-            MsgClusterData,
-        )
+        self.log.logging( "Input", "Debug", "scan_attribute_reponse - %s idx: %s Read Attribute Response: [%s:%s] ClusterID: %s MsgSQN: %s, i_sqn: %s, AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" % (
+            msgtype, idx, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgSQN, i_sqn, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ), MsgSrcAddr, )
+        read_report_attributes( self, Devices, msgtype, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, )
 
 
-def read_report_attributes(
-    self,
-    Devices,
-    MsgType,
-    MsgSQN,
-    MsgSrcAddr,
-    MsgSrcEp,
-    MsgClusterId,
-    MsgAttrID,
-    MsgAttStatus,
-    MsgAttType,
-    MsgAttSize,
-    MsgClusterData,
-):
+def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ):
 
     if DeviceExist(self, Devices, MsgSrcAddr):
         debug_LQI(self, MsgSrcAddr, MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcEp)
@@ -3164,13 +3099,13 @@ def Decode8120(self, Devices, MsgData, MsgLQI):  # Configure Reporting response
 
     self.log.logging("Input", "Debug", "Decode8120 - Configure reporting response: %s" % MsgData)
     if len(MsgData) < 14:
-        Domoticz.Error("Decode8120 - uncomplet message %s " % MsgData)
+        self.log.logging( "Input", "Error", "Decode8120 - uncomplet message %s " % MsgData)
         return
 
     MsgSQN = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("Decode8120 - receiving Configure reporting response from unknown %s" % MsgSrcAddr)
+        self.log.logging( "Input", "Error", "Decode8120 - receiving Configure reporting response from unknown %s" % MsgSrcAddr)
         if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
             handle_unknow_device( self, MsgSrcAddr)
         return
@@ -3462,7 +3397,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("Decode8401 - unknown IAS device %s from plugin" % MsgSrcAddr)
+        self.log.logging( "Input", "Error", "Decode8401 - unknown IAS device %s from plugin" % MsgSrcAddr)
         if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
             handle_unknow_device( self, MsgSrcAddr)
         return
@@ -3764,7 +3699,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
 
     if "Model" not in self.ListOfDevices[MsgSrcAddr]:
-        Domoticz.Log("Decode8085 - No Model Name !")
+        self.log.logging( "Input", "Log", "Decode8085 - No Model Name !")
         return
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]["Model"]
@@ -3864,43 +3799,27 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
         step_mod, up_down, step_size, transition = extract_info_from_8085(MsgData)
 
-        self.log.logging(
-            "Input",
-            "Log",
-            "Decode8085 - OSRAM Lightify Switch Mini %s/%s: Mod %s, UpDown %s Size %s Transition %s"
-            % (MsgSrcAddr, MsgEP, step_mod, up_down, step_size, transition),
-        )
+        self.log.logging( "Input", "Log", "Decode8085 - OSRAM Lightify Switch Mini %s/%s: Mod %s, UpDown %s Size %s Transition %s" % (
+            MsgSrcAddr, MsgEP, step_mod, up_down, step_size, transition), )
 
         if MsgCmd == "04":  # Appui court boutton central
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8085 - OSRAM Lightify Switch Mini %s/%s Central button" % (MsgSrcAddr, MsgEP),
-            )
+            self.log.logging( "Input", "Log", "Decode8085 - OSRAM Lightify Switch Mini %s/%s Central button" % (
+                MsgSrcAddr, MsgEP), )
             MajDomoDevice(self, Devices, MsgSrcAddr, "03", MsgClusterId, "02")
 
         elif MsgCmd == "05":  # Appui Long Top button
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8085 - OSRAM Lightify Switch Mini %s/%s Long press Up button" % (MsgSrcAddr, MsgEP),
-            )
+            self.log.logging( "Input", "Log", "Decode8085 - OSRAM Lightify Switch Mini %s/%s Long press Up button" % (
+                MsgSrcAddr, MsgEP), )
             MajDomoDevice(self, Devices, MsgSrcAddr, "03", MsgClusterId, "03")
 
         elif MsgCmd == "01":  # Appui Long Botton button
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8085 - OSRAM Lightify Switch Mini %s/%s Long press Down button" % (MsgSrcAddr, MsgEP),
-            )
+            self.log.logging( "Input", "Log", "Decode8085 - OSRAM Lightify Switch Mini %s/%s Long press Down button" % (
+                MsgSrcAddr, MsgEP), )
             MajDomoDevice(self, Devices, MsgSrcAddr, "03", MsgClusterId, "04")
 
         elif MsgCmd == "03":  # Release
-            self.log.logging(
-                "Input",
-                "Log",
-                "Decode8085 - OSRAM Lightify Switch Mini %s/%s release" % (MsgSrcAddr, MsgEP),
-            )
+            self.log.logging( "Input", "Log", "Decode8085 - OSRAM Lightify Switch Mini %s/%s release" % (
+                MsgSrcAddr, MsgEP), )
 
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgEP][MsgClusterId]["0000"] = "Cmd: %s, %s" % (MsgCmd, unknown_)
 
@@ -3957,7 +3876,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             self.log.logging("Input", "Log", "step_mod: %s" % step_mod)
 
             if step_mod in TYPE_ACTIONS:
-                Domoticz.Error("Decode8085 - Profalux Remote, unknown Action: %s" % step_mod)
+                self.log.logging( "Input", "Error", "Decode8085 - Profalux Remote, unknown Action: %s" % step_mod)
 
             selector = None
 
@@ -3966,10 +3885,8 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
             elif TYPE_ACTIONS[step_mod] in ("stop"):
                 selector = TYPE_ACTIONS[step_mod]
             else:
-                Domoticz.Error(
-                    "Decode8085 - Profalux remote Unknown state for %s step_mod: %s up_down: %s"
-                    % (MsgSrcAddr, step_mod, up_down)
-                )
+                self.log.logging( "Input", "Error", "Decode8085 - Profalux remote Unknown state for %s step_mod: %s up_down: %s" % (
+                    MsgSrcAddr, step_mod, up_down) )
 
             self.log.logging(
                 "Input",
@@ -4310,7 +4227,7 @@ def Decode8807(self, Devices, MsgData, MsgLQI):
         "JN516x M05": {0: 9.5, 52: -3, 40: -15, 31: -26},
     }
 
-    Domoticz.Debug("Decode8807 - MsgData: %s" % MsgData)
+    self.log.logging( "Input", "Debug", "Decode8807 - MsgData: %s" % MsgData)
 
     TxPower = MsgData[:2]
     self.ControllerData["Tx-Power"] = TxPower

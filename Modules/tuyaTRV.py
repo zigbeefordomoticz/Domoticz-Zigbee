@@ -11,18 +11,17 @@
 """
 # https://github.com/zigpy/zha-device-handlers/issues/357
 
-import Domoticz
 import binascii
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            is_ack_tobe_disabled, voltage2batteryP)
+from Modules.tuyaConst import eTRV_MODELS
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
-from Modules.tuyaConst import eTRV_MODELS
 from Modules.zigateConsts import ZIGATE_EP
 
 
@@ -452,23 +451,23 @@ def receive_moe_schedule(self, Devices, model_target, NwkId, srcEp, ClusterID, d
     # 0600-28/ 0b1e-2a/ 0d1e-2c 111e-2e
     # 0600-30/ 0c00-2e/ 0e1e-2c 111e-2a
     # 0600-26/ 0c1e-28/ 0e1e-2a 121e-28
-    Domoticz.Log("receive_moe_schedule( %s )" %data) 
-    schedule = {'Monday Friday': decode_moes_plan(data[:24])}
-    schedule['Saturday'] = decode_moes_plan(data[24:48])
-    schedule['Sunday'] = decode_moes_plan(data[48:72])
+    self.log.logging( "Tuya", "Log", "receive_moe_schedule( %s )" %data) 
+    schedule = {'Monday Friday': decode_moes_plan(self, data[:24])}
+    schedule['Saturday'] = decode_moes_plan(self, data[24:48])
+    schedule['Sunday'] = decode_moes_plan(self, data[48:72])
     store_tuya_attribute(self, NwkId, "Schedule", schedule )
         
-def decode_moes_plan( data ):
-    Domoticz.Log("decode_moes_plan( %s )" %data) 
+def decode_moes_plan( self, data ):
+    self.log.logging( "Tuya", "Log", "decode_moes_plan( %s )" %data) 
     return {
-        'Period1': decode_moes_period( data[:6] ),
-        'Period2': decode_moes_period( data[6:12]) ,
-        'Period3': decode_moes_period( data[12:18]) ,
-        'Period4': decode_moes_period( data[18:24]),
+        'Period1': decode_moes_period( self, data[:6] ),
+        'Period2': decode_moes_period( self, data[6:12]) ,
+        'Period3': decode_moes_period( self, data[12:18]) ,
+        'Period4': decode_moes_period( self, data[18:24]),
     }
 
-def decode_moes_period( data ):
-    Domoticz.Log("decode_moes_period( %s )" %data)    
+def decode_moes_period( self, data ):
+    self.log.logging( "Tuya", "Log", "decode_moes_period( %s )" %data)    
     return {
         'Start': data[:4],
         'Setpoint': int(data[4:6],16)

@@ -5,8 +5,6 @@
 #
 import struct
 
-import Domoticz
-
 import Modules.paramDevice
 from Modules.basicOutputs import (raw_APS_request, set_poweron_afteroffon,
                                   write_attribute)
@@ -15,7 +13,8 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0006_400x,
                                     ReadAttributeRequest_0008_0000,
                                     ReadAttributeRequest_0406_philips_0030)
-from Modules.tools import (checkAndStoreAttributeValue, is_hex, get_deviceconf_parameter_value,
+from Modules.tools import (checkAndStoreAttributeValue,
+                           get_deviceconf_parameter_value, is_hex,
                            retreive_cmd_payload_from_8002)
 from Modules.zigateConsts import ZIGATE_EP
 
@@ -43,7 +42,7 @@ def callbackDeviceAwake_Philips(self, Devices, NwkId, EndPoint, cluster):
     The function is called after processing the readCluster part
     """
 
-    Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
+    self.log.logging("Philips", "Log", "callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
 
 
 def default_response_for_philips_hue_reporting_attribute(self, Nwkid, srcEp, cluster, sqn):
@@ -124,7 +123,7 @@ def philips_set_poweron_after_offon(self, mode):
     # call from WebServer
 
     if mode not in PHILIPS_POWERON_MODE:
-        Domoticz.Error("philips_set_poweron_after_offon - Unknown mode: %s" % mode)
+        self.log.logging("Philips", "Error", "philips_set_poweron_after_offon - Unknown mode: %s" % mode)
 
     for nwkid in self.ListOfDevices:
         philips_set_poweron_after_offon_device(self, mode, nwkid)
@@ -142,7 +141,7 @@ def philips_set_poweron_after_offon_device(self, mode, nwkid):
     if "0006" not in self.ListOfDevices[nwkid]["Ep"]["0b"]:
         return
     if "4003" not in self.ListOfDevices[nwkid]["Ep"]["0b"]["0006"]:
-        Domoticz.Log("philips_set_poweron_after_offon Device: %s do not have a Set Power Attribute !" % nwkid)
+        self.log.logging("Philips", "Log", "philips_set_poweron_after_offon Device: %s do not have a Set Power Attribute !" % nwkid)
         ReadAttributeRequest_0006_400x(self, nwkid)
         return
 

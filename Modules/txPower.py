@@ -15,7 +15,7 @@ zigate_set_tx_power
 from datetime import datetime
 from time import time
 
-from Modules.zigateCommands import zigate_set_tx_power, zigate_get_tx_power
+from Modules.zigateCommands import zigate_get_tx_power, zigate_set_tx_power
 
 # 
 # (Zigate) JN5168 standard-power module has a transmission power range of -32 to 0 dBm

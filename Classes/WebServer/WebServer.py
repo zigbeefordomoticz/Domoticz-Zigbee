@@ -123,7 +123,8 @@ class WebServer(object):
         transport,
         ModelManufMapping,
         DomoticzMajor,
-        DomoticzMinor
+        DomoticzMinor,
+        readZclClusters
     ):
         self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
@@ -163,7 +164,7 @@ class WebServer(object):
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
         self.Devices = Devices
-
+        self.readZclClusters = readZclClusters
         self.ControllerIEEE = None
 
         self.restart_needed = {"RestartNeeded": 0}

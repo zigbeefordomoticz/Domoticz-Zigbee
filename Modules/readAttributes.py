@@ -13,28 +13,25 @@
 
 import time
 
-import Domoticz
-
 import Modules.paramDevice
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
                                   send_zigatecmd_zcl_noack)
-from Modules.macPrefix import DEVELCO_PREFIX, casaiaPrefix, OWON_PREFIX
+from Modules.macPrefix import DEVELCO_PREFIX, OWON_PREFIX, casaiaPrefix
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
                                        PREFIX_MACADDR_IKEA_TRADFRI,
                                        PREFIX_MACADDR_OPPLE,
-                                       PREFIX_MACADDR_TUYA, TUYA_MANUF_CODE,
-                                       PREFIX_MACADDR_XIAOMI)
-from Modules.tools import (check_datastruct, getListOfEpForCluster,
-                           is_ack_tobe_disabled, is_attr_unvalid_datastruct,
-                           is_time_to_perform_work, reset_attr_datastruct,
-                           set_isqn_datastruct, set_status_datastruct,
-                           set_timestamp_datastruct)
-from Zigbee.zclRawCommands import rawaps_read_attribute_req
+                                       PREFIX_MACADDR_TUYA,
+                                       PREFIX_MACADDR_XIAOMI, TUYA_MANUF_CODE)
+from Modules.tools import (check_datastruct, get_deviceconf_parameter_value,
+                           getListOfEpForCluster, is_ack_tobe_disabled,
+                           is_attr_unvalid_datastruct, is_time_to_perform_work,
+                           reset_attr_datastruct, set_isqn_datastruct,
+                           set_status_datastruct, set_timestamp_datastruct)
 from Modules.tuya import tuya_cmd_0x0000_0xf0
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.zlinky import get_OPTARIF
-
+from Zigbee.zclRawCommands import rawaps_read_attribute_req
 
 ATTRIBUTES = {
     "0000": [ 0x0004, 0x0005, 0x0000, 0x0001, 0x0002, 0x0003, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000, 0xF000, ],
@@ -190,13 +187,8 @@ def skipThisAttribute(self, addr, EpOut, Cluster, Attr):
     if Cluster not in self.DeviceConf[model]["ReadAttributes"]:
         return False
     if Attr in self.DeviceConf[model]["ReadAttributes"][Cluster]:
-        Domoticz.Log("Skip Attribute 6 %s/%s %s %s" % (addr, EpOut, Cluster, Attr))
-        self.log.logging(
-            "ReadAttributes",
-            "Debug",
-            "normalizedReadAttrReq - Skip Read Attribute due to DeviceConf Nwkid: %s Cluster: %s Attribute: %s" % (addr, Cluster, Attr),
-            nwkid=addr,
-        )
+        self.log.logging( "ReadAttributes", "Debug", "Skip Attribute 6 %s/%s %s %s" % (addr, EpOut, Cluster, Attr))
+        self.log.logging( "ReadAttributes", "Debug", "normalizedReadAttrReq - Skip Read Attribute due to DeviceConf Nwkid: %s Cluster: %s Attribute: %s" % (addr, Cluster, Attr), nwkid=addr, )
         return False
     return True
 
@@ -502,7 +494,6 @@ def ReadAttributeRequest_0000_for_general(self, key):
             or ("Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("EH-ZB-VAC"))
         ):
             # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
-            # Domoticz.Log("Specific Manufacturer !!!!")
             manufacturer_code = "105e"
             for _attr in list(listAttributes):
                 if _attr in (0xE000, 0xE001, 0xE002):
@@ -522,9 +513,6 @@ def ReadAttributeRequest_0000_for_general(self, key):
             del listAttributes
             listAttributes = listAttrGeneric
 
-
-        # Domoticz.Log("List Attributes: " + " ".join("0x{:04x}".format(num) for num in listAttributes) )
-
         if listAttributes:
             # self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
             self.log.logging(
@@ -536,7 +524,6 @@ def ReadAttributeRequest_0000_for_general(self, key):
             )
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key), checkTime=False, )
 
-        # Domoticz.Log("List Attributes Manuf Spec: " + " ".join("0x{:04x}".format(num) for num in listAttrSpecific) )
         if listAttrSpecific:
             # self.log.logging( "ReadAttributes", 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttrSpecific)), nwkid=key)
             self.log.logging(
@@ -600,6 +587,9 @@ def ReadAttributeRequest_0002(self, key, force_disable_ack=None):
 def ReadAttributeRequest_0006_0000(self, key):
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " % key, nwkid=key)
 
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[key]["Model"], "DisableOnOffPolling"):
+        return
+    
     ListOfEp = getListOfEpForCluster(self, key, "0006")
     for EPout in ListOfEp:
         listAttributes = [0]
@@ -647,6 +637,9 @@ def ReadAttributeRequest_0006(self, key):
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0006"):
+            if get_deviceconf_parameter_value(self, self.ListOfDevices[key]["Model"], "DisableOnOffPolling") and iterAttr == 0x0000:
+                continue
+
             if iterAttr not in listAttributes:
                 listAttributes.append(iterAttr)
 
@@ -662,9 +655,11 @@ def ReadAttributeRequest_0006(self, key):
 
 def ReadAttributeRequest_0008_0000(self, key):
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " % key, nwkid=key)
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[key]["Model"], "DisableLevelControlPolling"):
+        return
+
     ListOfEp = getListOfEpForCluster(self, key, "0008")
     for EPout in ListOfEp:
-
         listAttributes = [0]
         ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0008", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
@@ -677,6 +672,8 @@ def ReadAttributeRequest_0008(self, key):
     for EPout in ListOfEp:
         listAttributes = []
         for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0008"):
+            if get_deviceconf_parameter_value(self, self.ListOfDevices[key]["Model"], "DisableLevelControlPolling") and iterAttr == 0x0000:
+                continue
             if iterAttr not in listAttributes:
                 listAttributes.append(iterAttr)
 
@@ -888,8 +885,6 @@ def ReadAttributeRequest_0201(self, key):
             del listAttributes
             listAttributes = listAttrGeneric
 
-        # Domoticz.Log("List Attributes: " + " ".join("0x{:04x}".format(num) for num in listAttributes) )
-
         if listAttributes:
             # self.log.logging( "ReadAttributes", 'Debug', "Request 0201 %s/%s 0201 %s " %(key, EPout, listAttributes), nwkid=key)
             self.log.logging(
@@ -910,7 +905,6 @@ def ReadAttributeRequest_0201(self, key):
                 checkTime=False,
             )
 
-        # Domoticz.Log("List Attributes Manuf Spec: " + " ".join("0x{:04x}".format(num) for num in listAttrSpecific) )
         if listAttrSpecific:
             # self.log.logging( "ReadAttributes", 'Debug', "Request Thermostat info via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttrSpecific)), nwkid=key)
             self.log.logging(

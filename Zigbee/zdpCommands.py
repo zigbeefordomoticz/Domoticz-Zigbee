@@ -11,7 +11,6 @@
 """
 
 from Modules.sendZigateCommand import raw_APS_request, send_zigatecmd_raw
-
 from Zigbee.zdpRawCommands import (zdp_raw_active_endpoint_request,
                                    zdp_raw_binding_device,
                                    zdp_raw_IEEE_address_request,

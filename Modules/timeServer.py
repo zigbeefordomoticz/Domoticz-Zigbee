@@ -5,8 +5,9 @@
 #
 
 
-from Modules.basicInputs import read_attribute_response
 from datetime import datetime
+
+from Modules.basicInputs import read_attribute_response
 
 
 def timeserver_read_attribute_request(self, sqn, nwkid, ep, cluster, manuf_spec, manuf_code, attribute):

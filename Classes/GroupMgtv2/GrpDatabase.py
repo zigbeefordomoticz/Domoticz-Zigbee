@@ -16,13 +16,13 @@ Methodes which manipulate the Groups Data Structure
 "Device Addr"]
 
 """
-import os
 import json
+import os
 import time
 
 import Domoticz
-
-from Modules.tools import setConfigItem, getConfigItem, is_domoticz_db_available
+from Modules.domoticzAPI import getConfigItem, setConfigItem
+from Modules.tools import is_domoticz_db_available
 
 
 def write_groups_list(self):

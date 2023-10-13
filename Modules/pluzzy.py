@@ -10,18 +10,12 @@
 
 """
 
-import Domoticz
-
 def pluzzyDecode004D(self, MsgSrcAddr, MsgIEEE, MsgMacCapa, decodedMacCapa, LQI):
 
-    self.log.logging(
-        "Input", "Debug", "Pluzzy-Decode004D - Device Annoucement %s %s %s" % (MsgSrcAddr, MsgIEEE, decodedMacCapa)
-    )
+    self.log.logging( "Input", "Debug", "Pluzzy-Decode004D - Device Annoucement %s %s %s" % (MsgSrcAddr, MsgIEEE, decodedMacCapa) )
 
 
-def pluzzyDecode8102(
-    self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI
-):
+def pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI ):
 
     """
     Receiving a 8102 message and we are using the pluzzy Firmware.
@@ -29,19 +23,16 @@ def pluzzyDecode8102(
     (2) if we are in the pairing/widget creation process, let's specify Model Name for Pluzzy devices.
     """
 
-    self.log.logging(
-        "Input",
-        "Debug",
-        "Pluzzy-Decode8102 - Individual Attribute response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<"
-        % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData),
-    )
+    self.log.logging( "Input", "Debug", "Pluzzy-Decode8102 - Individual Attribute response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" % (
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData))
+ 
 
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("Pluzzy-Decode8102 - Unknown Device %s" % MsgSrcAddr)
+        self.log.logging( "Pluzzy", "Error", "Pluzzy-Decode8102 - Unknown Device %s" % MsgSrcAddr)
         return
 
     if self.ListOfDevices[MsgSrcAddr]["Status"] == "UNKNOW":
-        Domoticz.Error("Pluzzy-Decode8102 - Device %s in UNKNOW state" % MsgSrcAddr)
+        self.log.logging( "Pluzzy", "Error","Pluzzy-Decode8102 - Device %s in UNKNOW state" % MsgSrcAddr)
         return
 
     if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] != {}:

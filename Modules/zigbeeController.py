@@ -3,21 +3,23 @@
 #
 # Author: zaraki673 & pipiche38
 #
-import Domoticz
+
 from Zigbee.zdpCommands import (zdp_active_endpoint_request,
                                 zdp_simple_descriptor_request)
 
 
 def initLODZigate(self, nwkid, ieee):
 
-    Domoticz.Status("Initialize Zigate Data Structure %s %s" % (nwkid, ieee))
+    self.log.logging("Input", "Status", "Initialize Zigate Data Structure %s %s" % (nwkid, ieee))
     self.IEEE2NWK[ieee] = nwkid
-    self.ListOfDevices[nwkid] = {'Version': '3', 'ZDeviceName': 'Zigbee Coordinator'}
-    self.ListOfDevices[nwkid]["IEEE"] = ieee
-    self.ListOfDevices[nwkid]["Ep"] = {}
-    self.ListOfDevices[nwkid]["PowerSource"] = "Main"
-    self.ListOfDevices[nwkid]["LogicalType"] = "Coordinator"
-
+    self.ListOfDevices[nwkid] = {
+        'Version': '3',
+        'ZDeviceName': 'Zigbee Coordinator',
+        "IEEE": ieee,
+        "Ep": {},
+        "PowerSource": "Main",
+        "LogicalType": "Coordinator",
+    }
     endpointZigate(self, ieee)
 
 
