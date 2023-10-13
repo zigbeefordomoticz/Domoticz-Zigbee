@@ -79,12 +79,12 @@ fi
 
 echo " "
 echo "(4) git config --global --unset safe.directory"
-git config --global --unset safe.directory $(pwd)/external/bellows
-git config --global --unset safe.directory $(pwd)/external/zigpy-deconz
-git config --global --unset safe.directory $(pwd)/external/zigpy-zigate
-git config --global --unset safe.directory $(pwd)/external/zigpy-znp
-git config --global --unset safe.directory $(pwd)/external/zigpy
-git config --global --unset safe.directory $(pwd)
+git config --global --unset-all safe.directory $(pwd)/external/bellows
+git config --global --unset-all safe.directory $(pwd)/external/zigpy-deconz
+git config --global --unset-all safe.directory $(pwd)/external/zigpy-zigate
+git config --global --unset-all safe.directory $(pwd)/external/zigpy-znp
+git config --global --unset-all safe.directory $(pwd)/external/zigpy
+git config --global --unset-all safe.directory $(pwd)
 
 echo " "
 echo "Plugin Upgrade process completed without errors."

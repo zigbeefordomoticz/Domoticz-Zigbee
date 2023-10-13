@@ -6,8 +6,8 @@
 
 from Modules.basicOutputs import (raw_APS_request, read_attribute,
                                   write_attribute)
-from Modules.tools import (build_fcf, get_and_inc_ZCL_SQN, getListOfEpForCluster,
-                           is_ack_tobe_disabled)
+from Modules.tools import (build_fcf, get_and_inc_ZCL_SQN,
+                           getListOfEpForCluster, is_ack_tobe_disabled)
 from Modules.zigateConsts import ZIGATE_EP
 
 

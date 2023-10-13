@@ -6,11 +6,10 @@
 
 from time import time
 
-from Zigbee.zdpCommands import zdp_binding_device, zdp_unbinding_device
-
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.tools import is_fake_ep
 from Modules.zigateConsts import CLUSTERS_LIST
+from Zigbee.zdpCommands import zdp_binding_device, zdp_unbinding_device
 
 
 def bindGroup(self, ieee, ep, cluster, groupid):

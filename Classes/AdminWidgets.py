@@ -170,7 +170,6 @@ class AdminWidgets:
         return
 
     def updateNotificationWidget(self, Devices, notification):
-
         deviceid_txt_widget = DEVICEID_TXT_WIDGET + "%02s" % self.HardwareID
         unit = 0
         for x in Devices:
@@ -186,5 +185,4 @@ class AdminWidgets:
             Devices[unit].Update(nValue=nValue, sValue=sValue)
 
     def handleCommand(self, Command):
-
         return

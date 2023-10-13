@@ -13,12 +13,12 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 
 import json
 import os.path
-from pathlib import Path
 import time
+from pathlib import Path
 
 import Domoticz
-from Modules.tools import (getConfigItem, is_domoticz_db_available, is_hex,
-                           setConfigItem)
+from Modules.domoticzAPI import getConfigItem, setConfigItem
+from Modules.tools import is_domoticz_db_available, is_hex
 
 SETTINGS = {
     "Services": {
@@ -293,8 +293,16 @@ SETTINGS = {
             "Tuya0601": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "Profalux": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "Schneider": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "AbstractDz": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "CasaIA": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "Philips": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "Enki": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "Gledopto": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "Orvibo": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "PiZigate": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "Pluzzy": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "PollControl": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "PluginTools": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "PDM": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "inRawAPS": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "outRawAPS": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},

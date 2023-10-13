@@ -15,9 +15,6 @@ import os.path
 import struct
 from time import time
 
-import Domoticz
-from Zigbee.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
-
 from Modules.basicOutputs import read_attribute, write_attribute
 from Modules.bindings import WebBindStatus, webBind
 from Modules.domoMaj import MajDomoDevice
@@ -29,6 +26,7 @@ from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            retreive_cmd_payload_from_8002)
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
+from Zigbee.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
 
 WISER_LEGACY_MODEL_NAME_PREFIX = "EH-ZB"
 WISER_LEGACY_BASE_EP = "0b"
@@ -133,7 +131,6 @@ def wiser_thermostat_monitoring_heating_demand(self, Devices):
                             updated_pi_demand += 100
 
         if cnt_actioners:
-            # Domoticz.Log("---- Actioners: %s  Pi Demand: %s" %(cnt_actioners,updated_pi_demand ))
             self.ListOfDevices[NwkId]["Ep"]["01"]["0201"]["0008"] = int(round(updated_pi_demand / cnt_actioners))
             MajDomoDevice(
                 self,
@@ -367,7 +364,7 @@ def wiser_set_calibration(self, key, EPout):  # 0x0201/0x0010
         # in two’s complement form
         calibration = int(hex(-calibration - pow(2, 32))[9:], 16)
 
-    Domoticz.Log("Calibration: 0x%02x" % calibration)
+    self.log.logging( "Schneider", "Log", "Calibration: 0x%02x" % calibration)
 
     manuf_id = "0000"
     manuf_spec = "00"
@@ -1237,11 +1234,9 @@ def schneiderAlarmReceived(self, Devices, NWKID, srcEp, ClusterID, start, payloa
 
         else:
             schneider_bms_change_reporting(self, NWKID, srcEp, False)
-            if "Shedding" in self.ListOfDevices[NWKID]:
-                if not self.ListOfDevices[NWKID]["Shedding"]:
-                    self.log.logging("Schneider", "Debug", "schneiderAlarmReceived not shedding - EXIT", NWKID)
-                    return  # we are already shedding
-            value = "00"
+            if "Shedding" in self.ListOfDevices[NWKID] and not self.ListOfDevices[NWKID]["Shedding"]:
+                self.log.logging("Schneider", "Debug", "schneiderAlarmReceived not shedding - EXIT", NWKID)
+                return
             self.ListOfDevices[NWKID]["Shedding"] = False
 
         self.log.logging(

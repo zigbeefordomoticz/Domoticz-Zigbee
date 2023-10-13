@@ -18,6 +18,15 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## October 2023 - stable7 - 7.1.004 ( 2023.10 )
+
+- [Hardware] - Ronelabs SEM101 Meter
+- [Hardware] - Neo Solar Siren full integration
+- [Technical] - Domoticz abstract layer to faciliate move to Extended Framework.
+- [Issue] - Fix issues in Groups management ( PR #1647, PR #1648 @GMLinky )
+- [Issue] - Fix issues in ZLinky integration (PR #1646 @SylvainPer )
+- [Issue] - Limit Level control anbalog value to 254 (0xfe) as per Zigbee standard
+
 ## Septembre 2023 - stable7 - 7.1.003 ( 2023.9)
 
 - [Technical] - Compatible Debian12 and python3.11
@@ -42,12 +51,12 @@ Release Numbering
 
 - [zigpy] - Upgrade to latest zigpy radio library level
 
-
 ## June 2023 - stable6 - 6.0.014 ( 2023.6 )
 
 - [Issue] - Zigpy, make sure we leave a minimum elapse time before 2 commands to the same device. (regression from a 6.3.008)
 
 ## May 2023 - stable6 - 6.3.013 ( 2023.5 )
+
 - [Issue] - for Illuminence (LUMI) make sure to use an int (and not hex)
 - [Issue] - Fix illuminence calculation for Aqara RTCGQ11LM
 - [Issue] - Fix check_requirements()

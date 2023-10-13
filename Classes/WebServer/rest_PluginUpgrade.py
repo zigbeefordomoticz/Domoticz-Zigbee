@@ -65,6 +65,11 @@ def _reload_device_conf(self):
     z4d_certified_devices.z4d_import_device_configuration(self, z4d_certified_devices_pathname )
 
 def certified_devices_update(self):
+    
+    if not self.pluginconf.pluginConf["internetAccess"]:
+        # No Internet, or Internet disabled
+        self.logging( "Error", "Internet access is disable !!!")
+        return { "result": "Internet access disabled !!!", "ReturnCode": -1}
 
     if distro.id() in ("debian", "raspbian") and distro.version() >= '12':
         CERTIFIED_DEVICES_UPGRADE_CMD = "python3 -m pip install z4d-certified-devices --upgrade --break-system-packages"

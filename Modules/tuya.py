@@ -14,7 +14,6 @@
 import time
 from datetime import datetime, timedelta
 
-import Domoticz
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
@@ -58,9 +57,11 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False, tuya_regi
     if parkside:
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "0d", ackIsDisabled=False)
 
+    # if tuya_registration_value:
+    #     write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", TUYA_MANUF_CODE, "01", "ffde", "20", "%02x" %tuya_registration_value, ackIsDisabled=False)
     if tuya_registration_value:
-        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", TUYA_MANUF_CODE, "01", "ffde", "20", "%02x" %tuya_registration_value, ackIsDisabled=False)
-    
+        write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "%02x" %tuya_registration_value, ackIsDisabled=False)
+
     elif _ModelName == "TS0216":
         # Heiman like siren
         # Just do the Regitsration
@@ -144,7 +145,7 @@ def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
     This is fonction is call when receiving a message from a Manufacturer battery based device.
     The function is called after processing the readCluster part
     """
-    Domoticz.Log("callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
+    self.log.logging( "Tuya", "Log", "callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
 
 
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
@@ -238,7 +239,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
             version = MsgPayload[10:12]  # int8
             store_tuya_attribute(self, NwkId, "TUYA_MCU_VERSION_RSP", version)
         except Exception as e:
-            Domoticz.Error("tuyaReadRawAPS - MCU_VERSION_RSP error on Payload: %s reason %s" % (MsgPayload,e))
+            self.log.logging( "Tuya", "Error", "tuyaReadRawAPS - MCU_VERSION_RSP error on Payload: %s reason %s" % (MsgPayload,e))
 
     elif cmd == "23":  # TUYA_REPORT_LOG
         pass
@@ -1503,10 +1504,14 @@ def ts110e_light_type( self, NwkId, mode):
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
 
+def ts110e_switch01_type( self, NwkId, mode):
+    ts110e_switch_type( self, NwkId, "01", mode)
 
-def ts110e_switch_type( self, NwkId, mode):
+def ts110e_switch02_type( self, NwkId, mode):
+    ts110e_switch_type( self, NwkId, "02", mode)
+
+def ts110e_switch_type( self, NwkId, EPout, mode):
     # momentary: 0, toggle: 1, state: 2
     self.log.logging("Tuya", "Debug", "ts110e_switch_type - mode %s" % mode, NwkId)
-    EPout = "01"
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)

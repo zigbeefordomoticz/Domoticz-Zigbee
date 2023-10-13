@@ -14,7 +14,6 @@ import json
 import logging
 import os
 import os.path
-
 import threading
 import time
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler

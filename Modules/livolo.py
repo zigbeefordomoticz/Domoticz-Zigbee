@@ -10,13 +10,12 @@
 
 """
 
-import Domoticz
-from Classes.LoggingManagement import LoggingManagement
-from Zigbee.zclCommands import zcl_level_move_to_level, zcl_toggle
 
+from Classes.LoggingManagement import LoggingManagement
 from Modules.domoMaj import MajDomoDevice
 from Modules.tools import retreive_cmd_payload_from_8002
 from Modules.zigateConsts import ZIGATE_EP
+from Zigbee.zclCommands import zcl_level_move_to_level, zcl_toggle
 
 # Livolo commands.
 #
@@ -80,13 +79,11 @@ def livolo_OnOff(self, nwkid, EPout, devunit, onoff):
             zcl_level_move_to_level( self, nwkid, EPout, "00", level_value, timing_value)
             #sendZigateCmd(self, "0081", "02" + nwkid + ZIGATE_EP + EPout + "00" + level_value + timing_value)
         else:
-            Domoticz.Error("livolo_OnOff - Wrong parameters sent ! onoff: %s devunit: %s" % (onoff, devunit))
+            self.log.logging( "Livolo", "Error", "livolo_OnOff - Wrong parameters sent ! onoff: %s devunit: %s" % (
+                onoff, devunit))
 
 
 def livoloReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
-
-    # Domoticz.Log("livoloReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
-    #        %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
 
     # At Device Annoucement 0x00 and 0x05 are sent by device
 

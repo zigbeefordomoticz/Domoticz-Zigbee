@@ -10,7 +10,6 @@
 
 """
 
-import Domoticz
 from Modules.actuators import (actuator_off, actuator_on, actuator_setcolor,
                                actuator_setlevel, actuator_stop, actuators)
 from Modules.casaia import (casaia_ac201_fan_control, casaia_setpoint,
@@ -45,18 +44,6 @@ from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
 from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
-
-
-def debugDevices(self, Devices, Unit):
-
-    Domoticz.Log("Device Name: %s" % Devices[Unit].Name)
-    Domoticz.Log("       DeviceId: %s" % Devices[Unit].DeviceID)
-    Domoticz.Log("       Type: %s" % Devices[Unit].Type)
-    Domoticz.Log("       Subtype: %s" % Devices[Unit].SubType)
-    Domoticz.Log("       SwitchType: %s" % Devices[Unit].SwitchType)
-    Domoticz.Log("       Options: %s" % Devices[Unit].Options)
-    Domoticz.Log("       LastLevel: %s" % Devices[Unit].LastLevel)
-    Domoticz.Log("       LastUpdate: %s" % Devices[Unit].LastUpdate)
 
 
 # Matrix between Domoticz Type, Subtype, SwitchType and Plugin DeviceType
@@ -142,16 +129,15 @@ ACTIONATORS = [
     "ThermoOnOff",
     "ShutterCalibration",
     "SwitchAlarm",
+    "TamperSwitch"
 ]
 
 
 def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
     if Devices[Unit].DeviceID not in self.IEEE2NWK:
-        Domoticz.Error(
-            "mgtCommand - something strange the Device %s DeviceID: %s Unknown"
-            % (Devices[Unit].Name, Devices[Unit].DeviceID)
-        )
+        self.log.logging("Command", "Error", "mgtCommand - something strange the Device %s DeviceID: %s Unknown" % (
+            Devices[Unit].Name, Devices[Unit].DeviceID) )
         return
 
     NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
@@ -181,7 +167,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
     if len(ClusterTypeList) == 0:  # No match with ClusterType
         # Should not happen. We didn't find any Widget references in the Device ClusterType!
-        Domoticz.Error("mgtCommand - no ClusterType found !  " + str(self.ListOfDevices[NWKID]))
+        self.log.logging("Command", "Error", "mgtCommand - no ClusterType found !  " + str(self.ListOfDevices[NWKID]))
         return
 
     self.log.logging(
@@ -190,7 +176,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
     actionable = False
     if len(ClusterTypeList) != 1:
-        Domoticz.Error("mgtCommand - Not Expected. ClusterType: %s for NwkId: %s" % (ClusterTypeList, NWKID))
+        self.log.logging("Command", "Error", "mgtCommand - Not Expected. ClusterType: %s for NwkId: %s" % (ClusterTypeList, NWKID))
         return
 
     if ClusterTypeList[0][0] == "00":
@@ -334,18 +320,20 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
-
-            
         if DeviceType == "SwitchAlarm" and _model_name == "SMSZB-120" and self.iaszonemgt:
             self.iaszonemgt.iaswd_develco_warning(NWKID, EPout, "00")
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
-        if DeviceType == "SwitchAlarm" and _model_name == "TS0601-Solar-Siren":
-            if ts0601_extract_data_point_infos( self, _model_name):
-                ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 0)
-                UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-                return
+        if DeviceType == "SwitchAlarm" and _model_name == "TS0601-Solar-Siren" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 0)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+            
+        if DeviceType == "TamperSwitch" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "TuyaTamperSwitch", 0)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
             
         if _model_name in ("TS0601-Energy",):
             tuya_energy_onoff(self, NWKID, "00")
@@ -596,11 +584,15 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             self.iaszonemgt.iaswd_develco_warning(NWKID, EPout, "01")
             return
         
-        if DeviceType == "SwitchAlarm" and _model_name == "TS0601-Solar-Siren":
-            if ts0601_extract_data_point_infos( self, _model_name):
-                ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 1)
-                UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-                return
+        if DeviceType == "SwitchAlarm" and _model_name == "TS0601-Solar-Siren" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "TuyaAlarmSwitch", 1)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+
+        if DeviceType == "TamperSwitch" and _model_name == "TS0601-Solar-Siren" and ts0601_extract_data_point_infos( self, _model_name):
+            ts0601_actuator(self, NWKID, "TuyaTamperSwitch", 1)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
     
         if _model_name in ("TS0601-_TZE200_nklqjk62", ):
             self.log.logging("Command", "Debug", "mgtCommand : On for Tuya Garage Door %s" % NWKID)
@@ -823,7 +815,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
                 schneider_hact_heater_type(self, NWKID, "fip")
 
             else:
-                Domoticz.Error("Unknown mode %s for HACTMODE for device %s" % (Level, NWKID))
+                self.log.logging("Command", "Error", "Unknown mode %s for HACTMODE for device %s" % (Level, NWKID))
 
             # Let's force a refresh of Attribute in the next Heartbeat
             request_read_device_status(self, NWKID)

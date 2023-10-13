@@ -8,17 +8,16 @@
     Description: Update of Domoticz Widget
 """
 import Domoticz
-from Zigbee.zdpCommands import zdp_IEEE_address_request
-
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                UpdateDevice_v2, remove_bad_cluster_type_entry)
-from Modules.tools import zigpy_plugin_sanity_check
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
+from Modules.tools import zigpy_plugin_sanity_check
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
                             get_tarif_color, zlinky_sum_all_indexes)
-
+from Zigbee.zdpCommands import zdp_IEEE_address_request
+from Modules.domoticzAbstractLayer import find_widget_unit_from_WidgetID
 
 def is_PowerNegative_widget( ClusterTypeList):
     return any( _widget_type == "ProdMeter" for _, _, _widget_type in ClusterTypeList )
@@ -116,11 +115,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             continue
 
         DeviceUnit = 0
-        for x in Devices:  # Found the Device Unit
-            if Devices[x].ID == int(WidgetId):
-                DeviceUnit = x
-                break
-        if DeviceUnit == 0:
+        DeviceUnit = find_widget_unit_from_WidgetID(self, Devices, WidgetId )
+        if DeviceUnit is None:
             self.log.logging( "Widget", "Error", "Device %s not found !!!" % WidgetId, NWKID)
             # House keeping, we need to remove this bad clusterType
             if remove_bad_cluster_type_entry(self, NWKID, Ep, clusterID, WidgetId ):
@@ -280,6 +276,29 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # it is assumed that if there is also summation provided by the device, that
             # such information is stored on the data structuture and here we will retreive it.
             # value is expected as String
+
+            if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
+                if (( isinstance( value, (int, float)) and value < 0) or (float(value) < 0) ) and is_PowerNegative_widget( ClusterTypeList):
+                    self.log.logging("Widget", "Log", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
+                    continue
+
+                nValue = round(float(value), 2)
+                sValue = value
+                self.log.logging("Widget", "Debug", "------>Power  : %s" % sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
+
+            if WidgetType == "ProdPower" and Attribute_ == "":
+                if value > 0:
+                    self.log.logging("Widget", "Debug", "------>the value is Positive. Skiping here", NWKID)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
+                    continue
+
+                nValue = abs( round(float(value), 2) )
+                sValue = abs(value)
+                self.log.logging("Widget", "Debug", "------>PowerNegative  : %s" % sValue, NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel)
+
             if WidgetType == "P1Meter" and Attribute_ == "0000":
                 self.log.logging("Widget", "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
@@ -392,7 +411,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 sValue = "%s" %int(value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
-
             elif WidgetType == "ConsoMeter" and Attribute_ == "0000":
                 # Consummed Energy
                 sValue = "%s" %int(value)
@@ -435,8 +453,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
-
-            if (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and clusterID == "000c"):  # kWh
+            elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and clusterID == "000c"):  # kWh
                 # We receive Instant
                 # Let's check if we have Summation in the datastructutre
                 summation = 0
@@ -464,12 +481,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "ProdMeter" and Attribute_ == "0001":
-                # Produced Energy injected
-                sValue = "%s" %int(value)
-                UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
-
 
         if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
             # /json.htm?type=command&param=udevice&idx=IDX&nvalue=0&svalue=INCREMENT
@@ -994,7 +1005,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             sValue = "%02x" %nValue
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
             
-            
+        if ClusterType == "TamperSwitch" and WidgetType == "SwitchAlarm":
+            nValue = value
+            sValue = "%02x" %nValue
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
+        if "Notification" in ClusterType and WidgetType == "Notification":
+            # Notification
+            # value is a str containing all Orientation information to be updated on Text Widget
+            nValue = 0
+            sValue = value
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                       
         if ClusterType in ( "Motion", "Door",) and WidgetType == "Motion":
             self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NWKID)
             if isinstance(value, str):

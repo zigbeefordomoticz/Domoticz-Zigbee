@@ -115,7 +115,6 @@ ZCL_EXTENDED_ERROR_CODES = {
 
 def DisplayStatusCode(StatusCode):
 
-    StatusMsg = ""
     if StatusCode in ZIGATE_CODES:
         return "[%s] %s" % (StatusCode, ZIGATE_CODES[StatusCode])
 

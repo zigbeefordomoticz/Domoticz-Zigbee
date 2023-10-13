@@ -9,23 +9,19 @@
 """
 
 
-import time
 import struct
+import time
 
-import Domoticz
+from Modules.basicOutputs import write_attribute
 from Modules.bindings import bindDevice
-from Modules.tools import getEpForCluster
+from Modules.sendZigateCommand import raw_APS_request
+from Modules.tools import get_and_inc_ZCL_SQN, getEpForCluster
 from Modules.zigateConsts import ZIGATE_EP
 from Zigbee.zclCommands import (zcl_ias_wd_command_squawk,
                                 zcl_ias_wd_command_start_warning,
                                 zcl_ias_zone_enroll_response,
                                 zcl_read_attribute, zcl_write_attribute)
 from Zigbee.zdpCommands import zdp_simple_descriptor_request
-
-from Modules.basicOutputs import write_attribute
-from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import get_and_inc_ZCL_SQN
-
 
 # Synopsys
 #
@@ -294,7 +290,7 @@ class IAS_Zone_Management:
         SQUAWKMODE = {"disarmed": 0b00000000, "armed": 0b00000001}
 
         if SquawkMode not in SQUAWKMODE:
-            Domoticz.Error("_write_IAS_WD_Squawk - %s/%s Unknown Squawk Mode: %s" % (NwkId, ep, SquawkMode))
+            self.logging("Error", "_write_IAS_WD_Squawk - %s/%s Unknown Squawk Mode: %s" % (NwkId, ep, SquawkMode))
 
         self.logging(
             "Debug",
@@ -485,7 +481,7 @@ def retreive_attributes(self, MsgData):
             idx += size
         elif len(MsgData[idx:]) == 6:
             # crap, lets finish it
-            # Domoticz.Log("Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
+            self.logging("Debug", "Crap Data: %s len: %s" %(MsgData[idx:], len(MsgData[idx:])))
             idx += 6
     
     return attributes

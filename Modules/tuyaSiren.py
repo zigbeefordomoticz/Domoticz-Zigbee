@@ -12,8 +12,6 @@
 
 import struct
 
-import Domoticz
-
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
@@ -213,7 +211,7 @@ def get_alarm_attrbutes(self, nwkid, alarm_num):
 
     alarm = "Alarm%s" % alarm_num
     if alarm not in default_value:
-        Domoticz.Error("get_alarm_attrbutes - something wrong %s %s" % (alarm_num, alarm))
+        self.log.logging("Tuya", "Error", "get_alarm_attrbutes - something wrong %s %s" % (alarm_num, alarm))
         return None
 
     default_alarm = default_value[alarm]

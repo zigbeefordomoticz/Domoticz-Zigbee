@@ -5,15 +5,14 @@
 #
 
 
-from distutils.command.build import build
 import struct
+from distutils.command.build import build
 from os import stat
 
 from Modules.tools import (is_direction_to_client, is_direction_to_server,
                            retreive_cmd_payload_from_8002)
 from Modules.zigateConsts import (SIZE_DATA_TYPE, ZIGATE_EP, composite_value,
                                   discrete_value)
-
 from Zigbee.encoder_tools import decode_endian_data, encapsulate_plugin_frame
 from Zigbee.zclRawCommands import zcl_raw_default_response
 
@@ -226,7 +225,9 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
     nbAttribute = 0
     idx = 0
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
-    while idx < len(Data) and len(Data[idx:]) >= 8:
+    # Len of remaining Data is either 8 for response with Status/Type/Value or 6 for response with only Status (exemple "86" attribute doesn't exist in cluster)
+    #  while idx < len(Data) and len(Data[idx:]) >= 8:
+    while idx < len(Data) and len(Data[idx:]) >= 6:
         nbAttribute += 1
         Attribute = "%04x" % struct.unpack("H", struct.pack(">H", int(Data[idx : idx + 4], 16)))[0]
         idx += 4
@@ -443,17 +444,17 @@ def buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkI
 
 
 def buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
-    #MsgSequenceNumber = MsgData[0:2]
-    #MsgEP = MsgData[2:4]
-    #MsgClusterID = MsgData[4:8]
-    #MsgStatus = MsgData[8:10]
-    #MsgGroupID = MsgData[10:14]
-    #MsgSrcAddr = MsgData[14:18]
+    # MsgSequenceNumber = MsgData[0:2]
+    # MsgEP = MsgData[2:4]
+    # MsgClusterID = MsgData[4:8]
+    # MsgStatus = MsgData[8:10]
+    # MsgGroupID = MsgData[10:14]
+    # MsgSrcAddr = MsgData[14:18]
     self.log.logging("zclDecoder", "Debug", "buildframe8063_remove_group_member_ship_response - Data: %s" % Data)
-    
-    buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data( Data[ 2:6 ], "21")
+# SrcNwkId is not passed ----> Causes a false Error in GrpResponses.py function remove_group_member_ship_response
+#    buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data( Data[ 2:6 ], "21")
+    buildPayload = Sqn + SrcEndPoint + "0004" + Data[:2] + decode_endian_data( Data[ 2:6 ], "21") + SrcNwkId
     return encapsulate_plugin_frame("8063", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
-
 
 # Cluster 0x0005 - Scenes
 

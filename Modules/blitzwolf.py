@@ -3,7 +3,6 @@
 #
 # Author: zaraki673 & pipiche38
 #
-import Domoticz
 
 from Modules.readAttributes import ReadAttributeRequest_0b04_050b_0505_0508
 from Modules.zigateConsts import MAX_LOAD_ZIGATE

@@ -3,7 +3,6 @@
 #
 # Author: zaraki673 & pipiche38
 #
-import Domoticz
 
 from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0008_0000)
@@ -34,4 +33,5 @@ def callbackDeviceAwake_Gledopto(self, Devices, NwkId, EndPoint, cluster):
     The function is called after processing the readCluster part
     """
 
-    Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
+    self.log.logging("Gledopto", "Debug", "callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" % (
+        NwkId, EndPoint, cluster))

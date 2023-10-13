@@ -1,0 +1,43 @@
+{
+    "_source": "https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1581",
+    "_comment": "NEO - Sirène intelligente extérieure Zigbee Tuya (alimentation 5V/1A ou batterie + panneau solaire)",
+    "_version": "1.0",
+    "Identifier": [
+        [ "TS0601", "_TZE200_nlrfgpny"]
+    ],
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "SwitchAlarm/TamperSwitch/Tamper/Notification"
+        }
+    },
+    "Type": "",
+    "ClusterToBind": [],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0004", "0000", "0001", "0005", "0007", "fffe" ],
+        "0009": []
+    },
+    "TUYA_REGISTRATION": 19,
+    "TS0601_DP": { 
+        "01": { "store_tuya_attribute": "AlarmState", "sensor_type": "tamper"},
+        "06": { "store_tuya_attribute": "Charging", "sensor_type": "charging_mode"},
+        "07": { "store_tuya_attribute": "TuyaAlarmDuration", "action_type": "TuyaAlarmDuration"},
+        "0d": { "store_tuya_attribute": "TuyaAlarmSwitch", "action_type": "TuyaAlarmSwitch"},
+        "0e": { "store_tuya_attribute": "Battery", "sensor_type": "battery"},
+	    "14": { "store_tuya_attribute": "TamperAlarmState", "sensor_type": "tamper"},
+        "15": { "store_tuya_attribute": "TuyaAlarmMelody", "action_type": "TuyaAlarmMelody"},
+	    "65": { "store_tuya_attribute": "TuyaTamperSwitch", "action_type": "TuyaTamperSwitch"},
+	    "66": { "store_tuya_attribute": "TuyaAlarmMode", "action_type": "TuyaAlarmMode"} 
+    },
+    "BatteryDevice": 1,
+    "Param": {
+        "TuyaAlarmMelody": 0,
+        "TuyaAlarmMode": 2,
+        "TuyaAlarmDuration": 1
+    }
+}

@@ -52,7 +52,7 @@ def decoding_attribute_data( AttType, attribute_value, handleErrors=False):
         if (signed_int & 0x00800000) != 0:  # Check the sign bit
             signed_int -= 0x01000000  # If negative, adjust to two's complement
         return signed_int
-    
+
     if int(AttType, 16) == 0x2B:  # 32Bitint
         return struct.unpack("i", struct.pack("I", int(attribute_value[:8], 16)))[0]
 

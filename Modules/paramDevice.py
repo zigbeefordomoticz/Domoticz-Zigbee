@@ -10,7 +10,6 @@
 
 """
 
-import Domoticz
 from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
                                   set_PIROccupiedToUnoccupiedDelay,
@@ -46,10 +45,11 @@ from Modules.tools import get_deviceconf_parameter_value, getEpForCluster
 from Modules.tuya import (SmartRelayStatus01, SmartRelayStatus02,
                           SmartRelayStatus03, SmartRelayStatus04,
                           get_tuya_attribute, ts110e_light_type,
-                          ts110e_switch_type, tuya_backlight_command,
-                          tuya_cmd_ts004F, tuya_curtain_mode,
-                          tuya_energy_childLock, tuya_external_switch_mode,
-                          tuya_garage_run_time, tuya_motion_zg204l_keeptime,
+                          ts110e_switch01_type, ts110e_switch02_type,
+                          tuya_backlight_command, tuya_cmd_ts004F,
+                          tuya_curtain_mode, tuya_energy_childLock,
+                          tuya_external_switch_mode, tuya_garage_run_time,
+                          tuya_motion_zg204l_keeptime,
                           tuya_motion_zg204l_sensitivity,
                           tuya_pir_keep_time_lookup,
                           tuya_radar_motion_radar_detection_delay,
@@ -92,8 +92,6 @@ def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
     # specifies the time delay, in seconds,before the PIR sensor changes to
     # its unoccupied state after the last detection of movement in the sensed area.
 
-    # Domoticz.Log("param_Occupancy_settings_PIROccupiedToUnoccupiedDelay %s -> delay: %s" %(nwkid, delay))
-
     if self.ListOfDevices[nwkid]["Manufacturer"] == "100b" or self.ListOfDevices[nwkid]["Manufacturer Name"] == "Philips":  # Philips
         if "02" not in self.ListOfDevices[nwkid]["Ep"]:
             return
@@ -130,7 +128,7 @@ def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
                 ReadAttributeRequest_0406_0010(self, nwkid)
 
     else:
-        Domoticz.Log("=====> Unknown Manufacturer/Name")
+        self.log.logging("Heartbeat", "Log", "=====> Unknown Manufacturer/Name")
 
 
 def param_PowerOnAfterOffOn(self, nwkid, mode):
@@ -305,12 +303,11 @@ DEVICE_PARAMETERS = {
     "WiserShutterDuration": wiser_lift_duration,
     "AqaraMultiClick": enable_click_mode_aqara,
     "TS110ELightType": ts110e_light_type,
-    "TS110ESwitchType": ts110e_switch_type
+    "TS110ESwitch01Type": ts110e_switch01_type,
+    "TS110ESwitch02Type": ts110e_switch02_type
 }
 
 def sanity_check_of_param(self, NwkId):
-    # Domoticz.Log("sanity_check_of_param for %s" %NwkId)
-
     if "Param" not in self.ListOfDevices[NwkId]:
         return
 
@@ -322,7 +319,6 @@ def sanity_check_of_param(self, NwkId):
             continue
 
         if param in DEVICE_PARAMETERS:
-            # Domoticz.Log("sanity_check_of_param - calling %s" %param)
             func = DEVICE_PARAMETERS[param]
             value = self.ListOfDevices[NwkId]["Param"][param]
             func(self, NwkId, value)

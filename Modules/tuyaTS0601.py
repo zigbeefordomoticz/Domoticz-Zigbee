@@ -11,12 +11,13 @@
 """
 
 import struct
+
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            getAttributeValue)
-from Modules.tuyaTools import store_tuya_attribute, tuya_cmd, get_tuya_attribute
-
+from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
+                               tuya_cmd)
 
 # Generic functions
 
@@ -141,13 +142,16 @@ def evaluate_expression_with_data(self, expression, value):
         return eval( expression )
         
     except NameError as e:
-        self.log.logging("ZclClusters", "Error", "Undefined variable, please check the formula %s" %expression)
+        self.log.logging("ZclClusters", "Error", "Undefined variable, please check the formula %s or value %s" %(
+            expression, value))
     
     except SyntaxError as e:
-        self.log.logging("ZclClusters", "Error", "Syntax error, please check the formula %s" %expression)
+        self.log.logging("ZclClusters", "Error", "Syntax error, please check the formula %s or value %s" %(
+            expression, value))
 
     except ValueError as e:
-        self.log.logging("ZclClusters", "Error", "Value Error, please check the formula %s %s" %(expression, e))
+        self.log.logging("ZclClusters", "Error", "Value Error, please check the formula %s or value %s. Error: %s" %(
+            expression, value, e))
         
     return value
 
@@ -227,11 +231,19 @@ def ts0601_battery_state(self, Devices, nwkid, ep, value ):
 
 def ts0601_tamper(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_tamper - Tamper %s %s %s" % (nwkid, ep, value), nwkid)
-    store_tuya_attribute(self, nwkid, "SmokeTamper", value)
+    store_tuya_attribute(self, nwkid, "Tamper", value)
     state = "01" if value != 0 else "00"
     MajDomoDevice(self, Devices, nwkid, ep, "0009", state)
-
-
+    
+def ts0601_charging_mode(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_charging_mode - Charging %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Tamper", value)
+    state = "01" if value != 0 else "00"
+    if state == "01":
+        MajDomoDevice(self, Devices, nwkid, ep, "Notification", "Charging On")
+    else:
+        MajDomoDevice(self, Devices, nwkid, ep, "Notification", "Charging Off")
+        
 def ts0601_switch(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_switch - Switch%s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Switch", value)
@@ -317,7 +329,6 @@ def ts0601_instant_power(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0702", signed_int)
     store_tuya_attribute(self, nwkid, "InstantPower", signed_int)  # Store str
 
-
 def ts0601_voltage(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_voltage - Voltage %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0001", value)
@@ -363,7 +374,12 @@ def ts0601_sirene_switch(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_sirene_switch - After Nwkid: %s/%s Alarm: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Alarm", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0006", value)
-
+    
+def ts0601_tamper_switch(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_sirene_switch - After Nwkid: %s/%s Alarm: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Alarm", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0006", value)
+    
 def ts0601_sirene_level(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_sirene_level - Sound Level: %s" % value, nwkid)
     store_tuya_attribute(self, nwkid, "AlarmLevel", value)
@@ -443,6 +459,7 @@ DP_SENSOR_FUNCTION = {
     "battery": ts0601_battery,
     "batteryState": ts0601_battery_state,
     "tamper": ts0601_tamper,
+    "charging_mode": ts0601_charging_mode,
     "switch": ts0601_switch,
     "door": ts0601_door,
     "lvl_percentage": ts0601_level_percentage,
@@ -466,6 +483,7 @@ DP_SENSOR_FUNCTION = {
     "TuyaAlarmMelody": ts0601_sirene_melody,
     "TuyaAlarmLevel": ts0601_sirene_level,
     "TuyaAlarmSwitch": ts0601_sirene_switch,
+    "TuyaTamperSwitch": ts0601_tamper_switch,
     "smoke_state": ts0601_smoke_detection,
     "smoke_ppm": ts0601_smoke_concentration,
     "water_consumption": ts0601_water_consumption,
@@ -581,6 +599,19 @@ def ts0601_action_siren_switch(self, NwkId, Ep, dp, value=None):
     data = "%02x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
+def ts0601_tamper_siren_switch(self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_tamper_siren_switch - %s Tamper Switch Action: dp:%s value: %s" % (
+        NwkId, dp, value))
+    device_value = value
+   
+    action = "%02x01" % dp  # Mode
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
 def ts0601_action_switch(self, NwkId, Ep, dp, value=None):
     if value is None:
         return
@@ -633,12 +664,45 @@ def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
     data = "%08x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
     
+def ts0601_solar_siren_alarm_melody( self, NwkId, Ep, dp, melody=None):
+    if melody is None:
+        return
+    self.log.logging("Tuya0601", "Log", "ts0601_solar_siren_alarm_melody - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, melody))
+    if melody is None:
+        return
+    action = "%02x04" % dp  # I
+    data = "%02x" % (melody)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+def ts0601_solar_siren_alarm_mode( self, NwkId, Ep, dp, mode=None):
+    if mode is None:
+        return
+    self.log.logging("Tuya0601", "Log", "ts0601_solar_siren_alarm_mode - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, mode))
+    if mode is None:
+        return
+    action = "%02x04" % dp  # I
+    data = "%02x" % (mode)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+def ts0601_solar_siren_alarm_duration( self, NwkId, Ep, dp, duration=None):
+    if duration is None:
+        return
+    self.log.logging("Tuya0601", "Log", "ts0601_solar_siren_alarm_duration - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, duration))
+    action = "%02x02" % dp  # I
+    data = "%08x" % (duration)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 TS0601_COMMANDS = {
     "TRV7WindowDetection": ts0601_window_detection_mode,
     "TRV7ChildLock": ts0601_child_lock_mode,
     "TuyaIrrigationTarget": ts0601_irrigation_valve_target,
-    "TuyaIrrigationMode": ts0601_irrigation_mode
+    "TuyaIrrigationMode": ts0601_irrigation_mode,
+    "TuyaAlarmMelody": ts0601_solar_siren_alarm_melody,
+    "TuyaAlarmMode": ts0601_solar_siren_alarm_mode,
+    "TuyaAlarmDuration": ts0601_solar_siren_alarm_duration
 }
 
 DP_ACTION_FUNCTION = {
@@ -647,5 +711,6 @@ DP_ACTION_FUNCTION = {
     "calibration": ts0601_action_calibration,
     "TRV6SystemMode": ts0601_action_trv6_system_mode,
     "TRV7SystemMode": ts0601_action_trv7_system_mode,
-    "TuyaAlarmSwitch": ts0601_action_siren_switch
+    "TuyaAlarmSwitch": ts0601_action_siren_switch,
+    "TuyaTamperSwitch": ts0601_tamper_siren_switch
 }

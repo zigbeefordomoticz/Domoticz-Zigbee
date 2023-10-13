@@ -1,9 +1,10 @@
 
-import Domoticz
-import os.path
 import json
+import os.path
 from pathlib import Path
+
 import Modules.tools
+
 
 def handle_zigpy_backup(self, backup):
 
@@ -24,7 +25,7 @@ def handle_zigpy_backup(self, backup):
             self.log.logging("TransportZigpy", "Status", "Coordinator backup is available: %s" %_coordinator_backup)
 
     except IOError:
-        Domoticz.Error("Error while Writing Coordinator backup %s" % _coordinator_backup)
+        self.log.logging("TransportZigpy", "Error", "Error while Writing Coordinator backup %s" % _coordinator_backup)
 
 
 def handle_zigpy_retreive_last_backup( self ):
