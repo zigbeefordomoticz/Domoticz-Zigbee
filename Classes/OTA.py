@@ -841,7 +841,7 @@ def ota_scan_folder(self):  # OK 13/10
             continue
         
         self.ListOfImages["Brands"][brand] = {}
-        ota_dir = self.pluginconf.pluginConf["pluginOTAFirmware"] + OTA_CODES[brand]["Folder"]
+        ota_dir = self.pluginconf.pluginConf["pluginOTAFirmware"] + "/" + OTA_CODES[brand]["Folder"]
         # Check the folder exist
         if not exists(ota_dir):
             continue
