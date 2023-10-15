@@ -194,7 +194,7 @@ def best_group_widget(self, GroupId):
         if NwkId == "0000":
             continue
 
-        self.logging("debug", "bestGroupWidget - Group: %s processing %s" % (GroupId, NwkId))
+        self.logging("Debug", "bestGroupWidget - Group: %s processing %s" % (GroupId, NwkId))
         if NwkId not in self.ListOfDevices:
             # We have some inconsistency !
             continue
@@ -210,7 +210,7 @@ def best_group_widget(self, GroupId):
             if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
                 # Those widgets are commanded via cluster Level Control
                 GroupWidgetType = "LvlControl"
-                continue
+                return WIDGET_STYLE.get("VenetianInverted", WIDGET_STYLE["ColorControlFull"])
 
             if GroupWidgetType is None and WidgetType in WIDGET_STYLE:
                 GroupWidgetType = WidgetType
