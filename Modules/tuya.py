@@ -1517,9 +1517,11 @@ def ts110e_switch_type( self, NwkId, EPout, mode):
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
 
 def tuya_lighting_color_control( self, NwkId, ColorCapabilities=29):
-    
+    # The ColorCapabilities attribute specifies the color capabilities of the device supporting the color control clus-
+    # ter, as illustrated in Table 5.8. If a bit is set to 1, the corresponding attributes and commands SHALL become
+    # mandatory. If a bit is set to 0, the corresponding attributes and commands need not be implemented.
     self.log.logging("Tuya", "Debug", "tuya_lighting_color_control - Color Capabilities %s" % ColorCapabilities, NwkId)
-    write_attribute( self, NwkId, ZIGATE_EP, "01", "0300", "0000", "00", "000f", "18", "%02x" %ColorCapabilities, ackIsDisabled=False )
+    write_attribute( self, NwkId, ZIGATE_EP, "01", "0300", "0000", "00", "400a", "19", "%04x" %ColorCapabilities, ackIsDisabled=False )
     self.log.logging("Tuya", "Debug", "tuya_lighting_color_control - Color Capabilities %s completed" % ColorCapabilities, NwkId)
         
     
