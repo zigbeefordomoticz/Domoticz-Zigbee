@@ -276,10 +276,9 @@ def post_coordinator_startup(self, radiomodule):
 
     self.log.logging( "TransportZigpy", "Debug", "Active Endpoint List:  %s" % str(self.app.get_device(nwk=t.NWK(0x0000)).endpoints.keys()), )
     for epid, ep in self.app.get_device(nwk=t.NWK(0x0000)).endpoints.items():
-        if epid == 0:
-            continue
-        self.log.logging( "TransportZigpy", "Debug", "Simple Descriptor:  %s" % ep)
-        self.forwarder_queue.put(build_plugin_8043_frame_list_node_descriptor(self, epid, ep))
+        if epid != 0 and ep.status == 0x00:
+            self.log.logging( "TransportZigpy", "Debug", "Simple Descriptor:  %s" % ep)
+            self.forwarder_queue.put(build_plugin_8043_frame_list_node_descriptor(self, epid, ep))
 
     self.log.logging( "TransportZigpy", "Debug", "Controller Model %s" % self.app.get_device(nwk=t.NWK(0x0000)).model )
     self.log.logging( "TransportZigpy", "Debug", "Controller Manufacturer %s" % self.app.get_device(nwk=t.NWK(0x0000)).manufacturer )
