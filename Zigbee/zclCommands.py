@@ -447,6 +447,11 @@ def zcl_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transition="0
         return send_zigatecmd_zcl_noack(self, nwkid, "0081", data)
     return send_zigatecmd_zcl_ack(self, nwkid, "0081", data)
 
+def zcl_move_to_level_stop(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_move_to_level_stop %s %s" % (nwkid, EPout, ))
+    zcl_command_formated_logging( self, "zcl_move_to_level_stop", nwkid, EPout, "0008", "Stop", ackIsDisabled)
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        return zcl_raw_level_move_to_level(self, nwkid, ZIGATE_EP, EPout, "Stop")
 
 def zcl_group_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transition="0000", ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_move_to_level_with_onoff %s %s %s %s %s" % (nwkid, EPout, OnOff, level, transition))
@@ -457,7 +462,11 @@ def zcl_group_move_to_level_with_onoff(self, nwkid, EPout, OnOff, level, transit
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + ZIGATE_EP + EPout + OnOff + level + transition
     return send_zigatecmd_raw(self, "0081", data)
 
-
+def zcl_group_move_to_level_stop(self, nwkid, EPout, ackIsDisabled=DEFAULT_ACK_MODE):
+    self.log.logging("zclCommand", "Debug", "zcl_move_to_level_stop %s %s" % (nwkid, EPout, ))
+    zcl_command_formated_logging( self, "zcl_move_to_level_stop", nwkid, EPout, "0008", "Stop", ackIsDisabled)
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        return zcl_raw_level_move_to_level(self, nwkid, ZIGATE_EP, EPout, "Stop", groupaddrmode=True)
 
 # Cluster 0102 ( Window Covering )
 ##################################

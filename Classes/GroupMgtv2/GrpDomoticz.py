@@ -19,6 +19,7 @@ from Zigbee.zclCommands import (zcl_group_level_move_to_level,
                                 zcl_group_onoff_on,
                                 zcl_group_window_covering_off,
                                 zcl_group_window_covering_on,
+                                zcl_group_move_to_level_stop,
                                 zcl_group_window_covering_stop)
 
 WIDGET_STYLE = {
@@ -683,6 +684,14 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         nValue = 1
         sValue = "On"
         self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+
+    elif Command in ( "Stop",) and self.ListOfGroups[GrpId]["Cluster"] == "0102":
+        # Windowscovering Stop
+        zcl_group_window_covering_stop(self, GrpId, "01", EPout)
+        
+    elif Command in ( "Stop",) and self.ListOfGroups[GrpId]["Cluster"] == "0008":
+        # SetLevel Off
+        zcl_group_move_to_level_stop(self, GrpId, EPout)
 
     elif Command == "Set Level":
         # Level: % value of move
