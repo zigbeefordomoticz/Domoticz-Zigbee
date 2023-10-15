@@ -10,7 +10,7 @@ import Domoticz
 from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
-from Modules.tools import Hex_Format
+from Modules.tools import Hex_Format, is_hex
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
 from Zigbee.zclCommands import (zcl_group_level_move_to_level,
                                 zcl_group_move_to_level_with_onoff,
@@ -322,7 +322,7 @@ def update_domoticz_group_device(self, GroupId):
     if "Cluster" in self.ListOfGroups[GroupId]:
         Cluster = self.ListOfGroups[GroupId]["Cluster"]
 
-    countOn = countOff = 0
+    countStop = countOn = countOff = 0
     nValue = 0 if self.pluginconf.pluginConf["OnIfOneOn"] else 1
     sValue = level = None
     for NwkId, Ep, IEEE in self.ListOfGroups[GroupId]["Devices"]:
@@ -352,11 +352,13 @@ def update_domoticz_group_device(self, GroupId):
             and Cluster in ("0006", "0008", "0300") 
             and "0006" in self.ListOfDevices[NwkId]["Ep"][Ep]
             and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]
-            and str(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]).isdigit()
+            and is_hex(  str(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) )
         ):
             self.logging( "Debug", "update_domoticz_group_device - Cluster ON/OFF Group: %s NwkId: %s Ep: %s Value: %s" %( 
                 GroupId, NwkId, Ep, self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]))
-            if int(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) != 0:
+            if str(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) == "f0":
+                countStop += 1
+            elif int(self.ListOfDevices[NwkId]["Ep"][Ep]["0006"]["0000"]) != 0:
                 countOn += 1
             else:
                 countOff += 1
@@ -386,10 +388,12 @@ def update_domoticz_group_device(self, GroupId):
             level = lvl_value if level is None else (level + lvl_value) // 2
             nValue, sValue = ValuesForVenetian(level)
 
-        self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s %s/%s On: %s, Off: %s level: %s" % (
-            GroupId, NwkId, Ep, countOn, countOff, level), )
+        self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s %s/%s On: %s, Off: %s Stop: %s, level: %s" % (
+            GroupId, NwkId, Ep, countOn, countOff, countStop, level), )
 
-    if self.pluginconf.pluginConf["OnIfOneOn"]:
+    if countStop > 0:
+        nValue = 17
+    elif self.pluginconf.pluginConf["OnIfOneOn"]:
         if countOn > 0:
             nValue = 1
     elif countOff > 0:
@@ -397,12 +401,18 @@ def update_domoticz_group_device(self, GroupId):
     self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > nValue: %s, level: %s" % (
         GroupId, nValue, level), )
 
+
     # At that stage
     # nValue == 0 if Off
     # nValue == 1 if Open/On
+    # nValue == 17 if Stop
     # level is None, so we use nValue/sValue
     # level is not None; so we have a LvlControl
-    if sValue is None and level:
+    if nValue == 17:
+        # Stop
+        sValue = "0"
+        
+    elif sValue is None and level:
         if self.Devices[unit].SwitchType not in (13, 14, 15, 16):
             # Not a Shutter/Blind
             analogValue = level
@@ -444,11 +454,8 @@ def update_domoticz_group_device(self, GroupId):
             else:
                 sValue = "On"
 
-    self.logging(
-        "Debug",
-        "update_domoticz_group_device - Processing: Group: %s ==  > from %s:%s to %s:%s"
-        % (GroupId, self.Devices[unit].nValue, self.Devices[unit].sValue, nValue, sValue),
-    )
+    self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > from %s:%s to %s:%s" % (
+        GroupId, self.Devices[unit].nValue, self.Devices[unit].sValue, nValue, sValue), )
     if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
         self.logging("Log", "UpdateGroup  - (%15s) %s:%s" % (self.Devices[unit].Name, nValue, sValue))
         self.Devices[unit].Update(nValue, sValue)
