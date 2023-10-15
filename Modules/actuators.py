@@ -15,7 +15,7 @@ import json
 from Modules.basicOutputs import set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.thermostats import thermostat_Setpoint
-from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
+from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy, get_deviceconf_parameter_value
 from Modules.zigateConsts import ZIGATE_EP
 from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
                                 zcl_level_move_to_level,
@@ -32,6 +32,7 @@ from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
                                 zcl_window_covering_on,
                                 zcl_window_covering_percentage,
                                 zcl_window_covering_stop)
+from Modules.tuya import tuya_color_control_command_fe
 
 
 def lightning_percentage_to_analog( percentage_value ):
@@ -220,6 +221,23 @@ def get_all_transition_mode( self, Nwkid):
             transitionHue = "%04x" % int(self.ListOfDevices[Nwkid]["Param"]["moveToHueSatu"])
     return transitionMoveLevel , transitionRGB , transitionMoveLevel ,transitionHue , transitionTemp
 
+def rgb_to_hsv(r, g, b):
+    r, g, b = r/255.0, g/255.0, b/255.0
+    mx = max(r, g, b)
+    mn = min(r, g, b)
+    df = mx-mn
+    if mx == mn:
+        h = 0
+    elif mx == r:
+        h = (60 * ((g-b)/df) + 360) % 360
+    elif mx == g:
+        h = (60 * ((b-r)/df) + 120) % 360
+    elif mx == b:
+        h = (60 * ((r-g)/df) + 240) % 360
+    s = 0 if mx == 0 else (df/mx)*100
+    v = mx*100
+    return int(h), int(s), int(v)
+
 def actuator_setcolor(self, nwkid, EPout, value, Color):
     
     Hue_List = json.loads(Color)
@@ -238,21 +256,34 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
     # First manage level
     # if Hue_List['m'] or Hue_List['m'] != 9998 or manage_level:
     transitionMoveLevel = "0000"
-    if (
-        "Param" in self.ListOfDevices[nwkid]
-        and "moveToLevel" in self.ListOfDevices[nwkid]["Param"]
-    ):
+    if ( "Param" in self.ListOfDevices[nwkid] and "moveToLevel" in self.ListOfDevices[nwkid]["Param"] ):
         transitionMoveLevel = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToLevel"])
-        
-    if Hue_List["m"] or Hue_List["m"] != 9998:
-        value = lightning_percentage_to_analog( value )
-        self.log.logging("Command", "Debug", "---------- Set Level: %s" % (value), nwkid)
-        actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)
+
+    #if Hue_List["m"] or Hue_List["m"] != 9998:
+    #    value = lightning_percentage_to_analog( value )
+    #    self.log.logging("Command", "Debug", "---------- Set Level: %s" % (value), nwkid)
+    #    actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)
+
+
+    force_color_command = get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "FORCE_COLOR_COMMAND", return_default=None)
+    #if force_color_command == "MovetoHueandSaturation":
+    #    #     "FORCE_COLOR_COMMAND": "MovetoHueandSaturation",
+    #    transitionMoveLevel , transitionRGB , _ , _ , _ = get_all_transition_mode( self, nwkid)
+    #    r = int(Hue_List["r"])
+    #    g = int(Hue_List["g"])
+    #    b = int(Hue_List["b"])
+    #    hue, saturation, brightness = rgb_to_hsv( r, g, b )
+    #    self.log.logging("Command", "Debug", "MovetoHueandSaturation (%s,%s,%s) Set Hue X: %s Saturation: %s Brightness: %s" % (
+    #        r, g, b, hue, saturation, brightness), nwkid)
+    #    zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
 
     # ColorModeTemp = 2   // White with color temperature. Valid fields: t
     if Hue_List["m"] == 2:
         handle_color_mode_2(self, nwkid, EPout, Hue_List)
 
+    elif Hue_List["m"] == 3 and force_color_command == "MovetoHueandSaturation":
+        handle_color_mode_9998( self, nwkid, EPout, Hue_List)
+        
     # ColorModeRGB = 3    // Color. Valid fields: r, g, b.
     elif Hue_List["m"] == 3:
         handle_color_mode_3(self, nwkid, EPout, Hue_List)
@@ -260,7 +291,7 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
     # ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
     elif Hue_List["m"] == 4:
         handle_color_mode_4(self, nwkid, EPout, Hue_List )
-        
+ 
     # With saturation and hue, not seen in domoticz but present on zigate, and some device need it
     elif Hue_List["m"] == 9998:
         handle_color_mode_9998( self, nwkid, EPout, Hue_List)
@@ -274,6 +305,9 @@ def handle_color_mode_2(self, nwkid, EPout, Hue_List):
     self.log.logging( "Command", "Debug", "handle_color_mode_2 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid )
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
     zcl_move_to_colour_temperature( self, nwkid, EPout, Hex_Format(4, TempMired), transitionTemp)
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYA_Color_Control_Command_fe", return_default=None):
+        tuya_color_control_command_fe( self, nwkid, "00")
+
             
 def handle_color_mode_3(self, nwkid, EPout, Hue_List):
     x, y = rgb_to_xy((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
@@ -296,10 +330,12 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
     if cw != 0 and ww != 0:
         TempKelvin = int((255 - ww) * (6500 - 1700) / 255 + 1700)
         TempMired = 1000000 // TempKelvin
-        self.log.logging(
-            "Command", "Log", "handle_color_mode_4 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid
-        )
+        self.log.logging( "Command", "Log", "handle_color_mode_4 Set Temp Kelvin: %s-%s" % (
+            TempMired, Hex_Format(4, TempMired)), nwkid )
         zcl_move_to_colour_temperature( self, nwkid, EPout, Hex_Format(4, TempMired), transitionTemp)
+        if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYA_Color_Control_Command_fe", return_default=None):
+            tuya_color_control_command_fe( self, nwkid, "00")
+
 
     # Process Colour
     _h, _s, _l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
@@ -308,9 +344,12 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
     hue = _h * 360  # 0 > 360
     hue = int(hue * 254 // 360)
     
-    self.log.logging("Command", "Log", "handle_color_mode_4 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
+    self.log.logging("Command", "Log", "handle_color_mode_4 Set Hue X: %s Saturation: %s" % (
+        hue, saturation), nwkid)
     zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
-       
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYA_Color_Control_Command_fe", return_default=None):
+        tuya_color_control_command_fe( self, nwkid, "01")
+    
 def handle_color_mode_9998( self, nwkid, EPout, Hue_List):
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)    
     _h, _s, _l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
@@ -321,6 +360,8 @@ def handle_color_mode_9998( self, nwkid, EPout, Hue_List):
     
     self.log.logging("Command", "Debug", "handle_color_mode_9998 Set Hue X: %s Saturation: %s" % (hue, saturation), nwkid)
     zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYA_Color_Control_Command_fe", return_default=None):
+        tuya_color_control_command_fe( self, nwkid, "01")
 
     value = int(_l * 254 // 100)
     OnOff = "01"

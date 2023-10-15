@@ -1525,3 +1525,8 @@ def tuya_lighting_color_control( self, NwkId, ColorCapabilities=29):
     self.log.logging("Tuya", "Debug", "tuya_lighting_color_control - Color Capabilities %s completed" % ColorCapabilities, NwkId)
         
     
+def tuya_color_control_command_fe( self, NwkId, svalue):
+    self.log.logging("Tuya", "Debug", "tuya_ltuya_color_control_command_fe", NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    payload = "11" + sqn + "f0" + svalue
+    raw_APS_request(self, NwkId, "01", "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)

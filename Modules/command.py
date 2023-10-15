@@ -1358,6 +1358,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         self.log.logging( "Command", "Debug", "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" % (
             NWKID, EPout, Unit, DeviceType, Level, Color), NWKID,
         )
+        
         actuator_setcolor(self, NWKID, EPout, Level, Color)
         request_read_device_status(self, NWKID)
 
