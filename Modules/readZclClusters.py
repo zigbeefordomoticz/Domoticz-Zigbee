@@ -386,7 +386,8 @@ def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model
         return True
     eval_result = eval( _majdomodeviceValidValues )
 
-    self.log.logging("ZclClusters", "Debug", " . majdomodevice_possiblevalues: %s -> %s" %( eval_result, _majdomodeviceValidValues))
+    self.log.logging("ZclClusters", "Debug", " . majdomodevice_possiblevalues: >%s<(%s) %s -> %s" %(
+        value, type(value), eval_result, _majdomodeviceValidValues))
     return eval_result
 
 
