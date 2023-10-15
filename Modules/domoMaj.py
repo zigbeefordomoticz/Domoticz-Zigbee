@@ -1184,7 +1184,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                             # We do update only if this is a On/off
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, "On", BatteryLevel, SignalLevel)
 
-            elif WidgetType == "VenetianInverted" and model_name in ( "PR412", "CPR412") and clusterID == "0006":
+            elif WidgetType == "VenetianInverted" and model_name in ( "PR412", "CPR412", "CPR412-E") and clusterID == "0006":
                 self.log.logging( "Widget", "Debug", "--++->  %s/%s ClusterType: %s Updating %s Value: %s" % (NWKID, Ep, ClusterType, WidgetType, value), NWKID, )
                 # nValue will depends if we are on % or not
                 if value == '01':
