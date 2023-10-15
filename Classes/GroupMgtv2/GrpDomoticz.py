@@ -185,6 +185,7 @@ def best_group_widget(self, GroupId):
     #        }
 
     GroupWidgetType = None
+    GroupWidgetStyle = None
 
     self.logging("Debug", "best_group_widget Device - %s" % str(self.ListOfGroups[GroupId]["Devices"]))
     for NwkId, devEp, iterIEEE in self.ListOfGroups[GroupId]["Devices"]:
@@ -207,10 +208,14 @@ def best_group_widget(self, GroupId):
             WidgetType = self.ListOfDevices[NwkId]["Ep"][devEp]["ClusterType"][DomoDeviceUnit]
             self.logging("Debug", "------------ GroupWidget: %s WidgetType: %s" % (GroupWidgetType, WidgetType))
 
+            if WidgetType == "LvlControl" and "Blind" in self.ListOfDevices[NwkId]["Type"]:
+                GroupWidgetStyle = "BlindPercentInverted"
+
             if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
                 # Those widgets are commanded via cluster Level Control
                 GroupWidgetType = "LvlControl"
-                return WIDGET_STYLE.get("VenetianInverted", WIDGET_STYLE["ColorControlFull"])
+                GroupWidgetStyle = "VenetianInverted"
+                continue
 
             if GroupWidgetType is None and WidgetType in WIDGET_STYLE:
                 GroupWidgetType = WidgetType
@@ -244,7 +249,6 @@ def best_group_widget(self, GroupId):
             if WidgetType in ("ColorControl", "ColorControlFull"):
                 GroupWidgetType = WidgetType
                 continue
-
 
             if WidgetType in ("Venetian", "WindowCovering", "BlindPercentInverted"):
                 GroupWidgetType = WidgetType
@@ -281,13 +285,13 @@ def best_group_widget(self, GroupId):
     else:
         self.ListOfGroups[GroupId]["Cluster"] = ""
 
-    self.logging(
-        "Debug",
-        "best_group_widget for GroupId: %s Found WidgetType: %s Widget: %s"
-        % (GroupId, GroupWidgetType, WIDGET_STYLE.get(GroupWidgetType, WIDGET_STYLE["ColorControlFull"])),
-    )
+    self.logging( "Debug", "best_group_widget for GroupId: %s Found WidgetType: %s Widget: %s" % (
+        GroupId, GroupWidgetType, WIDGET_STYLE.get(GroupWidgetType, WIDGET_STYLE["ColorControlFull"])), )
 
-    return WIDGET_STYLE.get(GroupWidgetType, WIDGET_STYLE["ColorControlFull"])
+    if GroupWidgetStyle is None:
+        GroupWidgetStyle = GroupWidgetType
+        
+    return WIDGET_STYLE.get(GroupWidgetStyle, WIDGET_STYLE["ColorControlFull"])
 
 
 def update_domoticz_group_device(self, GroupId):
