@@ -1515,3 +1515,11 @@ def ts110e_switch_type( self, NwkId, EPout, mode):
     self.log.logging("Tuya", "Debug", "ts110e_switch_type - mode %s" % mode, NwkId)
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
+
+def tuya_lighting_color_control( self, NwkId, ColorCapabilities=29):
+    
+    self.log.logging("Tuya", "Debug", "tuya_lighting_color_control - Color Capabilities %s" % ColorCapabilities, NwkId)
+    write_attribute( self, NwkId, ZIGATE_EP, "01", "0300", "0000", "00", "000f", "18", "%02x" %ColorCapabilities, ackIsDisabled=False )
+    self.log.logging("Tuya", "Debug", "tuya_lighting_color_control - Color Capabilities %s completed" % ColorCapabilities, NwkId)
+        
+    

@@ -36,7 +36,7 @@ from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
 from Modules.thermostats import thermostat_Calibration
 from Modules.tools import (get_deviceconf_parameter_value,
                            getListOfEpForCluster, is_fake_ep)
-from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration
+from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration, tuya_lighting_color_control
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
@@ -627,7 +627,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
     if self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
-    elif  get_device_config_param( self, NWKID, "AqaraMultiClick"):
+    elif get_device_config_param( self, NWKID, "AqaraMultiClick"):
         enable_click_mode_aqara( self, NWKID)
 
     elif ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY and WISER_LEGACY_MODEL_NAME_PREFIX in self.ListOfDevices[NWKID]["Model"] ):
@@ -692,6 +692,9 @@ def handle_device_specific_needs(self, Devices, NWKID):
         enable_click_mode_aqara( self, NWKID )
         enableOppleSwitch( self, NWKID )
         
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "LightingColorControl", return_default=None):
+        tuya_lighting_color_control(self, NWKID)
+    
 def scan_device_for_group_memebership(self, NWKID):
     for ep in self.ListOfDevices[NWKID]["Ep"]:
         if "0004" in self.ListOfDevices[NWKID]["Ep"][ep] and self.groupmgt:
