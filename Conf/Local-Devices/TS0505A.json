@@ -28,25 +28,15 @@
     },
     "Type": "",
     "bindEp": "01",
-    "ClusterToBind": [ "0006", "0008", "0300" ],
+    "ClusterToBind": [ ],
     "ConfigureReporting": {
-        "0006": { "Attributes": { "0000": { "DataType": "10", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0258", "Change": "01" } } },
-        "0008": { "Attributes": { "0000": { "DataType": "20", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "05" } } },
-        "0300": { 
-            "Attributes": {
-                "0003": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001"},
-                "0004": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001"},
-                "0007": { "DataType": "21", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "0001"},
-                "0008": { "DataType": "30", "MinInterval": "0001", "MaxInterval": "012C", "TimeOut": "0000", "Change": "01" }
-                }
-        } 
-
     },
     "ReadAttributes": {
         "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007" ],
         "0006": [ "0000", "4001", "4002" ],
         "0008": [ "0000" ],
-        "0300": [ "f002", "f00d", "0000", "0001", "0003", "0004", "0007", "0008", "000f", "400a" ]
+        "0019": [],
+        "0300": [ "f002", "f00d", "0000", "0001", "0003", "0004", "0007", "0008", "000f" ]
     },
     "TUYA_REGISTRATION": 19,
     "TUYAColorControlRgbMode": true
