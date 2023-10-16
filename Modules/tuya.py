@@ -13,6 +13,7 @@
 
 import time
 from datetime import datetime, timedelta
+import struct
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.bindings import bindDevice
@@ -1516,7 +1517,7 @@ def ts110e_switch_type( self, NwkId, EPout, mode):
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
 
-def tuya_lighting_color_control( self, NwkId, ColorCapabilities=29):
+def tuya_lighting_color_control( self, NwkId, ColorCapabilities=25):
     # The ColorCapabilities attribute specifies the color capabilities of the device supporting the color control clus-
     # ter, as illustrated in Table 5.8. If a bit is set to 1, the corresponding attributes and commands SHALL become
     # mandatory. If a bit is set to 0, the corresponding attributes and commands need not be implemented.
@@ -1525,8 +1526,24 @@ def tuya_lighting_color_control( self, NwkId, ColorCapabilities=29):
     self.log.logging("Tuya", "Debug", "tuya_lighting_color_control - Color Capabilities %s completed" % ColorCapabilities, NwkId)
         
     
-def tuya_color_control_command_fe( self, NwkId, svalue):
-    self.log.logging("Tuya", "Debug", "tuya_ltuya_color_control_command_fe", NwkId)
+def tuya_color_control_rgbMode( self, NwkId, mode):
+    # Command 0xfe
+    # To switch between white mode and color mode
+    self.log.logging("Tuya", "Debug", "tuya_color_control_rgbMode", NwkId)
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
-    payload = "11" + sqn + "f0" + svalue
+    payload = "11" + sqn + "f0" + mode
+    raw_APS_request(self, NwkId, "01", "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
+
+
+
+def tuya_Move_To_Hue_Saturation_Brightness( self, NwkId, hue, saturation, brightness):
+    # Command 0xe1
+    self.log.logging("Tuya", "Debug", "tuya_Move_To_Hue_Saturation_Brightness", NwkId)
+    
+    saturation = "%04x" % struct.unpack("H", struct.pack(">H", saturation))[0]
+    hue = "%04x" % struct.unpack("H", struct.pack(">H", hue, ))[0]
+    brightness = "%04x" % struct.unpack("H", struct.pack(">H", brightness))[0]
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    payload = "11" + sqn + "e1" + hue + saturation + brightness
+    
     raw_APS_request(self, NwkId, "01", "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
