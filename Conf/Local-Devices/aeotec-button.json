@@ -23,7 +23,7 @@
                 }}},
             "0b05": "",
             "0019": "", 
-            "Type": "Temp/Button_3"
+            "Type": "Voltage/Temp/Button_3"
         }
     },
     "Type": "",
