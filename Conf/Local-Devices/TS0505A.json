@@ -42,6 +42,8 @@
     "TUYA_REGISTRATION": 19,
     "TUYAColorControlRgbMode": true,
     "Param": {
-        "ResetTuyaTS0505A": 1
+        "ResetTuyaTS0505A": 1,
+        "moveToColourTemp": "0010",
+        "moveToColourRGB": "0010"
     }
 }
