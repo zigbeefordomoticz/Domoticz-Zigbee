@@ -10,12 +10,19 @@
 
 """
 
+
+
+
+
 import json
 
 from Modules.basicOutputs import set_poweron_afteroffon
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.thermostats import thermostat_Setpoint
-from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy, get_deviceconf_parameter_value
+from Modules.tools import (Hex_Format, get_deviceconf_parameter_value,
+                           rgb_to_hsl, rgb_to_xy)
+from Modules.tuya import (tuya_color_control_rgbMode,
+                          tuya_Move_To_Hue_Saturation_Brightness)
 from Modules.zigateConsts import ZIGATE_EP
 from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
                                 zcl_level_move_to_level,
@@ -32,7 +39,6 @@ from Zigbee.zclCommands import (zcl_identify_send, zcl_identify_trigger_effect,
                                 zcl_window_covering_on,
                                 zcl_window_covering_percentage,
                                 zcl_window_covering_stop)
-from Modules.tuya import tuya_color_control_rgbMode, tuya_Move_To_Hue_Saturation_Brightness
 
 
 def lightning_percentage_to_analog( percentage_value ):

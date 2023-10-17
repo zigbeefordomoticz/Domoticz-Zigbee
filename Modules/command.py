@@ -28,8 +28,8 @@ from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_set_contract,
                                      schneider_temp_Setcurrent)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
-from Modules.tools import get_deviceconf_parameter_value
 from Modules.thermostats import thermostat_Mode, thermostat_Setpoint
+from Modules.tools import get_deviceconf_parameter_value
 from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_dimmer_dimmer, tuya_dimmer_onoff,
                           tuya_energy_onoff, tuya_garage_door_action,
@@ -44,7 +44,6 @@ from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
 from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
-
 
 # Matrix between Domoticz Type, Subtype, SwitchType and Plugin DeviceType
 # Type, Subtype, Switchtype

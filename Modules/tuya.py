@@ -11,9 +11,9 @@
 
 """
 
+import struct
 import time
 from datetime import datetime, timedelta
-import struct
 
 from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.bindings import bindDevice
@@ -1521,6 +1521,7 @@ def tuya_lighting_color_control( self, NwkId, ColorCapabilities=25):
     # The ColorCapabilities attribute specifies the color capabilities of the device supporting the color control clus-
     # ter, as illustrated in Table 5.8. If a bit is set to 1, the corresponding attributes and commands SHALL become
     # mandatory. If a bit is set to 0, the corresponding attributes and commands need not be implemented.
+    
     self.log.logging("Tuya", "Debug", "tuya_lighting_color_control - Color Capabilities %s" % ColorCapabilities, NwkId)
     write_attribute( self, NwkId, ZIGATE_EP, "01", "0300", "0000", "00", "400a", "19", "%04x" %ColorCapabilities, ackIsDisabled=False )
     self.log.logging("Tuya", "Debug", "tuya_lighting_color_control - Color Capabilities %s completed" % ColorCapabilities, NwkId)

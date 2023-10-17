@@ -36,7 +36,8 @@ from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
 from Modules.thermostats import thermostat_Calibration
 from Modules.tools import (get_deviceconf_parameter_value,
                            getListOfEpForCluster, is_fake_ep)
-from Modules.tuya import tuya_cmd_ts004F, tuya_command_f0, tuya_registration, tuya_lighting_color_control
+from Modules.tuya import (tuya_cmd_ts004F, tuya_command_f0,
+                          tuya_lighting_color_control, tuya_registration)
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
