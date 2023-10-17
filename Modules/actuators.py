@@ -10,17 +10,16 @@
 
 """
 
-
-
-
-
 import json
 
 from Modules.basicOutputs import set_poweron_afteroffon
-from Modules.readAttributes import ReadAttributeRequest_0006_400x
+from Modules.paramDevice import get_device_config_param
+from Modules.readAttributes import (
+    ReadAttributeRequest_0006_400x,
+    ReadAttributeRequest_0300_Color_Capabilities)
 from Modules.thermostats import thermostat_Setpoint
 from Modules.tools import (Hex_Format, get_deviceconf_parameter_value,
-                           rgb_to_hsl, rgb_to_xy)
+                           getAttributeValue, rgb_to_hsl, rgb_to_xy)
 from Modules.tuya import (tuya_color_control_rgbMode,
                           tuya_Move_To_Hue_Saturation_Brightness)
 from Modules.zigateConsts import ZIGATE_EP
@@ -249,7 +248,8 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
         transitionMoveLevel = "%04x" % int(self.ListOfDevices[nwkid]["Param"]["moveToLevel"])
 
     force_color_command = get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "FORCE_COLOR_COMMAND", return_default=None)
-
+    ColorCapabilitiesList = device_color_capabilities( self, nwkid, EPout)
+    
     # ColorModeTemp = 2   // White with color temperature. Valid fields: t
     if Hue_List["m"] == 2:
         handle_color_mode_2(self, nwkid, EPout, Hue_List)
@@ -290,6 +290,12 @@ def handle_color_mode_3(self, nwkid, EPout, Hue_List):
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
     if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYAColorControlRgbMode", return_default=None):
         tuya_color_control_rgbMode( self, nwkid, "01")
+        
+
+    if get_device_config_param( self, nwkid, "ResetTuyaTS0505A"):
+        tuya_Move_To_Hue_Saturation_Brightness( self, nwkid, 300, 100, 50)
+        
+        
     zcl_move_to_colour(self, nwkid, EPout, Hex_Format(4, x), Hex_Format(4, y), transitionRGB)
     
 def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
@@ -367,3 +373,35 @@ def actuator_identify(self, nwkid, ep, value=None):
                 color = 0x03  # Blue
 
         zcl_identify_trigger_effect( self, nwkid, ep, "%02x" % value, "%02x" % color)
+
+
+def decode_color_capabilities(capabilities_value):
+    capabilities = {
+        "Hue and Saturation": 0b00000000_00000001,
+        "Enhanced Hue": 0b00000000_00000010,
+        "Color Loop": 0b00000000_00000100,
+        "XY Attributes": 0b00000000_00001000,
+        "Color Temperature": 0b00000000_00010000
+    }
+
+    return [
+        feature
+        for feature, bitmask in capabilities.items()
+        if capabilities_value & bitmask
+    ]
+
+def device_color_capabilities( self, nwkid, ep):
+    self.log.logging( "Command", "Debug", "device_color_capabilities %s %s" % (nwkid, ep), nwkid)
+    deviceHasNoColorCapabilities = get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "NoColorCapabilitie", return_default=None) 
+    colorCapabilities = getAttributeValue( self, nwkid, ep, "0300", "400a")
+    
+    self.log.logging( "Command", "Debug", "+ deviceHasColorCapabilities %s" % (deviceHasNoColorCapabilities), nwkid)
+    self.log.logging( "Command", "Debug", "+ colorCapabilities %s" % (colorCapabilities), nwkid)
+    
+    if colorCapabilities is None and deviceHasNoColorCapabilities:
+        return []
+    if colorCapabilities is None or isinstance( colorCapabilities, str):
+        ReadAttributeRequest_0300_Color_Capabilities(self, nwkid)
+        return []
+
+    return decode_color_capabilities(colorCapabilities)
