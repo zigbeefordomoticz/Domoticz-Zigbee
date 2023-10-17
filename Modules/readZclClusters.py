@@ -1,17 +1,17 @@
 
 import binascii
 import json
-
 from os import listdir
 from os.path import isdir, isfile, join
 from pathlib import Path
 
 from DevicesModules import FUNCTION_MODULE, FUNCTION_WITH_ACTIONS_MODULE
+from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.paramDevice import get_device_config_param
 from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
-from Modules.zclClusterHelpers import handle_model_name, decoding_attribute_data
-from Modules.batterieManagement import UpdateBatteryAttribute
+from Modules.zclClusterHelpers import (decoding_attribute_data,
+                                       handle_model_name)
 
 # "ActionList":
 #   check_store_value - check the value and store in the corresponding data strcuture entry
