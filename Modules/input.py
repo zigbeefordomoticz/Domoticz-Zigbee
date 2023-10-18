@@ -3489,7 +3489,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     motion_via_IAS_alarm = get_device_config_param( self, MsgSrcAddr, "MotionViaIASAlarm1")
     self.log.logging( "Input", "Debug", "MotionViaIASAlarm1 = %s" % (motion_via_IAS_alarm))
     
-    ias_alarm1_2_merged = get_deviceconf_parameter_value( self, MsgSrcAddr, "IASAlarmMerge")
+    ias_alarm1_2_merged = get_deviceconf_parameter_value( self, Model, "IASAlarmMerge", return_default=None )
     self.log.logging( "Input", "Debug", "IASAlarmMerge = %s" % (ias_alarm1_2_merged))
     
     if ias_alarm1_2_merged:
