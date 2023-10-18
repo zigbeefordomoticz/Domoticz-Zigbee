@@ -17,13 +17,7 @@
             "0003": "", 
             "0020": "", 
             "0402": "", 
-            "0500": { "Attributes": {
-                "0002": {
-                    "Name": "Button Click",
-                    "DataType": "19",
-                    "UpdDomoDeviceWithCluster": "0006",
-                    "EvalExp": "str(int(value))", 
-                    "ActionList": [ "check_store_value", "upd_domo_device" ]}}},
+            "0500": "",
             "0b05": "",
             "0019": "", 
             "Type": "Voltage/Temp/Button_3"
@@ -48,7 +42,7 @@
         "0402": [ "0000", "0001", "0002" ],
         "0500": [ "0000", "00001", "0002", "0010", "0011" ]
     },
-    "ByPassIASAlarm": true,
+    "IASAlarmMerge": true,
     "Param": {
         "resetSwitchSelectorPushButton": 30
     }
