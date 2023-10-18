@@ -3494,7 +3494,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     
     if ias_alarm1_2_merged:
         self.log.logging( "Input", "Debug", "IASAlarmMerge alarm1 %s alarm2 %s" % (alarm1, alarm2))
-        combined_alarm = ( alarm1 << 1 ) | alarm2
+        combined_alarm = ( alarm2 << 1 ) | alarm1
         self.log.logging( "Input", "Debug", "IASAlarmMerge combined value = %02d" % (combined_alarm))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % combined_alarm)
         
