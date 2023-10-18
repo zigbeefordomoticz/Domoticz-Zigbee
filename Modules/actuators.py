@@ -250,26 +250,28 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
     force_color_command = get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "FORCE_COLOR_COMMAND", return_default=None)
     ColorCapabilitiesList = device_color_capabilities( self, nwkid, EPout)
     
-    # ColorModeTemp = 2   // White with color temperature. Valid fields: t
+    
     if Hue_List["m"] == 2:
+        # ColorModeTemp = 2   // White with color temperature. Valid fields: t
         handle_color_mode_2(self, nwkid, EPout, Hue_List)
 
     elif Hue_List["m"] == 3 and force_color_command == "TuyaMovetoHueandSaturation":
-        handle_color_mode_9998( self, nwkid, EPout, Hue_List, value)
-        
-    # ColorModeRGB = 3    // Color. Valid fields: r, g, b.
+        handle_color_mode_4( self, nwkid, EPout, Hue_List)
+
     elif Hue_List["m"] == 3:
+        # ColorModeRGB = 3    // Color. Valid fields: r, g, b.
         handle_color_mode_3(self, nwkid, EPout, Hue_List)
 
-    # ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
     elif Hue_List["m"] == 4:
+        # ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
         handle_color_mode_4(self, nwkid, EPout, Hue_List )
  
-    # With saturation and hue, not seen in domoticz but present on zigate, and some device need it
     elif Hue_List["m"] == 9998:
+        # With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         handle_color_mode_9998( self, nwkid, EPout, Hue_List, value)
      
 def handle_color_mode_2(self, nwkid, EPout, Hue_List):
+    # White with color temperature. Valid fields: t
     # Value is in mireds (not kelvin)
     # Correct values are from 153 (6500K) up to 588 (1700K)
     # t is 0 > 255
@@ -281,6 +283,7 @@ def handle_color_mode_2(self, nwkid, EPout, Hue_List):
 
             
 def handle_color_mode_3(self, nwkid, EPout, Hue_List):
+    # Color. Valid fields: r, g, b.
     x, y = rgb_to_xy((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
     # Convert 0>1 to 0>FFFF
     x = int(x * 65536)
@@ -289,13 +292,7 @@ def handle_color_mode_3(self, nwkid, EPout, Hue_List):
     self.log.logging("Command", "Debug", "handle_color_mode_3 Set Temp X: %s Y: %s" % (x, y), nwkid)
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
     if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYAColorControlRgbMode", return_default=None):
-        tuya_color_control_rgbMode( self, nwkid, "01")
-        
-
-    if get_device_config_param( self, nwkid, "ResetTuyaTS0505A"):
-        tuya_Move_To_Hue_Saturation_Brightness( self, nwkid, 300, 100, 50)
-        
-        
+        tuya_color_control_rgbMode( self, nwkid, "01")  
     zcl_move_to_colour(self, nwkid, EPout, Hex_Format(4, x), Hex_Format(4, y), transitionRGB)
     
 def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
