@@ -311,7 +311,7 @@ def is_cluster_zcl_config_available( self, nwkid, ep, cluster, attribute=None):
     if is_manufacturer_specific_cluster( self, cluster):
         return True
     
-    if is_cluster_specific_config(self, _get_model_name( self, nwkid), ep, cluster, attribute=None):
+    if is_cluster_specific_config(self, _get_model_name( self, nwkid), ep, cluster, attribute):
         return True
     
     return is_generic_zcl_cluster( self, cluster, attribute)

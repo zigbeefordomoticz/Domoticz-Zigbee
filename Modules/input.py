@@ -3489,7 +3489,16 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     motion_via_IAS_alarm = get_device_config_param( self, MsgSrcAddr, "MotionViaIASAlarm1")
     self.log.logging( "Input", "Debug", "MotionViaIASAlarm1 = %s" % (motion_via_IAS_alarm))
     
-    if motion_via_IAS_alarm is not None and motion_via_IAS_alarm == 1:
+    ias_alarm1_2_merged = get_deviceconf_parameter_value( self, Model, "IASAlarmMerge", return_default=None )
+    self.log.logging( "Input", "Debug", "IASAlarmMerge = %s" % (ias_alarm1_2_merged))
+    
+    if ias_alarm1_2_merged:
+        self.log.logging( "Input", "Debug", "IASAlarmMerge alarm1 %s alarm2 %s" % (alarm1, alarm2))
+        combined_alarm = ( alarm2 << 1 ) | alarm1
+        self.log.logging( "Input", "Debug", "IASAlarmMerge combined value = %02d" % (combined_alarm))
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % combined_alarm)
+        
+    elif motion_via_IAS_alarm is not None and motion_via_IAS_alarm == 1:
         self.log.logging( "Input", "Debug", "Motion detected sending to MajDomo %s/%s %s" % (
             MsgSrcAddr, MsgEp, (alarm1 or alarm2)))    
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % (alarm1 or alarm2))
