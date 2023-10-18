@@ -9,11 +9,7 @@
     "Ep":{
         "01": {
             "0000": "",
-            "0001": { "Attributes": {
-                "0041": {
-                    "Name": "Power 0041",
-                    "DataType": "20",
-                    "ActionList": [ "check_store_value" ] }}},
+            "0001": { "Attributes": { "0041": { "Name": "Power 0041", "DataType": "20", "ActionList": [ "check_store_value" ] }}},
             "0003": "", 
             "0020": "", 
             "0402": "", 
