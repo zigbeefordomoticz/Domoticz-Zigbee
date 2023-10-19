@@ -1614,22 +1614,24 @@ def Cluster0500(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
                 self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["doorbell"] = doorbell
 
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["GlobalInfos"] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" % (
-                alarm1,
-                alarm2,
-                tamper,
-                batter,
-                srepor,
-                rrepor,
-                troubl,
-                acmain,
-                test,
-                batdef,
-                doorbell
-            )
+                alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef, doorbell )
+            
             self.ListOfDevices[MsgSrcAddr]["IAS"][MsgSrcEp]["ZoneStatus"]["TimeStamp"] = int(time())
-            if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] in ("RC-EF-3.0", "RC-EM"):   # alarm1 or alarm2 not used on thoses devices
+            model = self.ListOfDevices[MsgSrcAddr].get("Model", "")
+            if model in ("RC-EF-3.0", "RC-EM"):   # alarm1 or alarm2 not used on thoses devices
                 return
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02d" % (alarm1 or alarm2 or doorbell))
+            
+            ias_alarm1_2_merged = get_deviceconf_parameter_value( self, model, "IASAlarmMerge", return_default=None )
+            self.log.logging( "Input", "Debug", "IASAlarmMerge = %s" % (ias_alarm1_2_merged))
+
+            if ias_alarm1_2_merged:
+                self.log.logging( "Input", "Debug", "IASAlarmMerge alarm1 %s alarm2 %s" % (alarm1, alarm2))
+                combined_alarm = ( alarm2 << 1 ) | alarm1
+                self.log.logging( "Input", "Debug", "IASAlarmMerge combined value = %02d" % (combined_alarm))
+            else:
+                combined_alarm = alarm1 or alarm2 or doorbell
+
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02d" % (combined_alarm))
 
             if batter:
                 # Battery Warning
