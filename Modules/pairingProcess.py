@@ -694,7 +694,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         enable_click_mode_aqara( self, NWKID )
         enableOppleSwitch( self, NWKID )
     
-    if get_deviceconf_parameter_value( self, NWKID, "TuyaCommandF0"):
+    if get_deviceconf_parameter_value( self, self.ListOfDevices[NWKID]["Model"], "TuyaCommandF0"):
         tuya_command_f0( self, NWKID )
 
     if get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "LightingColorControl", return_default=None):
