@@ -662,7 +662,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
 
     elif self.ListOfDevices[NWKID]["Model"] in ( "TS0222", "TS0002_relay_switch", "TS0003_relay_switch", 'TS0601-motion'):
         tuya_command_f0( self, NWKID )
-        
+
+
     elif self.ListOfDevices[NWKID]["Model"] in (
         "TS0601-Energy",
         "TS0601-switch",
@@ -692,7 +693,10 @@ def handle_device_specific_needs(self, Devices, NWKID):
     elif self.ListOfDevices[NWKID]["Model"] == "lumi.remote.b28ac1":
         enable_click_mode_aqara( self, NWKID )
         enableOppleSwitch( self, NWKID )
-        
+    
+    if get_deviceconf_parameter_value( self, NWKID, "TuyaCommandF0"):
+        tuya_command_f0( self, NWKID )
+
     if get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "LightingColorControl", return_default=None):
         tuya_lighting_color_control(self, NWKID)
     

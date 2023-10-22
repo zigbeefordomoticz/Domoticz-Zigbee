@@ -39,11 +39,12 @@
         "0019": [],
         "0300": [ "f002", "f00d", "0000", "0001", "0003", "0004", "0007", "0008", "000f" ]
     },
-    "TUYA_REGISTRATION": 19,
+    "TUYA_REGISTRATION": 13,
+    "TuyaCommandF0": true,
     "TUYAColorControlRgbMode": true,
     "Param": {
         "moveToColourTemp": "0010",
         "moveToColourRGB": "0010",
-        "moveToHueSatu": "0010"
+        "moveToHueSatu": "0000"
     }
 }
