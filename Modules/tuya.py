@@ -1543,7 +1543,7 @@ def tuya_Move_To_Hue_Saturation( self, NwkId, EPout, hue, saturation, transition
     saturation = "%02x" % saturation
 
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
-    payload = "11" + sqn + "06" + hue + saturation + transition + "ff"
+    payload = "11" + sqn + "06" + hue + saturation + "0000" + "ff"
     
     raw_APS_request(self, NwkId, EPout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
 
