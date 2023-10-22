@@ -116,16 +116,7 @@ def tuya_cmd_0x0000_0xf0(self, NwkId):
     # Seen at pairing of a WGH-JLCZ02 / TS011F and TS0201 and TS0601 (MOES BRT-100)
 
         payload = "11" + get_and_inc_ZCL_SQN(self, NwkId) + "fe"
-        raw_APS_request(
-            self,
-            NwkId,
-            '01',
-            "0000",
-            "0104",
-            payload,
-            zigate_ep=ZIGATE_EP,
-            ackIsDisabled=is_ack_tobe_disabled(self, NwkId),
-        )
+        raw_APS_request( self, NwkId, '01', "0000", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, NwkId), )
         self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % NwkId)
 
 
