@@ -250,13 +250,14 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
 
     force_color_command = get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "FORCE_COLOR_COMMAND", return_default=None)
     ColorCapabilitiesList = device_color_capabilities( self, nwkid, EPout)
-
+    self.log.logging("Command", "Debug", "actuator_setcolor force_color_command %s" % force_color_command, nwkid)
+    
     if Hue_List["m"] == 2:
         # ColorModeTemp = 2   // White with color temperature. Valid fields: t
         handle_color_mode_2(self, nwkid, EPout, Hue_List)
 
     elif Hue_List["m"] == 3 and force_color_command == "TuyaMovetoHueandSaturation":
-        handle_color_mode_tuya( self, nwkid, EPout, Hue_List)
+        handle_color_mode_tuya( self, nwkid, EPout, Hue_List, value)
 
     elif Hue_List["m"] == 3:
         # ColorModeRGB = 3    // Color. Valid fields: r, g, b.
@@ -362,7 +363,7 @@ def handle_color_mode_tuya( self, nwkid, EPout, Hue_List, value):
         hue, saturation, value), nwkid)
     if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYAColorControlRgbMode", return_default=None):
         tuya_color_control_rgbMode( self, nwkid, "01")
-    tuya_Move_To_Hue_Saturation( self, nwkid, EPout, hue, saturation, transitionHue)   
+    tuya_Move_To_Hue_Saturation( self, nwkid, EPout, hue, saturation, transitionHue )   
 
 def actuator_identify(self, nwkid, ep, value=None):
 
