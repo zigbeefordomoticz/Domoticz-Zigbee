@@ -352,17 +352,17 @@ def handle_color_mode_tuya( self, nwkid, EPout, Hue_List, value):
         Hue_List, value), nwkid)
     
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
-    _h, _s, brightness = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
+    _h, _s, _ = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
     saturation = _s * 100  # 0 > 100
     saturation = int(saturation * 254 // 100)
     hue = _h * 360  # 0 > 360
     hue = int(hue * 254 // 360)
     
-    self.log.logging("Command", "Log", "handle_color_mode_tuya Set Hue X: %s Saturation: %s Brightness: %s Value: %s" % (
-        hue, saturation, brightness, value), nwkid)
+    self.log.logging("Command", "Log", "handle_color_mode_tuya Set Hue X: %s Saturation: %s Value: %s" % (
+        hue, saturation, value), nwkid)
     if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYAColorControlRgbMode", return_default=None):
         tuya_color_control_rgbMode( self, nwkid, "01")
-    tuya_Move_To_Hue_Saturation_Brightness( self, nwkid, EPout, hue, saturation, transitionHue, brightness)   
+    tuya_Move_To_Hue_Saturation( self, nwkid, EPout, hue, saturation, transitionHue)   
 
 def actuator_identify(self, nwkid, ep, value=None):
 

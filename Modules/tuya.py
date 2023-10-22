@@ -1535,16 +1535,17 @@ def tuya_color_control_rgbMode( self, NwkId, mode):
     payload = "11" + sqn + "f0" + mode
     raw_APS_request(self, NwkId, "01", "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
 
-def tuya_Move_To_Hue_Saturation( self, NwkId, hue, saturation, transition, brightness):
+def tuya_Move_To_Hue_Saturation( self, NwkId, hue, saturation, transition):
     # Command 0x06
     self.log.logging("Tuya", "Debug", "tuya_Move_To_Hue_Saturation", NwkId)
     
-    hue = "%04x" % struct.unpack("H", struct.pack(">H", hue, ))[0]
-    saturation = "%04x" % struct.unpack("H", struct.pack(">H", saturation))[0]
+    hue = "%02x" % hue
+    saturation = "%02x" % saturation
+    
     transition = "%04x" % struct.unpack("H", struct.pack(">H", transition, ))[0]
-    brightness = "%02x" % brightness
+
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
-    payload = "11" + sqn + "06" + hue + saturation + + transition + brightness
+    payload = "11" + sqn + "06" + hue + saturation + transition + "ff"
     
     raw_APS_request(self, NwkId, "01", "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
 
