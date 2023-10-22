@@ -1,9 +1,9 @@
 {
-    "_comment": "Tuya RR400ZB able to manage color via MoveToColour",
+    "_comment": "Tuya RR400ZB require Tuya HueandSaturation",
     "_blakadder": "https://zigbee.blakadder.com/Lidl_HG06104A.html",
     "_version": "1.0",
     "Identifier" : [
-        ["TS0505A", "_TZ3000_riwp3k79"]
+        ["TS0505A", "_TZ3000_dbou1ap4"]
     ],
     "Ep": {
         "01": {
@@ -44,6 +44,7 @@
     },
     "TUYA_REGISTRATION": 13,
     "TuyaCommandF0": true,
+    "FORCE_COLOR_COMMAND": "TuyaMovetoHueandSaturation",
     "TUYAColorControlRgbMode": true,
     "Param": {
         "moveToColourTemp": "0010",
