@@ -15,8 +15,9 @@
             "0008": "",
             "0300": { 
                 "Attributes": { 
-                    "f000": {"Enabled": true, "Name": "Tuya0300_f000", "DataType": "20", "ActionList": [ "check_store_value"] },
-                    "f003": {"Enabled": true, "Name": "Tuya0300_f003", "DataType": "48", "ActionList": [ "check_store_value"] }
+                    "f000": {"Enabled": true, "Name": "ColorMode", "DataType": "20", "ActionList": [ "check_store_value"] },
+                    "f001": {"Enabled": true, "Name": "Brightness ", "DataType": "20", "ActionList": [ "check_store_value"] },
+                    "f003": {"Enabled": true, "Name": "SceneData", "DataType": "48", "ActionList": [ "check_store_value"] }
                 }
             },
             "000a": "",
