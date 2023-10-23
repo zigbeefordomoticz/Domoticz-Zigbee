@@ -363,7 +363,7 @@ def handle_color_mode_tuya( self, nwkid, EPout, Hue_List, value):
         hue, saturation, value), nwkid)
     if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYAColorControlRgbMode", return_default=None):
         tuya_color_control_rgbMode( self, nwkid, "01")
-    tuya_Move_To_Hue_Saturation( self, nwkid, EPout, hue, saturation, transitionHue )
+    tuya_Move_To_Hue_Saturation( self, nwkid, EPout, hue, saturation, transitionHue, value )
 
 def actuator_identify(self, nwkid, ep, value=None):
 
