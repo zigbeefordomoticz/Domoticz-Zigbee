@@ -1519,8 +1519,14 @@ def tuya_lighting_color_control( self, NwkId, ColorCapabilities=25):
         
     
 def tuya_color_control_rgbMode( self, NwkId, mode):
-    # Command 0xfe
-    # To switch between white mode and color mode
+    # Command 0xfe: Set mode (Tuya-specific command)
+    # Change the mode.
+    #    0: White light
+    #    1: Colored light
+    #    2: Scene
+    #    3: Music
+    # https://developer.tuya.com/en/docs/connect-subdevices-to-gateways/tuya-zigbee-lighting-access-standard?id=K9ik6zvod83fi#title-7-Color%20Control%20cluster
+
     self.log.logging("Tuya", "Debug", "tuya_color_control_rgbMode", NwkId)
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     payload = "11" + sqn + "f0" + mode
