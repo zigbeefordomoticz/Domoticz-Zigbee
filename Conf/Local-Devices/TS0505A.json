@@ -2,9 +2,6 @@
     "_comment": "Tuya RR400ZB able to manage color via MoveToColour",
     "_blakadder": "https://zigbee.blakadder.com/Lidl_HG06104A.html",
     "_version": "1.0",
-    "Identifier" : [
-        ["TS0505A", "_TZ3000_riwp3k79"]
-    ],
     "Ep": {
         "01": {
             "0000": "",
