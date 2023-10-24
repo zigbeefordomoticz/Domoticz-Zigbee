@@ -18,7 +18,7 @@
                         "DataType": "39",
                         "UpdDomoDeviceWithCluster": "0402",
                         "UpdDomoDeviceWithAttribute": "0005",
-                        "EvalExp": "(value * 10000)",
+                        "EvalExp": "(value * 1000000)",
                         "ActionList": [ "check_store_value", "upd_domo_device" ]
                     }
                 }
