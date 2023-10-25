@@ -95,7 +95,8 @@ def ts0601_actuator( self, NwkId, command, value=None):
     
     dps_mapping = ts0601_extract_data_point_infos( self, model_name) 
     if dps_mapping is None:
-        self.log.logging("Tuya0601", "Error", "ts0601_actuator - No DPS stanza in config file for %s %s" %(NwkId, command))
+        self.log.logging("Tuya0601", "Error", "ts0601_actuator - No DPS stanza in config file for %s %s %s" %(
+            NwkId, model_name, command))
         return False
     
     if command not in DP_ACTION_FUNCTION and command not in TS0601_COMMANDS:
