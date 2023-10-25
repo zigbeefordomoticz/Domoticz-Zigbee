@@ -4310,14 +4310,22 @@ def Decode7000(self, Devices, MsgData, MsgLQI):
             u8TransactionSequenceNumber,
         )
 
-
 def check_duplicate_sqn(self, Nwkid, Ep, Cluster, Sqn):
-    if "Ep" in self.ListOfDevices[Nwkid] and Ep in self.ListOfDevices[Nwkid]["Ep"]:
-        if Cluster not in self.ListOfDevices[Nwkid]["Ep"][Ep]:
-            self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster] = {}
-        if not isinstance(self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster], dict):
-            self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster] = {}
-        if "0000" not in self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster]:
-            self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster]["0000"] = {}
+    """
+    This function is useful for checking the uniqueness of sequence numbers associated with specific network devices, 
+    ensuring data integrity and preventing duplicates in a network application.
+    """
+    
+    if "Ep" not in self.ListOfDevices[Nwkid] or Ep not in self.ListOfDevices[Nwkid]["Ep"]:
+        return False
+    
+    EpCluster = self.ListOfDevices[Nwkid]["Ep"][Ep]
+    if Cluster not in EpCluster:
+        EpCluster[Cluster] = {}
+    elif not isinstance(EpCluster[Cluster], dict):
+        EpCluster[Cluster] = {}
+
+    if "0000" not in EpCluster[Cluster]:
+        EpCluster[Cluster]["0000"] = {}
 
     return Sqn != "00" and "SQN" in self.ListOfDevices[Nwkid] and Sqn == self.ListOfDevices[Nwkid]["SQN"]
