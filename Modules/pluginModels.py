@@ -34,11 +34,10 @@ def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_
         if "Model" in x and model not in x["Model"]:
             continue
         if (
-            "Manufacturer" in x and x["Manufacturer"] and manufacturer_name not in x["Manufacturer"]
-            or "ManufId" in x and x["ManufId"] and manufacturer_code not in x["ManufId"]
+            ( "Manufacturer" in x and x["Manufacturer"] and manufacturer_name not in x["Manufacturer"] ) 
+            or ( "ManufId" in x and x["ManufId"] and manufacturer_code not in x["ManufId"]) 
+            or ( "DeviceID" in x and x["DeviceID"] and device_id not in x["DeviceID"] )
         ):
-            continue
-        if "DeviceID" in x and x["DeviceID"] and device_id not in x["DeviceID"]:
             continue
         
         self.log.logging( "Pairing", "Log", "check_found_plugin_model - Found %s" % x)
@@ -240,5 +239,20 @@ PLUGIN_MODELS_MATRIX = [
         "ManufId": [],
         "PluginModelName": "TS0601-_TZE200_dzuqwsyg",},
 
+    # SONOFF 66666 'Temperature and humidity sensor',:
+    {
+        "Model": ["66666",],
+        "Manufacturer": "eWeLink",
+        "DeviceID": "0302",
+        "PluginModelName": "66666-temphumi.json"
+    },
+
+    # SONOFF 66666 'Motion'
+    {
+        "Model": ["66666",],
+        "Manufacturer": "eWeLink",
+        "DeviceID": "0402",
+        "PluginModelName": "66666-motion.json"
+    }
 
 ]
