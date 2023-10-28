@@ -155,6 +155,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     ) -> None:
         return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message,dst_addressing=dst_addressing)                
 
+    def packet_received(self, packet: t.ZigbeePacket) -> None:
+        return Classes.ZigpyTransport.AppGeneric.packet_received(self,packet)
+
     async def set_zigpy_tx_power(self, power):
         pass
         #await self._api.set_tx_power(power)
