@@ -36,6 +36,7 @@ from Zigbee.zclRawCommands import (raw_zcl_zcl_onoff,
                                    zcl_raw_read_report_config_request,
                                    zcl_raw_remove_all_groups,
                                    zcl_raw_remove_group_member_ship,
+                                   zcl_raw_reset_device,
                                    zcl_raw_send_group_member_ship_identify,
                                    zcl_raw_window_covering,
                                    zcl_raw_write_attributeNoResponse)
@@ -44,6 +45,11 @@ DEFAULT_ACK_MODE = False
 
 # Standard commands
 
+def zcl_reset_device(self, nwkid, epin, epout):
+    self.log.logging("zdpCommand", "Debug", "zcl_reset_device %s %s %s" % (nwkid, epin, epout))
+    if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
+        return zcl_raw_reset_device(self, nwkid, epin, epout)
+    return send_zigatecmd_raw(self, "0050", "02" + nwkid + epin + epout)
 
 def zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "read_attribute %s %s %s %s %s %s %s %s %s" % (nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr))
