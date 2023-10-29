@@ -188,7 +188,7 @@ def packet_received(self, packet: t.ZigbeePacket) -> None:
     cluster=packet.cluster_id
     src_ep=packet.src_ep
     dst_ep=packet.dst_ep
-    message=packet.data.serialize()[::-1]
+    message=packet.data.serialize()
     dst_addressing=(packet.dst).addr_mode
     
     write_capture_rx_frames( self, sender, profile, cluster, src_ep, dst_ep, message, binascii.hexlify(message).decode("utf-8"), dst_addressing)
