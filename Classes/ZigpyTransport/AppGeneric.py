@@ -200,7 +200,7 @@ def packet_received(self, packet: t.ZigbeePacket) -> None:
         # When coming from coordinator we have to send it back to zigpy
         self.log.logging("TransportZigpy", "Log", "packet_received from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             str(sender.nwk), profile, cluster, src_ep, dst_ep, binascii.hexlify(message).decode("utf-8")))
-        #super(type(self),self).packet_received(packet)
+        super(type(self),self).packet_received(packet)
 
     if cluster == 0x8036:
         # This has been handle via on_zdo_mgmt_permitjoin_rsp()
