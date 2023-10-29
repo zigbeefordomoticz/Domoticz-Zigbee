@@ -13,7 +13,8 @@ import zigpy.profiles
 import zigpy.zdo.types as zdo_types
 import zigpy_znp.commands.util
 import zigpy_znp.config as znp_conf
-import zigpy_znp.types as t
+#import zigpy_znp.types as znp_t
+import zigpy.types as t
 import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.firmwareversionHelper import \
     znp_extract_versioning_for_plugin
