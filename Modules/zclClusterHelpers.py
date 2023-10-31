@@ -220,23 +220,25 @@ def _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, inital_ep):
 
 def _build_model_name( self, nwkid, modelName):
     
-    manufacturer_name = self.ListOfDevices[nwkid]["Manufacturer Name"] if "Manufacturer Name" in self.ListOfDevices[nwkid] else ""
-    manuf_code = self.ListOfDevices[nwkid]["Manufacturer"] if "Manufacturer" in self.ListOfDevices[nwkid] else ""
+    manufacturer_name = self.ListOfDevices[nwkid].get("Manufacturer Name", "")
+    manuf_code = self.ListOfDevices[nwkid].get("Manufacturer", "")
+    zdevice_id = self.ListOfDevices[nwkid].get("ZDeviceID", None)
 
+    if modelName in ( '66666', ):
+        #  https://github.com/Koenkk/zigbee2mqtt/issues/4338
+        return check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=manuf_code, device_id=zdevice_id)
 
     # Try to check if the Model name is in the DeviceConf list ( optimised devices)
     if modelName + '-' + manufacturer_name in self.DeviceConf:
         return modelName + '-' + manufacturer_name
-        
+
     if modelName + manufacturer_name in self.DeviceConf:
         return modelName + manufacturer_name
-    
+
     # If not found, let see if the model name can be extracted from the (ModelName, ManufacturerName) tuple set in the Conf file as Identifier
     plugin_identifier = plugin_self_identifier( self, modelName, manufacturer_name)
     if plugin_identifier:
         return plugin_identifier
-
-    zdevice_id = self.ListOfDevices[nwkid]["ZDeviceID"] if "ZDeviceID" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["ZDeviceID"] else None
 
     return check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=manuf_code, device_id=zdevice_id)
 
