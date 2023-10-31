@@ -17,7 +17,7 @@
             "Type": "Power/Voltage/Ampere/ConsoMeter/ProdPower/ProdMeter"
         },
         "f1": {
-            "Type": "Power/Voltage/Ampere/ConsoMeter/ProdPower/ProdMeter"
+            "Type": "Power/Ampere/ConsoMeter/ProdPower/ProdMeter"
         }
     },
     "FakeEp": [ "f1" ],
