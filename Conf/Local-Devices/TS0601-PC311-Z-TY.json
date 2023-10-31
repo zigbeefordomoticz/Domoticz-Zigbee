@@ -1,0 +1,59 @@
+{
+    "_comment": "Tuya Zigbee PC311-Z-TY",
+    "_source": "",
+    "_blakadder": "",
+    "_version": "1",
+    "MinPluginVersion": "7.1.004",
+    "Identifier": [
+        [ "TS0601", "_TZE200_rks0sgb7" ]
+    ],
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0004": "",
+            "ef00": "",
+            "000a": "",
+            "0019": "",
+            "Type": "Power/Voltage/Ampere/ConsoMeter/ProdPower/ProdMeter"
+        },
+        "f1": {
+            "Type": "Power/Voltage/Ampere/ConsoMeter/ProdPower/ProdMeter"
+        }
+    },
+    "FakeEp": [ "f1" ],
+    "Type": "",
+    "ClusterToBind": [ "0019", "ef00" ],
+    "ConfigureReporting": {},
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0007" ]
+    },
+    "TUYA_REGISTRATION": 19,
+    "TS0601_DP": { 
+
+        "65": { "store_tuya_attribute": "Meter A", "EvalExp": "value/100", "sensor_type": "cons_metering", "domo_round": 3 },
+        "66": { "store_tuya_attribute": "ProducedEnergy A", "EvalExp": "value/100", "sensor_type": "prod_metering", "domo_round": 3},
+
+        "67": { "store_tuya_attribute": "Meter B", "EvalExp": "value/100", "sensor_type": "cons_metering", "domo_round": 3, "domo_ep": "f1"},
+        "68": { "store_tuya_attribute": "ProducedEnergy B", "EvalExp": "value/100", "sensor_type": "prod_metering", "domo_round": 3, "domo_ep": "f1"},
+
+        "69": { "store_tuya_attribute": "Energy A+B", "EvalExp": "value/100"},
+
+        "6a": { "store_tuya_attribute": "Voltage", "EvalExp": "value/10", "sensor_type": "voltage", "domo_round": 2}, 
+
+        "6b": { "store_tuya_attribute": "Current A", "EvalExp": "value", "sensor_type": "current", "domo_round": 2 },
+        "6c": { "store_tuya_attribute": "Power A", "EvalExp": "value", "sensor_type": "power", "domo_round": 2 },
+        "6d": { "store_tuya_attribute": "Power Factor A", "EvalExp": "value" },
+
+        "6e": { "store_tuya_attribute": "Current B", "EvalExp": "value", "sensor_type": "current", "domo_round": 2, "domo_ep": "f1" },
+        "6f": { "store_tuya_attribute": "Power B", "EvalExp": "value", "sensor_type": "power", "domo_round": 2, "domo_ep": "f1" },
+        "70": { "store_tuya_attribute": "Power Factor B", "EvalExp": "value" },
+
+        "71": { "store_tuya_attribute": "AC_Frequency", "EvalExp": "value"}, 
+
+        "72": { "store_tuya_attribute": "Power Direction A", "EvalExp": "value"}, 
+        "73": { "store_tuya_attribute": "Power Direction B", "EvalExp": "value"}, 
+        "74": { "store_tuya_attribute": "Update Frequency", "EvalExp": "value"}
+    },
+    "Param": {
+    }
+}
