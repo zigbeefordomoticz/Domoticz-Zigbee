@@ -69,8 +69,13 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
             store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
         return True
     
+    # we will overwrite the end point as, we have to force the domo update on a specific ep.add()
+    domo_ep = dps_mapping_item["domo_ep"] if  "domo_ep" in dps_mapping_item else Ep
+    self.log.logging("Tuya0601", "Debug", "                - Ep to be used for domo update %s" %domo_ep) 
+  
     divisor = dps_mapping_item["domo_divisor"] if "domo_divisor" in dps_mapping_item else 1
     value = value / divisor
+    
     rounding = dps_mapping_item["domo_round"] if "domo_round" in dps_mapping_item else 0
     value = round( value, rounding ) if rounding else int(value)
 
@@ -80,7 +85,7 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
     if sensor_type in DP_SENSOR_FUNCTION:
         value = check_domo_format_req( self, dps_mapping_item, value)
         func = DP_SENSOR_FUNCTION[ sensor_type ]
-        func(self, Devices, NwkId, Ep, value  )
+        func(self, Devices, NwkId, domo_ep, value  )
         return True
     
     return False
