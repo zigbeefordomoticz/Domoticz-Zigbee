@@ -30,13 +30,15 @@
     "TUYA_REGISTRATION": 19,
     "TS0601_DP": { 
 
-        "65": { "store_tuya_attribute": "Meter A", "EvalExp": "value/100", "sensor_type": "cons_metering", "domo_round": 3 },
-        "66": { "store_tuya_attribute": "ProducedEnergy A", "EvalExp": "value/100", "sensor_type": "prod_metering", "domo_round": 3},
+        "01": { "store_tuya_attribute": "Unknow 01_02", "EvalExp": "value"},
 
-        "67": { "store_tuya_attribute": "Meter B", "EvalExp": "value/100", "sensor_type": "cons_metering", "domo_round": 3, "domo_ep": "f1"},
-        "68": { "store_tuya_attribute": "ProducedEnergy B", "EvalExp": "value/100", "sensor_type": "prod_metering", "domo_round": 3, "domo_ep": "f1"},
+        "65": { "store_tuya_attribute": "Meter A", "EvalExp": "value * 10", "sensor_type": "cons_metering", "domo_round": 3 },
+        "66": { "store_tuya_attribute": "ProducedEnergy A", "EvalExp": "value * 10", "sensor_type": "prod_metering", "domo_round": 3},
 
-        "69": { "store_tuya_attribute": "Energy A+B", "EvalExp": "value/100"},
+        "67": { "store_tuya_attribute": "Meter B", "EvalExp": "value * 10", "sensor_type": "cons_metering", "domo_round": 3, "domo_ep": "f1"},
+        "68": { "store_tuya_attribute": "ProducedEnergy B", "EvalExp": "value * 10", "sensor_type": "prod_metering", "domo_round": 3, "domo_ep": "f1"},
+
+        "69": { "store_tuya_attribute": "Energy A+B", "EvalExp": "value * 10"},
 
         "6a": { "store_tuya_attribute": "Voltage", "EvalExp": "value/10", "sensor_type": "voltage", "domo_round": 2}, 
 
