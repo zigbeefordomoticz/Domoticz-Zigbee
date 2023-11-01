@@ -38,9 +38,9 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
     
     value = int(data, 16)
     self.log.logging("Tuya0601", "Debug", "                - value: %s" % (value), NwkId)
-    
     self.log.logging("Tuya0601", "Debug", "                - dps_mapping[ %s ]: %s (%s)" % (
         str_dp, dps_mapping[ str_dp ], type(dps_mapping[ str_dp ])), NwkId)
+    
     if not isinstance( dps_mapping[ str_dp ], list):
         # We complex data point which provide multiple value
         return process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, dps_mapping[ str_dp ], value)
@@ -70,25 +70,20 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
         return True
     
     # we will overwrite the end point as, we have to force the domo update on a specific ep.add()
-    domo_ep = dps_mapping_item["domo_ep"] if  "domo_ep" in dps_mapping_item else Ep
+    domo_ep = dps_mapping_item.get("domo_ep", Ep)
     self.log.logging("Tuya0601", "Debug", "                - Ep to be used for domo update %s" %domo_ep) 
   
-    divisor = dps_mapping_item["domo_divisor"] if "domo_divisor" in dps_mapping_item else 1
-    value = value / divisor
-    
-    rounding = dps_mapping_item["domo_round"] if "domo_round" in dps_mapping_item else 0
-    value = round( value, rounding ) if rounding else int(value)
+    divisor = dps_mapping_item.get("domo_divisor", 1)
+    value /= divisor
+
+    rounding = dps_mapping_item.get("domo_round", 0)
+    value = round(value, rounding) if rounding else int(value)
 
     self.log.logging("Tuya0601", "Debug", "                - after sensor_type() value: %s divisor: %s rounding: %s" % (value, divisor, rounding), NwkId)
    
     sensor_type = dps_mapping_item[ "sensor_type"]
-    if sensor_type in DP_SENSOR_FUNCTION:
-        value = check_domo_format_req( self, dps_mapping_item, value)
-        func = DP_SENSOR_FUNCTION[ sensor_type ]
-        func(self, Devices, NwkId, domo_ep, value  )
-        return True
-    
-    return False
+    return process_sensor_data(self, sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep)
+
 
 def ts0601_actuator( self, NwkId, command, value=None):
     self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s" %(
@@ -133,7 +128,17 @@ def ts0601_actuator( self, NwkId, command, value=None):
         func(self, NwkId, "01", dp )
 
 
-# Helpers        
+# Helpers  
+
+def process_sensor_data(self, sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep):
+    if sensor_type in DP_SENSOR_FUNCTION:
+        formatted_value = check_domo_format_req(self, dps_mapping_item, value)
+        sensor_function = DP_SENSOR_FUNCTION[sensor_type]
+        sensor_function(self, Devices, NwkId, domo_ep, formatted_value)
+        return True
+    return False
+
+      
 def read_uint16_be(data, offset):
     # Use the format '>H' to specify big-endian (>) and 'H' for 16-bit unsigned integer.
     return struct.unpack_from('>H', data, offset)[0]
