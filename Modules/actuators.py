@@ -255,6 +255,7 @@ def actuator_setcolor(self, nwkid, EPout, value, Color):
     if Hue_List["m"] == 2:
         # ColorModeTemp = 2   // White with color temperature. Valid fields: t
         handle_color_mode_2(self, nwkid, EPout, Hue_List)
+        actuator_setlevel(self, nwkid, EPout, value, "Light", transitionMoveLevel)
 
     elif Hue_List["m"] == 3 and force_color_command == "TuyaMovetoHueandSaturation":
         handle_color_mode_tuya( self, nwkid, EPout, Hue_List, value)
@@ -281,6 +282,7 @@ def handle_color_mode_2(self, nwkid, EPout, Hue_List):
     self.log.logging( "Command", "Debug", "handle_color_mode_2 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid )
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
     zcl_move_to_colour_temperature( self, nwkid, EPout, Hex_Format(4, TempMired), transitionTemp)
+    
 
             
 def handle_color_mode_3(self, nwkid, EPout, Hue_List):
