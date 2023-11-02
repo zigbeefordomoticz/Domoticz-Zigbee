@@ -182,7 +182,8 @@ def packet_received(self, packet: t.ZigbeePacket) -> None:
         self.log.logging("TransportZigpy", "Debug", "packet_received Unknown device %r" %packet.src)
         return
 
-    self.log.logging("TransportZigpy", "Debug", "packet_received identified device - %s (%s)" % (str(sender), type(sender)))
+    self.log.logging("TransportZigpy", "Debug", "packet_received identified device  %r -> %r with source route %r" %(
+        packet.src.address, packet.dst.address, packet.source_route ))
 
     profile, cluster, src_ep, dst_ep = packet.profile_id, packet.cluster_id, packet.src_ep, packet.dst_ep
     message = packet.data.serialize()
