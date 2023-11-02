@@ -176,13 +176,13 @@ def packet_received(self, packet: t.ZigbeePacket) -> None:
     """Notify zigpy of a received Zigbee packet.""" 
     try:
         sender = self.get_device_with_address(packet.src)
-        self.log.logging("TransportZigpy", "Debug", "identified device - %s (%s)" %(str(sender), type(sender)) )
+        self.log.logging("TransportZigpy", "Debug", "packet_received identified device - %s (%s)" %(str(sender), type(sender)) )
 
     except KeyError:
-        self.log.logging("TransportZigpy", "Debug", "Unknown device %r", packet.src)
+        self.log.logging("TransportZigpy", "Debug", "packet_received Unknown device %r" %packet.src)
         return
 
-    self.log.logging("TransportZigpy", "Debug", "identified device - %s (%s)" % (str(sender), type(sender)))
+    self.log.logging("TransportZigpy", "Debug", "packet_received identified device - %s (%s)" % (str(sender), type(sender)))
 
     profile, cluster, src_ep, dst_ep = packet.profile_id, packet.cluster_id, packet.src_ep, packet.dst_ep
     message = packet.data.serialize()
