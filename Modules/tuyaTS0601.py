@@ -303,9 +303,13 @@ def ts0601_current(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_current - Current %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0b04", value, Attribute_="0508")
     checkAndStoreAttributeValue(self, nwkid, ep, "0b04", "0508", value)  # Store int
-    store_tuya_attribute(self, nwkid, "Current", value)
+    store_tuya_attribute(self, nwkid, "Current_%s" %ep, value)
 
-
+def ts0601_power_factor(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya0601", "Debug", "ts0601_current - Current %s %s %s" % (nwkid, ep, value), nwkid, )
+    MajDomoDevice(self, Devices, nwkid, ep, "PowerFactor", value)
+    store_tuya_attribute(self, nwkid, "PowerFactor_%s" %ep, value)
+ 
 def ts0601_summation_energy(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
     previous_summation = getAttributeValue(self, nwkid, ep, "0702", "0000")
@@ -314,19 +318,19 @@ def ts0601_summation_energy(self, Devices, nwkid, ep, value):
         nwkid, ep, value, previous_summation, current_summation), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", current_summation, Attribute_="0000")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", current_summation)  # Store int
-    store_tuya_attribute(self, nwkid, "Energy", value)
+    store_tuya_attribute(self, nwkid, "Energy_%s" %ep, value)
 
 def ts0601_summation_energy_raw(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0000")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", value)  # Store int
-    store_tuya_attribute(self, nwkid, "ConsumedEnergy", value)
+    store_tuya_attribute(self, nwkid, "ConsumedEnergy_%s" %ep, value)
 
 def ts0601_production_energy(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_production_energy - Production Energy %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0001")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0001", value)  # Store int
-    store_tuya_attribute(self, nwkid, "ProducedEnergy", value)
+    store_tuya_attribute(self, nwkid, "ProducedEnergy_%s" %ep, value)
 
 
 def ts0601_instant_power(self, Devices, nwkid, ep, value):
@@ -338,7 +342,7 @@ def ts0601_instant_power(self, Devices, nwkid, ep, value):
 
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", signed_int)
     MajDomoDevice(self, Devices, nwkid, ep, "0702", signed_int)
-    store_tuya_attribute(self, nwkid, "InstantPower", signed_int)  # Store str
+    store_tuya_attribute(self, nwkid, "InstantPower_%s" %ep, signed_int)  # Store str
 
 def ts0601_voltage(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_voltage - Voltage %s %s %s" % (nwkid, ep, value), nwkid, )
@@ -498,6 +502,7 @@ DP_SENSOR_FUNCTION = {
     "smoke_state": ts0601_smoke_detection,
     "smoke_ppm": ts0601_smoke_concentration,
     "water_consumption": ts0601_water_consumption,
+    "power_factor": ts0601_power_factor,
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
