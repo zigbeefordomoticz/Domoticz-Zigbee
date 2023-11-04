@@ -7,8 +7,7 @@
 import logging
 
 import bellows.config as bellows_conf
-import bellows.types as bt
-import zigpy.types as t
+import bellows.types as t
 import bellows.zigbee.application
 import zigpy.config as zigpy_conf
 import zigpy.device
@@ -137,7 +136,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     def get_device(self, ieee=None, nwk=None):
         return Classes.ZigpyTransport.AppGeneric.get_device(self, ieee, nwk)
 
-    def handle_join(self, nwk: bt.EmberNodeId, ieee: bt.EmberEUI64, parent_nwk: bt.EmberNodeId, *, handle_rejoin: bool = True,) -> None:
+    def handle_join(self, nwk: t.EmberNodeId, ieee: t.EmberEUI64, parent_nwk: t.EmberNodeId, *, handle_rejoin: bool = True,) -> None:
         return Classes.ZigpyTransport.AppGeneric.handle_join(self, nwk, ieee, parent_nwk)
             
     def get_device_ieee(self, nwk):
@@ -149,9 +148,19 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     def get_zigpy_version(self):
         return Classes.ZigpyTransport.AppGeneric.get_zigpy_version(self)
 
-    def packet_received(self, packet: t.ZigbeePacket) -> None:
-        return Classes.ZigpyTransport.AppGeneric.packet_received(self,packet)
-    
+    def handle_message(
+        self,
+        sender: zigpy.device.Device,
+        profile: int,
+        cluster: int,
+        src_ep: int,
+        dst_ep: int,
+        message: bytes,
+        * ,
+        dst_addressing=None,
+    )->None:
+        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message, dst_addressing=dst_addressing)
+
     async def set_zigpy_tx_power(self, power):
         # EmberConfigTxPowerMode - EZSP_CONFIG_TX_POWER_MODE in EzspConfigId
         # 0x00: Normal mode

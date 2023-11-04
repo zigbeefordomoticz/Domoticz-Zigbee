@@ -13,8 +13,7 @@ import zigpy.profiles
 import zigpy.zdo.types as zdo_types
 import zigpy_znp.commands.util
 import zigpy_znp.config as znp_conf
-#import zigpy_znp.types as znp_t
-import zigpy.types as t
+import zigpy_znp.types as t
 import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.firmwareversionHelper import \
     znp_extract_versioning_for_plugin
@@ -117,8 +116,17 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     def get_zigpy_version(self):
         return Classes.ZigpyTransport.AppGeneric.get_zigpy_version(self)
 
-    def packet_received(self, packet: t.ZigbeePacket) -> None:
-        return Classes.ZigpyTransport.AppGeneric.packet_received(self,packet)
+    def handle_message(
+        self,
+        sender: zigpy.device.Device,
+        profile: int,
+        cluster: int,
+        src_ep: int,
+        dst_ep: int,
+        message: bytes,
+        dst_addressing=None,
+    ) -> None:
+        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message, dst_addressing=dst_addressing)
 
     async def set_zigpy_tx_power(self, power):
         self.log.logging("TransportZigpy", "Debug", "set_tx_power %s" %power)
