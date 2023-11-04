@@ -598,9 +598,14 @@ def zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, va
     elif attribut == "0217":
         # Standard : STGE
         self.log.logging( "ZLinky", "Log", "STGE raw Value: %s" % ( value ))
-        stge = binascii.unhexlify( value ).decode("utf-8")
-        self.log.logging( "ZLinky", "Log", "STGE unhexlify Value: %s" % ( stge ))
-        self.log.logging( "ZLinky", "Log", "STGE decoded : %s" % ( decode_STEG( stge ) ))
+        try:
+            stge = binascii.unhexlify( value ).decode("utf-8")
+            self.log.logging( "ZLinky", "Log", "STGE unhexlify Value: %s/%s" % ( value, stge ))
+        except Exception as e:
+            self.log.logging( "ZLinky", "Log", "STGE Value: %s" % ( value ))
+            stge = value
+
+        self.log.logging( "ZLinky", "Log", "STGE decoded %s : %s" % ( stge,  decode_STEG( stge ) ))
         store_ZLinky_infos( self, nwkid, "STGE", decode_STEG( stge ))
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, stge)
 
@@ -662,4 +667,3 @@ def zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, va
     elif attribut == "0300":
         # Linky Mode
         update_zlinky_device_model_if_needed( self, nwkid )
-    

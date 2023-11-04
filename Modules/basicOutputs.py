@@ -34,7 +34,8 @@ from Zigbee.encoder_tools import decode_endian_data
 from Zigbee.zclCommands import (zcl_attribute_discovery_request,
                                 zcl_get_list_attribute_extended_infos,
                                 zcl_identify_send, zcl_identify_trigger_effect,
-                                zcl_read_attribute, zcl_write_attribute,
+                                zcl_read_attribute, zcl_reset_device,
+                                zcl_write_attribute,
                                 zcl_write_attributeNoResponse)
 from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_IEEE_address_request,
@@ -42,7 +43,7 @@ from Zigbee.zdpCommands import (zdp_get_permit_joint_status,
                                 zdp_management_network_update_request,
                                 zdp_many_to_one_route_request,
                                 zdp_permit_joining_request,
-                                zdp_raw_nwk_update_request, zdp_reset_device)
+                                zdp_raw_nwk_update_request)
 from Zigbee.zdpRawCommands import (zdp_management_binding_table_request,
                                    zdp_management_routing_table_request)
 
@@ -417,7 +418,7 @@ def reset_device(self, nwkid, epout):
 
     self.log.logging("BasicOutput", "Debug", "reset_device - Send a Device Reset to %s/%s" % (nwkid, epout), nwkid)
     #return send_zigatecmd_raw(self, "0050", "02" + nwkid + ZIGATE_EP + epout)
-    return zdp_reset_device(self, nwkid, ZIGATE_EP, epout)  
+    return zcl_reset_device(self, nwkid, ZIGATE_EP, epout)  
 
 
 def leaveRequest(self, ShortAddr=None, IEEE=None, RemoveChild=0x00, Rejoin=0x00):

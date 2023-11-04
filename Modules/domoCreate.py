@@ -549,6 +549,7 @@ SIMPLE_WIDGET = {
     "Alarm_ZL2": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
     "Alarm_ZL3": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
     "AirPurifierAlarm": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
+    "PowerFactor": { "Type": 243, "Subtype": 6, "Switchtype": 0, },
     "Valve": { "Type": 243, "Subtype": 6, "Switchtype": 0, },
     "FanSpeed": { "Type": 243, "Subtype": 6, "Switchtype": 0, },
     "ThermoSetpoint": { "Type": 242, "Subtype": 1, },

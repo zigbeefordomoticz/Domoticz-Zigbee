@@ -999,7 +999,14 @@ def ReadAttributeRequest_0300(self, key):
             )
             ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0300", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+def ReadAttributeRequest_0300_Color_Capabilities(self, key):
+    # Cluster 0x0300 - Color Control
 
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0300_Color_Capabilities - Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "0300")
+    for EPout in ListOfEp:
+        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0300", [ 0x400A], ackIsDisabled=is_ack_tobe_disabled(self, key))
+   
 def ReadAttributeRequest_0400(self, key):
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0400 - Key: %s " % key, nwkid=key)

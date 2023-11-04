@@ -15,6 +15,34 @@ DEFAULT_ACK_MODE = False
 
 # General Command Frame
 
+def zcl_raw_reset_device(self, nwkid, epin, epout):
+    """
+    Sends a raw ZCL reset device command to a Zigbee device to reset it.
+
+    The raw command contains the frame control, sequence number, command, 
+    and payload required for the ZCL reset device command. It is sent directly
+    without additional ZCL framing.
+
+    Args:
+     nwkid: The network ID of the device to reset.
+     epin: The endpoint ID to send the command from. 
+     epout: The endpoint ID to send the command to.
+
+    Returns: 
+     The sequence number used in the command.
+    """
+    
+    self.log.logging("zclCommand", "Debug", "zcl_raw_default_response %s" % nwkid)
+    frame_control_field = "%02x" %0b0001_0001
+    cmd = "00"
+    cluster = "0000"
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    payload = frame_control_field + sqn + cmd
+    zcl_command_formated_logging( self, "Reset Device (Raw)", nwkid, epout, sqn, cluster)
+    raw_APS_request(self, nwkid, epout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=epin, ackIsDisabled=False)
+    return sqn
+
+
 # Read Attributes Command
 def rawaps_read_attribute_req(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr, ackIsDisabled=DEFAULT_ACK_MODE, groupaddrmode=False):
     self.log.logging("zclCommand", "Debug", "rawaps_read_attribute_req %s %s %s %s %s %s %s %s" % (nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, Attr))

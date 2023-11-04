@@ -38,9 +38,9 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
     
     value = int(data, 16)
     self.log.logging("Tuya0601", "Debug", "                - value: %s" % (value), NwkId)
-    
     self.log.logging("Tuya0601", "Debug", "                - dps_mapping[ %s ]: %s (%s)" % (
         str_dp, dps_mapping[ str_dp ], type(dps_mapping[ str_dp ])), NwkId)
+    
     if not isinstance( dps_mapping[ str_dp ], list):
         # We complex data point which provide multiple value
         return process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, dps_mapping[ str_dp ], value)
@@ -69,21 +69,21 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
             store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
         return True
     
-    divisor = dps_mapping_item["domo_divisor"] if "domo_divisor" in dps_mapping_item else 1
-    value = value / divisor
-    rounding = dps_mapping_item["domo_round"] if "domo_round" in dps_mapping_item else 0
-    value = round( value, rounding ) if rounding else int(value)
+    # we will overwrite the end point as, we have to force the domo update on a specific ep.add()
+    domo_ep = dps_mapping_item.get("domo_ep", Ep)
+    self.log.logging("Tuya0601", "Debug", "                - Ep to be used for domo update %s" %domo_ep) 
+  
+    divisor = dps_mapping_item.get("domo_divisor", 1)
+    value /= divisor
+
+    rounding = dps_mapping_item.get("domo_round", 0)
+    value = round(value, rounding) if rounding else int(value)
 
     self.log.logging("Tuya0601", "Debug", "                - after sensor_type() value: %s divisor: %s rounding: %s" % (value, divisor, rounding), NwkId)
    
     sensor_type = dps_mapping_item[ "sensor_type"]
-    if sensor_type in DP_SENSOR_FUNCTION:
-        value = check_domo_format_req( self, dps_mapping_item, value)
-        func = DP_SENSOR_FUNCTION[ sensor_type ]
-        func(self, Devices, NwkId, Ep, value  )
-        return True
-    
-    return False
+    return process_sensor_data(self, sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep)
+
 
 def ts0601_actuator( self, NwkId, command, value=None):
     self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s" %(
@@ -128,7 +128,17 @@ def ts0601_actuator( self, NwkId, command, value=None):
         func(self, NwkId, "01", dp )
 
 
-# Helpers        
+# Helpers  
+
+def process_sensor_data(self, sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep):
+    if sensor_type in DP_SENSOR_FUNCTION:
+        formatted_value = check_domo_format_req(self, dps_mapping_item, value)
+        sensor_function = DP_SENSOR_FUNCTION[sensor_type]
+        sensor_function(self, Devices, NwkId, domo_ep, formatted_value)
+        return True
+    return False
+
+      
 def read_uint16_be(data, offset):
     # Use the format '>H' to specify big-endian (>) and 'H' for 16-bit unsigned integer.
     return struct.unpack_from('>H', data, offset)[0]
@@ -293,9 +303,13 @@ def ts0601_current(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_current - Current %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0b04", value, Attribute_="0508")
     checkAndStoreAttributeValue(self, nwkid, ep, "0b04", "0508", value)  # Store int
-    store_tuya_attribute(self, nwkid, "Current", value)
+    store_tuya_attribute(self, nwkid, "Current_%s" %ep, value)
 
-
+def ts0601_power_factor(self, Devices, nwkid, ep, value):
+    self.log.logging( "Tuya0601", "Debug", "ts0601_current - Current %s %s %s" % (nwkid, ep, value), nwkid, )
+    MajDomoDevice(self, Devices, nwkid, ep, "PowerFactor", value)
+    store_tuya_attribute(self, nwkid, "PowerFactor_%s" %ep, value)
+ 
 def ts0601_summation_energy(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
     previous_summation = getAttributeValue(self, nwkid, ep, "0702", "0000")
@@ -304,19 +318,19 @@ def ts0601_summation_energy(self, Devices, nwkid, ep, value):
         nwkid, ep, value, previous_summation, current_summation), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", current_summation, Attribute_="0000")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", current_summation)  # Store int
-    store_tuya_attribute(self, nwkid, "Energy", value)
+    store_tuya_attribute(self, nwkid, "Energy_%s" %ep, value)
 
 def ts0601_summation_energy_raw(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0000")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", value)  # Store int
-    store_tuya_attribute(self, nwkid, "ConsumedEnergy", value)
+    store_tuya_attribute(self, nwkid, "ConsumedEnergy_%s" %ep, value)
 
 def ts0601_production_energy(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_production_energy - Production Energy %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0001")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0001", value)  # Store int
-    store_tuya_attribute(self, nwkid, "ProducedEnergy", value)
+    store_tuya_attribute(self, nwkid, "ProducedEnergy_%s" %ep, value)
 
 
 def ts0601_instant_power(self, Devices, nwkid, ep, value):
@@ -328,7 +342,7 @@ def ts0601_instant_power(self, Devices, nwkid, ep, value):
 
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", signed_int)
     MajDomoDevice(self, Devices, nwkid, ep, "0702", signed_int)
-    store_tuya_attribute(self, nwkid, "InstantPower", signed_int)  # Store str
+    store_tuya_attribute(self, nwkid, "InstantPower_%s" %ep, signed_int)  # Store str
 
 def ts0601_voltage(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_voltage - Voltage %s %s %s" % (nwkid, ep, value), nwkid, )
@@ -488,6 +502,7 @@ DP_SENSOR_FUNCTION = {
     "smoke_state": ts0601_smoke_detection,
     "smoke_ppm": ts0601_smoke_concentration,
     "water_consumption": ts0601_water_consumption,
+    "power_factor": ts0601_power_factor,
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):

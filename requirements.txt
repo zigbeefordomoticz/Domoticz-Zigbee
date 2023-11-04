@@ -1,8 +1,8 @@
 zigpy==0.59.0
 zigpy_deconz==0.21.1
 zigpy-cli==1.0.4
-zigpy_znp==0.11.6
-bellows==0.36.8
+zigpy_znp==0.11.2
+bellows==0.35.8
 dnspython==2.3.0
 pyserial>=3.5
 z4d-certified-devices

@@ -18,6 +18,17 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## November 2023 - stable7 7.1.005 ( 2023.11 )
+
+- [Technical] - zigpy radio libraries upgrade
+- [Technical] - fix issue on Groups
+- [Technical] - Fix issue which was producing error message "No DPS stanza in config file for ....."
+- [Technical] - Refactor how IAS Alarm 1 & 2 are managed.
+
+- [Hardware] - Fixing error on Heiman manufacturer command
+- [Hardware] - Aotec zigbee button support
+- [Hardware] - Tuya Hue and Saturation for Lidl "TS0505A", "_TZ3000_dbou1ap4"
+
 ## October 2023 - stable7 - 7.1.004 ( 2023.10 )
 
 - [Hardware] - Ronelabs SEM101 Meter
