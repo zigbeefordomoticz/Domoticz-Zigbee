@@ -271,6 +271,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             self.log.logging("Widget", "Debug", "------>  Ampere3 : %s from Attribute: %s" % (sValue, Attribute_), NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
+        if "PWFactor" == ClusterType and WidgetType == "PowerFactor":
+            self.log.logging("Widget", "Debug", "PowerFactor %s WidgetType: %s Value: %s (%s)" % (
+                NWKID, WidgetType, value, type(value)), NWKID)
+
+            nValue = round(value, 1)
+            sValue = str(nValue)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
         if "Power" in ClusterType:  # Instant Power/Watts
             # Power and Meter usage are triggered only with the Instant Power usage.
             # it is assumed that if there is also summation provided by the device, that
@@ -377,7 +385,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, cur_prod)
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
-
 
         if "Meter" in ClusterType:  # Meter Usage.
             
@@ -582,11 +589,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Valve" in ClusterType and (WidgetType == "Valve" and Attribute_ in ("026d", "4001", "0008")):
-            nValue = round(value, 1)
-            sValue = str(nValue)
-            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if "PowerFactor" in ClusterType and WidgetType == "PowerFactor":
             nValue = round(value, 1)
             sValue = str(nValue)
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)

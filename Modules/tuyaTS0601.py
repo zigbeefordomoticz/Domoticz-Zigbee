@@ -306,8 +306,8 @@ def ts0601_current(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "Current_%s" %ep, value)
 
 def ts0601_power_factor(self, Devices, nwkid, ep, value):
-    self.log.logging( "Tuya0601", "Debug", "ts0601_current - Current %s %s %s" % (nwkid, ep, value), nwkid, )
-    MajDomoDevice(self, Devices, nwkid, ep, "PowerFactor", value)
+    self.log.logging( "Tuya0601", "Debug", "ts0601_power_factor - Power Factor %s %s %s" % (nwkid, ep, value), nwkid, )
+    MajDomoDevice(self, Devices, nwkid, ep, "PWFactor", value)
     store_tuya_attribute(self, nwkid, "PowerFactor_%s" %ep, value)
  
 def ts0601_summation_energy(self, Devices, nwkid, ep, value):
@@ -331,7 +331,6 @@ def ts0601_production_energy(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0001")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0001", value)  # Store int
     store_tuya_attribute(self, nwkid, "ProducedEnergy_%s" %ep, value)
-
 
 def ts0601_instant_power(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power %s %s %s" % (nwkid, ep, value), nwkid, )
