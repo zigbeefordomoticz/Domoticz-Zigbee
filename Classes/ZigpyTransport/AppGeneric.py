@@ -172,8 +172,14 @@ def get_zigpy_version(self):
     return self.version
 
 
-def packet_received(self, packet: t.ZigbeePacket) -> None:
+def packet_received(
+    self, 
+    packet: t.ZigbeePacket
+    ) -> None:
+    
     """Notify zigpy of a received Zigbee packet.""" 
+    self.log.logging("TransportZigpy", "Debug", "packet_received %s" %(packet))
+    
     try:
         sender = self.get_device_with_address(packet.src)
         self.log.logging("TransportZigpy", "Debug", "identified device - %s (%s)" %(str(sender), type(sender)) )
@@ -188,57 +194,115 @@ def packet_received(self, packet: t.ZigbeePacket) -> None:
     message = packet.data.serialize()
     hex_message = binascii.hexlify(message).decode("utf-8")
     dst_addressing = packet.dst.addr_mode if packet.dst else None
-
-    write_capture_rx_frames( self, sender, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing)
     
-    self.log.logging("TransportZigpy", "Debug", "packet_received - %s %s %s %s %s %s %s %s" %( 
+    self.log.logging("TransportZigpy", "Debug", "packet_received - %s %s %s %s %s %s %s %s" %(
         sender, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing))
+
+    _handle_message( self, sender, profile, cluster, src_ep, dst_ep, message, dst_addressing, packet)
+    return
+
+def handle_message(
+    self,
+    sender: zigpy.device.Device,
+    profile: int,
+    cluster: int,
+    src_ep: int,
+    dst_ep: int,
+    message: bytes,
+    dst_addressing=None,
+    ) -> None:
     
+    """Notify zigpy of a received handle_message.""" 
+    _handle_message( self, sender, profile, cluster, src_ep, dst_ep, message, dst_addressing)
+
+
+def _handle_message(
+    self,
+    sender: zigpy.device.Device,
+    profile: int,
+    cluster: int,
+    src_ep: int,
+    dst_ep: int,
+    message: bytes,
+    dst_addressing=None,
+    Packet=None
+    ) -> None:
+    
+    hex_message = binascii.hexlify(message).decode("utf-8")
+    write_capture_rx_frames( self, sender, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing)
+
     if sender.nwk == 0x0000:
-        # When coming from coordinator we have to send it back to zigpy
-        self.log.logging("TransportZigpy", "Debug", "packet_received from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+        self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             str(sender.nwk), profile, cluster, src_ep, dst_ep, hex_message))
-        super(type(self),self).packet_received(packet)
+        #self.super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
+        if Packet:
+            super(type(self),self).packet_received(Packet)
+        else:
+            super(type(self),self).handle_message(sender, profile, cluster, src_ep, dst_ep, message)
 
     if cluster == 0x8036:
         # This has been handle via on_zdo_mgmt_permitjoin_rsp()
-        self.log.logging("TransportZigpy", "Debug", "packet_received 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+        self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             str(sender.nwk), profile, cluster, src_ep, dst_ep, hex_message))
         self.callBackFunction( build_plugin_8014_frame_content(self, str(sender), hex_message ) )
-        super(type(self),self).packet_received(packet)
+        if Packet:
+            super(type(self),self).packet_received(Packet)
+        else:
+            super(type(self),self).handle_message(sender, profile, cluster, src_ep, dst_ep, message)
         return
 
     if cluster == 0x8034:
         # This has been handle via on_zdo_mgmt_leave_rsp()
-        self.log.logging("TransportZigpy", "Debug", "packet_received 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+        self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             str(sender.nwk), profile, cluster, src_ep, dst_ep, hex_message))
         self.callBackFunction( build_plugin_8047_frame_content(self, str(sender), hex_message) )
         return
 
     addr = None
     if sender.nwk is not None:
+        addr_mode = 0x02
         addr = sender.nwk.serialize()[::-1].hex()
+        if profile and cluster:
+            self.log.logging(
+                "TransportZigpy",
+                "Debug",
+                "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                    str(sender), profile, cluster, src_ep, dst_ep, hex_message, sender.lqi)),
+
     elif sender.ieee is not None:
         addr = "%016x" % t.uint64_t.deserialize(sender.ieee.serialize())[0]
-        
-    addr_mode = 0x02 if sender.nwk is not None else 0x03        
-    sender.lqi = sender.lqi or 0x00
+        addr_mode = 0x03
+        if profile and cluster:
+            self.log.logging(
+                "TransportZigpy",
+                "Debug",
+                "handle_message device 1: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                    str(sender), profile, cluster, src_ep, dst_ep, hex_message, sender.lqi)),
 
-    # Let's force profile to ZDP if eps == 0x00
+    if sender.lqi is None:
+        sender.lqi = 0x00
+
     if src_ep == dst_ep == 0x00:
         profile = 0x0000
 
-    if profile is not None and cluster is not None:
-        self.log.logging( "TransportZigpy", "Debug", "packet_received device: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
-            str(addr), profile, cluster, src_ep, dst_ep, hex_message, sender.lqi), )
+    if profile and cluster:
+        self.log.logging(
+            "TransportZigpy",
+            "Debug",
+            "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
+                str(addr), profile, cluster, src_ep, dst_ep, hex_message, sender.lqi),
+        )
 
-    if addr is not None:
+    if addr:
         plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
-        self.log.logging("TransportZigpy", "Debug", "packet_received Sender: %s frame for plugin: %s" % (addr, plugin_frame))
-        return self.callBackFunction(plugin_frame)
-
-    self.log.logging( "TransportZigpy", "Error", "packet_received - Issue with sender is %s %s" % (
-        sender.nwk, sender.ieee), )
+        self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))
+        self.callBackFunction(plugin_frame)
+    else:
+        self.log.logging(
+            "TransportZigpy",
+            "Error",
+            "handle_message - Issue with sender is %s %s" % (sender.nwk, sender.ieee),
+        )
 
     return
 
