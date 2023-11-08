@@ -15,7 +15,7 @@ import struct
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
-                           getAttributeValue)
+                           get_deviceconf_parameter_value, getAttributeValue)
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 
@@ -321,7 +321,7 @@ def ts0601_summation_energy(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "Energy_%s" %ep, value)
 
 def ts0601_summation_energy_raw(self, Devices, nwkid, ep, value):
-    self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
+    self.log.logging( "Tuya0601", "Log", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0000")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", value)  # Store int
     store_tuya_attribute(self, nwkid, "ConsumedEnergy_%s" %ep, value)
@@ -335,9 +335,18 @@ def ts0601_production_energy(self, Devices, nwkid, ep, value):
 def ts0601_instant_power(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power %s %s %s" % (nwkid, ep, value), nwkid, )
     # Given Zigbee 24-bit integer and tuya store in two's complement form
+    model_name = self.ListOfDevices[ nwkid ]["Model"] if "Model" in self.ListOfDevices[ nwkid ] else None
+    twocomplement_tst = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_TST", return_default=None ),16)
+    twocomplement_val = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_VAL", return_default=None ),16)
+    self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement : %s %s" %( twocomplement_tst, twocomplement_val))
+
     signed_int = int( value )
-    if (signed_int & 0x00800000) != 0:  # Check the sign bit
+    if twocomplement_tst:
+        signed_int = signed_int - twocomplement_val if signed_int & twocomplement_tst else signed_int
+    elif (signed_int & 0x00800000) != 0:  # Check the sign bit
         signed_int -= 0x01000000  # If negative, adjust to two's complement
+
+    self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement : value: %s" %signed_int)
 
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", signed_int)
     MajDomoDevice(self, Devices, nwkid, ep, "0702", signed_int)
