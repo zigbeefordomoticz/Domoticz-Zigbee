@@ -76,7 +76,7 @@ Your first place to get support is via the Forums.
 * English channel : <https://www.domoticz.com/forum/viewforum.php?f=68>
 * French Channel : <https://easydomoticz.com/forum/viewforum.php?f=28>
 
-# Donations
+# Donations and Sponsorship
 
 We warmly invite Manufacturers and sellers to contribute by sending us samples of their devices for integration. Your support in this regard is greatly appreciated as it enables us to expand our compatibility and offer a more comprehensive solution.
 
