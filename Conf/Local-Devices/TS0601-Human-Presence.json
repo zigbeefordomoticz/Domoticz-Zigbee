@@ -31,7 +31,7 @@
     },
     "TS0601_DP": {
         "68": { "sensor_type": "illuminance"},
-        "69": { "sensor_type": "motion", "EvalExp": "int(value == 0)", "DomoDeviceFormat": "str"},
+        "69": { "sensor_type": "motion", "EvalExp": "int(value != 0)", "DomoDeviceFormat": "str"},
         "6a": { "store_tuya_attribute": "Sensitivity"},
         "6b": { "store_tuya_attribute": "max_range"},
         "6c": { "store_tuya_attribute": "min_range"},
