@@ -917,12 +917,12 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
                 elif self.ListOfDevices[NWKID]["Model"] in ( "SIN-4-FP-21_EQU", "SIN-4-FP-21"):
                     ADEO_FIP_ONOFF_COMMAND = {
-                        60: 0,
                         10: 1,
+                        20: 4,
+                        30: 5,
                         40: 2,
                         50: 3,
-                        20: 4,
-                        30: 5 
+                        60: 0,
                         }
                     self.log.logging( "Command", "Log", "mgtCommand : -----> Adeo/Nodon/Enky Fil Pilote mode: %s - %s" % (
                         Level, ADEO_FIP_ONOFF_COMMAND[Level]), NWKID, )
