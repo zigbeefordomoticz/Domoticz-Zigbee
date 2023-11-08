@@ -139,13 +139,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         # Attribute_ : If used This is the Attribute from readCluster. Will help to route to the right action
         # Color_     : If used This is the color value to be set
 
-        self.log.logging(
-            "Widget",
-            "Debug",
-            "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" % (
-                ClusterType, WidgetEp, WidgetId, WidgetType, Attribute_),
-            NWKID,
-        )
+        self.log.logging( "Widget", "Debug", "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" % ( 
+            ClusterType, WidgetEp, WidgetId, WidgetType, Attribute_), NWKID, )
 
         SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, NWKID)
         self.log.logging("Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NWKID)
@@ -287,7 +282,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
                 if (( isinstance( value, (int, float)) and value < 0) or (float(value) < 0) ) and is_PowerNegative_widget( ClusterTypeList):
-                    self.log.logging("Widget", "Log", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
+                    self.log.logging("Widget", "Debug", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
                     UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
                     continue
 
@@ -420,7 +415,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     or ( Attribute_ in ("0104", "0106") and Ep == "f2")
                     or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                     )
-            ):
+                ):
                 check_set_meter_widget( Devices, DeviceUnit, 0)    
                 instant, _summation = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
                 summation = round(float(zlinky_sum_all_indexes( self, NWKID )), 2)
