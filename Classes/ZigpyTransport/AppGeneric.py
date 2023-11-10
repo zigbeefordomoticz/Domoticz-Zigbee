@@ -186,6 +186,7 @@ def packet_received(
 
     except KeyError:
         self.log.logging("TransportZigpy", "Debug", "Unknown device %r", packet.src)
+        super(type(self),self).packet_received(packet)
         return
 
     self.log.logging("TransportZigpy", "Debug", "identified device - %s (%s)" % (str(sender), type(sender)))
