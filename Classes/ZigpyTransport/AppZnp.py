@@ -97,9 +97,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.log.logging("TransportZigpy", "Status", "ZNP Radio register any additional/specific Ep")
         await Classes.ZigpyTransport.AppGeneric.register_specific_endpoints(self)
 
-    def device_initialized(self, device):
-            self.log.logging("TransportZigpy", "Log","device_initialized (0x%04x %s)" %(device.nwk, device.ieee))
-            super().device_initialized(device)
+    #def device_initialized(self, device):
+    #        self.log.logging("TransportZigpy", "Log","device_initialized (0x%04x %s)" %(device.nwk, device.ieee))
+    #        super().device_initialized(device)
      
         
     def get_device(self, ieee=None, nwk=None):

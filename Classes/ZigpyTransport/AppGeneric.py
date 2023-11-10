@@ -26,6 +26,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
 
 LOGGER = logging.getLogger(__name__)
 
+
 async def _load_db(self) -> None:
     pass
 
@@ -122,30 +123,30 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
     """
     Called when a device joins or announces itself on the network.
     """
+    self.log.logging("TransportZigpy", "Log","handle_join (0x%04x %s)" %(nwk, ieee))
+    
     if str(ieee) in {"00:00:00:00:00:00:00:00", "ff:ff:ff:ff:ff:ff:ff:ff"}:
         # invalid ieee, drop
-        LOGGER.debug("ignoring invalid neighbor: %s", ieee)
+        self.log.logging("TransportZigpy", "Log", "ignoring invalid neighbor: %s", ieee)
         return
 
     ieee = t.EUI64(ieee)
     try:
         dev = self.get_device(ieee)
-        time.sleep(1.0)
-        LOGGER.info("Device 0x%04x (%s) joined the network", nwk, ieee)
+        #time.sleep(2.0)
+        self.log.logging("TransportZigpy", "Log", "Device 0x%04x (%s) joined the network" %(nwk, ieee))
     except KeyError:
-        time.sleep(1.0)
         dev = self.add_device(ieee, nwk)
-        LOGGER.debug("New device 0x%04x (%s) joined the network", nwk, ieee)
+        #time.sleep(2.0)
+        self.log.logging("TransportZigpy", "Log", "New device 0x%04x (%s) joined the network" %(nwk, ieee))
 
     if dev.nwk != nwk:
         dev.nwk = nwk
         _update_nkdids_if_needed(self, ieee, dev.nwk )
-        LOGGER.debug("Device %s changed id (0x%04x => 0x%04x)", ieee, dev.nwk, nwk)
+        self.log.logging("TransportZigpy", "Log", "Device %s changed id (0x%04x => 0x%04x)" %(ieee, dev.nwk, nwk))
 
-def _update_nkdids_if_needed( self, ieee, new_nwkid ):
-    _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
-    _nwk = new_nwkid.serialize()[::-1].hex()
-    self.callBackUpdDevice(_ieee, _nwk)
+    super(type(self),self).handle_join(nwk, ieee, parent_nwk) 
+
 
 def get_device_ieee(self, nwk):
     # Call from the plugin to retreive the ieee
@@ -153,24 +154,20 @@ def get_device_ieee(self, nwk):
     try:
         dev = super(type(self),self).get_device( nwk=int(nwk,16))
         LOGGER.debug("AppZnp get_device  nwk: %s returned %s" %( nwk, dev))
+        
     except KeyError:
         LOGGER.debug("AppZnp get_device raise KeyError nwk: %s !!" %( nwk))
         return None
+    
     if dev.ieee:
         return "%016x" % t.uint64_t.deserialize(dev.ieee.serialize())[0]
     return None
 
 def handle_leave(self, nwk, ieee):
-    self.log.logging("TransportZigpy", "Log","handle_leave (0x%04x %s)" %(nwk, ieee))
+    self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
     plugin_frame = build_plugin_8048_frame_content(self, ieee)
     self.callBackFunction(plugin_frame)
     super(type(self),self).handle_leave(nwk, ieee)
-
-def get_zigpy_version(self):
-    # This is a fake version number. This is just to inform the plugin that we are using ZNP over Zigpy
-    LOGGER.debug("get_zigpy_version ake version number. !!")
-    return self.version
-
 
 def packet_received(
     self, 
@@ -182,14 +179,14 @@ def packet_received(
     
     try:
         sender = self.get_device_with_address(packet.src)
-        self.log.logging("TransportZigpy", "Debug", "identified device - %s (%s)" %(str(sender), type(sender)) )
+        self.log.logging("TransportZigpy", "Log", "identified device - %s (%s)" %(str(sender), type(sender)) )
 
     except KeyError:
-        self.log.logging("TransportZigpy", "Debug", "Unknown device %r", packet.src)
+        self.log.logging("TransportZigpy", "Log", "Unknown device %r" %packet.src)
         super(type(self),self).packet_received(packet)
         return
 
-    self.log.logging("TransportZigpy", "Debug", "identified device - %s (%s)" % (str(sender), type(sender)))
+    self.log.logging("TransportZigpy", "Log", "identified device - %s (%s)" % (str(sender), type(sender)))
 
     profile, cluster, src_ep, dst_ep = packet.profile_id, packet.cluster_id, packet.src_ep, packet.dst_ep
     message = packet.data.serialize()
@@ -235,7 +232,6 @@ def _handle_message(
     if sender.nwk == 0x0000:
         self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             str(sender.nwk), profile, cluster, src_ep, dst_ep, hex_message))
-        #self.super().handle_message(sender, profile, cluster, src_ep, dst_ep, message)
         if Packet:
             super(type(self),self).packet_received(Packet)
         else:
@@ -287,25 +283,28 @@ def _handle_message(
         profile = 0x0000
 
     if profile and cluster:
-        self.log.logging(
-            "TransportZigpy",
-            "Debug",
-            "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" % (
-                str(addr), profile, cluster, src_ep, dst_ep, hex_message, sender.lqi),
-        )
+        self.log.logging( "TransportZigpy", "Debug", "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" %( 
+            str(addr), profile, cluster, src_ep, dst_ep, hex_message, sender.lqi), )
 
     if addr:
         plugin_frame = build_plugin_8002_frame_content(self, addr, profile, cluster, src_ep, dst_ep, message, sender.lqi, src_addrmode=addr_mode)
         self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (addr, plugin_frame))
         self.callBackFunction(plugin_frame)
     else:
-        self.log.logging(
-            "TransportZigpy",
-            "Error",
-            "handle_message - Issue with sender is %s %s" % (sender.nwk, sender.ieee),
-        )
+        self.log.logging( "TransportZigpy", "Error", "handle_message - Issue with sender is %s %s" % (
+            sender.nwk, sender.ieee), )
 
     return
+
+def _update_nkdids_if_needed( self, ieee, new_nwkid ):
+    _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+    _nwk = new_nwkid.serialize()[::-1].hex()
+    self.callBackUpdDevice(_ieee, _nwk)
+
+def get_zigpy_version(self):
+    # This is a fake version number. This is just to inform the plugin that we are using ZNP over Zigpy
+    LOGGER.debug("get_zigpy_version ake version number. !!")
+    return self.version
 
 async def register_specific_endpoints(self):
     """
