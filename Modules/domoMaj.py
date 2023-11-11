@@ -124,7 +124,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             else:
                 self.log.logging( "Widget", "Error", "WidgetID %s not found, unable to remove the entry from device" % WidgetId, NWKID)
             continue
-
+        elif DeviceUnit not in Devices:
+            continue
+        
         Switchtype = Devices[DeviceUnit].SwitchType
         Subtype = Devices[DeviceUnit].SubType
 
