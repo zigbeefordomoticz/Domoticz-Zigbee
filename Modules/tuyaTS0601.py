@@ -198,6 +198,11 @@ def ts0601_motion(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0406", value )
     checkAndStoreAttributeValue(self, nwkid, "01", "0406", "0000", value)
 
+def ts0601_tuya_presence_state(self, Devices, nwkid, ep, value):
+    # Presence State ( None, Present, Moving )
+    self.log.logging("Tuya0601", "Debug", "ts0601_tuya_presence_state - state %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "presence_state", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0006", value )
 
 def ts0601_illuminance(self, Devices, nwkid, ep, value):
     # Illuminance
@@ -511,6 +516,7 @@ DP_SENSOR_FUNCTION = {
     "smoke_ppm": ts0601_smoke_concentration,
     "water_consumption": ts0601_water_consumption,
     "power_factor": ts0601_power_factor,
+    "presence_state": ts0601_tuya_presence_state
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
