@@ -123,7 +123,7 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
     """
     Called when a device joins or announces itself on the network.
     """
-    self.log.logging("TransportZigpy", "Log","handle_join (0x%04x %s)" %(nwk, ieee))
+    self.log.logging("TransportZigpy", "Debug","handle_join (0x%04x %s)" %(nwk, ieee))
     
     if str(ieee) in {"00:00:00:00:00:00:00:00", "ff:ff:ff:ff:ff:ff:ff:ff"}:
         # invalid ieee, drop
@@ -176,22 +176,20 @@ def packet_received(
 
     """Notify zigpy of a received Zigbee packet.""" 
     self.log.logging("TransportZigpy", "Debug", "packet_received %s" %(packet))
-    
-    sender , addr_mode, profile, cluster, src_ep, dst_ep = (
-        packet.src.address.serialize()[::-1].hex(),
-        int(packet.src.addr_mode),
-        int(packet.profile_id),
-        int(packet.cluster_id),
-        int(packet.src_ep),
-        int(packet.dst_ep)
-        )
 
-    #self.log.logging("TransportZigpy", "Debug", " Src     : %s (%s)" %(sender,type(sender)))
-    #self.log.logging("TransportZigpy", "Debug", " AddrMod : %02X" %(addr_mode))
-    #self.log.logging("TransportZigpy", "Debug", " src Ep  : %02X" %(dst_ep))
-    #self.log.logging("TransportZigpy", "Debug", " dst Ep  : %02x" %(dst_ep))
-    #self.log.logging("TransportZigpy", "Debug", " Profile : %04X" %(profile))
-    #self.log.logging("TransportZigpy", "Debug", " Cluster : %04X" %(cluster))
+    sender = packet.src.address.serialize()[::-1].hex()
+    addr_mode = int(packet.src.addr_mode) if packet.src.addr_mode is not None else None
+    profile = int(packet.profile_id) if packet.profile_id is not None else None
+    cluster = int(packet.cluster_id) if packet.cluster_id is not None else None
+    src_ep = int(packet.src_ep) if packet.src_ep is not None else None
+    dst_ep = int(packet.dst_ep) if packet.dst_ep is not None else None
+
+    # self.log.logging("TransportZigpy", "Log", " Src     : %s (%s)" %(sender,type(sender)))
+    # self.log.logging("TransportZigpy", "Log", " AddrMod : %02X" %(addr_mode))
+    # self.log.logging("TransportZigpy", "Log", " src Ep  : %02X" %(dst_ep))
+    # self.log.logging("TransportZigpy", "Log", " dst Ep  : %02x" %(dst_ep))
+    # self.log.logging("TransportZigpy", "Log", " Profile : %04X" %(profile))
+    # self.log.logging("TransportZigpy", "Log", " Cluster : %04X" %(cluster))
     
     message = packet.data.serialize()
     hex_message = binascii.hexlify(message).decode("utf-8")
@@ -203,7 +201,10 @@ def packet_received(
     hex_message = binascii.hexlify(message).decode("utf-8")
     write_capture_rx_frames( self, packet.src, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing)
 
-    if packet.src == 0x0000 or ( zigpy.zdo.ZDO_ENDPOINT in (packet.src_ep, packet.dst_ep)): 
+    if sender is None or profile is None or cluster is None:
+        super(type(self),self).packet_received(packet)
+        
+    if sender == 0x0000 or ( zigpy.zdo.ZDO_ENDPOINT in (packet.src_ep, packet.dst_ep)): 
         self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             sender, profile, cluster, src_ep, dst_ep, hex_message))
         super(type(self),self).packet_received(packet)

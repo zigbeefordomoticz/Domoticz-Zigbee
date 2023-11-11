@@ -210,19 +210,13 @@ def interview_state_8043(self, NWKID, RIA, knownModel, status):
 
 
 def request_node_descriptor(self, NWKID, RIA=None, status=None):
+    """ Trigger a Req Node Descriptor if Manufacturer not found"""
 
-    if "Manufacturer" in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]["Manufacturer"] in ({}, ""):
-            self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
-            zdp_node_descriptor_request(self, NWKID)
-            return True
-
-        self.log.logging(
-            "Pairing",
-            "Debug",
-            "[%s] NEW OBJECT: %s Manufacturer: %s" % (RIA, NWKID, self.ListOfDevices[NWKID]["Manufacturer"]),
-            NWKID,
-        )
+    manufacturer = self.ListOfDevices[NWKID].get("Manufacturer", "")
+    model = self.ListOfDevices[NWKID].get("Model", "")
+    
+    if model in ( "lumi.sensor_switch",) or manufacturer not in  ( "", {} ):
+        self.log.logging( "Pairing", "Debug", "[%s] NEW OBJECT: %s Manufacturer: %s Model: %s" % (RIA, NWKID, manufacturer, model), NWKID, )
         return False
 
     self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s Request Node Descriptor" % (RIA, NWKID))
