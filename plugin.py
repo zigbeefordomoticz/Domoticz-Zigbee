@@ -1502,10 +1502,10 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.56.1",
-        "zigpy_znp": "0.11.2",
+        "zigpy": "0.59.0",
+        "zigpy_znp": "0.11.6",
         "zigpy_deconz": "0.21.1",
-        "bellows": "0.35.8",
+        "bellows": "0.36.8",
         }
 
     flag = True

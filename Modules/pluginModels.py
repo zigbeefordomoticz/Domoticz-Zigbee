@@ -26,7 +26,7 @@ def plugin_self_identifier( self, model, manufacturer):
     return None
 
 def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_code=None, device_id=None):
-    self.log.logging( "Pairing", "Log", "check_found_plugin_model - %s %s %s %s" % (
+    self.log.logging( "Pairing", "Debug", "check_found_plugin_model - %s %s %s %s" % (
         model, manufacturer_name, manufacturer_code, device_id))
 
     # Let's check if 
@@ -40,10 +40,10 @@ def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_
         ):
             continue
         
-        self.log.logging( "Pairing", "Log", "check_found_plugin_model - Found %s" % x)
+        self.log.logging( "Pairing", "Debug", "check_found_plugin_model - Found %s" % x)
         
         if "PluginModelName" in x:
-            self.log.logging( "Pairing", "Log", "check_found_plugin_model - return %s" % (
+            self.log.logging( "Pairing", "Debug", "check_found_plugin_model - return %s" % (
                 x["PluginModelName"]))
 
             return x["PluginModelName"]

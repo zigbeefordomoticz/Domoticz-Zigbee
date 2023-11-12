@@ -787,7 +787,7 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0006", "0000", value)
 
-    elif _modelName in ("lumi.sensor_switch.aq3", "lumi.sensor_switch.aq3"):
+    elif _modelName in ("lumi.sensor_switch.aq3", "lumi.sensor_switch.aq3t"):
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
         self.log.logging(
             "Cluster",

@@ -14,6 +14,7 @@ import zigpy.zdo.types as zdo_types
 import zigpy_znp.commands.util
 import zigpy_znp.config as znp_conf
 import zigpy_znp.types as t
+import zigpy.types as zigpy_t
 import zigpy_znp.zigbee.application
 from Classes.ZigpyTransport.firmwareversionHelper import \
     znp_extract_versioning_for_plugin
@@ -96,9 +97,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.log.logging("TransportZigpy", "Status", "ZNP Radio register any additional/specific Ep")
         await Classes.ZigpyTransport.AppGeneric.register_specific_endpoints(self)
 
-    def device_initialized(self, device):
-            self.log.logging("TransportZigpy", "Log","device_initialized (0x%04x %s)" %(device.nwk, device.ieee))
-            super().device_initialized(device)
+    #def device_initialized(self, device):
+    #        self.log.logging("TransportZigpy", "Log","device_initialized (0x%04x %s)" %(device.nwk, device.ieee))
+    #        super().device_initialized(device)
      
         
     def get_device(self, ieee=None, nwk=None):
@@ -116,6 +117,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     def get_zigpy_version(self):
         return Classes.ZigpyTransport.AppGeneric.get_zigpy_version(self)
 
+    def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
+        return Classes.ZigpyTransport.AppGeneric.packet_received(self,packet)
+    
     def handle_message(
         self,
         sender: zigpy.device.Device,
