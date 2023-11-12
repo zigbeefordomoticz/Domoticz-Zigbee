@@ -341,8 +341,8 @@ def ts0601_instant_power(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power %s %s %s" % (nwkid, ep, value), nwkid, )
     # Given Zigbee 24-bit integer and tuya store in two's complement form
     model_name = self.ListOfDevices[ nwkid ]["Model"] if "Model" in self.ListOfDevices[ nwkid ] else None
-    twocomplement_tst = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_TST", return_default=0x00 ),16)
-    twocomplement_val = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_VAL", return_default=0x00 ),16)
+    twocomplement_tst = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_TST", return_default="0" ),16)
+    twocomplement_val = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_VAL", return_default="0" ),16)
     self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement : %s %s" %( twocomplement_tst, twocomplement_val))
 
     signed_int = int( value )
