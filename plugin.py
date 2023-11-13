@@ -275,7 +275,9 @@ class BasePlugin:
 
     def onStart(self):
         Domoticz.Status( "Zigbee for Domoticz plugin starting")
-        
+        # Enable the cycle detector
+        # gc.set_debug(gc.DEBUG_SAVEALL)
+
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
@@ -730,6 +732,15 @@ class BasePlugin:
         self.PluginHealth["Txt"] = "No Communication"
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
+
+        # objects = gc.get_objects()
+        # Domoticz.Log( "Garbage Collected objects: %s" %str(objects))
+
+        # Print detected cycles (garbage collectors)
+        # for item in gc.garbage:
+        #    Domoticz.Log(item)
+
+    
 
     def onDeviceRemoved(self, Unit):
         if self.log:
