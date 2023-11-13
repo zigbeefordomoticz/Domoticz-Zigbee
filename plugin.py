@@ -1667,8 +1667,9 @@ def uninstall_Z4D_to_domoticz_custom_ui():
 def do_python_garbage_collection( self ):
     # Garbage collector ( experimental for now)
     if self.internalHB % (3600 // HEARTBEAT) == 0:
-        self.log.logging("Plugin", "Debug", "Garbage Collection status: %s" % str(gc.get_count()))
-        self.log.logging("Plugin", "Debug", "Garbage Collection triggered: %s" % str(gc.collect()))
+        self.log.logging("Garbage", "Debug", "Garbage Collection status: %s" % str(gc.get_count()) )
+        # self.log.logging("Garbage", "Debug", "Garbage Collection triggered: %s" % str(gc.collect()) )
+        self.log.logging("Garbage", "Debug", "Garbage collection statistics: %s" % str( gc.get_stats()) )
 
 def _check_if_busy(self):
     busy_ = self.ControllerLink.loadTransmit() >= MAX_FOR_ZIGATE_BUZY
