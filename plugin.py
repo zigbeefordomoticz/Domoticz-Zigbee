@@ -365,10 +365,10 @@ class BasePlugin:
             self.zigbee_communication, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
 
-        if self.pluginconf.pluginConf["Garbage"]:
-            # Enable the cycle detector
-            Domoticz.Log("Setup Garbage set_debug to %s" %gc.DEBUG_LEAK)
-            gc.set_debug(gc.DEBUG_LEAK)
+        #if self.pluginconf.pluginConf["Garbage"]:
+        #    # Enable the cycle detector
+        #    Domoticz.Log("Setup Garbage set_debug to %s" %gc.DEBUG_LEAK)
+        #    gc.set_debug(gc.DEBUG_LEAK)
 
         # Create Domoticz Sub menu
         if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
@@ -735,17 +735,17 @@ class BasePlugin:
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
-        if self.pluginconf.pluginConf["Garbage"]:
-            
-            # Domoticz.Log( "Garbage Collected objects:")
-            # objects = gc.get_objects()
-            # for item in objects:
-            #     Domoticz.Log( "- %s" %str(item))
-
-            # Print detected cycles (garbage collectors)
-            Domoticz.Log( "Garbage Collected detected cycles:")
-            for item in gc.garbage:
-                Domoticz.Log("- %s" %str(item))
+        #if self.pluginconf.pluginConf["Garbage"]:
+        #    
+        #    # Domoticz.Log( "Garbage Collected objects:")
+        #    # objects = gc.get_objects()
+        #    # for item in objects:
+        #    #     Domoticz.Log( "- %s" %str(item))
+#
+        #    # Print detected cycles (garbage collectors)
+        #    Domoticz.Log( "Garbage Collected detected cycles:")
+        #    for item in gc.garbage:
+        #        Domoticz.Log("- %s" %str(item))
 
     
 
@@ -1684,10 +1684,11 @@ def uninstall_Z4D_to_domoticz_custom_ui():
 
 def do_python_garbage_collection( self ):
     # Garbage collector ( experimental for now)
-    if self.internalHB % (3600 // HEARTBEAT) == 0:
-        self.log.logging("Garbage", "Debug", "Garbage Collection status: %s" % str(gc.get_count()) )
-        self.log.logging("Garbage", "Debug", "Garbage collection statistics: %s" % str( gc.get_stats()) )
-        # self.log.logging("Garbage", "Debug", "Garbage Collection triggered: %s" % str(gc.collect()) )
+    pass
+    #if self.internalHB % (3600 // HEARTBEAT) == 0:
+    #    self.log.logging("Garbage", "Debug", "Garbage Collection status: %s" % str(gc.get_count()) )
+    #    self.log.logging("Garbage", "Debug", "Garbage collection statistics: %s" % str( gc.get_stats()) )
+    #    # self.log.logging("Garbage", "Debug", "Garbage Collection triggered: %s" % str(gc.collect()) )
 
 def _check_if_busy(self):
     busy_ = self.ControllerLink.loadTransmit() >= MAX_FOR_ZIGATE_BUZY
