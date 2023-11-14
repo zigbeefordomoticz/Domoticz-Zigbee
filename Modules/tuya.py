@@ -44,7 +44,7 @@ from Modules.zigateConsts import ZIGATE_EP
 #   0x04: enum8 ( 0x00-0xff)
 #   0x05: bitmap ( 1,2, 4 bytes) as bits
     
-def tuya_registration(self, nwkid, device_reset=False, parkside=False, tuya_registration_value=None):
+def tuya_registration(self, nwkid, ty_data_request=False, parkside=False, tuya_registration_value=None):
     if "Model" not in self.ListOfDevices[nwkid]:
             return
     _ModelName = self.ListOfDevices[nwkid]["Model"]
@@ -79,8 +79,9 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False, tuya_regi
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
 
 
-    # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Zigbee Device Reset
-    if device_reset:
+    # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Tuya TY_DATA_QUERY 
+    # (https://developer.tuya.com/en/docs/iot/tuya-zigbee-universal-docking-access-standard?id=K9ik6zvofpzql#subtitle-6-Private%20cluster)
+    if ty_data_request:
         payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
         raw_APS_request( self, nwkid, EPout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
         self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s reset device Cmd: 03" % nwkid)

@@ -616,7 +616,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
         return
 
     # Tuya_regitration ?
-    tuya_registration_parameter = get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "TUYA_REGISTRATION", return_default=None)  
+    tuya_registration_parameter = get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "TUYA_REGISTRATION", return_default=None)
+    ty_data_request = get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "TUYA_RESET_CMD", return_default=False) 
     # In case of Schneider Wiser, let's do the Registration Process
     MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
     if self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
@@ -639,10 +640,10 @@ def handle_device_specific_needs(self, Devices, NWKID):
 
     elif self.ListOfDevices[NWKID]["Model"] in (TUYA_eTRV_MODEL):
         self.log.logging("Pairing", "Debug", "Tuya eTRV registration needed")
-        tuya_eTRV_registration(self, NWKID, device_reset=True)
+        tuya_eTRV_registration(self, NWKID, ty_data_request=True)
         
     elif tuya_registration_parameter:
-        tuya_registration(self, NWKID, device_reset=False, parkside=False, tuya_registration_value=tuya_registration_parameter)
+        tuya_registration(self, NWKID, ty_data_request=ty_data_request, parkside=False, tuya_registration_value=tuya_registration_parameter)
             
     elif self.ListOfDevices[NWKID]["Model"] in ("TS0121", "TS0002_relay_switch", "TS0002_relay_switch"):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
@@ -671,11 +672,11 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "TS0601-temphumi",
     ):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
-        tuya_registration(self, NWKID, device_reset=True)
+        tuya_registration(self, NWKID, ty_data_request=True)
 
     elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-Parkside-Watering-Timer", "TS0601-_TZE200_nklqjk62"):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
-        tuya_registration(self, NWKID, device_reset=True, parkside=True)
+        tuya_registration(self, NWKID, ty_data_request=True, parkside=True)
 
     elif self.ListOfDevices[NWKID]["Model"] in ( "TS0216", "TY0A01", ):
         # Do just the registration
