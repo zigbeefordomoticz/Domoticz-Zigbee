@@ -568,7 +568,8 @@ CLUSTER_TO_TYPE = {
     "fc80": "Heiman",
     "Distance": "Distance",
     "TamperSwitch": "TamperSwitch",
-    "Notification": "Notification"
+    "Notification": "Notification",
+    "PWFactor": "PWFactor"
 }
 
 def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", ModelName=""):

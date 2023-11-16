@@ -142,6 +142,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     def handle_leave(self, nwk, ieee):
         Classes.ZigpyTransport.AppGeneric.handle_leave(self, nwk, ieee)
 
+    def packet_received(self, packet: t.ZigbeePacket) -> None:
+        return Classes.ZigpyTransport.AppGeneric.packet_received(self,packet)
+
     def handle_message(
         self,
         sender: zigpy.device.Device,

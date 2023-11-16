@@ -365,6 +365,11 @@ class BasePlugin:
             self.zigbee_communication, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
 
+        #if self.pluginconf.pluginConf["Garbage"]:
+        #    # Enable the cycle detector
+        #    Domoticz.Log("Setup Garbage set_debug to %s" %gc.DEBUG_LEAK)
+        #    gc.set_debug(gc.DEBUG_LEAK)
+
         # Create Domoticz Sub menu
         if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
             install_Z4D_to_domoticz_custom_ui( )
@@ -429,7 +434,7 @@ class BasePlugin:
             self.zigbee_communication 
             and self.zigbee_communication == "zigpy" 
             and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.multiinstances_z4d_plugin_instance())
-        ):
+            ):
             # https://github.com/python/cpython/issues/91375
             self.log.logging("Plugin", "Status", "Multi instances plugin detected. Enable zigpy workaround")
             sys.modules["_asyncio"] = None
@@ -509,7 +514,6 @@ class BasePlugin:
             # Fixing Profalux Model is required
             if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] in ( "", {} ):
                 profalux_fake_deviceModel(self, x)
-
 
         self.log.logging("Plugin", "Debug", "ListOfDevices after checkListOfDevice2Devices: " + str(self.ListOfDevices))
         self.log.logging("Plugin", "Debug", "IEEE2NWK after checkListOfDevice2Devices     : " + str(self.IEEE2NWK))
@@ -730,6 +734,20 @@ class BasePlugin:
         self.PluginHealth["Txt"] = "No Communication"
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
+
+        #if self.pluginconf.pluginConf["Garbage"]:
+        #    
+        #    # Domoticz.Log( "Garbage Collected objects:")
+        #    # objects = gc.get_objects()
+        #    # for item in objects:
+        #    #     Domoticz.Log( "- %s" %str(item))
+#
+        #    # Print detected cycles (garbage collectors)
+        #    Domoticz.Log( "Garbage Collected detected cycles:")
+        #    for item in gc.garbage:
+        #        Domoticz.Log("- %s" %str(item))
+
+    
 
     def onDeviceRemoved(self, Unit):
         if self.log:
@@ -1502,10 +1520,10 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.56.1",
-        "zigpy_znp": "0.11.2",
-        "zigpy_deconz": "0.21.0",
-        "bellows": "0.35.8",
+        "zigpy": "0.59.0",
+        "zigpy_znp": "0.11.6",
+        "zigpy_deconz": "0.21.1",
+        "bellows": "0.36.8",
         }
 
     flag = True
@@ -1666,9 +1684,11 @@ def uninstall_Z4D_to_domoticz_custom_ui():
 
 def do_python_garbage_collection( self ):
     # Garbage collector ( experimental for now)
-    if self.internalHB % (3600 // HEARTBEAT) == 0:
-        self.log.logging("Plugin", "Debug", "Garbage Collection status: %s" % str(gc.get_count()))
-        self.log.logging("Plugin", "Debug", "Garbage Collection triggered: %s" % str(gc.collect()))
+    pass
+    #if self.internalHB % (3600 // HEARTBEAT) == 0:
+    #    self.log.logging("Garbage", "Debug", "Garbage Collection status: %s" % str(gc.get_count()) )
+    #    self.log.logging("Garbage", "Debug", "Garbage collection statistics: %s" % str( gc.get_stats()) )
+    #    # self.log.logging("Garbage", "Debug", "Garbage Collection triggered: %s" % str(gc.collect()) )
 
 def _check_if_busy(self):
     busy_ = self.ControllerLink.loadTransmit() >= MAX_FOR_ZIGATE_BUZY

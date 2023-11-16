@@ -11,6 +11,7 @@
 
 """
 
+import struct
 import time
 from datetime import datetime, timedelta
 
@@ -43,7 +44,7 @@ from Modules.zigateConsts import ZIGATE_EP
 #   0x04: enum8 ( 0x00-0xff)
 #   0x05: bitmap ( 1,2, 4 bytes) as bits
     
-def tuya_registration(self, nwkid, device_reset=False, parkside=False, tuya_registration_value=None):
+def tuya_registration(self, nwkid, ty_data_request=False, parkside=False, tuya_registration_value=None):
     if "Model" not in self.ListOfDevices[nwkid]:
             return
     _ModelName = self.ListOfDevices[nwkid]["Model"]
@@ -78,8 +79,9 @@ def tuya_registration(self, nwkid, device_reset=False, parkside=False, tuya_regi
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
 
 
-    # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Zigbee Device Reset
-    if device_reset:
+    # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Tuya TY_DATA_QUERY 
+    # (https://developer.tuya.com/en/docs/iot/tuya-zigbee-universal-docking-access-standard?id=K9ik6zvofpzql#subtitle-6-Private%20cluster)
+    if ty_data_request:
         payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
         raw_APS_request( self, nwkid, EPout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
         self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s reset device Cmd: 03" % nwkid)
@@ -115,16 +117,7 @@ def tuya_cmd_0x0000_0xf0(self, NwkId):
     # Seen at pairing of a WGH-JLCZ02 / TS011F and TS0201 and TS0601 (MOES BRT-100)
 
         payload = "11" + get_and_inc_ZCL_SQN(self, NwkId) + "fe"
-        raw_APS_request(
-            self,
-            NwkId,
-            '01',
-            "0000",
-            "0104",
-            payload,
-            zigate_ep=ZIGATE_EP,
-            ackIsDisabled=is_ack_tobe_disabled(self, NwkId),
-        )
+        raw_APS_request( self, NwkId, '01', "0000", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, NwkId), )
         self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % NwkId)
 
 
@@ -1515,3 +1508,52 @@ def ts110e_switch_type( self, NwkId, EPout, mode):
     self.log.logging("Tuya", "Debug", "ts110e_switch_type - mode %s" % mode, NwkId)
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
+
+def tuya_lighting_color_control( self, NwkId, ColorCapabilities=25):
+    # The ColorCapabilities attribute specifies the color capabilities of the device supporting the color control clus-
+    # ter, as illustrated in Table 5.8. If a bit is set to 1, the corresponding attributes and commands SHALL become
+    # mandatory. If a bit is set to 0, the corresponding attributes and commands need not be implemented.
+    
+    self.log.logging("Tuya", "Debug", "tuya_lighting_color_control - Color Capabilities %s" % ColorCapabilities, NwkId)
+    write_attribute( self, NwkId, ZIGATE_EP, "01", "0300", "0000", "00", "400a", "19", "%04x" %ColorCapabilities, ackIsDisabled=False )
+    self.log.logging("Tuya", "Debug", "tuya_lighting_color_control - Color Capabilities %s completed" % ColorCapabilities, NwkId)
+        
+    
+def tuya_color_control_rgbMode( self, NwkId, mode):
+    # Command 0xfe: Set mode (Tuya-specific command)
+    # Change the mode.
+    #    0: White light
+    #    1: Colored light
+    #    2: Scene
+    #    3: Music
+    # https://developer.tuya.com/en/docs/connect-subdevices-to-gateways/tuya-zigbee-lighting-access-standard?id=K9ik6zvod83fi#title-7-Color%20Control%20cluster
+
+    self.log.logging("Tuya", "Debug", "tuya_color_control_rgbMode", NwkId)
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    payload = "11" + sqn + "f0" + mode
+    raw_APS_request(self, NwkId, "01", "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
+
+def tuya_Move_To_Hue_Saturation( self, NwkId, EPout, hue, saturation, transition, level):
+    # Command 0x06
+    self.log.logging("Tuya", "Debug", "tuya_Move_To_Hue_Saturation", NwkId)
+    
+    hue = "%02x" % hue
+    saturation = "%02x" % saturation
+
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    payload = "11" + sqn + "06" + hue + saturation + "0000" + "%02x" %level
+    
+    raw_APS_request(self, NwkId, EPout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
+
+
+def tuya_Move_To_Hue_Saturation_Brightness( self, NwkId, epout, hue, saturation, brightness):
+    # Command 0xe1
+    self.log.logging("Tuya", "Debug", "tuya_Move_To_Hue_Saturation_Brightness", NwkId)
+    
+    saturation = "%04x" % struct.unpack("H", struct.pack(">H", saturation))[0]
+    hue = "%04x" % struct.unpack("H", struct.pack(">H", hue, ))[0]
+    brightness = "%04x" % struct.unpack("H", struct.pack(">H", brightness))[0]
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+    payload = "11" + sqn + "e1" + hue + saturation + brightness
+    
+    raw_APS_request(self, NwkId, epout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)

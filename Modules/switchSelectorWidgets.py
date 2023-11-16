@@ -269,7 +269,6 @@ SWITCH_SELECTORS = {
         "Language": {
             "fr-FR": {"LevelNames": "Off | Simple click|Double click|Triple click|Quadruple+ click"}},
     },
-
     "SwitchAQ3WithOff": {
         "0": (0, "00"),
         "1": (1, "10"),
@@ -806,4 +805,17 @@ SWITCH_SELECTORS = {
             "fr-FR": { "Off|Movie|At Home|Sleep|Go Out"}
         },
     },
+    "TuyaRadarSensor": {
+        0: (0, "Off"),
+        0x1: (1, "10"),
+        0x2: (2, "20"),
+        "ForceUpdate": True,
+        "OffHidden": False, 
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Presence|Moving",
+        "Language": {
+            "fr-FR": { "Off|Presence|Deplacement"}
+        },
+    },
+
 }

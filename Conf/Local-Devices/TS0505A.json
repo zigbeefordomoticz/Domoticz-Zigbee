@@ -1,0 +1,50 @@
+{
+    "_comment": "Tuya RR400ZB able to manage color via MoveToColour",
+    "_blakadder": "https://zigbee.blakadder.com/Lidl_HG06104A.html",
+    "_version": "1.0",
+    "Ep": {
+        "01": {
+            "0000": "",
+            "0003": "",
+            "0004": "",
+            "0005": "",
+            "0006": "",
+            "0008": "",
+            "0300": { 
+                "Attributes": { 
+                    "f000": {"Enabled": true, "Name": "Tuya0300_f000", "DataType": "20", "ActionList": [ "check_store_value"] },
+                    "f003": {"Enabled": true, "Name": "Tuya0300_f003", "DataType": "48", "ActionList": [ "check_store_value"] }
+                }
+            },
+            "000a": "",
+            "0019": "",
+            "1000": "",
+            "ef00": "",
+            "Type": "ColorControlRGBWW"
+        },
+        "f2": {
+            "0021": "",
+            "Type": ""
+        }
+    },
+    "Type": "",
+    "bindEp": "01",
+    "ClusterToBind": [ ],
+    "ConfigureReporting": {
+    },
+    "ReadAttributes": {
+        "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007" ],
+        "0006": [ "0000", "4001", "4002" ],
+        "0008": [ "0000" ],
+        "0019": [],
+        "0300": [ "f002", "f00d", "0000", "0001", "0003", "0004", "0007", "0008", "000f" ]
+    },
+    "TUYA_REGISTRATION": 13,
+    "TuyaCommandF0": true,
+    "TUYAColorControlRgbMode": true,
+    "Param": {
+        "moveToColourTemp": "0010",
+        "moveToColourRGB": "0010",
+        "moveToHueSatu": "0000"
+    }
+}

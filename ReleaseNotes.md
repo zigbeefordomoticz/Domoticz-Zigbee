@@ -18,6 +18,24 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## November 2023 - stable7 7.1.005 ( 2023.11 )
+
+- [Technical] - zigpy radio libraries upgrade
+- [Technical] - Moving from handle_message to packet_received
+- [Technical] - fix issue on Groups
+- [Technical] - Fix issue which was producing error message "No DPS stanza in config file for ....."
+- [Technical] - Refactor how IAS Alarm 1 & 2 are managed.
+- [Technical] - New widget as PowerFactor, ProdPower, ConsoPower
+- [Technical] - Provide possibility to select which complement's 2 to be usd.
+
+- [Hardware] - Fixing error on Heiman manufacturer command
+- [Hardware] - Aotec zigbee button support
+- [Hardware] - Tuya Hue and Saturation for Lidl "TS0505A", "_TZ3000_dbou1ap4"
+- [Hardware] - Enhancement of Lidl Hue and Saturation color control
+- [Hardware] - Handle the 2 version of Sonoff SNZB-02 
+- [Hardware] - Handle the command specific for Nodon Fil Pilot
+- [Hardware] - Tuya PC311 Multimeter 2 ways, 2 flows
+
 ## October 2023 - stable7 - 7.1.004 ( 2023.10 )
 
 - [Hardware] - Ronelabs SEM101 Meter

@@ -124,7 +124,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             else:
                 self.log.logging( "Widget", "Error", "WidgetID %s not found, unable to remove the entry from device" % WidgetId, NWKID)
             continue
-
+        elif DeviceUnit not in Devices:
+            continue
+        
         Switchtype = Devices[DeviceUnit].SwitchType
         Subtype = Devices[DeviceUnit].SubType
 
@@ -139,13 +141,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         # Attribute_ : If used This is the Attribute from readCluster. Will help to route to the right action
         # Color_     : If used This is the color value to be set
 
-        self.log.logging(
-            "Widget",
-            "Debug",
-            "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" % (
-                ClusterType, WidgetEp, WidgetId, WidgetType, Attribute_),
-            NWKID,
-        )
+        self.log.logging( "Widget", "Debug", "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" % ( 
+            ClusterType, WidgetEp, WidgetId, WidgetType, Attribute_), NWKID, )
 
         SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, NWKID)
         self.log.logging("Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NWKID)
@@ -271,6 +268,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             self.log.logging("Widget", "Debug", "------>  Ampere3 : %s from Attribute: %s" % (sValue, Attribute_), NWKID)
             UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
+        if "PWFactor" == ClusterType and WidgetType == "PowerFactor":
+            self.log.logging("Widget", "Debug", "PowerFactor %s WidgetType: %s Value: %s (%s)" % (
+                NWKID, WidgetType, value, type(value)), NWKID)
+
+            nValue = round(value, 1)
+            sValue = str(nValue)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
         if "Power" in ClusterType:  # Instant Power/Watts
             # Power and Meter usage are triggered only with the Instant Power usage.
             # it is assumed that if there is also summation provided by the device, that
@@ -279,7 +284,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             if WidgetType == "Power" and (Attribute_ in ("", "050f") or clusterID == "000c"):  # kWh
                 if (( isinstance( value, (int, float)) and value < 0) or (float(value) < 0) ) and is_PowerNegative_widget( ClusterTypeList):
-                    self.log.logging("Widget", "Log", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
+                    self.log.logging("Widget", "Debug", "------>There is a PowerNegative widget and the value is negative. Skiping here", NWKID)
                     UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
                     continue
 
@@ -378,7 +383,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-
         if "Meter" in ClusterType:  # Meter Usage.
             
             if WidgetType == "GazMeter" and Attribute_ == "0000":
@@ -413,7 +417,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     or ( Attribute_ in ("0104", "0106") and Ep == "f2")
                     or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                     )
-            ):
+                ):
                 check_set_meter_widget( Devices, DeviceUnit, 0)    
                 instant, _summation = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
                 summation = round(float(zlinky_sum_all_indexes( self, NWKID )), 2)
@@ -581,13 +585,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     data = "09"
                     UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-        if "Valve" in ClusterType:  # Valve Position
-            if WidgetType == "Valve" and Attribute_ in ("026d", "4001", "0008"):
-                # value int is the % of the valve opening
-                # Percentage Widget
-                nValue = round(value, 1)
-                sValue = str(nValue)
-                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+        if "Valve" in ClusterType and (WidgetType == "Valve" and Attribute_ in ("026d", "4001", "0008")):
+            nValue = round(value, 1)
+            sValue = str(nValue)
+            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if "ThermoMode" in ClusterType:  # Thermostat Mode
             self.log.logging("Widget", "Debug", "ThermoMode %s WidgetType: %s Value: %s (%s) Attribute_: %s" % ( 
@@ -1184,14 +1185,27 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                             # We do update only if this is a On/off
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, "On", BatteryLevel, SignalLevel)
 
+            elif WidgetType == "VenetianInverted" and model_name in ( "PR412", "CPR412", "CPR412-E") and clusterID == "0006":
+                self.log.logging( "Widget", "Debug", "--++->  %s/%s ClusterType: %s Updating %s Value: %s" % (NWKID, Ep, ClusterType, WidgetType, value), NWKID, )
+                # nValue will depends if we are on % or not
+                if value == '01':
+                    nValue = 0
+                    sValue = "0"
+
+                elif value == '00':
+                    nValue = 1
+                    sValue = "100"
+
+                elif value == 'f0':
+                    nValue = 17
+                    sValue = "0"
+
+                self.log.logging("Widget", "Debug", "------>  %s %s/%s Value: %s:%s" % (WidgetType, NWKID, Ep, nValue, sValue), NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
             elif WidgetType in ("VenetianInverted", "Venetian", "WindowCovering", "VanneInverted", "Vanne", "Curtain", "CurtainInverted"):
                 _value = int(value, 16)
-                self.log.logging(
-                    "Widget",
-                    "Debug",
-                    "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (NWKID, Ep, ClusterType, WidgetType, _value),
-                    NWKID,
-                )
+                self.log.logging( "Widget", "Debug", "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (NWKID, Ep, ClusterType, WidgetType, _value), NWKID, )
                 if WidgetType in ("VenetianInverted", "VanneInverted"):
                     _value = 100 - _value
                     self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NWKID, Ep, _value), NWKID)
@@ -1258,13 +1272,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(_value), BatteryLevel, SignalLevel)
 
         if "LvlControl" in ClusterType:  # LvlControl ( 0x0008)
-            if WidgetType == "LvlControl" or (
-                WidgetType
-                in (
-                    "BSO-Volet",
-                    "Blind",
-                )
-            ):
+            if WidgetType == "LvlControl" or ( WidgetType in ( "BSO-Volet", "Blind", ) ):
                 # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                 # We might get a Level, but the device is still Off and we shouldn't make it On .
                 nValue = None
@@ -1320,13 +1328,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                             nValue, normalized_value, Devices[DeviceUnit].SwitchType), NWKID, )
                         UpdateDevice_v2( self, Devices, DeviceUnit, Devices[DeviceUnit].nValue, str(normalized_value), BatteryLevel, SignalLevel, )
 
-            elif WidgetType in (
-                "ColorControlRGB",
-                "ColorControlWW",
-                "ColorControlRGBWW",
-                "ColorControlFull",
-                "ColorControl",
-            ):
+            elif WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
                 if Devices[DeviceUnit].nValue != 0 or Devices[DeviceUnit].sValue != "Off":
                     nValue, sValue = getDimmerLevelOfColor(self, value)
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)

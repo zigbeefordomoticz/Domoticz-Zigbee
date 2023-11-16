@@ -1,17 +1,17 @@
 
 import binascii
 import json
-
 from os import listdir
 from os.path import isdir, isfile, join
 from pathlib import Path
 
 from DevicesModules import FUNCTION_MODULE, FUNCTION_WITH_ACTIONS_MODULE
+from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.paramDevice import get_device_config_param
 from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
-from Modules.zclClusterHelpers import handle_model_name, decoding_attribute_data
-from Modules.batterieManagement import UpdateBatteryAttribute
+from Modules.zclClusterHelpers import (decoding_attribute_data,
+                                       handle_model_name)
 
 # "ActionList":
 #   check_store_value - check the value and store in the corresponding data strcuture entry
@@ -311,7 +311,7 @@ def is_cluster_zcl_config_available( self, nwkid, ep, cluster, attribute=None):
     if is_manufacturer_specific_cluster( self, cluster):
         return True
     
-    if is_cluster_specific_config(self, _get_model_name( self, nwkid), ep, cluster, attribute=None):
+    if is_cluster_specific_config(self, _get_model_name( self, nwkid), ep, cluster, attribute):
         return True
     
     return is_generic_zcl_cluster( self, cluster, attribute)
@@ -386,7 +386,8 @@ def majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, model
         return True
     eval_result = eval( _majdomodeviceValidValues )
 
-    self.log.logging("ZclClusters", "Debug", " . majdomodevice_possiblevalues: %s -> %s" %( eval_result, _majdomodeviceValidValues))
+    self.log.logging("ZclClusters", "Debug", " . majdomodevice_possiblevalues: >%s<(%s) %s -> %s" %(
+        value, type(value), eval_result, _majdomodeviceValidValues))
     return eval_result
 
 

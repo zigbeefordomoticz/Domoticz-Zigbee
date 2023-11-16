@@ -12,6 +12,7 @@
 
 from Modules.actuators import (actuator_off, actuator_on, actuator_setcolor,
                                actuator_setlevel, actuator_stop, actuators)
+from Modules.adeo import adeo_fip
 from Modules.casaia import (casaia_ac201_fan_control, casaia_setpoint,
                             casaia_swing_OnOff, casaia_system_mode)
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
@@ -28,8 +29,8 @@ from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_set_contract,
                                      schneider_temp_Setcurrent)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
-from Modules.tools import get_deviceconf_parameter_value
 from Modules.thermostats import thermostat_Mode, thermostat_Setpoint
+from Modules.tools import get_deviceconf_parameter_value
 from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_dimmer_dimmer, tuya_dimmer_onoff,
                           tuya_energy_onoff, tuya_garage_door_action,
@@ -44,7 +45,6 @@ from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
 from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
-
 
 # Matrix between Domoticz Type, Subtype, SwitchType and Plugin DeviceType
 # Type, Subtype, Switchtype
@@ -903,43 +903,32 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
             if ( Level in FIL_PILOT_MODE and "Model" in self.ListOfDevices[NWKID] ):
                 if self.ListOfDevices[NWKID]["Model"] == "EH-ZB-HACT":
-                    self.log.logging(
-                        "Command",
-                        "Debug",
-                        "mgtCommand : -----> HACT -> Fil Pilote mode: %s - %s" % (Level, FIL_PILOT_MODE[Level]),
-                        NWKID,
-                    )
+                    self.log.logging( "Command", "Debug","mgtCommand : -----> HACT -> Fil Pilote mode: %s - %s" % (
+                        Level, FIL_PILOT_MODE[Level]),NWKID, )
                     self.ListOfDevices[NWKID]["Schneider Wiser"]["HACT FIP Mode"] = FIL_PILOT_MODE[Level]
                     schneider_hact_fip_mode(self, NWKID, FIL_PILOT_MODE[Level])
-                    UpdateDevice_v2(
-                        self,
-                        Devices,
-                        Unit,
-                        int(Level) // 10,
-                        Level,
-                        BatteryLevel,
-                        SignalLevel,
-                        ForceUpdate_=forceUpdateDev,
-                    )
+                    UpdateDevice_v2( self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev, )
 
                 elif self.ListOfDevices[NWKID]["Model"] == "Cable outlet":
-                    self.log.logging(
-                        "Command",
-                        "Debug",
-                        "mgtCommand : -----> Fil Pilote mode: %s - %s" % (Level, FIL_PILOT_MODE[Level]),
-                        NWKID,
-                    )
+                    self.log.logging( "Command", "Debug", "mgtCommand : -----> Fil Pilote mode: %s - %s" % (
+                        Level, FIL_PILOT_MODE[Level]), NWKID, )
                     legrand_fc40(self, NWKID, FIL_PILOT_MODE[Level])
-                    UpdateDevice_v2(
-                        self,
-                        Devices,
-                        Unit,
-                        int(Level) // 10,
-                        Level,
-                        BatteryLevel,
-                        SignalLevel,
-                        ForceUpdate_=forceUpdateDev,
-                    )
+                    UpdateDevice_v2( self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev, )
+
+                elif self.ListOfDevices[NWKID]["Model"] in ( "SIN-4-FP-21_EQU", "SIN-4-FP-21"):
+                    ADEO_FIP_ONOFF_COMMAND = {
+                        10: 1,
+                        20: 4,
+                        30: 5,
+                        40: 2,
+                        50: 3,
+                        60: 0,
+                        }
+                    self.log.logging( "Command", "Log", "mgtCommand : -----> Adeo/Nodon/Enky Fil Pilote mode: %s - %s" % (
+                        Level, ADEO_FIP_ONOFF_COMMAND[Level]), NWKID, )
+
+                    adeo_fip(self, NWKID, EPout, ADEO_FIP_ONOFF_COMMAND[ Level ])
+                    UpdateDevice_v2( self, Devices, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev, )
 
             # Let's force a refresh of Attribute in the next Heartbeat
             request_read_device_status(self, NWKID)
@@ -1358,6 +1347,7 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
         self.log.logging( "Command", "Debug", "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" % (
             NWKID, EPout, Unit, DeviceType, Level, Color), NWKID,
         )
+        
         actuator_setcolor(self, NWKID, EPout, Level, Color)
         request_read_device_status(self, NWKID)
 

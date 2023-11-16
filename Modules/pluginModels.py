@@ -26,7 +26,7 @@ def plugin_self_identifier( self, model, manufacturer):
     return None
 
 def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_code=None, device_id=None):
-    self.log.logging( "Pairing", "Log", "check_found_plugin_model - %s %s %s %s" % (
+    self.log.logging( "Pairing", "Debug", "check_found_plugin_model - %s %s %s %s" % (
         model, manufacturer_name, manufacturer_code, device_id))
 
     # Let's check if 
@@ -34,17 +34,16 @@ def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_
         if "Model" in x and model not in x["Model"]:
             continue
         if (
-            "Manufacturer" in x and x["Manufacturer"] and manufacturer_name not in x["Manufacturer"]
-            or "ManufId" in x and x["ManufId"] and manufacturer_code not in x["ManufId"]
+            ( "Manufacturer" in x and x["Manufacturer"] and manufacturer_name not in x["Manufacturer"] ) 
+            or ( "ManufId" in x and x["ManufId"] and manufacturer_code not in x["ManufId"]) 
+            or ( "DeviceID" in x and x["DeviceID"] and device_id not in x["DeviceID"] )
         ):
             continue
-        if "DeviceID" in x and x["DeviceID"] and device_id not in x["DeviceID"]:
-            continue
         
-        self.log.logging( "Pairing", "Log", "check_found_plugin_model - Found %s" % x)
+        self.log.logging( "Pairing", "Debug", "check_found_plugin_model - Found %s" % x)
         
         if "PluginModelName" in x:
-            self.log.logging( "Pairing", "Log", "check_found_plugin_model - return %s" % (
+            self.log.logging( "Pairing", "Debug", "check_found_plugin_model - return %s" % (
                 x["PluginModelName"]))
 
             return x["PluginModelName"]
@@ -240,5 +239,20 @@ PLUGIN_MODELS_MATRIX = [
         "ManufId": [],
         "PluginModelName": "TS0601-_TZE200_dzuqwsyg",},
 
+    # SONOFF 66666 'Temperature and humidity sensor',:
+    {
+        "Model": ["66666",],
+        "Manufacturer": "eWeLink",
+        "DeviceID": "0302",
+        "PluginModelName": "66666-temphumi.json"
+    },
+
+    # SONOFF 66666 'Motion'
+    {
+        "Model": ["66666",],
+        "Manufacturer": "eWeLink",
+        "DeviceID": "0402",
+        "PluginModelName": "66666-motion.json"
+    }
 
 ]

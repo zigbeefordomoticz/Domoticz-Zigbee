@@ -54,7 +54,7 @@ def decode_endian_data(data, datatype, len_stream=None):
             # we expect 7 bytes lenght
             data = data[2:16]
         # 7 bytes - 56b
-        return "%016x" % ("%014x" % struct.unpack(">Q", struct.pack("Q", int("00" + data[:14], 16)))[0])[:14]
+        return ("%016x" % struct.unpack(">Q", struct.pack("Q", int("00" + data[:14], 16)))[0])[:14]
 
     if data_type_id in {0x0F, 0x1F, 0x27, 0x2F, 0x3A, 0xF0}:
         # 8 bytes - 64b

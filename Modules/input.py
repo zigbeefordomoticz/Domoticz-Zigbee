@@ -2037,23 +2037,22 @@ def Decode8042(self, Devices, MsgData, MsgLQI):  # Node Descriptor response
 
 
 def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor response
-    # MsgLen = len(MsgData)
+    """Decode and process 0x8043 message."""
 
     MsgDataSQN = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgDataShAddr = MsgData[4:8]
     MsgDataLenght = MsgData[8:10]
-    self.log.logging(
-        "Input",
-        "Debug",
-        "Decode8043 - Received SQN: %s Addr: %s Len: %s Status: %s Data: %s" % (MsgDataSQN, MsgDataShAddr, MsgDataLenght, MsgDataStatus, MsgData),
-    )
+    self.log.logging( "Input", "Debug", "Decode8043 - Received SQN: %s Addr: %s Len: %s Status: %s Data: %s" % (
+        MsgDataSQN, MsgDataShAddr, MsgDataLenght, MsgDataStatus, MsgData), )
     if MsgDataShAddr not in self.ListOfDevices:
         self.log.logging( "Input", "Log", "Decode8043 receives a message from a non existing device %s" % MsgDataShAddr, )
         return
     
     if "SQN" in self.ListOfDevices[MsgDataShAddr] and MsgDataSQN == self.ListOfDevices[MsgDataShAddr]["SQN"]:
         return
+    
+    inDB_status = self.ListOfDevices[MsgDataShAddr].get("Status", None) == "inDB"
     
     if int(MsgDataLenght, 16) == 0:
         return
@@ -2085,13 +2084,13 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
             MsgDataProfile, MsgDataDeviceId), )
         if MsgDataEp in self.ListOfDevices[MsgDataShAddr]["Ep"]:
             del self.ListOfDevices[MsgDataShAddr]["Ep"][MsgDataEp]
-        if "NbEp" in self.ListOfDevices[MsgDataShAddr]:
-            if self.ListOfDevices[MsgDataShAddr]["NbEp"] > "1":
-                self.ListOfDevices[MsgDataShAddr]["NbEp"] = int(self.ListOfDevices[MsgDataShAddr]["NbEp"]) - 1
+        if "NbEp" in self.ListOfDevices[MsgDataShAddr] and self.ListOfDevices[MsgDataShAddr]["NbEp"] > "1":
+            self.ListOfDevices[MsgDataShAddr]["NbEp"] = int(self.ListOfDevices[MsgDataShAddr]["NbEp"]) - 1
         return
 
-    self.log.logging( "Input", "Status", "[%s] NEW OBJECT: %s Simple Descriptor Response EP: 0x%s LQI: %s" % (
-        "-", MsgDataShAddr, MsgDataEp, int(MsgLQI, 16)), )
+    if not inDB_status:
+        self.log.logging( "Input", "Status", "[%s] NEW OBJECT: %s Simple Descriptor Response EP: 0x%s LQI: %s" % (
+            "-", MsgDataShAddr, MsgDataEp, int(MsgLQI, 16)), )
 
     # Endpoint V2 (ProfileID and ZDeviceID)
     if "Epv2" not in self.ListOfDevices[MsgDataShAddr]:
@@ -2109,32 +2108,36 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
         if self.ListOfDevices[MsgDataShAddr]["ProfileID"] != MsgDataProfile:
             pass
     self.ListOfDevices[MsgDataShAddr]["ProfileID"] = MsgDataProfile
-    self.log.logging( "Input", "Status", "[%s]    NEW OBJECT: %s ProfileID %s" % (
-        "-", MsgDataShAddr, MsgDataProfile), )
+    if not inDB_status:
+        self.log.logging( "Input", "Status", "[%s]    NEW OBJECT: %s ProfileID %s" % (
+            "-", MsgDataShAddr, MsgDataProfile), )
 
     if "ZDeviceID" in self.ListOfDevices[MsgDataShAddr]:
         if self.ListOfDevices[MsgDataShAddr]["ZDeviceID"] != MsgDataDeviceId:
             pass
+        
     self.ListOfDevices[MsgDataShAddr]["ZDeviceID"] = MsgDataDeviceId
-    self.log.logging( "Input", "Status", "[%s]    NEW OBJECT: %s ZDeviceID %s" % (
-        "-", MsgDataShAddr, MsgDataDeviceId), )
+    if not inDB_status:
+        self.log.logging( "Input", "Status", "[%s]    NEW OBJECT: %s ZDeviceID %s" % (
+            "-", MsgDataShAddr, MsgDataDeviceId), )
 
     # Decode Bit Field
     # Device version: 4 bits (bits 0-4)
     # eserved: 4 bits (bits4-7)
     DeviceVersion = int(MsgDataBField, 16) & 0x00001111
     self.ListOfDevices[MsgDataShAddr]["ZDeviceVersion"] = "%04x" % DeviceVersion
-    self.log.logging( "Input", "Status", "[%s]    NEW OBJECT: %s Application Version %s" % (
-        "-", MsgDataShAddr, self.ListOfDevices[MsgDataShAddr]["ZDeviceVersion"]), )
+    if not inDB_status:
+        self.log.logging( "Input", "Status", "[%s]    NEW OBJECT: %s Application Version %s" % (
+            "-", MsgDataShAddr, self.ListOfDevices[MsgDataShAddr]["ZDeviceVersion"]), )
 
     configSourceAvailable = False
-    if "ConfigSource" in self.ListOfDevices[MsgDataShAddr]:
-        if self.ListOfDevices[MsgDataShAddr]["ConfigSource"] == "DeviceConf":
-            configSourceAvailable = True
+    if "ConfigSource" in self.ListOfDevices[MsgDataShAddr] and self.ListOfDevices[MsgDataShAddr]["ConfigSource"] == "DeviceConf":
+        configSourceAvailable = True
 
     # Decoding Cluster IN
-    self.log.logging( "Input", "Status", "[%s]    NEW OBJECT: %s Cluster IN Count: %s" % (
-        "-", MsgDataShAddr, MsgDataInClusterCount), )
+    if not inDB_status:
+        self.log.logging( "Input", "Status", "[%s]    NEW OBJECT: %s Cluster IN Count: %s" % (
+            "-", MsgDataShAddr, MsgDataInClusterCount), )
     idx = 24
     i = 1
     if int(MsgDataInClusterCount, 16) > 0:
@@ -2161,23 +2164,25 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
             if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]["ClusterIn"]:
                 self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]["ClusterIn"][MsgDataCluster] = {}
 
-            if MsgDataCluster in ZCL_CLUSTERS_LIST:
-                self.log.logging( "Input", "Status", "[%s]       NEW OBJECT: %s Cluster In %s: %s (%s)" % ( 
-                    "-", MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster], ), )
-            else:
-                self.log.logging( "Input", "Status", "[%s]       NEW OBJECT: %s Cluster In %s: %s" % (
-                    "-", MsgDataShAddr, i, MsgDataCluster), )
-            i = i + 1
+            if not inDB_status:
+                if MsgDataCluster in ZCL_CLUSTERS_LIST:
+                    self.log.logging( "Input", "Status", "[%s]       NEW OBJECT: %s Cluster In %s: %s (%s)" % ( 
+                        "-", MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster], ), )
+                else:
+                    self.log.logging( "Input", "Status", "[%s]       NEW OBJECT: %s Cluster In %s: %s" % (
+                        "-", MsgDataShAddr, i, MsgDataCluster), )
+            i += 1
 
     # Decoding Cluster Out
     idx = 24 + int(MsgDataInClusterCount, 16) * 4
     MsgDataOutClusterCount = MsgData[idx : idx + 2]
 
-    self.log.logging( "Input", "Status", "[%s]    NEW OBJECT: %s Cluster OUT Count: %s" % (
-        "-", MsgDataShAddr, MsgDataOutClusterCount), )
+    if not inDB_status:
+        self.log.logging( "Input", "Status", "[%s]    NEW OBJECT: %s Cluster OUT Count: %s" % (
+            "-", MsgDataShAddr, MsgDataOutClusterCount), )
+        
     idx += 2
     i = 1
-
     if int(MsgDataOutClusterCount, 16) > 0:
         while i <= int(MsgDataOutClusterCount, 16):
             MsgDataCluster = MsgData[idx + ((i - 1) * 4) : idx + (i * 4)]
@@ -2198,21 +2203,21 @@ def Decode8043(self, Devices, MsgData, MsgLQI):  # Reception Simple descriptor r
             if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]["ClusterOut"]:
                 self.ListOfDevices[MsgDataShAddr]["Epv2"][MsgDataEp]["ClusterOut"][MsgDataCluster] = {}
 
-            if MsgDataCluster in ZCL_CLUSTERS_LIST:
-                self.log.logging("Input","Status","[%s]       NEW OBJECT: %s Cluster Out %s: %s (%s)"% (
-                    "-",MsgDataShAddr,i,MsgDataCluster,ZCL_CLUSTERS_LIST[MsgDataCluster],),)
-            else:
-                self.log.logging("Input","Status","[%s]       NEW OBJECT: %s Cluster Out %s: %s" % (
-                    "-", MsgDataShAddr, i, MsgDataCluster),)
+            if not inDB_status:
+                if MsgDataCluster in ZCL_CLUSTERS_LIST:
+                    self.log.logging("Input","Status","[%s]       NEW OBJECT: %s Cluster Out %s: %s (%s)"% (
+                        "-",MsgDataShAddr,i,MsgDataCluster,ZCL_CLUSTERS_LIST[MsgDataCluster],),)
+                else:
+                    self.log.logging("Input","Status","[%s]       NEW OBJECT: %s Cluster Out %s: %s" % (
+                        "-", MsgDataShAddr, i, MsgDataCluster),)
 
             MsgDataCluster = ""
-            i = i + 1
+            i += 1
 
     # Let's check if there is any other Ep to be disxcovered
-    if request_next_Ep(self, MsgDataShAddr):
-        if self.ListOfDevices[MsgDataShAddr]["Status"] != "inDB":
-            self.ListOfDevices[MsgDataShAddr]["Status"] = "8043"
-            self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
+    if request_next_Ep(self, MsgDataShAddr) and not inDB_status:
+        self.ListOfDevices[MsgDataShAddr]["Status"] = "8043"
+        self.ListOfDevices[MsgDataShAddr]["Heartbeat"] = "0"
 
     self.log.logging("Pairing","Debug","Decode8043 - Processed " + MsgDataShAddr + " end results is: " + str(self.ListOfDevices[MsgDataShAddr]),)
 
@@ -2406,7 +2411,7 @@ def Decode8048(self, Devices, MsgData, MsgLQI):  # Leave indication
         # Will set to Leave in order to protect Domoticz Widget, Just need to make sure that we can reconnect at a point of time
         self.ListOfDevices[sAddr]["Status"] = "Leave"
         self.ListOfDevices[sAddr]["Heartbeat"] = 0
-        self.log.logging("Input", "Error", "Receiving a leave from %s/%s while device is %s status" % (
+        self.log.logging("Input", "Error", "Receiving a leave from %s/%s while device is '%s' status." % (
             sAddr, MsgExtAddress, self.ListOfDevices[sAddr]["Status"]))
 
     zdevname = ""
@@ -3489,7 +3494,16 @@ def Decode8401(self, Devices, MsgData, MsgLQI):  # Reception Zone status change 
     motion_via_IAS_alarm = get_device_config_param( self, MsgSrcAddr, "MotionViaIASAlarm1")
     self.log.logging( "Input", "Debug", "MotionViaIASAlarm1 = %s" % (motion_via_IAS_alarm))
     
-    if motion_via_IAS_alarm is not None and motion_via_IAS_alarm == 1:
+    ias_alarm1_2_merged = get_deviceconf_parameter_value( self, Model, "IASAlarmMerge", return_default=None )
+    self.log.logging( "Input", "Debug", "IASAlarmMerge = %s" % (ias_alarm1_2_merged))
+    
+    if ias_alarm1_2_merged:
+        self.log.logging( "Input", "Debug", "IASAlarmMerge alarm1 %s alarm2 %s" % (alarm1, alarm2))
+        combined_alarm = ( alarm2 << 1 ) | alarm1
+        self.log.logging( "Input", "Debug", "IASAlarmMerge combined value = %02d" % (combined_alarm))
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", "%02d" % combined_alarm)
+        
+    elif motion_via_IAS_alarm is not None and motion_via_IAS_alarm == 1:
         self.log.logging( "Input", "Debug", "Motion detected sending to MajDomo %s/%s %s" % (
             MsgSrcAddr, MsgEp, (alarm1 or alarm2)))    
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", "%02d" % (alarm1 or alarm2))
@@ -4301,14 +4315,22 @@ def Decode7000(self, Devices, MsgData, MsgLQI):
             u8TransactionSequenceNumber,
         )
 
-
 def check_duplicate_sqn(self, Nwkid, Ep, Cluster, Sqn):
-    if "Ep" in self.ListOfDevices[Nwkid] and Ep in self.ListOfDevices[Nwkid]["Ep"]:
-        if Cluster not in self.ListOfDevices[Nwkid]["Ep"][Ep]:
-            self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster] = {}
-        if not isinstance(self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster], dict):
-            self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster] = {}
-        if "0000" not in self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster]:
-            self.ListOfDevices[Nwkid]["Ep"][Ep][Cluster]["0000"] = {}
+    """
+    This function is useful for checking the uniqueness of sequence numbers associated with specific network devices, 
+    ensuring data integrity and preventing duplicates in a network application.
+    """
+    
+    if "Ep" not in self.ListOfDevices[Nwkid] or Ep not in self.ListOfDevices[Nwkid]["Ep"]:
+        return False
+    
+    EpCluster = self.ListOfDevices[Nwkid]["Ep"][Ep]
+    if Cluster not in EpCluster:
+        EpCluster[Cluster] = {}
+    elif not isinstance(EpCluster[Cluster], dict):
+        EpCluster[Cluster] = {}
+
+    if "0000" not in EpCluster[Cluster]:
+        EpCluster[Cluster]["0000"] = {}
 
     return Sqn != "00" and "SQN" in self.ListOfDevices[Nwkid] and Sqn == self.ListOfDevices[Nwkid]["SQN"]

@@ -282,6 +282,33 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
     else:
         Devices[Unit_].Update( nValue=int(nValue), sValue=str(sValue), SignalLevel=int(SignalLevel), BatteryLevel=int(BatteryLevel), TimedOut=0, )
 
+def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
+    """
+    Read the nValue and sValue of a device unit.
+
+    Args:
+        Devices: The dictionary of devices.
+        DeviceID: The ID of the device.
+        Unit: The unit number of the device.
+
+    Returns:
+        Tuple: A tuple containing the nValue and sValue of the device unit.
+    """
+
+    if DOMOTICZ_EXTENDED_API:
+        _unit = Devices[DeviceID].Units[Unit]
+    else:
+        _unit = Devices[Unit]
+
+    return _unit.nValue, _unit.sValue
+
+def domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit):
+    if DOMOTICZ_EXTENDED_API:
+        _unit = Devices[DeviceID].Units[Unit]
+    else:
+        _unit = Devices[Unit]
+
+    return _unit.SwitchType, _unit.SubType, _unit.Type
 
 def _is_meter_widget( self, Devices,DeviceID_, Unit_):
     # self.log.logging("AbstractDz", "Debug", "_is_meter_widget: %s %s" %(DeviceID_, Unit_))

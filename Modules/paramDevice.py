@@ -74,7 +74,8 @@ from Modules.tuyaTRV import (tuya_trv_boost_time, tuya_trv_calibration,
                              tuya_trv_set_opened_window_temp,
                              tuya_trv_thermostat_sensor_mode,
                              tuya_trv_window_detection)
-from Modules.tuyaTS0601 import TS0601_COMMANDS, ts0601_actuator
+from Modules.tuyaTS0601 import (TS0601_COMMANDS, ts0601_actuator,
+                                ts0601_extract_data_point_infos)
 
 
 def Ballast_max_level(self, nwkid, max_level):
@@ -308,20 +309,14 @@ DEVICE_PARAMETERS = {
 }
 
 def sanity_check_of_param(self, NwkId):
-    if "Param" not in self.ListOfDevices[NwkId]:
-        return
+    param_data = self.ListOfDevices.get(NwkId, {}).get("Param", {})
+    model_name = self.ListOfDevices.get(NwkId, {}).get("Model", "")
 
-    for param in self.ListOfDevices[NwkId]["Param"]:
-        if param in TS0601_COMMANDS:
-            # We a Tuya TS0601 devices
-            value = self.ListOfDevices[NwkId]["Param"][param]
-            ts0601_actuator( self, NwkId, param, value)
-            continue
-
-        if param in DEVICE_PARAMETERS:
-            func = DEVICE_PARAMETERS[param]
-            value = self.ListOfDevices[NwkId]["Param"][param]
-            func(self, NwkId, value)
+    for param, value in param_data.items():
+        if ts0601_extract_data_point_infos(self, model_name) and param in TS0601_COMMANDS:
+            ts0601_actuator(self, NwkId, param, value)
+        elif param in DEVICE_PARAMETERS:
+            DEVICE_PARAMETERS[param](self, NwkId, value)
 
 
 def get_device_config_param( self, NwkId, config_parameter):
