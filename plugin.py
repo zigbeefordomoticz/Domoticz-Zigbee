@@ -85,7 +85,10 @@
 
 import pathlib
 import sys
+import tracemalloc
+
 import Domoticz
+
 try:
     from Domoticz import Devices, Images, Parameters, Settings
 except ImportError:
@@ -97,7 +100,10 @@ import os.path
 import threading
 import time
 from importlib.metadata import version as import_version
+
 import pkg_resources
+import z4d_certified_devices
+
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
 from Classes.DomoticzDB import (DomoticzDB_DeviceStatus, DomoticzDB_Hardware,
@@ -121,7 +127,8 @@ from Modules.command import mgtCommand
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
-from Modules.domoticzAbstractLayer import how_many_slot_available, load_list_of_domoticz_widget
+from Modules.domoticzAbstractLayer import (how_many_slot_available,
+                                           load_list_of_domoticz_widget)
 from Modules.domoTools import ResetDevice
 from Modules.heartbeat import processListOfDevices
 from Modules.input import ZigateRead
@@ -133,6 +140,9 @@ from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
                            chk_and_update_IEEE_NWKID, how_many_devices,
                            lookupForIEEE, night_shift_jobs, removeDeviceInList)
+from Modules.traceMemoryAllocation import (check_memory_allocation,
+                                           dump_trace_malloc,
+                                           start_memory_allocation_tracking)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -143,7 +153,6 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
-import z4d_certified_devices
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -272,9 +281,13 @@ class BasePlugin:
         # Zigpy
         self.zigbee_communication = None  # "zigpy" or "native"
         #self.pythonModuleVersion = {}
+        
+        # Memory Allocation tracing
+        start_memory_allocation_tracking(self)
 
     def onStart(self):
         Domoticz.Status( "Zigbee for Domoticz plugin starting")
+        check_memory_allocation(self, "onStart")
         
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
@@ -686,6 +699,7 @@ class BasePlugin:
 
     def onStop(self):  # sourcery skip: class-extract-method
         Domoticz.Log("onStop()")
+        dump_trace_malloc(self)
         uninstall_Z4D_to_domoticz_custom_ui()
 
         if self.pluginconf and self.log:
@@ -746,8 +760,6 @@ class BasePlugin:
         #    Domoticz.Log( "Garbage Collected detected cycles:")
         #    for item in gc.garbage:
         #        Domoticz.Log("- %s" %str(item))
-
-    
 
     def onDeviceRemoved(self, Unit):
         if self.log:
@@ -971,6 +983,7 @@ class BasePlugin:
                 return
             self.HeartbeatCount += 1
 
+        check_memory_allocation(self, "onHeartbeat %s" %self.internalHB)
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
         if "startZigateNeeded" in self.ControllerData and self.ControllerData["startZigateNeeded"]:
