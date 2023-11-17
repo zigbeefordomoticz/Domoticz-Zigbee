@@ -6,8 +6,7 @@ from pathlib import Path
 import os
 import Domoticz
 
-TOP_LIST = 10
-
+TOP_nENTRIES = 5 
 def start_memory_allocation_tracking(self):
     
     self.snapshot1 = None
@@ -15,10 +14,10 @@ def start_memory_allocation_tracking(self):
     self.tracemalloc = {}
 
     tracemalloc.start()
-    check_memory_allocation(self, "Init")
-    
-    
-def check_memory_allocation(self, label):
+    self.snapshot2 = tracemalloc.take_snapshot()
+        
+        
+def check_memory_allocation(self):
 
     if self.snapshot2:
         self.snapshot1 = self.snapshot2
@@ -26,13 +25,10 @@ def check_memory_allocation(self, label):
     self.snapshot2 = tracemalloc.take_snapshot()
     
     if self.snapshot1 and self.snapshot2:
-        top_5_differences(self, label)
+        store_memory_allocation(self)
     
     
-    
-    
-def top_5_differences(self, label):
-    
+def store_memory_allocation(self):
     top_stats = self.snapshot2.compare_to(self.snapshot1, 'lineno')
     store_in_dictionnary(self, top_stats)
     
@@ -69,7 +65,7 @@ def store_in_dictionnary(self, tracemalloc_stats):
             
             
 def dump_trace_malloc(self):
-    
+
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
     _tracemalloc_filename = _pluginData / ("Plugin_Malloc_Allocations.json")
 
@@ -79,24 +75,28 @@ def dump_trace_malloc(self):
 
 def report_top10_allocation(self):
 
-    TOP_nENTRIES = 5 
     # Tri par MaxSize décroissant, puis par sizeIncrease décroissant
     sorted_entries_maxsize = sorted(self.tracemalloc.items(), key=lambda x: x[1]['MaxSize'], reverse=True)[:TOP_nENTRIES]
     sorted_entries_sizeincrease = sorted(self.tracemalloc.items(), key=lambda x: x[1]['sizeIncrease'], reverse=True)[:TOP_nENTRIES]
 
+    top10_allocation_data = _extracted_from_report_top10_allocation_8( "Top %s MaxSize ", sorted_entries_maxsize )
+    top10_allocation_data = _extracted_from_report_top10_allocation_8( "Top %s sizeIncrease ", sorted_entries_sizeincrease )
+
+
+def _extracted_from_report_top10_allocation_8(self, arg0, arg1):
     # Affichage des n premières entrées avec le MaxSize le plus élevé
-    top10_allocation_data = "Top %s MaxSize " % TOP_nENTRIES
-    for entry in sorted_entries_maxsize:
+    result = arg0 % TOP_nENTRIES
+    for entry in arg1:
         module_name = str(os.path.basename(entry[0]))
-        top10_allocation_data += "| %s | %s | %s | %s" %( module_name, entry[1]['size'], entry[1]['MaxSize'], entry[1]['sizeIncrease'] )
-    log_top10(self,top10_allocation_data)
-        
-    # Affichage des 10 premières entrées avec le sizeIncrease le plus élevé
-    top10_allocation_data = "Top %s sizeIncrease " % TOP_nENTRIES
-    for entry in sorted_entries_sizeincrease:
-        module_name = str(os.path.basename(entry[0]))
-        top10_allocation_data += "| %s | %s | %s | %s" %( module_name, entry[1]['size'], entry[1]['MaxSize'], entry[1]['sizeIncrease'] )
-    log_top10(self,top10_allocation_data)
+        result += "| %s | %s | %s | %s" % (
+            module_name,
+            entry[1]['size'],
+            entry[1]['MaxSize'],
+            entry[1]['sizeIncrease'],
+        )
+    log_top10(self, result)
+
+    return result
     
 def log_top10(self,data):
  

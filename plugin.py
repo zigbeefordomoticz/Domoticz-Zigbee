@@ -142,8 +142,8 @@ from Modules.tools import (build_list_of_device_model,
                            lookupForIEEE, night_shift_jobs, removeDeviceInList)
 from Modules.traceMemoryAllocation import (check_memory_allocation,
                                            dump_trace_malloc,
-                                           report_top10_allocation,
-                                           start_memory_allocation_tracking)
+                                           start_memory_allocation_tracking,
+                                           store_memory_allocation)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -288,8 +288,11 @@ class BasePlugin:
 
     def onStart(self):
         Domoticz.Status( "Zigbee for Domoticz plugin starting")
-        check_memory_allocation(self, "onStart")
-        
+        try:
+            check_memory_allocation(self)
+        except Exception as e:
+            Domoticz.Error("onStart (check_memory_allocation) %s" %e)  
+              
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
@@ -700,8 +703,8 @@ class BasePlugin:
 
     def onStop(self):  # sourcery skip: class-extract-method
         Domoticz.Log("onStop()")
-        report_top10_allocation(self)
         dump_trace_malloc(self)
+        
         uninstall_Z4D_to_domoticz_custom_ui()
 
         if self.pluginconf and self.log:
@@ -988,10 +991,13 @@ class BasePlugin:
                 return
             self.HeartbeatCount += 1
 
-        check_memory_allocation(self, "onHeartbeat %s" %self.internalHB)
+        try:
+            check_memory_allocation(self)
+        except Exception as e:
+            Domoticz.Error("onHeartbeat (check_memory_allocation) %s" %e)  
 
         if (self.internalHB % 300) == 0:
-            report_top10_allocation(self)
+            store_memory_allocation(self)
 
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer

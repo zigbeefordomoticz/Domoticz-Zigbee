@@ -292,7 +292,6 @@ class LoggingManagement:
         else:
             Domoticz.Log("%s" % message)
 
-
 def _loggingStatus(self, thread_name, message):
     if self.pluginconf.pluginConf["logThreadName"]:
         message = "[%17s] " %thread_name + message
@@ -446,59 +445,58 @@ def start_logging_thread(self):
     )
     self.logging_thread.start()
 
-
 def logging_thread(self):
+    """ logging thread """
 
     Domoticz.Log("logging_thread - listening")
     while self.running:
-        # We loop until self.running is set to False,
-        # which indicate plugin shutdown
+
         logging_tuple = self.logging_queue.get()
-        if len(logging_tuple) == 2:
-            timing, command = logging_tuple
-            if command == "QUIT":
-                Domoticz.Log("logging_thread Exit requested")
-                break
+
+        if len(logging_tuple) == 2 and logging_tuple[1] == "QUIT":
+            Domoticz.Log("logging_thread Exit requested")
+            break
+
         elif len(logging_tuple) == 8:
-            (
-                timing,
-                thread_name,
-                thread_id,
-                module,
-                logType,
-                message,
-                nwkid,
-                context,
-            ) = logging_tuple
-            try:
-                context = eval(context)
-            except Exception as e:
-                Domoticz.Error("Something went wrong and catch: context: %s" % str(context))
-                Domoticz.Error("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
-                Domoticz.Error("      Error %s" % (str(e)))
-                return
+            ( timing, thread_name, thread_id, module, logType, message, nwkid, context, ) = logging_tuple
+
+            if context != str(None):
+                try:
+                    context = eval(context)
+
+                except Exception as e:
+                    Domoticz.Error("Something went wrong and catch: context: %s" % str(context))
+                    Domoticz.Error("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
+                    Domoticz.Error("      Error %s" % (str(e)))
+                    return
+
             if logType == "Error":
                 loggingError(self, thread_name, module, message, nwkid, context)
+
             elif logType == "Debug":
                 # thread filter
-                threadFilter = [
-                    x for x in self.threadLogConfig if self.pluginconf.pluginConf["Thread" + self.threadLogConfig[x]] == 1
-                ]
+                threadFilter = [ x for x in self.threadLogConfig if self.pluginconf.pluginConf["Thread" + self.threadLogConfig[x]] == 1 ]
+
                 if threadFilter and thread_name not in threadFilter:
                     continue
+
                 thread_name=thread_name + " " + thread_id
                 pluginConfModule = str(module)
-                if pluginConfModule in self.pluginconf.pluginConf:
-                    if self.pluginconf.pluginConf[pluginConfModule]:
-                        _logginfilter(self, thread_name, message, nwkid)
-                else:
+
+                if pluginConfModule in self.pluginconf.pluginConf and self.pluginconf.pluginConf[ pluginConfModule ]:
+                    _logginfilter(self, thread_name, message, nwkid)
+
+                elif pluginConfModule not in self.pluginconf.pluginConf:
                     Domoticz.Error("%s debug module unknown %s" % (pluginConfModule, module))
                     _loggingDebug(self, thread_name, message)
+
             else:
                 thread_name=thread_name + " " + thread_id
                 loggingDirector(self, thread_name, logType, message)
+
         else:
             Domoticz.Error("logging_thread unexpected tuple %s" % (str(logging_tuple)))
+        
     Domoticz.Log("logging_thread - ended")
 
 

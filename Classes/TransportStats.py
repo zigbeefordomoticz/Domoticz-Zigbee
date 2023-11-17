@@ -128,16 +128,34 @@ class TransportStatistics:
                 % (self._maxRxProcesses, self._averageRxProcess)
             )
 
+    #def addPointforTrendStats(self, TimeStamp):
+#
+    #    MAX_TREND_STAT_TABLE = 120
+#
+    #    uptime = int(time() - self._start)
+    #    Rxps = round(self._received / uptime, 2)
+    #    Txps = round(self._sent / uptime, 2)
+    #    if len(self.TrendStats) >= MAX_TREND_STAT_TABLE:
+    #        del self.TrendStats[0]
+    #    self.TrendStats.append({"_TS": TimeStamp, "Rxps": Rxps, "Txps": Txps, "Load": self._Load})
+
     def addPointforTrendStats(self, TimeStamp):
+        """ Adds a data point to the trend statistics table. """
 
         MAX_TREND_STAT_TABLE = 120
 
-        uptime = int(time() - self._start)
+        current_time = time()
+        uptime = int(current_time - self._start)
         Rxps = round(self._received / uptime, 2)
         Txps = round(self._sent / uptime, 2)
+
+        trend_stat = {"_TS": TimeStamp, "Rxps": Rxps, "Txps": Txps, "Load": self._Load}
+
         if len(self.TrendStats) >= MAX_TREND_STAT_TABLE:
-            del self.TrendStats[0]
-        self.TrendStats.append({"_TS": TimeStamp, "Rxps": Rxps, "Txps": Txps, "Load": self._Load})
+            self.TrendStats = self.TrendStats[-MAX_TREND_STAT_TABLE + 1:]
+
+        self.TrendStats.append(trend_stat)
+
 
     def reTx(self):
         """ return the number of crc Errors """
