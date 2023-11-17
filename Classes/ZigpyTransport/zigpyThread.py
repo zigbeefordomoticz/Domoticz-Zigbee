@@ -304,8 +304,10 @@ async def worker_loop(self):
 
     while self.zigpy_running and self.writer_queue is not None:
         entry = await get_next_command(self)
+
         if entry is None:
             continue
+
         elif entry == "STOP":
             # Shutding down
             self.log.logging("TransportZigpy", "Log", "worker_loop - Shutting down ... exit.")
@@ -468,12 +470,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     extended_timeout = not data["RxOnIdle"] if ("RxOnIdle" in data and not self.pluginconf.pluginConf["PluginRetrys"]) else False
 
     delay = data["Delay"] if "Delay" in data else None
-    self.log.logging(
-        "TransportZigpy",
-        "Debug",
-        "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s, Delay: %s, Extended_TO: %s"
-        % ( Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn, delay,extended_timeout ),
-    )
+    self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s, Delay: %s, Extended_TO: %s" % (
+        Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn, delay,extended_timeout ), )
 
     if int(NwkId, 16) >= 0xFFFB:  # Broadcast
         destination = int(NwkId, 16)
@@ -701,13 +699,8 @@ async def _limit_concurrency(self, destination, sequence):
 
     if was_locked:
         self._currently_waiting_requests_list[_ieee] += 1
-        self.log.logging(
-            "TransportZigpy",
-            "Debug",
-            "Max concurrency reached for %s, delaying request %s (%s enqueued)"
-            % (_nwkid, sequence, self._currently_waiting_requests_list[_ieee]),
-            _nwkid,
-        )
+        self.log.logging( "TransportZigpy", "Debug", "Max concurrency reached for %s, delaying request %s (%s enqueued)" % (
+            _nwkid, sequence, self._currently_waiting_requests_list[_ieee]), _nwkid, )
 
     try:
         async with self._concurrent_requests_semaphores_list[_ieee]:
