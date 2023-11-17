@@ -354,7 +354,6 @@ def device_touch_api( self, Devices, DeviceId_, Unit_):
     # Legacy
     Devices[Unit_].Touch()
     
-    
 def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
     if _is_meter_widget( self, Devices, DeviceId_, Unit_):
         return
