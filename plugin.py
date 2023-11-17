@@ -142,6 +142,7 @@ from Modules.tools import (build_list_of_device_model,
                            lookupForIEEE, night_shift_jobs, removeDeviceInList)
 from Modules.traceMemoryAllocation import (check_memory_allocation,
                                            dump_trace_malloc,
+                                           report_top10_allocation,
                                            start_memory_allocation_tracking)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
@@ -699,6 +700,7 @@ class BasePlugin:
 
     def onStop(self):  # sourcery skip: class-extract-method
         Domoticz.Log("onStop()")
+        report_top10_allocation(self)
         dump_trace_malloc(self)
         uninstall_Z4D_to_domoticz_custom_ui()
 
@@ -887,6 +889,9 @@ class BasePlugin:
         # stop_time = int(time.time() *1000)
         # Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 
+        # Release Data memory
+        # del Data
+
     def zigpy_chk_upd_device(self, ieee, nwkid ):
         chk_and_update_IEEE_NWKID(self, nwkid, ieee)
         
@@ -984,6 +989,10 @@ class BasePlugin:
             self.HeartbeatCount += 1
 
         check_memory_allocation(self, "onHeartbeat %s" %self.internalHB)
+
+        if (self.internalHB % 300) == 0:
+            report_top10_allocation(self)
+
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
         if "startZigateNeeded" in self.ControllerData and self.ControllerData["startZigateNeeded"]:
@@ -996,12 +1005,8 @@ class BasePlugin:
             return
 
         if self.transport != "None":
-            self.log.logging(
-                "Plugin",
-                "Debug",
-                "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s ErasePDMinProgress: %s ErasePDMDone: %s"
-                % ( self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ControllerLink.pdm_lock_status(), self.ErasePDMinProgress, self.ErasePDMDone, ),
-            )
+            self.log.logging( "Plugin", "Debug", "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s ErasePDMinProgress: %s ErasePDMDone: %s" % (
+                self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ControllerLink.pdm_lock_status(), self.ErasePDMinProgress, self.ErasePDMDone, ), )
 
         if not _post_readiness_startup_completed( self ):
             return
