@@ -313,8 +313,8 @@ def sanity_check_of_param(self, NwkId):
     model_name = self.ListOfDevices.get(NwkId, {}).get("Model", "")
 
     for param, value in param_data.items():
-        if ts0601_extract_data_point_infos(self, model_name) and param in TS0601_COMMANDS:
-            ts0601_actuator(self, NwkId, param, value)
+        if ts0601_extract_data_point_infos(self, model_name) and param in TS0601_COMMANDS:            
+            ts0601_actuator(self, NwkId, param, value, check_previous=True)
         elif param in DEVICE_PARAMETERS:
             DEVICE_PARAMETERS[param](self, NwkId, value)
 

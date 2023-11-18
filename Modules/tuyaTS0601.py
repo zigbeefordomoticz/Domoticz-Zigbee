@@ -55,7 +55,7 @@ def process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, d
     self.log.logging("Tuya0601", "Debug", "                - after evaluate_expression_with_data() value: %s" % (value), NwkId)
 
     if "store_tuya_attribute" in dps_mapping_item:
-        store_tuya_attribute(self, NwkId, dps_mapping_item["store_tuya_attribute"], data)
+        store_tuya_attribute(self, NwkId, dps_mapping_item["store_tuya_attribute"], value)
     
     return sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping_item )
    
@@ -85,7 +85,7 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
     return process_sensor_data(self, sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep)
 
 
-def ts0601_actuator( self, NwkId, command, value=None):
+def ts0601_actuator( self, NwkId, command, value=None, check_previous=False):
     self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s" %(
         command, value))
 
@@ -108,6 +108,14 @@ def ts0601_actuator( self, NwkId, command, value=None):
         self.log.logging("Tuya0601", "Error", "ts0601_actuator - unknow command %s in config file" % command)
         return False
     
+    if "store_tuya_attribute" in dps_mapping[ str_dp ]:
+        # Retreive the existing value
+        previous_value = get_tuya_attribute( self, NwkId, dps_mapping[ str_dp ]["store_tuya_attribute"])
+        self.log.logging("Tuya0601", "Debug", "ts0601_actuator - previous value %s vs. target %s" % (previous_value, value) )
+        if check_previous and previous_value == value:
+            self.log.logging("Tuya0601", "Debug", "ts0601_actuator - nothing to do %s == %s" % (previous_value, value) )
+            return
+        
     if "action_Exp" in dps_mapping[ str_dp ]:
         # Correct Value to proper format
         value = evaluate_expression_with_data(self, dps_mapping[ str_dp ]["action_Exp"], value)
@@ -719,10 +727,57 @@ def ts0601_solar_siren_alarm_mode( self, NwkId, Ep, dp, mode=None):
 def ts0601_solar_siren_alarm_duration( self, NwkId, Ep, dp, duration=None):
     if duration is None:
         return
-    self.log.logging("Tuya0601", "Log", "ts0601_solar_siren_alarm_duration - %s Switch Action: dp:%s value: %s" % (
+    
+    self.log.logging("Tuya0601", "Log", "ts0601_solar_siren_alarm_duration - %s Switch Action: dp: 0x%02x value: %s" % (
         NwkId, dp, duration))
     action = "%02x02" % dp  # I
     data = "%08x" % (duration)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+def ts0601_radar_sensitivity( self, NwkId, Ep, dp, sensitivity=0):
+    self.log.logging("Tuya0601", "Log", "ts0601_radar_sensitivity - %s Sensitivity: dp: 0x%02x value: %s" % (
+        NwkId, dp, sensitivity))
+    
+    action = "%02x02" % dp  # I
+    data = "%08x" % (sensitivity)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+    
+def ts0601_radar_min_range( self, NwkId, Ep, dp, min_range=0):
+    self.log.logging("Tuya0601", "Log", "ts0601_radar_min_range - %s min_range: dp: 0x%02x value: %s" % (
+        NwkId, dp, min_range))
+    
+    action = "%02x02" % dp  # I
+    data = "%08x" % (min_range)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+def ts0601_radar_max_range( self, NwkId, Ep, dp, max_range=0):
+    self.log.logging("Tuya0601", "Log", "ts0601_radar_max_range - %s max_range: dp: 0x%02x value: %s" % (
+        NwkId, dp, max_range))
+    
+    if not (150 <= max_range <= 550):
+        return
+    action = "%02x02" % dp  # I
+    data = "%08x" % (max_range)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+def ts0601_radar_detection_delay( self, NwkId, Ep, dp, detection_delay=0):
+    self.log.logging("Tuya0601", "Log", "ts0601_ts0601_radar_detection_delayradar_sensitivity - %s detection_delay: dp: 0x%02x value: %s" % (
+        NwkId, dp, detection_delay))
+    
+    if not (1 <= detection_delay <= 1500):
+        return
+    action = "%02x02" % dp  # I
+    data = "%08x" % (detection_delay)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+def ts0601_radar_fading_time( self, NwkId, Ep, dp, fading_time=0):
+    self.log.logging("Tuya0601", "Log", "ts0601_radar_fading_time - %s fading_time: dp: 0x%02x value: %s" % (
+        NwkId, dp, fading_time))
+    
+    if not ( 1 <= fading_time <= 1500):
+        return
+    action = "%02x02" % dp  # I
+    data = "%08x" % (fading_time)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 TS0601_COMMANDS = {
@@ -732,7 +787,14 @@ TS0601_COMMANDS = {
     "TuyaIrrigationMode": ts0601_irrigation_mode,
     "TuyaAlarmMelody": ts0601_solar_siren_alarm_melody,
     "TuyaAlarmMode": ts0601_solar_siren_alarm_mode,
-    "TuyaAlarmDuration": ts0601_solar_siren_alarm_duration
+    "TuyaAlarmDuration": ts0601_solar_siren_alarm_duration,
+    "TuyaRadarSensitivity": ts0601_radar_sensitivity,
+    "TuyaPresenceSensitivity": ts0601_radar_sensitivity,
+    "TuyaRadarMaxRange": ts0601_radar_max_range,
+    "TuyaRadarMinRange": ts0601_radar_min_range,
+    "TuyaRadarDetectionDelay": ts0601_radar_detection_delay,
+    "TuyaRadaFadingTime": ts0601_radar_fading_time,
+    
 }
 
 DP_ACTION_FUNCTION = {
