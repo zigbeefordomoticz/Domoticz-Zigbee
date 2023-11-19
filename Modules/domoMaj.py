@@ -35,35 +35,34 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         return
     
     if NWKID not in self.ListOfDevices:
-        self.log.logging("Widget", "Error", "MajDomoDevice - %s not known" % NWKID, NWKID)
+        self.log.logging("Widget", "Error", f"MajDomoDevice - {NWKID} not known", NWKID)
         zigpy_plugin_sanity_check(self, NWKID)
         return
-
-    if ( "Health" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Health"] == "Disabled" ):
+    
+    if "Health" in self.ListOfDevices.get(NWKID, {}) and self.ListOfDevices[NWKID]["Health"] == "Disabled":
         # If the device has been disabled, just drop the message
-        self.log.logging("Widget", "Debug", "MajDomoDevice - disabled device: %s/%s droping message " % (NWKID, Ep), NWKID)
+        self.log.logging("Widget", "Debug", f"MajDomoDevice - disabled device: {NWKID}/{Ep} dropping message", NWKID)
         return
-
-    if Ep not in self.ListOfDevices[NWKID]["Ep"]:
-        self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NWKID, Ep), NWKID)
+    
+    if Ep not in self.ListOfDevices.get(NWKID, {}).get("Ep", []):
+        self.log.logging("Widget", "Error", f"MajDomoDevice - {NWKID}/{Ep} not known Endpoint", NWKID)
         return
-
-    check_and_update_db_status( self, NWKID)
-        
-    if "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] != "inDB":
-        self.log.logging( "Widget", "Log", "MajDomoDevice NwkId: %s status: %s not inDB request IEEE for possible reconnection" % (
-            NWKID, self.ListOfDevices[NWKID]["Status"]), NWKID, )
+    
+    check_and_update_db_status(self, NWKID)
+    
+    device_status = self.ListOfDevices.get(NWKID, {}).get("Status", "")
+    if device_status != "inDB":
+        self.log.logging("Widget", "Log", f"MajDomoDevice NwkId: {NWKID} status: {device_status} not inDB. Requesting IEEE for possible reconnection", NWKID)
         
         if not zigpy_plugin_sanity_check(self, NWKID):
             # Broadcast to 0xfffd: macRxOnWhenIdle = TRUE
             zdp_IEEE_address_request(self, 'fffd', NWKID, u8RequestType="00", u8StartIndex="00")
-            
-        return
-
-    deviceid_ieee = self.ListOfDevices[NWKID].get("IEEE", None)
-    if deviceid_ieee is None:
-        self.log.logging("Widget", "Error", "MajDomoDevice - no IEEE for %s" % NWKID, NWKID)
-        return
+            return
+    
+        deviceid_ieee = self.ListOfDevices[NWKID].get("IEEE", None)
+        if deviceid_ieee is None:
+            self.log.logging("Widget", "Error", "MajDomoDevice - no IEEE for %s" % NWKID, NWKID)
+            return
 
     model_name = self.ListOfDevices[NWKID].get("Model", "")
 
