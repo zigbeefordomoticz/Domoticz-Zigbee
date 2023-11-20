@@ -1542,20 +1542,20 @@ def check_requirements( ):
     Domoticz.Status("Checking Python modules %s" %requirements_file)
 
     with open(requirements_file, 'r') as file:
-        requirements_list  = file.readlines()
+        requirements_list = file.readlines()
 
     for req_str in list(requirements_list):
         try:
-           pkg_resources.require(req_str.strip())
+            pkg_resources.require(req_str.strip())
 
-        except pkg_resources.DistributionNotFound as e:
-            Domoticz.Error("Looks like %s python module is not installed (error: %s). Make sure to install the required python3 module" %(req, e))
+        except pkg_resources.DistributionNotFound:
+            Domoticz.Error("Looks like %s python module is not installed. Make sure to install the required python3 module" %(req_str.strip()))
             Domoticz.Error("Use the command:")
             Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
             return True
 
         except pkg_resources.VersionConflict:
-            Domoticz.Error("Looks like %s python module is conflicting (error: %s). Make sure to install the required python3 module" %(req, e))
+            Domoticz.Error("Looks like %s python module is conflicting. Make sure to install the required python3 module" %(req_str.strip()))
             Domoticz.Error("Use the command:")
             Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
             return True
