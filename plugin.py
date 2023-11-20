@@ -284,7 +284,7 @@ class BasePlugin:
     
         assert sys.version_info >= (3, 8)  # nosec
         
-        if check_requirements( self ):
+        if check_requirements( ):
             self.onStop()
             return
 
@@ -1520,9 +1520,9 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.59.0",
+        "zigpy": "0.60.0",
         "zigpy_znp": "0.11.6",
-        "zigpy_deconz": "0.21.1",
+        "zigpy_deconz": "0.22.0",
         "bellows": "0.36.8",
         }
 
@@ -1536,22 +1536,37 @@ def check_python_modules_version( self ):
             
     return flag
   
-def check_requirements( self ):
+def check_requirements( ):
 
-    _filename = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
+    requirements_file = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
+    Domoticz.Status("Checking Python modules %s" %requirements_file)
 
-    Domoticz.Status("Checking Python modules %s" %_filename)
-    requirements = pkg_resources.parse_requirements(_filename.open())
-    for requirements in requirements:
-        req = str(requirements)
+    with open(requirements_file, 'r') as file:
+        requirements_list  = file.readlines()
+
+    for req_str in list(requirements_list):
         try:
-            pkg_resources.require(req)
+           pkg_resources.require(req_str.strip())
+
         except pkg_resources.DistributionNotFound as e:
             Domoticz.Error("Looks like %s python module is not installed (error: %s). Make sure to install the required python3 module" %(req, e))
             Domoticz.Error("Use the command:")
             Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
             return True
-    return False          
+
+        except pkg_resources.VersionConflict:
+            Domoticz.Error("Looks like %s python module is conflicting (error: %s). Make sure to install the required python3 module" %(req, e))
+            Domoticz.Error("Use the command:")
+            Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
+            return True
+
+        except Exception as e:
+            Domoticz.Error(f"An unexpected error occurred: {e}")
+
+        else:
+            Domoticz.Error(f"Requirement satisfied: {req_str.strip()}")
+
+    return False
                      
 def debuging_information(self, mode):
     self.log.logging("Plugin", mode, "Is GC enabled: %s" % gc.isenabled())
