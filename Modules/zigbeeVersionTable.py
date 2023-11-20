@@ -22,6 +22,7 @@ ZNP_MODEL = {
     "CC2531, Z-Stack 3.0.x": "21",
     "CC2531, Z-Stack Home 1.2": "22",
     "ConBee II": "40",
+    "Conbee II": "40",
     "Raspbee II": "41",
     "Elelabs, ELR02x": "30",
     "Elelabs, ELU01x": "31",
