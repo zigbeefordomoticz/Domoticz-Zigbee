@@ -1379,8 +1379,15 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID in ("4000", "4003", "4010", "4011", "4012", "4013", "4014", "4015", "4020", "4030", "4031") and danfoss:
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-        if MsgAttrID == "4003" and self.ListOfDevices[MsgSrcAddr]["Model"] in ("eTRV0100", "eT093WRO"):
+        if MsgAttrID == "4000" and self.ListOfDevices[MsgSrcAddr]["Model"] in ("eTRV0100"):
             # Open Window Detection for Danfoss eTRV
+            if value in [ 3, 4 ]:
+                value = "01"
+            else:
+                value = "00"
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500", value)
+        if MsgAttrID == "4003" and self.ListOfDevices[MsgSrcAddr]["Model"] in ("eTRV0100", "eT093WRO"):
+            # External Open Window Detection for Danfoss eTRV
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500", value)
 
     elif MsgAttrID in ("e010", "e011", "e012", "e013", "e014", "e030", "e031", "e020"):
