@@ -318,12 +318,8 @@ def is_cluster_zcl_config_available( self, nwkid, ep, cluster, attribute=None):
     
 def is_manufacturer_specific_cluster( self, cluster):
     
-    if cluster not in self.readZclClusters:
-        return False
-    if "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
-        # We have a Manufacturer Specific cluster
-        return True
-    
+    return bool(self.readZclClusters.get(cluster, {}).get("ManufSpecificCluster", False))
+
     
 def is_generic_zcl_cluster( self, cluster, attribute=None):
     if cluster not in self.readZclClusters:
