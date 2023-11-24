@@ -16,6 +16,7 @@ import os
 import os.path
 import threading
 import time
+import traceback
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
 from queue import PriorityQueue, Queue
@@ -43,15 +44,19 @@ class LoggingManagement:
         self._startTime = int(time.time())
 
         self.debugzigpy = False
-        zigpy_loging_mode("warning")
         self.debugZNP = False
-        zigpy_logging_znp("warning")
         self.debugEZSP = False
-        zigpy_logging_ezsp("warning")
         self.debugZigate = False
-        zigpy_logging_zigate("warning")
         self.debugdeconz = False
-        zigpy_logging_deconz("warning")
+        
+        configure_zigpy_loggers("warning")
+        configure_zigpy_znp_loggers("warning")
+        configure_zigpy_ezsp_loggers("warning")
+        configure_zigpy_zigate_loggers("warning")
+        configure_zigpy_deconz_loggers("warning")
+
+
+
 
         self.zigpy_login()
 
@@ -72,6 +77,13 @@ class LoggingManagement:
 
     def is_new_error(self):
         return bool(self._newError and bool(self.LogErrorHistory))
+
+    def zigpy_login(self):
+        _configure_debug_mode(self, self.debugzigpy, "Zigpy", configure_zigpy_loggers)
+        _configure_debug_mode(self, self.debugZNP, "ZigpyZNP", configure_zigpy_znp_loggers)
+        _configure_debug_mode(self, self.debugEZSP, "ZigpyEZSP", configure_zigpy_ezsp_loggers)
+        _configure_debug_mode(self, self.debugZigate, "ZigpyZigate", configure_zigpy_zigate_loggers)
+        _configure_debug_mode(self, self.debugdeconz, "ZigpydeCONZ", configure_zigpy_deconz_loggers)
 
     def loggingUpdatePluginVersion(self, Version):
         self.PluginVersion = Version
@@ -97,45 +109,6 @@ class LoggingManagement:
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareVersion"] = FirmwareVersion
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareMajorVersion"] = FirmwareMajorVersion
 
-    def zigpy_login(self):
-        if not self.debugzigpy and self.pluginconf.pluginConf["Zigpy"]:
-            self.debugzigpy = True
-            zigpy_loging_mode("debug")
-        elif self.debugzigpy and not self.pluginconf.pluginConf["Zigpy"]:
-            self.debugzigpy = False
-            zigpy_loging_mode("warning")
-        
-        # Debug ZNP
-        if not self.debugZNP and self.pluginconf.pluginConf["ZigpyZNP"]:
-            self.debugZNP = True
-            zigpy_logging_znp("debug")
-        elif self.debugZNP and not self.pluginconf.pluginConf["ZigpyZNP"]:
-            self.debugZNP = False
-            zigpy_logging_znp("warning")
-
-        # Debug Bellows/Ezsp
-        if not self.debugEZSP and self.pluginconf.pluginConf["ZigpyEZSP"]:
-            self.debugEZSP = True
-            zigpy_logging_ezsp("debug")
-        elif self.debugEZSP and not self.pluginconf.pluginConf["ZigpyEZSP"]:
-            self.debugEZSP = False
-            zigpy_logging_ezsp("warning")
-
-        # Debug Zigate
-        if not self.debugZigate and self.pluginconf.pluginConf["ZigpyZigate"]:
-            self.debugZigate = True
-            zigpy_logging_zigate("debug")
-        elif self.debugZigate and not self.pluginconf.pluginConf["ZigpyZigate"]:
-            self.debugZigate = False
-            zigpy_logging_zigate("warning")
-             
-        # Debug deConz
-        if not self.debugdeconz and self.pluginconf.pluginConf["ZigpydeCONZ"]:
-            self.debugdeconz = True
-            zigpy_logging_deconz("debug")
-        elif self.debugdeconz and not self.pluginconf.pluginConf["ZigpydeCONZ"]:
-            self.debugdeconz = False
-            zigpy_logging_deconz("warning")
 
 
     def openLogFile(self):
@@ -394,31 +367,28 @@ def loggingError(self, thread_name, module, message, nwkid, context):
 
     loggingWriteErrorHistory(self)
 
+def loggingBuildContext(self, thread_name, module, message, nwkid, context=None):
 
-def loggingBuildContext(self, thread_name, module, message, nwkid, context):
-
-    if not self.PluginHealth:
-        _txt = "Not Started"
-    if "Txt" not in self.PluginHealth:
-        _txt = "Not Started"
-    else:
-        _txt = self.PluginHealth["Txt"]
+    _txt = self.PluginHealth.get("Txt", "Not Started")
+    _stacktrace = str(traceback.format_exc())
+                      
     _context = {
         "Time": int(time.time()),
-        "Module": module,
-        "nwkid": nwkid,
-        "PluginHealth": _txt,
-        "message": message,
         "PermitToJoin": self.permitTojoin,
+        "PluginHealth": _txt,
         "Thread": thread_name,
+        "nwkid": nwkid,
+        "Module": module,
+        "message": message,
+        "Stack Trace": _stacktrace
     }
-    if nwkid and nwkid in self.ListOfDevices:
-        _context["DeviceInfos"] = dict(self.ListOfDevices[nwkid])
+    
+    if nwkid in self.ListOfDevices:
+        _context["DeviceInfos"] = dict(self.ListOfDevices.get(nwkid, {}))
+    
     if context is not None:
-        if isinstance(context, dict):
-            _context["context"] = context.copy()
-        elif isinstance(context, (str, int)):
-            _context["context"] = str(context)
+        _context["context"] = context.copy() if isinstance(context, dict) else str(context)
+
     return _context
 
 
@@ -501,56 +471,73 @@ def logging_thread(self):
             Domoticz.Error("logging_thread unexpected tuple %s" % (str(logging_tuple)))
     Domoticz.Log("logging_thread - ended")
 
-
-def zigpy_loging_mode(mode):
+def configure_loggers(logger_names, mode):
+    #Domoticz.Log(f"configure_loggers({logger_names} with {_set_logging_level})")
     _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING
-    Domoticz.Log( "zigpy_login_mode(%s)" %_set_logging_level)
-    logging.getLogger("zigpy.application").setLevel(_set_logging_level)
-    logging.getLogger("zigpy").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.zdo").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.zcl").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.profiles").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.quirks").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.ota").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.appdb_schemas").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.backups").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.device").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.application").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.appdb").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.endpoint").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.group").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.neighbor").setLevel(_set_logging_level)
-    logging.getLogger("zigpy.topology").setLevel(_set_logging_level)
 
+    for logger_name in logger_names:
+        logging.getLogger(logger_name).setLevel(_set_logging_level)
         
-def zigpy_logging_znp(mode):
-    _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING
-    logging.getLogger("zigpy_znp").setLevel(_set_logging_level)
-    logging.getLogger("zigpy_znp.zigbee").setLevel(_set_logging_level)
-    logging.getLogger("zigpy_znp.zigbee.application").setLevel(_set_logging_level)
-    logging.getLogger("zigpy_znp.zigbee.device").setLevel(_set_logging_level)
-    logging.getLogger("Classes.ZigpyTransport.AppZnp").setLevel(_set_logging_level)
-    logging.getLogger("Classes.ZigpyTransport.AppGeneric").setLevel(_set_logging_level)
+
+# Loggers configurations
+def configure_zigpy_loggers(mode):
+    logger_names = [
+        "zigpy.application", "zigpy", "zigpy.zdo", "zigpy.zcl",
+        "zigpy.profiles", "zigpy.quirks", "zigpy.ota",
+        "zigpy.appdb_schemas", "zigpy.backups", "zigpy.device",
+        "zigpy.application", "zigpy.appdb", "zigpy.endpoint",
+        "zigpy.group", "zigpy.neighbor", "zigpy.topology"
+    ]
+    configure_loggers(logger_names, mode)
 
 
-def zigpy_logging_ezsp(mode): 
-    _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING  
-    logging.getLogger("bellows").setLevel(_set_logging_level)
-    logging.getLogger("bellows.zigbee").setLevel(_set_logging_level)
-    logging.getLogger("bellows.zigbee.application").setLevel(_set_logging_level)
-    logging.getLogger("bellows.zigbee.device").setLevel(_set_logging_level)
-    logging.getLogger("bellows.uart").setLevel(_set_logging_level)
-    logging.getLogger("Classes.ZigpyTransport.AppBellows").setLevel(_set_logging_level)
-    logging.getLogger("Classes.ZigpyTransport.AppGeneric").setLevel(_set_logging_level)
+def configure_zigpy_znp_loggers(mode):
+    logger_names = [
+        "zigpy_znp", 
+        "zigpy_znp.zigbee", 
+        "zigpy_znp.zigbee.application", 
+        "zigpy_znp.zigbee.device", 
+        "Classes.ZigpyTransport.AppZnp", 
+        "Classes.ZigpyTransport.AppGeneric"
+    ]
+    configure_loggers(logger_names, mode)
 
 
-def zigpy_logging_zigate(mode):
-    _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING 
-    logging.getLogger("zigpy_zigate").setLevel(_set_logging_level)
-    logging.getLogger("Classes.ZigpyTransport.AppZigate").setLevel(_set_logging_level)
+def configure_zigpy_ezsp_loggers(mode):
+    logger_names = [
+        "bellows", 
+        "bellows.zigbee", 
+        "bellows.zigbee.application", 
+        "bellows.zigbee.device", 
+        "bellows.uart", 
+        "Classes.ZigpyTransport.AppBellows", 
+        "Classes.ZigpyTransport.AppGeneric"
+    ]
+    configure_loggers(logger_names, mode)
 
 
-def zigpy_logging_deconz(mode):
-    _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING 
-    logging.getLogger("zigpy_deconz").setLevel(_set_logging_level)
-    logging.getLogger("Classes.ZigpyTransport.AppDeconz").setLevel(_set_logging_level)
+def configure_zigpy_zigate_loggers(mode):
+    logger_names = [
+        "zigpy_zigate",
+        "Classes.ZigpyTransport.AppZigate"
+    ]
+    configure_loggers(logger_names, mode)
+
+
+def configure_zigpy_deconz_loggers(mode):
+    logger_names = [
+        "zigpy_deconz",
+        "Classes.ZigpyTransport.AppDeconz"
+    ]
+    configure_loggers(logger_names, mode)
+
+
+# Main configuration function
+
+def _configure_debug_mode(self, debug_flag, config_name, config_function):
+    if not debug_flag and self.pluginconf.pluginConf[config_name]:
+        debug_flag = True
+        config_function("debug")
+    elif debug_flag and not self.pluginconf.pluginConf[config_name]:
+        debug_flag = False
+        config_function("warning")

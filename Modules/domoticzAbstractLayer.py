@@ -8,8 +8,13 @@
     Description: Set of functions which abstract Domoticz Legacy and Extended framework API
 """
 
+import time
+
 import Domoticz
+
 DOMOTICZ_EXTENDED_API = False
+
+DELAY_BETWEEN_TOUCH = 30
 
 def load_list_of_domoticz_widget(self, Devices):
     """Use at plugin start to creat an index of Domoticz Widget. It is also called after a Widget removal and when a new device has been paired.
@@ -282,6 +287,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
     else:
         Devices[Unit_].Update( nValue=int(nValue), sValue=str(sValue), SignalLevel=int(SignalLevel), BatteryLevel=int(BatteryLevel), TimedOut=0, )
 
+
 def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
     """
     Read the nValue and sValue of a device unit.
@@ -302,6 +308,7 @@ def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
 
     return _unit.nValue, _unit.sValue
 
+
 def domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit):
     if DOMOTICZ_EXTENDED_API:
         _unit = Devices[DeviceID].Units[Unit]
@@ -309,6 +316,7 @@ def domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit):
         _unit = Devices[Unit]
 
     return _unit.SwitchType, _unit.SubType, _unit.Type
+
 
 def _is_meter_widget( self, Devices,DeviceID_, Unit_):
     # self.log.logging("AbstractDz", "Debug", "_is_meter_widget: %s %s" %(DeviceID_, Unit_))
@@ -336,25 +344,33 @@ def _is_device_tobe_switched_off(self, Devices,DeviceID_, Unit_):
         (Devices[Unit_].Type == 244 and Devices[Unit_].SubType == 73 and Devices[Unit_].SwitchType == 7)
         or (Devices[Unit_].Type == 241 and Devices[Unit_].SwitchType == 7)
     )
-    
 
-    
-def device_touch_api( self, Devices, DeviceId_, Unit_):
-    self.log.logging("AbstractDz", "Debug", "device_touch: %s %s" %(DeviceId_, Unit_))
-    
-    # In case of Meter Device ( kWh ), we must not touch it, otherwise it will destroy the metering
+
+def device_touch_api(self, Devices, DeviceId_, Unit_):
+    self.log.logging("AbstractDz", "Debug", f"device_touch: {DeviceId_} {Unit_}")
+
+    # In case of Meter Device (kWh), we must not touch it, otherwise it will destroy the metering
     # Type, Subtype, SwitchType 
     # 243|29|0
 
-    if _is_meter_widget( self, Devices, DeviceId_, Unit_):
+    if _is_meter_widget(self, Devices, DeviceId_, Unit_):
         return
-    if DOMOTICZ_EXTENDED_API:
-        Devices[DeviceId_].Units[Unit_].Touch()
+
+    last_time = (
+        Devices[DeviceId_].Units[Unit_].LastUpdate
+        if DOMOTICZ_EXTENDED_API
+        else Devices[Unit_].LastUpdate
+    )
+
+    last_update_time_seconds = time.mktime(time.strptime(last_time, "%Y-%m-%d %H:%M:%S"))
+
+    if time.time() > last_update_time_seconds + DELAY_BETWEEN_TOUCH:
+        # Last Touch was done more than 30 seconds ago.
+        Devices[DeviceId_].Units[Unit_].Touch() if DOMOTICZ_EXTENDED_API else Devices[Unit_].Touch()
         return
-    # Legacy
-    Devices[Unit_].Touch()
+    self.log.logging("AbstractDz", "Debug", f"device_touch too early: {DeviceId_} {Unit_}")
     
-    
+
 def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
     if _is_meter_widget( self, Devices, DeviceId_, Unit_):
         return
