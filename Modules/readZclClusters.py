@@ -317,24 +317,15 @@ def is_cluster_zcl_config_available( self, nwkid, ep, cluster, attribute=None):
     return is_generic_zcl_cluster( self, cluster, attribute)
 
 
-def is_manufacturer_specific_cluster( self, nwkid, ep, cluster):
 
-    is_manuf_specific_cluster = self.readZclClusters.get(cluster, {}).get("ManufSpecificCluster", False)
-    device_model = _get_model_name( self, nwkid)
-    if is_manuf_specific_cluster:
+def is_manufacturer_specific_cluster(self, nwkid, ep, cluster):
+    cluster_info = self.readZclClusters.get(cluster, {}).get("ManufSpecificCluster", False)
+
+    if cluster_info:
         return True
 
-    device_model_conf = self.DeviceConf.get(device_model, {})
-    ep_conf = device_model_conf.get('Ep', {}).get(ep, {})
-    cluster_conf = ep_conf.get(cluster, {})
-    
-    if not device_model_conf or 'Ep' not in device_model_conf or ep not in ep_conf or not cluster_conf or cluster_conf in ('', {}):
-        return False
-
-    if "ManufSpecificCluster" in cluster_conf:
-        return True
-
-    return False
+    device_info = self.DeviceConf.get(_get_model_name(self, nwkid), {}).get('Ep', {}).get(ep, {}).get(cluster, {})
+    return device_info and 'ManufSpecificCluster' in device_info
 
 
 def is_generic_zcl_cluster( self, cluster, attribute=None):
