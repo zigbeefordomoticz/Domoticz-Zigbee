@@ -370,7 +370,8 @@ def loggingError(self, thread_name, module, message, nwkid, context):
 def loggingBuildContext(self, thread_name, module, message, nwkid, context=None):
 
     _txt = self.PluginHealth.get("Txt", "Not Started")
-    
+    _stacktrace = str(traceback.format_exc())
+                      
     _context = {
         "Time": int(time.time()),
         "PermitToJoin": self.permitTojoin,
@@ -379,7 +380,7 @@ def loggingBuildContext(self, thread_name, module, message, nwkid, context=None)
         "nwkid": nwkid,
         "Module": module,
         "message": message,
-        "Stack Trace": str(traceback.format_exc())
+        "Stack Trace": _stacktrace
     }
     
     if nwkid in self.ListOfDevices:
@@ -477,7 +478,6 @@ def configure_loggers(logger_names, mode):
     for logger_name in logger_names:
         logging.getLogger(logger_name).setLevel(_set_logging_level)
         
-    
 
 # Loggers configurations
 def configure_zigpy_loggers(mode):
@@ -490,6 +490,7 @@ def configure_zigpy_loggers(mode):
     ]
     configure_loggers(logger_names, mode)
 
+
 def configure_zigpy_znp_loggers(mode):
     logger_names = [
         "zigpy_znp", 
@@ -500,6 +501,7 @@ def configure_zigpy_znp_loggers(mode):
         "Classes.ZigpyTransport.AppGeneric"
     ]
     configure_loggers(logger_names, mode)
+
 
 def configure_zigpy_ezsp_loggers(mode):
     logger_names = [
@@ -513,6 +515,7 @@ def configure_zigpy_ezsp_loggers(mode):
     ]
     configure_loggers(logger_names, mode)
 
+
 def configure_zigpy_zigate_loggers(mode):
     logger_names = [
         "zigpy_zigate",
@@ -520,12 +523,14 @@ def configure_zigpy_zigate_loggers(mode):
     ]
     configure_loggers(logger_names, mode)
 
+
 def configure_zigpy_deconz_loggers(mode):
     logger_names = [
         "zigpy_deconz",
         "Classes.ZigpyTransport.AppDeconz"
     ]
     configure_loggers(logger_names, mode)
+
 
 # Main configuration function
 
