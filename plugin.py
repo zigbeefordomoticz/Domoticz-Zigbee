@@ -1521,9 +1521,9 @@ def check_python_modules_version( self ):
     
     MODULES_VERSION = {
         "zigpy": "0.60.0",
-        "zigpy_znp": "0.11.6",
+        "zigpy_znp": "0.12.0",
         "zigpy_deconz": "0.22.0",
-        "bellows": "0.36.8",
+        "bellows": "0.37.0",
         }
 
     flag = True
