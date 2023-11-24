@@ -10,6 +10,7 @@
 
 """
 
+import inspect
 import json
 import logging
 import os
@@ -95,6 +96,7 @@ class LoggingManagement:
         ):
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["PluginVersion"] = Version
 
+
     def loggingUpdateFirmware(self, FirmwareVersion, FirmwareMajorVersion):
         if self.FirmwareVersion and self.FirmwareMajorVersion:
             return
@@ -110,10 +112,10 @@ class LoggingManagement:
             self.LogErrorHistory[str(self.LogErrorHistory["LastLog"])]["FirmwareMajorVersion"] = FirmwareMajorVersion
 
 
-
     def openLogFile(self):
         self.open_logging_mode()
         self.open_log_history()
+
 
     def open_logging_mode(self):
         import sys
@@ -168,7 +170,6 @@ class LoggingManagement:
                 os.chmod(_logfilename, self.pluginconf.pluginConf["PluginLogMode"])
 
 
-
     def open_log_history(self):
         _pluginlogs = Path( self.pluginconf.pluginConf["pluginLogs"] )
         jsonLogHistory = _pluginlogs / ( LOG_ERROR_HISTORY + "%02d.json" % self.HardwareID) 
@@ -195,6 +196,7 @@ class LoggingManagement:
 
         handle.close()
 
+
     def closeLogFile(self):
         if self.logging_thread is None:
             Domoticz.Error("closeLogFile - logging_thread is None")
@@ -218,6 +220,7 @@ class LoggingManagement:
         loggingWriteErrorHistory(self)
         Domoticz.Log("Logging Thread shutdown")
 
+
     def loggingCleaningErrorHistory(self):
         if len(self.LogErrorHistory) > 1:
             idx = list(self.LogErrorHistory.keys())[1]
@@ -235,9 +238,11 @@ class LoggingManagement:
         if len(self.LogErrorHistory) == 1:
             self.LogErrorHistory.clear()
 
+
     def loggingClearErrorHistory(self):
         self.LogErrorHistory.clear()
         self._newError = False
+
 
     def logging(self, module, logType, message, nwkid=None, context=None):
         #Domoticz.Log("%s %s %s %s %s %s %s" % (module, logType, message, nwkid, context, self.logging_thread, self.logging_queue))
@@ -250,6 +255,12 @@ class LoggingManagement:
         except AttributeError:
             thread_id = 0
 
+        if logType == "Error":
+            if context:
+                context["StackTrace"] = get_stack_trace()
+            else:
+                context = { "StackTrace": get_stack_trace() }
+            
         if self.logging_thread and self.logging_queue:
             logging_tuple = [
                 str(time.time()),
@@ -367,10 +378,24 @@ def loggingError(self, thread_name, module, message, nwkid, context):
 
     loggingWriteErrorHistory(self)
 
+
+def get_stack_trace():
+    # Get the current stack frame
+    current_frame = inspect.currentframe()
+
+    # Get the call stack ( -2 to exclude the get_stack_trace() and logging()
+    stack = traceback.extract_stack(current_frame)[:-2]
+
+    # Format the stack trace
+    stack_trace = traceback.format_list(stack)
+
+    # Alternatively, you can return the formatted stack trace as a string
+    return ''.join(stack_trace)
+
+
 def loggingBuildContext(self, thread_name, module, message, nwkid, context=None):
 
     _txt = self.PluginHealth.get("Txt", "Not Started")
-    _stacktrace = str(traceback.format_exc())
                       
     _context = {
         "Time": int(time.time()),
@@ -380,7 +405,6 @@ def loggingBuildContext(self, thread_name, module, message, nwkid, context=None)
         "nwkid": nwkid,
         "Module": module,
         "message": message,
-        "Stack Trace": _stacktrace
     }
     
     if nwkid in self.ListOfDevices:
