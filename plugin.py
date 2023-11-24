@@ -1563,9 +1563,6 @@ def check_requirements( ):
         except Exception as e:
             Domoticz.Error(f"An unexpected error occurred: {e}")
 
-        else:
-            Domoticz.Error(f"Requirement satisfied: {req_str.strip()}")
-
     return False
                      
 def debuging_information(self, mode):
