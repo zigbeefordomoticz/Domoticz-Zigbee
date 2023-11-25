@@ -170,7 +170,7 @@ class OTAManagement(object):
 
         if self.ListInUpdate["NwkId"] is None:
             logging(self, "Debug", "ota_image_block_request - Async request from device: %s." % (MsgSrcAddr))
-            if not async_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ):
+            if not ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ):
                 logging(
                     self,
                     "Debug",
@@ -232,7 +232,7 @@ class OTAManagement(object):
                 MsgMaxDataSize, 
                 intMsgFieldControl, 
                 "%02x" %_sqn, 
-                disabelACK=True
+                disableACK=True
             )
             
             _file_offset += MsgMaxDataSize
@@ -304,10 +304,18 @@ class OTAManagement(object):
 
         cleanup_after_completed_upgrade(self, MsgSrcAddr, MsgStatus)
 
-    def heartbeat(self):
 
-        if self.ListInUpdate["NwkId"] is None:
-            # Nothing to do.
+    def heartbeat(self):
+        
+        nwk_id = self.ListInUpdate["NwkId"]
+        process = self.ListInUpdate["Process"]
+        image_type = self.ImageLoaded["image_type"]
+        loaded_time_stamp = self.ImageLoaded["LoadedTimeStamp"]
+        notified_time_stamp = self.ImageLoaded["NotifiedTimeStamp"]
+        retry = self.ListInUpdate["Retry"]
+        authorized_for_update = self.ListInUpdate["AuthorizedForUpdate"]
+
+        if nwk_id is None:
             logging(self, "Debug", "ota_heartbeat - nothing to do")
             return
 
@@ -315,49 +323,21 @@ class OTAManagement(object):
             self,
             "Debug",
             "ota_heartbeat - NwkId: %s Process: %s Loaded: 0x%s Time: %s Notified: %s Retry: %s Authorized: %s"
-            % (
-                self.ListInUpdate["NwkId"],
-                self.ListInUpdate["Process"],
-                self.ImageLoaded["image_type"],
-                self.ImageLoaded["LoadedTimeStamp"],
-                self.ImageLoaded["NotifiedTimeStamp"],
-                self.ListInUpdate["Retry"],
-                self.ListInUpdate["AuthorizedForUpdate"],
-            ),
+            % (nwk_id, process, image_type, loaded_time_stamp, notified_time_stamp, retry, authorized_for_update),
         )
 
-        # Do we have a TimeOut on Sending Blocks
-        if self.ListInUpdate["NwkId"] and self.ListInUpdate["Status"] == "Transfer Progress" and self.ListInUpdate["LastBlockSent"] != 0 and (time.time() > self.ListInUpdate["LastBlockSent"] + 300):
-            logging(self, "Error", "Ota timed out on NwkId: %s for block: %s" % ( self.ListInUpdate["NwkId"],self.ListInUpdate["intFileOffset"] ))
-            if self.ListInUpdate["NwkId"] in self.ListInUpdate["AuthorizedForUpdate"]:
-                self.ListInUpdate["AuthorizedForUpdate"].remove(self.ListInUpdate["NwkId"])
-            self.ListInUpdate["NwkId"] = None
-            self.ListInUpdate["Status"] = None
-            self.ListInUpdate["Retry"] = 0
-            self.ListInUpdate["LastBlockSent"] = 0
-            self.ImageLoaded["NotifiedTimeStamp"] = 0
-            self.ImageLoaded["LoadedTimeStamp"] = 0
-            self.ListInUpdate["Process"] = None
+        if nwk_id and self.ListInUpdate["Status"] == "Transfer Progress" and self.ListInUpdate["LastBlockSent"] != 0 and (
+                time.time() > self.ListInUpdate["LastBlockSent"] + 300):
+            _handle_ota_timeout(self)
             return
 
-        # Is an image loaded and we need to re-enforce the Notification
-        if self.ListInUpdate["NwkId"] and self.ListInUpdate["LastBlockSent"] == 0 and self.ImageLoaded["LoadedTimeStamp"] != 0:
-            # Retry every 5s (heartbeat) after 10s after first notification
-            self.ListInUpdate["Retry"] += 1
-            logging(self, "Log", "Ota retries notifying device %s" % self.ListInUpdate["NwkId"])
-            ota_image_advertize( self, self.ListInUpdate["NwkId"], self.ListInUpdate["Ep"], int(self.ImageLoaded["ImageVersion"], 16), int(self.ImageLoaded["image_type"], 16), int(self.ImageLoaded["manufacturer_code"], 16), )
+        if nwk_id and self.ListInUpdate["LastBlockSent"] == 0 and loaded_time_stamp != 0:
+            _retry_notification(self)
 
-        if self.ListInUpdate["Retry"] == 10:
-            logging(self, "Error", "Ota detects Timeout while notifying device %s" % self.ListInUpdate["NwkId"])
-            if self.ListInUpdate["NwkId"] in self.ListInUpdate["AuthorizedForUpdate"]:
-                self.ListInUpdate["AuthorizedForUpdate"].remove(self.ListInUpdate["NwkId"])
-            self.ListInUpdate["NwkId"] = None
-            self.ListInUpdate["Status"] = None
-            self.ListInUpdate["LastBlockSent"] = 0
-            self.ListInUpdate["Retry"] = 0
-            self.ImageLoaded["LoadedTimeStamp"] = 0
-            self.ImageLoaded["NotifiedTimeStamp"] = 0
-            self.ListInUpdate["Process"] = None
+        if retry == 10:
+            _handle_timeout(self)
+
+
 
     def restapi_list_of_firmware(self):
         brand = {}
@@ -450,126 +430,157 @@ class OTAManagement(object):
 
 
 # Routines sending Data
+def _handle_ota_timeout(self):
+    logging(self, "Error", "Ota timed out on NwkId: %s for block: %s" % (
+        self.ListInUpdate["NwkId"], self.ListInUpdate["intFileOffset"]))
+    _reset_ota_state(self)
 
-def ota_load_image_to_zigate(self, image_type, force_version=None):  # OK 13/10
+def _retry_notification(self):
+    self.ListInUpdate["Retry"] += 1
+    logging(self, "Log", "Ota retries notifying device %s" % self.ListInUpdate["NwkId"])
+    
+    ota_image_advertize(self, self.ListInUpdate["NwkId"], self.ListInUpdate["Ep"],
+                        self.ImageLoaded["ImageVersion"], 
+                        self.ImageLoaded["image_type"],
+                        self.ImageLoaded["manufacturer_code"])
+
+def _handle_timeout(self):
+    logging(self, "Error", "Ota detects Timeout while notifying device %s" % self.ListInUpdate["NwkId"])
+    _reset_ota_state(self)
+
+def _reset_ota_state(self):
+    if self.ListInUpdate["NwkId"] in self.ListInUpdate["AuthorizedForUpdate"]:
+        self.ListInUpdate["AuthorizedForUpdate"].remove(self.ListInUpdate["NwkId"])
+    self.ListInUpdate["NwkId"] = None
+    self.ListInUpdate["Status"] = None
+    self.ListInUpdate["LastBlockSent"] = 0
+    self.ListInUpdate["Retry"] = 0
+    self.ImageLoaded["LoadedTimeStamp"] = 0
+    self.ImageLoaded["NotifiedTimeStamp"] = 0
+    self.ListInUpdate["Process"] = None
+
+def ota_load_image_to_zigate(self, image_type, force_version=None):
     # Load the image headers into Zigate
 
     if image_type not in self.ListOfImages["ImageType"]:
-        logging( self, "Debug", "ota_load_image_to_zigate - Unknown Image %s in %s" % (image_type, self.ListOfImages["ImageType"].keys()), )
+        _log_debug_unknown_image_type(self, image_type)
         return
 
     brand = self.ListOfImages["ImageType"][image_type]
-    image_entry = retreive_image_in_a_brand(self, image_type, brand)
+    image_entry = retrieve_image_in_a_brand(self, image_type, brand)
 
     if image_entry is None:
-        logging( self, "Debug", "ota_load_image_to_zigate - Image %s not found in %s" % (image_type, str(self.ListOfImages["Brands"][brand]).keys()), )
+        _log_debug_image_not_found(self, image_type, brand)
+        return
+
     image_entry = self.ListOfImages["Brands"][brand][image_entry]
+    decoded_header = image_entry["Decoded Header"]
 
-    file_id = "%08X" % image_entry["Decoded Header"]["file_id"]
-    header_version = "%04X" % image_entry["Decoded Header"]["header_version"]
-    header_length = "%04X" % image_entry["Decoded Header"]["header_length"]
-    header_fctl = "%04X" % image_entry["Decoded Header"]["header_fctl"]
-    manufacturer_code = "%04X" % image_entry["Decoded Header"]["manufacturer_code"]
-    image_type = "%04X" % image_entry["Decoded Header"]["image_type"]
-    image_version = "%08X" % image_entry["Decoded Header"]["image_version"]
-    if force_version:
-        image_version = "%08X" % force_version
-    stack_version = "%04X" % image_entry["Decoded Header"]["stack_version"]
-    header_str = "".join("%02X" % i for i in image_entry["Decoded Header"]["header_str"])
+    datas = _format_image_data(self, decoded_header, force_version)
 
-    size = "%08X" % image_entry["Decoded Header"]["size"]
-    security_cred_version = "%02X" % image_entry["Decoded Header"]["security_cred_version"]
-    upgrade_file_dest = "%016X" % image_entry["Decoded Header"]["upgrade_file_dest"]
-    min_hw_version = "%04X" % image_entry["Decoded Header"]["min_hw_version"]
-    max_hw_version = "%04X" % image_entry["Decoded Header"]["max_hw_version"]
+    logging(self, "Debug", f"ota_load_image_to_zigate: - len:{len(datas)} datas: {datas}")
 
-    datas = "%02x" % ADDRESS_MODE["short"] + "0000"
-    datas += file_id + header_version + header_length + header_fctl
-    datas += manufacturer_code + image_type + image_version
-    datas += stack_version + header_str + size
-    datas += security_cred_version + upgrade_file_dest + min_hw_version + max_hw_version
-
-    logging(self, "Debug", "ota_load_image_to_zigate: - len:%s datas: %s" % (len(datas), datas))
-    if "ControllerInRawMode" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["ControllerInRawMode"]:
+    if not _is_controller_in_raw_mode(self):
         self.ControllerLink.sendData("0500", datas, ackIsDisabled=True)
 
-    self.ImageLoaded["ImageVersion"] = image_version
-    self.ImageLoaded["image_type"] = image_type
-    self.ImageLoaded["manufacturer_code"] = manufacturer_code
+    _update_image_loaded_info(self, decoded_header, force_version)
+
+def _log_debug_unknown_image_type(self, image_type):
+    logging(self, "Debug", f"ota_load_image_to_zigate - Unknown Image {image_type} in {list(self.ListOfImages['ImageType'].keys())}")
+
+def _log_debug_image_not_found(self, image_type, brand):
+    logging(self, "Debug", f"ota_load_image_to_zigate - Image {image_type} not found in {list(self.ListOfImages['Brands'][brand].keys())}")
+
+def _format_image_data(self, decoded_header, force_version):
+    return (
+        f"{ADDRESS_MODE['short']:02x}0000"
+        f"{decoded_header['file_id']} {decoded_header['header_version']} {decoded_header['header_length']} {decoded_header['header_fctl']}"
+        f"{decoded_header['manufacturer_code']} {decoded_header['image_type']} {force_version or decoded_header['image_version']}"
+        f"{decoded_header['stack_version']}{''.join('%02X' % i for i in decoded_header['header_str'])}{decoded_header['size']}"
+        f"{decoded_header['security_cred_version']} {decoded_header['upgrade_file_dest']} {decoded_header['min_hw_version']} {decoded_header['max_hw_version']}"
+    )
+
+def _is_controller_in_raw_mode(self):
+    return "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]
+
+def _update_image_loaded_info(self, decoded_header, force_version):
+    self.ImageLoaded["ImageVersion"] = force_version or decoded_header['image_version']
+    self.ImageLoaded["image_type"] = decoded_header['image_type']
+    self.ImageLoaded["manufacturer_code"] = decoded_header['manufacturer_code']
     self.ImageLoaded["LoadedTimeStamp"] = time.time()
 
 
-def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request, disabelACK=False):  # OK 24/10
-    # 'BLOCK_SEND 	0x0502 	This is used to transfer firmware BLOCKS to device when it sends request 0x8501.'
-    #
-    # Indicates whether a data block is included in the response:
-    #     OTA_STATUS_SUCCESS: ( 0x00)  A data block is included
-    #     OTA_STATUS_WAIT_FOR_DATA (0x97) : No data block is included - client should re-request a data block after a waiting time
+def build_ota_data_block(self, block_request, max_data_size):
+    sequence = int(block_request["Sequence"], 16)
+    offset = int(block_request["Offset"], 16)
+    raw_ota_data = self.ListInUpdate["OtaImage"][offset: offset + max_data_size]
+    length = min(max_data_size, len(raw_ota_data))
 
-    logging(self, "Debug", "ota_send_block - Addr: %s/%s Type: 0x%X" % (dest_addr, dest_ep, image_type))
+    return sequence, offset, length, raw_ota_data
+
+def build_ota_message(self, dest_addr, dest_ep, sequence, status, offset, image_version, image_type, manufacturer_code, length, raw_ota_data):
+    data = "02" + dest_addr + ZIGATE_EP + dest_ep
+    data += f"{sequence:02x}{status:02x}{offset:08x}{image_version}{image_type}{manufacturer_code}{length:02x}"
+    data += "".join(f"{i:02x}" for i in raw_ota_data)
+
+    return data
+
+def update_list_in_update(self, offset, length):
+    self.ListInUpdate["TimeStamps"] = time.time()
+    self.ListInUpdate["Status"] = "Transfer Progress"
+    self.ListInUpdate["Received"] = offset
+    self.ListInUpdate["Sent"] = offset + length
+
+def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, block_request, disable_ack=False):
+    logging(self, "Debug", f"ota_send_block - Addr: {dest_addr}/{dest_ep} Type: 0x{image_type}")
+
     if image_type not in self.ListOfImages["ImageType"]:
-        logging(self, "Error", "ota_send_block - unknown image_type %s" % image_type)
+        logging(self, "Error", f"ota_send_block - unknown image_type {image_type}")
         return False
 
     if image_type != int(self.ListInUpdate["ImageType"], 16):
-        logging(self, "Error", "ota_send_block - inconsistent ImageType Received: %s Expecting: %s" % (image_type, self.ListInUpdate["ImageType"]))
+        logging(self, "Error", f"ota_send_block - inconsistent ImageType Received: {image_type} Expecting: {self.ListInUpdate['ImageType']}")
         return False
 
-    _status = 0x00
+    status = 0x00
 
-    sequence = int(block_request["Sequence"], 16)
-    _offset = int(block_request["Offset"], 16)
-    #image_version = "%08x" % self.ListInUpdate["ImageVersion"]
-    image_version = "%08x" %msg_image_version
-    image_type = "%04x" % image_type
-    manufacturer_code = "%04x" % self.ListInUpdate["intManufCode"]
+    max_data_size = min(block_request["MaxDataSize"], MAX_FRAME_DATA)
+    sequence, offset, length, raw_ota_data = build_ota_data_block(self, block_request, max_data_size)
+    image_version_hex = f"{msg_image_version:08x}"
+    image_type_hex = f"{image_type:04x}"
+    manufacturer_code_hex = f"{self.ListInUpdate['intManufCode']:04x}"
 
-    # Build the data block to be send based on the request
-    _lenght = min( MAX_FRAME_DATA, block_request["MaxDataSize"])
-    
-    _raw_ota_data = self.ListInUpdate["OtaImage"][_offset : _offset + _lenght]
-    if len(_raw_ota_data) != _lenght:
-        logging( self, "Log", "ota_send_block - we reached the end of the image !! %s against %s" %(len(_raw_ota_data), _lenght ))
-        _lenght = len(_raw_ota_data)
+    data = build_ota_message(self, dest_addr, dest_ep, sequence, status, offset, image_version_hex, image_type_hex, manufacturer_code_hex, length, raw_ota_data)
 
-    # Build the message and send
-    datas = "02" + dest_addr + ZIGATE_EP + dest_ep
-    datas += "%02x" % sequence + "%02x" % _status
-    datas += "%08x" % _offset
-    datas += image_version + image_type + manufacturer_code
-    datas += "%02x" % _lenght
-    for i in _raw_ota_data:
-        datas += "%02x" % i
+    update_list_in_update(self, offset, length)
 
-    self.ListInUpdate["TimeStamps"] = time.time()
-    self.ListInUpdate["Status"] = "Transfer Progress"
-    self.ListInUpdate["Received"] = _offset
-    self.ListInUpdate["Sent"] = _offset + _lenght
+    logging(self, "Debug", f"ota_send_block - Block sent to {dest_addr}/{dest_ep} Received yet: {offset} Sent now: {length}")
 
-    logging( self, "Debug", "ota_send_block - Block sent to %s/%s Received yet: %s Sent now: %s" % (dest_addr, dest_ep, _offset, _lenght), )
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        rawdatas = "".join("%02x" % i for i in _raw_ota_data)
-        return zcl_raw_ota_image_block_response_success(self, "%02x" % sequence, dest_addr, ZIGATE_EP, dest_ep, "%02x" % _status, manufacturer_code, image_type, image_version, "%08x" % _offset, "%02x" % _lenght, rawdatas , ackIsDisabled=disabelACK)
+        raw_data_hex = "".join(f"{i:02x}" for i in raw_ota_data)
+        return zcl_raw_ota_image_block_response_success(
+            self, f"{sequence:02x}", dest_addr, ZIGATE_EP, dest_ep, f"{status:02x}",
+            manufacturer_code_hex, image_type_hex, image_version_hex, f"{offset:08x}", f"{length:02x}", raw_data_hex, ackIsDisabled=disable_ack
+        )
 
-    self.ControllerLink.sendData("0502", datas, ackIsDisabled=False, NwkId=dest_addr)
+    self.ControllerLink.sendData("0502", data, ackIsDisabled=False, NwkId=dest_addr)
 
-
-def ota_image_advertize(self, dest_addr, dest_ep, image_version, image_type=0xFFFF, manufacturer_code=0xFFFF):  # OK 24/10
-    # 'IMAGE_NOTIFY 	0x0505 	Notify desired device that ota is available. After loading headers use this.'
-
+def ota_image_advertize(self, dest_addr, dest_ep, image_version, image_type=0xFFFF, manufacturer_code=0xFFFF):
+    # 'IMAGE_NOTIFY  0x0505  Notify desired device that ota is available. After loading headers use this.'
     # The 'query jitter' mechanism can be used to prevent a flood of replies to an Image Notify broadcast
-    # or multicast (Step 2 above). The server includes a number, n, in the range 1-100 in the notification.
+    # or multicast (Step 2 above). The server includes a number, n, in the notification.
     # If interested in the image, the receiving client generates a random number in the range 1-100.
     # If this number is greater than n, the client discards the notification, otherwise it responds with
-    # a Query Next Image Request. This results in only a fraction of interested clients res
+    # a Query Next Image Request. This results in only a fraction of interested clients responding.
 
     JITTER_OPTION = 100
 
     # teOTA_ImageNotifyPayloadType
-    #   - 0 : E_CLD_OTA_QUERY_JITTER Include only ‘Query Jitter’ in payload
-    #   - 1 : E_CLD_OTA_MANUFACTURER_ID_AND_JITTER Include ‘Manufacturer Code’ and ‘Query Jitter’ in payload
-    #   - 2 : E_CLD_OTA_ITYPE_MDID_JITTER Include ‘Image Type’, ‘Manufacturer Code’ and ‘Query Jit- ter’ in payload
-    #   - 3 : E_CLD_OTA_ITYPE_MDID_FVERSION_JITTER Include ‘Image Type’, ‘Manufacturer Code’, ‘File Version’ and ‘Query Jitter’ in payload
+    #   - 0: E_CLD_OTA_QUERY_JITTER Include only ‘Query Jitter’ in payload
+    #   - 1: E_CLD_OTA_MANUFACTURER_ID_AND_JITTER Include ‘Manufacturer Code’ and ‘Query Jitter’ in payload
+    #   - 2: E_CLD_OTA_ITYPE_MDID_JITTER Include ‘Image Type’, ‘Manufacturer Code’ and ‘Query Jit- ter’ in payload
+    #   - 3: E_CLD_OTA_ITYPE_MDID_FVERSION_JITTER Include ‘Image Type’, ‘Manufacturer Code’,
+    #        ‘File Version’ and ‘Query Jitter’ in payload
 
     IMG_NTFY_PAYLOAD_TYPE = 3
 
@@ -580,32 +591,25 @@ def ota_image_advertize(self, dest_addr, dest_ep, image_version, image_type=0xFF
         image_version = 0xFFFFFFFF  # Wildcard
         image_type = 0xFFFF  # Wildcard
         manufacturer_code = 0xFFFF  # Wildcard
-
     elif IMG_NTFY_PAYLOAD_TYPE == 1:
         image_version = 0xFFFFFFFF  # Wildcard
         image_type = 0xFFFF  # Wildcard
-
     elif IMG_NTFY_PAYLOAD_TYPE == 2:
         image_version = 0xFFFFFFFF  # Wildcard
 
-    datas = "%02x" % ADDRESS_MODE["short"] + dest_addr + ZIGATE_EP + dest_ep + "%02x" % IMG_NTFY_PAYLOAD_TYPE
-    datas += "%08X" % image_version + "%04x" % image_type + "%04x" % manufacturer_code
-    datas += "%02x" % JITTER_OPTION
-    logging( self, "Debug", "ota_image_advertize - Type: 0x%04x, Version: 0x%08x => datas: %s" % (image_type, image_version, datas), )
+    datas = (
+        f"{ADDRESS_MODE['short']:02x}"
+        f"{dest_addr}{ZIGATE_EP}{dest_ep}"
+        f"{IMG_NTFY_PAYLOAD_TYPE:02x}"
+        f"{image_version:08X}{image_type:04x}{manufacturer_code:04x}"
+        f"{JITTER_OPTION:02x}"
+    )
+    
+    logging(self, "Debug", f"ota_image_advertize - Type: 0x{image_type:04x}, Version: 0x{image_version:08X} => datas: {datas}")
 
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        return zcl_raw_ota_image_notify(
-            self, 
-            dest_addr, 
-            ZIGATE_EP, 
-            dest_ep, 
-            "%02x" %IMG_NTFY_PAYLOAD_TYPE, 
-            "%02x" % JITTER_OPTION, 
-            "%04x" % manufacturer_code, 
-            "%04x" % image_type, 
-            "%08X" % image_version 
-        )
-    
+        return zcl_raw_ota_image_notify(self, dest_addr, ZIGATE_EP, dest_ep, f"{IMG_NTFY_PAYLOAD_TYPE:02x}", f"{JITTER_OPTION:02x}", f"{manufacturer_code:04x}", f"{image_type:04x}", f"{image_version:08X}")
+
     self.ControllerLink.sendData("0505", datas, ackIsDisabled=False, NwkId=dest_addr)
 
 
@@ -656,7 +660,7 @@ def ota_upgrade_end_response(self, sqn, dest_addr, dest_ep, intMsgImageVersion, 
 
 
 def ota_management(self, MsgSrcAddr, MsgEP, delay=500):
-    # 'SEND_WAIT_FOR_DATA_PARAMS 	0x0506 	Can be used to delay/pause OTA update'
+    # 'SEND_WAIT_FOR_DATA_PARAMS  0x0506  Can be used to delay/pause OTA update'
 
     # OTA_STATUS_WAIT_FOR_DATA: No data block is included - client should re-request
     #                           a data block after a waiting time
@@ -666,27 +670,29 @@ def ota_management(self, MsgSrcAddr, MsgEP, delay=500):
     # If UTC time is not supported by the server, this value should be set to zero
     _CurrentTime = 0x00
 
-    # RequestTime is the UTC time, in seconds, at which the client should re- issue
+    # RequestTime is the UTC time, in seconds, at which the client should re-issue
     # an Image Block Request
     _RequestTime = 0x00
 
     # BlockRequestDelayMs is used in ‘rate limiting’ to specify the value of the ‘block
-    # request delay’ attribute for the client - this is minimum time, in milliseconds,
+    # request delay’ attribute for the client - this is the minimum time, in milliseconds,
     # that the client must wait between consecutive block requests (the client will
     # update the local attribute with this value)
     _BlockRequestDelayMs = delay
 
-    datas = "%02x" % ADDRESS_MODE["short"] + MsgSrcAddr
-    datas += ZIGATE_EP + MsgEP
-    datas += "%02X" % _status
-    datas += "%08X" % _CurrentTime
-    datas += "%08X" % _RequestTime
-    datas += "%04X" % _BlockRequestDelayMs
+    datas = (
+        f"{ADDRESS_MODE['short']:02x}"
+        f"{MsgSrcAddr}{ZIGATE_EP}{MsgEP}"
+        f"{_status:02X}"
+        f"{_CurrentTime:08X}"
+        f"{_RequestTime:08X}"
+        f"{_BlockRequestDelayMs:04X}"
+    )
 
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         return
-    
-    logging(self, "Debug", "ota_management - Reduce Block request to a rate of %s ms" % _BlockRequestDelayMs)
+
+    logging(self, "Debug", f"ota_management - Reduce Block request to a rate of {_BlockRequestDelayMs} ms")
     self.ControllerLink.sendData("0506", datas, ackIsDisabled=False, NwkId=MsgSrcAddr)
 
 
@@ -721,14 +727,18 @@ def cleanup_after_completed_upgrade(self, NwkId, Status):
         sendZigateCmd(self, "0011", "")  # Software Reset
 
 def delay_checking_version(self, NwkId):
-    
-    if 'DelayReadAttributes' not in self.ListOfDevices[ NwkId ]:
-        self.ListOfDevices[ NwkId ]['DelayReadAttributes'] = {'Clusters': []}
-    self.ListOfDevices[ NwkId ]['DelayReadAttributes']['TargetTime'] = time.time() + 120
-    if "0000" not in self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters']:
-        self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters'].append( "0000" )
-    if "0019" not in self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters']:
-        self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters'].append( "0019" )
+    delay_attributes_key = 'DelayReadAttributes'
+
+    if delay_attributes_key not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId][delay_attributes_key] = {'Clusters': []}
+
+    target_time = time.time() + 120
+    self.ListOfDevices[NwkId][delay_attributes_key]['TargetTime'] = target_time
+
+    clusters = self.ListOfDevices[NwkId][delay_attributes_key]['Clusters']
+    for cluster in ["0000", "0019"]:
+        if cluster not in clusters:
+            clusters.append(cluster)
 
 def firmware_update(self, brand, file_name, target_nwkid, target_ep, force_update=False):
 
@@ -816,18 +826,16 @@ def is_image_for_query_next_image_request( self, nwkid, manuf_code, image_type, 
 
     return None
 
-def retreive_image_in_a_brand(self, image_type, brand):  # OK 13/10
-    if brand not in self.ListOfImages["Brands"]:
-        return None
-    for y in self.ListOfImages["Brands"][brand]:
-        if image_type == self.ListOfImages["Brands"][brand][y]["ImageType"]:
-            return y
+def retrieve_image_in_a_brand(self, image_type, brand):
+    brand_images = self.ListOfImages.get("Brands", {}).get(brand, {})
+    
+    return next((image for image, info in brand_images.items() if info.get("ImageType") == image_type), None)
 
-def retreive_image(self, image_type):  # OK 13/10
-    for x in self.ListOfImages["Brands"]:
-        for y in self.ListOfImages["Brands"][x]:
-            if image_type == self.ListOfImages["Brands"][x][y]["ImageType"]:
-                return (x, y)
+def retrieve_image(self, image_type):
+    for brand, images in self.ListOfImages.get("Brands", {}).items():
+        for image, info in images.items():
+            if image_type == info.get("ImageType"):
+                return brand, image
     return None
 
 def ota_scan_folder(self):  # OK 13/10
@@ -895,7 +903,7 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
     # Purpose is to check if the already imported image has a higher version or not.
     # If the version number is the same we will take the existing one
 
-    existing_image = retreive_image(self, image_type)
+    existing_image = retrieve_image(self, image_type)
     if existing_image is None:
         # Strange
         return False
@@ -915,16 +923,15 @@ def check_image_valid_version(self, brand, image_type, ota_image_file, headers):
     del self.ListOfImages["Brands"][brand][ota_image_file]
     return True
 
+
 def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
     # Load headers from the image
-    ota_image = _open_image_file(self, Path( self.pluginconf.pluginConf["pluginOTAFirmware"]) / subfolder / image)
+    ota_image = _open_image_file(self, Path(self.pluginconf.pluginConf["pluginOTAFirmware"]) / subfolder / image)
     if ota_image is None:
-        logging( self, "Error", "ota_extract_image_headers - unable to open file %s" % (self.pluginconf.pluginConf["pluginOTAFirmware"] + subfolder + "/" + image), )
         return None
 
-    offset = offset_start_firmware(ota_image)
+    offset = offset_start_firmware(self, ota_image)
     if offset is None:
-        logging( self, "Error", "ota_extract_image_headers - Doesn't look as a OTA file %s" % (self.pluginconf.pluginConf["pluginOTAFirmware"] + subfolder + "/" + image), )
         return None
 
     logging(self, "Debug", "ota_extract_image_headers - offset:%s ..." % offset)
@@ -939,34 +946,37 @@ def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
         % (headers["manufacturer_code"], headers["image_type"], headers["image_version"], headers["size"], image),
     )
 
-    return (headers["image_type"], headers, ota_image)
+    return headers["image_type"], headers, ota_image
 
 def _open_image_file(self, filename):  # OK 13/10
     try:
         with open(filename, "rb") as file:
             ota_image = file.read()
     except OSError as err:
-        logging(self, "Error", "ota_extract_image_headers - error when opening %s - %s" % (filename, err))
+        logging(self, "Error", f"ota_extract_image_headers - error when opening {filename} - {err}")
         return None
     if len(ota_image) < 69:
-        logging(self, "Error","ota_extract_image_headers - invalid file size read %s - %s" % (filename, len(ota_image)))
+        logging(self, "Error", f"ota_extract_image_headers - invalid file size read {filename} - {len(ota_image)}")
         return None
     return ota_image
 
-def offset_start_firmware(ota_image):  # OK 13/10
-    # Search for the OTA Upgrade File Identifier (  “0x0BEEF11E” )
+def offset_start_firmware(self, ota_image):  # OK 13/10
+    # Search for the OTA Upgrade File Identifier ( “0x0BEEF11E” )
     offset = None
-    for i in range(len(ota_image) - 4):
-        if hex(struct.unpack("<I", ota_image[0 + i : 4 + i])[0]) == "0xbeef11e":
-            return i
-    return None
+    return next(
+        (
+            i
+            for i in range(len(ota_image) - 4)
+            if hex(struct.unpack("<I", ota_image[i : i + 4])[0]) == "0xbeef11e"
+        ),
+        None,
+    )
 
 def unpack_headers(self, ota_image):  # OK 13/10
-
     try:
         header_data = list(struct.unpack("<LHHHHHLH32BLBQHH", ota_image[:69]))
     except struct.error:
-        logging(self, "Error", "ota_extract_image_headers - Error when unpacking: %s" % ota_image[:69])
+        logging(self, "Error", f"ota_extract_image_headers - Error when unpacking: {ota_image[:69]}")
         return None
 
     for i in range(8, 40):
@@ -993,7 +1003,7 @@ def unpack_headers(self, ota_image):  # OK 13/10
 
     return dict(zip(header_headers, header_data_compact))
 
-def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN, disabelACK=False):
+def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN, disableACK=False):
     self.ListInUpdate["Retry"] = 0
 
     # Get all block information, and patch if needed ( Legrand )
@@ -1031,27 +1041,14 @@ def prepare_and_send_block(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVe
     logging( self, "Debug", "ota_image_block_request - Block Request for %s/%s Image Type: 0x%04X Image Version: %08X Seq: %s Offset: %s Size: %s FieldCtrl: 0x%02X" % ( 
         MsgSrcAddr, block_request["ReqEp"], block_request["ImageType"], block_request["ImageVersion"], MsgSQN, block_request["Offset"], block_request["MaxDataSize"], block_request["FieldControl"], ),)
 
-    ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request, disabelACK=disabelACK)
+    ota_send_block(self, MsgSrcAddr, MsgEP, intMsgImageType, intMsgImageVersion, block_request, disable_ack=disableACK)
 
 
-def initialize_block_request(  # OK 13/10
-    self,
-    MsgSrcAddr,
-    MsgEP,
-    MsgFileOffset,
-    intMsgImageVersion,
-    intMsgImageType,
-    intMsgManufCode,
-    MsgBlockRequestDelay,
-    MsgMaxDataSize,
-    intMsgFieldControl,
-    MsgSQN,
-):
-
+def initialize_block_request(self, MsgSrcAddr, MsgEP, MsgFileOffset, intMsgImageVersion, intMsgImageType, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, MsgSQN):
     # Patching in order to make Legrand update with Image Page Request working
     if intMsgManufCode == 0x00C8 and self.ListInUpdate["NwkId"] == MsgSrcAddr:
-        # Request a Page , and Note a Block
-        # For the time been , we are forcing a response with a Block
+        # Request a Page, and Note a Block
+        # For the time being, we are forcing a response with a Block
         intMsgImageType = self.ListInUpdate["intImageType"]
         intMsgManufCode = 0x1021
         MsgBlockRequestDelay = 0xffff
@@ -1060,19 +1057,7 @@ def initialize_block_request(  # OK 13/10
         logging(
             self,
             "Debug",
-            "  Fixing   - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X"
-            % (
-                int(MsgSQN, 16),
-                MsgSrcAddr,
-                MsgEP,
-                int(MsgFileOffset, 16),
-                intMsgImageVersion,
-                intMsgImageType,
-                intMsgManufCode,
-                MsgBlockRequestDelay,
-                MsgMaxDataSize,
-                intMsgFieldControl,
-            ),
+            f"Fixing - [{int(MsgSQN, 16):3}] OTA image Block request - {MsgSrcAddr}/{MsgEP} Offset: {int(MsgFileOffset, 16)} version: 0x{intMsgImageVersion:08X} Type: 0x{intMsgImageType:04X} Code: 0x{intMsgManufCode:04X} Delay: {MsgBlockRequestDelay} MaxSize: {MsgMaxDataSize} Control: 0x{intMsgFieldControl:02X}"
         )
 
     return {
@@ -1088,70 +1073,59 @@ def initialize_block_request(  # OK 13/10
         "Sequence": MsgSQN,
     }
 
-def async_request(  # OK 24/10
-    self,
-    MsgSrcAddr,
-    MsgEP,
-    MsgIEEE,
-    MsgFileOffset,
-    image_version,
-    image_type,
-    intMsgManufCode,
-    MsgBlockRequestDelay,
-    MsgMaxDataSize,
-    intMsgFieldControl,
-):
+
+def ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, image_version, image_type, intMsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, intMsgFieldControl, ):
     # We are receiving an OTA request
     # Check if we have an available firmware
     # If yes, then load the firmware on ZiGate
 
-    logging(self, "Debug", "async_request: There is async request comming %s against %s" % (
-        MsgSrcAddr, self.ListInUpdate["AuthorizedForUpdate"]))
+    logging(self, "Debug", f"ota_aync_request: There is async request coming {MsgSrcAddr} against {self.ListInUpdate.get('AuthorizedForUpdate')}")
 
-    if MsgSrcAddr not in self.ListInUpdate["AuthorizedForUpdate"]:
-        if ( "autoServeOTA" in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["autoServeOTA"] ):
+    if MsgSrcAddr not in self.ListInUpdate.get("AuthorizedForUpdate", []):
+        if self.pluginconf.pluginConf.get("autoServeOTA", False):
             return False
-        
+
         # We need to prevent looping on serving if it is not expected!
-        logging( self, "Error", "async_request: There is no upgrade plan for that device, drop request from %s" % (MsgSrcAddr), )
+        logging(self, "Error", f"ota_aync_request: There is no upgrade plan for that device, drop request from {MsgSrcAddr}")
         return False
 
-    if self.ListInUpdate["NwkId"]:
+    if self.ListInUpdate.get("NwkId"):
         logging(
             self,
             "Debug",
-            "async_request: There is an upgrade in progress %s, drop request from %s" % (self.ListInUpdate["NwkId"], MsgSrcAddr),
+            f"ota_aync_request: There is an upgrade in progress {self.ListInUpdate['NwkId']}, drop request from {MsgSrcAddr}",
         )
         return False
 
-    if image_type not in self.ListOfImages["ImageType"]:
-        logging(self, "Log", "async_request: No Firmware available to satisfy this request by %s" % (MsgSrcAddr))
+    if image_type not in self.ListOfImages.get("ImageType", {}):
+        logging(self, "Log", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr}")
         return False
 
-    entry = retreive_image(self, image_type)
+    entry = retrieve_image(self, image_type)
     if entry is None:
-        logging(self, "Error", "async_request: No Firmware available to satisfy this request by %s !!!" % (MsgSrcAddr))
+        logging(self, "Error", f"ota_aync_request: No Firmware available to satisfy this request by {MsgSrcAddr} !!!")
 
     brand, ota_image_file = entry
-    available_image = self.ListOfImages["Brands"][brand][ota_image_file]
-    logging(self, "Debug", "async_request: brand: %s ota_image_file: %s" % (brand, ota_image_file))
+    available_image = self.ListOfImages.get("Brands", {}).get(brand, {}).get(ota_image_file, {})
+    logging(self, "Debug", f"ota_aync_request: brand: {brand} ota_image_file: {ota_image_file}")
 
     # Sanity Checks
-    if intMsgManufCode != available_image["intManufCode"]:
+    if intMsgManufCode != available_image.get("intManufCode"):
         logging(
             self,
             "Error",
-            "async_request: %s Available Firmware %s is not for this Manufacturer Code %s . Droping"
-            % (MsgSrcAddr, ota_image_file, intMsgManufCode),
+            f"ota_aync_request: {MsgSrcAddr} Available Firmware {ota_image_file} is not for this Manufacturer Code {intMsgManufCode}. Dropping",
         )
         return False
-    logging(self, "Debug", "OTA heartbeat - Image: 0x%04X from file: %s" % (image_type, ota_image_file))
+
+    logging(self, "Debug", f"OTA heartbeat - Image: 0x{image_type:04X} from file: {ota_image_file}")
 
     # Loading Image on Zigate
-    if len(self.ImageLoaded) == 0:
+    if not self.ImageLoaded:
         ota_load_image_to_zigate(self, image_type)
 
     return True
+
 
 def notify_upgrade_end(
     self,
@@ -1161,9 +1135,9 @@ def notify_upgrade_end(
     image_type,
     intMsgManufCode,
     intMsgImageVersion,
-):  # OK 26/10
+    ):  # OK 26/10
 
-    _transferTime_hh, _transferTime_mm, _transferTime_ss = convertTime(int(time.time() - self.ListInUpdate["StartTime"]))
+    _transferTime_hh, _transferTime_mm, _transferTime_ss = convert_time(int(time.time() - self.ListInUpdate["StartTime"]))
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
     _name = None
     _textmsg = ""
@@ -1216,75 +1190,74 @@ def notify_upgrade_end(
 
     self.adminWidgets.updateNotificationWidget(self.Devices, _textmsg)
 
-def convertTime(_timeInSec):  # Ok 13/10
-
-    _timeInSec_hh = _timeInSec // 3600
-    _timeInSec = _timeInSec - (_timeInSec_hh * 3600)
-    _timeInSec_mm = _timeInSec // 60
-    _timeInSec = _timeInSec - (_timeInSec_mm * 60)
-    _timeInSec_ss = _timeInSec
-    return _timeInSec_hh, _timeInSec_mm, _timeInSec_ss
+def convert_time(seconds):
+    hours, remainder = divmod(seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return hours, minutes, seconds
 
 def _logging_headers(self, headers):  # OK 13/10
 
-    if "debugOTA" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["debugOTA"]:
+    if not self.pluginconf.pluginConf.get("debugOTA", False):
         return
-    for attribut in headers:
-        if attribut in ("stack_version", "security_cred_version", "image_version"):
-            continue
-        if isinstance(headers[attribut], int):
-            logging(self, "Debug", "==> %s : 0x%x" % (attribut, headers[attribut]))
-        else:
-            logging(self, "Debug", "==> %s : %s" % (attribut, headers[attribut]))
+
+    excluded_attributs = {"stack_version", "security_cred_version", "image_version"}
+    
+    for attribut, value in headers.items():
+        if attribut not in excluded_attributs:
+            if isinstance(value, int):
+                logging(self, "Debug", f"==> {attribut}: 0x{value:X}")
+            else:
+                logging(self, "Debug", f"==> {attribut}: {value}")
 
     # Decoding File Version
-    logging(self, "Debug", "==> File Version: 0x%08X" % headers["image_version"])
-    logging(self, "Debug", "==>    Application Release: 0x%02x" % ((headers["image_version"] & 0xFF000000) >> 24))
-    logging(self, "Debug", "==>    Application Build: %s" % ((headers["image_version"] & 0x00FF0000) >> 16))
-    logging(self, "Debug", "==>    Stack Release: %s" % ((headers["image_version"] & 0x0000FF00) >> 8))
-    logging(self, "Debug", "==>    Stack Build: %s" % ((headers["image_version"] & 0x000000FF)))
+    image_version = headers["image_version"]
+    logging(self, "Debug", f"==> File Version: 0x{image_version:08X}")
+    logging(self, "Debug", f"==>    Application Release: 0x{(image_version & 0xFF000000) >> 24:02X}")
+    logging(self, "Debug", f"==>    Application Build: {(image_version & 0x00FF0000) >> 16}")
+    logging(self, "Debug", f"==>    Stack Release: {(image_version & 0x0000FF00) >> 8}")
+    logging(self, "Debug", f"==>    Stack Build: {image_version & 0x000000FF}")
 
     # Stack version
-    if headers["stack_version"] == 0x0000:
-        logging(self, "Debug", "==> Stack Name: ZigBee 2006")
-    elif headers["stack_version"] == 0x0001:
-        logging(self, "Debug", "==> Stack Name: ZigBee 2007")
-    elif headers["stack_version"] == 0x0002:
-        logging(self, "Debug", "==> Stack Name: ZigBee Pro")
-    elif headers["stack_version"] == 0x0003:
-        logging(self, "Debug", "==> Stack Name: ZigBee IP")
-    else:
-        logging(self, "Debug", "==> Stack Name: Reserved")
+    stack_version = headers["stack_version"]
+    stack_names = {
+        0x0000: "ZigBee 2006",
+        0x0001: "ZigBee 2007",
+        0x0002: "ZigBee Pro",
+        0x0003: "ZigBee IP",
+    }
+    logging(self, "Debug", f"==> Stack Name: {stack_names.get(stack_version, 'Reserved')}")
 
     # Security Credential
-    if headers["security_cred_version"] == 0x00:
-        logging(self, "Debug", "==> Security Credential: SE 1.0")
-    elif headers["security_cred_version"] == 0x01:
-        logging(self, "Debug", "==> Security Credential: SE 1.1")
-    elif headers["security_cred_version"] == 0x02:
-        logging(self, "Debug", "==> Security Credential: SE 2.0")
-    else:
-        logging(self, "Debug", "==> Security Credential: Reserved")
+    security_cred_version = headers["security_cred_version"]
+    credential_names = {
+        0x00: "SE 1.0",
+        0x01: "SE 1.1",
+        0x02: "SE 2.0",
+    }
+    logging(self, "Debug", f"==> Security Credential: {credential_names.get(security_cred_version, 'Reserved')}")
+
 
 def display_percentage_progress(self, MsgSrcAddr, MsgEP, intMsgImageType, MsgFileOffset):
 
-    _size = self.ListInUpdate["intSize"]
-    _completion = round(((int(MsgFileOffset, 16) / _size) * 100), 1)
+    _size = self.ListInUpdate.get("intSize", 1)  # Default to 1 to avoid division by zero
+    _completion = round((int(MsgFileOffset, 16) / _size) * 100, 1)
 
-    if (_completion % 5) == 0:
-        logging(self, "Status", "Firmware transfer for %s/%s - Progress: %4s %%" % (MsgSrcAddr, MsgEP, _completion))
-        if "Firmware Update" not in self.PluginHealth:
-            self.PluginHealth["Firmware Update"] = {}
+    if _completion % 5 == 0:
+        update_firmware_health(self, MsgSrcAddr, _completion)
 
-        if self.PluginHealth["Firmware Update"] is None:
-            self.PluginHealth["Firmware Update"] = {}
+def update_firmware_health(self, MsgSrcAddr, completion):
+    firmware_update_health = self.PluginHealth.setdefault("Firmware Update", {})
 
-    self.PluginHealth["Firmware Update"]["Progress"] = "%s %%" % round(_completion)
-    self.PluginHealth["Firmware Update"]["Device"] = MsgSrcAddr
+    if "Progress" not in firmware_update_health:
+        firmware_update_health["Progress"] = {}
+
+    firmware_update_health["Progress"] = f"{round(completion)}%"
+    firmware_update_health["Device"] = MsgSrcAddr
+
 
 def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize):  # OK 24/10/2020
 
-    entry = retreive_image(self, intMsgImageType)
+    entry = retrieve_image(self, intMsgImageType)
     if entry is None:
         logging(self, "Error", "start_upgrade_infos: No Firmware available to satify this request by %s !!!" % MsgSrcAddr)
         return
@@ -1321,7 +1294,7 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
 
     _name = next((self.Devices[x].Name for x in self.Devices if self.Devices[x].DeviceID == _ieee), None)
 
-    _durhh, _durmm, _durss = convertTime(self.ListInUpdate["intSize"] // MsgMaxDataSize)
+    _durhh, _durmm, _durss = convert_time(self.ListInUpdate["intSize"] // MsgMaxDataSize)
     _textmsg = "Firmware update started for Device: %s with %s - Estimated Time: %s H %s min %s sec " % (
         _name,
         self.ListInUpdate["FileName"],
@@ -1339,40 +1312,39 @@ def loading_zigbee_ota_index( self ):
         self.zigbee_ota_index.extend( convert_ikea_format_to_list( _load_json_from_url( self, self.pluginconf.pluginConf["IkeaTradfri_Repository"] )) )
         self.zigbee_ota_index.extend( convert_sonoff_format_to_list( _load_json_from_url( self, self.pluginconf.pluginConf["Sonoff_Repository"] )) )
 
-    
-def convert_sonoff_format_to_list( _zigbee_sonoff_index ):
-    _build_list = []
-    for sonoff_image in _zigbee_sonoff_index:
-        item_to_add = {
-            "fileVersion": sonoff_image["fw_file_version"],
-            "manufacturerCode": sonoff_image[ "fw_manufacturer_id"],
-            "imageType": sonoff_image[ "fw_image_type" ],
-            "url": sonoff_image[ "fw_binary_url"], 
-        }
-        _build_list.append(item_to_add )
-    return _build_list
-   
-def convert_ikea_format_to_list( _zigbee_ikea_index ):
-    _build_list = []
-    for ikea_image in _zigbee_ikea_index:
-        if "fw_file_version_MSB" not in ikea_image or "fw_file_version_LSB" not in ikea_image:
-            continue
-        item_to_add = {
-            "fileVersion": int( "%04x%04x" %(ikea_image["fw_file_version_MSB"], ikea_image["fw_file_version_LSB"]),16 ),
-            "manufacturerCode": ikea_image[ "fw_manufacturer_id"],
-            "imageType": ikea_image[ "fw_image_type" ],
-            "url": ikea_image[ "fw_binary_url"], 
-        }
-        _build_list.append(item_to_add )
-    return _build_list
 
-    
+def convert_sonoff_format_to_list(zigbee_sonoff_index):
+    return [
+        {
+            "fileVersion": image["fw_file_version"],
+            "manufacturerCode": image["fw_manufacturer_id"],
+            "imageType": image["fw_image_type"],
+            "url": image["fw_binary_url"],
+        }
+        for image in zigbee_sonoff_index
+    ]
+
+
+def convert_ikea_format_to_list(zigbee_ikea_index):
+    return [
+        {
+            "fileVersion": int(f"{image['fw_file_version_MSB']:04x}{image['fw_file_version_LSB']:04x}", 16),
+            "manufacturerCode": image["fw_manufacturer_id"],
+            "imageType": image["fw_image_type"],
+            "url": image["fw_binary_url"],
+        }
+        for image in zigbee_ikea_index
+        if "fw_file_version_MSB" in image and "fw_file_version_LSB" in image
+    ]
+
+
 def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ): 
     logging(self, "Debug", "check_ota_availability_from_index: Index Size: %s Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
         len(self.zigbee_ota_index), manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
 
     return next((_image for _image in self.zigbee_ota_index if (_image["manufacturerCode"] == manufcode and _image["imageType"] == imagetype and _image["fileVersion"] > fileversion)), {})
-    
+
+
 def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, fileversion, _ota_available ):
 
     folder = next((OTA_CODES[supported_manufacturer]["Folder"] for supported_manufacturer in OTA_CODES if OTA_CODES[supported_manufacturer]["ManufCode"] == manufcode), None)
@@ -1390,6 +1362,7 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
         logging(self, "Status", "   to get this Manufacturer supported: %s" % manufcode)
         logging(self, "Status", "   provide those informations: %s" % _ota_available)
         logging(self, "Status", "   open an Issue on GitHub here: https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/new?assignees=&labels=&template=feature_request.md&title=")
+
 
 def _load_json_from_url( self, url ):
 
