@@ -49,6 +49,7 @@ from Zigbee.zclRawCommands import (zcl_raw_ota_image_block_response_success,
 # This file is maintained from the community, so make sure what you do.
 
 OTA_CLUSTER_ID = "0019"
+MAX_FRAME_DATA = 64
 
 OTA_CODES = {
     
@@ -524,7 +525,8 @@ def ota_send_block(self, dest_addr, dest_ep, image_type, msg_image_version, bloc
     manufacturer_code = "%04x" % self.ListInUpdate["intManufCode"]
 
     # Build the data block to be send based on the request
-    _lenght = block_request["MaxDataSize"]
+    _lenght = min( MAX_FRAME_DATA, block_request["MaxDataSize"])
+    
     _raw_ota_data = self.ListInUpdate["OtaImage"][_offset : _offset + _lenght]
     if len(_raw_ota_data) != _lenght:
         logging( self, "Log", "ota_send_block - we reached the end of the image !! %s against %s" %(len(_raw_ota_data), _lenght ))
