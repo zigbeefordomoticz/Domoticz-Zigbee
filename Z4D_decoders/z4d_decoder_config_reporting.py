@@ -1,3 +1,9 @@
+from Modules.basicOutputs import handle_unknow_device
+from Modules.domoTools import lastSeenUpdate
+from Modules.tools import (timeStamped, updLQI, updSQN,
+                           zigpy_plugin_sanity_check)
+
+
 def Decode8120(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'Decode8120 - Configure reporting response: %s' % MsgData)
     if len(MsgData) < 14:
@@ -26,7 +32,11 @@ def Decode8120(self, Devices, MsgData, MsgLQI):
             idx += 4
             MsgStatus = MsgData[idx:idx + 2]
             idx += 2
-            Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus)def Decode8122(self, Devices, MsgData, MsgLQI):
-    self.configureReporting.read_report_configure_response(MsgData, MsgLQI)def Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
+            Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus)
+            
+def Decode8122(self, Devices, MsgData, MsgLQI):
+    self.configureReporting.read_report_configure_response(MsgData, MsgLQI)
+    
+def Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
     self.log.logging('Input', 'Debug', 'Decode8120 --> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s' % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus), MsgSrcAddr)
     self.configureReporting.read_configure_reporting_response(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus)

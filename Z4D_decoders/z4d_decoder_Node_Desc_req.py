@@ -1,3 +1,8 @@
+import struct
+
+from Modules.sendZigateCommand import raw_APS_request
+
+
 def Decode0042(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'Decode0042 - Node_Desc_req: %s' % MsgData)
     sqn = MsgData[:2]
@@ -5,17 +10,22 @@ def Decode0042(self, Devices, MsgData, MsgLQI):
     srcEp = MsgData[6:8]
     nwkid = MsgData[8:12]
     Cluster = '8002'
+    
     if nwkid != '0000':
         status = '80'
         payload = sqn + status + nwkid
+        
     elif '0000' not in self.ListOfDevices:
         status = '81'
         payload = sqn + status + nwkid
+        
     elif 'Manufacturer' not in self.ListOfDevices['0000']:
         status = '89'
         payload = sqn + status + nwkid
+        
     else:
         status = '00'
+        
         controllerManufacturerCode = self.ListOfDevices['0000']['Manufacturer']
         controllerManufacturerCode = '0000'
         self.log.logging('Input', 'Log', 'Decode0042 - %s/%s requested manuf code -responding with Manufacturer: %s' % (srcNwkId, srcEp, controllerManufacturerCode))

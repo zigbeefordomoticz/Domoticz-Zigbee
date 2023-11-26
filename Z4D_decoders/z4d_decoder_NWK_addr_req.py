@@ -1,3 +1,8 @@
+import struct
+
+from Modules.sendZigateCommand import raw_APS_request
+
+
 def Decode0040(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'Decode0040 - NWK_addr_req: %s' % MsgData)
     sqn = MsgData[:2]
