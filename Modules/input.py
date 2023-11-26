@@ -23,7 +23,7 @@ from Z4D_decoders.z4d_decoder_Device_Annoucement import Decode004D
 from Z4D_decoders.z4d_decoder_Discovery_Rsp import Decode804B
 from Z4D_decoders.z4d_decoder_groups import (Decode8060, Decode8061,
                                              Decode8062, Decode8063)
-from Z4D_decoders.z4d_decoder_helpers import extract_messge_infos
+from Z4D_decoders.z4d_decoder_helpers import extract_message_infos
 from Z4D_decoders.z4d_decoder_IAS import (Decode0400, Decode8046, Decode8100,
                                           Decode8400, Decode8401)
 from Z4D_decoders.z4d_decoder_IEEE_addr_req import Decode0041
@@ -142,7 +142,7 @@ def zigbee_receive_message(self, Devices, Data):
         self.log_error(f"zigbee_receive_message - received a non-zigate frame Data: {Data} FS/FS = {FrameStart}/{FrameStop}")
         return
 
-    MsgType, MsgData, MsgLQI = _extract_message_infos(self, Data)
+    MsgType, MsgData, MsgLQI = extract_message_infos(self, Data)
     self.Ping["Nb Ticks"] = 0  # We receive a valid packet
 
     self.log_debug(f"ZigateRead - MsgType: {MsgType}, Data: {MsgData}, LQI: {int(MsgLQI, 16)}")
@@ -152,27 +152,10 @@ def zigbee_receive_message(self, Devices, Data):
         decoded_frame = decode8002_and_process(self, Data)
         if decoded_frame is None:
             return
-        MsgType, MsgData, MsgLQI = _extract_message_infos(self, decoded_frame)
+        MsgType, MsgData, MsgLQI = extract_message_infos(self, decoded_frame)
 
     _decode_message(self, MsgType, Devices, Data, MsgData, MsgLQI)
 
-def _extract_message_infos( self, Data):
-    FrameStart = Data[:2]
-    FrameStop = Data[len(Data) - 2 :]
-    if FrameStart != "01" and FrameStop != "03":
-        self.log.logging("Input", "Error", f"zigbee_receive_message - received a non-zigate frame Data: {Data} FS/FS = {FrameStart}/{FrameStop}")
-        return None, None, None
-    MsgType = Data[2:6]
-    MsgType = MsgType.lower()
-
-    if len(Data) > 12:
-        # We have Payload: data + rssi
-        MsgData = Data[12 : len(Data) - 4]
-        MsgLQI = Data[len(Data) - 4 : len(Data) - 2]
-    else:
-        MsgData = ""
-        MsgLQI = "00"
-    return MsgType, MsgData, MsgLQI
 
 def _decode_message(self, MsgType, Devices, Data, MsgData, MsgLQI):
     

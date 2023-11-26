@@ -1,3 +1,5 @@
+from Modules.tools import (ReArrangeMacCapaBasedOnModel, decodeMacCapa, updLQI)
+
 def Decode8042(self, Devices, MsgData, MsgLQI):
     sequence = MsgData[:2]
     status = MsgData[2:4]
@@ -14,6 +16,7 @@ def Decode8042(self, Devices, MsgData, MsgLQI):
     if status != '00':
         self.log.logging('Input', 'Debug', 'Decode8042 - Reception of Node Descriptor for %s with status %s' % (addr, status))
         return
+    
     self.log.logging('Input', 'Debug', 'Decode8042 - Reception Node Descriptor for: ' + addr + ' SEQ: ' + sequence + ' Status: ' + status + ' manufacturer:' + manufacturer + ' mac_capability: ' + str(mac_capability) + ' bit_field: ' + str(bit_field), addr)
     if addr == '0000' and addr not in self.ListOfDevices:
         self.ListOfDevices[addr] = {}
@@ -21,7 +24,9 @@ def Decode8042(self, Devices, MsgData, MsgLQI):
     if addr not in self.ListOfDevices:
         self.log.logging('Input', 'Log', 'Decode8042 receives a message from a non existing device %s' % addr)
         return
+    
     updLQI(self, addr, MsgLQI)
+    
     self.ListOfDevices[addr]['_rawNodeDescriptor'] = MsgData[8:]
     self.ListOfDevices[addr]['Max Buffer Size'] = max_buffer
     self.ListOfDevices[addr]['Max Rx'] = max_rx
@@ -32,22 +37,31 @@ def Decode8042(self, Devices, MsgData, MsgLQI):
     self.ListOfDevices[addr]['descriptor_capability'] = descriptor_capability
     mac_capability = ReArrangeMacCapaBasedOnModel(self, addr, mac_capability)
     capabilities = decodeMacCapa(mac_capability)
+    
     if 'Able to act Coordinator' in capabilities:
         AltPAN = 1
+        
     else:
         AltPAN = 0
+        
     if 'Main Powered' in capabilities:
         PowerSource = 'Main'
+        
     else:
         PowerSource = 'Battery'
+        
     if 'Full-Function Device' in capabilities:
         DeviceType = 'FFD'
+        
     else:
         DeviceType = 'RFD'
+        
     if 'Receiver during Idle' in capabilities:
         ReceiveonIdle = 'On'
+        
     else:
         ReceiveonIdle = 'Off'
+        
     self.log.logging('Input', 'Debug', 'Decode8042 - Alternate PAN Coordinator = ' + str(AltPAN), addr)
     self.log.logging('Input', 'Debug', 'Decode8042 - Receiver on Idle = ' + str(ReceiveonIdle), addr)
     self.log.logging('Input', 'Debug', 'Decode8042 - Power Source = ' + str(PowerSource), addr)
@@ -56,16 +70,22 @@ def Decode8042(self, Devices, MsgData, MsgLQI):
     bit_fieldH = int(bit_field[:2], 16)
     self.log.logging('Input', 'Debug', 'Decode8042 - bit_fieldL  = %s bit_fieldH = %s' % (bit_fieldL, bit_fieldH))
     LogicalType = bit_fieldL & 15
+    
     if LogicalType == 0:
         LogicalType = 'Coordinator'
+        
     elif LogicalType == 1:
         LogicalType = 'Router'
+        
     elif LogicalType == 2:
         LogicalType = 'End Device'
+        
     self.log.logging('Input', 'Debug', 'Decode8042 - bit_field = ' + str(bit_fieldL) + ': ' + str(bit_fieldH), addr)
     self.log.logging('Input', 'Debug', 'Decode8042 - Logical Type = ' + str(LogicalType), addr)
+    
     if 'Manufacturer' not in self.ListOfDevices[addr] or self.ListOfDevices[addr]['Manufacturer'] in ('', {}):
         self.ListOfDevices[addr]['Manufacturer'] = manufacturer
+        
     if 'Status' not in self.ListOfDevices[addr] or self.ListOfDevices[addr]['Status'] != 'inDB':
         self.ListOfDevices[addr]['Manufacturer'] = manufacturer
         self.ListOfDevices[addr]['DeviceType'] = str(DeviceType)
