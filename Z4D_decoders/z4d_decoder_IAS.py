@@ -9,7 +9,9 @@ def Decode0400(self, Devices, MsgData, MsgLQI):
     ZoneId = MsgData[12:14]
     self.log.logging('Input', 'Log', 'Decode0400 - Source Address: %s Source Ep: %s EnrollmentResponseCode: %s ZoneId: %s' % (SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId))
     if self.iaszonemgt:
-        self.iaszonemgt.IAS_zone_enroll_request_response(SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId)def Decode8046(self, Devices, MsgData, MsgLQI):
+        self.iaszonemgt.IAS_zone_enroll_request_response(SrcAddress, SrcEndPoint, EnrollResponseCode, ZoneId)
+        
+def Decode8046(self, Devices, MsgData, MsgLQI):
     MsgDataSQN = MsgData[:2]
     MsgDataStatus = MsgData[2:4]
     MsgDataShAddr = MsgData[4:8]
@@ -24,7 +26,9 @@ def Decode0400(self, Devices, MsgData, MsgLQI):
             ep = MsgDataMatchList[idx:idx + 2]
             idx += 2
             self.log.logging('Input', 'Log', 'Decode8046 - Match Descriptor response Nwkid: %sfound Ep: %s Matching 0500' % (MsgDataShAddr, ep))
-            self.iaszonemgt.IAS_write_CIE_after_match_descriptor(MsgDataShAddr, ep)def Decode8100(self, Devices, MsgData, MsgLQI):
+            self.iaszonemgt.IAS_write_CIE_after_match_descriptor(MsgDataShAddr, ep)
+
+def Decode8100(self, Devices, MsgData, MsgLQI):
     MsgSQN = MsgData[:2]
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
     MsgSrcAddr = MsgData[2:6]
@@ -39,14 +43,18 @@ def Decode0400(self, Devices, MsgData, MsgLQI):
         self.log.logging('Input', 'Debug', 'Read Attributed Request Response on Cluster 0x0500 for %s' % MsgSrcAddr)
         self.iaszonemgt.IAS_CIE_service_discovery_response(MsgSrcAddr, MsgSrcEp, MsgData)
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, '8100')
-    callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)def Decode8400(self, Devices, MsgData, MsgLQI):
+    callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
+    
+def Decode8400(self, Devices, MsgData, MsgLQI):
     sqn = MsgData[:2]
     zonetype = MsgData[2:6]
     manufacturercode = MsgData[6:10]
     nwkid = MsgData[10:14]
     ep = MsgData[14:16]
     self.log.logging('Input', 'Log', 'Decode8400 - IAS Zone Enroll Request NwkId: %s/%s Sqn: %s ZoneType: %s Manuf: %s' % (nwkid, ep, sqn, zonetype, manufacturercode))
-    self.iaszonemgt.IAS_zone_enroll_request(nwkid, ep, zonetype, sqn)def Decode8401(self, Devices, MsgData, MsgLQI):
+    self.iaszonemgt.IAS_zone_enroll_request(nwkid, ep, zonetype, sqn)
+    
+def Decode8401(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'Decode8401 - Reception Zone status change notification: ' + MsgData)
     MsgSQN = MsgData[:2]
     MsgEp = MsgData[2:4]
@@ -148,7 +156,9 @@ def Decode0400(self, Devices, MsgData, MsgLQI):
         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['test'] = test
         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battdef'] = battdef
         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['GlobalInfos'] = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]['0500']['0002']
-        self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['TimeStamp'] = int(time.time())def Decode8401_PST03Av225(self, Devices, MsgSrcAddr, MsgEp, Model, MsgZoneStatus):
+        self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['TimeStamp'] = int(time.time())
+        
+def Decode8401_PST03Av225(self, Devices, MsgSrcAddr, MsgEp, Model, MsgZoneStatus):
     iData = int(MsgZoneStatus, 16) & 8 >> 3
     self.ListOfDevices[MsgSrcAddr]['IASBattery'] = '100' if iData == 0 else '0'
     if MsgEp == '02':
@@ -169,28 +179,5 @@ def Decode0400(self, Devices, MsgData, MsgLQI):
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0006', value)
     else:
         self.log.logging('Input', 'Debug', 'Decode8401 - PST03A-v2.2.5, unknown EndPoint: ' + MsgEp, MsgSrcAddr)
-    returndef Decode8110_raw(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrStatus, MsgAttrID, MsgLQI):
-    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
-    self.log.logging('Input', 'Debug', 'Decode8110 - WriteAttributeResponse - MsgSQN: %s,  MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s MsgAttrID: %s Status: %s' % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus), MsgSrcAddr)
-    timeStamped(self, MsgSrcAddr, 33040)
-    updSQN(self, MsgSrcAddr, MsgSQN)
-    updLQI(self, MsgSrcAddr, MsgLQI)
-    lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-    if (self.zigbee_communication != 'native' or (self.FirmwareVersion and int(self.FirmwareVersion, 16) >= int('31d', 16))) and MsgAttrID:
-        set_status_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus)
-        set_request_phase_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, 'fullfilled')
-        if MsgAttrStatus != '00':
-            self.log.logging('Input', 'Log', 'Decode8110 - Write Attribute Respons response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s' % (MsgClusterId, MsgAttrID, MsgSrcAddr, MsgSrcEp, MsgAttrStatus), MsgSrcAddr)
-        return
-    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
-    self.log.logging('Input', 'Debug', '------- - i_sqn: %0s e_sqn: %s' % (i_sqn, MsgSQN))
-    for matchAttributeId in list(get_list_isqn_attr_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId)):
-        if get_isqn_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId) != i_sqn:
-            continue
-        self.log.logging('Input', 'Debug', '------- - Sqn matches for Attribute: %s' % matchAttributeId)
-        set_status_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, MsgAttrStatus)
-        set_request_phase_datastruct(self, 'WriteAttributes', MsgSrcAddr, MsgSrcEp, MsgClusterId, matchAttributeId, 'fullfilled')
-        if MsgAttrStatus != '00':
-            self.log.logging('Input', 'Debug', 'Decode8110 - Write Attribute Response response - ClusterID: %s/%s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s' % (MsgClusterId, matchAttributeId, MsgSrcAddr, MsgSrcEp, MsgAttrStatus), MsgSrcAddr)
-    if MsgClusterId == '0500':
-        self.iaszonemgt.IAS_CIE_write_response(MsgSrcAddr, MsgSrcEp, MsgAttrStatus)
+    return
+

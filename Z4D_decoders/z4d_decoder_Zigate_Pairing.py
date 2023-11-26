@@ -30,3 +30,9 @@ def Decode8014(self, Devices, MsgData, MsgLQI):
     self.Ping['TimeStamp'] = int(time.time())
     self.Ping['Status'] = 'Receive'
     self.log.logging('Input', 'Debug', 'Ping - received', 'ffff')
+    
+def Decode8049(self, Devices, MsgData, MsgLQI):
+    self.log.logging('Input', 'Debug', 'Decode8049 - MsgData: %s' % MsgData)
+    Status = MsgData[2:4]
+    if Status == '00':
+        self.log.logging('Input', 'Status', 'Pairing Command correctly exectued')
