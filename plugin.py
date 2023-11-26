@@ -124,7 +124,7 @@ from Modules.database import (LoadDeviceList, WriteDeviceList,
 from Modules.domoticzAbstractLayer import how_many_slot_available, load_list_of_domoticz_widget
 from Modules.domoTools import ResetDevice
 from Modules.heartbeat import processListOfDevices
-from Modules.input import ZigateRead
+from Modules.input import zigbee_receive_message
 from Modules.piZigate import switchPiZigate_mode
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readZclClusters import load_zcl_cluster
@@ -871,7 +871,7 @@ class BasePlugin:
             return
         self.connectionState = 1
         # start_time = int(time.time() *1000)
-        ZigateRead(self, Devices, Data)
+        zigbee_receive_message(self, Devices, Data)
         # stop_time = int(time.time() *1000)
         # Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 
