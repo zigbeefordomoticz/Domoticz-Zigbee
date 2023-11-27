@@ -31,17 +31,19 @@ def Decode8010(self, Devices, MsgData, MsgLQI):
             self.log.logging('Input', 'Status', 'Untested Zigbee adapter model. If this is a Sonoff USB Dongle E that is a known issue, otherwise, please report to the Zigbee for Domoticz team')
             self.pluginParameters['CoordinatorModel'] = FIRMWARE_BRANCH[self.FirmwareBranch]
         elif firmware_branch_int == 11:
-            self.HandleFirmwareBranch11()
+            HandleFirmwareBranch11(self)
         elif firmware_branch_int >= 20:
-            self.HandleFirmwareBranch20()
+            HandleFirmwareBranch20(self)
         else:
             self.log.logging('Input', 'Status', f'{FIRMWARE_BRANCH[self.FirmwareBranch]}')
             version = ''
 
         self.log.logging('Input', 'Status', f'Installer Version Number: {self.FirmwareVersion}')
         self.log.logging('Input', 'Status', f'Branch Version: ==> {FIRMWARE_BRANCH[self.FirmwareBranch]} <==')
-        self.UpdateControllerData()
+        UpdateControllerData(self)
 
+    set_display_firmware_version( self )
+    
     if self.webserver:
         self.webserver.UpdateFirmware(self.FirmwareVersion)
         self.ControllerLink.UpdateZiGate_HW_Version(self.ZiGateModel)
@@ -53,7 +55,6 @@ def Decode8010(self, Devices, MsgData, MsgLQI):
         self.networkmap.update_firmware(self.FirmwareVersion)
     if self.log:
         self.log.loggingUpdateFirmware(self.FirmwareVersion, self.FirmwareMajorVersion)
-
 
     self.PDMready = True
 

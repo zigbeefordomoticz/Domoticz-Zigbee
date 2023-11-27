@@ -1,6 +1,7 @@
 
-from Modules.tools import timeStamped, updLQI
 from Modules.domoTools import lastSeenUpdate
+from Modules.tools import timeStamped, updLQI
+
 
 def Decode0110(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'Decode0110 - message: %s' % MsgData)

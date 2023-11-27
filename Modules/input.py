@@ -139,13 +139,13 @@ def zigbee_receive_message(self, Devices, Data):
     FrameStart = Data[:2]
     FrameStop = Data[-2:]
     if FrameStart != "01" and FrameStop != "03":
-        self.log_error(f"zigbee_receive_message - received a non-zigate frame Data: {Data} FS/FS = {FrameStart}/{FrameStop}")
+        self.log.logging("Input", "Error", f"zigbee_receive_message - received a non-zigate frame Data: {Data} FS/FS = {FrameStart}/{FrameStop}")
         return
 
     MsgType, MsgData, MsgLQI = extract_message_infos(self, Data)
     self.Ping["Nb Ticks"] = 0  # We receive a valid packet
 
-    self.log_debug(f"ZigateRead - MsgType: {MsgType}, Data: {MsgData}, LQI: {int(MsgLQI, 16)}")
+    self.log.logging("Input", "Debug", f"ZigateRead - MsgType: {MsgType}, Data: {MsgData}, LQI: {int(MsgLQI, 16)}")
 
     if MsgType == "8002":
         # Let's try to see if we can decode it, and then get a new MsgType
@@ -161,13 +161,13 @@ def _decode_message(self, MsgType, Devices, Data, MsgData, MsgLQI):
     
     if MsgType in DECODERS:
         decoding_method = DECODERS[MsgType]
-        decoding_method(Devices, MsgData, MsgLQI)
+        decoding_method(self, Devices, MsgData, MsgLQI)
         
     elif MsgType == "8002":
-        Decode8002(Devices, Data, MsgData, MsgLQI)
+        Decode8002(self, Devices, Data, MsgData, MsgLQI)
         
     elif MsgType == "8011":
-        Decode8011(Devices, MsgData, MsgLQI)
+        Decode8011(self, Devices, MsgData, MsgLQI)
         
     else:
-        self.log_error(f"_decode_message - not found for {MsgType}")
+        self.log.logging("Input", "Error", f"_decode_message - not found for {MsgType}")
