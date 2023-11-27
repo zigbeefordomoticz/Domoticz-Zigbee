@@ -1,3 +1,7 @@
+
+from Modules.errorCodes import DisplayStatusCode
+from Modules.domoMaj import MajDomoDevice
+
 def Decode80A0(self, Devices, MsgData, MsgLQI):
     MsgSequenceNumber = MsgData[:2]
     MsgEP = MsgData[2:4]

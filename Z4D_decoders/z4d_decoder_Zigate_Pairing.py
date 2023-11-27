@@ -1,3 +1,5 @@
+import time
+
 def Decode8014(self, Devices, MsgData, MsgLQI):
     Status = MsgData[:2]
     timestamp = int(time.time())

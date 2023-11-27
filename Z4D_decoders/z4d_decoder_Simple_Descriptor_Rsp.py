@@ -1,3 +1,9 @@
+from Modules.pairingProcess import request_next_Ep
+from Modules.tools import updLQI, updSQN
+from Modules.zigateConsts import ZCL_CLUSTERS_LIST
+from Modules.zigbeeController import receiveZigateEpDescriptor
+
+
 def Decode8043(self, Devices, MsgData, MsgLQI):
     """Decode and process 0x8043 message."""
     MsgDataSQN = MsgData[:2]

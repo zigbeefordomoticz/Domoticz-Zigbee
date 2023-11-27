@@ -1,3 +1,5 @@
+from Modules.errorCodes import DisplayStatusCode
+
 def Decode804B(self, Devices, MsgData, MsgLQI):
     MsgSequenceNumber = MsgData[:2]
     MsgDataStatus = MsgData[2:4]

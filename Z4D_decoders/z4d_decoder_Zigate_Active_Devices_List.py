@@ -1,3 +1,5 @@
+from Modules.tools import DeviceExist
+
 def Decode8015(self, Devices, MsgData, MsgLQI):
     numberofdev = len(MsgData)
     self.log.logging('Input', 'Status', 'Number of devices recently active in Coordinator = %s' % str(round(numberofdev / 26)))

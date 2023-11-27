@@ -1,3 +1,16 @@
+
+from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
+                                             sqn_get_internal_sqn_from_app_sqn)
+from Modules.basicOutputs import handle_unknow_device
+from Modules.callback import callbackDeviceAwake
+from Modules.domoTools import lastSeenUpdate
+from Modules.pluzzy import pluzzyDecode8102
+from Modules.readClusters import ReadCluster
+from Modules.tools import (DeviceExist, loggingMessages, timeStamped, updLQI,
+                           updSQN)
+from Z4D_decoders.z4d_decoder_helpers import debug_LQI
+
+
 def Decode8102(self, Devices, MsgData, MsgLQI):
     MsgSQN = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
@@ -9,6 +22,7 @@ def Decode8102(self, Devices, MsgData, MsgLQI):
     MsgAttSize = MsgData[20:24]
     MsgClusterData = MsgData[24:]
     self.log.logging('Input', 'Debug', 'Decode8102 - Attribute Reports: [%s:%s] MsgSQN: %s ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<' % (MsgSrcAddr, MsgSrcEp, MsgSQN, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
     if self.PluzzyFirmware:
         self.log.logging('Input', 'Log', 'Patching payload:', MsgSrcAddr)
         _type = MsgAttStatus
@@ -26,13 +40,16 @@ def Decode8102(self, Devices, MsgData, MsgLQI):
         MsgClusterData = _newdata
         MsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
         pluzzyDecode8102(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgLQI)
+
     timeStamped(self, MsgSrcAddr, 33026)
     loggingMessages(self, '8102', MsgSrcAddr, None, MsgLQI, MsgSQN)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
     updLQI(self, MsgSrcAddr, MsgLQI)
+
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
     self.statistics._clusterOK += 1
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, '8102')
+
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
     
     

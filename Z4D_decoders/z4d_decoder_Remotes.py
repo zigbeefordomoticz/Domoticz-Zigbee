@@ -1,3 +1,27 @@
+
+
+from Modules.basicOutputs import handle_unknow_device
+from Modules.domoMaj import MajDomoDevice
+from Modules.domoTools import lastSeenUpdate
+from Modules.ikeaTradfri import (ikea_motion_sensor_8095,
+                                 ikea_remote_control_80A7,
+                                 ikea_remote_control_8085,
+                                 ikea_remote_control_8095,
+                                 ikea_remote_switch_8085,
+                                 ikea_remote_switch_8095,
+                                 ikea_remoteN2_control_80A7,
+                                 ikea_wireless_dimer_8085)
+from Modules.legrand_netatmo import (legrand_motion_8085, legrand_motion_8095,
+                                     legrand_remote_switch_8085,
+                                     legrand_remote_switch_8095)
+from Modules.lumi import AqaraOppleDecoding
+from Modules.tools import (checkAndStoreAttributeValue, extract_info_from_8085,
+                           get_deviceconf_parameter_value, timeStamped, updLQI,
+                           updSQN, zigpy_plugin_sanity_check)
+from Modules.zigateConsts import LEGRAND_REMOTE_MOTION, LEGRAND_REMOTE_SWITCHS
+from Z4D_decoders.z4d_decoder_helpers import check_duplicate_sqn
+
+
 def Decode8085(self, Devices, MsgData, MsgLQI):
     """Remote button pressed"""
     MsgSQN = MsgData[:2]
@@ -233,7 +257,9 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', MsgCmd)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' % (MsgCmd, unknown_)
-        self.log.logging('Input', 'Log', 'Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s ' % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)def Decode80A7(self, Devices, MsgData, MsgLQI):
+        self.log.logging('Input', 'Log', 'Decode8095 - Model: %s SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s ' % (_ModelName, MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
+        
+def Decode80A7(self, Devices, MsgData, MsgLQI):
     """Remote button pressed (LEFT/RIGHT)"""
     MsgSQN = MsgData[:2]
     MsgEP = MsgData[2:4]

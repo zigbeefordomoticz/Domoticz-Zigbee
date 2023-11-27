@@ -1,10 +1,28 @@
+from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
+                                             sqn_get_internal_sqn_from_app_sqn,
+                                             sqn_get_internal_sqn_from_aps_sqn)
+from Modules.errorCodes import DisplayStatusCode
+from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
+                           checkAndStoreAttributeValue, decodeMacCapa,
+                           extract_info_from_8085,
+                           get_deviceconf_parameter_value, get_isqn_datastruct,
+                           get_list_isqn_attr_datastruct, getSaddrfromIEEE,
+                           loggingMessages, lookupForIEEE, mainPoweredDevice,
+                           retreive_cmd_payload_from_8002,
+                           set_request_phase_datastruct, set_status_datastruct,
+                           timeStamped, updLQI, updSQN,
+                           zigpy_plugin_sanity_check)
+from Modules.domoTools import lastSeenUpdate, timedOutDevice
+from Modules.basicOutputs import (getListofAttribute, handle_unknow_device,
+                                  send_default_response, setTimeServer)
+from Z4D_decoders.z4d_decoder_helpers import set_health_state
+
 def Decode8000_v2(self, Devices, MsgData, MsgLQI):
     if len(MsgData) < 8:
         self.log.logging('Input', 'Log', 'Decode8000 - uncomplete message: %s' % MsgData)
         return
     Status = MsgData[:2]
     sqn_app = MsgData[2:4]
-    dsqn_app = int(sqn_app, 16)
     PacketType = MsgData[4:8]
     type_sqn = sqn_aps = None
     dsqn_aps = 0
@@ -20,6 +38,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):
         i_sqn = None
         if PacketType in ('0100', '0120', '0110'):
             i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, sqn_app, TYPE_APP_ZCL)
+        dsqn_app = int(sqn_app, 16)
         if i_sqn:
             self.log.logging('Input', 'Log', 'Decod8000 Received         [%s] PacketType:  %s TypeSqn: %s sqn_app: %s/%s sqn_aps: %s/%s Status: [%s] npdu: %s apdu: %s ' % (i_sqn, PacketType, type_sqn, sqn_app, dsqn_app, sqn_aps, dsqn_aps, Status, npdu, apdu))
         else:
