@@ -275,7 +275,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
             Devices[Unit].DeviceID, str(self.IEEE2NWK)) )
         return
 
-    self.log.logging( "Widget", "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" % (
+    self.log.logging( "Widget", "Log", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" % (
         nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID], )
 
     # Make sure that the Domoticz device still exists (they can be deleted) before updating it
@@ -289,7 +289,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         or ForceUpdate_
         or Devices[Unit].BatteryLevel != int(BatteryLvl)
         or Devices[Unit].TimedOut
-    ):
+        ):
 
         DeviceID_ = None    # This is required when we will use The Extended Framework
         if (
@@ -297,7 +297,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
             and ForceUpdate_
             and (Devices[Unit].nValue == int(nValue))
             and (Devices[Unit].sValue == sValue)
-        ):
+            ):
 
             # Due to new version of Domoticz which do not log in case we Update the same value
             nReset = 0

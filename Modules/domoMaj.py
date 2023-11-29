@@ -288,12 +288,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                _, CurrentsValue, _, _, _, _ = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0;0")
-                
-                if len(CurrentsValue.split(";")) != 6:
-                    # First time after device creation
-                    CurrentsValue = "0;0;0;0;0;0"
-                cur_usage1, cur_usage2, cur_return1, cur_return2, _, _ = CurrentsValue.split(";")
+                cur_usage1, cur_usage2, cur_return1, cur_return2, _, _ = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0;0")
                 
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 
@@ -829,11 +824,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
                         NWKID, value, WidgetType, e), NWKID)
 
-            CurrentnValue, CurrentsValue, _, _, _ = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
+            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
 
-            self.log.logging("Widget", "Debug", f"------> Adj Value: {adjvalue} from: {value} to {value + adjvalue} [{CurrentsValue}]", NWKID)
+            self.log.logging("Widget", "Debug", f"------> Adj Value: {adjvalue} from: {value} to {value + adjvalue} [{current_temp}, {current_humi}, {current_hum_stat}, {current_baro}, {current_baro_forecast}]", NWKID)
 
-            SplitData = CurrentsValue.split(";")
             NewNvalue = 0
             NewSvalue = ""
 
@@ -841,23 +835,23 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 NewNvalue = round(value + adjvalue, 1)
                 NewSvalue = str(NewNvalue)
 
-            elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
-                NewSvalue = f"{round(value + adjvalue, 1)};{SplitData[1]};{SplitData[2]}"
+            elif WidgetType == "Temp+Hum":
+                NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat}"
 
-            elif WidgetType == "Temp+Hum+Baro" and len(SplitData) >= 4:
-                NewSvalue = f"{round(value + adjvalue, 1)};{SplitData[1]};{SplitData[2]};{SplitData[3]};{SplitData[4]}"
+            elif WidgetType == "Temp+Hum+Baro":
+                NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat};{current_baro};{current_baro_forecast}"
 
             self.log.logging("Widget", "Debug", f"------> {WidgetType} update: {NewNvalue} - {NewSvalue}")
             UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):
-            self.log.logging("Widget", "Debug", f"------> Humi: {value}, WidgetType: {WidgetType}", NWKID)
-            CurrentnValue, CurrentsValue, _, _, _ = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
 
-            SplitData = CurrentsValue.split(";")
+            self.log.logging("Widget", "Debug", f"------> Humi: {value}, WidgetType: {WidgetType}", NWKID)
+            
             NewNvalue = 0
             NewSvalue = ""
             humi_status = calculate_humidity_status(value)
+            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
 
             if WidgetType == "Humi":
                 NewNvalue = value
@@ -865,13 +859,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", f"------> Humi update: {NewNvalue} - {NewSvalue}")
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
-                NewSvalue = f"{SplitData[0]};{value};{humi_status}"
+            elif WidgetType == "Temp+Hum":
+                NewSvalue = f"{current_temp};{value};{humi_status}"
                 self.log.logging("Widget", "Debug", f"------> Temp+Hum update: {NewNvalue} - {NewSvalue}")
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum+Baro" and len(SplitData) >= 4:
-                NewSvalue = f"{SplitData[0]};{value};{humi_status};{SplitData[3]};{SplitData[4]}"
+            elif WidgetType == "Temp+Hum+Baro":
+                NewSvalue = f"{current_temp};{value};{humi_status};{current_baro};{current_baro_forecast}"
                 self.log.logging("Widget", "Debug", f"------> Temp+Hum+Baro update: {NewNvalue} - {NewSvalue}")
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
@@ -888,18 +882,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             baroValue = round(value + adjvalue, 1)
             self.log.logging("Widget", "Debug", f"------> Adj Value: {adjvalue} from: {value} to {baroValue}", NWKID)
         
-            CurrentnValue, CurrentsValue, _, _, _ = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
-            
-            SplitData = CurrentsValue.split(";")
             NewNvalue = 0
             NewSvalue = ""
-        
+            
             Bar_forecast = calculate_baro_forecast(baroValue)
+            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
         
             if WidgetType == "Baro":
                 NewSvalue = f"{baroValue};{Bar_forecast}"
             elif WidgetType == "Temp+Hum+Baro":
-                NewSvalue = f"{SplitData[0]};{SplitData[1]};{SplitData[2]};{baroValue};{Bar_forecast}"
+                NewSvalue = f"{current_temp};{current_humi};{current_hum_stat};{baroValue};{Bar_forecast}"
         
             UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
@@ -1569,14 +1561,14 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
     _, current_svalue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
     
     nb_parameters = len(_format.split(";"))
-    currents_values = current_svalue.split(";")
+    current_list_values = current_svalue.split(";")
 
-    if len(currents_values) != nb_parameters:
-        currents_values = ["0"] * nb_parameters
+    if len(current_list_values) != nb_parameters:
+        current_list_values = ["0"] * nb_parameters
 
-    self.log.logging("Widget", "Debug", f"retrieve_data_from_current - Nb Param: {nb_parameters} returning {currents_values}")
+    self.log.logging("Widget", "Log", f"retrieve_data_from_current - Nb Param: {nb_parameters} returning {current_list_values}")
 
-    return current_svalue
+    return current_list_values
 
 
 def normalized_lvl_value( self, Devices, DeviceID, DeviceUnit, value ):

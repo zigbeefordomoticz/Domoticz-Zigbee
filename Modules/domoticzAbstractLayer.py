@@ -252,7 +252,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         TimedOut (int, optional): Timeoud flag 0 to unset the Timeout. Defaults to None.
         Color (str, optional): Color . Defaults to "".
     """
-    self.log.logging("AbstractDz", "Debug", "domo_update_api: %s %s %s %s %s %s %s %s %s" %(
+    self.log.logging("AbstractDz", "Log", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
         DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options))
 
     if DOMOTICZ_EXTENDED_API:
@@ -281,20 +281,26 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         return
 
     # Legacy
+    # Define common update parameters
+    update_params = {
+        'nValue': int(nValue),
+        'sValue': str(sValue),
+    }
+    if SignalLevel is not None:
+        update_params['SignalLevel'] = int(SignalLevel)
+    if BatteryLevel is not None:
+        update_params['BatteryLevel'] = int(BatteryLevel)
     if TimedOut is not None:
-        Devices[Unit_].Update(nValue=nValue, sValue=sValue, TimedOut=TimedOut,)
+        update_params['TimedOut'] = TimedOut
+    if Options is not None:
+        update_params['Options'] = Options
+    if Color != "":
+        update_params['Color'] = Color
 
-    elif Options is not None:
-        Devices[Unit_].Update(nValue=nValue, sValue=sValue, Options=Options,)
-        
-    elif SignalLevel is None and BatteryLevel is None:
-        Devices[Unit_].Update(nValue=nValue, sValue=sValue, TimedOut=0,)
-        
-    elif Color != "":
-        Devices[Unit_].Update( nValue=int(nValue), sValue=str(sValue), Color=Color, SignalLevel=int(SignalLevel), BatteryLevel=int(BatteryLevel), TimedOut=0, )
-
-    else:
-        Devices[Unit_].Update( nValue=int(nValue), sValue=str(sValue), SignalLevel=int(SignalLevel), BatteryLevel=int(BatteryLevel), TimedOut=0, )
+    # Perform the update with the defined parameters
+    self.log.logging("AbstractDz", "Log", "domo_update_api: update_params %s" %(update_params))
+    
+    Devices[Unit_].Update(**update_params)
 
 
 def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
@@ -363,7 +369,7 @@ def _is_device_tobe_switched_off(self, Devices,DeviceID_, Unit_):
     )
 
 def device_touch_api(self, Devices, DeviceId_, Unit_):
-    self.log.logging("AbstractDz", "Debug", f"device_touch: {DeviceId_} {Unit_}")
+    #self.log.logging("AbstractDz", "Debug", f"device_touch: {DeviceId_} {Unit_}")
 
     # In case of Meter Device (kWh), we must not touch it, otherwise it will destroy the metering
     # Type, Subtype, SwitchType 
@@ -384,7 +390,7 @@ def device_touch_api(self, Devices, DeviceId_, Unit_):
         # Last Touch was done more than 30 seconds ago.
         Devices[DeviceId_].Units[Unit_].Touch() if DOMOTICZ_EXTENDED_API else Devices[Unit_].Touch()
         return
-    self.log.logging("AbstractDz", "Debug", f"device_touch too early: {DeviceId_} {Unit_}")
+    #self.log.logging("AbstractDz", "Debug", f"device_touch too early: {DeviceId_} {Unit_}")
     
 
 def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
