@@ -1566,17 +1566,17 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
         >>> retrieve_data_from_current(self, "Device1", 123, 1, "A;B;C")
         ['0', '0', '0']
     """
-    _, currentsValue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
+    current_nvalue, current_svalue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
     
     nb_parameters = len(_format.split(";"))
-    currents_values = currentsValue.split(";")
+    currents_values = current_svalue.split(";")
 
     if len(currents_values) != nb_parameters:
         currents_values = ["0"] * nb_parameters
 
     self.log.logging("Widget", "Debug", f"retrieve_data_from_current - Nb Param: {nb_parameters} returning {currents_values}")
 
-    return currents_values
+    return current_nvalue, current_svalue
 
 
 def normalized_lvl_value( self, Devices, DeviceID, DeviceUnit, value ):
