@@ -124,7 +124,7 @@ from Modules.database import (LoadDeviceList, WriteDeviceList,
 from Modules.domoticzAbstractLayer import how_many_slot_available, load_list_of_domoticz_widget
 from Modules.domoTools import ResetDevice
 from Modules.heartbeat import processListOfDevices
-from Modules.input import ZigateRead
+from Modules.input import zigbee_receive_message
 from Modules.piZigate import switchPiZigate_mode
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readZclClusters import load_zcl_cluster
@@ -284,7 +284,7 @@ class BasePlugin:
     
         assert sys.version_info >= (3, 8)  # nosec
         
-        if check_requirements( self ):
+        if check_requirements( ):
             self.onStop()
             return
 
@@ -871,7 +871,7 @@ class BasePlugin:
             return
         self.connectionState = 1
         # start_time = int(time.time() *1000)
-        ZigateRead(self, Devices, Data)
+        zigbee_receive_message(self, Devices, Data)
         # stop_time = int(time.time() *1000)
         # Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 
@@ -1307,7 +1307,7 @@ def zigateInit_Phase3(self):
     elif int(self.FirmwareBranch) >= 20:
         self.log.logging(
             "Plugin", "Status", "Plugin with Zigpy, Coordinator %s firmware %s correctly initialized" % (
-                self.pluginParameters["CoordinatorModel"], self.pluginParameters["DisplayFirmwareVersion"]))
+                self.pluginParameters["CoordinatorModel"], self.pluginParameters["Firmware Version"]))
 
 
 
@@ -1520,10 +1520,10 @@ def update_DB_device_status_to_reinit( self ):
 def check_python_modules_version( self ):
     
     MODULES_VERSION = {
-        "zigpy": "0.59.0",
-        "zigpy_znp": "0.11.6",
-        "zigpy_deconz": "0.21.1",
-        "bellows": "0.36.8",
+        "zigpy": "0.60.0",
+        "zigpy_znp": "0.12.0",
+        "zigpy_deconz": "0.22.0",
+        "bellows": "0.37.0",
         }
 
     flag = True
@@ -1536,22 +1536,34 @@ def check_python_modules_version( self ):
             
     return flag
   
-def check_requirements( self ):
+def check_requirements( ):
 
-    _filename = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
+    requirements_file = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
+    Domoticz.Status("Checking Python modules %s" %requirements_file)
 
-    Domoticz.Status("Checking Python modules %s" %_filename)
-    requirements = pkg_resources.parse_requirements(_filename.open())
-    for requirements in requirements:
-        req = str(requirements)
+    with open(requirements_file, 'r') as file:
+        requirements_list = file.readlines()
+
+    for req_str in list(requirements_list):
         try:
-            pkg_resources.require(req)
-        except pkg_resources.DistributionNotFound as e:
-            Domoticz.Error("Looks like %s python module is not installed (error: %s). Make sure to install the required python3 module" %(req, e))
+            pkg_resources.require(req_str.strip())
+
+        except pkg_resources.DistributionNotFound:
+            Domoticz.Error("Looks like %s python module is not installed. Make sure to install the required python3 module" %(req_str.strip()))
             Domoticz.Error("Use the command:")
             Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
             return True
-    return False          
+
+        except pkg_resources.VersionConflict:
+            Domoticz.Error("Looks like %s python module is conflicting. Make sure to install the required python3 module" %(req_str.strip()))
+            Domoticz.Error("Use the command:")
+            Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
+            return True
+
+        except Exception as e:
+            Domoticz.Error(f"An unexpected error occurred: {e}")
+
+    return False
                      
 def debuging_information(self, mode):
     self.log.logging("Plugin", mode, "Is GC enabled: %s" % gc.isenabled())

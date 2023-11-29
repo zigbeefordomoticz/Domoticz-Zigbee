@@ -6,7 +6,6 @@
 import asyncio
 import logging
 
-import Classes.ZigpyTransport.AppGeneric
 import zigpy.config as zigpy_conf
 import zigpy.device
 import zigpy.types as t
@@ -15,9 +14,12 @@ import zigpy.zdo
 import zigpy.zdo.types as zdo_types
 import zigpy_deconz
 import zigpy_deconz.zigbee.application
-from Classes.ZigpyTransport.plugin_encoders import \
-    build_plugin_8010_frame_content
-from Classes.ZigpyTransport.firmwareversionHelper import deconz_extract_versioning_for_plugin
+
+import Classes.ZigpyTransport.AppGeneric
+from Classes.ZigpyTransport.firmwareversionHelper import \
+    deconz_extract_versioning_for_plugin
+from Classes.ZigpyTransport.plugin_encoders import (
+    build_plugin_8010_frame_content, build_plugin_8015_frame_content)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -63,18 +65,20 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         network_info = self.state.network_info
 
         # deConz doesn't have such capabilities to provided list of paired devices.
-        # LOGGER.debug("startup Network Info: %s" %str(network_info))
-        # self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
+        LOGGER.info("startup Network Info: %s" %str(network_info))
+        self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
+        version = int(self.state.node_info.version,16)
+        
         # Trigger Version payload to plugin
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
         self.log.logging("TransportZigpy", "Status", "deConz Radio manufacturer: %s" %deconz_manuf)
         self.log.logging("TransportZigpy", "Status", "deConz Radio board model: %s" %deconz_model)
-        self.log.logging("TransportZigpy", "Status", "deConz Radio version: 0x%x" %self.version)
+        self.log.logging("TransportZigpy", "Status", "deConz Radio version: 0x %x" %version )
         
         
-        branch, version = deconz_extract_versioning_for_plugin( self, deconz_model, deconz_manuf, self.version)
+        branch, version = deconz_extract_versioning_for_plugin( self, deconz_model, deconz_manuf, version)
         
         self.callBackFunction(build_plugin_8010_frame_content( branch, "00", "0000", version))
 

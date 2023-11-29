@@ -49,13 +49,6 @@ SETTINGS = {
             "pingViaGroup": { "type": "hex", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
         },
     },
-    #"DomoticzEnvironment": {
-    #    "Order": 3,
-    #    "param": {
-    #        "port": { "type": "str", "default": "8080", "current": None, "restart": 0, "hidden": False, "Advanced": False, }
-    #    },
-    #},
-    # Zigpy related parameters ( not applicable for ZiGate native)
     "Zigpy": {
         "Order": 4,
         "param": {    
@@ -93,7 +86,8 @@ SETTINGS = {
     },
     "Provisioning": {
         "Order": 6,
-        "param": {    
+        "param": {
+            "TuyaMagicRead": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "LegrandCompatibilityMode": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "enableSchneiderWiser": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "ConfigureReportingChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },

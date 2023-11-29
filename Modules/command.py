@@ -42,6 +42,7 @@ from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
                              tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
                              tuya_trv_mode, tuya_trv_onoff,
                              tuya_trv_switch_onoff)
+from Modules.danfoss import danfoss_on_off
 from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE, ZIGATE_EP)
@@ -504,7 +505,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         elif DeviceType == "ThermoOnOff":
             self.log.logging("Command", "Debug", "ThermoOnOff - requested Off", NWKID)
-            tuya_trv_onoff(self, NWKID, 0x00)
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("eTRV0100"):
+                danfoss_on_off(self, NWKID, 0x00)
+            else:
+                tuya_trv_onoff(self, NWKID, 0x00)
             UpdateDevice_v2(self, Devices, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
         elif DeviceType == "ShutterCalibration":
@@ -689,7 +693,10 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
             thermostat_Mode(self, NWKID, "Heat")
 
         elif DeviceType == "ThermoOnOff":
-            tuya_trv_onoff(self, NWKID, 0x01)
+            if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("eTRV0100"):
+                 danfoss_on_off(self, NWKID, 0x01)
+            else:
+                 tuya_trv_onoff(self, NWKID, 0x01)
             UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
         elif DeviceType == "ShutterCalibration":

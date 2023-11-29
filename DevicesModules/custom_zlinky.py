@@ -197,7 +197,7 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
     
     elif attribut == "050b":  # Active Power
         
-        self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Power %s" % (cluster, nwkid, ep, value))
+        self.log.logging("Cluster", "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s Power %s" % (cluster, nwkid, ep, value))
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         MajDomoDevice(self, Devices, nwkid, ep, cluster, str(value))
         store_ZLinky_infos( self, nwkid, 'CCASN', value)
@@ -206,7 +206,7 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
         store_ZLinky_infos( self, nwkid, 'CCASN-1',value)
         
     elif attribut in ("0505", "0905", "0a05"):  # RMS Voltage
-        self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s Voltage %s" % (cluster, nwkid, ep, value))
+        self.log.logging("Cluster", "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s Voltage %s" % (cluster, nwkid, ep, value))
         if value == 0xFFFF:
             return
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
@@ -224,7 +224,7 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
     elif attribut == "0508":  # RMSCurrent
         if value == 0xFFFF:
             return
-        self.log.logging( "ZLinky", "Debug", "ReadCluster %s - %s/%s %s Current L1 %s" % (
+        self.log.logging( "ZLinky", "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s %s Current L1 %s" % (
             cluster, nwkid, ep, attribut, value), nwkid, )
 
         # from random import randrange
@@ -277,7 +277,7 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
             store_ZLinky_infos( self, nwkid, 'SMAXN', value)
 
         else:                
-            self.log.logging( "ZLinky", "Error", "=====> ReadCluster %s - %s/%s Unexpected %s/%s linkyMode: %s" % (
+            self.log.logging( "ZLinky", "Error", "=====> zlinky_cluster_electrical_measurement %s - %s/%s Unexpected %s/%s linkyMode: %s" % (
                 cluster, nwkid, ep, attribut, value, _linkyMode ), nwkid, )
             return
 
@@ -301,14 +301,14 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
 
     elif attribut in ( "050f", "0306",) :  # Apparent Power - 0x0306 is for tri-phased
         if value >= 0xFFFF:
-            self.log.logging( "ZLinky", "Error", "=====> ReadCluster %s - %s/%s Apparent Power %s out of range !!!" % (cluster, nwkid, ep, value), nwkid, )
+            self.log.logging( "ZLinky", "Error", "=====> zlinky_cluster_electrical_measurement %s - %s/%s Apparent Power %s out of range !!!" % (cluster, nwkid, ep, value), nwkid, )
             return
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         
-        self.log.logging( "ZLinky", "Debug", "=====> ReadCluster %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
+        self.log.logging( "ZLinky", "Debug", "=====> zlinky_cluster_electrical_measurement %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
         # ApparentPower (Represents  the  single  phase  or  Phase  A,  current  demand  of  apparent  (Square  root  of  active  and  reactive power) power, in VA.)
 
-        self.log.logging( "ZLinky", "Debug", "=====> ReadCluster %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
+        self.log.logging( "ZLinky", "Debug", "=====> zlinky_cluster_electrical_measurement %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
         
         _linkyMode = linky_mode( self, nwkid, protocol=True ) 
         
@@ -330,7 +330,7 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
             store_ZLinky_infos( self, nwkid, 'SINSTS', value)
 
         else:                
-            self.log.logging( "ZLinky", "Error", "=====> ReadCluster %s - %s/%s Unexpected %s/%s linkyMode: %s" % (
+            self.log.logging( "ZLinky", "Error", "=====> zlinky_cluster_electrical_measurement %s - %s/%s Unexpected %s/%s linkyMode: %s" % (
                 cluster, nwkid, ep, attribut, value, _linkyMode ), nwkid, )
             return
             
@@ -355,7 +355,7 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
         else:
             MajDomoDevice(self, Devices, nwkid, "01", cluster, str(value), Attribute_=attribut)
 
-        self.log.logging( "ZLinky", "Debug", "ReadCluster %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
+        self.log.logging( "ZLinky", "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s Apparent Power %s" % (cluster, nwkid, ep, value), nwkid, )
 
     elif attribut in ( "090f", ):
             store_ZLinky_infos( self, nwkid, 'SINSTS2', value)
@@ -372,12 +372,12 @@ def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, att
         MajDomoDevice(self, Devices, nwkid, ep, cluster, str(value), Attribute_=attribut)
         # Check if Intensity is below subscription level
         if attribut == "0908":
-            self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L2 %s" % (cluster, nwkid, ep, attribut, value), nwkid)
+            self.log.logging("Cluster", "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s %s Current L2 %s" % (cluster, nwkid, ep, attribut, value), nwkid)
             MajDomoDevice( self, Devices, nwkid, "f2", "0009", zlinky_check_alarm(self, Devices, nwkid, ep, value), Attribute_="0005", )
             store_ZLinky_infos( self, nwkid, 'IRMS2', value)
 
         elif attribut == "0a08":
-            self.log.logging("Cluster", "Debug", "ReadCluster %s - %s/%s %s Current L3 %s" % (cluster, nwkid, ep, attribut, value), nwkid)
+            self.log.logging("Cluster", "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s %s Current L3 %s" % (cluster, nwkid, ep, attribut, value), nwkid)
             MajDomoDevice( self, Devices, nwkid, "f3", "0009", zlinky_check_alarm(self, Devices, nwkid, ep, value), Attribute_="0005", )
             store_ZLinky_infos( self, nwkid, 'IRMS3', value)
         
@@ -605,7 +605,7 @@ def zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, va
             self.log.logging( "ZLinky", "Log", "STGE Value: %s" % ( value ))
             stge = value
 
-        self.log.logging( "ZLinky", "Log", "STGE decoded %s : %s" % ( stge,  decode_STEG( stge ) ))
+        self.log.logging( "ZLinky", "Log", "STGE decoded %s : %s" % ( stge, decode_STEG( stge ) ))
         store_ZLinky_infos( self, nwkid, "STGE", decode_STEG( stge ))
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, stge)
 
