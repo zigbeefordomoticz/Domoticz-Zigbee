@@ -237,7 +237,7 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
     return myDev.ID
 
 
-def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel=None, BatteryLevel=None, TimedOut=None, Color="",):
+def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel=None, BatteryLevel=None, TimedOut=None, Color="", Options=None):
     """
     Does a widget (domoticz device) value update ( nValue,sValue, Color, Battery and Signal Level)
     Calls from UpdateDevice_v2  
@@ -252,8 +252,8 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         TimedOut (int, optional): Timeoud flag 0 to unset the Timeout. Defaults to None.
         Color (str, optional): Color . Defaults to "".
     """
-    self.log.logging("AbstractDz", "Debug", "domo_update_api: %s %s %s %s %s %s %s %s" %(
-        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color))
+    self.log.logging("AbstractDz", "Debug", "domo_update_api: %s %s %s %s %s %s %s %s %s" %(
+        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options))
 
     if DOMOTICZ_EXTENDED_API:
         Devices[DeviceID_].Units[Unit_].nValue = nValue
@@ -262,22 +262,31 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         if Color != "":
             Devices[DeviceID_].Units[Unit_].Color = Color
             Devices[DeviceID_].Units[Unit_].TimedOut = 0
+            
         if BatteryLevel is not None:
             Devices[DeviceID_].Units[Unit_].BatteryLevel = BatteryLevel
             Devices[DeviceID_].Units[Unit_].TimedOut = 0
+            
         if SignalLevel is not None:
             Devices[DeviceID_].Units[Unit_].SignalLevel = SignalLevel
             Devices[DeviceID_].Units[Unit_].TimedOut = 0
+            
         if TimedOut is not None:
             Devices[DeviceID_].Units[Unit_].TimedOut = TimedOut
-                 
+            
+        if Options is not None:
+            Devices[DeviceID_].Units[Unit_].Options = Options
+
         Devices[DeviceID_].Units[Unit_].Update(Log=True)
         return
 
     # Legacy
-    if TimedOut:
+    if TimedOut is not None:
         Devices[Unit_].Update(nValue=nValue, sValue=sValue, TimedOut=TimedOut,)
 
+    elif Options is not None:
+        Devices[Unit_].Update(nValue=nValue, sValue=sValue, Options=Options,)
+        
     elif SignalLevel is None and BatteryLevel is None:
         Devices[Unit_].Update(nValue=nValue, sValue=sValue, TimedOut=0,)
         
@@ -308,6 +317,14 @@ def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
 
     return _unit.nValue, _unit.sValue
 
+def domo_read_TimedOut( self, Devices, DeviceId_, Unit_, ):
+    return ( Devices[DeviceId_].Units[Unit_].TimedOut if DOMOTICZ_EXTENDED_API else Devices[Unit_].TimedOut )
+
+def domo_check_unit(self, Devices, DeviceId_, Unit_):
+    if DOMOTICZ_EXTENDED_API:
+        return Unit_ in Devices[DeviceId_].Units
+    else:
+        return Unit_ in Devices
 
 def domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit):
     if DOMOTICZ_EXTENDED_API:
@@ -345,7 +362,6 @@ def _is_device_tobe_switched_off(self, Devices,DeviceID_, Unit_):
         or (Devices[Unit_].Type == 241 and Devices[Unit_].SwitchType == 7)
     )
 
-
 def device_touch_api(self, Devices, DeviceId_, Unit_):
     self.log.logging("AbstractDz", "Debug", f"device_touch: {DeviceId_} {Unit_}")
 
@@ -375,14 +391,8 @@ def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
     if _is_meter_widget( self, Devices, DeviceId_, Unit_):
         return
     
-    if DOMOTICZ_EXTENDED_API:
-        _nValue = Devices[DeviceId_].Units[Unit_].nValue
-        _sValue = Devices[DeviceId_].Units[Unit_].sValue
-        _TimedOut = Devices[DeviceId_].Units[Unit_].TimedOut
-    else:
-        _nValue = Devices[Unit_].nValue
-        _sValue = Devices[Unit_].sValue
-        _TimedOut = Devices[Unit_].TimedOut
+    _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, Unit_)
+    _TimedOut = domo_read_TimedOut( self, Devices, DeviceId_, Unit_, )
     
     self.log.logging("Widget", "Debug", "timeout_widget unit %s -> %s from %s:%s %s" % (
         Devices[Unit_].Name, bool(timeout_value), _nValue, _sValue, Devices[Unit_].TimedOut))
