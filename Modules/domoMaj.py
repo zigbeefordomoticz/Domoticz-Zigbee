@@ -288,12 +288,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                _, CurrentsValue = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0;0")
+                _, CurrentsValue, _, _, _, _ = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0;0")
                 
                 if len(CurrentsValue.split(";")) != 6:
                     # First time after device creation
                     CurrentsValue = "0;0;0;0;0;0"
-                cur_usage1, cur_usage2, cur_return1, cur_return2 = CurrentsValue.split(";")
+                cur_usage1, cur_usage2, cur_return1, cur_return2, _, _ = CurrentsValue.split(";")
                 
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 
@@ -829,7 +829,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
                         NWKID, value, WidgetType, e), NWKID)
 
-            CurrentnValue, CurrentsValue = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
+            CurrentnValue, CurrentsValue, _, _, _ = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
 
             self.log.logging("Widget", "Debug", f"------> Adj Value: {adjvalue} from: {value} to {value + adjvalue} [{CurrentsValue}]", NWKID)
 
@@ -852,7 +852,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
         if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):
             self.log.logging("Widget", "Debug", f"------> Humi: {value}, WidgetType: {WidgetType}", NWKID)
-            CurrentnValue, CurrentsValue = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
+            CurrentnValue, CurrentsValue, _, _, _ = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
 
             SplitData = CurrentsValue.split(";")
             NewNvalue = 0
@@ -888,7 +888,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             baroValue = round(value + adjvalue, 1)
             self.log.logging("Widget", "Debug", f"------> Adj Value: {adjvalue} from: {value} to {baroValue}", NWKID)
         
-            CurrentnValue, CurrentsValue = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
+            CurrentnValue, CurrentsValue, _, _, _ = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
             
             SplitData = CurrentsValue.split(";")
             NewNvalue = 0
@@ -1563,10 +1563,10 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
         List[str]: The retrieved data from current.
 
     Examples:
-        >>> retrieve_data_from_current(self, "Device1", 123, 1, "A;B;C")
+        retrieve_data_from_current(self, "Device1", 123, 1, "A;B;C")
         ['0', '0', '0']
     """
-    current_nvalue, current_svalue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
+    _, current_svalue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
     
     nb_parameters = len(_format.split(";"))
     currents_values = current_svalue.split(";")
@@ -1576,7 +1576,7 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
 
     self.log.logging("Widget", "Debug", f"retrieve_data_from_current - Nb Param: {nb_parameters} returning {currents_values}")
 
-    return current_nvalue, current_svalue
+    return current_svalue
 
 
 def normalized_lvl_value( self, Devices, DeviceID, DeviceUnit, value ):
