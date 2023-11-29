@@ -96,7 +96,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 WidgetEp, Ep), NWKID,)
             continue
 
-        DeviceUnit = 0
         DeviceUnit = find_widget_unit_from_WidgetID(self, Devices, WidgetId )
         
         if DeviceUnit is None:
@@ -108,13 +107,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging( "Widget", "Error", "WidgetID %s not found, unable to remove the entry from device" % WidgetId, NWKID)
             continue
         
-        elif domo_check_unit(self, Devices, deviceid_ieee, DeviceUnit) not in Devices:
+        elif domo_check_unit(self, Devices, device_id_ieee, DeviceUnit) not in Devices:
             continue
 
-        prev_nValue, prev_sValue = domo_read_nValue_sValue(self, Devices, deviceid_ieee, DeviceUnit)
-        switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, Devices, deviceid_ieee, DeviceUnit)
+        prev_nValue, prev_sValue = domo_read_nValue_sValue(self, Devices, device_id_ieee, DeviceUnit)
+        switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, Devices, device_id_ieee, DeviceUnit)
        
-        # deviceid_ieee is the DeviceID (IEEE)
+        # device_id_ieee is the DeviceID (IEEE)
         # DeviceUnit is the Device unit
         # WidgetEp is the Endpoint to which the widget is linked to
         # WidgetId is the Device ID
@@ -230,7 +229,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # Retreive the previous values
             sValue = "%s;%s;%s" % (0, 0, 0)
                                         
-            ampere1, ampere2, ampere3 = retrieve_data_from_current(self, Devices, deviceid_ieee, DeviceUnit, "%s;%s;%s")
+            ampere1, ampere2, ampere3 = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "%s;%s;%s")
             if ampere2 == ampere3 == '65535.0':
                 self.log.logging("Widget", "Debug", "------>  Something going wrong ..... ampere %s %s %s" %(ampere1, ampere2, ampere3))
                 ampere2 = '0.0'
@@ -289,7 +288,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                _, CurrentsValue = retrieve_data_from_current(self, Devices, deviceid_ieee, DeviceUnit, "0;0;0;0;0;0")
+                _, CurrentsValue = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0;0")
                 
                 if len(CurrentsValue.split(";")) != 6:
                     # First time after device creation
@@ -329,7 +328,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, deviceid_ieee, DeviceUnit, "0;0;0;0;0;0")
+                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0;0")
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): retreive value: %s;%s;%s;%s;%s;%s" % (Ep, cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod), NWKID)
 
@@ -398,7 +397,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     )
                 ):
                 check_set_meter_widget( Devices, DeviceUnit, 0)    
-                instant, _summation = retrieve_data_from_current(self, Devices, deviceid_ieee, DeviceUnit, "0;0")
+                instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0")
                 summation = round(float(zlinky_sum_all_indexes( self, NWKID )), 2)
                 self.log.logging("ZLinky", "Debug", "------> Summation for Meter : %s" %summation)
                 
@@ -409,7 +408,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             elif WidgetType == "Meter" and Attribute_ == "050f":
                 # We receive Instant Power
                 check_set_meter_widget( Devices, DeviceUnit, 0)
-                _instant, summation = retrieve_data_from_current(self, Devices, deviceid_ieee, DeviceUnit, "0;0")
+                _instant, summation = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0")
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
@@ -434,11 +433,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     sValue = "%s;%s" % (instant, summation)
                     # We got summation from Device, let's check that EnergyMeterMode is
                     # correctly set to 0, if not adjust
-                    check_set_meter_widget( self, Devices, deviceid_ieee, DeviceUnit, 0)
+                    check_set_meter_widget( self, Devices, device_id_ieee, DeviceUnit, 0)
 
                 else:
                     sValue = "%s;" % (instant)
-                    check_set_meter_widget( self, Devices, deviceid_ieee, DeviceUnit, 1)
+                    check_set_meter_widget( self, Devices, device_id_ieee, DeviceUnit, 1)
 
                     # No summation retreive, so we make sure that EnergyMeterMode is
                     # correctly set to 1 (compute), if not adjust
@@ -830,7 +829,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
                         NWKID, value, WidgetType, e), NWKID)
 
-            CurrentnValue, CurrentsValue = retrieve_data_from_current(self, Devices, deviceid_ieee, DeviceUnit, "0;0;0;0;0")
+            CurrentnValue, CurrentsValue = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
 
             self.log.logging("Widget", "Debug", f"------> Adj Value: {adjvalue} from: {value} to {value + adjvalue} [{CurrentsValue}]", NWKID)
 
@@ -853,7 +852,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
         if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):
             self.log.logging("Widget", "Debug", f"------> Humi: {value}, WidgetType: {WidgetType}", NWKID)
-            CurrentnValue, CurrentsValue = retrieve_data_from_current(self, Devices, deviceid_ieee, DeviceUnit, "0;0;0;0;0")
+            CurrentnValue, CurrentsValue = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
 
             SplitData = CurrentsValue.split(";")
             NewNvalue = 0
@@ -889,7 +888,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             baroValue = round(value + adjvalue, 1)
             self.log.logging("Widget", "Debug", f"------> Adj Value: {adjvalue} from: {value} to {baroValue}", NWKID)
         
-            CurrentnValue, CurrentsValue = retrieve_data_from_current(self, Devices, deviceid_ieee, DeviceUnit, "0;0;0;0;0")
+            CurrentnValue, CurrentsValue = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
             
             SplitData = CurrentsValue.split(";")
             NewNvalue = 0
@@ -1213,7 +1212,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if WidgetType == "LvlControl" or ( WidgetType in ( "BSO-Volet", "Blind", ) ):
 
                 self.log.logging("Widget", "Debug", "------> LvlControl analogValue: -> %s" % value, NWKID)
-                normalized_value = normalized_lvl_value(self, Devices, deviceid_ieee, DeviceUnit, value)
+                normalized_value = normalized_lvl_value(self, Devices, device_id_ieee, DeviceUnit, value)
                 self.log.logging("Widget", "Debug", "------> LvlControl new sValue: -> %s old nValue/sValue %s:%s" % (
                     normalized_value, prev_nValue, prev_sValue), NWKID)
 
