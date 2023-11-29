@@ -59,10 +59,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             zdp_IEEE_address_request(self, 'fffd', NWKID, u8RequestType="00", u8StartIndex="00")
             return
     
-        deviceid_ieee = self.ListOfDevices[NWKID].get("IEEE", None)
-        if deviceid_ieee is None:
-            self.log.logging("Widget", "Error", "MajDomoDevice - no IEEE for %s" % NWKID, NWKID)
-            return
+    device_id_ieee = self.ListOfDevices.get(NWKID, {}).get("IEEE")
+    if device_id_ieee is None:
+        self.log.logging("Widget", "Error", f"MajDomoDevice - no IEEE for {NWKID}", NWKID)
+        return
 
     model_name = self.ListOfDevices[NWKID].get("Model", "")
 
