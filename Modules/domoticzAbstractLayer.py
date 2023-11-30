@@ -298,7 +298,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         update_params['Color'] = Color
 
     # Perform the update with the defined parameters
-    self.log.logging("AbstractDz", "Log", "domo_update_api: update_params %s" %(update_params))
+    self.log.logging("AbstractDz", "Debug", "domo_update_api: update_params %s" %(update_params))
     
     Devices[Unit_].Update(**update_params)
 
