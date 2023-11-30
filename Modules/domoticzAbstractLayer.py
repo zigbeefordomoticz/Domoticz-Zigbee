@@ -417,6 +417,6 @@ def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
     self.log.logging("Widget", "Debug", "timeout_widget DeviceId %s unit %s -> %s completed" % (DeviceId_, Unit_, bool(timeout_value)))
 
 
-def domoticz_log_api(self, message):
+def domoticz_log_api( message):
     
     Domoticz.Log( message )
