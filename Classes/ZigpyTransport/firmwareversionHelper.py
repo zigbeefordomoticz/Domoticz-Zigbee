@@ -24,11 +24,11 @@ def znp_extract_versioning_for_plugin(self, znp_model, znp_manuf):
 # Bellows
 
 def bellows_extract_versioning_for_plugin(self, brd_manuf, brd_name, version):
-    self.log.logging("TransportZigpy", "Debug", "bellows_extract_versioning_for_plugin Manuf: %s Name: %s Version: %s" % (brd_manuf, brd_name, version))
+    self.log.logging("TransportZigpy", "Log", "bellows_extract_versioning_for_plugin Manuf: %s Name: %s Version: %s" % (brd_manuf, brd_name, version))
     
     firmware_branch = "98"  # Not found in the Table.
     
-    if brd_manuf.lower() == 'elelabs':
+    if brd_manuf and brd_manuf.lower() == 'elelabs':
         if 'elu01' in brd_name.lower():
             firmware_branch = "31"
         elif 'elr02' in brd_name.lower():
