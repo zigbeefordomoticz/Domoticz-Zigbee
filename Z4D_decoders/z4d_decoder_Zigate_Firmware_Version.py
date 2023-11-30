@@ -55,7 +55,7 @@ def update_firmware_version_to_objects( self ):
     
     if self.webserver:
         self.webserver.update_firmware(self.FirmwareVersion)
-        self.ControllerLink.UpdateZiGate_HW_Version(self.ZiGateModel)
+        self.ControllerLink.update_ZiGate_HW_Version(self.ZiGateModel)
 
     if self.groupmgt:
         self.groupmgt.update_firmware(self.FirmwareVersion)
