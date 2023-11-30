@@ -35,8 +35,12 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
             NwkId, str_dp, datatype, data, str(dps_mapping)), NwkId)
         store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
         return False
-    
+
     value = int(data, 16)
+    # If we have a signed number in an unsigned, let's convert
+    if len(data) <= 8:
+        value = struct.unpack('>i', struct.pack('>I', value))[0]
+    
     self.log.logging("Tuya0601", "Debug", "                - value: %s" % (value), NwkId)
     self.log.logging("Tuya0601", "Debug", "                - dps_mapping[ %s ]: %s (%s)" % (
         str_dp, dps_mapping[ str_dp ], type(dps_mapping[ str_dp ])), NwkId)
@@ -213,7 +217,7 @@ def ts0601_illuminance(self, Devices, nwkid, ep, value):
 
 
 def ts0601_temperature(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Debug", "ts0601_temperature - Temperature %s %s %s " % (nwkid, ep, value), nwkid)
+
     store_tuya_attribute(self, nwkid, "Temp", value)
     checkAndStoreAttributeValue(self, nwkid, "01", "0402", "0000", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0402", value)

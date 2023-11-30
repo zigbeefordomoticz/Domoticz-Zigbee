@@ -1267,9 +1267,12 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
     
     self.log.logging("Tuya", "Log", "tuya_temphumi_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
     if dp == 0x01:  # Temperature, 
-        store_tuya_attribute(self, NwkId, "Temp", data)
-        MajDomoDevice(self, Devices, NwkId, srcEp, "0402", (int(data, 16) / 10))
-        checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", (int(data, 16) / 10))
+        unsigned_value = int( data,16)
+        signed_value = struct.unpack('>i', struct.pack('>I', unsigned_value))[0]
+
+        store_tuya_attribute(self, NwkId, "Temp", signed_value)
+        MajDomoDevice(self, Devices, NwkId, srcEp, "0402", (signed_value / 10))
+        checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", (signed_value/ 10))
        
     elif dp == 0x02:   # Humi
         humi = int(data, 16)
