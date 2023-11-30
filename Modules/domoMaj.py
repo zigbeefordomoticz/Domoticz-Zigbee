@@ -391,7 +391,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                     )
                 ):
-                check_set_meter_widget( Devices, DeviceUnit, 0)    
+                check_set_meter_widget( self, Devices, device_id_ieee, DeviceUnit, 0)    
                 instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0")
                 summation = round(float(zlinky_sum_all_indexes( self, NWKID )), 2)
                 self.log.logging("ZLinky", "Debug", "------> Summation for Meter : %s" %summation)
@@ -402,7 +402,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 
             elif WidgetType == "Meter" and Attribute_ == "050f":
                 # We receive Instant Power
-                check_set_meter_widget( Devices, DeviceUnit, 0)
+                check_set_meter_widget( self, Devices, device_id_ieee, DeviceUnit, 0)
                 _instant, summation = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0")
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
