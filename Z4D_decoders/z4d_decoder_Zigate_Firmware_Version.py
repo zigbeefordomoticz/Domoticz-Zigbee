@@ -11,6 +11,7 @@ def Decode8010(self, Devices, MsgData, MsgLQI):
     if MsgLen == 8:
         self.FirmwareMajorVersion = MsgData[2:4]
         self.FirmwareVersion = MsgData[4:8]
+
     else:
         self.log.logging('Input', 'Debug', f'Decode8010 {MsgData}')
         self.FirmwareMajorVersion = MsgData[:2]
@@ -30,10 +31,13 @@ def Decode8010(self, Devices, MsgData, MsgLQI):
         if firmware_branch_int in {98, 99}:
             self.log.logging('Input', 'Status', 'Untested Zigbee adapter model. If this is a Sonoff USB Dongle E that is a known issue, otherwise, please report to the Zigbee for Domoticz team')
             self.pluginParameters['CoordinatorModel'] = FIRMWARE_BRANCH[self.FirmwareBranch]
+
         elif firmware_branch_int == 11:
             HandleFirmwareBranch11(self)
+
         elif firmware_branch_int >= 20:
             HandleFirmwareBranch20(self)
+
         else:
             self.log.logging('Input', 'Status', f'{FIRMWARE_BRANCH[self.FirmwareBranch]}')
             version = ''
@@ -43,20 +47,28 @@ def Decode8010(self, Devices, MsgData, MsgLQI):
         UpdateControllerData(self)
 
     set_display_firmware_version( self )
+    update_firmware_version_to_objects( self )
+    self.PDMready = True
+
+
+def update_firmware_version_to_objects( self ):
     
     if self.webserver:
-        self.webserver.UpdateFirmware(self.FirmwareVersion)
+        self.webserver.update_firmware(self.FirmwareVersion)
         self.ControllerLink.UpdateZiGate_HW_Version(self.ZiGateModel)
+
     if self.groupmgt:
         self.groupmgt.update_firmware(self.FirmwareVersion)
+
     if self.ControllerLink:
         self.ControllerLink.update_ZiGate_Version(self.FirmwareVersion, self.FirmwareMajorVersion)
+
     if self.networkmap:
         self.networkmap.update_firmware(self.FirmwareVersion)
+
     if self.log:
         self.log.loggingUpdateFirmware(self.FirmwareVersion, self.FirmwareMajorVersion)
 
-    self.PDMready = True
 
 def HandleFirmwareBranch11(self):
     self.log.logging('Input', 'Status', f'{FIRMWARE_BRANCH[self.FirmwareBranch]}')
@@ -75,17 +87,20 @@ def HandleFirmwareBranch11(self):
     self.log.logging('Input', 'Status', f'{self.FirmwareMajorVersion}')
     self.log.logging('Input', 'Status', f'{version}')
 
+
 def HandleVersion(self, model):
     version = f'{model} %04x' % int(self.FirmwareVersion, 16)
     self.pluginParameters['CoordinatorModel'] = model
     self.pluginParameters['CoordinatorFirmwareVersion'] = '%04x' % int( self.FirmwareVersion, 16 )
     return version
 
+
 def HandleFirmwareBranch20(self):
     self.log.logging('Input', 'Status', f'{FIRMWARE_BRANCH[self.FirmwareBranch]}')
     self.ListOfDevices['0000']['Model'] = FIRMWARE_BRANCH[self.FirmwareBranch]
     self.pluginParameters['CoordinatorModel'] = FIRMWARE_BRANCH[self.FirmwareBranch]
     self.pluginParameters['CoordinatorFirmwareVersion'] = self.FirmwareVersion
+
 
 def UpdateControllerData(self):
     self.ControllerData['Firmware Version'] = f'Branch: {self.FirmwareBranch} Major: {self.FirmwareMajorVersion} Version: {self.FirmwareVersion}'
