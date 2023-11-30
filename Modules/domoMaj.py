@@ -1566,7 +1566,7 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
     if len(current_list_values) != nb_parameters:
         current_list_values = ["0"] * nb_parameters
 
-    self.log.logging("Widget", "Log", f"retrieve_data_from_current - Nb Param: {nb_parameters} returning {current_list_values}")
+    self.log.logging("Widget", "Debug", f"retrieve_data_from_current - Nb Param: {nb_parameters} returning {current_list_values}")
 
     return current_list_values
 
