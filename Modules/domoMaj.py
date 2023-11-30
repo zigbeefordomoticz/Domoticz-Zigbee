@@ -447,7 +447,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # will increment the counter value by 1. 
             # To reset an incremental counter, set the svalue to a negative integer equal to the current total of the counter. 
                 sValue = "%s" %value 
-                self.log.logging("Widget", "Log", "WaterCounter ------>  : %s" %sValue, NWKID)
+                self.log.logging("Widget", "Debug", "WaterCounter ------>  : %s" %sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
   
         if "Voltage" in ClusterType:  # Volts
@@ -465,7 +465,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 # Normalize SetPoint value with 2 digits
                 nValue = 0
                 sValue = str_round(float(setpoint), 2)  # 2 decimals
-                self.log.logging("Widget", "Log", "------>  Thermostat nValue: %s SetPoint: %s sValue: %s" % (
+                self.log.logging("Widget", "Debug", "------>  Thermostat nValue: %s SetPoint: %s sValue: %s" % (
                     0, setpoint, sValue), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
@@ -678,7 +678,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 
                 if int(value) in mode_mapping:
                     nValue, sValue = mode_mapping[int(value)]
-                    self.log.logging("Widget", "Log", f"------> Thermostat Mode 3 {value} {nValue}:{sValue}", NWKID)
+                    self.log.logging("Widget", "Debug", f"------> Thermostat Mode 3 {value} {nValue}:{sValue}", NWKID)
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
                 else:
                     # Unknown value
