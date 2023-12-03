@@ -21,6 +21,9 @@ ZNP_MODEL = {
     "CC1352/CC2652, Z-Stack 3.30+": "20",
     "CC2531, Z-Stack 3.0.x": "21",
     "CC2531, Z-Stack Home 1.2": "22",
+    "CC2652": "20",
+    "CC2531": "21",
+    "CC2538": "23",
     "ConBee II": "40",
     "Conbee II": "40",
     "Raspbee II": "41",
@@ -28,23 +31,22 @@ ZNP_MODEL = {
     "Elelabs, ELU01x": "31",
 }
 
-
 def set_display_firmware_version( self ):
 
     if 0 <= int(self.ControllerData["Branch Version"]) < 20:   
-        self.pluginParameters["Firmware Version"] = "Zigate - %s" % self.ControllerData["Minor Version"] 
+        self.pluginParameters["DisplayFirmwareVersion"] = "Zigate - %s" % self.ControllerData["Minor Version"] 
 
     elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
         # ZNP
-        self.pluginParameters["Firmware Version"] = "Znp - %s" % self.ControllerData["Minor Version"] 
+        self.pluginParameters["DisplayFirmwareVersion"] = "Znp - %s" % self.ControllerData["Minor Version"] 
 
     elif 30 <= int(self.ControllerData["Branch Version"]) < 40:   
         # Silicon Labs
-        self.pluginParameters["Firmware Version"] = "Ezsp - %s" %self.ControllerData["Minor Version"]
+        self.pluginParameters["DisplayFirmwareVersion"] = "Ezsp - %s" %self.ControllerData["Minor Version"]
         
     elif 40 <= int(self.ControllerData["Branch Version"]) < 50:
         # deCONZ
-        self.pluginParameters["Firmware Version"] = "deCONZ - %s" %self.ControllerData["Minor Version"]
+        self.pluginParameters["DisplayFirmwareVersion"] = "deCONZ - %s" %self.ControllerData["Minor Version"]
 
     else:
-        self.pluginParameters["Firmware Version"] = "UNK - %s" % self.ControllerData["Minor Version"] 
+        self.pluginParameters["DisplayFirmwareVersion"] = "UNK - %s" % self.ControllerData["Minor Version"] 

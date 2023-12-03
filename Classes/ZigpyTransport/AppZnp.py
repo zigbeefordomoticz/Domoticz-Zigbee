@@ -73,14 +73,16 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
         
         # Trigger Version payload to plugin
-        znp_model = self.get_device(nwk=t.NWK(0x0000)).model
-        znp_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
+        version = self.state.node_info.version
+        znp_model = self.state.node_info.model
+        znp_manuf = self.state.node_info.manufacturer
+        
         self.log.logging("TransportZigpy", "Status", "ZNP Radio manufacturer: %s" %znp_manuf)
         self.log.logging("TransportZigpy", "Status", "ZNP Radio board model: %s" %znp_model)
-        self.log.logging("TransportZigpy", "Status", "ZNP Radio version: %s" %self._znp.version)
+        self.log.logging("TransportZigpy", "Status", "ZNP Radio version: %s" %version)
 
-        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion, build = znp_extract_versioning_for_plugin( self, znp_model, znp_manuf)
-        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion, build ))
+        FirmwareBranch, FirmwareVersion, build = znp_extract_versioning_for_plugin( self, znp_model, znp_manuf, version)
+        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, "0000", FirmwareVersion, "" ))
         
 
     async def shutdown(self) -> None:

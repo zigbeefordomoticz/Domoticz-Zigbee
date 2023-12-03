@@ -1307,9 +1307,7 @@ def zigateInit_Phase3(self):
     elif int(self.FirmwareBranch) >= 20:
         self.log.logging(
             "Plugin", "Status", "Plugin with Zigpy, Coordinator %s firmware %s correctly initialized" % (
-                self.pluginParameters["CoordinatorModel"], self.pluginParameters["Firmware Version"]))
-
-
+                self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"]))
 
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
