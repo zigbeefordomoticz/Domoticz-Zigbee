@@ -82,7 +82,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.log.logging("TransportZigpy", "Status", "ZNP Radio version: %s" %version)
 
         FirmwareBranch, FirmwareVersion, build = znp_extract_versioning_for_plugin( self, znp_model, znp_manuf, version)
-        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, "0000", FirmwareVersion, "" ))
+        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, "000000", FirmwareVersion, "" ))
         
 
     async def shutdown(self) -> None:
