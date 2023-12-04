@@ -15,7 +15,7 @@ def Decode8010(self, Devices, MsgData, MsgLQI):  # Reception Firmware Version
 
     self.ListOfDevices.setdefault('0000', {'Model': {}})
 
-    self.log.logging("Input", "Log", "Decode8010 - Reception Version list:%s len: %s Branch: %s Major: %s Version: %s" % (
+    self.log.logging("Input", "Debug", "Decode8010 - Reception Version list:%s len: %s Branch: %s Major: %s Version: %s" % (
         MsgData, MsgLen, self.FirmwareBranch, self.FirmwareMajorVersion, self.FirmwareVersion))
 
     if self.FirmwareBranch in FIRMWARE_BRANCH:
@@ -34,13 +34,13 @@ def _zigate_firmware(self, MsgData):
 
 
 def zigpy_firmware(self, MsgData):
-    self.log.logging("Input", "Log", "Decode8010 %s" %MsgData)
+    self.log.logging("Input", "Debug", "Decode8010 %s" %MsgData)
     
     self.FirmwareMajorVersion = MsgData[:2]
     FirmwareMinorVersion = MsgData[4:8]
     self.FirmwareVersion = MsgData[8:]
     
-    self.log.logging("Input", "Log", "Decode8010 Major: %s Minor: %s Full: %s" %(
+    self.log.logging("Input", "Debug", "Decode8010 Major: %s Minor: %s Full: %s" %(
         self.FirmwareMajorVersion, FirmwareMinorVersion, self.FirmwareVersion ))
    
 
