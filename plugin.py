@@ -85,7 +85,9 @@
 
 import pathlib
 import sys
+
 import Domoticz
+
 try:
     from Domoticz import Devices, Images, Parameters, Settings
 except ImportError:
@@ -96,8 +98,10 @@ import os
 import os.path
 import threading
 import time
-from importlib.metadata import version as import_version
+
 import pkg_resources
+import z4d_certified_devices
+
 from Classes.AdminWidgets import AdminWidgets
 from Classes.ConfigureReporting import ConfigureReporting
 from Classes.DomoticzDB import (DomoticzDB_DeviceStatus, DomoticzDB_Hardware,
@@ -121,11 +125,18 @@ from Modules.command import mgtCommand
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
-from Modules.domoticzAbstractLayer import how_many_slot_available, load_list_of_domoticz_widget
+from Modules.domoticzAbstractLayer import (how_many_slot_available,
+                                           load_list_of_domoticz_widget)
 from Modules.domoTools import ResetDevice
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.piZigate import switchPiZigate_mode
+from Modules.pluginHelpers import (check_firmware_level,
+                                   check_python_modules_version,
+                                   check_requirements, decodeConnection,
+                                   get_domoticz_version,
+                                   list_all_modules_loaded, networksize_update,
+                                   update_DB_device_status_to_reinit)
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readZclClusters import load_zcl_cluster
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
@@ -143,7 +154,6 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
-import z4d_certified_devices
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -284,7 +294,7 @@ class BasePlugin:
     
         assert sys.version_info >= (3, 8)  # nosec
         
-        if check_requirements( ):
+        if check_requirements( Parameters[ "HomeFolder"] ):
             self.onStop()
             return
 
@@ -355,7 +365,7 @@ class BasePlugin:
         self.HardwareID = Parameters["HardwareID"]
         self.Key = Parameters["Key"]
         
-        if not get_domoticz_version( self ):
+        if not get_domoticz_version( self, Parameters["DomoticzVersion"] ):
             return
 
 
@@ -687,6 +697,9 @@ class BasePlugin:
     def onStop(self):  # sourcery skip: class-extract-method
         Domoticz.Log("onStop()")
         uninstall_Z4D_to_domoticz_custom_ui()
+        
+        if self.pluginconf and self.pluginconf.pluginConf["ListImportedModules"]:
+            list_all_modules_loaded(self)
 
         if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop called")
@@ -1056,66 +1069,6 @@ class BasePlugin:
         self.busy = _check_if_busy(self)
         return True
 
-def networksize_update(self):
-    self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
-    routers, enddevices = how_many_devices(self)
-    self.pluginParameters["NetworkSize"] = "Total: %s | Routers: %s | End Devices: %s" %(
-        routers + enddevices, routers, enddevices)
-
-
-
-def get_domoticz_version( self ):
-    lst_version = Parameters["DomoticzVersion"].split(" ")
-    if len(lst_version) == 1:
-        # No Build
-        major, minor = lst_version[0].split(".")
-        self.DomoticzBuild = 0
-        self.DomoticzMajor = int(major)
-        self.DomoticzMinor = int(minor)
-        # Domoticz.Log("Major: %s Minor: %s" %(int(major), int(minor)))
-        self.VersionNewFashion = True
-
-        if self.DomoticzMajor < 2020:
-            # Old fashon Versioning
-            Domoticz.Error(
-                "Domoticz version %s %s %s not supported, please upgrade to a more recent"
-                % (Parameters["DomoticzVersion"], major, minor)
-            )
-            self.VersionNewFashion = False
-            self.onStop()
-            return False
-
-    elif len(lst_version) != 3:
-        Domoticz.Error(
-            "Domoticz version %s unknown not supported, please upgrade to a more recent"
-            % (Parameters["DomoticzVersion"])
-        )
-        self.VersionNewFashion = False
-        self.onStop()
-        return False
-
-    else:
-        major, minor = lst_version[0].split(".")
-        build = lst_version[2].strip(")")
-        self.DomoticzBuild = int(build)
-        self.DomoticzMajor = int(major)
-        self.DomoticzMinor = int(minor)
-        self.VersionNewFashion = True
-        
-    return True
-
-
-        
-
-def decodeConnection(connection):
-
-    decoded = {}
-    for i in connection.strip().split(","):
-        label, value = i.split(": ")
-        label = label.strip().strip("'")
-        value = value.strip().strip("'")
-        decoded[label] = value
-    return decoded
 
 
 def zigateInit_Phase1(self):
@@ -1316,23 +1269,6 @@ def zigateInit_Phase3(self):
     if self.iaszonemgt and self.ControllerIEEE:
         self.iaszonemgt.setZigateIEEE(self.ControllerIEEE)
 
-def check_firmware_level(self):
-    # Check Firmware version
-    if int(self.FirmwareVersion.lower(),16) == 0x2100:
-        self.log.logging("Plugin", "Status", "Firmware for Pluzzy devices")
-        self.PluzzyFirmware = True
-        return True
-
-    if int(self.FirmwareVersion.lower(),16) < 0x031d:
-        self.log.logging("Plugin", "Error", "Firmware level not supported, please update ZiGate firmware")
-        return False
-
-    if int(self.FirmwareVersion.lower(),16) >= 0x031e:
-        self.pluginconf.pluginConf["forceAckOnZCL"] = False
-        return True
-
-    return False
-
 
 def start_GrpManagement(self, homefolder):
     
@@ -1506,63 +1442,7 @@ def pingZigate(self):
     else:
         self.log.logging("Plugin", "Error", "pingZigate - unknown status : %s" % self.Ping["Status"])
 
-
-def update_DB_device_status_to_reinit( self ):
-
-    # This function is called because the ZiGate will be reset, and so it is expected that all devices will be reseted and repaired
-
-    for x in self.ListOfDevices:
-        if 'Status' in self.ListOfDevices[ x ] and self.ListOfDevices[ x ]['Status'] == 'inDB':
-            self.ListOfDevices[ x ]['Status'] = 'erasePDM'
-
-def check_python_modules_version( self ):
-    
-    MODULES_VERSION = {
-        "zigpy": "0.60.0",
-        "zigpy_znp": "0.12.0",
-        "zigpy_deconz": "0.22.0",
-        "bellows": "0.37.0",
-        }
-
-    flag = True
-
-    for x in MODULES_VERSION:
-        if import_version( x ) != MODULES_VERSION[ x]:
-            self.log.logging("Plugin", "Error", "The python module %s version %s loaded is not compatible as we are expecting this level %s" %(
-                x, import_version( x ), MODULES_VERSION[ x] ))
-            flag = False
-            
-    return flag
-  
-def check_requirements( ):
-
-    requirements_file = pathlib.Path( Parameters[ "HomeFolder"] + "requirements.txt" )
-    Domoticz.Status("Checking Python modules %s" %requirements_file)
-
-    with open(requirements_file, 'r') as file:
-        requirements_list = file.readlines()
-
-    for req_str in list(requirements_list):
-        try:
-            pkg_resources.require(req_str.strip())
-
-        except pkg_resources.DistributionNotFound:
-            Domoticz.Error("Looks like %s python module is not installed. Make sure to install the required python3 module" %(req_str.strip()))
-            Domoticz.Error("Use the command:")
-            Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
-            return True
-
-        except pkg_resources.VersionConflict:
-            Domoticz.Error("Looks like %s python module is conflicting. Make sure to install the required python3 module" %(req_str.strip()))
-            Domoticz.Error("Use the command:")
-            Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
-            return True
-
-        except Exception as e:
-            Domoticz.Error(f"An unexpected error occurred: {e}")
-
-    return False
-                     
+                
 def debuging_information(self, mode):
     self.log.logging("Plugin", mode, "Is GC enabled: %s" % gc.isenabled())
     self.log.logging("Plugin", mode, "DomoticzVersion: %s" % Parameters["DomoticzVersion"])
@@ -1581,7 +1461,9 @@ def debuging_information(self, mode):
     self.log.logging("Plugin", mode, "Database: %s" % Parameters["Database"])
     self.log.logging("Plugin", mode, "Opening DomoticzDB in raw")
     self.log.logging("Plugin", mode, "   - DeviceStatus table")
-    
+
+
+ 
 global _plugin  # pylint: disable=global-variable-not-assigned
 _plugin = BasePlugin()
 
