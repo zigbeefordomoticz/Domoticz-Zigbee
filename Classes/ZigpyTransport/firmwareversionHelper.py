@@ -18,14 +18,14 @@ def znp_extract_versioning_for_plugin(self, znp_model, znp_manuf, version):
     build = (''.join(char for char in reversed(version) if char.isdigit()))[::-1]
     if "Z-Stack Home" in version:
         firmware_branch = firmware_major_version = 22
-        firmware_version = "Z-Stack Home " + "( build %s)" %build
+        firmware_version = "Z-Stack Home " + "(build %s)" %build
         
     if "Z-Stack 3.0.x" in version:
         firmware_branch = firmware_major_version = 21
-        firmware_version = "Z-Stack 3.0.x " + "( build %s)" %build
+        firmware_version = "Z-Stack 3.0.x " + "(build %s)" %build
     else:
         firmware_branch = firmware_major_version = ZNP_MODEL[ znp_model ]
-        firmware_version = "Z-Stack 3.30+ " + "( build %s)" %build
+        firmware_version = "Z-Stack 3.30+ " + "(build %s)" %build
 
     self.log.logging("TransportZigpy", "Debug", "extract_versioning_for_plugin %s %s %s %s" % (
         firmware_branch, firmware_major_version, firmware_version, build))
