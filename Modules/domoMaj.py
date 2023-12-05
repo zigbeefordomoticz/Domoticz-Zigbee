@@ -1563,20 +1563,16 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
     """
     _, current_svalue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
 
+    if current_svalue == "":
+        current_svalue = "0"
+
     # Calculate number of expected parameters from format_list directly
     # Create a zero_padded_list
-    
     format_list = _format.split(";")
     nb_parameters, zero_padded_list = len(format_list), ["0"] * len(format_list)
 
     current_list_values = current_svalue.split(";")
-    if len(current_list_values) < nb_parameters:
-        # We will pad with empty
-        result_list = current_list_values + zero_padded_list[len(current_list_values):]
-
-    elif len(current_list_values) > nb_parameters:
-        # Reset
-        result_list = ["0"] * nb_parameters
+    result_list = current_list_values + zero_padded_list[len(current_list_values):] if len(current_list_values) < nb_parameters else ["0"] * nb_parameters
 
     self.log.logging("Widget", "Log", f"retrieve_data_from_current - svalue: {current_svalue} Nb Param: {nb_parameters} returning {result_list}")
 
