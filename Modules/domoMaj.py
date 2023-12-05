@@ -1572,7 +1572,14 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
     nb_parameters, zero_padded_list = len(format_list), ["0"] * len(format_list)
 
     current_list_values = current_svalue.split(";")
-    result_list = current_list_values + zero_padded_list[len(current_list_values):] if len(current_list_values) < nb_parameters else ["0"] * nb_parameters
+    if len(current_list_values) == nb_parameters:
+        result_list = current_list_values
+        
+    elif len(current_list_values) < nb_parameters:
+        result_list = current_list_values + zero_padded_list[len(current_list_values):]
+        
+    else:
+        result_list = zero_padded_list
 
     self.log.logging("Widget", "Log", f"retrieve_data_from_current - svalue: {current_svalue} Nb Param: {nb_parameters} returning {result_list}")
 
