@@ -815,7 +815,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     NWKID, value, WidgetType), NWKID)
                 return
 
-            self.log.logging("Widget", "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NWKID)
+            self.log.logging("Widget", "Log", "------> %s %s %s Temp: %s, WidgetType: >%s<" % (
+                NWKID, ClusterType, WidgetType, value, WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
                 try:
@@ -846,7 +847,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
         if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):
 
-            self.log.logging("Widget", "Debug", f"------> Humi: {value}, WidgetType: {WidgetType}", NWKID)
+            self.log.logging("Widget", "Log", "------> %s %s %s Humi: %s, WidgetType: >%s<" % (
+                NWKID, ClusterType, WidgetType, value, WidgetType), NWKID)
             
             NewNvalue = 0
             NewSvalue = ""
@@ -870,8 +872,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Baro" and WidgetType in ("Baro", "Temp+Hum+Baro"):
-            self.log.logging("Widget", "Debug", f"------> Baro: {value}, WidgetType: {WidgetType}", NWKID)
-        
+            self.log.logging("Widget", "Log", "------> %s %s %s Baro: %s, WidgetType: >%s<" % (
+                NWKID, ClusterType, WidgetType, value, WidgetType), NWKID)
+
             adjvalue = 0
             try:
                 if self.domoticzdb_DeviceStatus:
@@ -1559,16 +1562,25 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
         ['0', '0', '0']
     """
     _, current_svalue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
+
+    # Calculate number of expected parameters from format_list directly
+    # Create a zero_padded_list
     
-    nb_parameters = len(_format.split(";"))
+    format_list = _format.split(";")
+    nb_parameters, zero_padded_list = len(format_list), ["0"] * len(format_list)
+
     current_list_values = current_svalue.split(";")
+    if len(current_list_values) < nb_parameters:
+        # We will pad with empty
+        result_list = current_list_values + zero_padded_list[len(current_list_values):]
 
-    if len(current_list_values) != nb_parameters:
-        current_list_values = ["0"] * nb_parameters
+    elif len(current_list_values) > nb_parameters:
+        # Reset
+        result_list = ["0"] * nb_parameters
 
-    self.log.logging("Widget", "Debug", f"retrieve_data_from_current - Nb Param: {nb_parameters} returning {current_list_values}")
+    self.log.logging("Widget", "Log", f"retrieve_data_from_current - svalue: {current_svalue} Nb Param: {nb_parameters} returning {result_list}")
 
-    return current_list_values
+    return result_list
 
 
 def normalized_lvl_value( self, Devices, DeviceID, DeviceUnit, value ):
