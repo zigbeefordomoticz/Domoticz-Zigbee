@@ -59,7 +59,7 @@ def deconz_extract_versioning_for_plugin(self, deconz_model, deconz_manuf, versi
         "conbee ii": "40",
         "raspbee ii": "41",
         "raspbee": "42",
-        "conbee": "43"
+        "conbee iii": "43"
     }
 
     deconz_version = "0x%08x" % version

@@ -8,7 +8,7 @@ FIRMWARE_BRANCH = {
     "40": "ConBee II",
     "41": "RaspBee II",
     "42": "RaspBee",
-    "43": "ConBee",
+    "43": "Conbee III",
     "30": "Elelabs, ELR02x",
     "31": "Elelabs, ELU01x",
     
@@ -27,6 +27,10 @@ ZNP_MODEL = {
     "ConBee II": "40",
     "Conbee II": "40",
     "Raspbee II": "41",
+    "RaspBee II": "41",
+    "RaspBee": "42",
+    "Raspbee": "42",
+    "Conbee III": "43",
     "Elelabs, ELR02x": "30",
     "Elelabs, ELU01x": "31",
 }

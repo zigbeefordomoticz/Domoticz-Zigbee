@@ -23,7 +23,7 @@
                 <option label="ZiGate+" value="V2"/>
                 <option label="Texas Instruments ZNP (via zigpy)" value="ZigpyZNP"/>
                 <option label="Silicon Labs EZSP (via zigpy)" value="ZigpyEZSP"/>
-                <option label="ConBee/RasBee (via zigpy)" value="ZigpydeCONZ"/>
+                <option label="Conbee/Rasbee I, II, III (via zigpy)" value="ZigpydeCONZ"/>
             </options>
         </param>
         <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">

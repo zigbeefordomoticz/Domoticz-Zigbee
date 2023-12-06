@@ -316,6 +316,10 @@ class WebServer(object):
                 # Silicon Labs
                 coordinator_infos["Display Firmware Version"] = "Ezsp - %s" %(self.ControllerData["Minor Version"] )
 
+            elif 40 <= int(self.ControllerData["Branch Version"]) < 50:   
+                # dresden elektronik
+                coordinator_infos["Display Firmware Version"] = "Dresden - %s" %(self.ControllerData["Minor Version"] )
+
             else:
                 coordinator_infos["Display Firmware Version"] = "UNK - %s" % self.ControllerData["Minor Version"]
 
