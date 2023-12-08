@@ -6,6 +6,13 @@ from Modules.tools import how_many_devices
 import Domoticz
 from pathlib import Path
 
+MODULES_VERSION = {
+    "zigpy": "0.60.0",
+    "zigpy_znp": "0.12.0",
+    "zigpy_deconz": "0.22.1",
+    "bellows": "0.37.1",
+    }
+
 def networksize_update(self):
     self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
     routers, enddevices = how_many_devices(self)
@@ -54,52 +61,49 @@ def update_DB_device_status_to_reinit( self ):
 def get_domoticz_version( self, domoticz_version  ):
     lst_version = domoticz_version.split(" ")
     if len(lst_version) == 1:
-        # No Build
-        major, minor = lst_version[0].split(".")
-        self.DomoticzBuild = 0
-        self.DomoticzMajor = int(major)
-        self.DomoticzMinor = int(minor)
-        # Domoticz.Log("Major: %s Minor: %s" %(int(major), int(minor)))
-        self.VersionNewFashion = True
+        return _old_fashon_domoticz(self, lst_version, domoticz_version)
+    
+    if len(lst_version) != 3:
+        Domoticz.Error( "Domoticz version %s unknown not supported, please upgrade to a more recent"% (
+            domoticz_version) )
+        return _domoticz_not_compatible(self)
 
-        if self.DomoticzMajor < 2020:
-            # Old fashon Versioning
-            Domoticz.Error(
-                "Domoticz version %s %s %s not supported, please upgrade to a more recent"
-                % (domoticz_version, major, minor)
-            )
-            self.VersionNewFashion = False
-            self.onStop()
-            return False
-
-    elif len(lst_version) != 3:
-        Domoticz.Error(
-            "Domoticz version %s unknown not supported, please upgrade to a more recent"
-            % (domoticz_version)
-        )
-        self.VersionNewFashion = False
-        self.onStop()
-        return False
-
-    else:
-        major, minor = lst_version[0].split(".")
-        build = lst_version[2].strip(")")
-        self.DomoticzBuild = int(build)
-        self.DomoticzMajor = int(major)
-        self.DomoticzMinor = int(minor)
-        self.VersionNewFashion = True
-        
+    major, minor = lst_version[0].split(".")
+    build = lst_version[2].strip(")")
+    self.DomoticzBuild = int(build)
+    _update_domoticz_firmware_data(self, major, minor)
     return True
+
+
+def _old_fashon_domoticz(self, lst_version, domoticz_version):
+    # No Build
+    major, minor = lst_version[0].split(".")
+    self.DomoticzBuild = 0
+    _update_domoticz_firmware_data(self, major, minor)
+    
+    if self.DomoticzMajor >= 2020:
+        return True
+    
+    # Old fashon Versioning
+    Domoticz.Error( "Domoticz version %s %s %s not supported, please upgrade to a more recent" % (
+        domoticz_version, major, minor) )
+    return _domoticz_not_compatible(self)
+
+
+def _update_domoticz_firmware_data(self, major, minor):
+    self.DomoticzMajor = int(major)
+    self.DomoticzMinor = int(minor)
+    self.VersionNewFashion = True
+
+
+def _domoticz_not_compatible(self):
+    self.VersionNewFashion = False
+    self.onStop()
+    return False
 
 
 def check_python_modules_version( self ):
     
-    MODULES_VERSION = {
-        "zigpy": "0.60.0",
-        "zigpy_znp": "0.12.0",
-        "zigpy_deconz": "0.22.0",
-        "bellows": "0.37.0",
-        }
 
     flag = True
 
