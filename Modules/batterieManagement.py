@@ -18,12 +18,11 @@ from Modules.tools import get_deviceconf_parameter_value, voltage2batteryP
 
 def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
 
-    model_name = None
-    if "Model" in self.ListOfDevices[MsgSrcAddr]:
-        model_name = self.ListOfDevices[MsgSrcAddr]["Model"]
+    model_name = self.ListOfDevices[MsgSrcAddr].get("Model", None)
 
-    if not get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "BatteryDevice"):
-        hack_battery(self, MsgSrcAddr)
+    if model_name and not get_deviceconf_parameter_value(self, model_name, "BatteryDevice"):
+        hack_battery_to_main_power(self, MsgSrcAddr)
+        return
 
     # Compute Battery %
     mainVolt = battVolt = battRemainingVolt = battRemainPer = None
@@ -77,7 +76,7 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
         del self.ListOfDevices[MsgSrcAddr]["IASBattery"]
 
 
-def hack_battery(self, Nwkid):
+def hack_battery_to_main_power(self, Nwkid):
 
     if self.ListOfDevices[Nwkid]["PowerSource"] == "Main" or self.ListOfDevices[Nwkid]["MacCapa"] in ( "84", "8e", ):
         # This is a Main Powered device. Make sure we do not report battery
