@@ -9,6 +9,7 @@
 """
 
 from Modules.domoticzAbstractLayer import (domo_check_unit,
+                                           domo_read_Device_Idx,
                                            domo_read_nValue_sValue,
                                            domo_read_Options,
                                            domo_read_SwitchType_SubType_Type,
@@ -132,7 +133,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging( "Widget", "Debug", "------> skiping this WidgetEp as do not match Ep : %s %s" % (WidgetEp, Ep), NwkId,)
             return
 
-        device_unit = retreive_device_unit( self, Devices, NwkId, Ep, ClusterId, WidgetId )
+        device_unit = retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, WidgetId )
         if device_unit is None:
             return
         
@@ -841,7 +842,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
             elif WidgetType == "Temp+Hum":
                 NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat}"
-                self.log.logging("Widget", "Debug", "------>  Temp+Hum update:  %s" % ( NewSvalue))
+                self.log.logging("Widget", "Debug", "------>  Temp+Hum update:  %s" % (NewSvalue))
                 UpdateDevice_v2(self, Devices, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Temp+Hum+Baro":
@@ -861,14 +862,14 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
             elif WidgetType == "Temp+Hum":
                 NewSvalue = f"{current_temp};{value};{humi_status}"
-                self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s - %s" % (NewNvalue, NewSvalue))
+                self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s" % (NewSvalue))
                 UpdateDevice_v2(self, Devices, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Temp+Hum+Baro":
                 NewSvalue = f"{current_temp};{value};{humi_status};{current_baro};{current_baro_forecast}"
                 UpdateDevice_v2(self, Devices, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
-        if ClusterType == "Baro" and WidgetType in ("Baro", "Temp+Hum+Baro"):  # barometre
+        if ClusterType == "Baro" and WidgetType in ("Baro", "Temp+Hum+Baro"):
             self.log.logging("Widget", "Debug", "------>  Baro: %s, WidgetType: %s" % (value, WidgetType), NwkId)
             
             adjvalue = baro_adjustement_value(self, Devices, NwkId, device_id_ieee, device_unit)
@@ -1476,23 +1477,25 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         CheckUpdateGroup(self, NwkId, Ep, ClusterId)
 
 
-def retreive_device_unit( self, Devices, NwkId, Ep, ClusterId, WidgetId ):
+def retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, WidgetId ):
+    """ Retreive the Device Unit from the Plugin Database (ClusterType information), then check that unit exists in the Domoticz Devices """
 
-        device_unit = find_widget_unit_from_WidgetID(self, Devices, WidgetId )
-        
-        if device_unit is None:
-            self.log.logging( "Widget", "Error", "Device %s not found !!!" % WidgetId, NwkId)
-            # House keeping, we need to remove this bad clusterType
-            if remove_bad_cluster_type_entry(self, NwkId, Ep, ClusterId, WidgetId ):
-                self.log.logging( "Widget", "Log", "WidgetID %s not found, successfully remove the entry from device" % WidgetId, NwkId)
-            else:
-                self.log.logging( "Widget", "Error", "WidgetID %s not found, unable to remove the entry from device" % WidgetId, NwkId)
-            return None
-        
-        elif device_unit not in Devices:
-            return None
-        
-        return device_unit
+    device_unit = find_widget_unit_from_WidgetID(self, Devices, WidgetId )
+    
+    if device_unit is None:
+        self.log.logging( "Widget", "Error", "Device %s not found !!!" % WidgetId, NwkId)
+        # House keeping, we need to remove this bad clusterType
+        if remove_bad_cluster_type_entry(self, NwkId, Ep, ClusterId, WidgetId ):
+            self.log.logging( "Widget", "Log", "WidgetID %s not found, successfully remove the entry from device" % WidgetId, NwkId)
+        else:
+            self.log.logging( "Widget", "Error", "WidgetID %s not found, unable to remove the entry from device" % WidgetId, NwkId)
+        return None
+    
+    elif not domo_check_unit(self, Devices, device_id_ieee, device_unit):
+        # device_id_ieee, device_unit not in Devices !!!
+        return None
+    
+    return device_unit
 
 
 def CheckUpdateGroup(self, NwkId, Ep, ClusterId):
@@ -1544,9 +1547,11 @@ def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_m
     _log_erratic_value_debug(self, NwkId, value_type, value, expected_min, expected_max, consecutive_erratic_value)
     return True
 
+
 def _get_disable_tracking_eratic_value(self, NwkId):
     param_data = self.ListOfDevices.get(NwkId, {}).get("Param", {})
     return param_data.get("disableTrackingEraticValue", False)
+
 
 def _increment_consecutive_erratic_value(self, NwkId, attribute_key):
     device_data = self.ListOfDevices.setdefault(NwkId, {})
@@ -1554,13 +1559,16 @@ def _increment_consecutive_erratic_value(self, NwkId, attribute_key):
     erratic_data["ConsecutiveErraticValue"] += 1
     return erratic_data["ConsecutiveErraticValue"]
 
+
 def _clear_erratic_attribute(self, NwkId, attribute_key):
     device_data = self.ListOfDevices.get(NwkId, {})
     if attribute_key in device_data:
         del device_data[attribute_key]
 
+
 def _log_erratic_value_error(self, NwkId, value_type, value, expected_min, expected_max):
     self.log.logging("Widget", "Error", f"Aberrant {value_type}: {value} (below {expected_min} or above {expected_max}) for device: {NwkId}", NwkId)
+
 
 def _log_erratic_value_debug(self, NwkId, value_type, value, expected_min, expected_max, consecutive_erratic_value):
     self.log.logging("Widget", "Debug", f"Aberrant {value_type}: {value} (below {expected_min} or above {expected_max}) for device: {NwkId} [{consecutive_erratic_value}]", NwkId)
@@ -1686,17 +1694,16 @@ def str_round(value, n):
 def baro_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
     if self.domoticzdb_DeviceStatus:
         try:
-            return round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(Devices[Device_Unit].ID), 1)
+            return round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(domo_read_Device_Idx(self, Devices, DeviceId, Device_Unit,)), 1)
         except Exception as e:
             self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Baro %s %s" % (
-                NwkId, e), NwkId)
-            
+                NwkId, e), NwkId)   
     return 0
 
 def temp_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
     if self.domoticzdb_DeviceStatus:
         try:
-            return round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(Devices[Device_Unit].ID), 1)
+            return round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(domo_read_Device_Idx(self, Devices, DeviceId, Device_Unit,)), 1)
         except Exception as e:
             self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s" % (
                 NwkId, e), NwkId)

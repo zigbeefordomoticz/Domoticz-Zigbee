@@ -329,7 +329,10 @@ def domo_read_TimedOut( self, Devices, DeviceId_, Unit_, ):
 
 def domo_read_Options( self, Devices, DeviceId_, Unit_,):
     return ( Devices[DeviceId_].Units[Unit_].Options if DOMOTICZ_EXTENDED_API else Devices[Unit_].Options )
-    
+
+def domo_read_Device_Idx(self, Devices, DeviceId_, Unit_,):
+    return ( Devices[DeviceId_].Units[Unit_].ID if DOMOTICZ_EXTENDED_API else Devices[Unit_].ID )    
+     
 def domo_check_unit(self, Devices, DeviceId_, Unit_):
     if DOMOTICZ_EXTENDED_API:
         return Unit_ in Devices[DeviceId_].Units
