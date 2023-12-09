@@ -821,6 +821,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             UpdateDevice_v2(self, Devices, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Temp" and WidgetType in ("Temp", "Temp+Hum", "Temp+Hum+Baro") and Attribute_ == "":  # temperature
+            
             if check_erratic_value(self, NwkId, "Temp", value, -50, 100):
                 # We got an erratic value, no update to Domoticz
                 self.log.logging("Widget", "Debug", "%s Receive an erratic Temp: %s, WidgetType: >%s<" % (
@@ -828,122 +829,63 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 return
 
             self.log.logging("Widget", "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
-            adjvalue = 0
-            if self.domoticzdb_DeviceStatus:
-                try:
-                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(Devices[device_unit].ID), 1)
-                except Exception as e:
-                    self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
-                        NwkId, value, WidgetType, e), NwkId)
+            adjvalue = temp_adjustement_value(self, Devices, NwkId, device_id_ieee, device_unit)
 
-            CurrentnValue = prev_nValue
-            CurrentsValue = prev_sValue
-            self.log.logging( "Widget", "Debug", "------> Adj Value : %s from: %s to %s [%s]" % (
-                adjvalue, value, (value + adjvalue), CurrentsValue), NwkId, )
-            if CurrentsValue == "":
-                # First time after device creation
-                CurrentsValue = "0;0;0;0;0"
-            SplitData = CurrentsValue.split(";")
-            NewNvalue = 0
-            NewSvalue = ""
+            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0")
+
             if WidgetType == "Temp":
                 NewNvalue = round(value + adjvalue, 1)
                 NewSvalue = str(round(value + adjvalue, 1))
                 self.log.logging("Widget", "Debug", "------>  Temp update: %s - %s" % (NewNvalue, NewSvalue))
                 UpdateDevice_v2(self, Devices, device_unit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
-                NewNvalue = 0
-                NewSvalue = "%s;%s;%s" % (round(value + adjvalue, 1), SplitData[1], SplitData[2])
-                self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s - %s" % (NewNvalue, NewSvalue))
-                UpdateDevice_v2(self, Devices, device_unit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
+            elif WidgetType == "Temp+Hum":
+                NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat}"
+                self.log.logging("Widget", "Debug", "------>  Temp+Hum update:  %s" % ( NewSvalue))
+                UpdateDevice_v2(self, Devices, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
-                NewNvalue = 0
-                NewSvalue = "%s;%s;%s;%s;%s" % (
-                    round(value + adjvalue, 1),
-                    SplitData[1],
-                    SplitData[2],
-                    SplitData[3],
-                    SplitData[4],
-                )
-                UpdateDevice_v2(self, Devices, device_unit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
+            elif WidgetType == "Temp+Hum+Baro":
+                NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat};{current_baro};{current_baro_forecast}"
+                UpdateDevice_v2(self, Devices, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):  # humidite
             self.log.logging("Widget", "Debug", "------>  Humi: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
-            CurrentnValue = prev_nValue
-            CurrentsValue = prev_sValue
-            if CurrentsValue == "":
-                # First time after device creation
-                CurrentsValue = "0;0;0;0;0"
-            elif ";" not in CurrentsValue:
-                CurrentsValue = CurrentsValue + ";0;0;0;0"
-            SplitData = CurrentsValue.split(";")
-            NewNvalue = 0
-            NewSvalue = ""
             # Humidity Status
-            if value < 40:
-                humiStatus = 2
-            elif 40 <= value < 70:
-                humiStatus = 1
-            else:
-                humiStatus = 3
+            humi_status = calculate_humidity_status(value)
+            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0")
 
             if WidgetType == "Humi":
-                NewNvalue = value
-                NewSvalue = "%s" % humiStatus
-                self.log.logging("Widget", "Debug", "------>  Humi update: %s - %s" % (NewNvalue, NewSvalue))
-                UpdateDevice_v2(self, Devices, device_unit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
+                NewSvalue = "%s" % humi_status
+                self.log.logging("Widget", "Debug", "------>  Humi update: %s - %s" % (value, NewSvalue))
+                UpdateDevice_v2(self, Devices, device_unit, value, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
-                NewNvalue = 0
-                NewSvalue = "%s;%s;%s" % (SplitData[0], value, humiStatus)
+            elif WidgetType == "Temp+Hum":
+                NewSvalue = f"{current_temp};{value};{humi_status}"
                 self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s - %s" % (NewNvalue, NewSvalue))
-                UpdateDevice_v2(self, Devices, device_unit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
-                NewNvalue = 0
-                NewSvalue = "%s;%s;%s;%s;%s" % (SplitData[0], value, humiStatus, SplitData[3], SplitData[4])
-                UpdateDevice_v2(self, Devices, device_unit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
+            elif WidgetType == "Temp+Hum+Baro":
+                NewSvalue = f"{current_temp};{value};{humi_status};{current_baro};{current_baro_forecast}"
+                UpdateDevice_v2(self, Devices, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Baro" and WidgetType in ("Baro", "Temp+Hum+Baro"):  # barometre
             self.log.logging("Widget", "Debug", "------>  Baro: %s, WidgetType: %s" % (value, WidgetType), NwkId)
-            adjvalue = 0
-            if self.domoticzdb_DeviceStatus:
-                try:
-                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(Devices[device_unit].ID), 1)
-                except Exception as e:
-                    self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
-                        NwkId, value, WidgetType, e), NwkId)
+            
+            adjvalue = baro_adjustement_value(self, Devices, NwkId, device_id_ieee, device_unit)
 
             baroValue = round((value + adjvalue), 1)
             self.log.logging("Widget", "Debug", "------> Adj Value : %s from: %s to %s " % (adjvalue, value, baroValue), NwkId)
-
-            CurrentnValue = prev_nValue
-            CurrentsValue = prev_sValue
-            if len(CurrentsValue.split(";")) != 5:
-                # First time after device creation
-                CurrentsValue = "0;0;0;0;0"
-            SplitData = CurrentsValue.split(";")
-            NewNvalue = 0
-            NewSvalue = ""
-
-            if baroValue < 1000:
-                Bar_forecast = 4  # RAIN
-            elif baroValue < 1020:
-                Bar_forecast = 3  # CLOUDY
-            elif baroValue < 1030:
-                Bar_forecast = 2  # PARTLY CLOUDY
-            else:
-                Bar_forecast = 1  # SUNNY
+            
+            Bar_forecast = calculate_baro_forecast(baroValue)
+            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0")
 
             if WidgetType == "Baro":
-                NewSvalue = "%s;%s" % (baroValue, Bar_forecast)
-                UpdateDevice_v2(self, Devices, device_unit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
+                NewSvalue = f"{baroValue};{Bar_forecast}"
+                UpdateDevice_v2(self, Devices, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Temp+Hum+Baro":
-                NewSvalue = "%s;%s;%s;%s;%s" % (SplitData[0], SplitData[1], SplitData[2], baroValue, Bar_forecast)
-                UpdateDevice_v2(self, Devices, device_unit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
+                NewSvalue = f"{current_temp};{current_humi};{current_hum_stat};{baroValue};{Bar_forecast}"
+                UpdateDevice_v2(self, Devices, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
         if "BSO-Orientation" in ClusterType and WidgetType == "BSO-Orientation":
             nValue = 1 + (round(int(value, 16) / 10))
@@ -1577,41 +1519,51 @@ def getDimmerLevelOfColor(self, value):
 
 def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_max):
     """
-    check if the value is in the range or not. If out range and disableTrackingValue not set, will check for 5 consecutive errors to log as an error.
-    return False if the value is in the range
-    return True if the value is out of range
+    Check if the value is in the range or not. If out of range and disableTrackingValue not set, will check for 5 consecutive errors to log as an error.
+    Returns False if the value is in the range, True if the value is out of range.
     """
-
-    valid_value = False
-    _attribute = "Erratic_" + value_type
-    tracking_disable = self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"] if "Param" in self.ListOfDevices[NwkId] and "disableTrackingEraticValue" in self.ListOfDevices[NwkId]["Param"] else False
+    attribute_key = "Erratic_" + value_type
+    tracking_disable = _get_disable_tracking_eratic_value(self, NwkId)
 
     if expected_min < value < expected_max:
-        # Value is in the threasholds, every thing fine
-        valid_value = True
-
-    if valid_value:
-        if _attribute in self.ListOfDevices[NwkId]:
-            # Remove the attribute if we had a previous erratic value
-            del self.ListOfDevices[NwkId][_attribute]
+        # Value is in the thresholds, everything is fine
+        _clear_erratic_attribute(self, NwkId, attribute_key)
         return False
 
-    elif tracking_disable:
+    if tracking_disable:
         return True
 
-    # We have an erratic value and we have to track Let's try to handle some eratics value
-    if _attribute not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId][_attribute] = {"ConsecutiveErraticValue": 1}
-    self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] += 1
-    if self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] > 5:
-        self.log.logging( "Widget", "Error", "Aberrant %s: %s (below %s or above %s) for device: %s" % (
-            value_type, value, expected_min, expected_max, NwkId), NwkId,)
-        del self.ListOfDevices[NwkId][_attribute]
+    # We have an erratic value and we have to track, let's try to handle some erratic values
+    consecutive_erratic_value = _increment_consecutive_erratic_value(self, NwkId, attribute_key)
+
+    if consecutive_erratic_value > 5:
+        _log_erratic_value_error(self, NwkId, value_type, value, expected_min, expected_max)
+        _clear_erratic_attribute(self, NwkId, attribute_key)
         return True
 
-    self.log.logging( "Widget", "Debug", "Aberrant %s: %s (below % or above %s) for device: %s [%s]" % (
-        value_type, value, expected_min, expected_max, NwkId, self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"],), NwkId,)
+    _log_erratic_value_debug(self, NwkId, value_type, value, expected_min, expected_max, consecutive_erratic_value)
     return True
+
+def _get_disable_tracking_eratic_value(self, NwkId):
+    param_data = self.ListOfDevices.get(NwkId, {}).get("Param", {})
+    return param_data.get("disableTrackingEraticValue", False)
+
+def _increment_consecutive_erratic_value(self, NwkId, attribute_key):
+    device_data = self.ListOfDevices.setdefault(NwkId, {})
+    erratic_data = device_data.setdefault(attribute_key, {"ConsecutiveErraticValue": 0})
+    erratic_data["ConsecutiveErraticValue"] += 1
+    return erratic_data["ConsecutiveErraticValue"]
+
+def _clear_erratic_attribute(self, NwkId, attribute_key):
+    device_data = self.ListOfDevices.get(NwkId, {})
+    if attribute_key in device_data:
+        del device_data[attribute_key]
+
+def _log_erratic_value_error(self, NwkId, value_type, value, expected_min, expected_max):
+    self.log.logging("Widget", "Error", f"Aberrant {value_type}: {value} (below {expected_min} or above {expected_max}) for device: {NwkId}", NwkId)
+
+def _log_erratic_value_debug(self, NwkId, value_type, value, expected_min, expected_max, consecutive_erratic_value):
+    self.log.logging("Widget", "Debug", f"Aberrant {value_type}: {value} (below {expected_min} or above {expected_max}) for device: {NwkId} [{consecutive_erratic_value}]", NwkId)
 
 
 def check_set_meter_widget( self, Devices, DeviceId, Unit, mode):
@@ -1729,3 +1681,23 @@ def calculate_baro_forecast(baroValue):
 
 def str_round(value, n):
     return "{:.{n}f}".format(value, n=int(n))
+
+
+def baro_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
+    if self.domoticzdb_DeviceStatus:
+        try:
+            return round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(Devices[Device_Unit].ID), 1)
+        except Exception as e:
+            self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Baro %s %s" % (
+                NwkId, e), NwkId)
+            
+    return 0
+
+def temp_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
+    if self.domoticzdb_DeviceStatus:
+        try:
+            return round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(Devices[Device_Unit].ID), 1)
+        except Exception as e:
+            self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s" % (
+                NwkId, e), NwkId)
+    return 0
