@@ -408,7 +408,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                     )
                 ):
-                check_set_meter_widget( Devices, device_id_ieee, device_unit, 0)    
+                check_set_meter_widget( self, Devices, device_id_ieee, device_unit, 0)    
                 instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
                 summation = round(float(zlinky_sum_all_indexes( self, NwkId )), 2)
                 self.log.logging("ZLinky", "Debug", "------> Summation for Meter : %s" %summation)
@@ -419,7 +419,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 
             elif WidgetType == "Meter" and Attribute_ == "050f":
                 # We receive Instant Power
-                check_set_meter_widget( Devices, device_id_ieee, device_unit, 0)
+                check_set_meter_widget(self, Devices, device_id_ieee, device_unit, 0)
                 _instant, summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
@@ -445,10 +445,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     sValue = "%s;%s" % (instant, summation)
                     # We got summation from Device, let's check that EnergyMeterMode is
                     # correctly set to 0, if not adjust
-                    check_set_meter_widget( Devices, device_id_ieee, device_unit, 0)
+                    check_set_meter_widget( self, Devices, device_id_ieee, device_unit, 0)
                 else:
                     sValue = "%s;" % (instant)
-                    check_set_meter_widget( Devices, device_id_ieee, device_unit, 1)
+                    check_set_meter_widget( self, Devices, device_id_ieee, device_unit, 1)
                     # No summation retreive, so we make sure that EnergyMeterMode is
                     # correctly set to 1 (compute), if not adjust
 
