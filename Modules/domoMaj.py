@@ -14,7 +14,10 @@ from Modules.domoticzAbstractLayer import (domo_check_unit,
                                            domo_read_Options,
                                            domo_read_SwitchType_SubType_Type,
                                            domo_update_api,
-                                           find_widget_unit_from_WidgetID)
+                                           find_widget_unit_from_WidgetID,
+                                           is_dimmable_blind,
+                                           is_dimmable_light,
+                                           is_dimmable_switch)
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                UpdateDevice_v2, remove_bad_cluster_type_entry)
@@ -28,53 +31,6 @@ from Zigbee.zdpCommands import zdp_IEEE_address_request
 WIDGET_TO_BYPASS_EP_MATCH = ("XCube", "Aqara", "DSwitch", "DButton", "DButton_3")
 
 
-def is_time_to_domo_update(self, NwkId, Ep):
-
-    if self.CommiSSionning and NwkId not in self.ListOfDevices:
-        return False
-
-    if NwkId not in self.ListOfDevices:
-        self.log.logging("Widget", "Error", "MajDomoDevice - %s not known" % NwkId, NwkId)
-        zigpy_plugin_sanity_check(self, NwkId)
-        return False
-
-    if ( "Health" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Health"] == "Disabled" ):
-        # If the device has been disabled, just drop the message
-        self.log.logging("Widget", "Debug", "MajDomoDevice - disabled device: %s/%s droping message " % (NwkId, Ep), NwkId)
-        return False
-
-    if Ep not in self.ListOfDevices[NwkId]["Ep"]:
-        self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NwkId, Ep), NwkId)
-        return False
-
-    if ( 
-        "Status" in self.ListOfDevices[NwkId] 
-        and self.ListOfDevices[NwkId]["Status"] == "erasePDM" 
-        and "autoRestore" in self.pluginconf.pluginConf 
-        and self.pluginconf.pluginConf["autoRestore"]
-        ):
-        # Most likely we have request a coordinator re-initialisation and the latest backup has been put in place
-        # simply put the device back
-        self.ListOfDevices[NwkId]["Status"] = "inDB"
-        
-    elif "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] != "inDB":
-        self.log.logging(
-            "Widget",
-            "Log",
-            "MajDomoDevice NwkId: %s status: %s not inDB request IEEE for possible reconnection" % (NwkId, self.ListOfDevices[NwkId]["Status"]),
-            NwkId,
-        )
-        if not zigpy_plugin_sanity_check(self, NwkId):
-            # Broadcast to 0xfffd: macRxOnWhenIdle = TRUE
-            zdp_IEEE_address_request(self, 'fffd', NwkId, u8RequestType="00", u8StartIndex="00")
-        return False
-
-
-    if "IEEE" not in self.ListOfDevices[NwkId]:
-        self.log.logging("Widget", "Error", "MajDomoDevice - no IEEE for %s" % NwkId, NwkId)
-        return False
-    
-    return True
 
 
 def MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, value, Attribute_="", Color_=""):
@@ -770,8 +726,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             nvalue = int(value)
             svalue = "%s" % (nvalue,)
             UpdateDevice_v2(self, Devices, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
-
-            
+         
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
             nValue = 0
             sValue = "%s %% used" %( value, )
@@ -920,8 +875,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             nValue = 0
             sValue = value
             UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                       
+                     
         if ClusterType in ( "Motion", "Door",) and WidgetType == "Motion":
             self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NwkId)
             if isinstance(value, str):
@@ -1177,310 +1131,304 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
 
         if "WindowCovering" in ClusterType and WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind"):
-            _value = int(value, 16)
-            self.log.logging(
-                "Widget",
-                "Debug",
-                "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (NwkId, Ep, ClusterType, WidgetType, _value),
-                NwkId,
-            )
-            if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
-                _value = 100 - _value
-                self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NwkId, Ep, _value), NwkId)
-            # nValue will depends if we are on % or not
-            if _value == 0:
-                nValue = 0
-            elif _value == 100:
-                nValue = 1
-            else:
-                if switchType in (4, 15):
-                    nValue = 17
-                else:
-                    nValue = 2
-            self.log.logging("Widget", "Debug", "------>  %s %s/%s Value: %s:%s" % (WidgetType, NwkId, Ep, nValue, _value), NwkId)
-            UpdateDevice_v2(self, Devices, device_unit, nValue, str(_value), BatteryLevel, SignalLevel)
+            nValue, sValue = _domo_convert_windows_covering( self, value, Devices, device_id_ieee, device_unit, NwkId, WidgetType )
+            UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if "LvlControl" in ClusterType:  # LvlControl ( 0x0008)
-            if WidgetType == "LvlControl" or ( WidgetType in ( "BSO-Volet", "Blind", ) ):
-                # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
-                # We might get a Level, but the device is still Off and we shouldn't make it On .
-                nValue = None
-                self.log.logging("Widget", "Debug", "------>  LvlControl analogValue: -> %s" % value, NwkId)
-                
-                normalized_value = normalized_lvl_value( switchType, value )
-                self.log.logging( "Widget", "Debug", "------>  LvlControl new sValue: -> %s old nValue/sValue %s:%s" % (
-                    normalized_value, prev_nValue, prev_sValue), NwkId, )
-                
-                # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
-                if normalized_value == 0:
-                    nValue = 0
-                    if switchType in (13, 14, 15, 16):
-                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
-                            0, 0, switchType), NwkId, )
-                        UpdateDevice_v2(self, Devices, device_unit, 0, "0", BatteryLevel, SignalLevel)
-                    else:
-                        # if prev_nValue == 0 and prev_sValue == 'Off':
-                        if prev_nValue == 0 and (prev_sValue == "Off" or prev_sValue == str(normalized_value)):
-                            pass
-                        else:
-                            self.log.logging("Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s" % (0, 0), NwkId)
-                            UpdateDevice_v2(self, Devices, device_unit, 0, "0", BatteryLevel, SignalLevel)
-
-                elif normalized_value == 100:
-                    nValue = 1
-                    if switchType in (13, 14, 15, 16):
-                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
-                            1, 100, switchType), NwkId, )
-                        UpdateDevice_v2(self, Devices, device_unit, 1, "100", BatteryLevel, SignalLevel)
-
-                    else:
-                        if prev_nValue == 0 and (prev_sValue == "Off" or prev_sValue == str(normalized_value)):
-                            pass
-                        else:
-                            self.log.logging("Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s" % (1, 100), NwkId)
-                            UpdateDevice_v2(self, Devices, device_unit, 1, "100", BatteryLevel, SignalLevel)
-
-                else:  # sValue != 0 and sValue != 100
-
-                    # if prev_nValue == 0 and prev_sValue == 'Off':
-                    if prev_nValue == 0 and (prev_sValue == "Off" or prev_sValue == str(normalized_value)):
-                        # Do nothing. We receive a ReadAttribute  giving the position of a Off device.
-                        pass
-                    elif switchType in (13, 14, 15, 16):
-                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
-                            nValue, normalized_value, switchType), NwkId, )
-                        UpdateDevice_v2(self, Devices, device_unit, 2, str(normalized_value), BatteryLevel, SignalLevel)
-
-                    else:
-                        # Just update the Level if Needed
-                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
-                            nValue, normalized_value, switchType), NwkId, )
-                        UpdateDevice_v2( self, Devices, device_unit, prev_nValue, str(normalized_value), BatteryLevel, SignalLevel, )
-
-            elif WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
-                if prev_nValue != 0 or prev_sValue != "Off":
-                    nValue, sValue = getDimmerLevelOfColor(self, value)
-                    UpdateDevice_v2(self, Devices, device_unit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
-
-            elif WidgetType == "LegrandSelector":
-                self.log.logging("Widget", "Debug", "------> LegrandSelector : Value -> %s" % value, NwkId)
-                if value == "00":
-                    nValue = 0
-                    sValue = "00"  # Off
-                    UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-                elif value == "01":
-                    nValue = 1
-                    sValue = "10"  # On
-                    UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-                elif value == "moveup":
-                    nValue = 2
-                    sValue = "20"  # Move Up
-                    UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-                elif value == "movedown":
-                    nValue = 3
-                    sValue = "30"  # Move Down
-                    UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-                elif value == "stop":
-                    nValue = 4
-                    sValue = "40"  # Stop
-                    UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-                else:
-                    self.log.logging("Widget", "Error", "------>  %s LegrandSelector Unknown value %s" % (NwkId, value))
-                    
-            elif WidgetType == "LegrandSleepWakeupSelector":
-                self.log.logging("Widget", "Debug", "------> LegrandSleepWakeupSelector : Value -> %s" % value, NwkId)
-                if value == "00":
-                    nValue = 1
-                    sValue = "10"  # sleep
-                    UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-                elif value == "01":
-                    nValue = 2
-                    sValue = "20"  # wakeup
-                    UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-                else:
-                    self.log.logging("Widget", "Error", "------>  %s LegrandSleepWakeupSelector Unknown value %s" % (NwkId, value))
-
-            elif WidgetType == "Generic_5_buttons":
-                self.log.logging("Widget", "Debug", "------> Generic 5 buttons : Value -> %s" % value, NwkId)
-                nvalue = 0
-                state = "00"
-                if value == "00":
-                    nvalue = 0
-                    sValue = "00"
-
-                elif value == "01":
-                    nvalue = 1
-                    sValue = "10"
-
-                elif value == "02":
-                    nvalue = 2
-                    sValue = "20"
-
-                elif value == "03":
-                    nvalue = 3
-                    sValue = "30"
-
-                elif value == "04":
-                    nvalue = 4
-                    sValue = "40"
-                else:
-                    return
-
-                UpdateDevice_v2(self, Devices, device_unit, nvalue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-            elif WidgetType == "GenericLvlControl":
-                # 1,10: Off
-                # 2,20: On
-                # 3,30: Move Up
-                # 4,40: Move Down
-                # 5,50: Stop
-                self.log.logging("Widget", "Debug", "------> GenericLvlControl : Value -> %s" % value, NwkId)
-                if value == "off":
-                    nvalue = 1
-                    sValue = "10"  # Off
-
-                elif value == "on":
-                    nvalue = 2
-                    sValue = "20"  # On
-
-                elif value == "moveup":
-                    nvalue = 3
-                    sValue = "30"  # Move Up
-
-                elif value == "movedown":
-                    nvalue = 4
-                    sValue = "40"  # Move Down
-
-                elif value == "stop":
-                    nvalue = 5
-                    sValue = "50"  # Stop
-                else:
-                    return
-
-                UpdateDevice_v2(self, Devices, device_unit, nvalue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-            elif WidgetType == "HueSmartButton":
-                self.log.logging("Widget", "Debug", "------> HueSmartButton : Value -> %s" % value, NwkId)
-                if value == "toggle":
-                    nvalue = 1
-                    sValue = "10"  # toggle
-                elif value == "move":
-                    nvalue = 2
-                    sValue = "20"  # Move
-                else:
-                    return
-                UpdateDevice_v2(self, Devices, device_unit, nvalue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-            elif WidgetType == "INNR_RC110_SCENE":
-                self.log.logging("Widget", "Debug", "------>  Updating INNR_RC110_SCENE (LvlControl) Value: %s" % value, NwkId)
-                if value == "Off":
-                    nValue = 0
-
-                elif value == "On":
-                    nValue = 1
-
-                elif value == "clickup":
-                    nValue = 2
-
-                elif value == "clickdown":
-                    nValue = 3
-
-                elif value == "moveup":
-                    nValue = 4
-
-                elif value == "movedown":
-                    nValue = 5
-
-                elif value == "stop":
-                    nValue = 6
-
-                elif value == "scene1":
-                    nValue = 7
-
-                elif value == "scene2":
-                    nValue = 8
-
-                elif value == "scene3":
-                    nValue = 9
-
-                elif value == "scene4":
-                    nValue = 10
-
-                elif value == "scene5":
-                    nValue = 11
-
-                elif value == "scene6":
-                    nValue = 12
-                else:
-                    return
-
-                sValue = "%s" % (10 * nValue)
-                UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "INNR_RC110_LIGHT":
-                self.log.logging("Widget", "Debug", "------>  Updating INNR_RC110_LIGHT (LvlControl) Value: %s" % value, NwkId)
-                if value == "00":
-                    nValue = 0
-
-                elif value == "01":
-                    nValue = 1
-
-                elif value == "clickup":
-                    nValue = 2
-
-                elif value == "clickdown":
-                    nValue = 3
-
-                elif value == "moveup":
-                    nValue = 4
-
-                elif value == "movedown":
-                    nValue = 5
-
-                elif value == "stop":
-                    nValue = 6
-                else:
-                    return
-
-                sValue = "%s" % (10 * nValue)
-                UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "TINT_REMOTE_WHITE":
-                nValue = int(value)
-                sValue = "%s" % (10 * nValue)
-                UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+            tuple_value = _domo_convert_level_control( self, Devices, device_id_ieee, device_unit, value, NwkId, switchType, WidgetType, prev_nValue, prev_sValue)
+            if tuple_value :
+                UpdateDevice_v2(self, Devices, device_unit, tuple_value[0], tuple_value[1], BatteryLevel, SignalLevel)
 
         if ClusterType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ) and ClusterType == WidgetType:
             # We just manage the update of the Dimmer (Control Level)
-            nValue, sValue = getDimmerLevelOfColor(self, value)
+            nValue, sValue = _domo_convert_colorcontrol( self, value )
             UpdateDevice_v2(self, Devices, device_unit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
         if "Orientation" in ClusterType and WidgetType == "Orientation":
             # Xiaomi Vibration
             # value is a str containing all Orientation information to be updated on Text Widget
-            nValue = 0
-            sValue = value
+            nValue, sValue = _domo_convert_orientation( value)
             UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Strenght" in ClusterType and WidgetType == "Strenght":
             # value is a str containing all Orientation information to be updated on Text Widget
-            nValue = 0
-            sValue = value
+            nValue, sValue = _domo_convert_strenght( value)
             UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Distance" in ClusterType and WidgetType == "Distance":
             # value is a str containing all Distance information in cm
-            nValue = 0
-            sValue = value
+            nValue, sValue = _domo_convert_distance( value )
             UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Lux" in ClusterType and WidgetType == "Lux":
-            nValue = int(value)
-            sValue = value
+            nValue, sValue = _domo_convert_lux( value)
             UpdateDevice_v2(self, Devices, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
 
         # Check if this Device belongs to a Group. In that case update group
         CheckUpdateGroup(self, NwkId, Ep, ClusterId)
+
+# Helpers
+
+
+def _domo_convert_windows_covering( self, value, Devices, DeviceId, Unit, NwkId, WidgetType ):
+
+    dimm_blind_nvalue = is_dimmable_blind(self, Devices, DeviceId, Unit)
+    value = int(value, 16)
+    
+    if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
+        value = 100 - value
+        
+    # nValue will depends if we are on % or not
+    if value == 0:
+        nValue = 0
+    elif value == 100:
+        nValue = 1
+    else:
+        nValue = dimm_blind_nvalue if dimm_blind_nvalue else 2
+            
+    self.log.logging("Widget", "Debug", "------>  %s %s Value: %s:%s" % (WidgetType, NwkId, nValue, value), NwkId)
+    return nValue, str(value)
+
+
+def _domo_convert_colorcontrol( self, value ):
+    return getDimmerLevelOfColor(self, value)
+
+  
+def _domo_convert_strenght( value ):
+    return 0, value
+
+
+def _domo_convert_orientation( value ):
+    return 0, value
+
+
+def _domo_convert_distance( value ):
+    return 0, value
+
+
+def _domo_convert_lux( value):
+    return int(value), value
+
+
+def _domo_convert_level_control( self, Devices, DeviceId, Unit, value, NwkId, switchType, WidgetType, prev_nValue, prev_sValue):
+    if WidgetType == "LvlControl" or ( WidgetType in ( "BSO-Volet", "Blind", ) ):
+        # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
+        # We might get a Level, but the device is still Off and we shouldn't make it On .
+        self.log.logging("Widget", "Debug", "_domo_convert_level_control input value: -> %s" % value, NwkId)
+        
+        normalized_value = normalized_lvl_value( switchType, value )
+        self.log.logging( "Widget", "Debug", "_domo_convert_level_control normalized Value: -> %s previous nValue/sValue %s:%s" % (
+            normalized_value, prev_nValue, prev_sValue), NwkId, )
+        
+        dimm_blind_nvalue = is_dimmable_blind(self, Devices, DeviceId, Unit)
+        self.log.logging( "Widget", "Debug", "_domo_convert_level_control dimm_blind_value %s" % (dimm_blind_nvalue), NwkId, )
+        
+        # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
+        if normalized_value == 0:
+            return handle_normalized_value_off(self, dimm_blind_nvalue, switchType, prev_nValue, prev_sValue, normalized_value, NwkId)
+
+        if normalized_value == 100:
+            return handle_normalized_value_on(self, dimm_blind_nvalue, switchType, prev_nValue, prev_sValue, normalized_value, NwkId)
+
+        # sValue != 0 and sValue != 100
+        return handle_normalized_other(self, dimm_blind_nvalue, prev_nValue, prev_sValue, normalized_value, switchType, NwkId)
+
+    elif WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
+        if prev_nValue != 0 or prev_sValue != "Off":
+            nValue, sValue = getDimmerLevelOfColor(self, value)
+            return nValue, str(sValue)
+
+    elif WidgetType == "LegrandSelector":
+        self.log.logging("Widget", "Debug", "------> LegrandSelector : Value -> %s" % value, NwkId)
+        _value_mapping = {
+            "00": (0, "00"),
+            "01": (1, "10"),
+            "moveup": (2, "20"),
+            "movedown": (3, "30"),
+            "stop": (4, "40"),
+        }
+        return _value_mapping.get(value)
+
+    elif WidgetType == "LegrandSleepWakeupSelector":
+        self.log.logging("Widget", "Debug", "------> LegrandSleepWakeupSelector : Value -> %s" % value, NwkId)
+        _value_mapping = {
+            "00": (1, "10"),
+            "01": (2, "20"),
+        }
+        return _value_mapping.get(value)
+    
+    elif WidgetType == "Generic_5_buttons":
+        self.log.logging("Widget", "Debug", "------> Generic 5 buttons : Value -> %s" % value, NwkId)
+        _value_mapping = {
+            "00": (0, "00"),
+            "01": (1, "10"),
+            "02": (2, "20"),
+            "03": (3, "30"),
+            "04": (4, "40"),
+        }
+        return _value_mapping.get(value)
+    
+    elif WidgetType == "GenericLvlControl":
+        self.log.logging("Widget", "Debug", "------> GenericLvlControl : Value -> %s" % value, NwkId)
+        _value_mapping = {
+            "off": (1, "10"),        # Off
+            "on": (2, "20"),         # On
+            "moveup": (3, "30"),     # Move Up
+            "movedown": (4, "40"),   # Move Down
+            "stop": (5, "50"),       # Stop
+        }
+        return _value_mapping.get(value)
+
+    elif WidgetType == "HueSmartButton":
+        self.log.logging("Widget", "Debug", "------> HueSmartButton : Value -> %s" % value, NwkId)
+        _value_mapping = {
+            "toggle": (1, "10"),       # toggle
+            "move": (2, "20"),         # Move
+        }
+        return _value_mapping.get(value)
+
+    elif WidgetType == "INNR_RC110_SCENE":
+        self.log.logging("Widget", "Debug", "------>  Updating INNR_RC110_SCENE (LvlControl) Value: %s" % value, NwkId)
+        _value_mapping = {
+            "Off": 0,
+            "On": 1,
+            "clickup": 2,
+            "clickdown": 3,
+            "moveup": 4,
+            "movedown": 5,
+            "stop": 6,
+            "scene1": 7,
+            "scene2": 8,
+            "scene3": 9,
+            "scene4": 10,
+            "scene5": 11,
+            "scene6": 12,
+        }
+        
+        nValue = _value_mapping.get(value)
+        if nValue is None:
+            return None
+        sValue = "%s" % (10 * nValue)
+        return nValue, sValue
+
+    elif WidgetType == "INNR_RC110_LIGHT":
+        self.log.logging("Widget", "Debug", "------>  Updating INNR_RC110_LIGHT (LvlControl) Value: %s" % value, NwkId)
+        _value_mapping = {
+            "00": 0,
+            "01": 1,
+            "clickup": 2,
+            "clickdown": 3,
+            "moveup": 4,
+            "movedown": 5,
+            "stop": 6,
+        }
+        nValue = _value_mapping.get(value)
+        if nValue is None:
+            return None
+        sValue = "%s" % (10 * nValue)
+        return nValue, sValue
+
+    elif WidgetType == "TINT_REMOTE_WHITE":
+        nValue = int(value)
+        sValue = "%s" % (10 * nValue)
+        return nValue, sValue
+
+    return None
+
+
+def handle_normalized_value_off(self, dimm_blind_nvalue, switchType, prev_nValue, prev_sValue, normalized_value, NwkId):
+
+    if dimm_blind_nvalue:
+        # Blind, update Switch Closed
+        self.log.logging("Widget", "Debug", "handle_normalized_value_off -> %s/%s SwitchType: %s" % (0, 0, switchType), NwkId)
+        return 0, "0"
+    
+    if prev_nValue == 0 and (prev_sValue == "Off" or prev_sValue == str(normalized_value)):
+        # It is not a blind and it is already Off, do nothing
+        return None
+
+    # All other cases we Switch Off
+    self.log.logging("Widget", "Debug", "handle_normalized_value_off -> %s/%s" % (0, 0), NwkId)
+    return 0, "0"
+
+
+def handle_normalized_value_on(self, dimm_blind_nvalue, switchType, prev_nValue, prev_sValue, normalized_value, NwkId):
+    if dimm_blind_nvalue:
+        # Blind, update Switch Open
+        self.log.logging("Widget", "Debug", "handle_normalized_value_on -> %s/%s SwitchType: %s" % (1, 100, switchType), NwkId)
+        return 1, "100"
+    
+    if prev_nValue == 0 and (prev_sValue == "Off" or prev_sValue == str(normalized_value)):
+        # It is not a blind and it is already Off, do nothing
+        return None
+
+    # All other cases we Switch Off
+    self.log.logging("Widget", "Debug", "handle_normalized_value_on -> %s/%s" % (1, 100), NwkId)
+    return 1, "100"
+
+
+def handle_normalized_other(self, dimm_blind_nvalue, prev_nValue, prev_sValue, normalized_value, switchType, NwkId):
+    if dimm_blind_nvalue:
+        self.log.logging("Widget", "Debug", "handle_normalized_other -> %s SwitchType: %s dimm_blind_value: %s" % (
+            normalized_value, switchType, dimm_blind_nvalue), NwkId)
+        return dimm_blind_nvalue, str(normalized_value)
+    
+    if prev_nValue == 0 and (prev_sValue == "Off" or prev_sValue == str(normalized_value)):
+        # Do nothing. We receive a ReadAttribute giving the position of an Off device.
+        return None
+    
+    # Just update the Level if Needed
+    self.log.logging("Widget", "Debug", "handle_normalized_other -> %s SwitchType: %s prev value: %s" % (normalized_value, switchType, prev_nValue ), NwkId)
+    return prev_nValue, str(normalized_value)
+
+
+def is_time_to_domo_update(self, NwkId, Ep):
+
+    if self.CommiSSionning and NwkId not in self.ListOfDevices:
+        return False
+
+    if NwkId not in self.ListOfDevices:
+        self.log.logging("Widget", "Error", "MajDomoDevice - %s not known" % NwkId, NwkId)
+        zigpy_plugin_sanity_check(self, NwkId)
+        return False
+
+    if ( "Health" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Health"] == "Disabled" ):
+        # If the device has been disabled, just drop the message
+        self.log.logging("Widget", "Debug", "MajDomoDevice - disabled device: %s/%s droping message " % (NwkId, Ep), NwkId)
+        return False
+
+    if Ep not in self.ListOfDevices[NwkId]["Ep"]:
+        self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NwkId, Ep), NwkId)
+        return False
+
+    if ( 
+        "Status" in self.ListOfDevices[NwkId] 
+        and self.ListOfDevices[NwkId]["Status"] == "erasePDM" 
+        and "autoRestore" in self.pluginconf.pluginConf 
+        and self.pluginconf.pluginConf["autoRestore"]
+        ):
+        # Most likely we have request a coordinator re-initialisation and the latest backup has been put in place
+        # simply put the device back
+        self.ListOfDevices[NwkId]["Status"] = "inDB"
+        
+    elif "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] != "inDB":
+        self.log.logging(
+            "Widget",
+            "Log",
+            "MajDomoDevice NwkId: %s status: %s not inDB request IEEE for possible reconnection" % (NwkId, self.ListOfDevices[NwkId]["Status"]),
+            NwkId,
+        )
+        if not zigpy_plugin_sanity_check(self, NwkId):
+            # Broadcast to 0xfffd: macRxOnWhenIdle = TRUE
+            zdp_IEEE_address_request(self, 'fffd', NwkId, u8RequestType="00", u8StartIndex="00")
+        return False
+
+
+    if "IEEE" not in self.ListOfDevices[NwkId]:
+        self.log.logging("Widget", "Error", "MajDomoDevice - no IEEE for %s" % NwkId, NwkId)
+        return False
+    
+    return True
 
 
 def retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, WidgetId ):
