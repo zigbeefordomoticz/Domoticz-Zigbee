@@ -831,7 +831,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
                 try:
-                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(prev_nValue.ID), 1)
+                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(Devices[device_unit].ID), 1)
                 except Exception as e:
                     self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
                         NwkId, value, WidgetType, e), NwkId)
@@ -911,7 +911,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
                 try:
-                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(prev_nValue.ID), 1)
+                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(Devices[device_unit].ID), 1)
                 except Exception as e:
                     self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
                         NwkId, value, WidgetType, e), NwkId)
