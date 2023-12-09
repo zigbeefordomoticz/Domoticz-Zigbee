@@ -353,32 +353,37 @@ def cluster_attribute_retrieval(self, ep, cluster, attribute, parameter, model=N
 
   
 def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
+    
+    DOMO_DEVICE_FORMATER = {
+        "str": str,
+        "str_2digits": lambda x: "%02d" % int(x),
+        "str_4digits": lambda x: "%04d" % int(x),
+        "strhex": lambda x: "%x" % x,
+        "str2hex": lambda x: "%02x" % x,
+        "str4hex": lambda x: "%04x" % x
+    }
+
     self.log.logging( "ZclClusters", "Debug", "action_majdomodevice - %s/%s %s %s %s %s" %(
-        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ))    
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ))
+    
     _majdomo_formater = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DomoDeviceFormat", model=device_model)
     self.log.logging( "ZclClusters", "Debug", "     _majdomo_formater: %s" %_majdomo_formater)
-    
+
     if get_device_config_param( self, MsgSrcAddr, "disableBinaryInputCluster") and MsgClusterId == "000f":
         return
-    
-    majValue = value
-    if _majdomo_formater:
-        if _majdomo_formater == "str":
-            majValue = str( value )
-        elif _majdomo_formater == "strhex":
-            majValue = "%x" %value
 
-    
+    majValue = DOMO_DEVICE_FORMATER[ _majdomo_formater ](value) if (_majdomo_formater and _majdomo_formater in DOMO_DEVICE_FORMATER) else value
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_formater: %s %s -> %s" %(_majdomo_formater, value, majValue))
+
     _majdomo_cluster = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithCluster", model=device_model)
     self.log.logging( "ZclClusters", "Debug", "     _majdomo_cluster: %s" %_majdomo_cluster)
-    
+
     majCluster = _majdomo_cluster if _majdomo_cluster is not None else MsgClusterId
 
     _majdomo_attribute = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithAttribute", model=device_model)
-    self.log.logging( "ZclClusters", "Debug", "     _majdomo_attribute: %s" %_majdomo_attribute)
-    
     majAttribute = _majdomo_attribute if _majdomo_attribute is not None else ""
-    
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_attribute: %s -> %s" %(_majdomo_attribute, majAttribute))
+
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, majCluster, majValue, Attribute_=majAttribute)
 
 

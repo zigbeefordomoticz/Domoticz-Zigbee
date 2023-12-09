@@ -1169,17 +1169,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------> Switch off as System Mode is Off")
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, "00", BatteryLevel, SignalLevel)
 
-            elif WidgetType in SWITCH_SELECTORS and value in SWITCH_SELECTORS[WidgetType]:
-                self.log.logging("Widget", "Debug", "------> Auto Update %s" % str(SWITCH_SELECTORS[WidgetType][value]))
-                if len(SWITCH_SELECTORS[WidgetType][value]) == 2:
-                    nValue, sValue = SWITCH_SELECTORS[WidgetType][value]
-                    _ForceUpdate = SWITCH_SELECTORS[WidgetType]["ForceUpdate"]
-                    self.log.logging( "Widget", "Debug", "------> Switch update WidgetType: %s with %s" % (
-                        WidgetType, str(SWITCH_SELECTORS[WidgetType])), NWKID, )
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=_ForceUpdate)
+            else:
+                if WidgetType in SWITCH_SELECTORS and value in SWITCH_SELECTORS[WidgetType]:
+                    self.log.logging("Widget", "Debug", "------> Auto Update %s" % str(SWITCH_SELECTORS[WidgetType][value]))
+                    if len(SWITCH_SELECTORS[WidgetType][value]) == 2:
+                        nValue, sValue = SWITCH_SELECTORS[WidgetType][value]
+                        _ForceUpdate = SWITCH_SELECTORS[WidgetType]["ForceUpdate"]
+                        self.log.logging( "Widget", "Debug", "------> Switch update WidgetType: %s with %s" % (
+                            WidgetType, str(SWITCH_SELECTORS[WidgetType])), NWKID, )
+                        UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=_ForceUpdate)
+                    else:
+                        self.log.logging( "Widget", "Error", "------>  len(SWITCH_SELECTORS[ %s ][ %s ]) == %s" % (
+                            WidgetType, value, len(SWITCH_SELECTORS[WidgetType])), NWKID, )
                 else:
-                    self.log.logging( "Widget", "Error", "------>  len(SWITCH_SELECTORS[ %s ][ %s ]) == %s" % (
-                        WidgetType, value, len(SWITCH_SELECTORS[WidgetType])), NWKID, )
+                    self.log.logging("Widget", "Error", "------> Auto Update (%s %s) not found in SWITCH_SELECTORS" % ( WidgetType, value))
 
         if "WindowCovering" in ClusterType:  # 0x0102
             if WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind"):
