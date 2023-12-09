@@ -7,15 +7,7 @@
     Module: domoMaj.py
     Description: Update of Domoticz Widget
 """
-
-from Modules.domoticzAbstractLayer import (domo_check_unit,
-                                           domo_read_nValue_sValue,
-                                           domo_read_SwitchType_SubType_Type,
-                                           domo_update_api,
-                                           find_widget_unit_from_WidgetID,
-                                           is_dimmable_blind,
-                                           is_dimmable_light,
-                                           is_dimmable_switch)
+import Domoticz
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                UpdateDevice_v2, remove_bad_cluster_type_entry)
@@ -25,7 +17,10 @@ from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
                             get_tarif_color, zlinky_sum_all_indexes)
 from Zigbee.zdpCommands import zdp_IEEE_address_request
+from Modules.domoticzAbstractLayer import find_widget_unit_from_WidgetID
 
+def is_PowerNegative_widget( ClusterTypeList):
+    return any( _widget_type == "ProdMeter" for _, _, _widget_type in ClusterTypeList )
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
     """
@@ -38,39 +33,57 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         return
     
     if NWKID not in self.ListOfDevices:
-        self.log.logging("Widget", "Error", f"MajDomoDevice - {NWKID} not known", NWKID)
+        self.log.logging("Widget", "Error", "MajDomoDevice - %s not known" % NWKID, NWKID)
         zigpy_plugin_sanity_check(self, NWKID)
         return
-    
-    if "Health" in self.ListOfDevices.get(NWKID, {}) and self.ListOfDevices[NWKID]["Health"] == "Disabled":
+
+    if ( "Health" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Health"] == "Disabled" ):
         # If the device has been disabled, just drop the message
-        self.log.logging("Widget", "Debug", f"MajDomoDevice - disabled device: {NWKID}/{Ep} dropping message", NWKID)
+        self.log.logging("Widget", "Debug", "MajDomoDevice - disabled device: %s/%s droping message " % (NWKID, Ep), NWKID)
         return
-    
-    if Ep not in self.ListOfDevices.get(NWKID, {}).get("Ep", []):
-        self.log.logging("Widget", "Error", f"MajDomoDevice - {NWKID}/{Ep} not known Endpoint", NWKID)
+
+    if Ep not in self.ListOfDevices[NWKID]["Ep"]:
+        self.log.logging("Widget", "Error", "MajDomoDevice - %s/%s not known Endpoint" % (NWKID, Ep), NWKID)
         return
-    
-    check_and_update_db_status(self, NWKID)
-    
-    device_status = self.ListOfDevices.get(NWKID, {}).get("Status", "")
-    if device_status != "inDB":
-        self.log.logging("Widget", "Log", f"MajDomoDevice NwkId: {NWKID} status: {device_status} not inDB. Requesting IEEE for possible reconnection", NWKID)
+
+    if ( 
+        "Status" in self.ListOfDevices[NWKID] 
+        and self.ListOfDevices[NWKID]["Status"] == "erasePDM" 
+        and "autoRestore" in self.pluginconf.pluginConf 
+        and self.pluginconf.pluginConf["autoRestore"]
+    ):
+        # Most likely we have request a coordinator re-initialisation and the latest backup has been put in place
+        # simply put the device back
+        self.ListOfDevices[NWKID]["Status"] = "inDB"
         
+    elif "Status" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Status"] != "inDB":
+        self.log.logging(
+            "Widget",
+            "Log",
+            "MajDomoDevice NwkId: %s status: %s not inDB request IEEE for possible reconnection" % (NWKID, self.ListOfDevices[NWKID]["Status"]),
+            NWKID,
+        )
         if not zigpy_plugin_sanity_check(self, NWKID):
             # Broadcast to 0xfffd: macRxOnWhenIdle = TRUE
             zdp_IEEE_address_request(self, 'fffd', NWKID, u8RequestType="00", u8StartIndex="00")
-            return
-    
-    device_id_ieee = self.ListOfDevices.get(NWKID, {}).get("IEEE")
-    if device_id_ieee is None:
-        self.log.logging("Widget", "Error", f"MajDomoDevice - no IEEE for {NWKID}", NWKID)
         return
 
-    model_name = self.ListOfDevices[NWKID].get("Model", "")
 
-    self.log.logging( "Widget", "Log", "MajDomoDevice NwkId: %s Ep: %s ClusterId: %s Value: %s ValueType: %s Attribute: %s Color: %s ModelName: %s" % (
-        NWKID, Ep, clusterID, value, type(value), Attribute_, Color_, model_name), NWKID, )
+    if "IEEE" not in self.ListOfDevices[NWKID]:
+        self.log.logging("Widget", "Error", "MajDomoDevice - no IEEE for %s" % NWKID, NWKID)
+        return
+
+    model_name = ""
+    if "Model" in self.ListOfDevices[NWKID]:
+        model_name = self.ListOfDevices[NWKID]["Model"]
+
+    self.log.logging(
+        "Widget",
+        "Debug",
+        "MajDomoDevice NwkId: %s Ep: %s ClusterId: %s Value: %s ValueType: %s Attribute: %s Color: %s ModelName: %s" % (
+            NWKID, Ep, clusterID, value, type(value), Attribute_, Color_, model_name),
+        NWKID,
+    )
 
     # Get the CluserType ( Action type) from Cluster Id
     ClusterType = TypeFromCluster(self, clusterID)
@@ -90,17 +103,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # Old fashion
             WidgetEp = "01"  # Force to 01
 
-        self.log.logging( "Widget", "Debug", "----> processing WidgetEp: %s, WidgetId: %s, WidgetType: %s" % (
-            WidgetEp, WidgetId, WidgetType), NWKID, )
-        
+        self.log.logging(
+            "Widget",
+            "Debug",
+            "----> processing WidgetEp: %s, WidgetId: %s, WidgetType: %s" % (WidgetEp, WidgetId, WidgetType),
+            NWKID,
+        )
         if WidgetType not in WidgetByPassEpMatch and WidgetEp != Ep:
             # We need to make sure that we are on the right Endpoint
-            self.log.logging( "Widget", "Debug", "------> skiping this WidgetEp as do not match Ep : %s %s" % (
-                WidgetEp, Ep), NWKID,)
+            self.log.logging( "Widget", "Debug", "------> skiping this WidgetEp as do not match Ep : %s %s" % (WidgetEp, Ep), NWKID,)
             continue
 
+        DeviceUnit = 0
         DeviceUnit = find_widget_unit_from_WidgetID(self, Devices, WidgetId )
-        
         if DeviceUnit is None:
             self.log.logging( "Widget", "Error", "Device %s not found !!!" % WidgetId, NWKID)
             # House keeping, we need to remove this bad clusterType
@@ -109,14 +124,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             else:
                 self.log.logging( "Widget", "Error", "WidgetID %s not found, unable to remove the entry from device" % WidgetId, NWKID)
             continue
-        
-        elif domo_check_unit(self, Devices, device_id_ieee, DeviceUnit) not in Devices:
+        elif DeviceUnit not in Devices:
             continue
+        
+        Switchtype = Devices[DeviceUnit].SwitchType
+        Subtype = Devices[DeviceUnit].SubType
 
-        prev_nValue, prev_sValue = domo_read_nValue_sValue(self, Devices, device_id_ieee, DeviceUnit)
-        switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, Devices, device_id_ieee, DeviceUnit)
-       
-        # device_id_ieee is the DeviceID (IEEE)
         # DeviceUnit is the Device unit
         # WidgetEp is the Endpoint to which the widget is linked to
         # WidgetId is the Device ID
@@ -145,8 +158,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             
             tuple_value = value.split("|")
             if len(tuple_value) != 2:
-                self.log.logging( "Widget", "Error", "------> Expecting 2 values got %s in Value = %s for Nwkid: %s Attribute: %s" % (
-                    len(tuple_value), value, NWKID, Attribute_), NWKID, )
+                self.log.logging(
+                    "Widget",
+                    "Error",
+                    "------> Expecting 2 values got %s in Value = %s for Nwkid: %s Attribute: %s" % (
+                        len(tuple_value), value, NWKID, Attribute_),
+                    NWKID,
+                )
                 continue
 
             value, text = tuple_value
@@ -231,8 +249,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
         if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ("0508", "0908", "0a08"):
             # Retreive the previous values
             sValue = "%s;%s;%s" % (0, 0, 0)
-                                        
-            ampere1, ampere2, ampere3 = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "%s;%s;%s")
+            ampere1, ampere2, ampere3 = retreive_data_from_current(self, Devices, DeviceUnit, "%s;%s;%s")
             if ampere2 == ampere3 == '65535.0':
                 self.log.logging("Widget", "Debug", "------>  Something going wrong ..... ampere %s %s %s" %(ampere1, ampere2, ampere3))
                 ampere2 = '0.0'
@@ -291,10 +308,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 self.log.logging("Widget", "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NWKID)
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                cur_usage1, cur_usage2, cur_return1, cur_return2, _, _ = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0;0")
-                
+                CurrentsValue = Devices[DeviceUnit].sValue
+                if len(CurrentsValue.split(";")) != 6:
+                    # First time after device creation
+                    CurrentsValue = "0;0;0;0;0;0"
+                SplitData = CurrentsValue.split(";")
+                cur_usage1 = SplitData[0]
+                cur_usage2 = SplitData[1]
+                cur_return1 = SplitData[2]
+                cur_return2 = SplitData[3]
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
-                
                 if "0702" in self.ListOfDevices[NWKID]["Ep"][Ep] and "0400" in self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]:
                     cons = round(float(self.ListOfDevices[NWKID]["Ep"][Ep]["0702"]["0400"]), 2)
                 usage1 = int(float(value))
@@ -305,9 +328,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             if (
                 WidgetType == "P1Meter_ZL" 
-                and model_name in ZLINK_CONF_MODEL 
-                and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a")
-                ):
+                and "Model" in self.ListOfDevices[NWKID] 
+                and self.ListOfDevices[NWKID]["Model"] in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a")
+            ):
  
                 if Attribute_ != "050f" and Ep == "01" and Attribute_ not in ("0100", "0102"):
                     # Ep = 01, so we store Base, or HP,HC, or BBRHCJB, BBRHPJB
@@ -326,7 +349,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0;0")
+                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retreive_data_from_current(self, Devices, DeviceUnit, "0;0;0;0;0;0")
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): retreive value: %s;%s;%s;%s;%s;%s" % (Ep, cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod), NWKID)
 
@@ -385,7 +408,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             # value is string an represent the Instant Usage
             elif (
-                model_name in ZLINK_CONF_MODEL
+                "Model" in self.ListOfDevices[ NWKID ] 
+                and self.ListOfDevices[ NWKID ]["Model"] in ZLINK_CONF_MODEL
                 and WidgetType == "Meter" 
                 and ( 
                     Attribute_ == "0000" 
@@ -394,8 +418,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                     )
                 ):
-                check_set_meter_widget( self, Devices, device_id_ieee, DeviceUnit, 0)    
-                instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0")
+                check_set_meter_widget( Devices, DeviceUnit, 0)    
+                instant, _summation = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
                 summation = round(float(zlinky_sum_all_indexes( self, NWKID )), 2)
                 self.log.logging("ZLinky", "Debug", "------> Summation for Meter : %s" %summation)
                 
@@ -405,8 +429,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 
             elif WidgetType == "Meter" and Attribute_ == "050f":
                 # We receive Instant Power
-                check_set_meter_widget( self, Devices, device_id_ieee, DeviceUnit, 0)
-                _instant, summation = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0")
+                check_set_meter_widget( Devices, DeviceUnit, 0)
+                _instant, summation = retreive_data_from_current(self, Devices, DeviceUnit, "0;0")
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
                 self.log.logging("Widget", "Debug", "------>  : " + sValue)
@@ -431,12 +455,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     sValue = "%s;%s" % (instant, summation)
                     # We got summation from Device, let's check that EnergyMeterMode is
                     # correctly set to 0, if not adjust
-                    check_set_meter_widget( self, Devices, device_id_ieee, DeviceUnit, 0)
-
+                    check_set_meter_widget( Devices, DeviceUnit, 0)
                 else:
                     sValue = "%s;" % (instant)
-                    check_set_meter_widget( self, Devices, device_id_ieee, DeviceUnit, 1)
-
+                    check_set_meter_widget( Devices, DeviceUnit, 1)
                     # No summation retreive, so we make sure that EnergyMeterMode is
                     # correctly set to 1 (compute), if not adjust
 
@@ -450,7 +472,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             # will increment the counter value by 1. 
             # To reset an incremental counter, set the svalue to a negative integer equal to the current total of the counter. 
                 sValue = "%s" %value 
-                self.log.logging("Widget", "Debug", "WaterCounter ------>  : %s" %sValue, NWKID)
+                self.log.logging("Widget", "Log", "WaterCounter ------>  : %s" %sValue, NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
   
         if "Voltage" in ClusterType:  # Volts
@@ -466,10 +488,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             if WidgetType == "ThermoSetpoint" and Attribute_ in ("4003", "0012"):
                 setpoint = round(float(value), 2)
                 # Normalize SetPoint value with 2 digits
+                strRound = lambda DeviceUnit, n: eval('"%.' + str(int(n)) + 'f" % ' + repr(DeviceUnit))
                 nValue = 0
-                sValue = str_round(float(setpoint), 2)  # 2 decimals
-                self.log.logging("Widget", "Debug", "------>  Thermostat nValue: %s SetPoint: %s sValue: %s" % (
-                    0, setpoint, sValue), NWKID)
+                sValue = strRound(float(setpoint), 2)
+                self.log.logging("Widget", "Debug", "------>  Thermostat Setpoint: %s %s" % (0, setpoint), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, sValue, BatteryLevel, SignalLevel)
 
         if "Analog" in ClusterType:
@@ -653,55 +675,55 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 sValue = FIL_PILOT_MODE[_mode]
 
                 if Attribute_ == "e020":      # Wiser specific Fil Pilote
-                    ep_data = self.ListOfDevices[NWKID].get("Ep", {}).get(Ep, {}).get("0201", {}).get("e011", "")
-
-                    if "0201" in ep_data and "e011" in ep_data and ep_data["e011"] != {} and ep_data["e011"] != "":
-                        _value_mode_hact = ep_data["e011"]
-                        _mode_hact = ((int(_value_mode_hact, 16) - 0x80)) & 1
-
-                        if _mode_hact == 0:
-                            self.log.logging("Widget", "Debug", "------> Disable FIP widget: %s" % (value), NWKID)
-                            nValue = 0
-                    
+                    if "0201" in self.ListOfDevices[NWKID]["Ep"][Ep]:
+                        if "e011" in self.ListOfDevices[NWKID]["Ep"][Ep]["0201"]:
+                            if self.ListOfDevices[NWKID]["Ep"][Ep]["0201"]["e011"] != {} and self.ListOfDevices[NWKID]["Ep"][Ep]["0201"]["e011"] != "":
+                                _value_mode_hact = self.ListOfDevices[NWKID]["Ep"][Ep]["0201"]["e011"]
+                                _mode_hact = ((int(_value_mode_hact, 16) - 0x80)) & 1
+                                if _mode_hact == 0:
+                                    self.log.logging("Widget", "Debug", "------>  Disable FIP widget: %s" % (value), NWKID)
+                                    nValue = 0
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
                 elif clusterID == "fc40":  # Legrand FIP
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "ThermoMode_3" and Attribute_ == "001c":
-                # Mapping of values to nValue and sValue
-                mode_mapping = {
-                    0x00: (0, "Off"),
-                    0x01: (1, "10"),
-                    0x03: (2, "20")
-                }
-
+                #   0x00: Off
+                #   0x01: Confort
+                #   0x03: No-Freeze
                 if "ThermoMode_3" not in SWITCH_SELECTORS:
                     continue
-                
-                if int(value) in mode_mapping:
-                    nValue, sValue = mode_mapping[int(value)]
-                    self.log.logging("Widget", "Debug", f"------> Thermostat Mode 3 {value} {nValue}:{sValue}", NWKID)
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+                if int(value) == 0x00:
+                    # Off # 00
+                    nValue = 0
+                    sValue = "Off"
+                elif int(value) == 0x01:
+                    # Confort # 10
+                    nValue = 1
+                    sValue = "10"
+                elif int(value) == 0x03:
+                    # No-Freeze # 20
+                    nValue = 2
+                    sValue = "20"
                 else:
-                    # Unknown value
-                    self.log.logging("Widget", "Error", f"MajDomoDevice - Unknown value for {NWKID}/{Ep}, clusterID: {clusterID}, value: {value}, Attribute_: {Attribute_}", NWKID)
+                    # Unknow
+                    self.log.logging("Widget", "Error", "MajDomoDevice - Unknown value for %s/%s, clusterID: %s, value: %s, Attribute_=%s," % (NWKID, Ep, clusterID, value, Attribute_), NWKID)
                     continue
-                
+                self.log.logging("Widget", "Log", "------>  Thermostat Mode 3 %s %s:%s" % (value, nValue, sValue), NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+
             elif WidgetType == "ThermoMode_2" and Attribute_ == "001c":
                 # Use by Tuya TRV
                 if "ThermoMode_2" not in SWITCH_SELECTORS:
                     continue
-                
-                value_mapping = SWITCH_SELECTORS["ThermoMode_2"]
-
-                if value in value_mapping:
-                    nValue, sValue = value_mapping[value]
-                    self.log.logging("Widget", "Debug", f"------> Thermostat Mode 2 {value} {nValue}:{sValue}", NWKID)
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-                else:
-                    self.log.logging("Widget", "Error", f"Unknown TermoMode2 value: {value}")
+                if value not in SWITCH_SELECTORS["ThermoMode_2"]:
+                    Domoticz.Error("Unknown TermoMode2 value: %s" % value)
                     continue
+                nValue = SWITCH_SELECTORS["ThermoMode_2"][value][0]
+                sValue = SWITCH_SELECTORS["ThermoMode_2"][value][1]
+                self.log.logging("Widget", "Debug", "------>  Thermostat Mode 2 %s %s:%s" % (value, nValue, sValue), NWKID)
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "ThermoMode_4" and Attribute_ == "001c":
                 # Use by Tuya TRV
@@ -722,37 +744,37 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, 0, '00'), NWKID)
                     UpdateDevice_v2(self, Devices, DeviceUnit, 0, '00', BatteryLevel, SignalLevel)
                             
-            elif WidgetType in ("ThermoMode", "ACMode") and Attribute_ == "001c":
-                self.log.logging("Widget", "Debug", f"------> Thermostat Mode {value} type: {type(value)}", NWKID)
-
-                mode_mapping = {
-                    "00": (0, "00"),  # Off
-                    "20": (1, "10"),  # Cool
-                    "30": (2, "20"),  # Heat
-                    "40": (3, "30"),  # Dry
-                    "50": (4, "40")   # Fan
-                }
-
+            elif WidgetType in ("ThermoMode", "ACMode", ) and Attribute_ == "001c":
+                # value seems to come as int or str. To be fixed
+                self.log.logging("Widget", "Debug", "------>  Thermostat Mode %s type: %s" % (value, type(value)), NWKID)
                 if value in THERMOSTAT_MODE_2_LEVEL:
-                    nValue, sValue = mode_mapping[THERMOSTAT_MODE_2_LEVEL[value]]
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-
+                    if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 0, "00", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "20":  # Cool
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 1, "10", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "30":  # Heat
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 2, "20", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "40":  # Dry
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 3, "30", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 4, "40", BatteryLevel, SignalLevel)
+                        
             elif WidgetType in ("CAC221ACMode", ) and Attribute_ == "001c":
-                self.log.logging("Widget", "Debug", f"------> Thermostat CAC221ACMode {value} type: {type(value)}", NWKID)
-            
-                mode_mapping = {
-                    "00": (0, "00"),  # Off
-                    "10": (1, "10"),  # Auto
-                    "20": (2, "20"),  # Cool
-                    "30": (3, "30"),  # Heat
-                    "40": (4, "40"),  # Dry
-                    "50": (5, "50")   # Fan
-                }
-            
+                self.log.logging("Widget", "Debug", "------>  Thermostat CAC221ACMode %s type: %s" % (value, type(value)), NWKID)
                 if value in THERMOSTAT_MODE_2_LEVEL:
-                    nValue, sValue = mode_mapping[THERMOSTAT_MODE_2_LEVEL[value]]
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
-                       
+                    if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 0, "00", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "10":  # Auto
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 1, "10", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "20":  # Cool
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 2, "20", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "30":  # Heat
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 3, "30", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "40":  # Dry
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 4, "40", BatteryLevel, SignalLevel)
+                    elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 5, "50", BatteryLevel, SignalLevel)
+
         if ClusterType == "PM25" and WidgetType == "PM25":
             nvalue = round(value, 0)
             svalue = "%s" % (nvalue,)
@@ -762,8 +784,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             nvalue = int(value)
             svalue = "%s" % (nvalue,)
             UpdateDevice_v2(self, Devices, DeviceUnit, nvalue, svalue, BatteryLevel, SignalLevel)
-  
+
+            
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
+            nValue = 0
             sValue = "%s %% used" %( value, )
             # This is Alarm for Air Purifier
             if value >= 100:
@@ -818,8 +842,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     NWKID, value, WidgetType), NWKID)
                 return
 
-            self.log.logging("Widget", "Log", "------> %s %s %s Temp: %s, WidgetType: >%s<" % (
-                NWKID, ClusterType, WidgetType, value, WidgetType), NWKID)
+            self.log.logging("Widget", "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
                 try:
@@ -828,85 +851,128 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
                         NWKID, value, WidgetType, e), NWKID)
 
-            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
-
-            self.log.logging("Widget", "Debug", f"------> Adj Value: {adjvalue} from: {value} to {value + adjvalue} [{current_temp}, {current_humi}, {current_hum_stat}, {current_baro}, {current_baro_forecast}]", NWKID)
-
+            CurrentnValue = Devices[DeviceUnit].nValue
+            CurrentsValue = Devices[DeviceUnit].sValue
+            self.log.logging( "Widget", "Debug", "------> Adj Value : %s from: %s to %s [%s]" % (
+                adjvalue, value, (value + adjvalue), CurrentsValue), NWKID, )
+            if CurrentsValue == "":
+                # First time after device creation
+                CurrentsValue = "0;0;0;0;0"
+            SplitData = CurrentsValue.split(";")
             NewNvalue = 0
             NewSvalue = ""
-
             if WidgetType == "Temp":
                 NewNvalue = round(value + adjvalue, 1)
-                NewSvalue = str(NewNvalue)
+                NewSvalue = str(round(value + adjvalue, 1))
+                self.log.logging("Widget", "Debug", "------>  Temp update: %s - %s" % (NewNvalue, NewSvalue))
+                UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum":
-                NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat}"
+            elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
+                NewNvalue = 0
+                NewSvalue = "%s;%s;%s" % (round(value + adjvalue, 1), SplitData[1], SplitData[2])
+                self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s - %s" % (NewNvalue, NewSvalue))
+                UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum+Baro":
-                NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat};{current_baro};{current_baro_forecast}"
+            elif WidgetType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
+                NewNvalue = 0
+                NewSvalue = "%s;%s;%s;%s;%s" % (
+                    round(value + adjvalue, 1),
+                    SplitData[1],
+                    SplitData[2],
+                    SplitData[3],
+                    SplitData[4],
+                )
+                UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            self.log.logging("Widget", "Debug", f"------> {WidgetType} update: {NewNvalue} - {NewSvalue}")
-            UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):
-
-            self.log.logging("Widget", "Log", "------> %s %s %s Humi: %s, WidgetType: >%s<" % (
-                NWKID, ClusterType, WidgetType, value, WidgetType), NWKID)
-            
+        if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):  # humidite
+            self.log.logging("Widget", "Debug", "------>  Humi: %s, WidgetType: >%s<" % (value, WidgetType), NWKID)
+            CurrentnValue = Devices[DeviceUnit].nValue
+            CurrentsValue = Devices[DeviceUnit].sValue
+            if CurrentsValue == "":
+                # First time after device creation
+                CurrentsValue = "0;0;0;0;0"
+            elif ";" not in CurrentsValue:
+                CurrentsValue = CurrentsValue + ";0;0;0;0"
+            SplitData = CurrentsValue.split(";")
             NewNvalue = 0
             NewSvalue = ""
-            humi_status = calculate_humidity_status(value)
-            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
+            # Humidity Status
+            if value < 40:
+                humiStatus = 2
+            elif 40 <= value < 70:
+                humiStatus = 1
+            else:
+                humiStatus = 3
 
             if WidgetType == "Humi":
                 NewNvalue = value
-                NewSvalue = str(humi_status)
-                self.log.logging("Widget", "Debug", f"------> Humi update: {NewNvalue} - {NewSvalue}")
+                NewSvalue = "%s" % humiStatus
+                self.log.logging("Widget", "Debug", "------>  Humi update: %s - %s" % (NewNvalue, NewSvalue))
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum":
-                NewSvalue = f"{current_temp};{value};{humi_status}"
-                self.log.logging("Widget", "Debug", f"------> Temp+Hum update: {NewNvalue} - {NewSvalue}")
+            elif WidgetType == "Temp+Hum" and len(SplitData) >= 2:
+                NewNvalue = 0
+                NewSvalue = "%s;%s;%s" % (SplitData[0], value, humiStatus)
+                self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s - %s" % (NewNvalue, NewSvalue))
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Temp+Hum+Baro":
-                NewSvalue = f"{current_temp};{value};{humi_status};{current_baro};{current_baro_forecast}"
-                self.log.logging("Widget", "Debug", f"------> Temp+Hum+Baro update: {NewNvalue} - {NewSvalue}")
+            elif WidgetType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
+                NewNvalue = 0
+                NewSvalue = "%s;%s;%s;%s;%s" % (SplitData[0], value, humiStatus, SplitData[3], SplitData[4])
                 UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if ClusterType == "Baro" and WidgetType in ("Baro", "Temp+Hum+Baro"):
-            self.log.logging("Widget", "Log", "------> %s %s %s Baro: %s, WidgetType: >%s<" % (
-                NWKID, ClusterType, WidgetType, value, WidgetType), NWKID)
-
+        if ClusterType == "Baro" and WidgetType in ("Baro", "Temp+Hum+Baro"):  # barometre
+            self.log.logging("Widget", "Debug", "------>  Baro: %s, WidgetType: %s" % (value, WidgetType), NWKID)
             adjvalue = 0
-            try:
-                if self.domoticzdb_DeviceStatus:
+            if self.domoticzdb_DeviceStatus:
+                try:
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(Devices[DeviceUnit].ID), 1)
-            except Exception as e:
-                self.log.logging("Widget", "Error", f"Error while trying to get Adjusted Value for Temp {NWKID} {value} {WidgetType} {e}", NWKID)
-        
-            baroValue = round(value + adjvalue, 1)
-            self.log.logging("Widget", "Debug", f"------> Adj Value: {adjvalue} from: {value} to {baroValue}", NWKID)
-        
+                except Exception as e:
+                    self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s %s %s" % (
+                        NWKID, value, WidgetType, e), NWKID)
+
+            baroValue = round((value + adjvalue), 1)
+            self.log.logging("Widget", "Debug", "------> Adj Value : %s from: %s to %s " % (adjvalue, value, baroValue), NWKID)
+
+            CurrentnValue = Devices[DeviceUnit].nValue
+            CurrentsValue = Devices[DeviceUnit].sValue
+            if len(CurrentsValue.split(";")) != 5:
+                # First time after device creation
+                CurrentsValue = "0;0;0;0;0"
+            SplitData = CurrentsValue.split(";")
             NewNvalue = 0
             NewSvalue = ""
-            
-            Bar_forecast = calculate_baro_forecast(baroValue)
-            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, DeviceUnit, "0;0;0;0;0")
-        
-            if WidgetType == "Baro":
-                NewSvalue = f"{baroValue};{Bar_forecast}"
-            elif WidgetType == "Temp+Hum+Baro":
-                NewSvalue = f"{current_temp};{current_humi};{current_hum_stat};{baroValue};{Bar_forecast}"
-        
-            UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if "BSO-Orientation" in ClusterType and WidgetType == "BSO-Orientation":
-            angle = int(value, 16)
-            nValue = min(10, round(angle / 10) + 1)
-            sValue = str(nValue * 10)
-            self.log.logging("Widget", "Debug", f"BSO-Orientation Angle: 0x{value}/{angle} Converted into nValue: {nValue} sValue: {sValue}")
-            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+            if baroValue < 1000:
+                Bar_forecast = 4  # RAIN
+            elif baroValue < 1020:
+                Bar_forecast = 3  # CLOUDY
+            elif baroValue < 1030:
+                Bar_forecast = 2  # PARTLY CLOUDY
+            else:
+                Bar_forecast = 1  # SUNNY
+
+            if WidgetType == "Baro":
+                NewSvalue = "%s;%s" % (baroValue, Bar_forecast)
+                UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
+
+            elif WidgetType == "Temp+Hum+Baro":
+                NewSvalue = "%s;%s;%s;%s;%s" % (SplitData[0], SplitData[1], SplitData[2], baroValue, Bar_forecast)
+                UpdateDevice_v2(self, Devices, DeviceUnit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
+
+        if "BSO-Orientation" in ClusterType:  # 0xfc21 Not fully tested / So far developped for Profalux
+            # value is str
+            if WidgetType == "BSO-Orientation":
+                # Receveive Level (orientation) in degrees to convert into % for the slider
+                # Translate the Angle into Selector item
+                nValue = 1 + (round(int(value, 16) / 10))
+                if nValue > 10:
+                    nValue = 10
+
+                sValue = str(nValue * 10)
+                self.log.logging("Widget", "Debug", " BSO-Orientation Angle: 0x%s/%s Converted into nValue: %s sValue: %s" % (value, int(value, 16), nValue, sValue))
+                UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
+                return
 
         if ClusterType == "Switch" and WidgetType == "SwitchAlarm":
             if isinstance(value, str):
@@ -931,7 +997,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
             sValue = value
             UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-                   
+                       
         if ClusterType in ( "Motion", "Door",) and WidgetType == "Motion":
             self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NWKID)
             if isinstance(value, str):
@@ -947,29 +1013,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=False)
             continue
 
-        excluded_widget_types = {
-            "ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", 
-            "ThermoOnOff", "Motionac01"
-        }
-
-        allowed_conditions = {
-            (ClusterType in ("IAS_ACE", "Door", "Switch", "SwitchButton", "AqaraOppleMiddle", "Ikea_Round_5b", "Ikea_Round_OnOff", 
-                             "Vibration", "OrviboRemoteSquare", "Button_3", "LumiLock") and WidgetType not in excluded_widget_types),
-            (ClusterType == WidgetType == "DoorLock"),
-            (ClusterType == WidgetType == "Alarm"),
-            (ClusterType == "Alarm" and WidgetType == "Tamper"),
-            (ClusterType == "DoorLock" and WidgetType == "Vibration"),
-            (ClusterType == "FanControl" and WidgetType == "FanControl"),
-            ("ThermoMode" in ClusterType and WidgetType == "ACMode_2"),
-            ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00"),
-            ("ThermoMode" in ClusterType and WidgetType == "ThermoMode_7" and Attribute_ == "001c"),
-            (WidgetType == "KF204Switch" and ClusterType in ("Switch", "Door")),
-            (WidgetType == "Valve" and Attribute_ == "0014"),
-            ("ThermoMode" in ClusterType and WidgetType == "ThermoOnOff"),
-            ("Heiman" in ClusterType and WidgetType == "HeimanSceneSwitch")
-        }
-
-        if any(allowed_condition for allowed_condition in allowed_conditions):
+        if (
+            WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff", "Motionac01") 
+            and ( 
+                ClusterType in ( "IAS_ACE", "Door", "Switch", "SwitchButton", "AqaraOppleMiddle", "Ikea_Round_5b", "Ikea_Round_OnOff", "Vibration", "OrviboRemoteSquare", "Button_3", "LumiLock", )
+                or (ClusterType == WidgetType == "DoorLock")
+                or (ClusterType == WidgetType == "Alarm")
+                or (ClusterType == "Alarm" and WidgetType == "Tamper")
+                or (ClusterType == "DoorLock" and WidgetType == "Vibration")
+                or (ClusterType == "FanControl" and WidgetType == "FanControl")
+                or ("ThermoMode" in ClusterType and WidgetType == "ACMode_2")
+                or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00")
+                or ("ThermoMode" in ClusterType and WidgetType == "ThermoMode_7" and Attribute_ == "001c")
+                or (WidgetType == "KF204Switch" and ClusterType in ("Switch", "Door"))
+                or (WidgetType == "Valve" and Attribute_ == "0014")
+                or ("ThermoMode" in ClusterType and WidgetType == "ThermoOnOff")
+                or ("Heiman" in ClusterType and WidgetType == "HeimanSceneSwitch")
+            )
+        ):
 
             # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
@@ -979,25 +1040,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
 
             if ClusterType == "Switch" and WidgetType == "LvlControl":
                 # Called with ClusterID: 0x0006 but we have to update a Dimmer, so we need to keep the level
-                _dimmable_switch = is_dimmable_switch(self, Devices, device_id_ieee, DeviceUnit)
-                _dimmable_light = is_dimmable_light(self, Devices, device_id_ieee, DeviceUnit)
-                _dimmable_blind = is_dimmable_blind(self, Devices, device_id_ieee, DeviceUnit)
-
-                self.log.logging("Widget", "Log", "------> Switch _dimmable_switch: %s _dimmable_light: %s _dimmable_blind: %s prev_nValue: %s prev_sValue: %s newValue: %s" %(
-                    _dimmable_switch, _dimmable_light, _dimmable_blind, prev_nValue, prev_sValue, value), NWKID)
-
-                if _dimmable_blind:
+                nValue = int(value)
+                sValue = Devices[DeviceUnit].sValue
+                if Devices[DeviceUnit].SwitchType in (13, 16):
                     # Correct for Blinds where we have to display %
                     if value == "00":
-                        nValue, sValue = 0, "0"
-                    elif value == "01" and sValue == "100":
-                        nValue, sValue = 1, "100"
+                        nValue = 0
+                        sValue = "0"
+                    elif value == "01" and Devices[DeviceUnit].sValue == "100":
+                        nValue = 1
+                        sValue = "100"
                     else:
-                        nValue = _dimmable_blind
-                else:
-                    nValue = 0 if int(value) == 0 else 1
-                    sValue = prev_sValue
-                    
+                        nValue = 2
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
             elif ClusterType == "Switch" and WidgetType == "Alarm":
@@ -1111,8 +1165,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     UpdateDevice_v2(self, Devices, DeviceUnit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
             elif WidgetType == "LvlControl" or WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
-
-                if switchType in (13, 14, 15, 16):
+                if Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
                     # Required Numeric value
                     if value == "00":
                         UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
@@ -1120,7 +1173,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     else:
                         # We are in the case of a Shutter/Blind inverse. If we receieve a Read Attribute telling it is On, great
                         # We only update if the shutter was off before, otherwise we will keep its Level.
-                        if prev_nValue == 0 and prev_sValue == "Off":
+                        if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == "Off":
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, "100", BatteryLevel, SignalLevel)
                 else:
                     # Required Off and On
@@ -1128,7 +1181,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         UpdateDevice_v2(self, Devices, DeviceUnit, 0, "Off", BatteryLevel, SignalLevel)
 
                     else:
-                        if prev_sValue == "Off":
+                        if Devices[DeviceUnit].sValue == "Off":
                             # We do update only if this is a On/off
                             UpdateDevice_v2(self, Devices, DeviceUnit, 1, "On", BatteryLevel, SignalLevel)
 
@@ -1162,14 +1215,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 elif _value == 100:
                     nValue = 1
                 else:
-                    nValue = 17 if switchType in (4, 15) else 2
+                    if Switchtype in (4, 15):
+                        nValue = 17
+                    else:
+                        nValue = 2
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(_value), BatteryLevel, SignalLevel)
 
             elif (
-                (
-                    (ClusterType == "FanControl" and WidgetType == "FanControl") 
-                    or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00")
-                )
+                ((ClusterType == "FanControl" and WidgetType == "FanControl") or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00"))
                 and model_name in ("AC211", "AC221", "CAC221")
                 and "Ep" in self.ListOfDevices[NWKID]
                 and WidgetEp in self.ListOfDevices[NWKID]["Ep"]
@@ -1194,15 +1247,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                         WidgetType, value, len(SWITCH_SELECTORS[WidgetType])), NWKID, )
 
         if "WindowCovering" in ClusterType:  # 0x0102
-            _dimmable_blind = is_dimmable_blind(self, Devices, device_id_ieee, DeviceUnit)
-            if _dimmable_blind is None:
-                self.log.logging( "Widget", "Debug", "------>  %s/%s ClusterType: %s Wrong Widget Type %s" % (
-                    NWKID, Ep, ClusterType, WidgetType), NWKID, )
-
             if WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind"):
                 _value = int(value, 16)
-                self.log.logging( "Widget", "Debug", "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (
-                    NWKID, Ep, ClusterType, WidgetType, _value), NWKID, )
+                self.log.logging(
+                    "Widget",
+                    "Debug",
+                    "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (NWKID, Ep, ClusterType, WidgetType, _value),
+                    NWKID,
+                )
                 if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
                     _value = 100 - _value
                     self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NWKID, Ep, _value), NWKID)
@@ -1212,60 +1264,74 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                 elif _value == 100:
                     nValue = 1
                 else:
-                    nValue = _dimmable_blind
+                    if Switchtype in (4, 15):
+                        nValue = 17
+                    else:
+                        nValue = 2
                 self.log.logging("Widget", "Debug", "------>  %s %s/%s Value: %s:%s" % (WidgetType, NWKID, Ep, nValue, _value), NWKID)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(_value), BatteryLevel, SignalLevel)
 
         if "LvlControl" in ClusterType:  # LvlControl ( 0x0008)
-            # Closed: nValue = 1 and sValue = 100
-            # partially opened: nValue = 2 and sValue = 1-99
-            # Open: nValue = 0 and sValue = 0 
-
-            _dimmable_switch = is_dimmable_switch(self, Devices, device_id_ieee, DeviceUnit)
-            _dimmable_light = is_dimmable_light(self, Devices, device_id_ieee, DeviceUnit)
-            _dimmable_blind = is_dimmable_blind(self, Devices, device_id_ieee, DeviceUnit)
-            
-            self.log.logging("Widget", "Log", "------> LvlControl _dimmable_switch: %s _dimmable_light: %s _dimmable_blind: %s prev_nValue: %s prev_sValue: %s newValue: %s" %(
-                _dimmable_switch, _dimmable_light, _dimmable_blind, prev_nValue, prev_sValue, value), NWKID)
-    
-            if WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
-                nValue, sValue = getDimmerLevelOfColor(self, value)
-                update_domoticz_widget = prev_nValue != 0 or prev_sValue != "Off"
+            if WidgetType == "LvlControl" or ( WidgetType in ( "BSO-Volet", "Blind", ) ):
+                # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
+                # We might get a Level, but the device is still Off and we shouldn't make it On .
+                nValue = None
+                self.log.logging("Widget", "Debug", "------>  LvlControl analogValue: -> %s" % value, NWKID)
                 
-                self.log.logging("Widget", "Log", "------> %s prev_nValue: %s prev_sValue: %s newValue: %s nValue: %s sValue: %s update_domoticz_widget: %s" %(
-                    WidgetType, prev_nValue, prev_sValue, value, nValue, sValue, update_domoticz_widget), NWKID)
-    
-                if update_domoticz_widget:
-                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
-
-            elif WidgetType == "LvlControl" or ( WidgetType in ( "BSO-Volet", "Blind", ) ):
-                normalized_value = normalized_lvl_value(self, Devices, device_id_ieee, DeviceUnit, value)
-                update_domoticz_widget = prev_nValue != 0 and (prev_sValue != "Off" and prev_sValue != str(normalized_value))
+                normalized_value = normalized_lvl_value(  Devices, DeviceUnit, value )
+                self.log.logging( "Widget", "Debug", "------>  LvlControl new sValue: -> %s old nValue/sValue %s:%s" % (
+                    normalized_value, Devices[DeviceUnit].nValue, Devices[DeviceUnit].sValue), NWKID, )
                 
-                self.log.logging("Widget", "Debug", "------> LvlControl new sValue: -> %s old nValue/sValue %s:%s update_domoticz_widget: %s" % (
-                    normalized_value, prev_nValue, prev_sValue, update_domoticz_widget), NWKID)
-
-                if normalized_value == 0 or normalized_value == 100:
-                    # In case we reach 0% or 100%, we shouldn't switch Off or On, except in the case of Shutter/Blind
-                    nValue = 0 if normalized_value == 0 else 1
-                    
-                    if switchType:
-                        self.log.logging("Widget", "Log", "------> LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
-                            nValue, normalized_value, switchType), NWKID)
-                        UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(normalized_value), BatteryLevel, SignalLevel)
-                        
+                # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
+                if normalized_value == 0:
+                    nValue = 0
+                    if Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
+                            0, 0, Devices[DeviceUnit].SwitchType), NWKID, )
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
                     else:
-                        if update_domoticz_widget:
-                            self.log.logging("Widget", "Log", "------> LvlControl UpdateDevice: -> %s/%s" % (nValue, normalized_value), NWKID)
-                            UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(normalized_value), BatteryLevel, SignalLevel)
+                        # if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
+                        if Devices[DeviceUnit].nValue == 0 and (Devices[DeviceUnit].sValue == "Off" or Devices[DeviceUnit].sValue == str(normalized_value)):
+                            pass
+                        else:
+                            self.log.logging("Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s" % (0, 0), NWKID)
+                            UpdateDevice_v2(self, Devices, DeviceUnit, 0, "0", BatteryLevel, SignalLevel)
 
-                else:
-                    if update_domoticz_widget:
-                        value_to_update = _dimmable_blind if _dimmable_blind else prev_nValue
+                elif normalized_value == 100:
+                    nValue = 1
+                    if Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
+                            1, 100, Devices[DeviceUnit].SwitchType), NWKID, )
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 1, "100", BatteryLevel, SignalLevel)
 
-                    self.log.logging("Widget", "Log", "------> LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
-                        value_to_update, normalized_value, switchType), NWKID)
-                    UpdateDevice_v2(self, Devices, DeviceUnit, value_to_update, str(normalized_value), BatteryLevel, SignalLevel)
+                    else:
+                        if Devices[DeviceUnit].nValue == 0 and (Devices[DeviceUnit].sValue == "Off" or Devices[DeviceUnit].sValue == str(normalized_value)):
+                            pass
+                        else:
+                            self.log.logging("Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s" % (1, 100), NWKID)
+                            UpdateDevice_v2(self, Devices, DeviceUnit, 1, "100", BatteryLevel, SignalLevel)
+
+                else:  # sValue != 0 and sValue != 100
+
+                    # if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
+                    if Devices[DeviceUnit].nValue == 0 and (Devices[DeviceUnit].sValue == "Off" or Devices[DeviceUnit].sValue == str(normalized_value)):
+                        # Do nothing. We receive a ReadAttribute  giving the position of a Off device.
+                        pass
+                    elif Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
+                            nValue, normalized_value, Devices[DeviceUnit].SwitchType), NWKID, )
+                        UpdateDevice_v2(self, Devices, DeviceUnit, 2, str(normalized_value), BatteryLevel, SignalLevel)
+
+                    else:
+                        # Just update the Level if Needed
+                        self.log.logging( "Widget", "Debug", "------>  LvlControl UpdateDevice: -> %s/%s SwitchType: %s" % (
+                            nValue, normalized_value, Devices[DeviceUnit].SwitchType), NWKID, )
+                        UpdateDevice_v2( self, Devices, DeviceUnit, Devices[DeviceUnit].nValue, str(normalized_value), BatteryLevel, SignalLevel, )
+
+            elif WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
+                if Devices[DeviceUnit].nValue != 0 or Devices[DeviceUnit].sValue != "Off":
+                    nValue, sValue = getDimmerLevelOfColor(self, value)
+                    UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
             elif WidgetType == "LegrandSelector":
                 self.log.logging("Widget", "Debug", "------> LegrandSelector : Value -> %s" % value, NWKID)
@@ -1290,7 +1356,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     sValue = "40"  # Stop
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
                 else:
-                    self.log.logging("Widget", "Error", "------>  %s LegrandSelector Unknown value %s" % (NWKID, value))
+                    Domoticz.Error("------>  %s LegrandSelector Unknown value %s" % (NWKID, value))
                     
             elif WidgetType == "LegrandSleepWakeupSelector":
                 self.log.logging("Widget", "Debug", "------> LegrandSleepWakeupSelector : Value -> %s" % value, NWKID)
@@ -1303,7 +1369,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Col
                     sValue = "20"  # wakeup
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
                 else:
-                    self.log.logging("Widget", "Error", "------>  %s LegrandSleepWakeupSelector Unknown value %s" % (NWKID, value))
+                    Domoticz.Error("------>  %s LegrandSleepWakeupSelector Unknown value %s" % (NWKID, value))
 
             elif WidgetType == "Generic_5_buttons":
                 self.log.logging("Widget", "Debug", "------> Generic 5 buttons : Value -> %s" % value, NWKID)
@@ -1497,58 +1563,67 @@ def CheckUpdateGroup(self, NwkId, Ep, ClusterId):
         self.groupmgt.checkAndTriggerIfMajGroupNeeded(NwkId, Ep, ClusterId)
 
 
-def get_dimmer_level_of_color(self, value):
+def getDimmerLevelOfColor(self, value):
+
     nValue = 1
-    analogValue = value if isinstance(value, int) else int(value, 16)
+    analogValue = value if isinstance( value, int) else int(value, 16)
 
     if analogValue >= 255:
         sValue = 100
-    else:
-        sValue = min(round((analogValue / 255) * 100), 100)
-        sValue = max(sValue, 1)
 
-    return nValue, sValue
+    else:
+        sValue = round(((analogValue * 100) / 255))
+        if sValue > 100:
+            sValue = 100
+
+        if sValue == 0 and analogValue > 0:
+            sValue = 1
+
+    return (nValue, sValue)
 
 
 def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_max):
     """
-    Check if the value is in the range or not. If out of range and disableTrackingValue not set, will check for 5 consecutive errors to log as an error.
-    Return False if the value is in the range
-    Return True if the value is out of range
+    check if the value is in the range or not. If out range and disableTrackingValue not set, will check for 5 consecutive errors to log as an error.
+    return False if the value is in the range
+    return True if the value is out of range
     """
 
+    valid_value = False
     _attribute = "Erratic_" + value_type
-    tracking_disable = self.ListOfDevices.get(NwkId, {}).get("Param", {}).get("disableTrackingEraticValue", False)
+    tracking_disable = self.ListOfDevices[NwkId]["Param"]["disableTrackingEraticValue"] if "Param" in self.ListOfDevices[NwkId] and "disableTrackingEraticValue" in self.ListOfDevices[NwkId]["Param"] else False
 
-    valid_value = expected_min < value < expected_max
+    if expected_min < value < expected_max:
+        # Value is in the threasholds, every thing fine
+        valid_value = True
 
     if valid_value:
-        self.ListOfDevices[NwkId].pop(_attribute, None)
+        if _attribute in self.ListOfDevices[NwkId]:
+            # Remove the attribute if we had a previous erratic value
+            del self.ListOfDevices[NwkId][_attribute]
         return False
 
     elif tracking_disable:
         return True
 
-    # We have an erratic value and we have to track. Let's try to handle some erratic values.
+    # We have an erratic value and we have to track Let's try to handle some eratics value
     if _attribute not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId][_attribute] = {"ConsecutiveErraticValue": 1}
-    else:
-        self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] += 1
+        self.ListOfDevices[NwkId][_attribute] = {}
+        self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] = 1
 
-    consecutive_erratic_value = self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"]
-
-    if consecutive_erratic_value > 5:
-        self.log.logging("Widget", "Error", "Aberrant %s: %s (below %s or above %s) for device: %s" % (
-            value_type, value, expected_min, expected_max, NwkId), NwkId)
-        self.ListOfDevices[NwkId].pop(_attribute, None)
+    self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] += 1
+    if self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"] > 5:
+        self.log.logging( "Widget", "Error", "Aberrant %s: %s (below %s or above %s) for device: %s" % (
+            value_type, value, expected_min, expected_max, NwkId), NwkId,)
+        del self.ListOfDevices[NwkId][_attribute]
         return True
 
-    self.log.logging("Widget", "Debug", "Aberrant %s: %s (below %s or above %s) for device: %s [%s]" % (
-        value_type, value, expected_min, expected_max, NwkId, consecutive_erratic_value), NwkId)
+    self.log.logging( "Widget", "Debug", "Aberrant %s: %s (below % or above %s) for device: %s [%s]" % (
+        value_type, value, expected_min, expected_max, NwkId, self.ListOfDevices[NwkId][_attribute]["ConsecutiveErraticValue"],), NwkId,)
     return True
 
 
-def check_set_meter_widget( self, Devices, DeviceId, Unit, mode):
+def check_set_meter_widget( Devices, Unit, mode):
     # Mode = 0 - From device (default)
     # Mode = 1 - Computed
 
@@ -1561,127 +1636,48 @@ def check_set_meter_widget( self, Devices, DeviceId, Unit, mode):
         Options = Devices[Unit].Options
 
     if Options["EnergyMeterMode"] != sMode:
-        oldnValue, oldsValue = domo_read_nValue_sValue(self, Devices, DeviceId, Unit)
-
-        Options = { "EnergyMeterMode": sMode }
-        domo_update_api(self, Devices, DeviceId, Unit, oldnValue, oldsValue, Options=Options ,)
-
-
-def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
-    """
-    Retrieve data from current.
-
-    Args:
-        Devices: The devices.
-        DeviceID: The device ID.
-        Unit: The unit.
-        _format: The format.
-
-    Returns:
-        List[str]: The retrieved data from current.
-
-    Examples:
-        retrieve_data_from_current(self, "Device1", 123, 1, "A;B;C")
-        ['0', '0', '0']
-    """
-    _, current_svalue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
-
-    if current_svalue == "":
-        current_svalue = "0"
-
-    # Calculate number of expected parameters from format_list directly
-    # Create a zero_padded_list
-    format_list = _format.split(";")
-    nb_parameters, zero_padded_list = len(format_list), ["0"] * len(format_list)
-
-    current_list_values = current_svalue.split(";")
-    if len(current_list_values) == nb_parameters:
-        result_list = current_list_values
-        
-    elif len(current_list_values) < nb_parameters:
-        result_list = current_list_values + zero_padded_list[len(current_list_values):]
-        
-    else:
-        result_list = zero_padded_list
-
-    self.log.logging("Widget", "Log", f"retrieve_data_from_current - svalue: {current_svalue} Nb Param: {nb_parameters} returning {result_list}")
-
-    return result_list
+        oldnValue = Devices[Unit].nValue
+        oldsValue = Devices[Unit].sValue
+        Options = {}
+        Options["EnergyMeterMode"] = sMode
+        Devices[Unit].Update(oldnValue, oldsValue, Options=Options)
 
 
-def normalized_lvl_value( self, Devices, DeviceID, DeviceUnit, value ):
+def retreive_data_from_current(self, Devices, Unit, _format):
+
+    nb_parameters = len(_format.split(";"))
+    currentsValue = Devices[Unit].sValue
+    if len(currentsValue.split(";")) != nb_parameters:
+        currentsValue = ""
+        for x in range(0, nb_parameters):
+            if x != nb_parameters - 1:
+                currentsValue += "0;"
+            else:
+                currentsValue += "0"
+
+    self.log.logging("Widget", "Debug", "retreive_data_from_current - Nb Param: %s returning %s" % (nb_parameters, currentsValue))
+
+    return currentsValue.split(";")
+
+def normalized_lvl_value(  Devices, DeviceUnit, value ):
     
     # Normalize sValue vs. analog value coomming from a ReadAttribute
     analogValue = value if isinstance( value, int) else int(value, 16)
-
+        
     if analogValue >= 255:
         normalized_value = 255
 
     normalized_value = round(((analogValue * 100) / 255))
-    normalized_value = min(normalized_value, 100)
+    if normalized_value > 100:
+        normalized_value = 100
     if normalized_value == 0 and analogValue > 0:
         normalized_value = 1
-
+        
     # Looks like in the case of the Profalux shutter, we never get 0 or 100
-    _switchtype, _, _ = domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, DeviceUnit)
-    if _switchtype in (13, 14, 15, 16):
+    if Devices[DeviceUnit].SwitchType in (13, 14, 15, 16):
         if normalized_value == 1 and analogValue == 1:
             normalized_value = 0
         if normalized_value == 99 and analogValue == 254:
             normalized_value = 100
-
+            
     return normalized_value
-
-
-def getDimmerLevelOfColor(self, value):
-    nValue = 1
-    analogValue = value if isinstance(value, int) else int(value, 16)
-
-    if analogValue >= 255:
-        sValue = 100
-    else:
-        sValue = min(round((analogValue / 255) * 100), 100)
-        sValue = max(sValue, 1) if sValue > 0 else 0
-
-    return nValue, sValue
-
-
-def check_and_update_db_status( self, NWKID):
-    if ( 
-        "Status" in self.ListOfDevices[NWKID] 
-        and self.ListOfDevices[NWKID]["Status"] == "erasePDM" 
-        and "autoRestore" in self.pluginconf.pluginConf 
-        and self.pluginconf.pluginConf["autoRestore"]
-    ):
-        # Most likely we have request a coordinator re-initialisation and the latest backup has been put in place
-        # simply put the device back
-        self.ListOfDevices[NWKID]["Status"] = "inDB"
-
-
-def is_PowerNegative_widget( ClusterTypeList):
-    return any( _widget_type == "ProdMeter" for _, _, _widget_type in ClusterTypeList )
-
-
-def calculate_humidity_status(humidity_value):
-    if humidity_value < 40:
-        return 2
-    elif 40 <= humidity_value < 70:
-        return 1
-    else:
-        return 3
-
-   
-def calculate_baro_forecast(baroValue):
-
-    if baroValue < 1000:
-        return 4  # RAIN
-    elif baroValue < 1020:
-        return 3  # CLOUDY
-    elif baroValue < 1030:
-        return 2  # PARTLY CLOUDY
-    else:
-        return 1  # SUNNY
-
-
-def str_round(value, n):
-    return "{:.{n}f}".format(value, n=int(n))
