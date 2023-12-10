@@ -1588,7 +1588,7 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
     else:
         result_list = zero_padded_list
 
-    self.log.logging("Widget", "Log", f"retrieve_data_from_current - svalue: {current_svalue} Nb Param: {nb_parameters} returning {result_list}")
+    self.log.logging("Widget", "Debug", f"retrieve_data_from_current - svalue: {current_svalue} Nb Param: {nb_parameters} returning {result_list}")
 
     return result_list
 
