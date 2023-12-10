@@ -694,9 +694,9 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         elif DeviceType == "ThermoOnOff":
             if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("eTRV0100"):
-                 danfoss_on_off(self, NWKID, 0x01)
+                danfoss_on_off(self, NWKID, 0x01)
             else:
-                 tuya_trv_onoff(self, NWKID, 0x01)
+                tuya_trv_onoff(self, NWKID, 0x01)
             UpdateDevice_v2(self, Devices, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
         elif DeviceType == "ShutterCalibration":
@@ -1360,6 +1360,8 @@ def mgtCommand(self, Devices, Unit, Command, Level, Color):
 
         UpdateDevice_v2(self, Devices, Unit, 1, str(Level), BatteryLevel, SignalLevel, str(Color))
 
+    
+    
 def get_previous_switch_level(self, NwkId, Ep):
     
     if NwkId not in self.ListOfDevices:

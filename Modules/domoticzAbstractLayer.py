@@ -16,6 +16,7 @@ DOMOTICZ_EXTENDED_API = False
 
 DELAY_BETWEEN_TOUCH = 30
 
+
 def load_list_of_domoticz_widget(self, Devices):
     """Use at plugin start to creat an index of Domoticz Widget. It is also called after a Widget removal and when a new device has been paired.
 
@@ -326,6 +327,12 @@ def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
 def domo_read_TimedOut( self, Devices, DeviceId_, Unit_, ):
     return ( Devices[DeviceId_].Units[Unit_].TimedOut if DOMOTICZ_EXTENDED_API else Devices[Unit_].TimedOut )
 
+def domo_read_Options( self, Devices, DeviceId_, Unit_,):
+    return ( Devices[DeviceId_].Units[Unit_].Options if DOMOTICZ_EXTENDED_API else Devices[Unit_].Options )
+
+def domo_read_Device_Idx(self, Devices, DeviceId_, Unit_,):
+    return ( Devices[DeviceId_].Units[Unit_].ID if DOMOTICZ_EXTENDED_API else Devices[Unit_].ID )    
+     
 def domo_check_unit(self, Devices, DeviceId_, Unit_):
     if DOMOTICZ_EXTENDED_API:
         return Unit_ in Devices[DeviceId_].Units
@@ -420,3 +427,46 @@ def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
 def domoticz_log_api( message):
     
     Domoticz.Log( message )
+    
+def is_dimmable_switch(self, Devices, DeviceId, Unit):
+    _switchType, _subType, _type = domo_read_SwitchType_SubType_Type(self, Devices, DeviceId, Unit)
+    if check_widget(_switchType, _subType, _type) == "Dimmable_Switch":
+        return find_partially_opened_nValue(_switchType, _subType, _type)
+    return None
+    
+    
+def is_dimmable_light(self, Devices, DeviceId, Unit):
+    _switchType, _subType, _type = domo_read_SwitchType_SubType_Type(self, Devices, DeviceId, Unit)
+    if check_widget(_switchType, _subType, _type) == "Dimmable_Light":
+        return find_partially_opened_nValue(_switchType, _subType, _type)
+    return None
+        
+    
+def is_dimmable_blind(self, Devices, DeviceId, Unit):
+    _switchType, _subType, _type = domo_read_SwitchType_SubType_Type(self, Devices, DeviceId, Unit)
+    if check_widget(_switchType, _subType, _type) == "Blind":
+        return find_partially_opened_nValue(_switchType, _subType, _type)
+    return None
+
+
+DIMMABLE_WIDGETS = {
+    (7, 1, 241): { "Widget": "Dimmable_Light", "Name": "RGBW", "partially_opened_nValue": 15},
+    (7, 2, 241): { "Widget": "Dimmable_Light", "Name": "RGB", "partially_opened_nValue": 15},
+    (7, 4, 241): { "Widget": "Dimmable_Light", "Name": "RGBWW", "partially_opened_nValue": 15},
+    (7, 7, 241): { "Widget": "Dimmable_Light", "Name": "RGBWWZ", "partially_opened_nValue": 15},
+    (7, 8, 241): { "Widget": "Dimmable_Light", "Name": "WW Switch", "partially_opened_nValue": 15},
+    (7, 73, 244): { "Widget": "Dimmable_Switch", "Name": "Dimmer", "partially_opened_nValue": 2},
+    (14, 73, 244): { "Widget": "Blind", "Name": "Venetian Blinds US", "partially_opened_nValue": 17},
+    (13, 73, 244): { "Widget": "Blind", "Name": "Blind Percentage", "partially_opened_nValue": 2},
+    (15, 73, 244): { "Widget": "Blind", "Name": "Venetian Blinds EU", "partially_opened_nValue": 17},
+    (21, 73, 244): { "Widget": "Blind", "Name": "Blinds + Stop", "partially_opened_nValue": 2},
+}
+
+def find_partially_opened_nValue(switch_type, sub_type, widget_type):
+    key = (switch_type, sub_type, widget_type)
+    return DIMMABLE_WIDGETS.get(key).get("partially_opened_nValue")
+
+
+def check_widget(switch_type, sub_type, widget_type):
+    key = (switch_type, sub_type, widget_type)
+    return DIMMABLE_WIDGETS.get(key).get("Widget")
