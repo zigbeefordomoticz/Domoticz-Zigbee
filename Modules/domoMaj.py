@@ -1127,7 +1127,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     else:
                         self.log.logging("Widget", "Error", f"------> len(SWITCH_SELECTORS[{WidgetType}][{value}]) == {len(selector_values)}", NwkId)
                 else:
-                    self.log.logging("Widget", "Log", f"------> Auto Update requested for NwkId: {NwkId} {ClusterType} {WidgetType} {value} not found in SWITCH_SELECTORS")
+                    self.log.logging("Widget", "Debug", f"------> Auto Update requested for NwkId: {NwkId} {ClusterType} {WidgetType} {value} not found in SWITCH_SELECTORS")
 
 
         if "WindowCovering" in ClusterType and WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind"):
