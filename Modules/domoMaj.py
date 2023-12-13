@@ -1137,7 +1137,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         if "LvlControl" in ClusterType:  # LvlControl ( 0x0008)
             tuple_value = _domo_convert_level_control( self, Devices, device_id_ieee, device_unit, value, NwkId, switchType, WidgetType, prev_nValue, prev_sValue)
             if tuple_value :
-                UpdateDevice_v2(self, Devices, device_unit, tuple_value[0], tuple_value[1], BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, device_unit, tuple_value[0], tuple_value[1], BatteryLevel, SignalLevel, ForceUpdate_=tuple_value[2])
 
         if ClusterType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ) and ClusterType == WidgetType:
             # We just manage the update of the Dimmer (Control Level)
@@ -1236,54 +1236,54 @@ def _domo_convert_level_control( self, Devices, DeviceId, Unit, value, NwkId, sw
     elif WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
         if prev_nValue != 0 or prev_sValue != "Off":
             nValue, sValue = getDimmerLevelOfColor(self, value)
-            return nValue, str(sValue)
+            return nValue, str(sValue), False
 
     elif WidgetType == "LegrandSelector":
         self.log.logging("Widget", "Debug", "------> LegrandSelector : Value -> %s" % value, NwkId)
         _value_mapping = {
-            "00": (0, "00"),
-            "01": (1, "10"),
-            "moveup": (2, "20"),
-            "movedown": (3, "30"),
-            "stop": (4, "40"),
+            "00": (0, "00", True),
+            "01": (1, "10", True),
+            "moveup": (2, "20", True),
+            "movedown": (3, "30", True),
+            "stop": (4, "40", True),
         }
         return _value_mapping.get(value)
 
     elif WidgetType == "LegrandSleepWakeupSelector":
         self.log.logging("Widget", "Debug", "------> LegrandSleepWakeupSelector : Value -> %s" % value, NwkId)
         _value_mapping = {
-            "00": (1, "10"),
-            "01": (2, "20"),
+            "00": (1, "10", True),
+            "01": (2, "20", True),
         }
         return _value_mapping.get(value)
     
     elif WidgetType == "Generic_5_buttons":
         self.log.logging("Widget", "Debug", "------> Generic 5 buttons : Value -> %s" % value, NwkId)
         _value_mapping = {
-            "00": (0, "00"),
-            "01": (1, "10"),
-            "02": (2, "20"),
-            "03": (3, "30"),
-            "04": (4, "40"),
+            "00": (0, "00", True),
+            "01": (1, "10", True),
+            "02": (2, "20", True),
+            "03": (3, "30", True),
+            "04": (4, "40", True),
         }
         return _value_mapping.get(value)
     
     elif WidgetType == "GenericLvlControl":
         self.log.logging("Widget", "Debug", "------> GenericLvlControl : Value -> %s" % value, NwkId)
         _value_mapping = {
-            "off": (1, "10"),        # Off
-            "on": (2, "20"),         # On
-            "moveup": (3, "30"),     # Move Up
-            "movedown": (4, "40"),   # Move Down
-            "stop": (5, "50"),       # Stop
+            "off": (1, "10", True),        # Off
+            "on": (2, "20", True),         # On
+            "moveup": (3, "30", True),     # Move Up
+            "movedown": (4, "40", True),   # Move Down
+            "stop": (5, "50", True),       # Stop
         }
         return _value_mapping.get(value)
 
     elif WidgetType == "HueSmartButton":
         self.log.logging("Widget", "Debug", "------> HueSmartButton : Value -> %s" % value, NwkId)
         _value_mapping = {
-            "toggle": (1, "10"),       # toggle
-            "move": (2, "20"),         # Move
+            "toggle": (1, "10", True),       # toggle
+            "move": (2, "20", True),         # Move
         }
         return _value_mapping.get(value)
 
@@ -1309,7 +1309,7 @@ def _domo_convert_level_control( self, Devices, DeviceId, Unit, value, NwkId, sw
         if nValue is None:
             return None
         sValue = "%s" % (10 * nValue)
-        return nValue, sValue
+        return nValue, sValue, False
 
     elif WidgetType == "INNR_RC110_LIGHT":
         self.log.logging("Widget", "Debug", "------>  Updating INNR_RC110_LIGHT (LvlControl) Value: %s" % value, NwkId)
@@ -1326,12 +1326,12 @@ def _domo_convert_level_control( self, Devices, DeviceId, Unit, value, NwkId, sw
         if nValue is None:
             return None
         sValue = "%s" % (10 * nValue)
-        return nValue, sValue
+        return nValue, sValue, False
 
     elif WidgetType == "TINT_REMOTE_WHITE":
         nValue = int(value)
         sValue = "%s" % (10 * nValue)
-        return nValue, sValue
+        return nValue, sValue, False
 
     return None
 
@@ -1341,7 +1341,7 @@ def handle_normalized_value_off(self, dimm_blind_nvalue, switchType, prev_nValue
     if dimm_blind_nvalue:
         # Blind, update Switch Closed
         self.log.logging("Widget", "Debug", "handle_normalized_value_off -> %s/%s SwitchType: %s" % (0, 0, switchType), NwkId)
-        return 0, "0"
+        return 0, "0", False
     
     if prev_nValue == 0 and (prev_sValue == "Off" or prev_sValue == str(normalized_value)):
         # It is not a blind and it is already Off, do nothing
@@ -1349,14 +1349,14 @@ def handle_normalized_value_off(self, dimm_blind_nvalue, switchType, prev_nValue
 
     # All other cases we Switch Off
     self.log.logging("Widget", "Debug", "handle_normalized_value_off -> %s/%s" % (0, 0), NwkId)
-    return 0, "0"
+    return 0, "0", False
 
 
 def handle_normalized_value_on(self, dimm_blind_nvalue, switchType, prev_nValue, prev_sValue, normalized_value, NwkId):
     if dimm_blind_nvalue:
         # Blind, update Switch Open
         self.log.logging("Widget", "Debug", "handle_normalized_value_on -> %s/%s SwitchType: %s" % (1, 100, switchType), NwkId)
-        return 1, "100"
+        return 1, "100", False
     
     if prev_nValue == 0 and (prev_sValue == "Off" or prev_sValue == str(normalized_value)):
         # It is not a blind and it is already Off, do nothing
@@ -1364,14 +1364,14 @@ def handle_normalized_value_on(self, dimm_blind_nvalue, switchType, prev_nValue,
 
     # All other cases we Switch Off
     self.log.logging("Widget", "Debug", "handle_normalized_value_on -> %s/%s" % (1, 100), NwkId)
-    return 1, "100"
+    return 1, "100", False
 
 
 def handle_normalized_other(self, dimm_blind_nvalue, prev_nValue, prev_sValue, normalized_value, switchType, NwkId):
     if dimm_blind_nvalue:
         self.log.logging("Widget", "Debug", "handle_normalized_other -> %s SwitchType: %s dimm_blind_value: %s" % (
             normalized_value, switchType, dimm_blind_nvalue), NwkId)
-        return dimm_blind_nvalue, str(normalized_value)
+        return dimm_blind_nvalue, str(normalized_value), False
     
     if prev_nValue == 0 and (prev_sValue == "Off" or prev_sValue == str(normalized_value)):
         # Do nothing. We receive a ReadAttribute giving the position of an Off device.
@@ -1379,7 +1379,7 @@ def handle_normalized_other(self, dimm_blind_nvalue, prev_nValue, prev_sValue, n
     
     # Just update the Level if Needed
     self.log.logging("Widget", "Debug", "handle_normalized_other -> %s SwitchType: %s prev value: %s" % (normalized_value, switchType, prev_nValue ), NwkId)
-    return prev_nValue, str(normalized_value)
+    return prev_nValue, str(normalized_value), False
 
 
 def is_time_to_domo_update(self, NwkId, Ep):
