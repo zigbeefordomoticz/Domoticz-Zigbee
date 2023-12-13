@@ -1,18 +1,14 @@
 
 import time
 
-from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
-                                             sqn_get_internal_sqn_from_app_sqn)
+from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL)
 from Modules.basicOutputs import handle_unknow_device
-from Modules.callback import callbackDeviceAwake
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate
 from Modules.paramDevice import get_device_config_param
-from Modules.tools import (get_deviceconf_parameter_value, loggingMessages,
+from Modules.tools import (get_deviceconf_parameter_value,
                            timeStamped, updLQI, updSQN,
                            zigpy_plugin_sanity_check)
-from Z4D_decoders.z4d_decoder_Read_Report_Attribute_Rsp import \
-    scan_attribute_reponse
 
 
 def Decode0400(self, Devices, MsgData, MsgLQI):
@@ -49,31 +45,6 @@ def Decode8046(self, Devices, MsgData, MsgLQI):
             self.log.logging('Input', 'Log', 'Decode8046 - Match Descriptor response Nwkid: %sfound Ep: %s Matching 0500' % (MsgDataShAddr, ep))
             self.iaszonemgt.IAS_write_CIE_after_match_descriptor(MsgDataShAddr, ep)
 
-def Decode8100(self, Devices, MsgData, MsgLQI):
-    MsgSQN = MsgData[:2]
-    
-    i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
-    
-    MsgSrcAddr = MsgData[2:6]
-    
-    timeStamped(self, MsgSrcAddr, 33024)
-    
-    loggingMessages(self, '8100', MsgSrcAddr, None, MsgLQI, MsgSQN)
-    
-    lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-    
-    updLQI(self, MsgSrcAddr, MsgLQI)
-    
-    MsgSrcEp = MsgData[6:8]
-    MsgClusterId = MsgData[8:12]
-    self.statistics._clusterOK += 1
-    if MsgClusterId == '0500':
-        self.log.logging('Input', 'Debug', 'Read Attributed Request Response on Cluster 0x0500 for %s' % MsgSrcAddr)
-        if self.iaszonemgt:
-            self.iaszonemgt.IAS_CIE_service_discovery_response(MsgSrcAddr, MsgSrcEp, MsgData)
-        
-    scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, '8100')
-    callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
     
 def Decode8400(self, Devices, MsgData, MsgLQI):
     sqn = MsgData[:2]

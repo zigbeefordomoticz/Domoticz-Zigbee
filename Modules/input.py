@@ -24,8 +24,8 @@ from Z4D_decoders.z4d_decoder_Discovery_Rsp import Decode804B
 from Z4D_decoders.z4d_decoder_groups import (Decode8060, Decode8061,
                                              Decode8062, Decode8063)
 from Z4D_decoders.z4d_decoder_helpers import extract_message_infos
-from Z4D_decoders.z4d_decoder_IAS import (Decode0400, Decode8046, Decode8100,
-                                          Decode8400, Decode8401)
+from Z4D_decoders.z4d_decoder_IAS import (Decode0400, Decode8046, Decode8400,
+                                          Decode8401)
 from Z4D_decoders.z4d_decoder_IEEE_addr_req import Decode0041
 from Z4D_decoders.z4d_decoder_IEEE_Addr_Rsp import Decode8041
 from Z4D_decoders.z4d_decoder_Leave_Notification import Decode8048
@@ -41,6 +41,7 @@ from Z4D_decoders.z4d_decoder_OTA_Rsp import Decode8501, Decode8502, Decode8503
 from Z4D_decoders.z4d_decoder_Power_Descriptor_Rsp import Decode8044
 from Z4D_decoders.z4d_decoder_Pwr_Mgt_Rsp import Decode8806, Decode8807
 from Z4D_decoders.z4d_decoder_Read_Attribute_Request import Decode0100
+from Z4D_decoders.z4d_decoder_Read_Attribute_Rsp import Decode8100
 from Z4D_decoders.z4d_decoder_Read_Report_Attribute_Rsp import Decode8102
 from Z4D_decoders.z4d_decoder_Remotes import Decode80A7, Decode8085, Decode8095
 from Z4D_decoders.z4d_decoder_Rte_Discovery_Performed import Decode8701
