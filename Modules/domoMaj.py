@@ -21,7 +21,8 @@ from Modules.domoticzAbstractLayer import (domo_check_unit,
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                UpdateDevice_v2, remove_bad_cluster_type_entry)
-from Modules.switchSelectorWidgets import SWITCH_SELECTORS
+from Modules.switchSelectorWidgets import (SWITCH_SELECTORS,
+                                           get_force_update_value_mapping)
 from Modules.tools import zigpy_plugin_sanity_check
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
