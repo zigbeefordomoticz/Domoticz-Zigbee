@@ -33,7 +33,7 @@ def Decode8100(self, Devices, MsgData, MsgLQI):
         if self.iaszonemgt:
             self.iaszonemgt.IAS_CIE_service_discovery_response(MsgSrcAddr, MsgSrcEp, MsgData)
     
-    if not get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "NO_READ_ATTRIBUTE_RSP"):
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "NO_READ_ATTRIBUTE_RSP"):
         # Some devices as the Tuya RR400ZB TS0505A-HueSaturation seems to return 00 all the time.
         return
     
