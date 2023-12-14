@@ -48,22 +48,15 @@ def Decode8102(self, Devices, MsgData, MsgLQI):
 
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
     self.statistics._clusterOK += 1
+    
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, '8102')
-
     callbackDeviceAwake(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId)
     
     
 def scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, msgtype):
 
-    self.log.logging(
-        "Input",
-        "Debug",
-        "scan_attribute_reponse - Sqn: %s i_sqn: %s Nwkid: %s Ep: %s Cluster: %s MsgData: %s Type: %s"
-        % (
-            MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, msgtype
-        ),
-        MsgSrcAddr,
-    )
+    self.log.logging( "Input", "Debug", "scan_attribute_reponse - Sqn: %s i_sqn: %s Nwkid: %s Ep: %s Cluster: %s MsgData: %s Type: %s" % (
+        MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, msgtype ), MsgSrcAddr, )
 
     idx = 12
     while idx < len(MsgData):
@@ -82,12 +75,8 @@ def scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, M
                 MsgClusterData = MsgData[idx : idx + size]
                 idx += size
         else:
-            self.log.logging(
-                "Input",
-                "Debug",
-                "scan_attribute_reponse - %s idx: %s Read Attribute Response: [%s:%s] status: %s -> %s"
-                % (msgtype, idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[idx:]),
-            )
+            self.log.logging( "Input", "Debug", "scan_attribute_reponse - %s idx: %s Read Attribute Response: [%s:%s] status: %s -> %s" % (
+                msgtype, idx, MsgSrcAddr, MsgSrcEp, MsgAttStatus, MsgData[idx:]), )
 
             # If the frame is coming from firmware we get only one attribute at a time, with some dumy datas
             if len(MsgData[idx:]) == 6:
@@ -100,46 +89,34 @@ def scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, M
 
 def read_report_attributes( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, ):
 
-    if DeviceExist(self, Devices, MsgSrcAddr):
-        debug_LQI(self, MsgSrcAddr, MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcEp)
-
-        self.log.logging(
-            "Input",
-            "Debug2",
-            "Decode8102: Attribute Report from "
-            + str(MsgSrcAddr)
-            + " SQN = "
-            + str(MsgSQN)
-            + " ClusterID = "
-            + str(MsgClusterId)
-            + " AttrID = "
-            + str(MsgAttrID)
-            + " Attribute Data = "
-            + str(MsgClusterData),
-            MsgSrcAddr,
-        )
-
-        if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Disabled",):
-            self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
-
-        updSQN(self, MsgSrcAddr, str(MsgSQN))
-        lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-
-        ReadCluster(
-            self,
-            Devices,
-            MsgType,
-            MsgSQN,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgClusterId,
-            MsgAttrID,
-            MsgAttStatus,
-            MsgAttType,
-            MsgAttSize,
-            MsgClusterData,
-            Source=MsgType,
-        )
+    if not DeviceExist(self, Devices, MsgSrcAddr):
+        # Device not found, let's try to find it, or trigger a scan
+        handle_unknow_device( self, MsgSrcAddr)
         return
-    # Device not found, let's try to find it, or trigger a scan
-    handle_unknow_device( self, MsgSrcAddr)
+        
+    debug_LQI(self, MsgSrcAddr, MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcEp)
+
+    self.log.logging(
+        "Input",
+        "Debug2",
+        "Decode8102: Attribute Report from "
+        + str(MsgSrcAddr)
+        + " SQN = "
+        + str(MsgSQN)
+        + " ClusterID = "
+        + str(MsgClusterId)
+        + " AttrID = "
+        + str(MsgAttrID)
+        + " Attribute Data = "
+        + str(MsgClusterData),
+        MsgSrcAddr,
+    )
+
+    if "Health" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Health"] not in ( "Disabled",):
+        self.ListOfDevices[MsgSrcAddr]["Health"] = "Live"
+
+    updSQN(self, MsgSrcAddr, str(MsgSQN))
+    lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
+
+    ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, Source=MsgType, )
+    return

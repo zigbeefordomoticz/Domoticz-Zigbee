@@ -13,6 +13,8 @@ from Z4D_decoders.z4d_decoder_Read_Report_Attribute_Rsp import \
 def Decode8100(self, Devices, MsgData, MsgLQI):
     MsgSQN = MsgData[:2]
     
+    self.log.logging('Input', 'Debug', 'Decode8100 Read Attributed Request Response on Cluster %s' % MsgData)
+
     i_sqn = sqn_get_internal_sqn_from_app_sqn(self.ControllerLink, MsgSQN, TYPE_APP_ZCL)
     
     MsgSrcAddr = MsgData[2:6]
@@ -33,8 +35,9 @@ def Decode8100(self, Devices, MsgData, MsgLQI):
         if self.iaszonemgt:
             self.iaszonemgt.IAS_CIE_service_discovery_response(MsgSrcAddr, MsgSrcEp, MsgData)
     
-    if get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "NO_READ_ATTRIBUTE_RSP"):
+    if MsgClusterId == "0006" and get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "DO_NOT_READ_ATTRIBUTE_RSP_CLUSTER_0006", return_default=False):
         # Some devices as the Tuya RR400ZB TS0505A-HueSaturation seems to return 00 all the time.
+        self.log.logging('Input', 'Debug', 'Skip Cluster %s payload %s' % (MsgClusterId, MsgData), MsgSrcAddr)
         return
     
     scan_attribute_reponse(self, Devices, MsgSQN, i_sqn, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgData, '8100')

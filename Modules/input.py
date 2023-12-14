@@ -146,7 +146,7 @@ def zigbee_receive_message(self, Devices, Data):
     MsgType, MsgData, MsgLQI = extract_message_infos(self, Data)
     self.Ping["Nb Ticks"] = 0  # We receive a valid packet
 
-    self.log.logging("Input", "Debug", f"ZigateRead - MsgType: {MsgType}, Data: {MsgData}, LQI: {int(MsgLQI, 16)}")
+    self.log.logging("Input", "Debug", f"zigbee_receive_message - MsgType: {MsgType}, Data: {MsgData}, LQI: {int(MsgLQI, 16)}")
 
     if MsgType == "8002":
         # Let's try to see if we can decode it, and then get a new MsgType
