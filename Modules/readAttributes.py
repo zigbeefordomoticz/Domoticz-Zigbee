@@ -1622,6 +1622,22 @@ def ReadAttributeRequest_fc01(self, key):
             ReadAttributeReq(self, key, ZIGATE_EP, EPout, "fc01", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
+def ReadAttributeRequest_fc11(self, key):
+    self.log.logging("ReadAttributes", "Debug", f"ReadAttributeRequest_fc11 - Key: {key}", nwkid=key)
+    list_of_ep = getListOfEpForCluster(self, key, "fc11")
+
+    for ep_out in list_of_ep:
+        list_attributes = list(set(retreive_ListOfAttributesByCluster(self, key, ep_out, "fc11")))
+
+        if list_attributes:
+            self.log.logging(
+                "ReadAttributes",
+                "Debug",
+                f"Request Legrand attributes info via Read Attribute request: {key} EPout = {ep_out}",
+                nwkid=key,
+            )
+            ReadAttributeReq(self, key, ZIGATE_EP, ep_out, "fc11", list_attributes, ack_is_disabled=is_ack_tobe_disabled(self, key))
+
 def ReadAttributeRequest_fc21(self, key):
     # Cluster PFX Profalux/ Manufacturer specific
 
@@ -1714,6 +1730,7 @@ READ_ATTRIBUTES_REQUEST = {
     "e001": (ReadAttributeRequest_e001, "polling0b05"),
     "fcc0": (ReadAttributeRequest_fcc0, "pollingfcc0"),
     "fc01": (ReadAttributeRequest_fc01, "pollingfc01"),
+    "fc11": (ReadAttributeRequest_fc11, "pollingfc11"),
     "fc21": (ReadAttributeRequest_fc21, "pollingfc21"),
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),
     "fc7d": (ReadAttributeRequest_fc7d, "pollingfc7d"),
