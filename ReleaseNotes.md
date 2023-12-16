@@ -18,6 +18,18 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## December 2023 - stable7 7.1.006 ( 2023.12 )
+
+- [Technical] - zigpy radio libraries upgrade
+- [Technical] - Compatibility with Conbee III
+- [Technical] - Refactoring of majDomo, preparing Extended framework
+- [Technical] - Prevent call TOUCH() too often and limit to lastupdate + 30 seconds (memory leak)
+- [Technical] - Make pyserial-asyncio-fast available for zigpy
+- [Technical] - Refactor input
+
+- [Issue] - Correct the handling of signed data for Tuya temp sensor
+- [Issue] - fix issues related to Danfoss eTRV ( @thertp )
+
 ## November 2023 - stable7 7.1.005 ( 2023.11 )
 
 - [Technical] - zigpy radio libraries upgrade
@@ -32,7 +44,7 @@ Release Numbering
 - [Hardware] - Aotec zigbee button support
 - [Hardware] - Tuya Hue and Saturation for Lidl "TS0505A", "_TZ3000_dbou1ap4"
 - [Hardware] - Enhancement of Lidl Hue and Saturation color control
-- [Hardware] - Handle the 2 version of Sonoff SNZB-02 
+- [Hardware] - Handle the 2 version of Sonoff SNZB-02
 - [Hardware] - Handle the command specific for Nodon Fil Pilot
 - [Hardware] - Tuya PC311 Multimeter 2 ways, 2 flows
 
