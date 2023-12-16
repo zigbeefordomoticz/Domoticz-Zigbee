@@ -8,6 +8,7 @@ import json
 import os
 import os.path
 from time import time
+from pathlib import Path
 
 import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage, setupHeadersResponse)
@@ -43,11 +44,14 @@ def rest_netTopologie(self, verb, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
 
     if not self.pluginconf.pluginConf["TopologyV2"]:
-        _filename = self.pluginconf.pluginConf["pluginReports"] + "NetworkTopology-v3-" + "%02d" % self.hardwareID + ".json"
+        _pluginDReports = Path( self.pluginconf.pluginConf["pluginReports"] )
+        _filename = _pluginDReports / ("NetworkTopology-v3-%02d.json" % self.hardwareID)
+
         self.logging("Debug", "Filename: %s" % _filename)
 
         if not os.path.isfile(_filename):
             _response["Data"] = json.dumps({}, sort_keys=True)
+            self.logging("Log", "Filename: %s not found !!" % _filename)
             return _response
 
         # Read the file, as we have anyway to do it

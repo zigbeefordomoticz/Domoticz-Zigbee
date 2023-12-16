@@ -307,24 +307,27 @@ def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
 
 def is_cluster_zcl_config_available( self, nwkid, ep, cluster, attribute=None):
     """ Is this cluster is handle via the ZclCluster , is this cluster + attribute hanlde via ZclCluster """
-    
-    if is_manufacturer_specific_cluster( self, cluster):
+
+    if is_manufacturer_specific_cluster( self, nwkid, ep, cluster):
         return True
-    
+
     if is_cluster_specific_config(self, _get_model_name( self, nwkid), ep, cluster, attribute):
         return True
-    
+
     return is_generic_zcl_cluster( self, cluster, attribute)
-    
-def is_manufacturer_specific_cluster( self, cluster):
-    
-    if cluster not in self.readZclClusters:
-        return False
-    if "ManufSpecificCluster" in self.readZclClusters[ cluster ]:
-        # We have a Manufacturer Specific cluster
+
+
+
+def is_manufacturer_specific_cluster(self, nwkid, ep, cluster):
+    cluster_info = self.readZclClusters.get(cluster, {}).get("ManufSpecificCluster", False)
+
+    if cluster_info:
         return True
-    
-    
+
+    device_info = self.DeviceConf.get(_get_model_name(self, nwkid), {}).get('Ep', {}).get(ep, {}).get(cluster, {})
+    return device_info and 'ManufSpecificCluster' in device_info
+
+
 def is_generic_zcl_cluster( self, cluster, attribute=None):
     if cluster not in self.readZclClusters:
         return False
@@ -350,32 +353,37 @@ def cluster_attribute_retrieval(self, ep, cluster, attribute, parameter, model=N
 
   
 def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
+    
+    DOMO_DEVICE_FORMATER = {
+        "str": str,
+        "str_2digits": lambda x: "%02d" % int(x),
+        "str_4digits": lambda x: "%04d" % int(x),
+        "strhex": lambda x: "%x" % x,
+        "str2hex": lambda x: "%02x" % x,
+        "str4hex": lambda x: "%04x" % x
+    }
+
     self.log.logging( "ZclClusters", "Debug", "action_majdomodevice - %s/%s %s %s %s %s" %(
-        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ))    
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ))
+    
     _majdomo_formater = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DomoDeviceFormat", model=device_model)
     self.log.logging( "ZclClusters", "Debug", "     _majdomo_formater: %s" %_majdomo_formater)
-    
+
     if get_device_config_param( self, MsgSrcAddr, "disableBinaryInputCluster") and MsgClusterId == "000f":
         return
-    
-    majValue = value
-    if _majdomo_formater:
-        if _majdomo_formater == "str":
-            majValue = str( value )
-        elif _majdomo_formater == "strhex":
-            majValue = "%x" %value
 
-    
+    majValue = DOMO_DEVICE_FORMATER[ _majdomo_formater ](value) if (_majdomo_formater and _majdomo_formater in DOMO_DEVICE_FORMATER) else value
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_formater: %s %s -> %s" %(_majdomo_formater, value, majValue))
+
     _majdomo_cluster = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithCluster", model=device_model)
     self.log.logging( "ZclClusters", "Debug", "     _majdomo_cluster: %s" %_majdomo_cluster)
-    
+
     majCluster = _majdomo_cluster if _majdomo_cluster is not None else MsgClusterId
 
     _majdomo_attribute = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithAttribute", model=device_model)
-    self.log.logging( "ZclClusters", "Debug", "     _majdomo_attribute: %s" %_majdomo_attribute)
-    
     majAttribute = _majdomo_attribute if _majdomo_attribute is not None else ""
-    
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_attribute: %s -> %s" %(_majdomo_attribute, majAttribute))
+
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, majCluster, majValue, Attribute_=majAttribute)
 
 

@@ -11,12 +11,12 @@
 
 import time
 
+from Modules.domoticzAbstractLayer import (device_touch_api, domo_update_api,
+                                           domoticz_log_api,
+                                           timeout_widget_api)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (is_domoticz_touch,
-                           is_domoticz_update_SuppressTriggers, lookupForIEEE,
-                           removeDeviceInList)
-from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
-from Modules.domoticzAbstractLayer import domo_update_api, device_touch_api, timeout_widget_api
+                           is_domoticz_update_SuppressTriggers, lookupForIEEE)
 
 
 def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):
@@ -289,7 +289,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         or ForceUpdate_
         or Devices[Unit].BatteryLevel != int(BatteryLvl)
         or Devices[Unit].TimedOut
-    ):
+        ):
 
         DeviceID_ = None    # This is required when we will use The Extended Framework
         if (
@@ -297,7 +297,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
             and ForceUpdate_
             and (Devices[Unit].nValue == int(nValue))
             and (Devices[Unit].sValue == sValue)
-        ):
+            ):
 
             # Due to new version of Domoticz which do not log in case we Update the same value
             nReset = 0
@@ -311,7 +311,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         domo_update_api(self, Devices, DeviceID_, Unit, nValue, sValue, SignalLevel=SignalLvl, BatteryLevel=BatteryLvl, TimedOut=0, Color=Color_,)
 
         if self.pluginconf.pluginConf["logDeviceUpdate"]:
-            self.log.logging( "Widget", "Log", "UpdateDevice - (%15s) %s:%s" % (Devices[Unit].Name, nValue, sValue))
+            domoticz_log_api( "UpdateDevice - (%15s) %s:%s" % (Devices[Unit].Name, nValue, sValue))
         self.log.logging( "Widget", "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" % (
             Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID], )
 

@@ -279,34 +279,7 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            
-            if self.ControllerData:
-                coordinator_infos = {}
-                coordinator_infos["Firmware Version"] = self.ControllerData["Firmware Version"]
-                coordinator_infos["IEEE"] = self.ControllerData["IEEE"]
-                coordinator_infos["Short Address"] = self.ControllerData["Short Address"]
-                coordinator_infos["Channel"] = self.ControllerData["Channel"]
-                coordinator_infos["PANID"] = self.ControllerData["PANID"]
-                coordinator_infos["Extended PANID"] = self.ControllerData["Extended PANID"]
-                coordinator_infos["Branch Version"] = self.ControllerData["Branch Version"]
-                coordinator_infos["Major Version"] = self.ControllerData["Major Version"] 
-                coordinator_infos["Minor Version"] = self.ControllerData["Minor Version"] 
-                if "Network key" in self.ControllerData:
-                    coordinator_infos[ "Network Key"] = self.ControllerData["Network key"] 
-                                      
-                if 0 <= int(self.ControllerData["Branch Version"]) < 20:   
-                    coordinator_infos["Display Firmware Version"] = "Zig - %s" % self.ControllerData["Minor Version"] 
-                elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
-                    # ZNP
-                    coordinator_infos["Display Firmware Version"] = "Znp - %s" % self.ControllerData["Minor Version"] 
-
-                elif 30 <= int(self.ControllerData["Branch Version"]) < 40:   
-                    # Silicon Labs
-                    coordinator_infos["Display Firmware Version"] = "Ezsp - %s" %(self.ControllerData["Minor Version"] )
-                else:
-                    coordinator_infos["Display Firmware Version"] = "UNK - %s" % self.ControllerData["Minor Version"] 
-                _response["Data"] = json.dumps(coordinator_infos, sort_keys=True)
-            else:
+            if self.ControllerData is None:
                 fake_zigate = {
                     "Firmware Version": "fake - 0310",
                     "IEEE": "00158d0001ededde",
@@ -315,8 +288,43 @@ class WebServer(object):
                     "PANID": "51cf",
                     "Extended PANID": "bd1247ec9d358634",
                 }
-
                 _response["Data"] = json.dumps(fake_zigate, sort_keys=True)
+                return _response
+            
+            coordinator_infos = {
+                "Firmware Version": self.ControllerData["Firmware Version"],
+                "IEEE": self.ControllerData["IEEE"],
+                "Short Address": self.ControllerData["Short Address"],
+                "Channel": self.ControllerData["Channel"],
+                "PANID": self.ControllerData["PANID"],
+                "Extended PANID": self.ControllerData["Extended PANID"],
+                "Branch Version": self.ControllerData["Branch Version"],
+                "Major Version": self.ControllerData["Major Version"],
+                "Minor Version": self.ControllerData["Minor Version"],
+            }
+            if "Network key" in self.ControllerData:
+                coordinator_infos[ "Network Key"] = self.ControllerData["Network key"] 
+
+            if 0 <= int(self.ControllerData["Branch Version"]) < 20:   
+                coordinator_infos["Display Firmware Version"] = "Zig - %s" % self.ControllerData["Minor Version"]
+
+            elif 20 <= int(self.ControllerData["Branch Version"]) < 30:
+                # ZNP
+                coordinator_infos["Display Firmware Version"] = "Znp - %s" % self.ControllerData["Minor Version"] 
+
+            elif 30 <= int(self.ControllerData["Branch Version"]) < 40:   
+                # Silicon Labs
+                coordinator_infos["Display Firmware Version"] = "Ezsp - %s" %(self.ControllerData["Minor Version"] )
+
+            elif 40 <= int(self.ControllerData["Branch Version"]) < 50:   
+                # dresden elektronik
+                coordinator_infos["Display Firmware Version"] = "Dresden - %s" %(self.ControllerData["Minor Version"] )
+
+            else:
+                coordinator_infos["Display Firmware Version"] = "UNK - %s" % self.ControllerData["Minor Version"]
+
+            _response["Data"] = json.dumps(coordinator_infos, sort_keys=True)
+
         return _response
 
     def rest_domoticz_env(self, verb, data, parameters):

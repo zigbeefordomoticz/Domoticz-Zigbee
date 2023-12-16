@@ -8,8 +8,14 @@
     Description: Set of functions which abstract Domoticz Legacy and Extended framework API
 """
 
+import time
+
 import Domoticz
+
 DOMOTICZ_EXTENDED_API = False
+
+DELAY_BETWEEN_TOUCH = 30
+
 
 def load_list_of_domoticz_widget(self, Devices):
     """Use at plugin start to creat an index of Domoticz Widget. It is also called after a Widget removal and when a new device has been paired.
@@ -232,7 +238,7 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
     return myDev.ID
 
 
-def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel=None, BatteryLevel=None, TimedOut=None, Color="",):
+def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel=None, BatteryLevel=None, TimedOut=None, Color="", Options=None):
     """
     Does a widget (domoticz device) value update ( nValue,sValue, Color, Battery and Signal Level)
     Calls from UpdateDevice_v2  
@@ -247,8 +253,8 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         TimedOut (int, optional): Timeoud flag 0 to unset the Timeout. Defaults to None.
         Color (str, optional): Color . Defaults to "".
     """
-    self.log.logging("AbstractDz", "Debug", "domo_update_api: %s %s %s %s %s %s %s %s" %(
-        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color))
+    self.log.logging("AbstractDz", "Debug", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
+        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options))
 
     if DOMOTICZ_EXTENDED_API:
         Devices[DeviceID_].Units[Unit_].nValue = nValue
@@ -257,30 +263,46 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         if Color != "":
             Devices[DeviceID_].Units[Unit_].Color = Color
             Devices[DeviceID_].Units[Unit_].TimedOut = 0
+            
         if BatteryLevel is not None:
             Devices[DeviceID_].Units[Unit_].BatteryLevel = BatteryLevel
             Devices[DeviceID_].Units[Unit_].TimedOut = 0
+            
         if SignalLevel is not None:
             Devices[DeviceID_].Units[Unit_].SignalLevel = SignalLevel
             Devices[DeviceID_].Units[Unit_].TimedOut = 0
+            
         if TimedOut is not None:
             Devices[DeviceID_].Units[Unit_].TimedOut = TimedOut
-                 
+            
+        if Options is not None:
+            Devices[DeviceID_].Units[Unit_].Options = Options
+
         Devices[DeviceID_].Units[Unit_].Update(Log=True)
         return
 
     # Legacy
-    if TimedOut:
-        Devices[Unit_].Update(nValue=nValue, sValue=sValue, TimedOut=TimedOut,)
+    # Define common update parameters
+    update_params = {
+        'nValue': int(nValue),
+        'sValue': str(sValue),
+    }
+    if SignalLevel is not None:
+        update_params['SignalLevel'] = int(SignalLevel)
+    if BatteryLevel is not None:
+        update_params['BatteryLevel'] = int(BatteryLevel)
+    if TimedOut is not None:
+        update_params['TimedOut'] = TimedOut
+    if Options is not None:
+        update_params['Options'] = Options
+    if Color != "":
+        update_params['Color'] = Color
 
-    elif SignalLevel is None and BatteryLevel is None:
-        Devices[Unit_].Update(nValue=nValue, sValue=sValue, TimedOut=0,)
-        
-    elif Color != "":
-        Devices[Unit_].Update( nValue=int(nValue), sValue=str(sValue), Color=Color, SignalLevel=int(SignalLevel), BatteryLevel=int(BatteryLevel), TimedOut=0, )
+    # Perform the update with the defined parameters
+    self.log.logging("AbstractDz", "Debug", "domo_update_api: update_params %s" %(update_params))
+    
+    Devices[Unit_].Update(**update_params)
 
-    else:
-        Devices[Unit_].Update( nValue=int(nValue), sValue=str(sValue), SignalLevel=int(SignalLevel), BatteryLevel=int(BatteryLevel), TimedOut=0, )
 
 def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
     """
@@ -302,6 +324,21 @@ def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
 
     return _unit.nValue, _unit.sValue
 
+def domo_read_TimedOut( self, Devices, DeviceId_, Unit_, ):
+    return ( Devices[DeviceId_].Units[Unit_].TimedOut if DOMOTICZ_EXTENDED_API else Devices[Unit_].TimedOut )
+
+def domo_read_Options( self, Devices, DeviceId_, Unit_,):
+    return ( Devices[DeviceId_].Units[Unit_].Options if DOMOTICZ_EXTENDED_API else Devices[Unit_].Options )
+
+def domo_read_Device_Idx(self, Devices, DeviceId_, Unit_,):
+    return ( Devices[DeviceId_].Units[Unit_].ID if DOMOTICZ_EXTENDED_API else Devices[Unit_].ID )    
+     
+def domo_check_unit(self, Devices, DeviceId_, Unit_):
+    if DOMOTICZ_EXTENDED_API:
+        return Unit_ in Devices[DeviceId_].Units
+    else:
+        return Unit_ in Devices
+
 def domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit):
     if DOMOTICZ_EXTENDED_API:
         _unit = Devices[DeviceID].Units[Unit]
@@ -309,6 +346,7 @@ def domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit):
         _unit = Devices[Unit]
 
     return _unit.SwitchType, _unit.SubType, _unit.Type
+
 
 def _is_meter_widget( self, Devices,DeviceID_, Unit_):
     # self.log.logging("AbstractDz", "Debug", "_is_meter_widget: %s %s" %(DeviceID_, Unit_))
@@ -336,37 +374,38 @@ def _is_device_tobe_switched_off(self, Devices,DeviceID_, Unit_):
         (Devices[Unit_].Type == 244 and Devices[Unit_].SubType == 73 and Devices[Unit_].SwitchType == 7)
         or (Devices[Unit_].Type == 241 and Devices[Unit_].SwitchType == 7)
     )
-    
 
-    
-def device_touch_api( self, Devices, DeviceId_, Unit_):
-    self.log.logging("AbstractDz", "Debug", "device_touch: %s %s" %(DeviceId_, Unit_))
-    
-    # In case of Meter Device ( kWh ), we must not touch it, otherwise it will destroy the metering
+def device_touch_api(self, Devices, DeviceId_, Unit_):
+    #self.log.logging("AbstractDz", "Debug", f"device_touch: {DeviceId_} {Unit_}")
+
+    # In case of Meter Device (kWh), we must not touch it, otherwise it will destroy the metering
     # Type, Subtype, SwitchType 
     # 243|29|0
 
-    if _is_meter_widget( self, Devices, DeviceId_, Unit_):
+    if _is_meter_widget(self, Devices, DeviceId_, Unit_):
         return
-    if DOMOTICZ_EXTENDED_API:
-        Devices[DeviceId_].Units[Unit_].Touch()
+
+    last_time = (
+        Devices[DeviceId_].Units[Unit_].LastUpdate
+        if DOMOTICZ_EXTENDED_API
+        else Devices[Unit_].LastUpdate
+    )
+
+    last_update_time_seconds = time.mktime(time.strptime(last_time, "%Y-%m-%d %H:%M:%S"))
+
+    if time.time() > last_update_time_seconds + DELAY_BETWEEN_TOUCH:
+        # Last Touch was done more than 30 seconds ago.
+        Devices[DeviceId_].Units[Unit_].Touch() if DOMOTICZ_EXTENDED_API else Devices[Unit_].Touch()
         return
-    # Legacy
-    Devices[Unit_].Touch()
+    #self.log.logging("AbstractDz", "Debug", f"device_touch too early: {DeviceId_} {Unit_}")
     
-    
+
 def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
     if _is_meter_widget( self, Devices, DeviceId_, Unit_):
         return
     
-    if DOMOTICZ_EXTENDED_API:
-        _nValue = Devices[DeviceId_].Units[Unit_].nValue
-        _sValue = Devices[DeviceId_].Units[Unit_].sValue
-        _TimedOut = Devices[DeviceId_].Units[Unit_].TimedOut
-    else:
-        _nValue = Devices[Unit_].nValue
-        _sValue = Devices[Unit_].sValue
-        _TimedOut = Devices[Unit_].TimedOut
+    _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, Unit_)
+    _TimedOut = domo_read_TimedOut( self, Devices, DeviceId_, Unit_, )
     
     self.log.logging("Widget", "Debug", "timeout_widget unit %s -> %s from %s:%s %s" % (
         Devices[Unit_].Name, bool(timeout_value), _nValue, _sValue, Devices[Unit_].TimedOut))
@@ -383,3 +422,51 @@ def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
         else:
             domo_update_api(self, Devices, DeviceId_, Unit_, _nValue, _sValue, TimedOut=timeout_value)
     self.log.logging("Widget", "Debug", "timeout_widget DeviceId %s unit %s -> %s completed" % (DeviceId_, Unit_, bool(timeout_value)))
+
+
+def domoticz_log_api( message):
+    
+    Domoticz.Log( message )
+    
+def is_dimmable_switch(self, Devices, DeviceId, Unit):
+    _switchType, _subType, _type = domo_read_SwitchType_SubType_Type(self, Devices, DeviceId, Unit)
+    if check_widget(_switchType, _subType, _type) == "Dimmable_Switch":
+        return find_partially_opened_nValue(_switchType, _subType, _type)
+    return None
+    
+    
+def is_dimmable_light(self, Devices, DeviceId, Unit):
+    _switchType, _subType, _type = domo_read_SwitchType_SubType_Type(self, Devices, DeviceId, Unit)
+    if check_widget(_switchType, _subType, _type) == "Dimmable_Light":
+        return find_partially_opened_nValue(_switchType, _subType, _type)
+    return None
+        
+    
+def is_dimmable_blind(self, Devices, DeviceId, Unit):
+    _switchType, _subType, _type = domo_read_SwitchType_SubType_Type(self, Devices, DeviceId, Unit)
+    if check_widget(_switchType, _subType, _type) == "Blind":
+        return find_partially_opened_nValue(_switchType, _subType, _type)
+    return None
+
+
+DIMMABLE_WIDGETS = {
+    (7, 1, 241): { "Widget": "Dimmable_Light", "Name": "RGBW", "partially_opened_nValue": 15},
+    (7, 2, 241): { "Widget": "Dimmable_Light", "Name": "RGB", "partially_opened_nValue": 15},
+    (7, 4, 241): { "Widget": "Dimmable_Light", "Name": "RGBWW", "partially_opened_nValue": 15},
+    (7, 7, 241): { "Widget": "Dimmable_Light", "Name": "RGBWWZ", "partially_opened_nValue": 15},
+    (7, 8, 241): { "Widget": "Dimmable_Light", "Name": "WW Switch", "partially_opened_nValue": 15},
+    (7, 73, 244): { "Widget": "Dimmable_Switch", "Name": "Dimmer", "partially_opened_nValue": 2},
+    (14, 73, 244): { "Widget": "Blind", "Name": "Venetian Blinds US", "partially_opened_nValue": 17},
+    (13, 73, 244): { "Widget": "Blind", "Name": "Blind Percentage", "partially_opened_nValue": 2},
+    (15, 73, 244): { "Widget": "Blind", "Name": "Venetian Blinds EU", "partially_opened_nValue": 17},
+    (21, 73, 244): { "Widget": "Blind", "Name": "Blinds + Stop", "partially_opened_nValue": 2},
+}
+
+def find_partially_opened_nValue(switch_type, sub_type, widget_type):
+    key = (switch_type, sub_type, widget_type)
+    return DIMMABLE_WIDGETS.get(key).get("partially_opened_nValue")
+
+
+def check_widget(switch_type, sub_type, widget_type):
+    key = (switch_type, sub_type, widget_type)
+    return DIMMABLE_WIDGETS.get(key).get("Widget")

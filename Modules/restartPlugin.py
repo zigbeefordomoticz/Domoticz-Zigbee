@@ -10,7 +10,7 @@ import urllib.parse
 import Domoticz
 
 LINUX_CURL_COMMAND = "/usr/bin/curl"
-WINDOWS_CURL_COMMAND = "c:\Windows\System32\curl.exe"
+WINDOWS_CURL_COMMAND = r"c:\Windows\System32\curl.exe"
 
 def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_api="http://127.0.0.1:8080"):
     # sourcery skip: replace-interpolation-with-fstring

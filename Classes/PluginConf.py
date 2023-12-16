@@ -49,13 +49,6 @@ SETTINGS = {
             "pingViaGroup": { "type": "hex", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
         },
     },
-    #"DomoticzEnvironment": {
-    #    "Order": 3,
-    #    "param": {
-    #        "port": { "type": "str", "default": "8080", "current": None, "restart": 0, "hidden": False, "Advanced": False, }
-    #    },
-    #},
-    # Zigpy related parameters ( not applicable for ZiGate native)
     "Zigpy": {
         "Order": 4,
         "param": {    
@@ -93,7 +86,8 @@ SETTINGS = {
     },
     "Provisioning": {
         "Order": 6,
-        "param": {    
+        "param": {
+            "TuyaMagicRead": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "LegrandCompatibilityMode": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "enableSchneiderWiser": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "ConfigureReportingChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
@@ -274,6 +268,7 @@ SETTINGS = {
             "Widget": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "WidgetCreation": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "Plugin": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "ListImportedModules": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "Database": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "Command": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "Pairing": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
@@ -409,6 +404,7 @@ SETTINGS = {
             "polling000f": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingfc00": {"type": "int","default": 300,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingfc01": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "pollingfc11": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingfc21": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingfc40": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingfc7d": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},

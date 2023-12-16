@@ -387,3 +387,39 @@ def danfoss_viewdirection(self, NwkId, viewdirection):
 
     write_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=False)
     read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
+
+
+def danfoss_on_off(self, NwkId, on):
+    # 0 = window closed 1 = window opened
+    if on == 0:
+        window_opened = 1
+    elif on == 1:
+        window_opened = 0
+    else:
+        return
+
+    manuf_id = "1246"
+    manuf_spec = "01"
+    cluster_id = "%04x" % 0x0201
+
+    EPout = "01"
+    for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
+        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
+            EPout = tmpEp
+
+    Hattribute = "%04x" % 0x4003
+    data_type = "10"  # boolean
+    self.log.logging("Danfoss", "Debug", "danfoss_on_off: %s" % window_opened, nwkid=NwkId)
+
+    Hdata = "%02x" % window_opened
+
+    self.log.logging(
+        "Danfoss",
+        "Debug",
+        "danfoss_on_onff for %s with value %s / cluster: %s, attribute: %s type: %s" % (NwkId, Hdata, cluster_id, Hattribute, data_type),
+        nwkid=NwkId,
+    )
+
+    write_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=False)
+    read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
+

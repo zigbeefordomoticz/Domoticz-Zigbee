@@ -8,7 +8,7 @@ FIRMWARE_BRANCH = {
     "40": "ConBee II",
     "41": "RaspBee II",
     "42": "RaspBee",
-    "43": "ConBee",
+    "43": "Conbee III",
     "30": "Elelabs, ELR02x",
     "31": "Elelabs, ELU01x",
     
@@ -21,12 +21,19 @@ ZNP_MODEL = {
     "CC1352/CC2652, Z-Stack 3.30+": "20",
     "CC2531, Z-Stack 3.0.x": "21",
     "CC2531, Z-Stack Home 1.2": "22",
+    "CC2652": "20",
+    "CC2531": "21",
+    "CC2538": "23",
     "ConBee II": "40",
+    "Conbee II": "40",
     "Raspbee II": "41",
+    "RaspBee II": "41",
+    "RaspBee": "42",
+    "Raspbee": "42",
+    "Conbee III": "43",
     "Elelabs, ELR02x": "30",
     "Elelabs, ELU01x": "31",
 }
-
 
 def set_display_firmware_version( self ):
 

@@ -12,128 +12,154 @@
 """
 
 
+
 SWITCH_SELECTORS = {
-    "Plug": {
-        "00": (0, "Off"), 
-        "01": (1, "On"), 
-        "ForceUpdate": False
-    },
-    "Door": {
-        "00": (0, "Closed"), 
-        "01": (1, "Open"), 
-        "ForceUpdate": False
-    },
-    "DoorLock": {
-        # Doorlock widget seems to behave inverted
-        "01": (0, "Closed"),
-        "00": (1, "Open"),
+    "ACMode": {
+        "00": (0, "00"),
+        "03": (1, "10"),
+        "04": (2, "20"),
+        "08": (3, "30"),
+        "07": (4, "40"),
         "ForceUpdate": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Cool|Heat|Dry|Fan",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"
+            },
+            "es-ES": {
+                "LevelNames": "Off|Frío||Calefacción|Deshumidificador|Ventilador"
+            }
+        }
     },
-    "LumiLock": {
-        "1101": (1, "10"),  # Unauthorized
-        "1107": (2, "20"),  # Bad Insert
-        "1207": (3, "30"),  # Unlock all to neutral
-        "1601": (4, "40"),  # All Key Removed
-        "1311": (5, "50"),  # New Key
-        "120101": (6, "60"),  # Authorized #1
-        "121101": (7, "70"),  # Key in Lock #1
-        "120102": (8, "80"),  # Key 2
-        "121102": (9, "90"),
-        "120103": (10, "100"),  # Key 3
-        "121103": (11, "110"),
-        "120104": (12, "120"),  # Key 4
-        "121104": (13, "130"),
-        "120105": (14, "140"),  # Key 5
-        "121105": (15, "150"),
+    "ACMode_2": {
+        "00": (0, "00"),
+        "03": (1, "10"),
+        "04": (2, "20"),
+        "08": (3, "30"),
+        "07": (4, "40"),
+        "ForceUpdate": True,
+        "OffHidden": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Cool|Heat|Dry|Fan",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"
+            },
+            "es-ES": {
+                "LevelNames": "Off|Frío||Calefacción|Deshumidificador|Ventilador"
+            }
+        }
+    },
+    "ACSwing": {
+        "00": (0, "00"),
+        "01": (1, "10"),
         "ForceUpdate": True,
         "SelectorStyle": 1,
-        "LevelNames": "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5",
+        "LevelNames": "Off|On",
         "Language": {
-            "fr-FR": { "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5"}
-        },
+            "fr-FR": {
+                "LevelNames": "Arrêt|Allumé"
+            }
+        }
     },
-    "Smoke": {
-        "00": (0, "Off"), 
-        "01": (1, "On"), 
-        "ForceUpdate": False
-        },
-    "Water": {
-        "00": (0, "Off"), 
-        "01": (1, "On"), 
-        "ForceUpdate": False
-        },
-    "Switch": {
-        "00": (0, "Off"), 
-        "01": (1, "On"), 
-        "ForceUpdate": False
-        },
-    "ThermoOnOff": {
-        0: (0, "Off"), 
-        1: (1, "On"),
-        "ForceUpdate": False
-        },
-    "SwitchButton": {
-        "00": (0, "Off"), 
-        "01": (1, "On"), 
+    "AirPurifierMode": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (2, "30"),
+        "04": (2, "40"),
+        "05": (2, "50"),
+        "06": (2, "60"),
+        "ForceUpdate": True,
+        "SelectorStyle": 0,
+        "LevelNames": "Off|Auto|Spd1|Spd2|Spd3|Spd4|Spd5",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Auto|Vit1|Vit2|Vit3|Vit4|V5"
+            }
+        }
+    },
+    "Alarm": {
+        "00": (0, "No Alert"),
+        "01": (1, "Level 1"),
+        "02": (2, "Level 2"),
+        "03": (3, "Level 3"),
+        "04": (4, "Critical"),
         "ForceUpdate": True
-        },
-    "LivoloSWL": {
-        "00": (0, "Off"), 
-        "01": (1, "On"), 
-        "ForceUpdate": False
-        },
-    "LivoloSWR": {
-        "10": (0, "Off"), 
-        "11": (1, "On"), 
-        "ForceUpdate": False
-        },
-    "INNR_RC110_SCENE": {
-        "00": (0, "00"),
-        "01": (1, "01"),
-        "ForceUpdate": False,
-        "SelectorStyle": 1,
-        "LevelNames": "Off|On|+|-|Long +|Long -|Release|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Marche|+|-|Long +|Long -|Rel.|Scène1|Scène2|Scène3|Scène4|Scène5|Scène6"}
-        },
     },
-    "INNR_RC110_LIGHT": {
-        "00": (0, "00"),
-        "01": (1, "01"),
-        "ForceUpdate": False,
-        "SelectorStyle": 1,
-        "LevelNames": "Off|On|+|-|Long +|Long -|Release",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Marche|+|-|Long +|Long -|Rel."}},
-    },
-    "TINT_REMOTE_WHITE": {
-        "00": (0, "00"),  # Off
-        "01": (1, "10"),  # On
-        "02": (2, "20"),  # Color -
-        "03": (3, "30"),  # Color +
-        "04": (4, "40"),  # Dim -
-        "05": (5, "50"),  # Dim +
-        "06": (6, "60"),  # Long Dim -
-        "07": (7, "70"),  # Long Dim +
-        "08": (8, "80"),  # Stop
-        "09": (9, "90"),  # Scene1
-        "10": (10, "100"),  # Scne2
-        "11": (11, "110"),  # Scne3
-        "12": (12, "120"),  # Scne4
-        "13": (13, "130"),  # Scne5
-        "14": (14, "140"),  # Scne6
-        "15": (15, "150"),  # Scne7
-        "16": (16, "160"),  # ColorMove down
-        "17": (17, "170"),  # ColorMove Up
-        "18": (18, "180"),  # COlorMove Sop
+    "AlarmWD": {
         "ForceUpdate": True,
         "SelectorStyle": 1,
-        "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",
+        "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
         "Language": {
-            "fr-FR": { "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",}
-        },
+            "fr-FR": {
+                "LevelNames": "Arrêter|Alarme|Sirène|Flash|Armer|Désarmer"
+            }
+        }
     },
-    "Button": {"01": (1, "On"), "ForceUpdate": True},
+    "Aqara": {
+        "ForceUpdate": True,
+        "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire"
+            }
+        }
+    },
+    "AqaraOppleMiddle": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "05": (5, "50"),
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "off|Click|Double click|Tripple click|Long click|Release",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "off|Clic|Double clic|Triple clic|Long clic|Relacher"
+            }
+        }
+    },
+    "AqaraOppleMiddleBulb": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|On|-|+|Release",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Eteindre|Marche|-|+|Arrêt"
+            }
+        }
+    },
+    "BSO-Orientation": {
+        0: (0, "00"),
+        10: (1, "10"),
+        20: (2, "20"),
+        30: (3, "30"),
+        40: (4, "40"),
+        50: (5, "50"),
+        60: (6, "60"),
+        70: (7, "70"),
+        80: (8, "80"),
+        90: (9, "90"),
+        100: (10, "100"),
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|0°|10°|20°|30°|40°|50°|60°|70°|80°|90°"
+    },
+    "Button": {
+        "01": (1, "On"),
+        "ForceUpdate": True
+    },
     "Button_3": {
         "00": (0, "00"),
         1: (1, "10"),
@@ -146,48 +172,113 @@ SWITCH_SELECTORS = {
         "3": (3, "30"),
         "03": (3, "30"),
         "ForceUpdate": True,
-        "SelectorStyle":1,
+        "SelectorStyle": 1,
         "LevelNames": "Off|Click|Double Click|Long Click",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Click|Double Click|Long Click"}},
+            "fr-FR": {
+                "LevelNames": "Arrêt|Click|Double Click|Long Click"
+            }
+        }
     },
-    "Generic_5_buttons": {
+    "CAC221ACMode": {
         "00": (0, "00"),
         "01": (1, "10"),
-        "02": (2, "20"),
-        "03": (3, "30"),
-        "04": (4, "40"),
-        "ForceUpdate": True,
-        "SelectorStyle":1,
-        "LevelNames": "button1|button2|button3|button4|button5",
-        "Language": {
-            "fr-FR": {"LevelNames": "Bouton1|Bouton2|Bouton3|Bouton4|Bouton5"}},
-    },
-    "AqaraOppleMiddleBulb": {
-        "00": (0, "00"),
-        "01": (1, "10"),
-        "02": (2, "20"),
-        "03": (3, "30"),
-        "04": (4, "40"),
-        "ForceUpdate": True,
-        "SelectorStyle":1,
-        "LevelNames": "Off|On|-|+|Release",
-        "Language": {
-            "fr-FR": {"LevelNames": "Eteindre|Marche|-|+|Arrêt"}},
-    },
-    "AqaraOppleMiddle": {
-        "00": (0, "00"),
-        "01": (1, "10"),
-        "02": (2, "20"),
-        "03": (3, "30"),
-        "04": (4, "40"),
-        "05": (5, "50"),
-        "ForceUpdate": True,
-        "OffHidden": True, 
+        "03": (2, "20"),
+        "04": (2, "30"),
+        "08": (3, "40"),
+        "07": (4, "50"),
+        "ForceUpdate": False,
         "SelectorStyle": 1,
-        "LevelNames": "off|Click|Double click|Tripple click|Long click|Release",
+        "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
         "Language": {
-            "fr-FR": {"LevelNames": "off|Clic|Double clic|Triple clic|Long clic|Relacher"}},
+            "fr-FR": {
+                "LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"
+            },
+            "es-ES": {
+                "LevelNames": "Off|Auto|Frío||Calefacción|Deshumidificador|Ventilador"
+            }
+        }
+    },
+    "ContractPower": {
+        "ForceUpdate": False,
+        "OffHidden": True,
+        "SelectorStyle": 0,
+        "LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA"
+            }
+        }
+    },
+    "DButton": {
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Switch 1|Switch 2|Both_Click",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Click Gauche|Click Droit|Click des 2"
+            }
+        }
+    },
+    "DButton_3": {
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Left click|Left Double click|Left Long click|Right click|Right Double Click|Right Long click|Both click|Both Double click|Both Long click",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Click Gauche|Double click Gauche|Long Click Gauche|Click Droit|Double Click Droit|Long Click Droit|Click des 2|Double Click des 2|Long Click des 2"
+            }
+        }
+    },
+    "DSwitch": {
+        "LevelNames": "Off|Left Click|Right Click|Both Click",
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 0,
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Off|Left Click|Right Click|Both Click"
+            }
+        }
+    },
+    "Door": {
+        "00": (0, "Closed"),
+        "01": (1, "Open"),
+        "ForceUpdate": False
+    },
+    "DoorLock": {
+        "01": (0, "Closed"),
+        "00": (1, "Open"),
+        "ForceUpdate": False
+    },
+    "FIP": {
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Confort|Confort -1|Confort -2|Eco|Hors Gel|Arrêt"
+            }
+        }
+    },
+    "FanControl": {
+        "00": (0, "00"),
+        "05": (1, "10"),
+        "01": (2, "20"),
+        "02": (3, "30"),
+        "03": (4, "40"),
+        "ForceUpdate": True,
+        "OffHidden": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Auto|Low|Medium|High",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Auto|Bas|Moyen|Fort"
+            }
+        }
     },
     "GenericLvlControl": {
         "off": (1, "10"),
@@ -196,216 +287,117 @@ SWITCH_SELECTORS = {
         "movedown": (4, "40"),
         "stop": (5, "50"),
         "ForceUpdate": True,
-        "OffHidden": True, 
+        "OffHidden": True,
         "SelectorStyle": 1,
         "LevelNames": "Off|Off|On|Dim +|Dim -|Stop",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Eteindre|Marche|Monter|Descendre|Arrêt"}},
+            "fr-FR": {
+                "LevelNames": "Arrêt|Eteindre|Marche|Monter|Descendre|Arrêt"
+            }
+        }
+    },
+    "Generic_5_buttons": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "button1|button2|button3|button4|button5",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Bouton1|Bouton2|Bouton3|Bouton4|Bouton5"
+            }
+        }
+    },
+    "HACTMODE": {
+        "00": (1, "10"),
+        "03": (2, "20"),
+        "ForceUpdate": False,
+        "OffHidden": True,
+        "SelectorStyle": 0,
+        "LevelNames": "Off|Conventional|Fil Pilote",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Normal|Fil Pilote"
+            }
+        }
+    },
+    "HeatingStatus": {
+        0: (0, "Off"),
+        1: (1, "10"),
+        2: (2, "20"),
+        "ForceUpdate": True,
+        "LevelNames": "Off|Heating|Not Heating",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Allumer|Eteind"
+            }
+        }
+    },
+    "HeimanSceneSwitch": {
+        0: (0, "Off"),
+        240: (1, "10"),
+        241: (2, "20"),
+        242: (3, "30"),
+        243: (4, "40"),
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Movie|At Home|Sleep|Go Out",
+        "Language": {
+            "fr-FR": {
+                "Off|Movie|At Home|Sleep|Go Out"
+            }
+        }
     },
     "HueSmartButton": {
-        "toggle": (1, "10"), 
+        "toggle": (1, "10"),
         "move": (3, "30"),
-        "SelectorStyle":1,
-        "LevelNames": "Off|toggle|move", 
+        "SelectorStyle": 1,
+        "LevelNames": "Off|toggle|move",
         "Language": {}
     },
-    "LegrandSelector": {
+    "IAS_ACE": {
         "00": (0, "00"),
-        "01": (1, "10"),
-        "moveup": (2, "20"),
-        "movedown": (3, "30"),
-        "stop": (4, "40"),
-        "02": (5, "50"),
-        "ForceUpdate": True,
-        "SelectorStyle":1,
-        "LevelNames": "Off|On|Dim +|Dim -|Stop|Toggle",
-        "Language": {
-            "fr-FR": {"LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt|Toggle"}},
-    },
-    "LegrandSleepWakeupSelector": {
-        "": ( 0, "00"),
-        "00": (1, "10"),
         "01": (2, "20"),
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|Sleep|WakeUp",
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|Coucher|Lever"}},
-    },
-    "SwitchAQ2": {
-        "1": (0, "00"),
-        "2": (1, "10"),
-        "3": (2, "20"),
-        "4": (3, "30"),
-        "01": (0, "00"),
         "02": (1, "10"),
-        "03": (2, "20"),
-        "04": (3, "30"),
-        "80": (3, "30"),
-        "255": (3, "30"),
-        "ForceUpdate": True,
-        "SelectorStyle":1,
-        "LevelNames": "One click|Two clicks|Tree clicks|Four+ clicks",
-        "Language": {
-            "fr-FR": {"LevelNames": "Simple click|Double click|Triple click|Quadruple+ click"}},
-    },
-    "SwitchAQ2WithOff": {
-        "0": (0, "00"),
-        "1": (1, "10"),
-        "2": (2, "20"),
-        "3": (3, "30"),
-        "4": (4, "40"),
-        "01": (1, "10"),
-        "02": (2, "20"),
         "03": (3, "30"),
         "04": (4, "40"),
-        "80": (5, "50"),
-        "255": (4, "40"),
         "ForceUpdate": True,
-        "OffHidden": True, 
+        "OffHidden": True,
         "SelectorStyle": 1,
-        "LevelNames": "Off | One click|Two clicks|Tree clicks|Four+ clicks",
+        "LevelNames": "Off|Emergency|Arm Day (Home Zones Only)|Arm All Zones|Disarm",
         "Language": {
-            "fr-FR": {"LevelNames": "Off | Simple click|Double click|Triple click|Quadruple+ click"}},
+            "fr-FR": {
+                "LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"
+            }
+        }
     },
-    "SwitchAQ3WithOff": {
-        "0": (0, "00"),
-        "1": (1, "10"),
-        "2": (2, "20"),
-        "01": (1, "10"),
-        "02": (2, "20"),
-        "16": (3, "30"),
-        "17": (4, "40"),
-        "18": (5, "50"),
+    "INNR_RC110_LIGHT": {
         "00": (0, "00"),
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|Click|Double click|Long click|Release click|Shake",
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|Click|Double click|Long click|Relacher click|Remuer"}},
-    },
-    
-    "SwitchAQ3": {
-        "1": (0, "00"),
-        "2": (1, "10"),
-        "01": (0, "00"),
-        "02": (1, "10"),
-        "16": (2, "20"),
-        "17": (3, "30"),
-        "18": (4, "40"),
-        "00": (0, "00"),
-        "ForceUpdate": True,
-        "SelectorStyle":1,
-        "LevelNames": "Click|Double click|Long click|Release click|Shake",
-        "Language": {
-            "fr-FR": {"LevelNames": "Click|Double click|Long click|Relacher click|Remuer"}},
-    },
-
-
-    "DSwitch": {
-        "LevelNames": "Off|Left Click|Right Click|Both Click",
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 0,
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|Left Click|Right Click|Both Click"}},
-    },
-    "DButton": {
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|Switch 1|Switch 2|Both_Click",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Click Gauche|Click Droit|Click des 2"}},
-    },
-    "DButton_3": {
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|Left click|Left Double click|Left Long click|Right click|Right Double Click|Right Long click|Both click|Both Double click|Both Long click",
-        "Language": {
-            "fr-FR": { "LevelNames": "Arrêt|Click Gauche|Double click Gauche|Long Click Gauche|Click Droit|Double Click Droit|Long Click Droit|Click des 2|Double Click des 2|Long Click des 2"}
-        },
-    },
-    "Toggle": {
-        "ForceUpdate": True,
-        "SelectorStyle": 0,
-        "LevelNames": "Off|On|Toggle",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Marche|Bascule"}},
-    },
-    "Aqara": {
-        "ForceUpdate": True,
-        "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
-        "Language": {
-            "fr-FR": { "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire"}
-        },
-    },
-    "XCube": {
-        "ForceUpdate": True,
-        "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
-        "Language": {
-            "fr-FR": { "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire" }
-        },
-    },
-    "Vibration": {
-        "00": (0, "00"),
-        "10": (1, "10"),
-        "20": (2, "20"),
-        "30": (3, "30"),
+        "01": (1, "01"),
         "ForceUpdate": False,
-        "SelectorStyle":1,
-        "LevelNames": "Off|Tilt|Vibrate|Free Fall",
-        "Language": {
-            "fr": {"LevelNames": "Arrêt|Incliner|Vibrer|Chute libre"}},
-    },
-    "SwitchIKEA": {
-        "00": (0, "Off"),
-        "01": (1, "10"),
-        "02": (2, "20"),
-        "03": (3, "30"),
-        "04": (4, "40"),
-        "ForceUpdate": True,
-        "SelectorStyle":1,
-        "LevelNames": "Off|On|Push Up|Push Down|Release",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Marche|Appuyer Haut|Appuyer Bas|Relacher"}},
-    },
-    "blindIKEA": {
-        "00": (1,"10"),
-        "01": (2,"20"),
-        "02": (3,"30"),
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 0,
-        "LevelNames": "Off|Open|Close|Stop",
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|Ouvrir|Fermer|Arreter"}}
-    },
-    "Ikea_Round_OnOff": {"00": "00", "toggle": (1, "10"), "ForceUpdate": True},
-    "Ikea_Round_5b": {
-        "00": (0, "00"),
-        "toggle": (1, "10"),
-        "left_click": (2, "20"),
-        "right_click": (3, "30"),
-        "click_up": (4, "40"),
-        "hold_up": (5, "50"),
-        "release_up": (6, "60"),
-        "click_down": (7, "70"),
-        "hold_down": (8, "80"),
-        "release_down": (9, "90"),
-        "right_hold": (10, "100"),
-        #"release_down": (11, "110"),
-        "left_hold": (12, "120"),
-        #"release_down": (13, "130"),
-        "ForceUpdate": True,
         "SelectorStyle": 1,
-        "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release",
+        "LevelNames": "Off|On|+|-|Long +|Long -|Release",
         "Language": {
-            "fr-FR": { "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"}
-        },
+            "fr-FR": {
+                "LevelNames": "Arrêt|Marche|+|-|Long +|Long -|Rel."
+            }
+        }
+    },
+    "INNR_RC110_SCENE": {
+        "00": (0, "00"),
+        "01": (1, "01"),
+        "ForceUpdate": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|On|+|-|Long +|Long -|Release|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Marche|+|-|Long +|Long -|Rel.|Scène1|Scène2|Scène3|Scène4|Scène5|Scène6"
+            }
+        }
     },
     "Ikea_Remote_2N": {
         "00": (0, "00"),
@@ -426,190 +418,146 @@ SWITCH_SELECTORS = {
         "SelectorStyle": 1,
         "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release",
         "Language": {
-            "fr-FR": { "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"}
-        },
+            "fr-FR": {
+                "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"
+            }
+        }
     },
-
-    "ThermoModeEHZBRTS": {
-        "00": (0, "Off"),
-        "01": (1, "10"),
-        "02": (2, "20"),
-        "03": (3, "30"),
-        "04": (4, "40"),
-        "05": (5, "50"),
-        "06": (6, "60"),
-        "ForceUpdate": False,
+    "Ikea_Round_5b": {
+        "00": (0, "00"),
+        "toggle": (1, "10"),
+        "left_click": (2, "20"),
+        "right_click": (3, "30"),
+        "click_up": (4, "40"),
+        "hold_up": (5, "50"),
+        "release_up": (6, "60"),
+        "click_down": (7, "70"),
+        "hold_down": (8, "80"),
+        "release_down": (9, "90"),
+        "right_hold": (10, "100"),
+        "left_hold": (12, "120"),
+        "ForceUpdate": True,
         "SelectorStyle": 1,
-        "LevelNames": "Off| Manual| Schedule| Manual Energy Saver| Schedule Energy Saver| Holiday| Holiday Frost Protection",
+        "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release",
         "Language": {
             "fr-FR": {
-                "LevelNames": "Arrêt| Manuel| Programmé| Mode Eco. manuel| Mode Eco. Programmé| Congés| Hors Gel"}
-        },
+                "LevelNames": "Arrêt|Basculer|Click Gauche|Click Droit|Click Haut|Click Haut Long|Relacher Haut|Click Bas|Click Bas Long|Relacher Bas|Click Long Droit|Relacher Droit|Click Long Gauche|Relacher Gauche"
+            }
+        }
     },
-    "ThermoMode": {
-        "00": (0, "00"),  # Off
-        "01": (1, "10"),  # Auto
-        "03": (2, "20"),  # Cool
-        "04": (3, "30"),  # Heat
-        "08": (4, "40"),  # Dry
-        "07": (5, "50"),  # Fan
-        "ForceUpdate": False,
-        "SelectorStyle":1,
-        "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"}},
+    "Ikea_Round_OnOff": {
+        "00": "00",
+        "toggle": (1, "10"),
+        "ForceUpdate": True
     },
-    "ThermoMode_2": {
-        0: (0, "Off"),
-        1: (1, "10"),
-        2: (2, "20"),
-        "ForceUpdate": True,
-        "SelectorStyle": 0,
-        "LevelNames": "Off|Auto|Manual",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
-    },
-    "ThermoMode_3": {
-        0: (0, "Off"),  # Off Ok Acova
-        1: (1, "10"),   # Confort Ok Acova
-        2: (2, "20"),   # No-Freez
-        "ForceUpdate": True,
-        "SelectorStyle":1,
-        "LevelNames": "Off|Comfort|No-Freeze",
-        "Language": {"fr-FR": {"LevelNames": "Arrêt|Confort|hors-gel"}},
-    },   
-    "ThermoMode_4": {
-        # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday  
-        0: (0, "Off"),
-        1: (1, "Auto"),  # Auto
-        2: (2, "10"),    # Manual
-        3: (3, "20"),    # Temp hand
-        4: (4, "30"),    # Holiday
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|Auto|Manual|Temp Hand|Holidays",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Manuel"}},
-    },
-    "ThermoMode_5": {
-        0: (0, "Off"),  # 
-        1: (1, "10"),   # Auto
-        2: (2, "20"),   # Manual
-        3: (3, "30"),   # Away
-        "ForceUpdate": True,
-        "OffHidden": False, 
-        "SelectorStyle": 0,
-        "LevelNames": "Off|Auto|Manual|Away",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Manual|Away"}},
-    },   
-    "ThermoMode_6": {
-        0: (0, "00"),  # Off
-        1: (1, "10"),  # Cool
-        2: (2, "20"),  # Heat
-        3: (3, "30"),  # Fan
-        "ForceUpdate": False,
-        "OffHidden": True, 
-        "SelectorStyle": 0,
-        "LevelNames": "Off|Cool|Heat|Fan",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Ventilateur"}},
-    },
-    "ThermoMode_7": {
-        2: (0, "00"),  # Off
-        1: (1, "10"),  # Manual
-        0: (2, "20"),  # Auto
-        "ForceUpdate": False,
-        "OffHidden": False, 
-        "SelectorStyle": 0,
-        "LevelNames": "Off|Manual|Auto",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Manuel|Auto"}},
-    },
-
-    "HeatingStatus": {
-        0: (0, "Off"),
-        1: (1, "10"),
-        2: (2, "20"),
-        "ForceUpdate": True,
-        "LevelNames": "Off|Heating|Not Heating",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Allumer|Eteind"}},
-    },
-    "HACTMODE": {
-        "00": (1, "10"),
-        "03": (2, "20"),
-        "ForceUpdate": False,
-        "OffHidden": True, 
-        "SelectorStyle": 0,
-        "LevelNames": "Off|Conventional|Fil Pilote",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}},
-    },
-    "ContractPower": {
-        "ForceUpdate": False,
-        "OffHidden": True, 
-        "SelectorStyle": 0,
-        "LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA",
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA"}},
-    },
-    "FIP": {
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Confort|Confort -1|Confort -2|Eco|Hors Gel|Arrêt"}},
-    },
-    "LegranCableMode": {
-        "0100": (1, "10"),  # Normal
-        "0200": (2, "20"),  # FIP
-        "ForceUpdate": False,
-        "OffHidden": True, 
-        "SelectorStyle": 0,
-        "LevelNames": "Off|Conventional|Fil Pilote",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}},
-    },
-    "AlarmWD": {
-        "ForceUpdate": True,
-        "SelectorStyle": 1,
-        "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêter|Alarme|Sirène|Flash|Armer|Désarmer"}},
-    },
-    "TuyaSiren": {
-        "ForceUpdate": True,
-        "SelectorStyle":1,
+    "KF204Switch": {
         "00": (0, "00"),
         "01": (1, "10"),
         "02": (2, "20"),
         "03": (3, "30"),
         "04": (4, "40"),
-        "05": (5, "50"),
-        "LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5",
-        "Languages": {
-            "fr-FR": {"LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5"}},
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 0,
+        "LevelNames": "Off|0|X|+|-",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Off|0|X|+|-"
+            }
+        }
     },
-    "TuyaSirenHumi": {
+    "LegranCableMode": {
+        "0100": (1, "10"),
+        "0200": (2, "20"),
+        "ForceUpdate": False,
+        "OffHidden": True,
+        "SelectorStyle": 0,
+        "LevelNames": "Off|Conventional|Fil Pilote",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Normal|Fil Pilote"
+            }
+        }
+    },
+    "LegrandSelector": {
         "00": (0, "00"),
         "01": (1, "10"),
+        "moveup": (2, "20"),
+        "movedown": (3, "30"),
+        "stop": (4, "40"),
+        "02": (5, "50"),
         "ForceUpdate": True,
         "SelectorStyle": 1,
-        "LevelNames": "Off|Alarm Humidity",
-        "Languages": {
-            "fr-FR": {"LevelNames": "Off|Alarm Humidité"}},
+        "LevelNames": "Off|On|Dim +|Dim -|Stop|Toggle",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Eteindre|Allumer|Monter|Descendre|Arrêt|Toggle"
+            }
+        }
     },
-    "TuyaSirenTemp": {
-        "00": (0, "00"),
-        "01": (1, "10"),
+    "LegrandSleepWakeupSelector": {
+        "": (0, "00"),
+        "00": (1, "10"),
+        "01": (2, "20"),
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Sleep|WakeUp",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Off|Coucher|Lever"
+            }
+        }
+    },
+    "LivoloSWL": {
+        "00": (0, "Off"),
+        "01": (1, "On"),
+        "ForceUpdate": False
+    },
+    "LivoloSWR": {
+        "10": (0, "Off"),
+        "11": (1, "On"),
+        "ForceUpdate": False
+    },
+    "LumiLock": {
+        "1101": (1, "10"),
+        "1107": (2, "20"),
+        "1207": (3, "30"),
+        "1601": (4, "40"),
+        "1311": (5, "50"),
+        "120101": (6, "60"),
+        "121101": (7, "70"),
+        "120102": (8, "80"),
+        "121102": (9, "90"),
+        "120103": (10, "100"),
+        "121103": (11, "110"),
+        "120104": (12, "120"),
+        "121104": (13, "130"),
+        "120105": (14, "140"),
+        "121105": (15, "150"),
         "ForceUpdate": True,
         "SelectorStyle": 1,
-        "LevelNames": "Off|Alarm Temperature",
-        "Languages": {
-            "fr-FR": {"LevelNames": "Off|Alarm Température"}},
+        "LevelNames": "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5",
+        "Language": {
+            "fr-FR": {
+                "Off|Unauthorized|Bad Insert|Unlock all to neutral|All Key Removed|New Key|Autorized Key #1|Key in lock #1|Autorized Key #2|Key in lock #2|Autorized Key #3|Key in lock #3|Autorized Key #4|Key in lock #4|Autorized Key #5|Key in lock #5"
+            }
+        }
+    },
+    "Motionac01": {
+        "0": (0, "00"),
+        "10": (1, "10"),
+        "20": (2, "20"),
+        "30": (3, "30"),
+        "40": (4, "40"),
+        "50": (5, "50"),
+        "60": (6, "60"),
+        "70": (7, "70"),
+        "80": (8, "80"),
+        "ForceUpdate": True,
+        "OffHidden": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Enter|Leave|Left_enter|Right_leave|Right_enter|Left_leave|Approach|Away"
     },
     "OrviboRemoteSquare": {
         0: (0, "Off"),
@@ -626,196 +574,417 @@ SWITCH_SELECTORS = {
         42: (11, "110"),
         43: (12, "120"),
         "ForceUpdate": True,
-        "OffHidden": True, 
+        "OffHidden": True,
         "SelectorStyle": 1,
         "LevelNames": "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release",
         "Language": {
-            "fr-FR": { "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"}
-        },
+            "fr-FR": {
+                "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"
+            }
+        }
     },
-    "Alarm": {
-        "00": (0, "No Alert"),
-        "01": (1, "Level 1"),
-        "02": (2, "Level 2"),
-        "03": (3, "Level 3"),
-        "04": (4, "Critical"),
-        "ForceUpdate": True,
+    "Plug": {
+        "00": (0, "Off"),
+        "01": (1, "On"),
+        "ForceUpdate": False
     },
     "SOS": {
         "00": (0, "No Alert"),
         "01": (4, "Critical"),
+        "ForceUpdate": True
+    },
+    "Smoke": {
+        "00": (0, "Off"),
+        "01": (1, "On"),
+        "ForceUpdate": False
+    },
+    "Switch": {
+        "00": (0, "Off"),
+        "01": (1, "On"),
+        "ForceUpdate": False
+    },
+    "SwitchAQ2": {
+        "1": (0, "00"),
+        "2": (1, "10"),
+        "3": (2, "20"),
+        "4": (3, "30"),
+        "01": (0, "00"),
+        "02": (1, "10"),
+        "03": (2, "20"),
+        "04": (3, "30"),
+        "80": (3, "30"),
+        "255": (3, "30"),
         "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "One click|Two clicks|Tree clicks|Four+ clicks",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Simple click|Double click|Triple click|Quadruple+ click"
+            }
+        }
+    },
+    "SwitchAQ2WithOff": {
+        "0": (0, "00"),
+        "1": (1, "10"),
+        "2": (2, "20"),
+        "3": (3, "30"),
+        "4": (4, "40"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "80": (5, "50"),
+        "255": (4, "40"),
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off | One click|Two clicks|Tree clicks|Four+ clicks",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Off | Simple click|Double click|Triple click|Quadruple+ click"
+            }
+        }
+    },
+    "SwitchAQ3": {
+        "1": (0, "00"),
+        "2": (1, "10"),
+        "01": (0, "00"),
+        "02": (1, "10"),
+        "16": (2, "20"),
+        "17": (3, "30"),
+        "18": (4, "40"),
+        "00": (0, "00"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Click|Double click|Long click|Release click|Shake",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Click|Double click|Long click|Relacher click|Remuer"
+            }
+        }
+    },
+    "SwitchAQ3WithOff": {
+        "0": (0, "00"),
+        "1": (1, "10"),
+        "2": (2, "20"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "16": (3, "30"),
+        "17": (4, "40"),
+        "18": (5, "50"),
+        "00": (0, "00"),
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Click|Double click|Long click|Release click|Shake",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Off|Click|Double click|Long click|Relacher click|Remuer"
+            }
+        }
+    },
+    "SwitchButton": {
+        "00": (0, "Off"),
+        "01": (1, "On"),
+        "ForceUpdate": True
+    },
+    "SwitchIKEA": {
+        "00": (0, "Off"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|On|Push Up|Push Down|Release",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Marche|Appuyer Haut|Appuyer Bas|Relacher"
+            }
+        }
+    },
+    "TINT_REMOTE_WHITE": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "05": (5, "50"),
+        "06": (6, "60"),
+        "07": (7, "70"),
+        "08": (8, "80"),
+        "09": (9, "90"),
+        "10": (10, "100"),
+        "11": (11, "110"),
+        "12": (12, "120"),
+        "13": (13, "130"),
+        "14": (14, "140"),
+        "15": (15, "150"),
+        "16": (16, "160"),
+        "17": (17, "170"),
+        "18": (18, "180"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Off|On|Color -|Color +|Dim -| Dim+|Long Dim-|Long Dim+|Stop|Scene1|Scene2|Scene3|Scene4|Scene5|Scene6|Scene7|Color Up|Color Down|Color Stop"
+            }
+        }
     },
     "Tamper": {
         "00": (0, "No Alert"),
         "01": (1, "Tamper "),
-        "ForceUpdate": False,
+        "ForceUpdate": False
     },
-    "BSO-Orientation": {
-        0: (0, "00"),
-        10: (1, "10"),
-        20: (2, "20"),
-        30: (3, "30"),
-        40: (4, "40"),
-        50: (5, "50"),
-        60: (6, "60"),
-        70: (7, "70"),
-        80: (8, "80"),
-        90: (9, "90"),
-        100: (10, "100"),
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|0°|10°|20°|30°|40°|50°|60°|70°|80°|90°",
-    },
-    "IAS_ACE": {
+    "ThermoMode": {
         "00": (0, "00"),
-        "01": (2, "20"),  # Arm Day (Home Zones Only) - Command Arm 0x00 - Payload 0x01
-        "02": (1, "10"),  # Emergency - Command Emergency 0x02
-        "03": (3, "30"),  # Arm All Zones - Command Arm 0x00 - Payload Arm all Zone 0x03
-        "04": (4, "40"),  # Disarm - Command 0x00 - Payload Disarm 0x00
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|Emergency|Arm Day (Home Zones Only)|Arm All Zones|Disarm",
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|Urgence|Armer (zone maison)|Armer (toutes zones)|Désarmer"}},
-    },
-    "AirPurifierMode": {
-        "00": (0, "00"),  # Off
-        "01": (1, "10"),  # Auto
-        "02": (2, "20"),  # Speed 1
-        "03": (2, "30"),  # Speed 2
-        "04": (2, "40"),  # Speed 3
-        "05": (2, "50"),  # Speed 4
-        "06": (2, "60"),  # Speed 5
-        "ForceUpdate": True,
-        "SelectorStyle": 0,
-        "LevelNames": "Off|Auto|Spd1|Spd2|Spd3|Spd4|Spd5",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Vit1|Vit2|Vit3|Vit4|V5"}},
-    },
-    
-    "FanControl": {
-        "00": (0, "00"),  # Off
-        "05": (1, "10"),  # Auto
-        "01": (2, "20"),  # Low
-        "02": (3, "30"),  # Moyen
-        "03": (4, "40"),  # Fort
-        "ForceUpdate": True,
-        "OffHidden": False, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|Auto|Low|Medium|High",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Bas|Moyen|Fort"}},
-    },
-    "ACMode_2": {
-        "00": (0, "00"),  # Off
-        "03": (1, "10"),  # Cool
-        "04": (2, "20"),  # Heat
-        "08": (3, "30"),  # Dry
-        "07": (4, "40"),  # Fan
-        "ForceUpdate": True,
-        "OffHidden": False, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|Cool|Heat|Dry|Fan",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"},
-            "es-ES": {"LevelNames": "Off|Frío||Calefacción|Deshumidificador|Ventilador"}
-            },
-    },
-    "CAC221ACMode": {
-        "00": (0, "00"),  # Off
-        "01": (1, "10"),  # Auto
-        "03": (2, "20"),  # Cool
-        "04": (2, "30"),  # Heat
-        "08": (3, "40"),  # Dry
-        "07": (4, "50"),  # Fan
+        "01": (1, "10"),
+        "03": (2, "20"),
+        "04": (3, "30"),
+        "08": (4, "40"),
+        "07": (5, "50"),
         "ForceUpdate": False,
-        "SelectorStyle":1,
+        "SelectorStyle": 1,
         "LevelNames": "Off|Auto|Cool|Heat|Dry|Fan",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"},
-            "es-ES": {"LevelNames": "Off|Auto|Frío||Calefacción|Deshumidificador|Ventilador"}},
+            "fr-FR": {
+                "LevelNames": "Arrêt|Auto|Froid|Chaud|Déshumidicateur|Ventilateur"
+            }
+        }
     },
-    "ACSwing": {
-        "00": (0, "00"),  # Off - All wings stopped
-        "01": (1, "10"),  # On Mode
-        "ForceUpdate": True,
-        "SelectorStyle": 1,
-        "LevelNames": "Off|On",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Allumé"},
-            },
-    },
-    "KF204Switch": {
-        "00": (0, "00"),  # Off
-        "01": (1, "10"),  # Button 0 ( left)
-        "02": (2, "20"),  # Button X ( right)
-        "03": (3, "30"),  # Button - ( Down )
-        "04": (4, "40"),  # Button + ( Up )
-        "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 0,
-        "LevelNames": "Off|0|X|+|-",
-        "Language": {
-            "fr-FR": {"LevelNames": "Off|0|X|+|-"},
-            },
-    },
-    "ACMode": {
-        "00": (0, "00"),  # Off
-        "03": (1, "10"),  # Cool
-        "04": (2, "20"),  # Heat
-        "08": (3, "30"),  # Dry
-        "07": (4, "40"),  # Fan
+    "ThermoModeEHZBRTS": {
+        "00": (0, "Off"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "05": (5, "50"),
+        "06": (6, "60"),
         "ForceUpdate": False,
-        "SelectorStyle":1,
-        "LevelNames": "Off|Cool|Heat|Dry|Fan",
-        "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Froid|Chaud|Déshumidicateur|Ventilateur"},
-            "es-ES": {"LevelNames": "Off|Frío||Calefacción|Deshumidificador|Ventilador"}
-            },
-    },
-    "Motionac01": {
-        "0": (0, "00"),   # Off
-        "10": (1, "10"),  # Enter
-        "20": (2, "20"),  # Leave
-        "30": (3, "30"),  # Left_enter
-        "40": (4, "40"),  # Right_leave
-        "50": (5, "50"),  # Right_enter
-        "60": (6, "60"),  # Left_leave
-        "70": (7, "70"),  # Approach
-        "80": (8, "80"),  # Away
-        "ForceUpdate": True,
-        "OffHidden": False, 
         "SelectorStyle": 1,
-        "LevelNames": "Off|Enter|Leave|Left_enter|Right_leave|Right_enter|Left_leave|Approach|Away",
+        "LevelNames": "Off| Manual| Schedule| Manual Energy Saver| Schedule Energy Saver| Holiday| Holiday Frost Protection",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt| Manuel| Programmé| Mode Eco. manuel| Mode Eco. Programmé| Congés| Hors Gel"
+            }
+        }
     },
-    "HeimanSceneSwitch": {
+    "ThermoMode_2": {
         0: (0, "Off"),
-        0xf0: (1, "10"),
-        0xf1: (2, "20"),
-        0xf2: (3, "30"),
-        0xf3: (4, "40"),
+        1: (1, "10"),
+        2: (2, "20"),
         "ForceUpdate": True,
-        "OffHidden": True, 
-        "SelectorStyle": 1,
-        "LevelNames": "Off|Movie|At Home|Sleep|Go Out",
+        "SelectorStyle": 0,
+        "LevelNames": "Off|Auto|Manual",
         "Language": {
-            "fr-FR": { "Off|Movie|At Home|Sleep|Go Out"}
-        },
+            "fr-FR": {
+                "LevelNames": "Arrêt|Auto|Manuel"
+            }
+        }
+    },
+    "ThermoMode_3": {
+        0: (0, "Off"),
+        1: (1, "10"),
+        2: (2, "20"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Comfort|No-Freeze",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Confort|hors-gel"
+            }
+        }
+    },
+    "ThermoMode_4": {
+        0: (0, "Off"),
+        1: (1, "Auto"),
+        2: (2, "10"),
+        3: (3, "20"),
+        4: (4, "30"),
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Auto|Manual|Temp Hand|Holidays",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Auto|Manuel"
+            }
+        }
+    },
+    "ThermoMode_5": {
+        0: (0, "Off"),
+        1: (1, "10"),
+        2: (2, "20"),
+        3: (3, "30"),
+        "ForceUpdate": True,
+        "OffHidden": False,
+        "SelectorStyle": 0,
+        "LevelNames": "Off|Auto|Manual|Away",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Auto|Manual|Away"
+            }
+        }
+    },
+    "ThermoMode_6": {
+        0: (0, "00"),
+        1: (1, "10"),
+        2: (2, "20"),
+        3: (3, "30"),
+        "ForceUpdate": False,
+        "OffHidden": True,
+        "SelectorStyle": 0,
+        "LevelNames": "Off|Cool|Heat|Fan",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Froid|Chaud|Ventilateur"
+            }
+        }
+    },
+    "ThermoMode_7": {
+        2: (0, "00"),
+        1: (1, "10"),
+        0: (2, "20"),
+        "ForceUpdate": False,
+        "OffHidden": False,
+        "SelectorStyle": 0,
+        "LevelNames": "Off|Manual|Auto",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Manuel|Auto"
+            }
+        }
+    },
+    "ThermoOnOff": {
+        0: (0, "Off"),
+        1: (1, "On"),
+        "ForceUpdate": False
+    },
+    "Toggle": {
+        "ForceUpdate": True,
+        "SelectorStyle": 0,
+        "LevelNames": "Off|On|Toggle",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Marche|Bascule"
+            }
+        }
     },
     "TuyaRadarSensor": {
         0: (0, "Off"),
-        0x1: (1, "10"),
-        0x2: (2, "20"),
+        1: (1, "10"),
+        2: (2, "20"),
         "ForceUpdate": True,
-        "OffHidden": False, 
+        "OffHidden": False,
         "SelectorStyle": 1,
         "LevelNames": "Off|Presence|Moving",
         "Language": {
-            "fr-FR": { "Off|Presence|Deplacement"}
-        },
+            "fr-FR": {
+                "Off|Presence|Deplacement"
+            }
+        }
     },
-
+    "TuyaSiren": {
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "03": (3, "30"),
+        "04": (4, "40"),
+        "05": (5, "50"),
+        "LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5",
+        "Languages": {
+            "fr-FR": {
+                "LevelNames": "Off|Alarm 1|Alarm 2|Alarm 3|Alarm 4|Alarm 5"
+            }
+        }
+    },
+    "TuyaSirenHumi": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Alarm Humidity",
+        "Languages": {
+            "fr-FR": {
+                "LevelNames": "Off|Alarm Humidité"
+            }
+        }
+    },
+    "TuyaSirenTemp": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "ForceUpdate": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Alarm Temperature",
+        "Languages": {
+            "fr-FR": {
+                "LevelNames": "Off|Alarm Température"
+            }
+        }
+    },
+    "Vibration": {
+        "00": (0, "00"),
+        "10": (1, "10"),
+        "20": (2, "20"),
+        "30": (3, "30"),
+        "ForceUpdate": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Tilt|Vibrate|Free Fall",
+        "Language": {
+            "fr": {
+                "LevelNames": "Arrêt|Incliner|Vibrer|Chute libre"
+            }
+        }
+    },
+    "Water": {
+        "00": (0, "Off"),
+        "01": (1, "On"),
+        "ForceUpdate": False
+    },
+    "XCube": {
+        "ForceUpdate": True,
+        "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Agiter|Alerte|Chute libre|Retourner_90|Retourner_180|Bouger|Frapper|Rotation Horaire|Rotation Antihoraire"
+            }
+        }
+    },
+    "blindIKEA": {
+        "00": (1, "10"),
+        "01": (2, "20"),
+        "02": (3, "30"),
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 0,
+        "LevelNames": "Off|Open|Close|Stop",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Off|Ouvrir|Fermer|Arreter"
+            }
+        }
+    }
 }
+
+
+def get_force_update_value_mapping(widget_name, value):
+    """
+    Extract the nValue, sValue tuple and provide the ForceUpdate for any value provided.
+    Return None if not found.
+
+    Args:
+        widget_name: The name of the widget.
+        value: The value to be mapped.
+
+    Returns:
+        The nValue, sValue tuple along with the ForceUpdate value, or None if not found.
+    """
+
+    sub_dict = SWITCH_SELECTORS.get(widget_name, {})
+    value = sub_dict.get(value, None)
+    force_update_value = sub_dict.get("ForceUpdate", False)
+
+    return value + (force_update_value,) if value is not None else None

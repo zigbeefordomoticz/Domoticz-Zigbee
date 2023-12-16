@@ -147,22 +147,23 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     self.log.logging( "Pairing", "Debug", "interview_state_004d - NWKID: %s, Status: %s, RIA: %s," % ( 
         NWKID, status, RIA, ), )
     self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s %s" % (RIA, NWKID, status))
+
     if RIA:
         self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
     self.ListOfDevices[NWKID]["Heartbeat"] = "0"
     self.ListOfDevices[NWKID]["Status"] = "0045"
 
-    MsgIEEE = None
-    if "IEEE" in self.ListOfDevices[NWKID]:
-        MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
-    
+    request_tuya_magic_read = self.pluginconf.pluginConf["TuyaMagicRead"]
+
+    MsgIEEE = self.ListOfDevices[NWKID].get("IEEE", None)
+
     if ( MsgIEEE and ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE ) ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
     elif ( self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
-        
-    elif ( MsgIEEE and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA):
+
+    elif request_tuya_magic_read and ( MsgIEEE and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA):
         ReadAttributeRequest_0000_for_tuya( self, NWKID)
 
     # Check if Cluster 0500 is on this device. If so this will trigger IAS asap
@@ -215,7 +216,7 @@ def request_node_descriptor(self, NWKID, RIA=None, status=None):
     manufacturer = self.ListOfDevices[NWKID].get("Manufacturer", "")
     model = self.ListOfDevices[NWKID].get("Model", "")
     
-    if model in ( "lumi.sensor_switch",) or manufacturer not in  ( "", {} ):
+    if model in ( "lumi.sensor_switch",) or manufacturer not in ( "", {} ):
         self.log.logging( "Pairing", "Debug", "[%s] NEW OBJECT: %s Manufacturer: %s Model: %s" % (RIA, NWKID, manufacturer, model), NWKID, )
         return False
 
