@@ -216,7 +216,7 @@ def request_node_descriptor(self, NWKID, RIA=None, status=None):
     manufacturer = self.ListOfDevices[NWKID].get("Manufacturer", "")
     model = self.ListOfDevices[NWKID].get("Model", "")
     
-    if model in ( "lumi.sensor_switch",) or manufacturer not in  ( "", {} ):
+    if model in ( "lumi.sensor_switch",) or manufacturer not in ( "", {} ):
         self.log.logging( "Pairing", "Debug", "[%s] NEW OBJECT: %s Manufacturer: %s Model: %s" % (RIA, NWKID, manufacturer, model), NWKID, )
         return False
 
