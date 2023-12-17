@@ -464,9 +464,9 @@ DIMMABLE_WIDGETS = {
 
 def find_partially_opened_nValue(switch_type, sub_type, widget_type):
     key = (switch_type, sub_type, widget_type)
-    return DIMMABLE_WIDGETS.get(key).get("partially_opened_nValue")
+    return DIMMABLE_WIDGETS.get(key,{}).get("partially_opened_nValue")
 
 
 def check_widget(switch_type, sub_type, widget_type):
     key = (switch_type, sub_type, widget_type)
-    return DIMMABLE_WIDGETS.get(key).get("Widget")
+    return DIMMABLE_WIDGETS.get(key,{}).get("Widget")
