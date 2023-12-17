@@ -16,6 +16,9 @@ DOMOTICZ_EXTENDED_API = False
 
 DELAY_BETWEEN_TOUCH = 30
 
+def is_domoticz_extended():
+    return DOMOTICZ_EXTENDED_API
+
 
 def load_list_of_domoticz_widget(self, Devices):
     """Use at plugin start to creat an index of Domoticz Widget. It is also called after a Widget removal and when a new device has been paired.
@@ -163,6 +166,10 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
     available_units = set(Devices.keys())
     _log_message(len(available_units) + 1)
     return _free_unit_in_device( available_units, nbunit_ )
+
+
+def is_device_ieee_in_domoticz_db(self, Devices, DeviceID_):
+    return DOMOTICZ_EXTENDED_API and DeviceID_ in Devices or any(DeviceID_ == device.DeviceID for device in Devices.values())
 
 
 def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Type_=None, Subtype_=None, Switchtype_=None, widgetOptions=None, Image=None):
@@ -324,21 +331,42 @@ def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
 
     return _unit.nValue, _unit.sValue
 
+
 def domo_read_TimedOut( self, Devices, DeviceId_, Unit_, ):
     return ( Devices[DeviceId_].Units[Unit_].TimedOut if DOMOTICZ_EXTENDED_API else Devices[Unit_].TimedOut )
+
+
+def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_,):
+    return ( Devices[DeviceId_].Units[Unit_].LastUpdate if DOMOTICZ_EXTENDED_API else Devices[Unit_].LastUpdate )
+
+
+def domo_read_BatteryLevel( self, Devices, DeviceId_, Unit_, ):
+    return ( Devices[DeviceId_].Units[Unit_].BatteryLevel if DOMOTICZ_EXTENDED_API else Devices[Unit_].BatteryLevel )
+
+
+def domo_read_Color( self, Devices, DeviceId_, Unit_, ):
+    return ( Devices[DeviceId_].Units[Unit_].Color if DOMOTICZ_EXTENDED_API else Devices[Unit_].Color )
+
+
+def domo_read_Name( self, Devices, DeviceId_, Unit_, ):
+    return ( Devices[DeviceId_].Units[Unit_].Name if DOMOTICZ_EXTENDED_API else Devices[Unit_].Name )
+
 
 def domo_read_Options( self, Devices, DeviceId_, Unit_,):
     return ( Devices[DeviceId_].Units[Unit_].Options if DOMOTICZ_EXTENDED_API else Devices[Unit_].Options )
 
+
 def domo_read_Device_Idx(self, Devices, DeviceId_, Unit_,):
     return ( Devices[DeviceId_].Units[Unit_].ID if DOMOTICZ_EXTENDED_API else Devices[Unit_].ID )    
-     
+
+
 def domo_check_unit(self, Devices, DeviceId_, Unit_):
     if DOMOTICZ_EXTENDED_API:
         return Unit_ in Devices[DeviceId_].Units
     else:
         return Unit_ in Devices
 
+    
 def domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit):
     if DOMOTICZ_EXTENDED_API:
         _unit = Devices[DeviceID].Units[Unit]
@@ -374,6 +402,7 @@ def _is_device_tobe_switched_off(self, Devices,DeviceID_, Unit_):
         (Devices[Unit_].Type == 244 and Devices[Unit_].SubType == 73 and Devices[Unit_].SwitchType == 7)
         or (Devices[Unit_].Type == 241 and Devices[Unit_].SwitchType == 7)
     )
+
 
 def device_touch_api(self, Devices, DeviceId_, Unit_):
     #self.log.logging("AbstractDz", "Debug", f"device_touch: {DeviceId_} {Unit_}")
@@ -427,7 +456,8 @@ def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
 def domoticz_log_api( message):
     
     Domoticz.Log( message )
-    
+
+
 def is_dimmable_switch(self, Devices, DeviceId, Unit):
     _switchType, _subType, _type = domo_read_SwitchType_SubType_Type(self, Devices, DeviceId, Unit)
     if check_widget(_switchType, _subType, _type) == "Dimmable_Switch":

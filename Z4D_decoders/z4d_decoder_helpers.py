@@ -124,3 +124,16 @@ def check_duplicate_sqn(self, nwk_id, ep, cluster, sqn):
         ep_cluster[cluster]["0000"] = {}
 
     return sqn != "00" and "SQN" in self.ListOfDevices.get(nwk_id, {}) and sqn == self.ListOfDevices[nwk_id]["SQN"]
+
+
+def set_health_after_message_received(self, Nwkid):
+    device = self.ListOfDevices.get(Nwkid, {})
+    
+    if "Health" not in device:
+        device["Health"] = "Live"
+    
+    if device.get("Health") == "Disabled":
+        return
+    
+    if device.get("Status") != "inDB":
+        device["Status"] = "inDB"

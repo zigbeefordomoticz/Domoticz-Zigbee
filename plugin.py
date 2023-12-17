@@ -127,7 +127,7 @@ from Modules.database import (LoadDeviceList, WriteDeviceList,
                               import_local_device_conf)
 from Modules.domoticzAbstractLayer import (how_many_slot_available,
                                            load_list_of_domoticz_widget)
-from Modules.domoTools import ResetDevice
+from Modules.domoTools import browse_and_reset_devices_if_needed
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.piZigate import switchPiZigate_mode
@@ -1025,7 +1025,7 @@ class BasePlugin:
         processListOfDevices(self, Devices)
 
         # Reset Motion sensors
-        ResetDevice(self, Devices)
+        browse_and_reset_devices_if_needed(self, Devices)
 
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)

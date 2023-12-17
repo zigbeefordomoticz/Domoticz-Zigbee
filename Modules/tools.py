@@ -18,6 +18,7 @@ from pathlib import Path
 from Modules.database import WriteDeviceList
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.zigateConsts import HEARTBEAT
+from Modules.domoticzAbstractLayer import domo_read_Device_Idx
 
 
 def is_hex(s):
@@ -240,13 +241,7 @@ def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
         found = True
         reconnectNWkDevice(self, lookupNwkId, lookupIEEE, exitsingNwkId)
 
-        # Let's send a Notfification
-        devName = ""
-        for x in list(Devices.keys()):
-            if Devices[x].DeviceID == lookupIEEE:
-                devName = Devices[x].Name
-                break
-        self.adminWidgets.updateNotificationWidget( Devices, "Reconnect %s with %s/%s" % (devName, lookupNwkId, lookupIEEE))
+        self.adminWidgets.updateNotificationWidget( Devices, "Reconnect %s %s with %s" % (lookupNwkId, lookupIEEE, exitsingNwkId))
 
     return found
 
@@ -324,42 +319,42 @@ def removeDeviceInList(self, Devices, IEEE, Unit):
     if IEEE not in self.IEEE2NWK:
         return
 
-    key = self.IEEE2NWK[IEEE]
-    ID = Devices[Unit].ID
+    nwkid = self.IEEE2NWK[IEEE]
+    ID = domo_read_Device_Idx(self, Devices, IEEE, Unit,)
 
-    if ( "ClusterTye" in self.ListOfDevices[key] ):  
+    if ( "ClusterTye" in self.ListOfDevices[nwkid] ):  
         # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
-        if str(ID) in self.ListOfDevices[key]["ClusterType"]:
-            del self.ListOfDevices[key]["ClusterType"][ID]  # Let's remove that entry
-            self.log.logging("PluginTools", "Log", "removeDeviceInList - removing : %s in %s" % (ID, str(self.ListOfDevices[key]["ClusterType"])))
+        if str(ID) in self.ListOfDevices[nwkid]["ClusterType"]:
+            del self.ListOfDevices[nwkid]["ClusterType"][ID]  # Let's remove that entry
+            self.log.logging("PluginTools", "Log", "removeDeviceInList - removing : %s in %s" % (ID, str(self.ListOfDevices[nwkid]["ClusterType"])))
             
     else:
-        for tmpEp in list(self.ListOfDevices[key]["Ep"].keys()):
+        for tmpEp in list(self.ListOfDevices[nwkid]["Ep"].keys()):
             # Search this DeviceID in ClusterType
             if (
-                "ClusterType" in self.ListOfDevices[key]["Ep"][tmpEp]
-                and str(ID) in self.ListOfDevices[key]["Ep"][tmpEp]["ClusterType"]
+                "ClusterType" in self.ListOfDevices[nwkid]["Ep"][tmpEp]
+                and str(ID) in self.ListOfDevices[nwkid]["Ep"][tmpEp]["ClusterType"]
             ):
-                del self.ListOfDevices[key]["Ep"][tmpEp]["ClusterType"][str(ID)]
+                del self.ListOfDevices[nwkid]["Ep"][tmpEp]["ClusterType"][str(ID)]
                 self.log.logging("PluginTools", "Log", "removeDeviceInList - removing : %s with Ep: %s in - %s" % (
-                    ID, tmpEp, str(self.ListOfDevices[key]["Ep"][tmpEp]["ClusterType"])) )
+                    ID, tmpEp, str(self.ListOfDevices[nwkid]["Ep"][tmpEp]["ClusterType"])) )
 
     # Finaly let's see if there is any Devices left in this .
     emptyCT = True
-    if "ClusterType" in self.ListOfDevices[key]:  # Empty or Doesn't exist
+    if "ClusterType" in self.ListOfDevices[nwkid]:  # Empty or Doesn't exist
         self.log.logging("PluginTools", "Log", "removeDeviceInList - existing Global 'ClusterTpe'")
-        if self.ListOfDevices[key]["ClusterType"] != {}:
+        if self.ListOfDevices[nwkid]["ClusterType"] != {}:
             emptyCT = False
-    for tmpEp in list(self.ListOfDevices[key]["Ep"].keys()):
-        if "ClusterType" in self.ListOfDevices[key]["Ep"][tmpEp]:
+    for tmpEp in list(self.ListOfDevices[nwkid]["Ep"].keys()):
+        if "ClusterType" in self.ListOfDevices[nwkid]["Ep"][tmpEp]:
             self.log.logging("PluginTools", "Log", "removeDeviceInList - existing Ep 'ClusterTpe'")
-            if self.ListOfDevices[key]["Ep"][tmpEp]["ClusterType"] != {}:
+            if self.ListOfDevices[nwkid]["Ep"][tmpEp]["ClusterType"] != {}:
                 emptyCT = False
 
     if emptyCT:
         #del self.ListOfDevices[key]
         #del self.IEEE2NWK[IEEE]
-        self.ListOfDevices[key]["Status"] = "Removed"
+        self.ListOfDevices[nwkid]["Status"] = "Removed"
 
         self.adminWidgets.updateNotificationWidget(
             Devices, "Device fully removed %s with IEEE: %s" % (Devices[Unit].Name, IEEE)
@@ -444,16 +439,8 @@ def get_and_increment_generic_SQN(self, nwkid, sqn_type):
     
 
 def updSQN(self, key, newSQN):
-
-    if key not in self.ListOfDevices:
-        return
-    if newSQN == {}:
-        return
-    if newSQN is None:
-        return
-
-    self.ListOfDevices[key]["SQN"] = newSQN
-    return
+    if key in self.ListOfDevices and newSQN:
+        self.ListOfDevices[key]["SQN"] = newSQN
 
 
 def updLQI(self, key, LQI):
@@ -1378,31 +1365,27 @@ def is_domoticz_db_available(self):
 
     return True
 
-def get_device_nickname( self, NwkId=None, Ieee=None):
 
+def get_device_nickname(self, NwkId=None, Ieee=None):
     if Ieee and Ieee in self.IEEE2NWK:
-        NwkId = self.IEEE2NWK[ Ieee ]
+        NwkId = self.IEEE2NWK[Ieee]
 
-    if (
-        NwkId in self.ListOfDevices
-        and 'ZDeviceName' in self.ListOfDevices[NwkId]
-        and self.ListOfDevices[NwkId]['ZDeviceName'] not in ('', {})
-    ):
-        return self.ListOfDevices[ NwkId]['ZDeviceName']
+    device_name = self.ListOfDevices.get(NwkId, {}).get('ZDeviceName', None)
+    
+    if device_name and device_name not in ('', {}):
+        return device_name
 
     return None
 
+
 def extract_info_from_8085(MsgData):
     step_mod = MsgData[14:16]
-    up_down = step_size = transition = None
-    if len(MsgData) >= 18:
-        up_down = MsgData[16:18]
-    if len(MsgData) >= 20:
-        step_size = MsgData[18:20]
-    if len(MsgData) >= 22:
-        transition = MsgData[20:22]
+    up_down = MsgData[16:18] if len(MsgData) >= 18 else None
+    step_size = MsgData[18:20] if len(MsgData) >= 20 else None
+    transition = MsgData[20:22] if len(MsgData) >= 22 else None
 
     return (step_mod, up_down, step_size, transition)
+
 
 def how_many_devices(self):
     routers = enddevices = 0
@@ -1433,6 +1416,7 @@ def how_many_devices(self):
             continue
 
     return routers, enddevices
+
 
 def get_deviceconf_parameter_value(self, model, attribute, return_default=None):
     
