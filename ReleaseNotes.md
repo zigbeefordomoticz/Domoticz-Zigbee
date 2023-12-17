@@ -18,7 +18,7 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
-## December 2023 - stable7 7.1.006 ( 2023.12 )
+## December 2023 - stable7 7.1.007 ( 2023.12 )
 
 - [Technical] - zigpy radio libraries upgrade
 - [Technical] - Compatibility with Conbee III
