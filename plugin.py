@@ -923,7 +923,7 @@ class BasePlugin:
         handle_zigpy_backup(self, backups)
 
 
-    def onCommand(self, Unit, Command, Level, Color):
+    def onCommand(self, DeviceID, Unit, Command, Level, Color):
         if (
             not self.VersionNewFashion
             or self.pluginconf is None
@@ -937,7 +937,7 @@ class BasePlugin:
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
-            mgtCommand(self, Devices, Unit, Command, Level, Color)
+            mgtCommand(self, DeviceID, Devices, Unit, Command, Level, Color)
 
         elif self.groupmgt:
             # if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
@@ -1493,11 +1493,10 @@ def onMessage(Connection, Data):
     _plugin.onMessage(Connection, Data)
 
 
-def onCommand(Unit, Command, Level, Hue):
-    global _plugin  # pylint: disable=global-variable-not-assigned
-    _plugin.onCommand(Unit, Command, Level, Hue)
-
-
+def onCommand(DeviceID, Unit, Command, Level, Color):
+    global _plugin
+    _plugin.onCommand(DeviceID, Unit, Command, Level, Color)
+    
 def onDisconnect(Connection):
     global _plugin  # pylint: disable=global-variable-not-assigned
     _plugin.onDisconnect(Connection)

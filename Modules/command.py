@@ -17,7 +17,7 @@ from Modules.casaia import (casaia_ac201_fan_control, casaia_setpoint,
                             casaia_swing_OnOff, casaia_system_mode)
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.domoTools import (RetreiveSignalLvlBattery,
-                               RetreiveWidgetTypeList, UpdateDevice_v2)
+                               RetreiveWidgetTypeList, update_domoticz_widget)
 from Modules.fanControl import change_fan_mode
 from Modules.ikeaTradfri import ikea_air_purifier_mode
 from Modules.legrand_netatmo import cable_connected_mode, legrand_fc40
@@ -134,14 +134,12 @@ ACTIONATORS = [
 ]
 
 
-def mgtCommand(self, Devices, Unit, Command, Level, Color):
+def mgtCommand(self, Devices, DeviceID, Unit, Command, Level, Color):
 
-    if Devices[Unit].DeviceID not in self.IEEE2NWK:
-        self.log.logging("Command", "Error", "mgtCommand - something strange the Device %s DeviceID: %s Unknown" % (
-            Devices[Unit].Name, Devices[Unit].DeviceID) )
+    if DeviceID not in self.IEEE2NWK:
         return
-
-    NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
+    
+    NWKID = self.IEEE2NWK[DeviceID]
     self.log.logging(
         "Command",
         "Debug",
