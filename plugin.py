@@ -1497,13 +1497,13 @@ def onMessage(Connection, Data):
     _plugin.onMessage(Connection, Data)
 
 
-#def onCommand(DeviceID, Unit, Command, Level, Color):
-#    global _plugin
-#    _plugin.onCommand(DeviceID, Unit, Command, Level, Color)
-
-def onCommand( Unit, Command, Level, Color):
+def onCommand(DeviceID, Unit, Command, Level, Color):
     global _plugin
-    _plugin.onCommand(Unit, Command, Level, Color)
+    _plugin.onCommand(DeviceID, Unit, Command, Level, Color)
+
+#def onCommand( Unit, Command, Level, Color):
+#    global _plugin
+#    _plugin.onCommand(Unit, Command, Level, Color)
 
 
 def onDisconnect(Connection):
