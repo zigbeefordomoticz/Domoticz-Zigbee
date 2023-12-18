@@ -97,6 +97,14 @@ def find_widget_unit_from_WidgetID(self, Devices, WidgetID ):
     return None
 
 
+def find_first_unit_widget_from_deviceID(self, Devices, DeviceID):
+
+    if DOMOTICZ_EXTENDED_API:
+        return Devices[DeviceID].Units[0] if DeviceID in Devices else None
+    return next((x for x in Devices if Devices[x].DeviceID == DeviceID), None)
+
+   
+    
 def how_many_slot_available( Devices, DeviceId=None):
     """Return the number of unit slot available
 
@@ -454,8 +462,10 @@ def timeout_widget_api(self, Devices, DeviceId_, Unit_, timeout_value):
 
 
 def domoticz_log_api( message):
-    
     Domoticz.Log( message )
+
+def domoticz_error_api( message):
+    Domoticz.Error( message )
 
 
 def is_dimmable_switch(self, Devices, DeviceId, Unit):
