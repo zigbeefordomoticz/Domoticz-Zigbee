@@ -38,6 +38,9 @@ def Hex_Format(taille, value):
         value = "0" + value
     return str(value)
 
+def str_round(value, n):
+    return "{:.{n}f}".format(value, n=int(n))
+
 def voltage2batteryP(voltage, volt_max, volt_min):
 
     if voltage > volt_max:

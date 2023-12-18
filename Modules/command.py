@@ -33,7 +33,7 @@ from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_temp_Setcurrent)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.thermostats import thermostat_Mode, thermostat_Setpoint
-from Modules.tools import get_deviceconf_parameter_value
+from Modules.tools import get_deviceconf_parameter_value, str_round
 from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_dimmer_dimmer, tuya_dimmer_onoff,
                           tuya_energy_onoff, tuya_garage_door_action,
@@ -841,8 +841,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         thermostat_Setpoint(self, Nwkid, value)
         Level = round(float(Level), 2)
         # Normalize SetPoint value with 2 digits
-        Round = lambda x, n: eval('"%.' + str(int(n)) + 'f" % ' + repr(x))
-        Level = Round(float(Level), 2)
+        Level = str_round(float(Level), 2)  # 2 decimals
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
         # Let's force a refresh of Attribute in the next Heartbeat
@@ -861,8 +860,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         schneider_temp_Setcurrent(self, Nwkid, value)
         Level = round(float(Level), 2)
         # Normalize SetPoint value with 2 digits
-        Round = lambda x, n: eval('"%.' + str(int(n)) + 'f" % ' + repr(x))
-        Level = Round(float(Level), 2)
+        Level = str_round(float(Level), 2)  # 2 decimals
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
         # Let's force a refresh of Attribute in the next Heartbeat

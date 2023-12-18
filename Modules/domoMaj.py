@@ -20,10 +20,11 @@ from Modules.domoticzAbstractLayer import (domo_check_unit,
                                            is_dimmable_switch)
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
-                               update_domoticz_widget, remove_bad_cluster_type_entry)
+                               remove_bad_cluster_type_entry,
+                               update_domoticz_widget)
 from Modules.switchSelectorWidgets import (SWITCH_SELECTORS,
                                            get_force_update_value_mapping)
-from Modules.tools import zigpy_plugin_sanity_check
+from Modules.tools import str_round, zigpy_plugin_sanity_check
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
                             get_tarif_color, zlinky_sum_all_indexes)
@@ -1640,10 +1641,6 @@ def calculate_baro_forecast(baroValue):
         return 2  # PARTLY CLOUDY
     else:
         return 1  # SUNNY
-
-
-def str_round(value, n):
-    return "{:.{n}f}".format(value, n=int(n))
 
 
 def baro_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
