@@ -10,12 +10,12 @@
 
 
 import Domoticz
-from Modules.domoTools import (GetType, UpdateDevice_v2,
-                               subtypeRGB_FromProfile_Device_IDs,
-                               subtypeRGB_FromProfile_Device_IDs_onEp2)
+from Modules.domoticzAbstractLayer import FreeUnit, domo_create_api
+from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
+                               subtypeRGB_FromProfile_Device_IDs_onEp2,
+                               update_domoticz_widget)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import is_domoticz_new_blind
-from Modules.domoticzAbstractLayer import domo_create_api, FreeUnit
 
 
 def cleanup_widget_Type(widget_type_list):
@@ -512,15 +512,15 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
         ForceClusterType=ForceClusterType
     )
     if unit:
-        set_default_value( self, Devices, unit, widget_record)
+        set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
     return True
 
-def set_default_value( self, Devices, unit, widget_record):
+def set_default_value( self, Devices, device_id_ieee, device_unit, widget_record):
     # Check if we need to initialize the Widget immediatly
-    if unit and "sValue" in widget_record and "nValue" in widget_record:
+    if device_unit and "sValue" in widget_record and "nValue" in widget_record:
         sValue = widget_record["sValue"] 
         nValue = widget_record["nValue"] 
-        UpdateDevice_v2(self, Devices, unit, nValue, sValue, 0, 0, ForceUpdate_=True)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, 0, 0, ForceUpdate_=True)
    
 
 SIMPLE_WIDGET = {

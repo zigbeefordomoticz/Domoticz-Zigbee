@@ -428,16 +428,12 @@ def casaia_ac201_fan_control(self, NwkId, Level):
 
     if Level == 10:
         casaia_system_mode(self, NwkId, "FanAuto")
-        # UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
     elif Level == 20:
         casaia_system_mode(self, NwkId, "FanLow")
-        # UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
     elif Level == 30:
         casaia_system_mode(self, NwkId, "FanMedium")
-        # UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
     elif Level == 40:
         casaia_system_mode(self, NwkId, "FanHigh")
-        # UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
 
 # 0xFFAC Client to Server
