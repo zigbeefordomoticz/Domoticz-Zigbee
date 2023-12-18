@@ -361,93 +361,62 @@ def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
         )
 
 
-def timedOutDevice(self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
+def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
+    if NwkId not in self.ListOfDevices:
+        return
+    if "IEEE" not in self.ListOfDevices[NwkId]:
+        return
+    
+    if self.ListOfDevices[NwkId]["Health"] == "Disabled":
+        return
+    
+    self.ListOfDevices[NwkId]["Health"] = "TimedOut" if MarkTimedOut else "Live"
+    
+    self.log.logging( "Widget", "Debug", f"timedOutDevice Object {NwkId} MarkTimedOut: {MarkTimedOut}")
 
-    self.log.logging( "Widget", "Debug", "timedOutDevice unit %s nwkid: %s MarkTimedOut: %s" % (
-        Unit, NwkId, MarkTimedOut), NwkId, )
+    _IEEE = self.ListOfDevices[NwkId]["IEEE"]
+    if MarkTimedOut and not domo_read_TimedOut( self, Devices, _IEEE ):
+        timeout_widget_api(self, Devices, _IEEE, 1)
 
-    _Unit = _nValue = _sValue = None
-
-    if Unit:
-        DeviceID = None
-        if MarkTimedOut and not Devices[Unit].TimedOut:
-            timeout_widget_api(self, Devices, DeviceID, Unit, 1)
-
-        elif not MarkTimedOut and Devices[Unit].TimedOut:
-            timeout_widget_api(self, Devices, DeviceID, Unit, 0)
-
-    elif NwkId:
-        if NwkId not in self.ListOfDevices:
-            return
-        if "IEEE" not in self.ListOfDevices[NwkId]:
-            return
-        _IEEE = self.ListOfDevices[NwkId]["IEEE"]
-        if self.ListOfDevices[NwkId]["Health"] == "Disabled":
-            return
-        
-        self.ListOfDevices[NwkId]["Health"] = "TimedOut" if MarkTimedOut else "Live"
-        for x in list(Devices):
-            if Devices[x].DeviceID != _IEEE:
-                continue
-            if Devices[x].TimedOut:
-                if MarkTimedOut:
-                    continue
-                timeout_widget_api(self, Devices, _IEEE, x, 0)
-                self.log.logging( "Widget", "Debug", "reset timedOutDevice unit %s nwkid: %s " % (
-                    Devices[x].Name, NwkId), NwkId, )
-
-            elif MarkTimedOut:
-                timeout_widget_api(self, Devices, _IEEE, x, 1)
-                self.log.logging( "Widget", "Debug", "timedOutDevice unit %s nwkid: %s " % (
-                    Devices[x].Name, NwkId), NwkId, )
+    elif not MarkTimedOut and domo_read_TimedOut( self, Devices, _IEEE ):
+        timeout_widget_api(self, Devices, _IEEE, 0)
 
 
-def lastSeenUpdate(self, Devices, Unit=None, NwkId=None):
 
-    # Purpose is here just to touch the device and update the Last Seen
-    # It might required to call Touch everytime we receive a message from the device and not only when update is requested.
+def lastSeenUpdate(self, Devices, NwkId=None):
+    """ Just touch the device widgets and if needed remove TimedOut flag """
+    
+    self.log.logging( "Widget", "Log", f"lastSeenUpdate Nwkid {NwkId}")
 
-    if Unit:
-        # self.log.logging( "Widget", "Debug2", "Touch unit %s" %( Devices[Unit].Name ))
-        if not is_domoticz_touch(self):
-            self.log.logging( "Widget", "Log", "Not the good Domoticz level for lastSeenUpdate %s %s %s" % (
-                self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor), NwkId, )
-            return
-        # Extract NwkId from Device Unit
-        IEEE = Devices[Unit].DeviceID
-        if Devices[Unit].TimedOut:
-            timedOutDevice(self, Devices, Unit=Unit, MarkTimedOut=0)
-        else:
-            device_touch_api( self, Devices, IEEE, Unit)
-        if NwkId is None and "IEEE" in self.IEEE2NWK:
-            NwkId = self.IEEE2NWK[IEEE]
+    if NwkId is None or NwkId not in self.ListOfDevices or "IEEE" not in self.ListOfDevices[NwkId]:
+        return
 
-    if NwkId:
-        if NwkId not in self.ListOfDevices:
-            return
-        if "IEEE" not in self.ListOfDevices[NwkId]:
-            return
-        if "Stamp" not in self.ListOfDevices[NwkId]:
-            self.ListOfDevices[NwkId]["Stamp"] = {"Time": {}, "MsgType": {}, "LastSeen": 0}
-        if "LastSeen" not in self.ListOfDevices[NwkId]["Stamp"]:
-            self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] = 0
-        if "ErrorManagement" in self.ListOfDevices[NwkId]:
-            self.ListOfDevices[NwkId]["ErrorManagement"] = 0
-        if "Health" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Health"] not in ( "Disabled", ):
-            self.ListOfDevices[NwkId]["Health"] = "Live"
+    device_data = self.ListOfDevices[NwkId]
 
-        self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] = int(time.time())
-        _IEEE = self.ListOfDevices[NwkId]["IEEE"]
-        if not is_domoticz_touch(self):
-            self.log.logging( "Widget", "Log", "Not the good Domoticz level for Touch %s %s %s" % (
-                self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor), NwkId, )
-            return
-        for x in list(Devices):
-            if x in Devices and Devices[x].DeviceID == _IEEE:
-                if Devices[x].TimedOut:
-                    timedOutDevice(self, Devices, Unit=x, MarkTimedOut=0)
-                else:
-                    device_touch_api( self, Devices, _IEEE, x)
+    device_data.setdefault("Stamp", {"Time": {}, "MsgType": {}, "LastSeen": 0})
+    device_data["Stamp"].setdefault("LastSeen", 0)
+
+    device_data.setdefault("ErrorManagement", 0)
+
+    health_data = device_data.get("Health")
+    if health_data is not None and health_data not in ("Disabled", ):
+        device_data["Health"] = "Live"
+
+    device_data["Stamp"]["LastSeen"] = int(time.time())
+    _IEEE = device_data["IEEE"]
+
+    if not is_domoticz_touch(self):
+        self.log.logging( "Widget", "Log", "Not the good Domoticz level for Touch %s %s %s" % (
+            self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor), NwkId, )
+        return
+    
+    self.log.logging( "Widget", "Log", f"lastSeenUpdate Nwkid {NwkId} DeviceId {_IEEE}")
+    
+    if domo_read_TimedOut( self, Devices, _IEEE ):
+        timeout_widget_api(self, Devices, _IEEE, 0)
+    else:
+        device_touch_api( self, Devices, _IEEE)
+            
 
 
 def GetType(self, Addr, Ep):

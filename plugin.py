@@ -83,10 +83,7 @@
 </plugin>
 """
 
-#ry:
-#   from DomoticzEx import Devices, Images, Parameters, Settings
-#xcept ImportError:
-#   pass
+
 import gc
 import json
 import os
@@ -97,6 +94,14 @@ import threading
 import time
 
 import DomoticzEx as Domoticz
+
+try:
+    from DomoticzEx import Devices, Images, Parameters, Settings
+    
+except ImportError:
+    pass
+
+
 import pkg_resources
 import z4d_certified_devices
 
@@ -922,8 +927,7 @@ class BasePlugin:
     def zigpy_backup_available(self, backups):
         handle_zigpy_backup(self, backups)
 
-    # def onCommand(self, DeviceID, Unit, Command, Level, Color):
-    def onCommand(self, Unit, Command, Level, Color):
+    def onCommand(self, DeviceID, Unit, Command, Level, Color):
         
         if (
             not self.VersionNewFashion
@@ -941,7 +945,7 @@ class BasePlugin:
         # Let's check if this is End Node, or Group related.
         if DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
-            mgtCommand(self,  Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
+            mgtCommand(self, Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
 
         elif self.groupmgt:
             # if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
@@ -1501,10 +1505,6 @@ def onCommand(DeviceID, Unit, Command, Level, Color):
     global _plugin
     _plugin.onCommand(DeviceID, Unit, Command, Level, Color)
 
-#def onCommand( Unit, Command, Level, Color):
-#    global _plugin
-#    _plugin.onCommand(Unit, Command, Level, Color)
-
 
 def onDisconnect(Connection):
     global _plugin  # pylint: disable=global-variable-not-assigned
@@ -1678,7 +1678,7 @@ def _coordinator_ready( self ):
         ) 
         and (self.internalHB % 10) == 0
     ):
-        self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Mostlikly there is a communication issue" % (self.internalHB), )
+        self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Most likely there is a communication issue" % (self.internalHB), )
         
     if (
         ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP )
