@@ -4,7 +4,10 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
+import DomoticzEx as Domoticz
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 
 
 def startWebServer(self):
@@ -47,7 +50,7 @@ def onConnect(self, Connection, Status, Description):
 
     self.logging("Debug", "Connection: %s, description: %s" % (Connection, Description))
     if Status != 0:
-        Domoticz.Error(
+        domoticz_error_api(
             "onConnect - Failed to connect ("
             + str(Status)
             + ") to: "
@@ -60,7 +63,7 @@ def onConnect(self, Connection, Status, Description):
         return
 
     if Connection is None:
-        Domoticz.Error("onConnect - Uninitialized Connection !!! %s %s %s" % (Connection, Status, Description))
+        domoticz_error_api("onConnect - Uninitialized Connection !!! %s %s %s" % (Connection, Status, Description))
         return
 
     # Search for Protocol
@@ -81,7 +84,7 @@ def onConnect(self, Connection, Status, Description):
             self.logging("Debug", "New Connection: %s" % (Connection.Name))
             self.httpServerConns[Connection.Name] = Connection
     else:
-        Domoticz.Error("onConnect - unexpected protocol for connection: %s" % (Connection))
+        domoticz_error_api("onConnect - unexpected protocol for connection: %s" % (Connection))
 
     self.logging("Debug", "Number of http  Connections : %s" % len(self.httpServerConns))
     self.logging("Debug", "Number of https Connections : %s" % len(self.httpsServerConns))

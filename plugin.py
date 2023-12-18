@@ -83,22 +83,20 @@
 </plugin>
 """
 
-import pathlib
-import sys
-
-import Domoticz
-
-try:
-    from Domoticz import Devices, Images, Parameters, Settings
-except ImportError:
-    pass
+#ry:
+#   from DomoticzEx import Devices, Images, Parameters, Settings
+#xcept ImportError:
+#   pass
 import gc
 import json
 import os
 import os.path
+import pathlib
+import sys
 import threading
 import time
 
+import DomoticzEx as Domoticz
 import pkg_resources
 import z4d_certified_devices
 

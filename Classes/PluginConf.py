@@ -16,7 +16,9 @@ import os.path
 import time
 from pathlib import Path
 
-import Domoticz
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 from Modules.domoticzAPI import getConfigItem, setConfigItem
 from Modules.tools import is_domoticz_db_available, is_hex
 
@@ -498,20 +500,17 @@ def _load_Settings(self):
         if "TimeStamp" in _domoticz_pluginConf:
             dz_timestamp = _domoticz_pluginConf["TimeStamp"]
             _domoticz_pluginConf = _domoticz_pluginConf["b64Settings"]
-            Domoticz.Log(
-                "Plugin data loaded where saved on %s"
-                % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)))
-            )
+            domoticz_log_api( "Plugin data loaded where saved on %s" % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))) )
         if not isinstance(_domoticz_pluginConf, dict):
             _domoticz_pluginConf = {}
 
     txt_timestamp = 0
     if os.path.isfile(self.pluginConf["filename"]):
         txt_timestamp = os.path.getmtime(self.pluginConf["filename"])
-    Domoticz.Log("%s timestamp is %s" % (self.pluginConf["filename"], txt_timestamp))
+    domoticz_log_api("%s timestamp is %s" % (self.pluginConf["filename"], txt_timestamp))
 
     if dz_timestamp < txt_timestamp:
-        Domoticz.Log("Dz PluginConf is older than Json Dz: %s Json: %s" % (dz_timestamp, txt_timestamp))
+        domoticz_log_api("Dz PluginConf is older than Json Dz: %s Json: %s" % (dz_timestamp, txt_timestamp))
         # We should load the json file
 
     with open(self.pluginConf["filename"], "rt") as handle:
@@ -520,7 +519,7 @@ def _load_Settings(self):
             _pluginConf = json.load(handle)
 
         except json.decoder.JSONDecodeError as e:
-            Domoticz.Error("poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
+            domoticz_error_api("poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
             return
 
         for param in _pluginConf:
@@ -530,13 +529,13 @@ def _load_Settings(self):
     
     # Check Load
     if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"]:
-        Domoticz.Log("PluginConf Loaded from Dz: %s from Json: %s" % (len(_domoticz_pluginConf), len(_pluginConf)))
+        domoticz_log_api("PluginConf Loaded from Dz: %s from Json: %s" % (len(_domoticz_pluginConf), len(_pluginConf)))
         if _domoticz_pluginConf:
             for x in _pluginConf:
                 if x not in _domoticz_pluginConf:
-                    Domoticz.Error("-- %s is missing in Dz" % x)
+                    domoticz_error_api("-- %s is missing in Dz" % x)
                 elif _pluginConf[x] != _domoticz_pluginConf[x]:
-                    Domoticz.Error(
+                    domoticz_error_api(
                         "++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x])
                     )
 
@@ -568,9 +567,9 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
     try:
         PluginConf = eval(tmpPluginConf)
     except SyntaxError:
-        Domoticz.Error("Syntax Error in %s, all plugin parameters set to default" % filename)
+        domoticz_error_api("Syntax Error in %s, all plugin parameters set to default" % filename)
     except (NameError, TypeError, ZeroDivisionError):
-        Domoticz.Error("Error while importing %s, all plugin parameters set to default" % filename)
+        domoticz_error_api("Error while importing %s, all plugin parameters set to default" % filename)
     else:
         for theme in SETTINGS:
             for param in SETTINGS[theme]["param"]:
@@ -579,7 +578,7 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
                         if is_hex(PluginConf.get(param)):
                             self.pluginConf[param] = int(PluginConf[param], 16)
                         else:
-                            Domoticz.Error(
+                            domoticz_error_api(
                                 "Wrong parameter type for %s, keeping default %s"
                                 % (param, self.pluginConf[param]["default"])
                             )
@@ -589,7 +588,7 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
                         if PluginConf.get(param).isdigit():
                             self.pluginConf[param] = int(PluginConf[param])
                         else:
-                            Domoticz.Error(
+                            domoticz_error_api(
                                 "Wrong parameter type for %s, keeping default %s"
                                 % (param, self.pluginConf[param]["default"])
                             )
@@ -611,14 +610,14 @@ def _path_check(self):
                 continue
             _path_name = Path( self.pluginConf[param] )
             if not os.path.exists(_path_name):
-                Domoticz.Error("Cannot access path: %s" % _path_name)
+                domoticz_error_api("Cannot access path: %s" % _path_name)
             if self.pluginConf[param] != str( _path_name ):
                 if self.pluginConf["PosixPathUpdate"]:
-                    Domoticz.Status("Updating path from %s to %s" %( self.pluginConf[param], _path_name))
+                    domoticz_status_api("Updating path from %s to %s" %( self.pluginConf[param], _path_name))
                     self.pluginConf[param] = str( _path_name )
                     update_done = True
                 else:
-                    Domoticz.Error("Updating path from %s to %s is required, but no backward compatibility" %( self.pluginConf[param], _path_name))
+                    domoticz_error_api("Updating path from %s to %s is required, but no backward compatibility" %( self.pluginConf[param], _path_name))
 
     if update_done:
         self.write_Settings()
@@ -633,9 +632,9 @@ def _param_checking(self):
             if SETTINGS[theme]["param"][param]["type"] == "hex":
                 if isinstance(self.pluginConf[param], str):
                     self.pluginConf[param] = int(self.pluginConf[param], 16)
-                Domoticz.Status("%s set to 0x%x" % (param, self.pluginConf[param]))
+                domoticz_status_api("%s set to 0x%x" % (param, self.pluginConf[param]))
             else:
-                Domoticz.Status("%s set to %s" % (param, self.pluginConf[param]))
+                domoticz_status_api("%s set to %s" % (param, self.pluginConf[param]))
 
 
 def zigpy_setup(self):

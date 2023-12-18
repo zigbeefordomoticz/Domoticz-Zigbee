@@ -18,7 +18,11 @@ from Modules.casaia import (casaia_ac201_fan_control, casaia_setpoint,
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.danfoss import danfoss_on_off
 from Modules.domoticzAbstractLayer import (domo_read_Name,
-                                           domo_read_SwitchType_SubType_Type)
+                                           domo_read_nValue_sValue,
+                                           domo_read_SwitchType_SubType_Type,
+                                           is_dimmable_blind,
+                                           is_dimmable_light,
+                                           is_dimmable_switch)
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, update_domoticz_widget)
 from Modules.fanControl import change_fan_mode
@@ -52,10 +56,7 @@ from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
 # Matrix between Domoticz Type, Subtype, SwitchType and Plugin DeviceType
 # Type, Subtype, Switchtype
 DEVICE_SWITCH_MATRIX = {
-    (
-        242,
-        1,
-    ): ("ThermoSetpoint", "TempSetCurrent"),
+    ( 242, 1, ): ("ThermoSetpoint", "TempSetCurrent"),
     (241, 2, 7): ("ColorControlRGB",),
     (241, 4, 7): ("ColorControlRGBWW",),
     (241, 7, 7): ("ColorControlFull",),
@@ -136,95 +137,6 @@ ACTIONATORS = [
 ]
 
 
-#def mgtCommand(self, Devices, DeviceID, Unit, Command, Level, Color):
-#
-#    if DeviceID not in self.IEEE2NWK:
-#        return
-#    
-#    Nwkid = self.IEEE2NWK[DeviceID]
-#    widget_name = domo_read_Name( self, Devices, DeviceID, Unit, )
-#
-#    self.log.logging( "Command", "Debug", "mgtCommand (%s) %s %s Name: %s Command: %s Level: %s Color: %s" % (
-#        Nwkid, DeviceID, Unit, widget_name, Command, Level, Color), Nwkid, )
-#
-#    deviceSwitchType, deviceSubType, deviceType = domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit)
-#
-#    if (deviceType, deviceSubType, deviceSwitchType) in DEVICE_SWITCH_MATRIX:
-#        domoticzType = DEVICE_SWITCH_MATRIX[(deviceType, deviceSubType, deviceSwitchType)]
-#        self.log.logging("Command", "Debug", "--------->   DeviceType: %s" % str(domoticzType), Nwkid)
-#
-#    SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, Nwkid)
-#
-#    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, Nwkid, Unit)
-#    if len(ClusterTypeList) == 0:  # No match with ClusterType
-#        # Should not happen. We didn't find any Widget references in the Device ClusterType!
-#        self.log.logging("Command", "Error", "mgtCommand - no ClusterType found !  " + str(self.ListOfDevices[Nwkid]))
-#        return
-#
-#    self.log.logging( "Command", "Debug", "--------->1   ClusterType founds: %s for Unit: %s" % (
-#        ClusterTypeList, Unit), Nwkid )
-#
-#    if len(ClusterTypeList) != 1:
-#        self.log.logging("Command", "Error", "mgtCommand - Not Expected. ClusterType: %s for Nwkid: %s" % (
-#            ClusterTypeList, Nwkid))
-#        return
-#
-#    if ClusterTypeList[0][0] == "00":
-#        EPout = "01"
-#
-#    # One element found, we have Endpoint and DevicetypeÒ
-#    EPout, DeviceTypeWidgetId, DeviceType = ClusterTypeList[0]
-#
-#    self.log.logging( "Command", "Debug", "--------->2   EPOut: %s DeviceType: %s WidgetID: %s" % (
-#        EPout, DeviceType, DeviceTypeWidgetId), Nwkid, )
-#
-#    if (
-#        Nwkid in self.ListOfDevices
-#        and "Health" in self.ListOfDevices[Nwkid] 
-#        and self.ListOfDevices[Nwkid]["Health"] == "Disabled"
-#    ):
-#        self.log.logging("Command", "Error", "You tried to action a disabled device: %s/%s" % (widget_name, Nwkid), Nwkid)
-#        return
-#
-#    # Sanity Check
-#    forceUpdateDev = False
-#    if DeviceType in SWITCH_SELECTORS and "ForceUpdate" in SWITCH_SELECTORS[DeviceType]:
-#        forceUpdateDev = SWITCH_SELECTORS[DeviceType]["ForceUpdate"]
-#    self.log.logging("Command", "Debug", "--------->3   forceUpdateDev: %s" % forceUpdateDev, Nwkid)
-#
-#    if DeviceType not in ACTIONATORS and not self.pluginconf.pluginConf["forcePassiveWidget"]:
-#        self.log.logging( "Command", "Log", "mgtCommand - You are trying to action not allowed for Device: %s Type: %s and DeviceType: %s Command: %s Level:%s" % (
-#            widget_name, ClusterTypeList, DeviceType, Command, Level), Nwkid, )
-#        return
-#    self.log.logging("Command", "Debug", "--------->4   Ready to action", Nwkid)
-#
-#    profalux = False
-#    if "Manufacturer" in self.ListOfDevices[Nwkid]:
-#        profalux = self.ListOfDevices[Nwkid]["Manufacturer"] == "1110" and self.ListOfDevices[Nwkid]["ZDeviceID"] in ( "0200", "0202", )
-#    self.log.logging("Command", "Debug", "--------->5   profalux: %s" % profalux, Nwkid)
-#    
-#    _model_name = self.ListOfDevices[Nwkid]["Model"] if "Model" in self.ListOfDevices[Nwkid] else ""
-#    self.log.logging("Command", "Debug", "--------->6   Model Name: %s" % _model_name, Nwkid)
-#
-#    # If Health is Not Reachable, let's give it a chance to be updated
-#    if "Health" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Health"] == "Not Reachable":
-#        self.ListOfDevices[Nwkid]["Health"] = ""
-#    self.log.logging("Command", "Debug", "--------->7   Health: %s" % self.ListOfDevices[Nwkid]["Health"], Nwkid)
-#
-#    if Command == "Stop":  # Manage the Stop command. For known seen only on BSO and Windowcoering
-#        handle_command_stop(self,Devices, DeviceID, Unit, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)     
-#
-#    elif Command in ( "Off", "Close",):
-#        handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)    
-#
-#    elif Command in ( "On", "Open", ):
-#        handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)    
-#        
-#    if Command == "Set Level":
-#        handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)    
-#
-#    if Command == "Set Color":
-#        handle_command_setcolor(self,Devices, DeviceID, Unit, Level, Color, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)    
 
 def mgtCommand(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color):
     
@@ -286,12 +198,16 @@ def mgtCommand(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color):
 
     if Command == "Stop":
         handle_command_stop(self, Devices, DeviceID, Unit, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)
+
     elif Command in ("Off", "Close"):
         handle_command_off(self, Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)
+
     elif Command in ("On", "Open"):
         handle_command_on(self, Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)
+
     elif Command == "Set Level":
         handle_command_setlevel(self, Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)
+
     elif Command == "Set Color":
         handle_command_setcolor(self, Devices, DeviceID, Unit, Level, Color, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)
 
@@ -531,7 +447,8 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
 
     if DeviceType == "LvlControl" and _model_name in ("TS0601-dimmer", "TS0601-2Gangs-dimmer"):
         tuya_dimmer_onoff(self, Nwkid, EPout, "00")
-        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, Devices[Unit].sValue, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+        _, cur_sValue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, cur_sValue, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
         return
 
     if DeviceType == "LvlControl" and _model_name == "TS0601-curtain":
@@ -639,7 +556,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
             #sendZigateCmd(self, "0092", "02" + Nwkid + ZIGATE_EP + "0b" + "00")
 
     # Update Devices
-    if Devices[Unit].SwitchType in (13, 14, 15, 16):
+    if is_dimmable_blind(self, Devices, DeviceID, Unit):
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "0", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
     else:
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -736,7 +653,8 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
 
     if DeviceType == "LvlControl" and _model_name in ("TS0601-dimmer", "TS0601-2Gangs-dimmer"):
         tuya_dimmer_onoff(self, Nwkid, EPout, "01")
-        update_domoticz_widget(self, Devices, DeviceID, Unit, 1, Devices[Unit].sValue, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        _, cur_sValue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 1, cur_sValue, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
 
     if DeviceType == "LvlControl" and _model_name == "TS0601-curtain":
@@ -803,7 +721,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
             actuator_on(self, Nwkid, EPout, "Light")
             #sendZigateCmd(self, "0092", "02" + Nwkid + ZIGATE_EP + EPout + "01")
 
-    if Devices[Unit].SwitchType in (13, 14, 15, 16):
+    if is_dimmable_blind(self, Devices, DeviceID, Unit):
         update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "100", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
     else:
         previous_level = get_previous_switch_level(self, Nwkid, EPout)
@@ -812,13 +730,15 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
 
         if previous_level is None:
             update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-        elif Devices[Unit].SubType in (1,2,4,6,7,8):
+            
+        elif is_dimmable_light(self, Devices, DeviceID, Unit):
             percentage_level = int(( (previous_level * 100 )/ 255))
-            self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s and Subtype Color" %previous_level)
+            self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s" %previous_level)
             update_domoticz_widget(self, Devices, DeviceID, Unit, 1, str(percentage_level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            
         else:
             percentage_level = int(( (previous_level * 100 )/ 255))
-            self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s and Subtype %sr" %(previous_level, Devices[Unit].SubType))
+            self.log.logging( "Command", "Debug", "mgtCommand : Previous Level was %s" %(previous_level,))
             update_domoticz_widget(self, Devices, DeviceID, Unit, 2, str(percentage_level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             
     # Let's force a refresh of Attribute in the next Heartbeat
@@ -1365,7 +1285,8 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             actuators(self, Nwkid, EPout, "Toggle", "Switch")
 
     elif _model_name in ("TS0601-dimmer", "TS0601-2Gangs-dimmer"):
-        if Devices[Unit].nValue == 0:
+        cur_nValue, _ = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
+        if cur_nValue == 0:
             tuya_dimmer_onoff(self, Nwkid, EPout, "01")
         Level = max(Level, 1)
         tuya_dimmer_dimmer(self, Nwkid, EPout, Level)
@@ -1386,22 +1307,20 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             actuator_setlevel(self, Nwkid, EPout, Level, "Light", transitionMoveLevel, withOnOff=True )
             #sendZigateCmd(self, "0081", "02" + Nwkid + ZIGATE_EP + EPout + OnOff + value + transitionMoveLevel)
 
-    if Devices[Unit].SwitchType in (13, 16):
-        update_domoticz_widget(self, Devices, DeviceID, Unit, 2, str(Level), BatteryLevel, SignalLevel)
-
-    elif Devices[Unit].SwitchType in (14, 15):
+                      
+    if is_dimmable_blind(self, Devices, DeviceID, Unit) and Level in ( 0, 50, 100):
         if Level == 0:
             update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "0", BatteryLevel, SignalLevel)
+        
         elif Level == 100:
             update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "1", BatteryLevel, SignalLevel)
+        
         elif Level == 50:
             update_domoticz_widget(self, Devices, DeviceID, Unit, 17, "0", BatteryLevel, SignalLevel)
-        else:
-            update_domoticz_widget(self, Devices, DeviceID, Unit, 2, str(Level), BatteryLevel, SignalLevel)
-
+        
     else:
-        # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
-        update_domoticz_widget(self, Devices, DeviceID, Unit, 1, str(Level), BatteryLevel, SignalLevel)
+        partially_opened_nValue = is_dimmable_blind(self, Devices, DeviceID, Unit) or is_dimmable_light(self, Devices, DeviceID, Unit) or is_dimmable_switch(self, Devices, DeviceId, Unit)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, partially_opened_nValue, str(Level), BatteryLevel, SignalLevel)
 
     # Let's force a refresh of Attribute in the next Heartbeat
     request_read_device_status(self, Nwkid)

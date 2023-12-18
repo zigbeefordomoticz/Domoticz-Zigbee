@@ -9,8 +9,8 @@
 """
 
 
-import Domoticz
-from Modules.domoticzAbstractLayer import FreeUnit, domo_create_api
+from Modules.domoticzAbstractLayer import (FreeUnit, domo_create_api,
+                                           domoticz_error_api)
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2,
                                update_domoticz_widget)
@@ -146,7 +146,7 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     
     if myDev_ID == -1:
         self.ListOfDevices[nwkid]["Status"] = "failDB"
-        Domoticz.Error("Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev_ID)
+        domoticz_error_api("Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev_ID)
         return None
 
     self.ListOfDevices[nwkid]["Status"] = "inDB"
@@ -247,7 +247,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
     # Sanity check before starting the processing
     if NWKID == "" or NWKID not in self.ListOfDevices:
-        Domoticz.Error("CreateDomoDevice - Cannot create a Device without an IEEE or not in ListOfDevice .")
+        domoticz_error_api("CreateDomoDevice - Cannot create a Device without an IEEE or not in ListOfDevice .")
         return
 
     DeviceID_IEEE = self.ListOfDevices[NWKID]["IEEE"]
@@ -364,7 +364,7 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     ID = myDev.ID
     if myDev.ID == -1:
         self.ListOfDevices[NWKID]["Status"] = "failDB"
-        Domoticz.Error("Domoticz widget creation failed. %s" % (str(myDev)))
+        domoticz_error_api("Domoticz widget creation failed. %s" % (str(myDev)))
     else:
         self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(ID)] = t
 
@@ -374,7 +374,7 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     myDev.Create()
     ID = myDev.ID
     if myDev.ID == -1:
-        Domoticz.Error("Domoticz widget creation failed. %s" % (str(myDev)))
+        domoticz_error_api("Domoticz widget creation failed. %s" % (str(myDev)))
     else:
         self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(ID)] = "Text"
 
@@ -467,7 +467,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
             if unit:
-                set_default_value( self, Devices, unit, widget_record)
+                set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
 
             return True
 
@@ -478,7 +478,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
             if unit:
-                set_default_value( self, Devices, unit, widget_record)
+                set_default_value( self, Devices,DeviceID_IEEE, unit, widget_record)
 
             return True
         
@@ -489,7 +489,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
             if unit:
-                set_default_value( self, Devices, unit, widget_record)
+                set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
 
             return True
  

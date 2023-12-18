@@ -11,7 +11,7 @@ import time
 from queue import PriorityQueue, Queue
 from threading import Semaphore
 
-import Domoticz
+import DomoticzEx as Domoticz
 from Classes.ZigateTransport.forwarderThread import start_forwarder_thread
 from Classes.ZigateTransport.readDecoder import decode_and_split_message
 from Classes.ZigateTransport.readerThread import (open_zigate_and_start_reader,

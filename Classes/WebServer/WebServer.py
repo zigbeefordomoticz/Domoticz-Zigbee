@@ -10,7 +10,6 @@ import os
 import os.path
 import time
 
-import Domoticz
 from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
@@ -18,6 +17,9 @@ from Modules.actuators import actuators
 from Modules.basicOutputs import (PermitToJoin, ZigatePermitToJoin,
                                   initiate_change_channel, setExtendedPANID,
                                   zigateBlueLed)
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 from Modules.sendZigateCommand import sendZigateCmd
 from Modules.tools import is_hex
 from Modules.txPower import set_TxPower
@@ -245,7 +247,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
             self.logging("Status", "Erase ZiGate PDM")
-            Domoticz.Error("Erase ZiGate PDM non implémenté pour l'instant")
+            domoticz_error_api("Erase ZiGate PDM non implémenté pour l'instant")
             if self.pluginconf.pluginConf["eraseZigatePDM"]:
                 if self.pluginParameters["Mode2"] != "None" and self.zigbee_communication == "native":
                     sendZigateCmd(self, "0012", "")
@@ -400,7 +402,7 @@ class WebServer(object):
                     action = {"Name": "Report %s removed" % timestamp}
                     _response["Data"] = json.dumps(action, sort_keys=True)
                 else:
-                    Domoticz.Error("Removing Nwk-Energy %s not found" % timestamp)
+                    domoticz_error_api("Removing Nwk-Energy %s not found" % timestamp)
                     _response["Data"] = json.dumps([], sort_keys=True)
 
         elif verb == "GET":
@@ -580,7 +582,6 @@ class WebServer(object):
                     }
 
                     if SETTINGS[_theme]["param"][param]["type"] == "hex":
-                        Domoticz.Debug("--> %s: %s - %s" % (param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
                         if isinstance(self.pluginconf.pluginConf[param], int):
                             setting["current_value"] = "%x" % self.pluginconf.pluginConf[param]
                         else:
@@ -638,7 +639,7 @@ class WebServer(object):
                                 self.pluginconf.pluginConf["Certification"] = setting_lst[setting]["current"]
                                 self.pluginconf.pluginConf["CertificationCode"] = CERTIFICATION_CODE[setting_lst[setting]["current"]]
                             else:
-                                Domoticz.Error("Unknown Certification code %s (allow are CE and FCC)" % (setting_lst[setting]["current"]))
+                                domoticz_error_api("Unknown Certification code %s (allow are CE and FCC)" % (setting_lst[setting]["current"]))
                                 continue
 
                         elif param == "blueLedOnOff":
@@ -676,13 +677,13 @@ class WebServer(object):
                             
                         else:
                             if SETTINGS[_theme]["param"][param]["type"] == "hex":
-                                # Domoticz.Log("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
+                                # domoticz_log_api("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
                                 self.pluginconf.pluginConf[param] = int(str(setting_lst[setting]["current"]), 16)
                             else:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
 
                 if not found:
-                    Domoticz.Error("Unexpected parameter: %s" % setting)
+                    domoticz_error_api("Unexpected parameter: %s" % setting)
                     _response["Data"] = {"unexpected parameters %s" % setting}
 
             if upd:
@@ -805,16 +806,16 @@ class WebServer(object):
                 deviceId = parameters[0]
                 if len(deviceId) == 4:  # Short Network Addr
                     if deviceId not in self.ListOfDevices:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     nwkid = deviceId
                     ieee = self.ListOfDevices[deviceId]["IEEE"]
                 else:
                     if deviceId not in self.IEEE2NWK:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     ieee = deviceId
@@ -960,7 +961,7 @@ class WebServer(object):
                             self.ListOfDevices[dev]["Param"], self.ListOfDevices[dev]["IEEE"], dev), )
                         self.ListOfDevices[dev]["CheckParam"] = True
                 else:
-                    Domoticz.Error("wrong data received: %s" % data)
+                    domoticz_error_api("wrong data received: %s" % data)
 
         return _response
 
@@ -974,16 +975,16 @@ class WebServer(object):
                 deviceId = parameters[0]
                 if len(deviceId) == 4:  # Short Network Addr
                     if deviceId not in self.ListOfDevices:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     nwkid = deviceId
                     ieee = self.ListOfDevice[deviceId]["IEEE"]
                 else:
                     if deviceId not in self.IEEE2NWK:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     ieee = deviceId
@@ -1164,7 +1165,7 @@ class WebServer(object):
         return _response
 
     def rest_change_channel(self, verb, data, parameters):
-        Domoticz.Log("rest_change_channel - %s %s" % (verb, data))
+        domoticz_log_api("rest_change_channel - %s %s" % (verb, data))
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
@@ -1176,9 +1177,9 @@ class WebServer(object):
         if len(parameters) == 0:
             data = data.decode("utf8")
             data = json.loads(data)
-            Domoticz.Log("---> Data: %s" % str(data))
+            domoticz_log_api("---> Data: %s" % str(data))
             if "Channel" not in data:
-                Domoticz.Error("Unexpected request: %s" % data)
+                domoticz_error_api("Unexpected request: %s" % data)
                 _response["Data"] = {"Error": "Unknow verb"}
                 return _response
             channel = data["Channel"]
@@ -1192,7 +1193,7 @@ class WebServer(object):
 
     def rest_raw_command(self, verb, data, parameters):
 
-        Domoticz.Log("raw_command - %s %s" % (verb, data))
+        domoticz_log_api("raw_command - %s %s" % (verb, data))
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
@@ -1201,14 +1202,14 @@ class WebServer(object):
             if len(parameters) == 0:
                 data = data.decode("utf8")
                 data = json.loads(data)
-                Domoticz.Log("---> Data: %s" % str(data))
+                domoticz_log_api("---> Data: %s" % str(data))
                 if "Command" not in data and "payload" not in data:
-                    Domoticz.Error("Unexpected request: %s" % data)
+                    domoticz_error_api("Unexpected request: %s" % data)
                     _response["Data"] = json.dumps("Executing %s on %s" % (data["Command"], data["payload"]))
                     return _response
 
                 if not is_hex(data["Command"]) or (is_hex(data["Command"]) and int(data["Command"], 16) not in ZIGATE_COMMANDS):
-                    Domoticz.Error("raw_command - Unknown MessageType received %s" % data["Command"])
+                    domoticz_error_api("raw_command - Unknown MessageType received %s" % data["Command"])
                     _response["Data"] = json.dumps("Unknown MessageType received %s" % data["Command"])
                     return _response
 
@@ -1308,7 +1309,7 @@ class WebServer(object):
             if len(parameters) == 0:
                 data = data.decode("utf8")
                 data = validateJSON( self, data)
-                Domoticz.Log("---> Data: %s" % str(data))
+                domoticz_log_api("---> Data: %s" % str(data))
                 self.logging(
                     "Log",
                     "rest_dev_command - Command: %s on object: %s with extra %s %s" % (data["Command"], data["NwkId"], data["Value"], data["Color"]),
@@ -1386,14 +1387,14 @@ class WebServer(object):
             return _response
 
         if len(parameters) == 0:
-            Domoticz.Error("rest_dev_capabilities - expecting a device id! %s" % (parameters))
+            domoticz_error_api("rest_dev_capabilities - expecting a device id! %s" % (parameters))
             return _response
 
         if len(parameters) != 1:
             return
 
         if parameters[0] not in self.ListOfDevices and parameters[0] not in self.IEEE2NWK:
-            Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" % (parameters[0]))
+            domoticz_error_api("rest_dev_capabilities - Device %s doesn't exist" % (parameters[0]))
             return _response
 
         # Check Capabilities
@@ -1466,7 +1467,7 @@ class WebServer(object):
 
     def rest_zigate_mode(self, verb, data, parameters):
 
-        Domoticz.Log("rest_zigate_mode mode: %s" % parameters)
+        domoticz_log_api("rest_zigate_mode mode: %s" % parameters)
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":

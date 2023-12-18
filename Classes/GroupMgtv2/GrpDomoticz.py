@@ -6,7 +6,7 @@
 
 import json
 
-import Domoticz
+
 from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
@@ -53,6 +53,8 @@ def free_unit(Devices):
 
 def create_domoticz_group_device(self, GroupName, GroupId):
     " Create Device for just created group in Domoticz. "
+    
+    import DomoticzEx as Domoticz
 
     if GroupName == "" or GroupId == "":
         self.logging(

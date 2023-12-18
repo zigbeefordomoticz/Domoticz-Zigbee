@@ -1,10 +1,13 @@
 
-import pkg_resources
 import sys
 from importlib.metadata import version as import_version
-from Modules.tools import how_many_devices
-import Domoticz
 from pathlib import Path
+
+import pkg_resources
+
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_status_api)
+from Modules.tools import how_many_devices
 
 MODULES_VERSION = {
     "zigpy": "0.60.1",
@@ -64,7 +67,7 @@ def get_domoticz_version( self, domoticz_version  ):
         return _old_fashon_domoticz(self, lst_version, domoticz_version)
     
     if len(lst_version) != 3:
-        Domoticz.Error( "Domoticz version %s unknown not supported, please upgrade to a more recent"% (
+        domoticz_error_api( "Domoticz version %s unknown not supported, please upgrade to a more recent"% (
             domoticz_version) )
         return _domoticz_not_compatible(self)
 
@@ -85,7 +88,7 @@ def _old_fashon_domoticz(self, lst_version, domoticz_version):
         return True
     
     # Old fashon Versioning
-    Domoticz.Error( "Domoticz version %s %s %s not supported, please upgrade to a more recent" % (
+    domoticz_error_api( "Domoticz version %s %s %s not supported, please upgrade to a more recent" % (
         domoticz_version, major, minor) )
     return _domoticz_not_compatible(self)
 
@@ -119,7 +122,7 @@ def check_python_modules_version( self ):
 def check_requirements( home_folder):
 
     requirements_file = Path( home_folder + "requirements.txt" )
-    Domoticz.Status("Checking Python modules %s" %requirements_file)
+    domoticz_status_api("Checking Python modules %s" %requirements_file)
 
     with open(requirements_file, 'r') as file:
         requirements_list = file.readlines()
@@ -129,19 +132,19 @@ def check_requirements( home_folder):
             pkg_resources.require(req_str.strip())
 
         except pkg_resources.DistributionNotFound:
-            Domoticz.Error("Looks like %s python module is not installed. Make sure to install the required python3 module" %(req_str.strip()))
-            Domoticz.Error("Use the command:")
-            Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
+            domoticz_error_api("Looks like %s python module is not installed. Make sure to install the required python3 module" %(req_str.strip()))
+            domoticz_error_api("Use the command:")
+            domoticz_error_api("sudo python3 -m pip install -r requirements.txt --upgrade")
             return True
 
         except pkg_resources.VersionConflict:
-            Domoticz.Error("Looks like %s python module is conflicting. Make sure to install the required python3 module" %(req_str.strip()))
-            Domoticz.Error("Use the command:")
-            Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
+            domoticz_error_api("Looks like %s python module is conflicting. Make sure to install the required python3 module" %(req_str.strip()))
+            domoticz_error_api("Use the command:")
+            domoticz_error_api("sudo python3 -m pip install -r requirements.txt --upgrade")
             return True
 
         except Exception as e:
-            Domoticz.Error(f"An unexpected error occurred: {e}")
+            domoticz_error_api(f"An unexpected error occurred: {e}")
 
     return False
 

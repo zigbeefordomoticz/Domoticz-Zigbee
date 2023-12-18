@@ -3,36 +3,23 @@
 #
 # Author: pipiche38
 #
-import Domoticz
 
 from time import time
 
+from Classes.GroupMgtv2.GrpCommands import (
+    add_group_member_ship, check_group_member_ship, look_for_group_member_ship,
+    remove_group_member_ship, send_group_member_ship_identify_effect)
+from Classes.GroupMgtv2.GrpDatabase import (check_if_group_empty,
+                                            checkNwkIdAndUpdateIfAny,
+                                            create_group, remove_group,
+                                            remove_nwkid_from_all_groups)
+from Classes.GroupMgtv2.GrpDomoticz import (create_domoticz_group_device,
+                                            remove_domoticz_group_device,
+                                            update_domoticz_group_name)
+from Classes.GroupMgtv2.GrpIkeaRemote import (checkIfIkeaRound5BToBeAdded,
+                                              checkIfIkeaRound5BToBeRemoved)
 from Modules.tools import mainPoweredDevice
 from Modules.zigateConsts import LEGRAND_REMOTES
-
-from Classes.GroupMgtv2.GrpDomoticz import (
-    create_domoticz_group_device,
-    remove_domoticz_group_device,
-    update_domoticz_group_name,
-)
-
-from Classes.GroupMgtv2.GrpIkeaRemote import checkIfIkeaRound5BToBeAdded, checkIfIkeaRound5BToBeRemoved
-
-# remove_domoticz_group_device, update_domoticz_group_device
-from Classes.GroupMgtv2.GrpDatabase import (
-    create_group,
-    checkNwkIdAndUpdateIfAny,
-    remove_nwkid_from_all_groups,
-    check_if_group_empty,
-    remove_group,
-)
-from Classes.GroupMgtv2.GrpCommands import (
-    remove_group_member_ship,
-    add_group_member_ship,
-    check_group_member_ship,
-    look_for_group_member_ship,
-    send_group_member_ship_identify_effect,
-)
 
 
 def SendGroupIdentifyEffect(self, GrpId):
@@ -145,7 +132,8 @@ def addGroupMemberShip(self, NwkId, Ep, GroupId):
 
 def add_group_member_ship_from_remote(self, NwkId, Ep, GroupId):
     # This is clall from plugin, when setting a group membership of a Legrand Remote
-    from Classes.GroupMgtv2.GrpCallBackResponses import checkToCreateOrUpdateGroup
+    from Classes.GroupMgtv2.GrpCallBackResponses import \
+        checkToCreateOrUpdateGroup
 
     if "GroupMemberShip" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["GroupMemberShip"] = {}

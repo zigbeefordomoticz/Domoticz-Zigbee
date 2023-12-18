@@ -7,7 +7,7 @@
 import socket
 from threading import Thread
 
-import Domoticz
+import DomoticzEx as Domoticz
 import serial
 from Classes.ZigateTransport.readSerial import (open_serial,
                                                 serial_read_write_from_zigate,

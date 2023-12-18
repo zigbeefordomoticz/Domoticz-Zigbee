@@ -9,7 +9,6 @@ import datetime
 import logging
 from typing import Any, Optional
 
-import Domoticz
 import zigpy.appdb
 import zigpy.config
 import zigpy.device

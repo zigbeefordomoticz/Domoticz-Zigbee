@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
+import DomoticzEx as Domoticz
 
 try:
     import zlib

@@ -3,24 +3,17 @@
 #
 # Author: pipiche38
 #
-import Domoticz
+
 
 from time import time
 
-from Modules.tools import getListOfEpForCluster, mainPoweredDevice
-
-from Classes.GroupMgtv2.GrpServices import (
-    create_new_group_and_attach_devices,
-    update_group_and_add_devices,
-    update_group_and_remove_devices,
-    scan_all_devices_for_grp_membership,
-    submitForGroupMemberShipScaner,
-    SendGroupIdentifyEffect,
-    updateGroupName,
-)
-
-
 from Classes.GroupMgtv2.GrpIkeaRemote import Ikea5BToBeAddedToListIfExist
+from Classes.GroupMgtv2.GrpServices import (
+    SendGroupIdentifyEffect, create_new_group_and_attach_devices,
+    scan_all_devices_for_grp_membership, submitForGroupMemberShipScaner,
+    update_group_and_add_devices, update_group_and_remove_devices,
+    updateGroupName)
+from Modules.tools import getListOfEpForCluster, mainPoweredDevice
 
 
 def ScanAllDevicesForGroupMemberShip(self):

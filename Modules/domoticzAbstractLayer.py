@@ -10,9 +10,9 @@
 
 import time
 
-import Domoticz
+import DomoticzEx as Domoticz
 
-DOMOTICZ_EXTENDED_API = False
+DOMOTICZ_EXTENDED_API = True
 
 DELAY_BETWEEN_TOUCH = 30
 
@@ -470,6 +470,8 @@ def domoticz_log_api( message):
 def domoticz_error_api( message):
     Domoticz.Error( message )
 
+def domoticz_status_api( message):
+    Domoticz.Status( message )
 
 def is_dimmable_switch(self, Devices, DeviceId, Unit):
     _switchType, _subType, _type = domo_read_SwitchType_SubType_Type(self, Devices, DeviceId, Unit)

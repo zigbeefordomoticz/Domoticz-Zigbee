@@ -9,8 +9,11 @@ import json
 import os
 from time import time
 
-import Domoticz
-from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 
 LIST_CLUSTERTYPE_FOR_GROUPS = ( 
     "LvlControl", "Switch", "Plug",
@@ -157,7 +160,7 @@ def rest_rescan_group(self, verb, data, parameters):
     if self.groupmgt:
         self.groupmgt.ScanAllDevicesForGroupMemberShip()
     else:
-        Domoticz.Error("rest_rescan_group Group not enabled!!!")
+        domoticz_error_api("rest_rescan_group Group not enabled!!!")
     action["Name"] = "Full Scan"
     action["TimeStamp"] = int(time())
 
@@ -296,7 +299,7 @@ def rest_zGroup(self, verb, data, parameters):
     if verb == "PUT":
         _response["Data"] = None
         if not self.groupmgt:
-            Domoticz.Error("Looks like Group Management is not enabled")
+            domoticz_error_api("Looks like Group Management is not enabled")
             _response["Data"] = {}
             return _response
 

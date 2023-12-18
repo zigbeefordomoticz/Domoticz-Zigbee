@@ -1,12 +1,14 @@
 
-import Domoticz
+import DomoticzEx as Domoticz
+
+from Modules.domoticzAbstractLayer import domoticz_error_api
 
 # Configuration Helpers
 def setConfigItem(Key=None, Attribute="", Value=None):
 
     Config = {}
     if not isinstance(Value, (str, int, float, bool, bytes, bytearray, list, dict)):
-        Domoticz.Error("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
+        domoticz_error_api("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
         return Config
 
     if isinstance(Value, dict):
@@ -23,7 +25,7 @@ def setConfigItem(Key=None, Attribute="", Value=None):
 
         Config = Domoticz.Configuration(Config)
     except Exception as inst:
-        Domoticz.Error("setConfigItem - Domoticz.Configuration operation failed: '" + str(inst) + "'")
+        domoticz_error_api("setConfigItem - Domoticz.Configuration operation failed: '" + str(inst) + "'")
         return None
     return Config
 
@@ -41,7 +43,7 @@ def getConfigItem(Key=None, Attribute="", Default=None):
     except KeyError:
         Value = Default
     except Exception as inst:
-        Domoticz.Error(
+        domoticz_error_api(
             "getConfigItem - Domoticz.Configuration read failed: '"
             + str(inst)
             + "'"

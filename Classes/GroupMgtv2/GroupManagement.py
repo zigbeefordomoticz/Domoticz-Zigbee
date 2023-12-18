@@ -50,48 +50,36 @@
 #      - Managing device short address changes ( could be better to store the IEEE )
 #
 
-import os
 import json
+import os
 import pickle
 
-import Domoticz
-
-from Classes.GroupMgtv2.GrpServices import scan_device_for_grp_membership
 from Classes.GroupMgtv2.GrpMigration import GrpMgtv2Migration
-from Modules.zigateConsts import MAX_LOAD_ZIGATE
+from Classes.GroupMgtv2.GrpServices import scan_device_for_grp_membership
 from Classes.LoggingManagement import LoggingManagement
+from Modules.zigateConsts import MAX_LOAD_ZIGATE
 
 
 class GroupsManagement(object):
 
+    from Classes.GroupMgtv2.GrpDatabase import (load_groups_list_from_json,
+                                                update_due_to_nwk_id_change,
+                                                write_groups_list)
+    from Classes.GroupMgtv2.GrpDomoticz import (processCommand,
+                                                update_domoticz_group_device)
+    from Classes.GroupMgtv2.GrpIkeaRemote import \
+        manageIkeaTradfriRemoteLeftRight
     from Classes.GroupMgtv2.GrpResponses import (
-        statusGroupRequest,
-        remove_group_member_ship_response,
-        look_for_group_member_ship_response,
-        check_group_member_ship_response,
-        add_group_member_ship_response,
-    )
-
-    from Classes.GroupMgtv2.GrpDomoticz import update_domoticz_group_device, processCommand
-    from Classes.GroupMgtv2.GrpDatabase import (
-        write_groups_list,
-        load_groups_list_from_json,
-        update_due_to_nwk_id_change,
-    )
+        add_group_member_ship_response, check_group_member_ship_response,
+        look_for_group_member_ship_response, remove_group_member_ship_response,
+        statusGroupRequest)
     from Classes.GroupMgtv2.GrpServices import (
-        FullRemoveOfGroup,
-        checkAndTriggerIfMajGroupNeeded,
-        addGroupMemberShip,
-        RemoveNwkIdFromAllGroups,
-        get_available_grp_id,
-        add_group_member_ship_from_remote,
-    )
+        FullRemoveOfGroup, RemoveNwkIdFromAllGroups,
+        add_group_member_ship_from_remote, addGroupMemberShip,
+        checkAndTriggerIfMajGroupNeeded, get_available_grp_id)
     from Classes.GroupMgtv2.GrpWebServices import (
-        process_web_request,
-        ScanAllDevicesForGroupMemberShip,
-        ScanDevicesForGroupMemberShip,
-    )
-    from Classes.GroupMgtv2.GrpIkeaRemote import manageIkeaTradfriRemoteLeftRight
+        ScanAllDevicesForGroupMemberShip, ScanDevicesForGroupMemberShip,
+        process_web_request)
 
     def __init__(
         self,

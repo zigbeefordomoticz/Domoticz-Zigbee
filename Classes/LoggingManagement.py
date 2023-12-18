@@ -22,7 +22,9 @@ from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
 from queue import PriorityQueue, Queue
 
-import Domoticz
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 
 LOG_ERROR_HISTORY = "PluginZigbee_log_error_history_"
 LOG_FILE = "PluginZigbee_"
@@ -132,7 +134,7 @@ class LoggingManagement:
             _backupCount = int(self.pluginconf.pluginConf["loggingBackupCount"])
         if "loggingMaxMegaBytes" in self.pluginconf.pluginConf:
             _maxBytes = int(self.pluginconf.pluginConf["loggingMaxMegaBytes"]) * 1024 * 1024
-        Domoticz.Status("Please watch plugin log into %s" % _logfilename)
+        domoticz_status_api("Please watch plugin log into %s" % _logfilename)
         if _maxBytes == 0:
             # Enable TimedRotating
             if sys.version_info >= (3, 9):
@@ -176,8 +178,8 @@ class LoggingManagement:
         try:
             handle = open(jsonLogHistory, "r", encoding="utf-8")
         except Exception as e:
-            Domoticz.Status("Log history not found, no error logged")
-            # Domoticz.Error(repr(e))
+            domoticz_status_api("Log history not found, no error logged")
+            # domoticz_error_api(repr(e))
             return
 
         try:
@@ -188,23 +190,23 @@ class LoggingManagement:
 
         except json.decoder.JSONDecodeError as e:
             loggingWriteErrorHistory(self)  # flush the file to avoid the error next startup
-            Domoticz.Error("load Json LogErrorHistory poorly-formed %s, not JSON: %s" % (jsonLogHistory, e))
+            domoticz_error_api("load Json LogErrorHistory poorly-formed %s, not JSON: %s" % (jsonLogHistory, e))
 
         except Exception as e:
             loggingWriteErrorHistory(self)  # flush the file to avoid the error next startup
-            Domoticz.Error("load Json LogErrorHistory Error %s, not JSON: %s" % (jsonLogHistory, e))
+            domoticz_error_api("load Json LogErrorHistory Error %s, not JSON: %s" % (jsonLogHistory, e))
 
         handle.close()
 
 
     def closeLogFile(self):
         if self.logging_thread is None:
-            Domoticz.Error("closeLogFile - logging_thread is None")
+            domoticz_error_api("closeLogFile - logging_thread is None")
             return
 
         self.running = False
         if self.logging_queue is None:
-            Domoticz.Error("closeLogFile - logging_queue is None")
+            domoticz_error_api("closeLogFile - logging_queue is None")
             return
 
         if self.logging_queue:
@@ -218,7 +220,7 @@ class LoggingManagement:
 
         # Write to file
         loggingWriteErrorHistory(self)
-        Domoticz.Log("Logging Thread shutdown")
+        domoticz_log_api("Logging Thread shutdown")
 
 
     def loggingCleaningErrorHistory(self):
@@ -245,7 +247,7 @@ class LoggingManagement:
 
 
     def logging(self, module, logType, message, nwkid=None, context=None):
-        #Domoticz.Log("%s %s %s %s %s %s %s" % (module, logType, message, nwkid, context, self.logging_thread, self.logging_queue))
+        #domoticz_log_api("%s %s %s %s %s %s %s" % (module, logType, message, nwkid, context, self.logging_thread, self.logging_queue))
         # Set python3 modules logging if required
         self.zigpy_login()
 
@@ -274,7 +276,7 @@ class LoggingManagement:
             ]
             self.logging_queue.put(logging_tuple)
         else:
-            Domoticz.Log("%s" % message)
+            domoticz_log_api("%s" % message)
 
 
 def _loggingStatus(self, thread_name, message):
@@ -282,7 +284,7 @@ def _loggingStatus(self, thread_name, message):
         message = "[%17s] " %thread_name + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info(message.encode('utf-8'))
-    Domoticz.Status(message)
+    domoticz_status_api(message)
 
 
 def _loggingLog(self, thread_name, message):
@@ -291,7 +293,7 @@ def _loggingLog(self, thread_name, message):
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info( message.encode('utf-8'))
     else:
-        Domoticz.Log(message)
+        domoticz_log_api(message)
 
 
 def _loggingDebug(self, thread_name, message):
@@ -300,7 +302,7 @@ def _loggingDebug(self, thread_name, message):
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info(message.encode('utf-8'))
     else:
-        Domoticz.Log(message)
+        domoticz_log_api(message)
 
 
 def _logginfilter(self, thread_name, message, nwkid):
@@ -322,7 +324,7 @@ def loggingDirector(self, thread_name, logType, message):
 
 
 def loggingError(self, thread_name, module, message, nwkid, context):
-    Domoticz.Error(message)
+    domoticz_error_api(message)
     self._newError = True
 
     # Log to file
@@ -425,13 +427,13 @@ def loggingWriteErrorHistory(self):
             json.dump(dict(self.LogErrorHistory), json_file)
             json_file.write("\n")
         except Exception as e:
-            Domoticz.Error("Hops ! Unable to write LogErrorHistory error: %s log: %s" % (e, self.LogErrorHistory))
+            domoticz_error_api("Hops ! Unable to write LogErrorHistory error: %s log: %s" % (e, self.LogErrorHistory))
 
 
 def start_logging_thread(self):
-    Domoticz.Log("start_logging_thread")
+    domoticz_log_api("start_logging_thread")
     if self.logging_thread:
-        Domoticz.Error("start_logging_thread - Looks like logging_thread already started !!!")
+        domoticz_error_api("start_logging_thread - Looks like logging_thread already started !!!")
         return
 
     self.logging_queue = PriorityQueue()
@@ -443,7 +445,7 @@ def start_logging_thread(self):
 
 def logging_thread(self):
 
-    Domoticz.Log("logging_thread - listening")
+    domoticz_log_api("logging_thread - listening")
     while self.running:
         # We loop until self.running is set to False,
         # which indicate plugin shutdown
@@ -451,7 +453,7 @@ def logging_thread(self):
         if len(logging_tuple) == 2:
             timing, command = logging_tuple
             if command == "QUIT":
-                Domoticz.Log("logging_thread Exit requested")
+                domoticz_log_api("logging_thread Exit requested")
                 break
         elif len(logging_tuple) == 8:
             (
@@ -467,9 +469,9 @@ def logging_thread(self):
             try:
                 context = eval(context)
             except Exception as e:
-                Domoticz.Error("Something went wrong and catch: context: %s" % str(context))
-                Domoticz.Error("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
-                Domoticz.Error("      Error %s" % (str(e)))
+                domoticz_error_api("Something went wrong and catch: context: %s" % str(context))
+                domoticz_error_api("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
+                domoticz_error_api("      Error %s" % (str(e)))
                 return
             if logType == "Error":
                 loggingError(self, thread_name, module, message, nwkid, context)
@@ -486,17 +488,17 @@ def logging_thread(self):
                     if self.pluginconf.pluginConf[pluginConfModule]:
                         _logginfilter(self, thread_name, message, nwkid)
                 else:
-                    Domoticz.Error("%s debug module unknown %s" % (pluginConfModule, module))
+                    domoticz_error_api("%s debug module unknown %s" % (pluginConfModule, module))
                     _loggingDebug(self, thread_name, message)
             else:
                 thread_name=thread_name + " " + thread_id
                 loggingDirector(self, thread_name, logType, message)
         else:
-            Domoticz.Error("logging_thread unexpected tuple %s" % (str(logging_tuple)))
-    Domoticz.Log("logging_thread - ended")
+            domoticz_error_api("logging_thread unexpected tuple %s" % (str(logging_tuple)))
+    domoticz_log_api("logging_thread - ended")
 
 def configure_loggers(logger_names, mode):
-    #Domoticz.Log(f"configure_loggers({logger_names} with {_set_logging_level})")
+    #domoticz_log_api(f"configure_loggers({logger_names} with {_set_logging_level})")
     _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING
 
     for logger_name in logger_names:

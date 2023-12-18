@@ -5,10 +5,12 @@
 #
 import json
 
-import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.bindings import bindGroup, unbindGroup, webBind, webUnBind
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 from Modules.zb_tables_management import mgt_binding_table_req
 from Modules.zigateConsts import ZCL_CLUSTERS_ACT
 
@@ -38,7 +40,7 @@ def rest_bindLSTdevice(self, verb, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
 
     if len(parameters) != 1:
-        Domoticz.Error("Must have 1 argument. %s" % parameters)
+        domoticz_error_api("Must have 1 argument. %s" % parameters)
         return _response
 
     listofdevices = []
@@ -83,7 +85,7 @@ def rest_binding(self, verb, data, parameters):
     data = json.loads(data)
 
     if "sourceIeee" not in data and "sourceEp" not in data and "destIeee" not in data and "destEp" not in data and "cluster" not in data:
-        Domoticz.Error("-----> uncomplet json %s" % data)
+        domoticz_error_api("-----> uncomplet json %s" % data)
         _response["Data"] = json.dumps("uncomplet json %s" % data)
         return _response
 
@@ -109,7 +111,7 @@ def rest_unbinding(self, verb, data, parameters):
     data = json.loads(data)
 
     if "sourceIeee" not in data and "sourceEp" not in data and "destIeee" not in data and "destEp" not in data and "cluster" not in data:
-        Domoticz.Log("-----> uncomplet json %s" % data)
+        domoticz_log_api("-----> uncomplet json %s" % data)
         _response["Data"] = json.dumps("uncomplet json %s" % data)
         return _response
 
@@ -137,7 +139,7 @@ def rest_group_binding(self, verb, data, parameters):
     data = json.loads(data)
 
     if "sourceIeee" not in data and "sourceEp" not in data and "groupId" not in data and "cluster" not in data:
-        Domoticz.Error("-----> uncomplet json %s" % data)
+        domoticz_error_api("-----> uncomplet json %s" % data)
         _response["Data"] = json.dumps("uncomplet json %s" % data)
         return _response
 
@@ -166,7 +168,7 @@ def rest_group_unbinding(self, verb, data, parameters):
     data = json.loads(data)
 
     if "sourceIeee" not in data and "sourceEp" not in data and "groupId" not in data and "cluster" not in data:
-        Domoticz.Error("-----> uncomplet json %s" % data)
+        domoticz_error_api("-----> uncomplet json %s" % data)
         _response["Data"] = json.dumps("uncomplet json %s" % data)
         return _response
 
