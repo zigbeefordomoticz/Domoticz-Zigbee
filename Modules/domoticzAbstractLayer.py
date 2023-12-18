@@ -103,8 +103,11 @@ def find_first_unit_widget_from_deviceID(self, Devices, DeviceID):
         return Devices[DeviceID].Units[0] if DeviceID in Devices else None
     return next((x for x in Devices if Devices[x].DeviceID == DeviceID), None)
 
-   
-    
+
+def find_legacy_DeviceID_from_unit(self, Devices, Unit):
+    return Devices[ Unit ].DeviceID if Unit in Devices else None    
+
+
 def how_many_slot_available( Devices, DeviceId=None):
     """Return the number of unit slot available
 
@@ -357,7 +360,7 @@ def domo_read_Color( self, Devices, DeviceId_, Unit_, ):
 
 
 def domo_read_Name( self, Devices, DeviceId_, Unit_, ):
-    return ( Devices[DeviceId_].Units[Unit_].Name if DOMOTICZ_EXTENDED_API else Devices[Unit_].Name )
+    return Devices[DeviceId_].Units[Unit_].Name if DOMOTICZ_EXTENDED_API else Devices[Unit_].Name
 
 
 def domo_read_Options( self, Devices, DeviceId_, Unit_,):

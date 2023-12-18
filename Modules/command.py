@@ -226,10 +226,7 @@ ACTIONATORS = [
 #    if Command == "Set Color":
 #        handle_command_setcolor(self,Devices, DeviceID, Unit, Level, Color, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev)    
 
-def mgtCommand(self, Devices, DeviceID, Unit, Command, Level, Color):
-    Nwkid = self.IEEE2NWK.get(DeviceID)
-    if Nwkid is None:
-        return
+def mgtCommand(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color):
     
     widget_name = domo_read_Name(self, Devices, DeviceID, Unit)
 

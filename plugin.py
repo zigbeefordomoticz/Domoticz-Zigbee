@@ -125,7 +125,9 @@ from Modules.command import mgtCommand
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
-from Modules.domoticzAbstractLayer import (how_many_slot_available,
+from Modules.domoticzAbstractLayer import (find_legacy_DeviceID_from_unit,
+                                           how_many_slot_available,
+                                           is_domoticz_extended,
                                            load_list_of_domoticz_widget)
 from Modules.domoTools import browse_and_reset_devices_if_needed
 from Modules.heartbeat import processListOfDevices
@@ -922,8 +924,9 @@ class BasePlugin:
     def zigpy_backup_available(self, backups):
         handle_zigpy_backup(self, backups)
 
-
-    def onCommand(self, DeviceID, Unit, Command, Level, Color):
+    # def onCommand(self, DeviceID, Unit, Command, Level, Color):
+    def onCommand(self, Unit, Command, Level, Color):
+        
         if (
             not self.VersionNewFashion
             or self.pluginconf is None
@@ -934,10 +937,13 @@ class BasePlugin:
 
         self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
+        if not is_domoticz_extended():
+            DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
+
         # Let's check if this is End Node, or Group related.
-        if Devices[Unit].DeviceID in self.IEEE2NWK:
+        if DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
-            mgtCommand(self, DeviceID, Devices, Unit, Command, Level, Color)
+            mgtCommand(self,  Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
 
         elif self.groupmgt:
             # if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
@@ -1493,10 +1499,15 @@ def onMessage(Connection, Data):
     _plugin.onMessage(Connection, Data)
 
 
-def onCommand(DeviceID, Unit, Command, Level, Color):
+#def onCommand(DeviceID, Unit, Command, Level, Color):
+#    global _plugin
+#    _plugin.onCommand(DeviceID, Unit, Command, Level, Color)
+
+def onCommand( Unit, Command, Level, Color):
     global _plugin
-    _plugin.onCommand(DeviceID, Unit, Command, Level, Color)
-    
+    _plugin.onCommand(Unit, Command, Level, Color)
+
+
 def onDisconnect(Connection):
     global _plugin  # pylint: disable=global-variable-not-assigned
     _plugin.onDisconnect(Connection)
