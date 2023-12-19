@@ -129,7 +129,7 @@ from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
 from Modules.domoticzAbstractLayer import (find_legacy_DeviceID_from_unit,
-                                           how_many_slot_available,
+                                           how_many_legacy_slot_available,
                                            is_domoticz_extended,
                                            load_list_of_domoticz_widget)
 from Modules.domoTools import browse_and_reset_devices_if_needed
@@ -696,7 +696,7 @@ class BasePlugin:
                 )
 
         self.log.logging("Plugin", "Status", "Domoticz Widgets usage is at %s %% (%s units free)" % (
-            round( ( ( 255 - how_many_slot_available( Devices )) / 255 ) * 100, 1 ), how_many_slot_available( Devices ) ))
+            round( ( ( 255 - how_many_legacy_slot_available( Devices)) / 255 ) * 100, 1 ), how_many_legacy_slot_available( Devices) ))
         self.busy = False
 
     def onStop(self):  # sourcery skip: class-extract-method

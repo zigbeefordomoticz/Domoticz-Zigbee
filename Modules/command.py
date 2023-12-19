@@ -17,12 +17,10 @@ from Modules.casaia import (casaia_ac201_fan_control, casaia_setpoint,
                             casaia_swing_OnOff, casaia_system_mode)
 from Modules.cmdsDoorLock import cluster0101_lock_door, cluster0101_unlock_door
 from Modules.danfoss import danfoss_on_off
-from Modules.domoticzAbstractLayer import (domo_read_Name,
-                                           domo_read_nValue_sValue,
-                                           domo_read_SwitchType_SubType_Type,
-                                           is_dimmable_blind,
-                                           is_dimmable_light,
-                                           is_dimmable_switch)
+from Modules.domoticzAbstractLayer import (
+    domo_read_Name, domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
+    is_dimmable_blind, is_dimmable_light, is_dimmable_switch,
+    retreive_widgetid_from_deviceId_unit)
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, update_domoticz_widget)
 from Modules.fanControl import change_fan_mode
@@ -152,7 +150,7 @@ def mgtCommand(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color):
 
     SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, Nwkid)
 
-    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, Nwkid, Unit)
+    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, Nwkid, DeviceID, Unit)
     if not ClusterTypeList:
         self.log.logging("Command", "Error", f"mgtCommand - no ClusterType found !  {self.ListOfDevices[Nwkid]}")
         return

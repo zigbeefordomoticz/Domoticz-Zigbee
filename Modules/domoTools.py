@@ -11,24 +11,18 @@
 
 import time
 
-from Modules.domoticzAbstractLayer import (device_touch_api,
-                                           domo_read_BatteryLevel,
-                                           domo_read_Color,
-                                           domo_read_Device_Idx,
-                                           domo_read_LastUpdate,
-                                           domo_read_Name,
-                                           domo_read_nValue_sValue,
-                                           domo_read_Options,
-                                           domo_read_TimedOut, domo_update_api,
-                                           domoticz_log_api,
-                                           is_domoticz_extended,
-                                           timeout_widget_api)
+from Modules.domoticzAbstractLayer import (
+    device_touch_api, domo_read_BatteryLevel, domo_read_Color,
+    domo_read_Device_Idx, domo_read_LastUpdate, domo_read_Name,
+    domo_read_nValue_sValue, domo_read_Options, domo_read_TimedOut,
+    domo_update_api, domoticz_log_api, is_domoticz_extended,
+    retreive_widgetid_from_deviceId_unit, timeout_widget_api)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (is_domoticz_touch,
                            is_domoticz_update_SuppressTriggers, lookupForIEEE)
 
 
-def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):
+def RetreiveWidgetTypeList(self, Devices, device_id_ieee, NwkId, DeviceUnit=None):
     """
     Return a list of tuple ( EndPoint, WidgetType, DeviceId)
     If DeviceUnit provides we have to return the WidgetType matching this Device Unit.
@@ -38,8 +32,8 @@ def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):
     # Let's retreive All Widgets entries for the entire entry.
     ClusterTypeList = []
     if DeviceUnit:
-        WidgetId = str(Devices[DeviceUnit].ID)
-        self.log.logging("Widget", "Debug", "------> Looking for %s" % WidgetId, NwkId)
+        Widget_Idx = retreive_widgetid_from_deviceId_unit(self, Devices, device_id_ieee, DeviceUnit)
+        self.log.logging("Widget", "Debug", "------> Looking for %s" % Widget_Idx, NwkId)
 
     if (
         "ClusterType" in self.ListOfDevices[NwkId]
@@ -48,36 +42,29 @@ def RetreiveWidgetTypeList(self, Devices, NwkId, DeviceUnit=None):
     ):
         # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
         # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
-        self.log.logging(
-            "Widget", "Debug", "------> OldFashion 'ClusterType': %s" % self.ListOfDevices[NwkId]["ClusterType"], NwkId
-        )
+        self.log.logging( "Widget", "Debug", "------> OldFashion 'ClusterType': %s" % self.ListOfDevices[NwkId]["ClusterType"], NwkId )
         if DeviceUnit:
-            if WidgetId in self.ListOfDevices[NwkId]["ClusterType"]:
-                WidgetType = self.ListOfDevices[NwkId]["ClusterType"][WidgetId]
-                ClusterTypeList.append(("00", WidgetId, WidgetType))
+            if Widget_Idx in self.ListOfDevices[NwkId]["ClusterType"]:
+                WidgetType = self.ListOfDevices[NwkId]["ClusterType"][Widget_Idx]
+                ClusterTypeList.append(("00", Widget_Idx, WidgetType))
                 return ClusterTypeList
         else:
-            for WidgetId in self.ListOfDevices[NwkId]["ClusterType"]:
-                WidgetType = self.ListOfDevices[NwkId]["ClusterType"][WidgetId]
-                ClusterTypeList.append(("00", WidgetId, WidgetType))
+            for Widget_Idx in self.ListOfDevices[NwkId]["ClusterType"]:
+                WidgetType = self.ListOfDevices[NwkId]["ClusterType"][Widget_Idx]
+                ClusterTypeList.append(("00", Widget_Idx, WidgetType))
 
     for iterEp in self.ListOfDevices[NwkId]["Ep"]:
         if "ClusterType" in self.ListOfDevices[NwkId]["Ep"][iterEp]:
-            self.log.logging(
-                "Widget",
-                "Debug",
-                "------> 'ClusterType': %s" % self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"],
-                NwkId,
-            )
+            self.log.logging("Widget","Debug","------> 'ClusterType': %s" % self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"],NwkId,)
             if DeviceUnit:
-                if WidgetId in self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"]:
-                    WidgetType = self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"][WidgetId]
-                    ClusterTypeList.append((iterEp, WidgetId, WidgetType))
+                if Widget_Idx in self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"]:
+                    WidgetType = self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"][Widget_Idx]
+                    ClusterTypeList.append((iterEp, Widget_Idx, WidgetType))
                     return ClusterTypeList
             else:
-                for WidgetId in self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"]:
-                    WidgetType = self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"][WidgetId]
-                    ClusterTypeList.append((iterEp, WidgetId, WidgetType))
+                for Widget_Idx in self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"]:
+                    WidgetType = self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"][Widget_Idx]
+                    ClusterTypeList.append((iterEp, Widget_Idx, WidgetType))
 
     return ClusterTypeList
 
@@ -270,7 +257,7 @@ def reset_motion(self, Devices, NwkId, WidgetType, DeviceId_, Unit_, SignalLevel
         return
 
     domo_update_api(self, Devices, DeviceId_, Unit_, nValue=0, sValue="Off")
-    self.log.logging("Widget", "Debug", "Last update of the device %s %s was %s ago" % (Unit_, WidgetType, (now - lastupdate)), NwkId)
+    self.log.logging("WidgetLevel3", "Debug", "Last update of the device %s %s was %s ago" % (Unit_, WidgetType, (now - lastupdate)), NwkId)
 
 
 def reset_switch_selector_PushButton(self, Devices, NwkId, WidgetType, DeviceId_, Unit_, SignalLevel, BatteryLvl, now, lastupdate, TimedOut):
@@ -286,7 +273,7 @@ def reset_switch_selector_PushButton(self, Devices, NwkId, WidgetType, DeviceId_
         sValue = "00"
 
     domo_update_api(self, Devices, DeviceId_, Unit_, nValue=0, sValue=sValue)
-    self.log.logging("Widget", "Debug", "Last update of the device %s WidgetType: %s was %s ago" % (Unit_, WidgetType, (now - lastupdate)), NwkId)
+    self.log.logging("WidgetLevel2", "Debug", "Last update of the device %s WidgetType: %s was %s ago" % (Unit_, WidgetType, (now - lastupdate)), NwkId)
 
 
 def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_="", ForceUpdate_=False):
@@ -294,7 +281,7 @@ def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, Batter
     if DeviceId not in self.IEEE2NWK:
         return
     _current_battery_level = domo_read_BatteryLevel( self, Devices, DeviceId, Unit, )
-    _current_TimedOut = domo_read_TimedOut( self, Devices, DeviceId, Unit, )
+    _current_TimedOut = domo_read_TimedOut( self, Devices, DeviceId, )
     _current_color = domo_read_Color( self, Devices, DeviceId, Unit, )
     _cur_nValue, cur_sValue = domo_read_nValue_sValue(self, Devices, DeviceId, Unit)
     widget_name = domo_read_Name( self, Devices, DeviceId, Unit, )
@@ -346,13 +333,13 @@ def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
     for device_unit in Devices:
         if Devices[device_unit].DeviceID != ieee:
             continue
-        self.log.logging( "Widget", "Debug", "Update_Battery_Device Battery: now: %s prev: %s (%15s)" % (
+        self.log.logging( "WidgetLevel3", "Debug", "Update_Battery_Device Battery: now: %s prev: %s (%15s)" % (
             BatteryLvl, Devices[device_unit].BatteryLevel, Devices[device_unit].Name), )
 
         if Devices[device_unit].BatteryLevel == int(BatteryLvl):
             continue
 
-        self.log.logging( "Widget", "Debug", "Update_Battery_Device Battery: %s  (%15s)" % (BatteryLvl, Devices[device_unit].Name) )
+        self.log.logging( "WidgetLevel3", "Debug", "Update_Battery_Device Battery: %s  (%15s)" % (BatteryLvl, Devices[device_unit].Name) )
         Devices[device_unit].Update(
             nValue=Devices[device_unit].nValue,
             sValue=Devices[device_unit].sValue,
@@ -372,7 +359,7 @@ def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
     
     self.ListOfDevices[NwkId]["Health"] = "TimedOut" if MarkTimedOut else "Live"
     
-    self.log.logging( "Widget", "Debug", f"timedOutDevice Object {NwkId} MarkTimedOut: {MarkTimedOut}")
+    self.log.logging( "WidgetLevel3", "Debug", f"timedOutDevice Object {NwkId} MarkTimedOut: {MarkTimedOut}")
 
     _IEEE = self.ListOfDevices[NwkId]["IEEE"]
     if MarkTimedOut and not domo_read_TimedOut( self, Devices, _IEEE ):
@@ -386,7 +373,7 @@ def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
 def lastSeenUpdate(self, Devices, NwkId=None):
     """ Just touch the device widgets and if needed remove TimedOut flag """
     
-    self.log.logging( "Widget", "Log", f"lastSeenUpdate Nwkid {NwkId}")
+    self.log.logging( "WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId}")
 
     if NwkId is None or NwkId not in self.ListOfDevices or "IEEE" not in self.ListOfDevices[NwkId]:
         return
@@ -406,11 +393,11 @@ def lastSeenUpdate(self, Devices, NwkId=None):
     _IEEE = device_data["IEEE"]
 
     if not is_domoticz_touch(self):
-        self.log.logging( "Widget", "Log", "Not the good Domoticz level for Touch %s %s %s" % (
+        self.log.logging( "WidgetLevel3", "Debug", "Not the good Domoticz level for Touch %s %s %s" % (
             self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor), NwkId, )
         return
     
-    self.log.logging( "Widget", "Log", f"lastSeenUpdate Nwkid {NwkId} DeviceId {_IEEE}")
+    self.log.logging( "WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId} DeviceId {_IEEE}")
     
     if domo_read_TimedOut( self, Devices, _IEEE ):
         timeout_widget_api(self, Devices, _IEEE, 0)
@@ -422,7 +409,7 @@ def lastSeenUpdate(self, Devices, NwkId=None):
 def GetType(self, Addr, Ep):
     Type = ""
     self.log.logging(
-        "Widget",
+        "WidgetLevel3",
         "Debug",
         "GetType - Model "
         + str(self.ListOfDevices[Addr]["Model"])
@@ -437,12 +424,12 @@ def GetType(self, Addr, Ep):
     if _Model != {} and _Model in list(self.DeviceConf.keys()):
         # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
         if Ep in self.DeviceConf[_Model]["Ep"]:
-            self.log.logging("Widget", "Debug", "Ep: %s found in DeviceConf" % Ep)
+            self.log.logging("WidgetLevel3", "Debug", "Ep: %s found in DeviceConf" % Ep)
             if "Type" in self.DeviceConf[_Model]["Ep"][Ep]:
-                self.log.logging("Widget", "Debug", " 'Type' entry found inf DeviceConf")
+                self.log.logging("WidgetLevel3", "Debug", " 'Type' entry found inf DeviceConf")
                 if self.DeviceConf[_Model]["Ep"][Ep]["Type"] != "":
                     self.log.logging(
-                        "Widget",
+                        "WidgetLevel3",
                         "Debug",
                         "GetType - Found Type in DeviceConf : %s" % self.DeviceConf[_Model]["Ep"][Ep]["Type"],
                         Addr,
@@ -451,26 +438,26 @@ def GetType(self, Addr, Ep):
                     Type = str(Type)
                 else:
                     self.log.logging(
-                        "Widget", "Debug" "GetType - Found EpEmpty Type in DeviceConf for %s/%s" % (Addr, Ep), Addr
+                        "WidgetLevel3", "Debug" "GetType - Found EpEmpty Type in DeviceConf for %s/%s" % (Addr, Ep), Addr
                     )
             else:
                 self.log.logging(
-                    "Widget", "Debug" "GetType - EpType not found in DeviceConf for %s/%s" % (Addr, Ep), Addr
+                    "WidgetLevel3", "Debug" "GetType - EpType not found in DeviceConf for %s/%s" % (Addr, Ep), Addr
                 )
         else:
             Type = self.DeviceConf[_Model]["Type"]
             self.log.logging(
-                "Widget", "Debug", "GetType - Found Type in DeviceConf for %s/%s: %s " % (Addr, Ep, Type), Addr
+                "WidgetLevel3", "Debug", "GetType - Found Type in DeviceConf for %s/%s: %s " % (Addr, Ep, Type), Addr
             )
     else:
         self.log.logging(
-            "Widget",
+            "WidgetLevel3",
             "Debug",
             "GetType - Model:  >%s< not found with Ep: %s in DeviceConf. Continue with ClusterSearch"
             % (self.ListOfDevices[Addr]["Model"], Ep),
             Addr,
         )
-        self.log.logging("Widget", "Debug", "        - List of Entries: %s" % str(self.DeviceConf.keys()), Addr)
+        self.log.logging("WidgetLevel3", "Debug", "        - List of Entries: %s" % str(self.DeviceConf.keys()), Addr)
         Type = ""
 
         # Check ProfileID/ZDeviceD
@@ -485,7 +472,7 @@ def GetType(self, Addr, Ep):
             elif self.ListOfDevices[Addr]["Manufacturer"] == "100b":  # Philipps Hue
                 pass
             elif str(self.ListOfDevices[Addr]["Manufacturer"]).find("LIVOLO") != -1:
-                self.log.logging("Widget", "Debug", "GetType - Found Livolo based on Manufacturer", Addr)
+                self.log.logging("WidgetLevel3", "Debug", "GetType - Found Livolo based on Manufacturer", Addr)
                 return "LivoloSWL/LivoloSWR"
 
         # Finaly Chec on Cluster
@@ -493,13 +480,13 @@ def GetType(self, Addr, Ep):
             if cluster in ("Type", "ClusterType", "ColorMode"):
                 continue
 
-            self.log.logging("Widget", "Debug", "GetType - check Type for Cluster : " + str(cluster))
+            self.log.logging("WidgetLevel3", "Debug", "GetType - check Type for Cluster : " + str(cluster))
 
             if Type != "" and Type[:1] != "/":
                 Type += "/"
 
             Type += TypeFromCluster(self, cluster, create_=True, ModelName=_Model)
-            self.log.logging("Widget", "Debug", "GetType - Type will be set to : " + str(Type))
+            self.log.logging("WidgetLevel3", "Debug", "GetType - Type will be set to : " + str(Type))
 
         # Type+=Type
         # Ne serait-il pas plus simple de faire un .split( '/' ), puis un join ('/')
@@ -515,9 +502,9 @@ def GetType(self, Addr, Ep):
         if Type[0:] == "/":
             Type = Type[1:]
 
-        self.log.logging("Widget", "Debug", "GetType - ClusterSearch return : %s" % Type, Addr)
+        self.log.logging("WidgetLevel3", "Debug", "GetType - ClusterSearch return : %s" % Type, Addr)
 
-    self.log.logging("Widget", "Debug", "GetType returning: %s" % Type, Addr)
+    self.log.logging("WidgetLevel3", "Debug", "GetType returning: %s" % Type, Addr)
 
     return Type
 
@@ -561,7 +548,7 @@ CLUSTER_TO_TYPE = {
 def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", ModelName=""):
 
     self.log.logging(
-        "Widget",
+        "WidgetLevel3",
         "Debug",
         "---> ClusterSearch - Cluster: %s, ProfileID: %s, ZDeviceID: %s, create: %s"
         % (cluster, ProfileID_, ZDeviceID_, create_),
@@ -697,7 +684,7 @@ def subtypeRGB_FromProfile_Device_IDs(EndPoints, Model, ProfileID, ZDeviceID, Co
     return Subtype
 
 
-def remove_bad_cluster_type_entry(self, NwkId, Ep, clusterID, WidgetId ):
+def remove_bad_cluster_type_entry(self, NwkId, Ep, clusterID, Widget_Idx ):
     
     if NwkId not in self.ListOfDevices:
         return
@@ -706,9 +693,9 @@ def remove_bad_cluster_type_entry(self, NwkId, Ep, clusterID, WidgetId ):
     if (
         Ep in self.ListOfDevices[NwkId]["Ep"] 
         and "ClusterType" in self.ListOfDevices[NwkId]["Ep"][Ep] 
-        and WidgetId in self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"]
+        and Widget_Idx in self.ListOfDevices[NwkId]["Ep"][Ep]["ClusterType"]
     ):
-        del self.ListOfDevices[ NwkId ][ "Ep"][ Ep ][ "ClusterType" ][ WidgetId ]
+        del self.ListOfDevices[ NwkId ][ "Ep"][ Ep ][ "ClusterType" ][ Widget_Idx ]
         return True
     return False
 

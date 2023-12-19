@@ -54,7 +54,7 @@ def MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, value, Attribute_="", Col
     ClusterType = TypeFromCluster(self, ClusterId)
     self.log.logging("Widget", "Debug", "------> ClusterType = " + str(ClusterType), NwkId)
 
-    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, NwkId)
+    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, device_id_ieee, NwkId)
     self.log.logging("Widget", "Debug", "------> ClusterTypeList = " + str(ClusterTypeList), NwkId)
     
     if len(ClusterTypeList) == 0:
@@ -248,7 +248,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 nValue = round(float(value), 2)
                 sValue = value
                 self.log.logging("Widget", "Debug", "------>Power  : %s" % sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, str(sValue), BatteryLevel, SignalLevel)
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if WidgetType == "ProdPower" and Attribute_ == "":
                 if value > 0:
@@ -259,7 +259,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 nValue = abs( round(float(value), 2) )
                 sValue = abs(value)
                 self.log.logging("Widget", "Debug", "------>PowerNegative  : %s" % sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, str(sValue), BatteryLevel, SignalLevel)
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if WidgetType == "P1Meter" and Attribute_ == "0000":
                 self.log.logging("Widget", "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NwkId)
