@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Dict
 
 import Modules.tools
-from Modules.domoticzAPI import setConfigItem, getConfigItem
+from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
