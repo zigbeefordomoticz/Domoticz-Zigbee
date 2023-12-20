@@ -1317,7 +1317,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             update_domoticz_widget(self, Devices, DeviceID, Unit, 17, "0", BatteryLevel, SignalLevel)
         
     else:
-        partially_opened_nValue = is_dimmable_blind(self, Devices, DeviceID, Unit) or is_dimmable_light(self, Devices, DeviceID, Unit) or is_dimmable_switch(self, Devices, DeviceId, Unit)
+        partially_opened_nValue = is_dimmable_blind(self, Devices, DeviceID, Unit) or is_dimmable_light(self, Devices, DeviceID, Unit) or is_dimmable_switch(self, Devices, DeviceID, Unit)
         update_domoticz_widget(self, Devices, DeviceID, Unit, partially_opened_nValue, str(Level), BatteryLevel, SignalLevel)
 
     # Let's force a refresh of Attribute in the next Heartbeat
