@@ -22,8 +22,8 @@ import time
 
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
-                                           domoticz_status_api)
-from Modules.domoticzAPI import getConfigItem, setConfigItem
+                                           domoticz_status_api, getConfigItem,
+                                           setConfigItem)
 from Modules.tools import is_domoticz_db_available
 
 
