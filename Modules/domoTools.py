@@ -28,45 +28,50 @@ def RetreiveWidgetTypeList(self, Devices, device_id_ieee, NwkId, DeviceUnit=None
     If DeviceUnit provides we have to return the WidgetType matching this Device Unit.
 
     """
-
+    self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList DeviceId: {device_id_ieee} Unit {DeviceUnit}" , NwkId)
     # Let's retreive All Widgets entries for the entire entry.
-    ClusterTypeList = []
+    to_return_list = []
     if DeviceUnit:
-        Widget_Idx = retreive_widgetid_from_deviceId_unit(self, Devices, device_id_ieee, DeviceUnit)
-        self.log.logging("Widget", "Debug", "------> Looking for %s" % Widget_Idx, NwkId)
+        Widget_Idx = str(retreive_widgetid_from_deviceId_unit(self, Devices, device_id_ieee, DeviceUnit))
+        self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList Looking for Device Idx {Widget_Idx}" , NwkId)
 
-    if (
-        "ClusterType" in self.ListOfDevices[NwkId]
-        and self.ListOfDevices[NwkId]["ClusterType"] != ""
-        and self.ListOfDevices[NwkId]["ClusterType"] != {}
-    ):
-        # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
-        # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
-        self.log.logging( "Widget", "Debug", "------> OldFashion 'ClusterType': %s" % self.ListOfDevices[NwkId]["ClusterType"], NwkId )
-        if DeviceUnit:
-            if Widget_Idx in self.ListOfDevices[NwkId]["ClusterType"]:
-                WidgetType = self.ListOfDevices[NwkId]["ClusterType"][Widget_Idx]
-                ClusterTypeList.append(("00", Widget_Idx, WidgetType))
-                return ClusterTypeList
-        else:
-            for Widget_Idx in self.ListOfDevices[NwkId]["ClusterType"]:
-                WidgetType = self.ListOfDevices[NwkId]["ClusterType"][Widget_Idx]
-                ClusterTypeList.append(("00", Widget_Idx, WidgetType))
+    if "ClusterType" not in self.ListOfDevices[NwkId] or self.ListOfDevices[NwkId]["ClusterType"] in ( "", {}):
+        for iterEp in self.ListOfDevices[NwkId]["Ep"]:
+            if "ClusterType" in self.ListOfDevices[NwkId]["Ep"][iterEp]:
+                device_cluster_type_list = self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"]
+                self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList 'ClusterType': {device_cluster_type_list}", NwkId,)
+                
+                if DeviceUnit:
+                    if Widget_Idx in device_cluster_type_list:
+                        self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList {Widget_Idx} found", NwkId,)
+                        WidgetType = device_cluster_type_list[Widget_Idx]
+                        to_return_list.append((iterEp, Widget_Idx, WidgetType))
+                        self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList returning {to_return_list}", NwkId,)
+                        return to_return_list
 
-    for iterEp in self.ListOfDevices[NwkId]["Ep"]:
-        if "ClusterType" in self.ListOfDevices[NwkId]["Ep"][iterEp]:
-            self.log.logging("Widget","Debug","------> 'ClusterType': %s" % self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"],NwkId,)
-            if DeviceUnit:
-                if Widget_Idx in self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"]:
-                    WidgetType = self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"][Widget_Idx]
-                    ClusterTypeList.append((iterEp, Widget_Idx, WidgetType))
-                    return ClusterTypeList
-            else:
-                for Widget_Idx in self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"]:
-                    WidgetType = self.ListOfDevices[NwkId]["Ep"][iterEp]["ClusterType"][Widget_Idx]
-                    ClusterTypeList.append((iterEp, Widget_Idx, WidgetType))
+                else:
+                    for Widget_Idx in device_cluster_type_list:
+                        WidgetType = device_cluster_type_list[Widget_Idx]
+                        to_return_list.append((iterEp, Widget_Idx, WidgetType))
 
-    return ClusterTypeList
+        self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList returning {to_return_list}", NwkId,)
+        return to_return_list
+
+    # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
+    # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
+    self.log.logging( "Widget", "Debug", "------> OldFashion 'ClusterType': %s" % self.ListOfDevices[NwkId]["ClusterType"], NwkId )
+    if DeviceUnit:
+        if Widget_Idx in self.ListOfDevices[NwkId]["ClusterType"]:
+            WidgetType = self.ListOfDevices[NwkId]["ClusterType"][Widget_Idx]
+            to_return_list.append(("00", Widget_Idx, WidgetType))
+            return to_return_list
+    else:
+        for Widget_Idx in self.ListOfDevices[NwkId]["ClusterType"]:
+            WidgetType = self.ListOfDevices[NwkId]["ClusterType"][Widget_Idx]
+            to_return_list.append(("00", Widget_Idx, WidgetType))
+
+    self.log.logging("Widget", "Debug", f"RetreiveWidgetTypeList returning {to_return_list}", NwkId,)
+    return to_return_list
 
 
 def RetreiveSignalLvlBattery(self, NwkID):
@@ -286,7 +291,7 @@ def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, Batter
     _cur_nValue, cur_sValue = domo_read_nValue_sValue(self, Devices, DeviceId, Unit)
     widget_name = domo_read_Name( self, Devices, DeviceId, Unit, )
 
-    self.log.logging( "Widget", "Debug", "update_domoticz_widget %s:%s:%s  %3s:%3s:%5s (%15s)" % (
+    self.log.logging( "Widget", "Log", "update_domoticz_widget %s:%s:%s  %3s:%3s:%5s (%15s)" % (
         nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, widget_name), self.IEEE2NWK[ DeviceId ])
     
     update_needed = (
@@ -315,7 +320,7 @@ def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, Batter
     if self.pluginconf.pluginConf["logDeviceUpdate"]:
         domoticz_log_api("UpdateDevice - (%15s) %s:%s" % (widget_name, nValue, sValue))
         
-    self.log.logging( "Widget", "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" % (
+    self.log.logging( "Widget", "Log", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" % (
         Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, widget_name), DeviceId, )
 
 

@@ -102,7 +102,6 @@ except ImportError:
     pass
 
 
-import pkg_resources
 import z4d_certified_devices
 
 from Classes.AdminWidgets import AdminWidgets
@@ -1335,7 +1334,7 @@ def start_OTAManagement(self, homefolder):
 
 
 def start_web_server(self, webserver_port, webserver_homefolder):
-
+ 
     self.log.logging("Plugin", "Status", "Start Web Server connection")
     self.webserver = WebServer(
         self.zigbee_communication,
@@ -1348,6 +1347,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         webserver_homefolder,
         self.HardwareID,
         Devices,
+        self.ListOfDomoticzWidget, 
         self.ListOfDevices,
         self.IEEE2NWK,
         self.DeviceConf,

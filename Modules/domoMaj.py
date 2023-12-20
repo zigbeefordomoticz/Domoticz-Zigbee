@@ -62,15 +62,15 @@ def MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, value, Attribute_="", Col
         return
 
     # Look for each entry in ClusterTypeList
-    for WidgetEp, WidgetId, WidgetType in ClusterTypeList:
-        _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, model_name, ClusterType, ClusterTypeList, ClusterId, value, Attribute_, Color_, WidgetEp, WidgetId, WidgetType )
+    for WidgetEp, Widget_Idx, WidgetType in ClusterTypeList:
+        _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, model_name, ClusterType, ClusterTypeList, ClusterId, value, Attribute_, Color_, WidgetEp, Widget_Idx, WidgetType )
 
     
-def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, model_name, ClusterType, ClusterTypeList, ClusterId, value, Attribute_, Color_, WidgetEp, WidgetId, WidgetType ):
+def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, model_name, ClusterType, ClusterTypeList, ClusterId, value, Attribute_, Color_, WidgetEp, Widget_Idx, WidgetType ):
 
         # device_unit is the Device unit
         # WidgetEp is the Endpoint to which the widget is linked to
-        # WidgetId is the Device ID
+        # Widget_Idx is the Device ID
         # WidgetType is the Widget Type at creation
         # ClusterType is the Type based on clusters
         # ClusterType: This the Cluster action extracted for the particular Endpoint based on Clusters.
@@ -79,8 +79,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         # Attribute_ : If used This is the Attribute from readCluster. Will help to route to the right action
         # Color_     : If used This is the color value to be set
 
-        self.log.logging( "Widget", "Debug", "_domo_maj_one_cluster_type_entry WidgetEp: %s, WidgetId: %s, WidgetType: %s" % (
-            WidgetEp, WidgetId, WidgetType), NwkId, )
+        self.log.logging( "Widget", "Debug", "_domo_maj_one_cluster_type_entry WidgetEp: %s, Widget_Idx: %s, WidgetType: %s Value: %s Color: %s" % (
+            WidgetEp, Widget_Idx, WidgetType, value, Color_), NwkId, )
         
         if WidgetEp == "00":
             # Old fashion / keep it for backward compatibility
@@ -91,15 +91,15 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging( "Widget", "Debug", "------> skiping this WidgetEp as do not match Ep : %s %s" % (WidgetEp, Ep), NwkId,)
             return
 
-        device_unit = retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, WidgetId )
+        device_unit = retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, Widget_Idx )
         if device_unit is None:
             return
         
         prev_nValue, prev_sValue = domo_read_nValue_sValue(self, Devices, device_id_ieee, device_unit)
         switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, Devices, device_id_ieee, device_unit)
 
-        self.log.logging( "Widget", "Debug", "------> ClusterType: %s WidgetEp: %s WidgetId: %s WidgetType: %s Attribute_: %s" % ( 
-            ClusterType, WidgetEp, WidgetId, WidgetType, Attribute_), NwkId, )
+        self.log.logging( "Widget", "Debug", "------> ClusterType: %s WidgetEp: %s Widget_Idx: %s WidgetType: %s Attribute_: %s" % ( 
+            ClusterType, WidgetEp, Widget_Idx, WidgetType, Attribute_), NwkId, )
 
         SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, NwkId)
         self.log.logging("Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NwkId)
@@ -245,7 +245,6 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
                     return
 
-                nValue = round(float(value), 2)
                 sValue = value
                 self.log.logging("Widget", "Debug", "------>Power  : %s" % sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
@@ -256,7 +255,6 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
                     return
 
-                nValue = abs( round(float(value), 2) )
                 sValue = abs(value)
                 self.log.logging("Widget", "Debug", "------>PowerNegative  : %s" % sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
@@ -378,41 +376,35 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 
             elif WidgetType == "Meter" and Attribute_ == "050f":
                 # We receive Instant Power
+                self.log.logging("Widget", "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: {Attribute_} received {value}")
                 check_set_meter_widget(self, Devices, device_id_ieee, device_unit, 0)
-                _instant, summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
+                _, summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
-                self.log.logging("Widget", "Debug", "------>  : " + sValue)
+                self.log.logging("Widget", "Debug", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}")
+                
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and ClusterId == "000c"):  # kWh
                 # We receive Instant
-                # Let's check if we have Summation in the datastructutre
-                summation = 0
-                if ( 
-                    "0702" in self.ListOfDevices[NwkId]["Ep"][Ep] 
-                    and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0702"] 
-                    and self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]["0000"] not in ({}, "", "0")
-                ): 
-                    # summation = int(self.ListOfDevices[NwkId]['Ep'][Ep]['0702']['0000'])
-                    summation = self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]["0000"]
+                self.log.logging("Widget", "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: {Attribute_} received {value}")
+
+                summation = None
+                ep_data = self.ListOfDevices[NwkId].get("Ep", {}).get(Ep, {})
+                if "0702" in ep_data and "0000" in ep_data["0702"]:
+                    value_0000 = ep_data["0702"]["0000"]
+                    if value_0000 not in ({}, "", "0"):
+                        summation = int(float(value_0000))
 
                 instant = round(float(value), 2)
-                # Did we get Summation from Data Structure
-                if summation != 0:
-                    summation = int(float(summation))
-                    sValue = "%s;%s" % (instant, summation)
-                    # We got summation from Device, let's check that EnergyMeterMode is
-                    # correctly set to 0, if not adjust
-                    check_set_meter_widget( self, Devices, device_id_ieee, device_unit, 0)
-                else:
-                    sValue = "%s;" % (instant)
-                    check_set_meter_widget( self, Devices, device_id_ieee, device_unit, 1)
-                    # No summation retreive, so we make sure that EnergyMeterMode is
-                    # correctly set to 1 (compute), if not adjust
+                sValue = f"{instant};{summation}" if summation is not None else f"{instant};"
 
-                self.log.logging("Widget", "Debug", "------>  : " + sValue)
+                EnergyMeterMode = 0 if summation is not None else 1
+                check_set_meter_widget(self, Devices, device_id_ieee, device_unit, EnergyMeterMode)
+
+                self.log.logging("Widget", "Debug", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}")
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
 
         if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
             # /json.htm?type=command&param=udevice&idx=IDX&nvalue=0&svalue=INCREMENT
@@ -1433,18 +1425,18 @@ def is_time_to_domo_update(self, NwkId, Ep):
     return True
 
 
-def retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, WidgetId ):
+def retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, Widget_Idx ):
     """ Retreive the Device Unit from the Plugin Database (ClusterType information), then check that unit exists in the Domoticz Devices """
 
-    device_unit = find_widget_unit_from_WidgetID(self, Devices, WidgetId )
+    device_unit = find_widget_unit_from_WidgetID(self, Devices, Widget_Idx )
     
     if device_unit is None:
-        self.log.logging( "Widget", "Error", "Device %s not found !!!" % WidgetId, NwkId)
+        self.log.logging( "Widget", "Error", "Device %s not found !!!" % Widget_Idx, NwkId)
         # House keeping, we need to remove this bad clusterType
-        if remove_bad_cluster_type_entry(self, NwkId, Ep, ClusterId, WidgetId ):
-            self.log.logging( "Widget", "Log", "WidgetID %s not found, successfully remove the entry from device" % WidgetId, NwkId)
+        if remove_bad_cluster_type_entry(self, NwkId, Ep, ClusterId, Widget_Idx ):
+            self.log.logging( "Widget", "Log", "Widget_Idx %s not found, successfully remove the entry from device" % Widget_Idx, NwkId)
         else:
-            self.log.logging( "Widget", "Error", "WidgetID %s not found, unable to remove the entry from device" % WidgetId, NwkId)
+            self.log.logging( "Widget", "Error", "Widget_Idx %s not found, unable to remove the entry from device" % Widget_Idx, NwkId)
         return None
     
     elif not domo_check_unit(self, Devices, device_id_ieee, device_unit):

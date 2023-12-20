@@ -17,7 +17,11 @@ from Modules.actuators import actuators
 from Modules.basicOutputs import (PermitToJoin, ZigatePermitToJoin,
                                   initiate_change_channel, setExtendedPANID,
                                   zigateBlueLed)
-from Modules.domoticzAbstractLayer import (domoticz_error_api,
+from Modules.domoticzAbstractLayer import (domo_read_BatteryLevel,
+                                           domo_read_nValue_sValue,
+                                           domo_read_SignalLevel,
+                                           domo_read_TimedOut,
+                                           domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
 from Modules.sendZigateCommand import sendZigateCmd
@@ -113,6 +117,7 @@ class WebServer(object):
         HomeDirectory,
         hardwareID,
         Devices,
+        ListOfDomoticzWidget,
         ListOfDevices,
         IEEE2NWK,
         DeviceConf,
@@ -166,6 +171,7 @@ class WebServer(object):
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
         self.Devices = Devices
+        self.ListOfDomoticzWidget = ListOfDomoticzWidget
         self.readZclClusters = readZclClusters
         self.ControllerIEEE = None
 
@@ -737,63 +743,67 @@ class WebServer(object):
                     ZigatePermitToJoin(self, int(data["PermitToJoin"]))
         return _response
 
+
     def rest_Device(self, verb, data, parameters):
-        def getDeviceInfos(self, UnitId):
+
+        def getDeviceInfos(self, widget_idx):
+            device_id = self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+            unit = self.ListOfDomoticzWidget[widget_idx]["Unit"]
+            nValue, sValue = domo_read_nValue_sValue(self, self.Devices, device_id, unit)
+            SignalLevel = domo_read_SignalLevel(self, self.Devices, device_id, unit)
+            BatteryLevel = domo_read_BatteryLevel(self, self.Devices, device_id, unit)
+            TimedOut = domo_read_TimedOut(self, self.Devices, device_id)
+
             return {
-                "_DeviceID": self.Devices[UnitId].DeviceID,
-                "Name": self.Devices[UnitId].Name,
-                "ID": self.Devices[UnitId].ID,
-                "sValue": self.Devices[UnitId].sValue,
-                "nValue": self.Devices[UnitId].nValue,
-                "SignaleLevel": self.Devices[UnitId].SignalLevel,
-                "BatteryLevel": self.Devices[UnitId].BatteryLevel,
-                "TimedOut": self.Devices[UnitId].TimedOut,
-                # _dictDevices['Type'] = self.Devices[UnitId].Type
-                # _dictDevices['SwitchType'] = self.Devices[UnitId].SwitchType
+                "_DeviceID": device_id,
+                "Name": device_id,
+                "ID": widget_idx,
+                "sValue": sValue,
+                "nValue": nValue,
+                "SignalLevel": SignalLevel,
+                "BatteryLevel": BatteryLevel,
+                "TimedOut": TimedOut,
             }
 
-        _dictDevices = {}
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        if verb == "GET":
-            if self.Devices is None or len(self.Devices) == 0:
-                return _response
+        if verb != "GET":
+            return _response
+        
+        if not self.ListOfDomoticzWidget or len(self.ListOfDomoticzWidget) == 0:
+            return _response
 
-            if len(parameters) == 0:
-                # Return the Full List of ZiGate Domoticz Widget
-                device_lst = []
-                for x in self.Devices:
-                    if len(self.Devices[x].DeviceID) != 16:
-                        continue
+        if len(parameters) == 0:
+            # Return the Full List of ZiGate Domoticz Widget
+            device_lst = [
+                getDeviceInfos(widget_idx)
+                for widget_idx in self.ListOfDomoticzWidget
+                if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
+            ]
+            _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
-                    device_info = getDeviceInfos(self, x)
-                    device_lst.append(device_info)
-                _response["Data"] = json.dumps(device_lst, sort_keys=True)
+        elif len(parameters) == 1:
+            for widget_idx in self.ListOfDomoticzWidget:
+                if (
+                    len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
+                    and parameters[0] == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+                ):
+                    _response["Data"] = json.dumps(getDeviceInfos(widget_idx), sort_keys=True)
+                    break
 
-            elif len(parameters) == 1:
-                for x in self.Devices:
-                    if len(self.Devices[x].DeviceID) != 16:
-                        continue
+        else:
+            device_lst = [
+                getDeviceInfos(widget_idx)
+                for parm in parameters
+                for widget_idx in self.ListOfDomoticzWidget
+                if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
+                and parm == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+            ]
+            _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
-                    if parameters[0] == self.Devices[x].DeviceID:
-                        _dictDevices = device_info = getDeviceInfos(self, x)
-                        _response["Data"] = json.dumps(_dictDevices, sort_keys=True)
-                        break
-
-            else:
-                device_lst = []
-                for parm in parameters:
-                    device_info = {}
-                    for x in self.Devices:
-                        if len(self.Devices[x].DeviceID) != 16:
-                            continue
-
-                        if parm == self.Devices[x].DeviceID:
-                            device_info = getDeviceInfos(self, x)
-                            device_lst.append(device_info)
-                _response["Data"] = json.dumps(device_lst, sort_keys=True)
         return _response
+
 
     def rest_zDevice_name(self, verb, data, parameters):
 
@@ -904,21 +914,19 @@ class WebServer(object):
                     for ep in self.ListOfDevices[x]["Ep"]:
                         if "ClusterType" in self.ListOfDevices[x]["Ep"][ep]:
                             clusterType = self.ListOfDevices[x]["Ep"][ep]["ClusterType"]
-                            for widgetID in clusterType:
-                                for widget in self.Devices:
-                                    if self.Devices[widget].ID == int(widgetID):
-                                        self.logging("Debug", "Widget Name: %s %s" % (widgetID, self.Devices[widget].Name))
-                                        if self.Devices[widget].Name not in device["WidgetList"]:
-                                            device["WidgetList"].append(self.Devices[widget].Name)
+                            for widget_idx in clusterType:
+                                if widget_idx in self.ListOfDomoticzWidget:
+                                    widget_name = self.ListOfDomoticzWidget[ widget_idx ]["Name"]
+                                    if widget_name not in device["WidgetList"]:
+                                        device["WidgetList"].append(widget_name)
 
                         elif "ClusterType" in self.ListOfDevices[x]:
                             clusterType = self.ListOfDevices[x]["ClusterType"]
-                            for widgetID in clusterType:
-                                for widget in self.Devices:
-                                    if self.Devices[widget].ID == int(widgetID):
-                                        self.logging("Debug", "Widget Name: %s %s" % (widgetID, self.Devices[widget].Name))
-                                        if self.Devices[widget].Name not in device["WidgetList"]:
-                                            device["WidgetList"].append(self.Devices[widget].Name)
+                            for widget_idx in clusterType:
+                                if widget_idx in self.ListOfDomoticzWidget:
+                                    widget_name = self.ListOfDomoticzWidget[ widget_idx ]["Name"]
+                                    if widget_name not in device["WidgetList"]:
+                                        device["WidgetList"].append(widget_name)
 
                     if device not in device_lst:
                         device_lst.append(device)
@@ -1094,14 +1102,11 @@ class WebServer(object):
                                     continue
 
                                 if cluster == "ClusterType":
-                                    for widgetId in self.ListOfDevices[item]["Ep"][epId]["ClusterType"]:
-                                        widget = {"_WidgetID": widgetId, "WidgetName": ""}
-                                        for x in self.Devices:
-                                            if self.Devices[x].ID == int(widgetId):
-                                                widget["WidgetName"] = self.Devices[x].Name
-                                                break
-
-                                        widget["WidgetType"] = self.ListOfDevices[item]["Ep"][epId]["ClusterType"][widgetId]
+                                    for widget_idx in self.ListOfDevices[item]["Ep"][epId]["ClusterType"]:
+                                        widget = {"_WidgetID": widget_idx, "WidgetName": ""}
+                                        if widget_idx in self.ListOfDomoticzWidget:
+                                            widget["WidgetName"] = self.ListOfDomoticzWidget[widget_idx]["Name"]
+                                        widget["WidgetType"] = self.ListOfDevices[item]["Ep"][epId]["ClusterType"][widget_idx]
                                         _widget_lst.append(widget)
                                     continue
 

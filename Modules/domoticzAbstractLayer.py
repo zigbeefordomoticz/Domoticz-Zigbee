@@ -52,12 +52,12 @@ def load_list_of_domoticz_widget(self, Devices):
         self.log.logging( "AbstractDz", "Debug", f"Loading Devices[{x}]: {self.ListOfDomoticzWidget[ x ]}")
 
 
-def find_widget_unit_from_WidgetID(self, Devices, WidgetID ):
+def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx ):
     """Find the Widget Unit with Legay framework, the tuple ( DeviceID, Unit ) with the Extended Framework
 
     Args:
         Devices (dict): Devices dictionary provided by the Domoticz framework
-        WidgetID (str): Domoticz Widget Idx, usally store in the "ClusterType" attribute associated to each Ep
+        Widget_Idx (str): Domoticz Widget Idx, usally store in the "ClusterType" attribute associated to each Ep
         Should be used in domoMaj, when looking for the 'DeviceUnit'
 
     Returns:
@@ -66,25 +66,25 @@ def find_widget_unit_from_WidgetID(self, Devices, WidgetID ):
         
     """
     
-    self.log.logging( "AbstractDz", "Debug", f"find_widget_unit - WidgetId: {WidgetID} ({type(WidgetID)})")
+    self.log.logging( "AbstractDz", "Debug", f"find_widget_unit_from_WidgetID - Widget_Idx: {Widget_Idx} ({type(Widget_Idx)})")
     
-    WidgetID = int(WidgetID)
-    if WidgetID in self.ListOfDomoticzWidget:
+    Widget_Idx = int(Widget_Idx)
+    if Widget_Idx in self.ListOfDomoticzWidget:
         self.log.logging( "AbstractDz", "Debug", "- returning %s (%s)" %(
-            self.ListOfDomoticzWidget[WidgetID]['Unit'], type(self.ListOfDomoticzWidget[WidgetID]['Unit'])))
-        return self.ListOfDomoticzWidget[WidgetID]['Unit'] 
+            self.ListOfDomoticzWidget[Widget_Idx]['Unit'], type(self.ListOfDomoticzWidget[Widget_Idx]['Unit'])))
+        return self.ListOfDomoticzWidget[Widget_Idx]['Unit'] 
 
-    self.log.logging( "AbstractDz", "Log", f"- {WidgetID} Not Found in ListOfDomoticzWidget, looking the old way" )
+    self.log.logging( "AbstractDz", "Log", f"- {Widget_Idx} Not Found in ListOfDomoticzWidget, looking the old way" )
     # In case it is not found with the new way, let's keep the old way 
     # TO-DO: Remove
     
     for x in list(Devices):
         if DOMOTICZ_EXTENDED_API:
             for y in list(Devices[x].Units):
-                if Devices[x].Units[y].ID == WidgetID:
+                if Devices[x].Units[y].ID == Widget_Idx:
                     return y
                 
-        elif Devices[x].ID == WidgetID:
+        elif Devices[x].ID == Widget_Idx:
             return x
     return None
 
@@ -157,7 +157,7 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
         return None
 
     if DOMOTICZ_EXTENDED_API:
-        self.log.logging("AbstractDz", "Debug", "FreeUnit - looking for a free unit in {DeviceId}")
+        self.log.logging("AbstractDz", "Debug", f"FreeUnit - looking for a free unit in {DeviceId}")
         available_units = set(Devices[DeviceId].Units.keys()) if DeviceId in Devices else []
         return _free_unit_in_device( available_units, nbunit_ )
             
@@ -284,8 +284,12 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         if TimedOut is not None:
             Devices[DeviceID_].TimedOut = TimedOut
             
-        if Options is not None:
-            Devices[DeviceID_].Units[Unit_].Options = Options
+        try:
+            if Options is not None:
+                Devices[DeviceID_].Units[Unit_].Options = Options
+                
+        except Exception as e:
+            self.log.logging("AbstractDz", "Debug", f"domo_update_api: Cannot Write Attribute Option with {Options}")
 
         Devices[DeviceID_].Units[Unit_].Update(Log=True)
         return
@@ -355,6 +359,9 @@ def domo_read_BatteryLevel( self, Devices, DeviceId_, Unit_, ):
     self.log.logging("AbstractDz", "Debug", f"domo_read_BatteryLevel: DeviceID: {DeviceId_} Unit {Unit_}")
     return ( Devices[DeviceId_].Units[Unit_].BatteryLevel if DOMOTICZ_EXTENDED_API else Devices[Unit_].BatteryLevel )
 
+def domo_read_SignalLevel( self, Devices, DeviceId_, Unit_, ):
+    self.log.logging("AbstractDz", "Debug", f"domo_read_BatteryLevel: DeviceID: {DeviceId_} Unit {Unit_}")
+    return ( Devices[DeviceId_].Units[Unit_].SignalLevel if DOMOTICZ_EXTENDED_API else Devices[Unit_].SignalLevel )
 
 def domo_read_Color( self, Devices, DeviceId_, Unit_, ):
     self.log.logging("AbstractDz", "Debug", f"domo_read_Color: DeviceID: {DeviceId_} Unit {Unit_}")
