@@ -694,8 +694,9 @@ class BasePlugin:
                     "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"]
                 )
 
-        self.log.logging("Plugin", "Status", "Domoticz Widgets usage is at %s %% (%s units free)" % (
-            round( ( ( 255 - how_many_legacy_slot_available( Devices)) / 255 ) * 100, 1 ), how_many_legacy_slot_available( Devices) ))
+        if not is_domoticz_extended():
+            self.log.logging("Plugin", "Status", "Domoticz Widgets usage is at %s %% (%s units free)" % (
+                round( ( ( 255 - how_many_legacy_slot_available( Devices)) / 255 ) * 100, 1 ), how_many_legacy_slot_available( Devices) ))
         self.busy = False
 
     def onStop(self):  # sourcery skip: class-extract-method
