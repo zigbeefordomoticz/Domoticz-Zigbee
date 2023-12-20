@@ -125,7 +125,7 @@ def load_list_of_domoticz_widget(self, Devices):
 
 
     for x in self.ListOfDomoticzWidget:
-        self.log.logging( "AbstractDz", "Debug", f"Loading Devices[{x}]: {self.ListOfDomoticzWidget[ x ]}")
+        self.log.logging( "AbstractDz", "Log", f"Loading Devices[{x}]: {self.ListOfDomoticzWidget[ x ]}")
 
 
 def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx ):

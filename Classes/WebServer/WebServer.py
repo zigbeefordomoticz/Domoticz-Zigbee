@@ -846,7 +846,7 @@ class WebServer(object):
 
         elif verb == "GET":
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
- 
+            
             if self.fake_mode():
                 _response["Data"] = json.dumps(dummy_zdevice_name(), sort_keys=True)
             else:
@@ -856,19 +856,7 @@ class WebServer(object):
                         continue
 
                     device = {"_NwkId": x}
-                    for item in (
-                        "Param",
-                        "ZDeviceName",
-                        "IEEE",
-                        "Model",
-                        "MacCapa",
-                        "Status",
-                        "ConsistencyCheck",
-                        "Health",
-                        "LQI",
-                        "Battery",
-                        "CertifiedDevice"
-                    ):
+                    for item in ( "Param", "ZDeviceName", "IEEE", "Model", "MacCapa", "Status", "ConsistencyCheck", "Health", "LQI", "Battery", "CertifiedDevice" ):
                         if item == "CertifiedDevice" and "CertifiedDevice" in self.ListOfDevices[x]:
                             device[item] = self.ListOfDevices[x][item]
 
@@ -915,16 +903,18 @@ class WebServer(object):
                         if "ClusterType" in self.ListOfDevices[x]["Ep"][ep]:
                             clusterType = self.ListOfDevices[x]["Ep"][ep]["ClusterType"]
                             for widget_idx in clusterType:
-                                if widget_idx in self.ListOfDomoticzWidget:
-                                    widget_name = self.ListOfDomoticzWidget[ widget_idx ]["Name"]
+                                if int(widget_idx) in self.ListOfDomoticzWidget:
+                                    widget_name = self.ListOfDomoticzWidget[ int(widget_idx) ]["Name"]
+                                    
                                     if widget_name not in device["WidgetList"]:
                                         device["WidgetList"].append(widget_name)
 
                         elif "ClusterType" in self.ListOfDevices[x]:
                             clusterType = self.ListOfDevices[x]["ClusterType"]
                             for widget_idx in clusterType:
-                                if widget_idx in self.ListOfDomoticzWidget:
-                                    widget_name = self.ListOfDomoticzWidget[ widget_idx ]["Name"]
+                                if int(widget_idx) in self.ListOfDomoticzWidget:
+                                    widget_name = self.ListOfDomoticzWidget[ int(widget_idx) ]["Name"]
+                                    
                                     if widget_name not in device["WidgetList"]:
                                         device["WidgetList"].append(widget_name)
 
@@ -1084,8 +1074,8 @@ class WebServer(object):
                     if "ClusterType" in self.ListOfDevices[item]:
                         for widget_idx in self.ListOfDevices[item]["ClusterType"]:
                             widget = {"_WidgetID": widget_idx, "WidgetName": ""}
-                            if widget_idx in self.ListOfDomoticzWidget:
-                                widget["WidgetName"] = self.ListOfDomoticzWidget[widget_idx]["Name"]
+                            if int(widget_idx) in self.ListOfDomoticzWidget:
+                                widget["WidgetName"] = self.ListOfDomoticzWidget[int(widget_idx)]["Name"]
                             widget["WidgetType"] = self.ListOfDevices[item]["ClusterType"][widget_idx]
                             _widget_lst.append(widget)
 
@@ -1101,8 +1091,8 @@ class WebServer(object):
                                 if cluster == "ClusterType":
                                     for widget_idx in self.ListOfDevices[item]["Ep"][epId]["ClusterType"]:
                                         widget = {"_WidgetID": widget_idx, "WidgetName": ""}
-                                        if widget_idx in self.ListOfDomoticzWidget:
-                                            widget["WidgetName"] = self.ListOfDomoticzWidget[widget_idx]["Name"]
+                                        if int(widget_idx) in self.ListOfDomoticzWidget:
+                                            widget["WidgetName"] = self.ListOfDomoticzWidget[int(widget_idx)]["Name"]
                                         widget["WidgetType"] = self.ListOfDevices[item]["Ep"][epId]["ClusterType"][widget_idx]
                                         _widget_lst.append(widget)
                                     continue

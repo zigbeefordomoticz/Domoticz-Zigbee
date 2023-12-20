@@ -445,7 +445,7 @@ def update_domoticz_group_device(self, GroupId):
 
 def update_domoticz_group_name(self, GrpId, NewGrpName):
 
-    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
+    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GrpId)
     if unit is None:
         self.logging("Debug", "update_domoticz_group_name - no unit found for GroupId: %s" % self.ListOfGroups[GrpId])
         return

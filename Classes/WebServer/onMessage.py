@@ -160,10 +160,10 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
     _response["Status"] = "200 OK"
 
     if "Accept-Encoding" in Data["Headers"]:
-        self.logging( "Debug", "send_file  sendResponse %s %s" %(webFilename, _response))
+        #self.logging( "Debug", "send_file  sendResponse %s %s" %(webFilename, _response))
         self.sendResponse(Connection, _response, AcceptEncoding=Data["Headers"]["Accept-Encoding"])
     else:
-        self.logging( "Debug", "send_file  sendResponse %s %s" %(webFilename, _response))
+        #self.logging( "Debug", "send_file  sendResponse %s %s" %(webFilename, _response))
         self.sendResponse(Connection, _response)
     
 def get__range_and_send(self,Connection, webFilename, Data, _response ):

@@ -495,7 +495,7 @@ class BasePlugin:
             return
         
         # Import List of Domoticz Widgets
-        self.ListOfDomoticzWidget = {}
+
         load_list_of_domoticz_widget(self, Devices)
         
         # Import DeviceList.txt Filename is : DeviceListName
@@ -816,7 +816,6 @@ class BasePlugin:
                     )
 
             self.log.logging("Plugin", "Debug", "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
-            self.ListOfDomoticzWidget = {}
             load_list_of_domoticz_widget(self, Devices)
             return
 
