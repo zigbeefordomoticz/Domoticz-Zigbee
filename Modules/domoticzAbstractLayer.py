@@ -22,9 +22,10 @@ def is_domoticz_extended():
 # Communication Helpers
 def domoticz_connection( name, transport, protocol, address=None, port=None, baud=None):
     if address and baud:
-        return Domoticz.Connection( Name=name, Transport=transport, Protocol=protocol, Address=address, Port=port, )
-    if address:
         return Domoticz.Connection( Name=name, Transport=transport, Protocol=protocol, Address=address, Port=port, Baud=baud)
+    
+    if address:
+        return Domoticz.Connection( Name=name, Transport=transport, Protocol=protocol, Address=address, Port=port)
 
     return Domoticz.Connection( Name=name, Transport=transport, Protocol=protocol, Port=port )
 
