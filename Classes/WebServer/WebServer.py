@@ -1082,14 +1082,11 @@ class WebServer(object):
                     # ClusterType
                     _widget_lst = []
                     if "ClusterType" in self.ListOfDevices[item]:
-                        for widgetId in self.ListOfDevices[item]["ClusterType"]:
-                            widget = {"_WidgetID": widgetId, "WidgetName": ""}
-                            for x in self.Devices:
-                                if self.Devices[x].ID == int(widgetId):
-                                    widget["WidgetName"] = self.Devices[x].Name
-                                    break
-
-                            widget["WidgetType"] = self.ListOfDevices[item]["ClusterType"][widgetId]
+                        for widget_idx in self.ListOfDevices[item]["ClusterType"]:
+                            widget = {"_WidgetID": widget_idx, "WidgetName": ""}
+                            if widget_idx in self.ListOfDomoticzWidget:
+                                widget["WidgetName"] = self.ListOfDomoticzWidget[widget_idx]["Name"]
+                            widget["WidgetType"] = self.ListOfDevices[item]["ClusterType"][widget_idx]
                             _widget_lst.append(widget)
 
                     # Ep informations
