@@ -274,6 +274,8 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
     self.log.logging("AbstractDz", "Debug", "domo_create_api DeviceID: %s,Name: %s,Unit: %s,TypeName: %s,Type: %s,Subtype: %s,Switchtype: %s, widgetOptions= %s, Image: %s" %(
         DeviceID_, Name_, Unit_, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, Image,))
 
+    Name_ = f"{self.pluginParameters['Name']} - {Name_}"
+
     # Determine the correct class to use based on the API type
     domoticz_device_api_class = Domoticz.Unit if DOMOTICZ_EXTENDED_API else Domoticz.Device
 
@@ -678,4 +680,3 @@ def _sanity_check_device_unit(self, Devices, device_ieee, unit):
         (DOMOTICZ_EXTENDED_API and (device_ieee not in Devices or unit not in Devices[device_ieee].Units))
         or (not DOMOTICZ_EXTENDED_API and unit not in Devices)
     )
-
