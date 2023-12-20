@@ -6,20 +6,21 @@
 
 import json
 
-
 from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
+from Modules.domoticzAbstractLayer import (
+    FreeUnit, domo_create_api, find_first_unit_widget_from_deviceID)
 from Modules.tools import Hex_Format, is_hex
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
 from Zigbee.zclCommands import (zcl_group_level_move_to_level,
+                                zcl_group_move_to_level_stop,
                                 zcl_group_move_to_level_with_onoff,
                                 zcl_group_onoff_off_noeffect,
                                 zcl_group_onoff_off_witheffect,
                                 zcl_group_onoff_on,
                                 zcl_group_window_covering_off,
                                 zcl_group_window_covering_on,
-                                zcl_group_move_to_level_stop,
                                 zcl_group_window_covering_stop)
 
 WIDGET_STYLE = {
@@ -37,24 +38,8 @@ WIDGET_STYLE = {
 }
 
 
-def unit_for_widget(self, GroupId):
-
-    for x in self.Devices:
-        if self.Devices[x].DeviceID == GroupId:
-            return x
-    return None
-
-
-def free_unit(Devices):
-    for x in range(1, 255):
-        if x not in Devices:
-            return x
-
-
 def create_domoticz_group_device(self, GroupName, GroupId):
     " Create Device for just created group in Domoticz. "
-    
-    import DomoticzEx as Domoticz
 
     if GroupName == "" or GroupId == "":
         self.logging(
@@ -62,25 +47,20 @@ def create_domoticz_group_device(self, GroupName, GroupId):
         )
         return
 
-    for x in self.Devices:
-        if self.Devices[x].DeviceID == GroupId:
-            # self.logging( 'Error',"createDomoticzGroupDevice - existing group %s" %(self.Devices[x].Name))
-            return
+    if find_first_unit_widget_from_deviceID(self, self.Devices, GroupId) is None:
+        return
+    
 
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
 
-    unit = free_unit(self.Devices)
+    unit = FreeUnit(self, self.Devices, GroupId, 1)
+    idx = domo_create_api(self, self.Devices, GroupId, unit, GroupName, Type=Type_, Subtype=Subtype_, Switchtype=SwitchType_, widgetOptions=None, Image=None)
     self.logging("Debug", "createDomoticzGroupDevice - Unit: %s" % unit)
-    myDev = Domoticz.Device(
-        DeviceID=str(GroupId), Name=str(GroupName), Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=SwitchType_
-    )
-    myDev.Create()
-    ID = myDev.ID
-    if ID == -1:
-        self.logging("Error", "createDomoticzGroupDevice - failed to create Group device.")
+    if idx == -1:
+        self.logging("Error", f"createDomoticzGroupDevice - failed to create Group device. {GroupName} with unit {unit}")
         return
 
-    self.ListOfGroups[GroupId]["WidgetType"] = unit
+    self.ListOfGroups[GroupId]["WidgetType"] = idx
 
 
 def LookForGroupAndCreateIfNeeded(self, GroupId):
@@ -88,7 +68,7 @@ def LookForGroupAndCreateIfNeeded(self, GroupId):
     if GroupId not in self.ListOfGroups:
         return
 
-    if unit_for_widget(self, GroupId):
+    if find_first_unit_widget_from_deviceID(self, self.Devices, GroupId):
         # Group Exist and has a valid unit
         update_domoticz_group_device_widget(self, GroupId)
         return
@@ -110,7 +90,7 @@ def update_domoticz_group_device_widget_name(self, GroupName, GroupId):
         )
         return
 
-    unit = unit_for_widget(self, GroupId)
+    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
         self.logging(
             "Debug",
@@ -132,7 +112,7 @@ def update_domoticz_group_device_widget(self, GroupId):
     if GroupId == "":
         self.logging("Error", "update_domoticz_group_device_widget - Invalid GroupdID: %s" % (GroupId))
 
-    unit = unit_for_widget(self, GroupId)
+    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
         self.logging(
             "Debug", "update_domoticz_group_device_widget - no unit found for GroupId: %s" % self.ListOfGroups[GroupId]
@@ -315,7 +295,7 @@ def update_domoticz_group_device(self, GroupId):
         self.logging( "Debug", "update_domoticz_group_device - no Devices for that group: %s" % self.ListOfGroups[GroupId])
         return
 
-    unit = unit_for_widget(self, GroupId)
+    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
         self.logging( "Debug", "update_domoticz_group_device - no unit found for GroupId: %s" % self.ListOfGroups[GroupId])
         return
@@ -465,7 +445,7 @@ def update_domoticz_group_device(self, GroupId):
 
 def update_domoticz_group_name(self, GrpId, NewGrpName):
 
-    unit = unit_for_widget(self, GrpId)
+    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
         self.logging("Debug", "update_domoticz_group_name - no unit found for GroupId: %s" % self.ListOfGroups[GrpId])
         return
@@ -493,7 +473,7 @@ def ValuesForVenetian(level):
 def remove_domoticz_group_device(self, GroupId):
     " User has removed the Domoticz Device corresponding to this group"
 
-    unit = unit_for_widget(self, GroupId)
+    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None and GroupId in self.ListOfGroups:
         self.logging(
             "Debug", "remove_domoticz_group_device - no unit found for GroupId: %s" % self.ListOfGroups[GroupId]
