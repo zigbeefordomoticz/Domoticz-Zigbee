@@ -19,7 +19,86 @@ DELAY_BETWEEN_TOUCH = 30
 def is_domoticz_extended():
     return DOMOTICZ_EXTENDED_API
 
+# Communication Helpers
+def domoticz_connection( name, transport, protocol, address=None, port=None):
+    if address:
+        return Domoticz.Connection( Name=name, Transport=transport, Protocol=protocol, Address=address, Port=port )
+    return Domoticz.Connection( Name=name, Transport=transport, Protocol=protocol, Port=port )
 
+
+# Configuration Helpers
+def setConfigItem(Key=None, Attribute="", Value=None):
+
+    Config = {}
+    if not isinstance(Value, (str, int, float, bool, bytes, bytearray, list, dict)):
+        domoticz_error_api("setConfigItem - A value is specified of a not allowed type: '" + str(type(Value)) + "'")
+        return Config
+
+    if isinstance(Value, dict):
+        # There is an issue that Configuration doesn't allow None value in dictionary !
+        # Replace none value to 'null'
+        Value = prepare_dict_for_storage(Value, Attribute)
+
+    try:
+        Config = Domoticz.Configuration()
+        if Key is None:
+            Config = Value  # set whole configuration if no key specified
+        else:
+            Config[Key] = Value
+
+        Config = Domoticz.Configuration(Config)
+    except Exception as inst:
+        domoticz_error_api("setConfigItem - Domoticz.Configuration operation failed: '" + str(inst) + "'")
+        return None
+    return Config
+
+
+def getConfigItem(Key=None, Attribute="", Default=None):
+    
+    Domoticz.Log("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
+    
+    if Default is None:
+        Default = {}
+    Value = Default
+    try:
+        Config = Domoticz.Configuration()
+        Value = Config if Key is None else Config[Key]
+    except KeyError:
+        Value = Default
+    except Exception as inst:
+        domoticz_error_api(
+            "getConfigItem - Domoticz.Configuration read failed: '"
+            + str(inst)
+            + "'"
+        )
+
+    return repair_dict_after_load(Value, Attribute)
+
+
+def prepare_dict_for_storage(dict_items, Attribute):
+
+    from base64 import b64encode
+
+    if Attribute in dict_items:
+        dict_items[Attribute] = b64encode(str(dict_items[Attribute]).encode("utf-8"))
+    dict_items["Version"] = 1
+    return dict_items
+
+
+def repair_dict_after_load(b64_dict, Attribute):
+    if b64_dict in ("", {}):
+        return {}
+    if "Version" not in b64_dict:
+        Domoticz.Log("repair_dict_after_load - Not supported storage")
+        return {}
+    if Attribute in b64_dict:
+        from base64 import b64decode
+
+        b64_dict[Attribute] = eval(b64decode(b64_dict[Attribute]))
+    return b64_dict
+
+
+# Devices helpers
 def load_list_of_domoticz_widget(self, Devices):
     """Use at plugin start to creat an index of Domoticz Widget. It is also called after a Widget removal and when a new device has been paired.
 
@@ -80,6 +159,7 @@ def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx ):
         elif Devices[x].ID == Widget_Idx:
             return x
     return None
+
 
 def retreive_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit):
     return next( ( x for x in self.ListOfDomoticzWidget if self.ListOfDomoticzWidget[x]["DeviceID"] == DeviceId and self.ListOfDomoticzWidget[x]["Unit"] == Unit ), None, )
