@@ -4,10 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 
-import DomoticzEx as Domoticz
-from Modules.domoticzAbstractLayer import (domoticz_error_api,
-                                           domoticz_log_api,
-                                           domoticz_status_api)
+from Modules.domoticzAbstractLayer import domoticz_connection
 
 
 def startWebServer(self):
@@ -17,20 +14,9 @@ def startWebServer(self):
     # self.httpPort = httpPort
 
     if self.httpIp is None:
-        self.httpServerConn = Domoticz.Connection(
-            Name="Zigate Server Connection",
-            Transport="TCP/IP",
-            Protocol="HTTP",
-            Port=self.httpPort
-        )
+        self.httpServerConn = domoticz_connection( name="Zigate Server Connection", transport="TCP/IP", protocol="HTTP", port=self.httpPort)
     else:
-        self.httpServerConn = Domoticz.Connection(
-            Name="Zigate Server Connection",
-            Transport="TCP/IP",
-            Protocol="HTTP",
-            Address=str(self.httpIp),
-            Port=self.httpPort
-        )
+        self.httpServerConn = domoticz_connection( name="Zigate Server Connection", transport="TCP/IP", protocol="HTTP", address=str(self.httpIp), port=self.httpPort )
 
     self.httpServerConn.Listen()
     if self.httpIp is None:
@@ -50,20 +36,11 @@ def onConnect(self, Connection, Status, Description):
 
     self.logging("Debug", "Connection: %s, description: %s" % (Connection, Description))
     if Status != 0:
-        domoticz_error_api(
-            "onConnect - Failed to connect ("
-            + str(Status)
-            + ") to: "
-            + Connection.Address
-            + ":"
-            + Connection.Port
-            + " with error: "
-            + Description
-        )
+        self.logging("Error", f"onConnect - Failed to connect ({str(Status)} to: {Connection.Address} : {Connection.Port} with error: {Description}")
         return
 
     if Connection is None:
-        domoticz_error_api("onConnect - Uninitialized Connection !!! %s %s %s" % (Connection, Status, Description))
+        self.logging("Error", "onConnect - Uninitialized Connection !!! %s %s %s" % (Connection, Status, Description))
         return
 
     # Search for Protocol
@@ -84,7 +61,7 @@ def onConnect(self, Connection, Status, Description):
             self.logging("Debug", "New Connection: %s" % (Connection.Name))
             self.httpServerConns[Connection.Name] = Connection
     else:
-        domoticz_error_api("onConnect - unexpected protocol for connection: %s" % (Connection))
+        self.logging("Error","onConnect - unexpected protocol for connection: %s" % (Connection))
 
     self.logging("Debug", "Number of http  Connections : %s" % len(self.httpServerConns))
     self.logging("Debug", "Number of https Connections : %s" % len(self.httpsServerConns))
@@ -113,8 +90,8 @@ def onStop(self):
     # Search for Protocol
     for connection in self.httpServerConns:
         self.logging("Log", "Closing %s" % connection)
-        self.httpServerConns[Connection.Name].close()
+        self.httpServerConns[connection.Name].close()
 
     for connection in self.httpsServerConns:
         self.logging("Log", "Closing %s" % connection)
-        self.httpServerConns[Connection.Name].close()
+        self.httpServerConns[connection.Name].close()
