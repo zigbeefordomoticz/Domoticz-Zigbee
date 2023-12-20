@@ -150,7 +150,7 @@ def mgtCommand(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color):
 
     SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, Nwkid)
 
-    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, Nwkid, DeviceID, Unit)
+    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, DeviceID, Nwkid,  Unit)
     if not ClusterTypeList:
         self.log.logging("Command", "Error", f"mgtCommand - no ClusterType found !  {self.ListOfDevices[Nwkid]}")
         return
