@@ -4,22 +4,29 @@
 # Author: zaraki673 & pipiche38
 #
 
-
-import gzip
 import zlib
+import gzip
 
 from Classes.WebServer.tools import MAX_KB_TO_SEND, DumpHTTPResponseToLog
 
+
 def sendResponse(self, Connection, Response, AcceptEncoding=None):
 
-    if "Data" not in Response or Response["Data"] is None:
+    if "Data" not in Response:
         DumpHTTPResponseToLog(Response)
         Connection.Send(Response)
         if not self.pluginconf.pluginConf["enableKeepalive"]:
             Connection.Disconnect()
         return
 
-    self.logging("Debug", "Sending Response to : %s" % Connection.Name)
+    if Response["Data"] is None:
+        DumpHTTPResponseToLog(Response)
+        Connection.Send(Response)
+        if not self.pluginconf.pluginConf["enableKeepalive"]:
+            Connection.Disconnect()
+        return
+
+    self.logging("Debug", "Sending Response to : %s" % (Connection.Name))
 
     # Compression
     allowgzip = self.pluginconf.pluginConf["enableGzip"]
@@ -33,11 +40,15 @@ def sendResponse(self, Connection, Response, AcceptEncoding=None):
         )
         if len(Response["Data"]) > MAX_KB_TO_SEND:
             orig_size = len(Response["Data"])
-            if allowdeflate and "deflate" in AcceptEncoding:
+            if allowdeflate and AcceptEncoding.find("deflate") != -1:
+                self.logging("Debug", "Compressing - deflate")
+                zlib_compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
+                deflated = zlib_compress.compress(Response["Data"])
+                deflated += zlib_compress.flush()
                 Response["Headers"]["Content-Encoding"] = "deflate"
-                Response["Data"] = deflate_response_data(self, Response)
-                
-            elif allowgzip and "gzip" in AcceptEncoding:
+                Response["Data"] = deflated
+
+            elif allowgzip and AcceptEncoding.find("gzip") != -1:
                 self.logging("Debug", "Compressing - gzip")
                 Response["Data"] = gzip.compress(Response["Data"])
                 Response["Headers"]["Content-Encoding"] = "gzip"
@@ -49,34 +60,46 @@ def sendResponse(self, Connection, Response, AcceptEncoding=None):
             )
 
     # Chunking, Follow the Domoticz Python Plugin Framework
-    if self.pluginconf.pluginConf["enableChunk"] and len(Response["Data"]) > MAX_KB_TO_SEND:
-        chunk_size = MAX_KB_TO_SEND
-        num_chunks = (len(Response["Data"]) + chunk_size - 1) // chunk_size
-        for idx in range(num_chunks):
-            start = idx * chunk_size
-            end = min((idx + 1) * chunk_size, len(Response["Data"]))
-            chunk_data = Response["Data"][start:end]
 
-            tosend = {"Chunk": True, "Data": chunk_data}
-            self.logging("Debug", "Sending Chunk: %s out of %s" % (idx + 1, num_chunks))
+    if self.pluginconf.pluginConf["enableChunk"] and len(Response["Data"]) > MAX_KB_TO_SEND:
+        idx = 0
+        HTTPchunk = {}
+        HTTPchunk["Status"] = Response["Status"]
+        HTTPchunk["Chunk"] = True
+        HTTPchunk["Headers"] = {}
+        HTTPchunk["Headers"] = dict(Response["Headers"])
+        HTTPchunk["Data"] = Response["Data"][0:MAX_KB_TO_SEND]
+        self.logging("Debug", "Sending: %s out of %s" % (idx, len((Response["Data"]))))
+
+        # Firs Chunk
+        DumpHTTPResponseToLog(HTTPchunk)
+        Connection.Send(HTTPchunk)
+
+        idx = MAX_KB_TO_SEND
+        while idx != -1:
+            tosend = {}
+            tosend["Chunk"] = True
+            if idx + MAX_KB_TO_SEND < len(Response["Data"]):
+                # we have to send one chunk and then continue
+                tosend["Data"] = Response["Data"][idx : idx + MAX_KB_TO_SEND]
+                idx += MAX_KB_TO_SEND
+            else:
+                # Last Chunk with Data
+                tosend["Data"] = Response["Data"][idx:]
+                idx = -1
+
+            self.logging("Debug", "Sending Chunk: %s out of %s" % (idx, len((Response["Data"]))))
             Connection.Send(tosend)
 
         # Closing Chunk
-        tosend = {"Chunk": True}
+        tosend = {}
+        tosend["Chunk"] = True
         Connection.Send(tosend)
-
+        if not self.pluginconf.pluginConf["enableKeepalive"]:
+            Connection.Disconnect()
     else:
+        # Response['Headers']['Content-Length'] = len( Response['Data'] )
         DumpHTTPResponseToLog(Response)
         Connection.Send(Response)
-    if not self.pluginconf.pluginConf["enableKeepalive"]:
-        Connection.Disconnect()
-
-
-# TODO Rename this here and in `sendResponse`
-def deflate_response_data(self, Response):
-    self.logging("Debug", "Compressing - deflate")
-    zlib_compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
-    deflated = zlib_compress.compress(Response["Data"])
-    deflated += zlib_compress.flush()
- 
-    return deflated
+        if not self.pluginconf.pluginConf["enableKeepalive"]:
+            Connection.Disconnect()
