@@ -284,8 +284,8 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         if TimedOut is not None:
             Devices[DeviceID_].TimedOut = TimedOut
             
-        #if Options is not None:
-        #    Devices[DeviceID_].Units[Unit_].Options = Options
+        if Options is not None:
+            Devices[DeviceID_].Units[Unit_].Options = Options
 
         Devices[DeviceID_].Units[Unit_].Update(Log=True)
         return
