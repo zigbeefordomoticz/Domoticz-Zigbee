@@ -184,7 +184,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             import zigpy_deconz.config as conf
             from Classes.ZigpyTransport.AppDeconz import App_deconz
             config = {
-                conf.CONF_DEVICE: {"path": serialPort}, 
+                conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, 
                 conf.CONF_NWK: {},
                 "topology_scan_enabled": False,
                 }

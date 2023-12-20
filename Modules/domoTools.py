@@ -16,7 +16,8 @@ from Modules.domoticzAbstractLayer import (
     domo_read_Device_Idx, domo_read_LastUpdate, domo_read_Name,
     domo_read_nValue_sValue, domo_read_Options, domo_read_TimedOut,
     domo_update_api, domoticz_log_api, is_domoticz_extended,
-    retreive_widgetid_from_deviceId_unit, timeout_widget_api)
+    retreive_widgetid_from_deviceId_unit, timeout_widget_api,
+    update_battery_api)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (is_domoticz_touch,
                            is_domoticz_update_SuppressTriggers, lookupForIEEE)
@@ -84,73 +85,44 @@ def RetreiveSignalLvlBattery(self, NwkID):
 
 
 def get_signal_level(self, NwkID):
-    
-    SignalLevel = ""
-    if "LQI" in self.ListOfDevices[NwkID]:
-        SignalLevel = self.ListOfDevices[NwkID]["LQI"]
+    SignalLevel = self.ListOfDevices[NwkID].get("LQI", "")
 
     DomoticzRSSI = 12  # Unknown
-
+    
     # La ZiGate+ USB n'a pas d'amplificateur contrairement à la V1. 
     # Le LQI max de la ZiGate+ (V2) est de 170. Cependant, 
     # la ZiGate+ est moins sensible aux perturbations.
     # D'après les tests, la portée entre la v1 et la v2 est sensiblement identique même si le LQI n'est pas gérer de la même manière.
     # La ZiGate v1 par exemple a des pertes de paquets à partir de 50-60 en LQI alors que sur la v2 elle commence à perdre des paquets à 25 LQI.
-    if self.ZiGateModel and self.ZiGateModel == 2:
-        SEUIL1 = 15
-        SEUIL2 = 35
-        SEUIL3 = 120
-    else:
-        SEUIL1 = 30
-        SEUIL2 = 75
-        SEUIL3 = 180
+
+    SEUIL1, SEUIL2, SEUIL3 = (15, 35, 120) if self.ZiGateModel and self.ZiGateModel == 2 else (30, 75, 180)
 
     if isinstance(SignalLevel, int):
-        # rssi = round((SignalLevel * 11) / 255)
-        DomoticzRSSI = 0
         if SignalLevel >= SEUIL3:
-            #  SEUIL3 < ZiGate LQI < 255 -> 11
             DomoticzRSSI = 11
+            
         elif SignalLevel >= SEUIL2:
-            # SEUIL2 <= ZiGate LQI <= SEUIL3 --> 4 - 10 ( 6 )
             gamme = SEUIL3 - SEUIL2
-            SignalLevel = SignalLevel - SEUIL2
-            DomoticzRSSI = 4 + round((SignalLevel * 6) / gamme)
+            DomoticzRSSI = 4 + round((SignalLevel - SEUIL2) * 6 / gamme)
+            
         elif SignalLevel >= SEUIL1:
-            # SEUIL1 < ZiGate LQI < SEUIL2 --> 1 - 3 ( 3 )
             gamme = SEUIL2 - SEUIL1
-            SignalLevel = SignalLevel - SEUIL1
-            DomoticzRSSI = 1 + round((SignalLevel * 3) / gamme)
+            DomoticzRSSI = 1 + round((SignalLevel - SEUIL1) * 3 / gamme)
 
     return DomoticzRSSI
 
     
 def get_battery_level(self, NwkID):
+    battery_info = self.ListOfDevices[NwkID].get("Battery", {})
 
-    if "Battery" in self.ListOfDevices[NwkID] and self.ListOfDevices[NwkID]["Battery"] not in ( {}, ):
-        self.log.logging(
-            "Widget",
-            "Debug",
-            "------>  From Battery NwkId: %s Battery: %s Type: %s"
-            % (NwkID, self.ListOfDevices[NwkID]["Battery"], type(self.ListOfDevices[NwkID]["Battery"])),
-            NwkID,
-        )
-        if isinstance(self.ListOfDevices[NwkID]["Battery"], (float)):
-            return int(round((self.ListOfDevices[NwkID]["Battery"])))
-        if isinstance(self.ListOfDevices[NwkID]["Battery"], (int)):
-            return self.ListOfDevices[NwkID]["Battery"]
-    elif (
-        "IASBattery" in self.ListOfDevices[NwkID]
-        and isinstance(self.ListOfDevices[NwkID]["IASBattery"], int)
-    ):
-        self.log.logging(
-            "Widget",
-            "Debug",
-            "------>  From IASBattery NwkId: %s Battery: %s Type: %s"
-            % (NwkID, self.ListOfDevices[NwkID]["IASBattery"], type(self.ListOfDevices[NwkID]["IASBattery"])),
-            NwkID,
-        )
-
+    if battery_info and battery_info != {}:
+        self.log.logging( "Widget", "Debug", f"------>  From Battery NwkId: {NwkID} Battery: {battery_info} Type: {type(battery_info)}", NwkID, )
+        if isinstance(battery_info, (float)):
+            return int(round(battery_info))
+        if isinstance(battery_info, (int)):
+            return battery_info
+    elif "IASBattery" in self.ListOfDevices[NwkID] and isinstance(self.ListOfDevices[NwkID]["IASBattery"], int):
+        self.log.logging( "Widget", "Debug", f"------>  From IASBattery NwkId: {NwkID} Battery: {self.ListOfDevices[NwkID]['IASBattery']} Type: {type(self.ListOfDevices[NwkID]['IASBattery'])}", NwkID, )
         return self.ListOfDevices[NwkID]["IASBattery"]
 
     return 255
@@ -291,7 +263,7 @@ def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, Batter
     _cur_nValue, cur_sValue = domo_read_nValue_sValue(self, Devices, DeviceId, Unit)
     widget_name = domo_read_Name( self, Devices, DeviceId, Unit, )
 
-    self.log.logging( "Widget", "Log", "update_domoticz_widget %s:%s:%s  %3s:%3s:%5s (%15s)" % (
+    self.log.logging( "WidgetUpdate", "Debug", "update_domoticz_widget %s:%s:%s  %3s:%3s:%5s (%15s)" % (
         nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, widget_name), self.IEEE2NWK[ DeviceId ])
     
     update_needed = (
@@ -320,7 +292,7 @@ def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, Batter
     if self.pluginconf.pluginConf["logDeviceUpdate"]:
         domoticz_log_api("UpdateDevice - (%15s) %s:%s" % (widget_name, nValue, sValue))
         
-    self.log.logging( "Widget", "Log", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" % (
+    self.log.logging( "Widget", "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" % (
         Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, widget_name), DeviceId, )
 
 
@@ -329,86 +301,58 @@ def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
     if not is_domoticz_update_SuppressTriggers( self ):
         return
 
-    if NwkId not in self.ListOfDevices:
+    ieee = self.ListOfDevices.get(NwkId, {}).get("IEEE")
+    if ieee is None:
         return
-    if "IEEE" not in self.ListOfDevices[NwkId]:
-        return
-    ieee = self.ListOfDevices[NwkId]["IEEE"]
 
+    update_battery_api(self, Devices, ieee, int(BatteryLvl))
+     
     for device_unit in Devices:
         if Devices[device_unit].DeviceID != ieee:
             continue
         self.log.logging( "WidgetLevel3", "Debug", "Update_Battery_Device Battery: now: %s prev: %s (%15s)" % (
             BatteryLvl, Devices[device_unit].BatteryLevel, Devices[device_unit].Name), )
 
-        if Devices[device_unit].BatteryLevel == int(BatteryLvl):
-            continue
-
-        self.log.logging( "WidgetLevel3", "Debug", "Update_Battery_Device Battery: %s  (%15s)" % (BatteryLvl, Devices[device_unit].Name) )
-        Devices[device_unit].Update(
-            nValue=Devices[device_unit].nValue,
-            sValue=Devices[device_unit].sValue,
-            BatteryLevel=int(BatteryLvl),
-            SuppressTriggers=True,
-        )
-
 
 def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
-    if NwkId not in self.ListOfDevices:
+    device_info = self.ListOfDevices.get(NwkId, {})
+    if not device_info.get("IEEE") or device_info.get("Health") == "Disabled":
         return
-    if "IEEE" not in self.ListOfDevices[NwkId]:
-        return
-    
-    if self.ListOfDevices[NwkId]["Health"] == "Disabled":
-        return
-    
-    self.ListOfDevices[NwkId]["Health"] = "TimedOut" if MarkTimedOut else "Live"
-    
-    self.log.logging( "WidgetLevel3", "Debug", f"timedOutDevice Object {NwkId} MarkTimedOut: {MarkTimedOut}")
 
-    _IEEE = self.ListOfDevices[NwkId]["IEEE"]
-    if MarkTimedOut and not domo_read_TimedOut( self, Devices, _IEEE ):
-        timeout_widget_api(self, Devices, _IEEE, 1)
+    device_info["Health"] = "TimedOut" if MarkTimedOut else "Live"
+    self.log.logging("WidgetLevel3", "Debug", f"timedOutDevice Object {NwkId} MarkTimedOut: {MarkTimedOut}")
 
-    elif not MarkTimedOut and domo_read_TimedOut( self, Devices, _IEEE ):
-        timeout_widget_api(self, Devices, _IEEE, 0)
-
+    _IEEE = device_info["IEEE"]
+    timeout_widget_api(self, Devices, _IEEE, 1) if MarkTimedOut and not domo_read_TimedOut(self, Devices, _IEEE) else timeout_widget_api(self, Devices, _IEEE, 0)
 
 
 def lastSeenUpdate(self, Devices, NwkId=None):
-    """ Just touch the device widgets and if needed remove TimedOut flag """
+    """Just touch the device widgets and if needed remove TimedOut flag"""
     
-    self.log.logging( "WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId}")
+    self.log.logging("WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId}")
 
-    if NwkId is None or NwkId not in self.ListOfDevices or "IEEE" not in self.ListOfDevices[NwkId]:
+    device_data = self.ListOfDevices.get(NwkId, {})
+    if not device_data or "IEEE" not in device_data:
         return
-
-    device_data = self.ListOfDevices[NwkId]
 
     device_data.setdefault("Stamp", {"Time": {}, "MsgType": {}, "LastSeen": 0})
     device_data["Stamp"].setdefault("LastSeen", 0)
-
     device_data.setdefault("ErrorManagement", 0)
 
     health_data = device_data.get("Health")
-    if health_data is not None and health_data not in ("Disabled", ):
+    if health_data not in ("Disabled", ):
         device_data["Health"] = "Live"
 
     device_data["Stamp"]["LastSeen"] = int(time.time())
-    _IEEE = device_data["IEEE"]
+    _IEEE = device_data.get("IEEE", "")
 
     if not is_domoticz_touch(self):
-        self.log.logging( "WidgetLevel3", "Debug", "Not the good Domoticz level for Touch %s %s %s" % (
-            self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor), NwkId, )
+        self.log.logging("WidgetLevel3", "Debug", f"Not the good Domoticz level for Touch {self.VersionNewFashion} {self.DomoticzMajor} {self.DomoticzMinor}", NwkId)
         return
     
-    self.log.logging( "WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId} DeviceId {_IEEE}")
-    
-    if domo_read_TimedOut( self, Devices, _IEEE ):
-        timeout_widget_api(self, Devices, _IEEE, 0)
-    else:
-        device_touch_api( self, Devices, _IEEE)
-            
+    self.log.logging("WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId} DeviceId {_IEEE}")
+
+    timeout_widget_api(self, Devices, _IEEE, 0) if domo_read_TimedOut(self, Devices, _IEEE) else device_touch_api(self, Devices, _IEEE)
 
 
 def GetType(self, Addr, Ep):
