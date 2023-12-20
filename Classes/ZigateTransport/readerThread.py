@@ -7,7 +7,6 @@
 import socket
 from threading import Thread
 
-import DomoticzEx as Domoticz
 import serial
 from Classes.ZigateTransport.readSerial import (open_serial,
                                                 serial_read_write_from_zigate,
@@ -74,4 +73,4 @@ def shutdown_reader_thread(self):
         self.logging_reader("Log", "close connection")
         if self._connection:
             self._connection.close()
-        Domoticz.Log("Connection closed")
+        self.logging_reader("Log", "Connection closed")
