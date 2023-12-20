@@ -488,60 +488,23 @@ def checkDevices2LOD(self, Devices):
         if self.ListOfDevices[nwkid]["Status"] == "inDB":
             self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
 
-
 def checkListOfDevice2Devices(self, Devices):
-    self.log.logging("Database", "Error", "checkListOfDevice2DevicesDISABLED !!!" )
-    # As of V3 we will be loading only the IEEE information as that is the only one existing in Domoticz area.
-    # It is also expected that the ListOfDevices is already loaded.
+    for widget_idx, widget_info in self.ListOfDomoticzWidget.items():
+        device_id = widget_info["DeviceID"]
+        widget_name = widget_info["Name"]
 
-    # At that stage the ListOfDevices has beene initialized.
-    #for x in Devices:  # initialise listeofdevices avec les devices en bases domoticz
-    #    ID = Devices[x].DeviceID
-    #    if len(str(ID)) == 4:
-    #        # This is a Group Id (short address)
-    #        continue
-    #    elif ID.find("Zigate-01-") != -1 or ID.find("Zigate-02-") != -1 or ID.find("Zigate-03-") != -1:
-    #        continue  # This is a Widget ID
-#
-    #    # Let's check if this is End Node
-    #    if str(ID) not in self.IEEE2NWK:
-    #        if self.pluginconf.pluginConf["allowForceCreationDomoDevice"] == 1:
-    #            self.log.logging(
-    #                "Database",
-    #                "Log",
-    #                "checkListOfDevice2Devices - "
-    #                + str(Devices[x].Name)
-    #                + " - "
-    #                + str(ID)
-    #                + " not found in Plugin Database",
-    #            )
-    #        else:
-    #            self.log.logging(
-    #                "Database",
-    #                "Error",
-    #                "checkListOfDevice2Devices - "
-    #                + str(Devices[x].Name)
-    #                + " - "
-    #                + str(ID)
-    #                + " not found in Plugin Database"
-    #            )
-    #            self.log.logging(
-    #                "Database",
-    #                "Debug",
-    #                "checkListOfDevice2Devices - " + str(ID) + " not found in " + str(self.IEEE2NWK),
-    #            )
-    #        continue
-    #    NWKID = self.IEEE2NWK[ID]
-    #    if str(NWKID) in self.ListOfDevices:
-    #        self.log.logging(
-    #            "Database",
-    #            "Debug",
-    #            "checkListOfDevice2Devices - we found a matching entry for ID %2s as DeviceID = %s NWK_ID = %s"
-    #            % (x, ID, NWKID),
-    #            NWKID,
-    #        )
-    #    else:
-    #        self.log.logging("Database", "Error", "loadListOfDevices -  : " + Devices[x].Name + " with IEEE = " + str(ID) + " not found in Zigate plugin Database!")
+        if len(device_id) == 4 or device_id.startswith(("Zigate-01-", "Zigate-02-", "Zigate-03-")):
+            continue
+
+        if device_id not in self.IEEE2NWK:
+            self.log.logging("Database", "Log", f"checkListOfDevice2Devices - {widget_name} not found in the plugin!")
+            continue
+
+        nwkid = self.IEEE2NWK[device_id]
+        if nwkid in self.ListOfDevices:
+            self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - found a matching entry for ID {widget_idx} as DeviceID {device_id} NWK_ID {nwkid}", nwkid)
+        else:
+            self.log.logging("Database", "Error", f"loadListOfDevices - {widget_name} with IEEE = {device_id} not found in the Zigate plugin Database!")
 
 
 def saveZigateNetworkData(self, nkwdata):
