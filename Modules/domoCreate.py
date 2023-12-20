@@ -9,8 +9,7 @@
 """
 
 
-from Modules.domoticzAbstractLayer import (FreeUnit, domo_create_api,
-                                           domoticz_error_api)
+from Modules.domoticzAbstractLayer import (FreeUnit, domo_create_api)
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2,
                                update_domoticz_widget)
@@ -146,7 +145,7 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     
     if myDev_ID == -1:
         self.ListOfDevices[nwkid]["Status"] = "failDB"
-        domoticz_error_api("Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev_ID)
+        self.log.logging("WidgetCreation", "Error", "Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev_ID)
         return None
 
     self.ListOfDevices[nwkid]["Status"] = "inDB"
@@ -247,7 +246,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
     # Sanity check before starting the processing
     if NWKID == "" or NWKID not in self.ListOfDevices:
-        domoticz_error_api("CreateDomoDevice - Cannot create a Device without an IEEE or not in ListOfDevice .")
+        self.log.logging("WidgetCreation", "Error", "CreateDomoDevice - Cannot create a Device without an IEEE or not in ListOfDevice .")
         return
 
     DeviceID_IEEE = self.ListOfDevices[NWKID]["IEEE"]
@@ -350,33 +349,29 @@ def update_widget_type_if_possible( self, Nwkid, widget_type):
     
 
 def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
-
-    # Do not use the generic createDomoticzWidget , because this one required 2 continuous widget.
-    # usage later on is based on that assumption
-    #
-    # Xiaomi Magic Cube
+    # Xiaomi Magic Cube, this one required 2 continuous widget.
     self.ListOfDevices[NWKID]["Status"] = "inDB"
+    
     # Create the XCube Widget
     Options = createSwitchSelector(self, 10, DeviceType=t, OffHidden=True, SelectorStyle=1)
-    unit = FreeUnit(self, Devices, nbunit_=2)  # Look for 2 consecutive slots
-    myDev = Domoticz.Device( DeviceID=str(DeviceID_IEEE), Name=deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options, )
-    myDev.Create()
-    ID = myDev.ID
-    if myDev.ID == -1:
+    unit = FreeUnit(self, Devices, DeviceID_IEEE, nbunit_=2)  # Look for 2 consecutive slots
+    
+    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=Options)
+    
+    if idx == -1:
         self.ListOfDevices[NWKID]["Status"] = "failDB"
-        domoticz_error_api("Domoticz widget creation failed. %s" % (str(myDev)))
+        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
     else:
-        self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(ID)] = t
+        self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(idx)] = t
 
     # Create the Status (Text) Widget to report Rotation angle
     unit += 1
-    myDev = Domoticz.Device( DeviceID=str(DeviceID_IEEE), Name=deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Unit=unit, Type=243, Subtype=19, Switchtype=0, )
-    myDev.Create()
-    ID = myDev.ID
-    if myDev.ID == -1:
-        domoticz_error_api("Domoticz widget creation failed. %s" % (str(myDev)))
+    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=243, Subtype_=19, Switchtype_=0,)
+    
+    if idx == -1:
+        self.log.logging("WidgetCreation", "Error",  f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
     else:
-        self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(ID)] = "Text"
+        self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(idx)] = "Text"
 
 
 def number_switch_selectors( widget_type ):

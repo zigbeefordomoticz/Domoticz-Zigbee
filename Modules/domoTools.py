@@ -208,7 +208,7 @@ def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, n
     SignalLevel, BatteryLvl = RetreiveSignalLvlBattery(self, nwkid)
 
     if TimedOutMotion and WidgetType in ("Motion", "Vibration"):
-        reset_motion(self, Devices, nwkid, WidgetType, device_unit, SignalLevel, BatteryLvl, now, ID, last_update, TimedOutMotion)
+        reset_motion(self, Devices, nwkid, WidgetType, device_ieee, device_unit, SignalLevel, BatteryLvl, ID, now, last_update, TimedOutMotion)
 
     elif TimedOutSwitchButton and WidgetType in SWITCH_SELECTORS:
         if "ForceUpdate" in SWITCH_SELECTORS[WidgetType] and SWITCH_SELECTORS[WidgetType]["ForceUpdate"]:

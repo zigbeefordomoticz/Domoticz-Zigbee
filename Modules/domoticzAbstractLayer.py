@@ -448,6 +448,9 @@ def device_touch_unit_api(self, Devices, DeviceId_, Unit_):
     # In case of Meter Device (kWh), we must not touch it, otherwise it will destroy the metering
     # Type, Subtype, SwitchType 
     # 243|29|0
+    if _sanity_check_device_unit(self, Devices, DeviceId_, Unit_):
+        return
+    
     if _is_meter_widget(self, Devices, DeviceId_, Unit_):
         return
 
@@ -583,3 +586,12 @@ def find_partially_opened_nValue(switch_type, sub_type, widget_type):
 def check_widget(switch_type, sub_type, widget_type):
     key = (switch_type, sub_type, widget_type)
     return DIMMABLE_WIDGETS.get(key,{}).get("Widget")
+
+
+def _sanity_check_device_unit(self, Devices, device_ieee, unit):
+    """ check that device_ieee, unit exist in Domoticz Db"""
+    return (
+        (DOMOTICZ_EXTENDED_API and (device_ieee not in Devices or unit not in Devices[device_ieee].Units))
+        or (not DOMOTICZ_EXTENDED_API and unit not in Devices)
+    )
+
