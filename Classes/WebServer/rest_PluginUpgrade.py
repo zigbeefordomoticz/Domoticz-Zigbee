@@ -1,11 +1,12 @@
 
 
 import json
-import subprocess  # nosec
 import os
-import z4d_certified_devices
+import subprocess  # nosec
 from pathlib import Path
+
 import distro
+import z4d_certified_devices
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
