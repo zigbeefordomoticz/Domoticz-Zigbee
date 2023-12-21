@@ -121,7 +121,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         import bellows.config as conf
         from Classes.ZigpyTransport.AppBellows import App_bellows
         config = {
-            conf.CONF_DEVICE: { "path": serialPort}, 
+            conf.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
             conf.CONF_NWK: {},
             conf.CONF_EZSP_CONFIG: {
             },
