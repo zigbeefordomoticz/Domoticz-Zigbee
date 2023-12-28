@@ -7,10 +7,10 @@ import Domoticz
 from pathlib import Path
 
 MODULES_VERSION = {
-    "zigpy": "0.60.1",
-    "zigpy_znp": "0.12.0",
-    "zigpy_deconz": "0.22.2",
-    "bellows": "0.37.3",
+    "zigpy": "0.60.2",
+    "zigpy_znp": "0.12.1",
+    "zigpy_deconz": "0.22.3",
+    "bellows": "0.37.4",
     }
 
 def networksize_update(self):

@@ -4,6 +4,7 @@
 # Author: badz & pipiche38
 #
 
+import asyncio
 import binascii
 import contextlib
 import logging
@@ -12,6 +13,7 @@ import time
 import zigpy.application
 import zigpy.backups
 import zigpy.config as zigpy_conf
+import zigpy.const as const
 import zigpy.device
 import zigpy.exceptions
 import zigpy.types as t
@@ -26,6 +28,8 @@ from Classes.ZigpyTransport.plugin_encoders import (
 
 LOGGER = logging.getLogger(__name__)
 
+ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
+
 
 async def _load_db(self) -> None:
     pass
@@ -37,6 +41,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     """
     self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
 
+    # Retreive Last Backup
     _retreived_backup = None
     if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
         # In case of a fresh coordinator, let's load the latest backup
@@ -52,6 +57,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
             LOGGER.debug("Last backup retreived: %s" % _retreived_backup )
             self.backups.add_backup( backup=_retreived_backup )
 
+    # If We need to Creat a new Zigbee network annd restore the last backup
     if force_form:
         with contextlib.suppress(Exception):
             if _retreived_backup is None:
@@ -60,6 +66,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
                 self.log.logging( "Zigpy", "Status","Force Form: Restoring the most recent network backup")
                 await self.backups.restore_backup(  _retreived_backup ) 
 
+    # Load Network Information
     try:
         await self.load_network_info(load_devices=False)
 
@@ -83,10 +90,58 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
         await self.load_network_info(load_devices=True)
 
+    if _retreived_backup is not None:
+        new_state = _retreived_backup.from_network_state()
+        if (
+            self.config[zigpy_conf.CONF_NWK_VALIDATE_SETTINGS]
+            and not new_state.is_compatible_with(self.backups)
+        ):
+            raise zigpy.exceptions.NetworkSettingsInconsistent(
+                f"Radio network settings are not compatible with most recent backup!\n"
+                f"Current settings: {new_state!r}\n"
+                f"Last backup: {_retreived_backup!r}",
+                old_state=_retreived_backup,
+                new_state=new_state,
+            )
+
     LOGGER.debug("Network info: %s", self.state.network_info)
     LOGGER.debug("Node info   : %s", self.state.node_info)
 
+    # Start Network
     await self.start_network()
+    
+    self._persist_coordinator_model_strings_in_db()
+
+    # Network interference scan
+    if self.config[zigpy_conf.CONF_STARTUP_ENERGY_SCAN]:
+        # Each scan period is 15.36ms. Scan for at least 200ms (2^4 + 1 periods) to
+        # pick up WiFi beacon frames.
+        results = await self.energy_scan(
+            channels=t.Channels.ALL_CHANNELS, duration_exp=4, count=1
+        )
+        
+        LOGGER.debug("Startup energy scan: %s", results)
+
+        if results[self.state.network_info.channel] > ENERGY_SCAN_WARN_THRESHOLD:
+            LOGGER.warning(
+                "Zigbee channel %s utilization is %0.2f%%!",
+                self.state.network_info.channel,
+                100 * results[self.state.network_info.channel] / 255,
+            )
+            LOGGER.warning(const.INTERFERENCE_MESSAGE)
+
+    
+    # Config Top Scan
+    if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
+        # Config specifies the period in minutes, not seconds
+        self.topology.start_periodic_scans(
+            period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD])
+        )
+
+    # Start Watchdog
+    if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
+        self._watchdog_task = asyncio.create_task(self._watchdog_loop())
+
     
 
 def get_device(self, ieee=None, nwk=None):
@@ -118,6 +173,7 @@ def get_device(self, ieee=None, nwk=None):
 
     LOGGER.debug("AppZnp get_device raise KeyError ieee: %s nwk: %s !!" %( ieee, nwk))
     raise KeyError
+
 
 def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
     """
