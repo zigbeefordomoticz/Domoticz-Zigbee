@@ -9,7 +9,7 @@ from pathlib import Path
 MODULES_VERSION = {
     "zigpy": "0.59.0",
     "zigpy_znp": "0.11.6",
-    "zigpy_deconz": "0.22.1",
+    "zigpy_deconz": "0.21.1",
     "bellows": "0.36.8",
     }
 
