@@ -29,10 +29,12 @@ from Classes.ZigpyTransport.plugin_encoders import (
 LOGGER = logging.getLogger(__name__)
 
 ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
+ZIGPY_INITIALISATION_DELAY = 2.5
 
 
 async def _load_db(self) -> None:
     pass
+
 
 async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
     """
@@ -109,39 +111,31 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
     # Start Network
     await self.start_network()
-    
     self._persist_coordinator_model_strings_in_db()
 
     # Network interference scan
     if self.config[zigpy_conf.CONF_STARTUP_ENERGY_SCAN]:
         # Each scan period is 15.36ms. Scan for at least 200ms (2^4 + 1 periods) to
         # pick up WiFi beacon frames.
-        results = await self.energy_scan(
-            channels=t.Channels.ALL_CHANNELS, duration_exp=4, count=1
-        )
+        results = await self.energy_scan( channels=t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
         
         LOGGER.debug("Startup energy scan: %s", results)
-
         if results[self.state.network_info.channel] > ENERGY_SCAN_WARN_THRESHOLD:
-            LOGGER.warning(
-                "Zigbee channel %s utilization is %0.2f%%!",
-                self.state.network_info.channel,
-                100 * results[self.state.network_info.channel] / 255,
-            )
+            LOGGER.warning( "Zigbee channel %s utilization is %0.2f%%!" %(
+                self.state.network_info.channel, 100 * results[self.state.network_info.channel] / 255, ))
             LOGGER.warning(const.INTERFERENCE_MESSAGE)
 
-    
     # Config Top Scan
     if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
         # Config specifies the period in minutes, not seconds
-        self.topology.start_periodic_scans(
-            period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD])
-        )
+        self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
     # Start Watchdog
     if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
         self._watchdog_task = asyncio.create_task(self._watchdog_loop())
 
+    #self.log.logging("TransportZigpy", "Log", f"Wait {ZIGPY_INITIALISATION_DELAY} to complete zigpy initialisation")
+    #await asyncio.sleep( ZIGPY_INITIALISATION_DELAY )
     
 
 def get_device(self, ieee=None, nwk=None):
@@ -219,11 +213,13 @@ def get_device_ieee(self, nwk):
         return "%016x" % t.uint64_t.deserialize(dev.ieee.serialize())[0]
     return None
 
+
 def handle_leave(self, nwk, ieee):
     self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
     plugin_frame = build_plugin_8048_frame_content(self, ieee)
     self.callBackFunction(plugin_frame)
     super(type(self),self).handle_leave(nwk, ieee)
+
 
 def packet_received(
     self, 
@@ -293,15 +289,18 @@ def packet_received(
 
     return
 
+
 def _update_nkdids_if_needed( self, ieee, new_nwkid ):
     _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
     _nwk = new_nwkid.serialize()[::-1].hex()
     self.callBackUpdDevice(_ieee, _nwk)
 
+
 def get_zigpy_version(self):
     # This is a fake version number. This is just to inform the plugin that we are using ZNP over Zigpy
     LOGGER.debug("get_zigpy_version ake version number. !!")
     return self.version
+
 
 async def register_specific_endpoints(self):
     """
