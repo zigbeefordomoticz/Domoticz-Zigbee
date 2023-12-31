@@ -145,21 +145,6 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         
         self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
-    elif radiomodule =="zigate":
-        self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
-        try:
-            import zigpy_zigate.config as conf
-            from Classes.ZigpyTransport.AppZigate import App_zigate
-            config = {
-                conf.CONF_DEVICE: {"path": serialPort,}, 
-                conf.CONF_NWK: {},
-                "topology_scan_enabled": False,
-                }
-            self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
-        except Exception as e:
-            self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
-            self.log.logging("%s" %traceback.format_exc())
-
     elif radiomodule =="znp":
         self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
         try:
@@ -215,9 +200,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 
     # Ready for starting the Radio module
     try:
-        if radiomodule == "zigate":
-            self.app = App_zigate(config)
-        elif radiomodule == "znp":
+        if radiomodule == "znp":
                 self.app = App_znp(config)
         elif radiomodule == "deCONZ":
                 self.app = App_deconz(config)
@@ -536,7 +519,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
 
 def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
-    # Looks like Zigate return an int, while ZNP returns a status.type
+    # Looks like Zigbee return an int, while ZNP returns a status.type
     if nwkid == "0000":
         # No Ack/Nack for Controller
         return
@@ -595,9 +578,6 @@ def log_exception(self, exception, error, cmd, data):
 
 def check_transport_readiness(self):
     
-    if self._radiomodule == "zigate":
-        return True
-
     if self._radiomodule == "znp":
         return self.app._znp is not None
     
