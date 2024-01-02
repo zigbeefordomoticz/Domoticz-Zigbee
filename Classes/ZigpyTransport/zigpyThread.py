@@ -8,7 +8,7 @@ import asyncio.events
 import binascii
 import contextlib
 import json
-import queue
+import asyncio
 import sys
 import time
 import traceback
@@ -60,7 +60,7 @@ def start_zigpy_thread(self):
 
 def stop_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "stop_zigpy_thread - Stopping zigpy thread")
-    self.writer_queue.put("STOP")
+    self.writer_queue.put_nowait("STOP")
     self.zigpy_running = False
 
 def zigpy_thread(self):
@@ -304,16 +304,18 @@ async def worker_loop(self):
 
     while self.zigpy_running and self.writer_queue is not None:
         entry = await get_next_command(self)
+        self.log.logging( "TransportZigpy", "Log", "got an entry %s (%s)" % (entry, type(entry)))
         if entry is None:
             continue
         elif entry == "STOP":
             # Shutding down
             self.log.logging("TransportZigpy", "Log", "worker_loop - Shutting down ... exit.")
             self.zigpy_running = False
+            self.writer_queue.task_done()
             break
 
-        data = json.loads(entry)
-        self.log.logging( "TransportZigpy", "Debug", "got a command %s" % data["cmd"], )
+        data = json.loads( entry )
+        self.log.logging( "TransportZigpy", "Log", "got a command %s (%s)" % (data["cmd"], type(data["cmd"])))
 
         if self.pluginconf.pluginConf["ZiGateReactTime"]:
             t_start = 1000 * time.time()
@@ -370,6 +372,8 @@ async def worker_loop(self):
                     "Log",
                     "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s" % (t_elapse, data),
                 )
+                
+        self.writer_queue.task_done()
 
     #self.log.logging("TransportZigpy", "Log", "worker_loop: Exiting Worker loop. Semaphore : %s" %len(self._concurrent_requests_semaphores_list))
     #if self._concurrent_requests_semaphores_list:
@@ -377,12 +381,8 @@ async def worker_loop(self):
     #        self.log.logging("TransportZigpy", "Log", "worker_loop:      Semaphore[%s] " %x)
 
 async def get_next_command(self):
-    try:
-        entry = self.writer_queue.get(False)
-    except queue.Empty:
-        await asyncio.sleep(0.100)
-        return None
-    return entry
+    # Writer queue is based on asyncio
+    return await self.writer_queue.get()
 
 async def dispatch_command(self, data):
 

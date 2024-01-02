@@ -6,7 +6,10 @@
 import json
 import os.path
 import time
-from queue import PriorityQueue, Queue
+import queue
+import asyncio
+
+#from queue import PriorityQueue, Queue
 from threading import Thread
 
 import zigpy.application
@@ -63,8 +66,8 @@ class ZigpyTransport(object):
 
         self.app: zigpy.application.ControllerApplication | None = None
         
-        self.writer_queue = Queue()
-        self.forwarder_queue = Queue()
+        self.writer_queue = asyncio.Queue()
+        self.forwarder_queue = queue.Queue()
         self.zigpy_loop = None
         self.zigpy_thread = None
         self.forwarder_thread = None
@@ -108,9 +111,10 @@ class ZigpyTransport(object):
             )
 
         self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
-        
+
         message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled, "Sqn": sqn}
-        self.writer_queue.put(str(json.dumps(message)))
+        
+        self.writer_queue.put_nowait( json.dumps(message) )
         instrument_sendData( self, cmd, datas, sqn, message["TimeStamp"], highpriority, ackIsDisabled, waitForResponseIn, NwkId )
         
 
