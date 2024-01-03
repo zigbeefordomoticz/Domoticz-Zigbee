@@ -105,8 +105,8 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
             new_state=new_state,
         )
 
-    self.log.logging("TransportZigpy", "Status", f"Network info: {self.state.network_info}")
-    self.log.logging("TransportZigpy", "Status", f"Node info   : {self.state.node_info}")
+    self.log.logging("TransportZigpy", "Debug", f"Network info: {self.state.network_info}")
+    self.log.logging("TransportZigpy", "Debug", f"Node info   : {self.state.node_info}")
 
     # Start Network
     await self.start_network()
