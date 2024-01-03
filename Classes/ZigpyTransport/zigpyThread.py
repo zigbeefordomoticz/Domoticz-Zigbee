@@ -329,19 +329,19 @@ async def worker_loop(self):
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
     while self.zigpy_running and self.writer_queue is not None:
-        entry = await self.writer_queue.get()
-        self.log.logging("TransportZigpy", "Debug", f"got an entry {entry} ({type(entry)})")
+        self.log.logging("TransportZigpy", "Debug", "wait for command")
+        command_to_send = await self.writer_queue.get()
+        self.log.logging("TransportZigpy", "Debug", f"got an entry {command_to_send} ({type(command_to_send)})")
 
-        if entry is None:
+        if command_to_send is None:
             continue
-        elif entry == "STOP":
+        elif command_to_send == "STOP":
             # Shutting down
             self.log.logging("TransportZigpy", "Debug", "worker_loop - Shutting down ... exit.")
             self.zigpy_running = False
-            self.writer_queue.task_done()
             break
 
-        data = json.loads(entry)
+        data = json.loads(command_to_send)
         self.log.logging("TransportZigpy", "Debug", f"got a command {data['cmd']} ({type(data['cmd'])})")
 
         if self.pluginconf.pluginConf["ZiGateReactTime"]:
@@ -371,7 +371,6 @@ async def worker_loop(self):
                     "Log",
                     "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s" % (t_elapse, data),
                 )
-        self.writer_queue.task_done()
 
 
 async def dispatch_command(self, data):
@@ -471,9 +470,10 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     # If the device is not listening on Idle ( end device ), enable the retry
     # However if PluginRetrys enabled, then we disable the slower APS retry as the plugin will do.
     extended_timeout = not data.get("RxOnIdle", False) and not self.pluginconf.pluginConf["PluginRetrys"]
-
+    self.log.logging( "TransportZigpy", "Debug", f"process_raw_command: extended_timeout {extended_timeout}")
+                     
     delay = data["Delay"] if "Delay" in data else None
-    self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s, Delay: %s, Extended_TO: %s" % (
+    self.log.logging( "TransportZigpy", "Debug", "process_raw_command: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s, Delay: %s, Extended_TO: %s" % (
         Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn, delay,extended_timeout ), )
 
     if int(NwkId, 16) >= 0xFFFB:  # Broadcast
