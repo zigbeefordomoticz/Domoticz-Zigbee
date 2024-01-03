@@ -53,10 +53,10 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
         if _retreived_backup:
             if self.pluginconf.pluginConf[ "OverWriteCoordinatorIEEEOnlyOnce"]:
-                LOGGER.debug("Allow eui64 overwrite only once !!!")
+                self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
                 _retreived_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
 
-            LOGGER.debug("Last backup retreived: %s" % _retreived_backup )
+            self.log.logging("TransportZigpy", "Log", "Last backup retreived: %s" % _retreived_backup )
             self.backups.add_backup( backup=_retreived_backup )
 
     # If We need to Creat a new Zigbee network annd restore the last backup
@@ -73,7 +73,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         await self.load_network_info(load_devices=False)
 
     except zigpy.exceptions.NetworkNotFormed:
-        LOGGER.info("Network is not formed")
+        self.log.logging("TransportZigpy", "Log", "Network is not formed")
 
         if not auto_form:
             raise
@@ -83,7 +83,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
         if _retreived_backup is None:
             # Form a new network if we have no backup
-            self.log.logging( "Zigpy", "Status","Forming a new network")
+            self.log.logging( "Zigpy", "Status","Forming a new network with no backup")
             await self.form_network()
         else:
             # Otherwise, restore the most recent backup
@@ -92,22 +92,21 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
         await self.load_network_info(load_devices=True)
 
-    if _retreived_backup is not None:
-        new_state = _retreived_backup.from_network_state()
-        if (
-            self.config[zigpy_conf.CONF_NWK_VALIDATE_SETTINGS]
-            and not new_state.is_compatible_with(self.backups)
-        ):
-            raise zigpy.exceptions.NetworkSettingsInconsistent(
-                f"Radio network settings are not compatible with most recent backup!\n"
-                f"Current settings: {new_state!r}\n"
-                f"Last backup: {_retreived_backup!r}",
-                old_state=_retreived_backup,
-                new_state=new_state,
-            )
+    new_state = self.backups.from_network_state()
+    if (
+        self.config[zigpy_conf.CONF_NWK_VALIDATE_SETTINGS]
+        and not new_state.is_compatible_with(self.backups)
+    ):
+        raise zigpy.exceptions.NetworkSettingsInconsistent(
+            f"Radio network settings are not compatible with most recent backup!\n"
+            f"Current settings: {new_state!r}\n"
+            f"Last backup: {_retreived_backup!r}",
+            old_state=_retreived_backup,
+            new_state=new_state,
+        )
 
-    LOGGER.debug("Network info: %s", self.state.network_info)
-    LOGGER.debug("Node info   : %s", self.state.node_info)
+    self.log.logging("TransportZigpy", "Status", "Network info: {self.state.network_info}")
+    self.log.logging("TransportZigpy", "Status", "Node info   : {self.state.node_info}")
 
     # Start Network
     await self.start_network()
@@ -119,11 +118,11 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         # pick up WiFi beacon frames.
         results = await self.energy_scan( channels=t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
         
-        LOGGER.debug("Startup energy scan: %s", results)
+        self.log.logging("TransportZigpy", "Status", "Startup energy scan: %s", results)
         if results[self.state.network_info.channel] > ENERGY_SCAN_WARN_THRESHOLD:
-            LOGGER.warning( "Zigbee channel %s utilization is %0.2f%%!" %(
+            self.log.logging("TransportZigpy", "Error", "Zigbee channel %s utilization is %0.2f%%!" %(
                 self.state.network_info.channel, 100 * results[self.state.network_info.channel] / 255, ))
-            LOGGER.warning(const.INTERFERENCE_MESSAGE)
+            self.log.logging("TransportZigpy", "Error", const.INTERFERENCE_MESSAGE)
 
     # Config Top Scan
     if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
