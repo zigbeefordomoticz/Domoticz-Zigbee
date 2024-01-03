@@ -105,8 +105,8 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
             new_state=new_state,
         )
 
-    self.log.logging("TransportZigpy", "Status", "Network info: {self.state.network_info}")
-    self.log.logging("TransportZigpy", "Status", "Node info   : {self.state.node_info}")
+    self.log.logging("TransportZigpy", "Status", f"Network info: {self.state.network_info}")
+    self.log.logging("TransportZigpy", "Status", f"Node info   : {self.state.node_info}")
 
     # Start Network
     await self.start_network()
@@ -118,7 +118,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         # pick up WiFi beacon frames.
         results = await self.energy_scan( channels=t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
         
-        self.log.logging("TransportZigpy", "Status", "Startup energy scan: %s", results)
+        self.log.logging("TransportZigpy", "Status", f"Startup energy scan: {results}")
         if results[self.state.network_info.channel] > ENERGY_SCAN_WARN_THRESHOLD:
             self.log.logging("TransportZigpy", "Error", "Zigbee channel %s utilization is %0.2f%%!" %(
                 self.state.network_info.channel, 100 * results[self.state.network_info.channel] / 255, ))
