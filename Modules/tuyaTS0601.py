@@ -344,18 +344,23 @@ def ts0601_production_energy(self, Devices, nwkid, ep, value):
 def ts0601_instant_power(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power %s %s %s" % (nwkid, ep, value), nwkid, )
     # Given Zigbee 24-bit integer and tuya store in two's complement form
+
     model_name = self.ListOfDevices[ nwkid ]["Model"] if "Model" in self.ListOfDevices[ nwkid ] else None
+    rely_on_eval_expression = get_deviceconf_parameter_value( self, model_name, "RELY_ON_EVAL_EXP", return_default=False )
     twocomplement_tst = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_TST", return_default="0" ),16)
     twocomplement_val = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_VAL", return_default="0" ),16)
-    self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement : %s %s" %( twocomplement_tst, twocomplement_val))
+    self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement : %s %s" %(
+        twocomplement_tst, twocomplement_val))
+    self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Rely on Eval Exp : %s" %( rely_on_eval_expression))
 
-    signed_int = int( value )
-    if twocomplement_tst:
-        signed_int = signed_int - twocomplement_val if signed_int & twocomplement_tst else signed_int
-    elif (signed_int & 0x00800000) != 0:  # Check the sign bit
-        signed_int -= 0x01000000  # If negative, adjust to two's complement
+    if not rely_on_eval_expression:
+        signed_int = int( value )
+        if twocomplement_tst:
+            signed_int = signed_int - twocomplement_val if signed_int & twocomplement_tst else signed_int
+        elif (signed_int & 0x00800000) != 0:  # Check the sign bit
+            signed_int -= 0x01000000  # If negative, adjust to two's complement
 
-    self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement : value: %s" %signed_int)
+        self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement : value: %s" %signed_int)
 
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", signed_int)
     MajDomoDevice(self, Devices, nwkid, ep, "0702", signed_int)
