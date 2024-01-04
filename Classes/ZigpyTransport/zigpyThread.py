@@ -96,11 +96,11 @@ def zigpy_thread(self):
 
 
 async def start_zigpy_task(self, channel, extended_pan_id):
-    self.log.logging("TransportZigpy", "Debug", "zigpy_thread - Starting zigpy thread")
+    self.log.logging("TransportZigpy", "Debug", "start_zigpy_task - Starting zigpy thread")
     self.zigpy_running = True
     
-    self.log.logging("TransportZigpy", "Log", f"===> channel      : {self.pluginconf.pluginConf['channel']}")
-    self.log.logging("TransportZigpy", "Log", f"===> extendedPANID: {self.pluginconf.pluginConf['extendedPANID']}")
+    self.log.logging("TransportZigpy", "Debug", f"===> channel      : {self.pluginconf.pluginConf['channel']}")
+    self.log.logging("TransportZigpy", "Debuf", f"===> extendedPANID: {self.pluginconf.pluginConf['extendedPANID']}")
 
     if "channel" in self.pluginconf.pluginConf:
         channel = int(self.pluginconf.pluginConf["channel"])
@@ -114,26 +114,31 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
         self.log.logging("TransportZigpy", "Debug", f"===> extendedPanId: 0x{extended_pan_id:X}")
 
-    self.log.logging( "TransportZigpy", "Debug", f"zigpy_thread -extendedPANID {self.pluginconf.pluginConf['extendedPANID']} {extended_pan_id}", )
+    self.log.logging( "TransportZigpy", "Debug", f"start_zigpy_task -extendedPANID {self.pluginconf.pluginConf['extendedPANID']} {extended_pan_id}", )
 
-    task = radio_start(self, self.pluginconf, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id)
-
-    await task
-
+    task = asyncio.create_task(
+        radio_start(self, self.pluginconf, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id)
+    )
+    await asyncio.gather(task, return_exceptions=False)
     await asyncio.sleep(1)
 
-    self.log.logging("TransportZigpy", "Debug", "Check and cancelled any left task (if any)")
-    for not_yet_finished_task in asyncio.all_tasks():
-        try:
-            self.log.logging("TransportZigpy", "Debug", f"         - not yet finished {not_yet_finished_task.get_name()}")
-            not_yet_finished_task.cancel()
-        except AttributeError:
-            continue
+    await _shutdown_remaining_task(self)
 
+    self.log.logging("TransportZigpy", "Debug", "start_zigpy_task - exiting zigpy thread")
+
+
+async def _shutdown_remaining_task(self):
+    """Cleanup tasks tied to the service's shutdown."""
+
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    
+    [task.cancel() for task in tasks]
+    
+    self.log.logging("TransportZigpy", "Debug", f"Cancelling {len(tasks)} outstanding tasks")
+    
+    await asyncio.gather(*tasks, return_exceptions=True)
     await asyncio.sleep(1)
 
-    self.log.logging("TransportZigpy", "Debug", "zigpy_thread - exiting zigpy thread")
- 
 
 async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
