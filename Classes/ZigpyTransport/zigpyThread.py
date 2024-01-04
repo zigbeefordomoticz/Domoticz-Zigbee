@@ -5,10 +5,10 @@
 
 import asyncio
 import asyncio.events
-import queue
 import binascii
 import contextlib
 import json
+import queue
 import sys
 import time
 import traceback
@@ -143,6 +143,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         if radiomodule == "ezsp":
             self.log.logging("TransportZigpy", "Debug", "Starting radio %s port: %s" %( radiomodule, serialPort))
             import bellows.config as conf
+
             from Classes.ZigpyTransport.AppBellows import App_bellows as App
 
             config = ezsp_configuration_setup(self, conf, serialPort)
@@ -152,6 +153,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         elif radiomodule =="znp":
             self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
             import zigpy_znp.config as conf
+
             from Classes.ZigpyTransport.AppZnp import App_znp as App
 
             config = znp_configuration_setup(self, conf, serialPort)
@@ -332,6 +334,8 @@ def display_network_infos(self):
 async def worker_loop(self):
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
+    self.writer_queue = queue.Queue()
+
     while self.zigpy_running and self.writer_queue is not None:
         self.log.logging("TransportZigpy", "Debug", "wait for command")
         command_to_send = await get_next_command(self)
@@ -378,8 +382,10 @@ async def get_next_command(self):
     while True:
         try:
             return self.writer_queue.get_nowait()
+
         except queue.Empty:
             await asyncio.sleep(0.100)
+
         except Exception as e:
             self.log.logging( "TransportZigpy", "Log", f"Error in get_next_command: {e}")
             return None
