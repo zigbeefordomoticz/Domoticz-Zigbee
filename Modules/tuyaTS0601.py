@@ -352,7 +352,7 @@ def ts0601_instant_power(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement : %s %s" %(
         twocomplement_tst, twocomplement_val))
     self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Rely on Eval Exp : %s" %( rely_on_eval_expression))
-
+    signed_int = value
     if not rely_on_eval_expression:
         signed_int = int( value )
         if twocomplement_tst:
