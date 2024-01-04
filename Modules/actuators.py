@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
+
 """
     Module: actuators.py
 
@@ -13,13 +21,13 @@
 import json
 
 from Modules.basicOutputs import set_poweron_afteroffon
-from Modules.paramDevice import get_device_config_param
 from Modules.readAttributes import (
     ReadAttributeRequest_0006_400x,
     ReadAttributeRequest_0300_Color_Capabilities)
 from Modules.thermostats import thermostat_Setpoint
-from Modules.tools import (Hex_Format, get_deviceconf_parameter_value,
-                           getAttributeValue, rgb_to_hsl, rgb_to_xy)
+from Modules.tools import (Hex_Format, get_device_config_param,
+                           get_deviceconf_parameter_value, getAttributeValue,
+                           rgb_to_hsl, rgb_to_xy)
 from Modules.tuya import (tuya_color_control_rgbMode,
                           tuya_Move_To_Hue_Saturation,
                           tuya_Move_To_Hue_Saturation_Brightness)
