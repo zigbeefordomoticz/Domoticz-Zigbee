@@ -7,7 +7,7 @@ import Domoticz
 from pathlib import Path
 
 MODULES_VERSION = {
-    "zigpy": "0.60.3",
+    "zigpy": "0.60.4",
     "zigpy_znp": "0.12.1",
     "zigpy_deconz": "0.22.4",
     "bellows": "0.37.6",
