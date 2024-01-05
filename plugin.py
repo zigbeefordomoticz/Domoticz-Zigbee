@@ -99,7 +99,6 @@ import os.path
 import threading
 import time
 
-import pkg_resources
 import z4d_certified_devices
 
 from Classes.AdminWidgets import AdminWidgets
