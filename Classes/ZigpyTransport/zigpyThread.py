@@ -248,7 +248,7 @@ def deconz_configuration_setup(self, conf, serialPort):
         conf.CONF_DEVICE: {"path": serialPort},
         conf.CONF_NWK: {},
         zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
-        zigpy.config.CONF_STARTUP_ENERGY_SCAN: False
+        # zigpy.config.CONF_STARTUP_ENERGY_SCAN: False
     }
     
 def optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel):
