@@ -66,6 +66,9 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
         self.log.logging('Input', 'Error', error_message)
         return
     
+    ias_dic = self.ListOfDevices[MsgSrcAddr].setdefault('Ep', {}).setdefault(MsgEp, {}).setdefault(MsgClusterId, {})
+    ias_dic.setdefault('0002', {})
+
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
     
     if MsgSrcAddr not in self.ListOfDevices:
@@ -90,17 +93,6 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     if Model == 'PST03A-v2.2.5':
         Decode8401_PST03Av225(self, Devices, MsgSrcAddr, MsgEp, Model, MsgZoneStatus)
         return
-    
-    # alarm1 = int(MsgZoneStatus, 16) & 1
-    # alarm2 = int(MsgZoneStatus, 16) >> 1 & 1
-    # tamper = int(MsgZoneStatus, 16) >> 2 & 1
-    # battery = int(MsgZoneStatus, 16) >> 3 & 1
-    # suprrprt = int(MsgZoneStatus, 16) >> 4 & 1
-    # restrprt = int(MsgZoneStatus, 16) >> 5 & 1
-    # trouble = int(MsgZoneStatus, 16) >> 6 & 1
-    # acmain = int(MsgZoneStatus, 16) >> 7 & 1
-    # test = int(MsgZoneStatus, 16) >> 8 & 1
-    # battdef = int(MsgZoneStatus, 16) >> 9 & 1
     
     status_bits = [int(MsgZoneStatus, 16) >> i & 1 for i in range(10)]
     alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef = status_bits
