@@ -117,15 +117,15 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         # Each scan period is 15.36ms. Scan for at least 200ms (2^4 + 1 periods) to
         # pick up WiFi beacon frames.
         results = await self.energy_scan( channels=t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
-        
-        self.log.logging("TransportZigpy", "Status", "Energy scan result:")
-        for _chnl in results:
-            self.log.logging("TransportZigpy", "Status", f"  [{_chnl}] : %0.2f%%" % (100 * results[_chnl] / 255) )
-            
+
         if results[self.state.network_info.channel] > ENERGY_SCAN_WARN_THRESHOLD:
-            self.log.logging("TransportZigpy", "Status", "WARNING - Zigbee channel %s utilization is %0.2f%%!" %(
+            self.log.logging("TransportZigpy", "Error", "WARNING - Zigbee channel %s utilization is %0.2f%%!" %(
                 self.state.network_info.channel, 100 * results[self.state.network_info.channel] / 255, ))
-            self.log.logging("TransportZigpy", "Status", const.INTERFERENCE_MESSAGE)
+            self.log.logging("TransportZigpy", "Error", const.INTERFERENCE_MESSAGE)
+            self.log.logging("TransportZigpy", "Log", "Energy scan result:")
+            for _chnl in results:
+                self.log.logging("TransportZigpy", "Log", f"  [{_chnl}] : %0.2f%%" % (100 * results[_chnl] / 255) )
+
 
     # Config Top Scan
     if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
