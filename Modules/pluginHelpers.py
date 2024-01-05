@@ -154,7 +154,7 @@ def check_requirements(home_folder):
                     raise importlib.metadata.PackageNotFoundError
 
         except importlib.metadata.PackageNotFoundError:
-            Domoticz.Error(f"Looks like {req_str} Python module is not installed or does not meet the required version. Requires {version}, Installed {installed_version}"
+            Domoticz.Error(f"Looks like {req_str} Python module is not installed or does not meet the required version. Requires {version}, Installed {installed_version}. "
                            f"Make sure to install the required Python3 module with the correct version.")
             Domoticz.Error("Use the command:")
             Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
