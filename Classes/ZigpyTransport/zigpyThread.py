@@ -209,9 +209,8 @@ def ezsp_configuration_setup(self, conf, serialPort):
         conf.CONF_NWK: {},
         conf.CONF_EZSP_CONFIG: {
         },
-        "topology_scan_enabled": False,
+        zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
         "handle_unknown_devices": True,
-        "source_routing": True         # If enable bellows is doing source routing, if not then it is ezsp taking care https://github.com/zigpy/bellows/issues/493#issuecomment-1239892344
         }
     
     if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
@@ -231,7 +230,7 @@ def znp_configuration_setup(self, conf, serialPort):
         conf.CONF_DEVICE: {"path": serialPort,}, 
         conf.CONF_NWK: {},
         conf.CONF_ZNP_CONFIG: { },
-        "topology_scan_enabled": False,
+        zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
         }
     if specific_endpoints(self):
         config[ conf.CONF_ZNP_CONFIG][ "prefer_endpoint_1" ] = False
