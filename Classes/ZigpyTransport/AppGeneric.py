@@ -29,7 +29,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
 LOGGER = logging.getLogger(__name__)
 
 ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
-ZIGPY_INITIALISATION_DELAY = 2.5
+ZIGPY_INITIALISATION_DELAY = 3
 
 
 async def _load_db(self) -> None:
@@ -126,7 +126,6 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
             for _chnl in results:
                 self.log.logging("TransportZigpy", "Log", f"  [{_chnl}] : %0.2f%%" % (100 * results[_chnl] / 255) )
 
-
     # Config Top Scan
     if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
         # Config specifies the period in minutes, not seconds
@@ -135,9 +134,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     # Start Watchdog
     if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
         self._watchdog_task = asyncio.create_task(self._watchdog_loop())
-
-    #self.log.logging("TransportZigpy", "Log", f"Wait {ZIGPY_INITIALISATION_DELAY} to complete zigpy initialisation")
-    #await asyncio.sleep( ZIGPY_INITIALISATION_DELAY )
+        
+        self.log.logging("TransportZigpy", "Log", f"Wait {ZIGPY_INITIALISATION_DELAY} to complete zigpy initialisation")
+        await asyncio.sleep( ZIGPY_INITIALISATION_DELAY )
     
 
 def get_device(self, ieee=None, nwk=None):
