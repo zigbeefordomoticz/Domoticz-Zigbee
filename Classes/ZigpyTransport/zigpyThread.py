@@ -32,6 +32,8 @@ from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
 
+import serial
+
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_0302_frame_content, build_plugin_8009_frame_content,
     build_plugin_8011_frame_content,
@@ -184,11 +186,14 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
     try:
         if radiomodule in ["znp", "deCONZ"]:
             self.app = App(config)
+
         elif radiomodule == "ezsp":
             self.app = App(conf.CONFIG_SCHEMA(config))
+
         else:
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
             return
+        
     except Exception as e:
             self.log.logging( "TransportZigpy", "Error", "Error while starting radio %s on port: %s - Error: %s" %( radiomodule, serialPort, e) )
 
@@ -646,7 +651,7 @@ async def transport_request(self, destination, Profile, Cluster, sEp, dEp, seque
         return
 
     if Profile == 0x0000 and Cluster == 0x0005 and _ieee and _ieee[:8] in DELAY_FOR_VERY_KEY:
-        self.log.logging("TransportZigpy", "Log", "ZigyTransport: process_raw_command waiting 6 seconds for CASA.IA Confirm Key")
+        self.log.logging("TransportZigpy", "Log", "transport_request: process_raw_command waiting 6 seconds for CASA.IA Confirm Key")
         delay = VERIFY_KEY_DELAY
 
     if delay:
@@ -657,12 +662,12 @@ async def transport_request(self, destination, Profile, Cluster, sEp, dEp, seque
         self.log.logging("TransportZigpy", "Debug", f"transport_request: _limit_concurrency {destination} {sequence}")
 
         if _ieee in self._currently_not_reachable and self._currently_waiting_requests_list[_ieee]:
-            self.log.logging("TransportZigpy", "Debug", f"ZigyTransport: process_raw_command Request {sequence} skipped NwkId: {_nwkid} not reachable - {_ieee} {str(self._currently_not_reachable)} {self._currently_waiting_requests_list[_ieee]}", _nwkid)
+            self.log.logging("TransportZigpy", "Debug", f"transport_request: process_raw_command Request {sequence} skipped NwkId: {_nwkid} not reachable - {_ieee} {str(self._currently_not_reachable)} {self._currently_waiting_requests_list[_ieee]}", _nwkid)
             return
 
         max_retry = MAX_ATTEMPS_REQUEST if self.pluginconf.pluginConf["PluginRetrys"] else 1
 
-        self.log.logging("TransportZigpy", "Debug", f"ZigyTransport: process_raw_command {_ieee} {Profile} {type(Profile)} {Cluster} {type(Cluster)} - Max Attempts: {max_retry}")
+        self.log.logging("TransportZigpy", "Debug", f"transport_request: process_raw_command {_ieee} {Profile} {type(Profile)} {Cluster} {type(Cluster)} - Max Attempts: {max_retry}")
 
         for attempt in range(max_retry):
             try:
@@ -671,6 +676,9 @@ async def transport_request(self, destination, Profile, Cluster, sEp, dEp, seque
                 # Slow down the throughput when too many commands. Try not to overload the coordinators
                 multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
                 await asyncio.sleep(multi * WAITING_TIME_BETWEEN_ATTEMPTS)
+
+            except AttributeError:
+                self.log.logging("TransportZigpy", "Log", f"transport_request: AttributeError {_ieee} {Profile} {type(Profile)} {Cluster} {type(Cluster)} - Max Attempts: {max_retry}")
 
             except DeliveryError as e:
                 await handle_delivery_error(self, e, destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout, attempt, max_retry, _ieee, _nwkid)
