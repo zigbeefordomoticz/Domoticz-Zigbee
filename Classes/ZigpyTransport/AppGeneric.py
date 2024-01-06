@@ -29,7 +29,6 @@ from Classes.ZigpyTransport.plugin_encoders import (
 LOGGER = logging.getLogger(__name__)
 
 ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
-ZIGPY_INITIALISATION_DELAY = 3
 
 
 async def _load_db(self) -> None:
@@ -42,6 +41,11 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     settings if necessary.
     """
     self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
+
+    # Make sure the first thing we do is feed the watchdog
+    if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
+        await self.watchdog_feed()
+        self._watchdog_task = asyncio.create_task(self._watchdog_loop())
 
     # Retreive Last Backup
     _retreived_backup = None
@@ -131,12 +135,6 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
-    # Start Watchdog
-    if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
-        self._watchdog_task = asyncio.create_task(self._watchdog_loop())
-        
-        self.log.logging("TransportZigpy", "Log", f"Wait {ZIGPY_INITIALISATION_DELAY} to complete zigpy initialisation")
-        await asyncio.sleep( ZIGPY_INITIALISATION_DELAY )
     
 
 def get_device(self, ieee=None, nwk=None):
