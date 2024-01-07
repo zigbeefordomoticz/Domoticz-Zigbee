@@ -164,7 +164,6 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
         elif radiomodule =="znp":
-            self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
             import zigpy_znp.config as conf
 
             from Classes.ZigpyTransport.AppZnp import App_znp as App
@@ -174,7 +173,6 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             self.log.logging("TransportZigpy", "Status", "Started radio znp port: %s" %(serialPort))
 
         elif radiomodule =="deCONZ":
-            self.log.logging("TransportZigpy", "Status", "Starting radio %s port: %s" %( radiomodule, serialPort))
             import zigpy_deconz.config as conf
 
             from Classes.ZigpyTransport.AppDeconz import App_deconz as App
@@ -182,6 +180,9 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             config = deconz_configuration_setup(self, conf, serialPort)
 
             self.log.logging("TransportZigpy", "Status", "Started radio deconz port: %s" %(serialPort))
+
+        else:
+            self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
 
     except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
@@ -207,6 +208,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
         self.log.logging( "TransportZigpy", "Status", "Coordinator initialisation requested  Channel %s(0x%02x) ExtendedPanId: 0x%016x" % (
             set_channel, set_channel, set_extendedPanId), )
         new_network = True
+
     else:
         new_network = False
 
