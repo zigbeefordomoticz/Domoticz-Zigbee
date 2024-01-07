@@ -4,10 +4,7 @@
 #
 
 import json
-import os.path
 import time
-from queue import PriorityQueue, Queue
-from threading import Thread
 
 import zigpy.application
 import zigpy.types as t
@@ -63,8 +60,8 @@ class ZigpyTransport(object):
 
         self.app: zigpy.application.ControllerApplication | None = None
         
-        self.writer_queue = Queue()
-        self.forwarder_queue = Queue()
+        self.writer_queue = None
+        self.forwarder_queue = None
         self.zigpy_loop = None
         self.zigpy_thread = None
         self.forwarder_thread = None
@@ -95,6 +92,10 @@ class ZigpyTransport(object):
         self.forwarder_thread.join()
 
     def sendData(self, cmd, datas, sqn=None, highpriority=False, ackIsDisabled=False, waitForResponseIn=False, NwkId=None):
+        
+        if self.writer_queue is None:
+            return
+
         _queue = self.loadTransmit()
         if _queue > self.statistics._MaxLoad:
             self.statistics._MaxLoad = _queue
@@ -108,14 +109,16 @@ class ZigpyTransport(object):
             )
 
         self.log.logging("Transport", "Debug", "===> sendData - Cmd: %s Datas: %s" % (cmd, datas))
-        
+
         message = {"cmd": cmd, "datas": datas, "NwkId": NwkId, "TimeStamp": time.time(), "ACKIsDisable": ackIsDisabled, "Sqn": sqn}
-        self.writer_queue.put(str(json.dumps(message)))
+        self.writer_queue.put_nowait(json.dumps(message))
         instrument_sendData( self, cmd, datas, sqn, message["TimeStamp"], highpriority, ackIsDisabled, waitForResponseIn, NwkId )
         
 
     def receiveData(self, message):
         self.log.logging("Transport", "Debug", "===> receiveData for Forwarded - Message %s" % (message))
+        if self.forwarder_queue is None:
+            return
         self.forwarder_queue.put(message)
 
     def get_device_ieee( self, nwkid):
@@ -142,6 +145,8 @@ class ZigpyTransport(object):
         #for device in list(self._currently_waiting_requests_list):
         #    _queue += self._currently_waiting_requests_list[device]
         #return self.writer_queue.qsize()
+        if self.writer_queue is None:
+            return 0
         _queue = sum(self._currently_waiting_requests_list[device] + 1 for device in list(self._currently_waiting_requests_list) if self._concurrent_requests_semaphores_list[device].locked())
         _ret_value = max(_queue - 1, 0) + self.writer_queue.qsize()
         self.log.logging("Transport", "Debug", "Load: PluginQueue: %3s ZigpyQueue: %3s => %s" %(self.writer_queue.qsize(), _queue, _ret_value ))

@@ -6,7 +6,6 @@
 
 import queue
 from threading import Thread
-from time import sleep
 
 from Classes.ZigpyTransport.instrumentation import time_spent_forwarder
 from Classes.ZigpyTransport.tools import handle_thread_error
@@ -24,6 +23,8 @@ def stop_forwarder_thread(self):
 def forwarder_thread(self):
     self.log.logging("TransportFrwder", "Status", "ZigpyTransport: thread_processing_and_sending Thread start.")
 
+    self.forwarder_queue = queue.Queue()
+    
     while self.running:
         message = None
         # Sending messages ( only 1 at a time )

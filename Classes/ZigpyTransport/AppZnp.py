@@ -89,6 +89,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=True))
+
+        if self._watchdog_task is not None:
+            self._watchdog_task.cancel()
+
         await self.disconnect()
 
 

@@ -92,6 +92,7 @@ try:
     from Domoticz import Devices, Images, Parameters, Settings
 except ImportError:
     pass
+
 import gc
 import json
 import os
@@ -408,7 +409,6 @@ class BasePlugin:
             self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
                 _current_python_version_major , _current_python_version_minor))
 
-
         # Debuging information
         debuging_information(self, "Debug")
          
@@ -530,146 +530,11 @@ class BasePlugin:
         # Create Statistics object
         self.statistics = TransportStatistics(self.pluginconf)
 
-        # Connect to Zigate only when all initialisation are properly done.
+        # Connect to Coordinator only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
-        if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
-            from Classes.ZigateTransport.Transport import ZigateTransport
-            
-            check_python_modules_version( self )
-            
-            self.zigbee_communication = "native"
-            self.pluginParameters["Zigpy"] = False
-            self.ControllerLink= ZigateTransport(
-                self.HardwareID,
-                self.DomoticzBuild,
-                self.DomoticzMajor,
-                self.DomoticzMinor,
-                self.transport,
-                self.statistics,
-                self.pluginconf,
-                self.processFrame,
-                self.log,
-                serialPort=Parameters["SerialPort"],
-            )
-
-        elif self.transport in ("PI", "V2-PI"):
-            from Classes.ZigateTransport.Transport import ZigateTransport
-            check_python_modules_version( self )
-            self.pluginconf.pluginConf["ControllerInRawMode"] = False
-            switchPiZigate_mode(self, "run")
-            self.zigbee_communication = "native"
-            self.pluginParameters["Zigpy"] = False
-            self.ControllerLink= ZigateTransport(
-                self.HardwareID,
-                self.DomoticzBuild,
-                self.DomoticzMajor,
-                self.DomoticzMinor,
-                self.transport,
-                self.statistics,
-                self.pluginconf,
-                self.processFrame,
-                self.log,
-                serialPort=Parameters["SerialPort"],
-            )
-
-        elif self.transport in ("Wifi", "V2-Wifi"):
-            from Classes.ZigateTransport.Transport import ZigateTransport
-            check_python_modules_version( self )
-            self.pluginconf.pluginConf["ControllerInRawMode"] = False
-            self.zigbee_communication = "native"
-            self.pluginParameters["Zigpy"] = False
-            self.ControllerLink= ZigateTransport(
-                self.HardwareID,
-                self.DomoticzBuild,
-                self.DomoticzMajor,
-                self.DomoticzMinor,
-                self.transport,
-                self.statistics,
-                self.pluginconf,
-                self.processFrame,
-                self.log,
-                wifiAddress=Parameters["Address"],
-                wifiPort=Parameters["Port"],
-            )
-
-        elif self.transport == "None":
-            from Classes.ZigateTransport.Transport import ZigateTransport
-            self.pluginconf.pluginConf["ControllerInRawMode"] = False
-            self.pluginParameters["Zigpy"] = False
-            self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
-            self.FirmwareVersion = "031c"
-            self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
-
-        elif self.transport == "ZigpyZNP":
-            import zigpy
-            import zigpy_znp
-            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH,
-                                      CONFIG_SCHEMA, SCHEMA_DEVICE)
-
-            from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-            #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-            # https://github.com/zigpy/zigpy-znp/issues/205
-            #self.pythonModuleVersion["zigpy_znp"] = import_version( 'zigpy-znp' )
-            
-            check_python_modules_version( self )
-            self.zigbee_communication = "zigpy"
-            self.pluginParameters["Zigpy"] = True
-            self.log.logging("Plugin", "Status", "Start Zigpy Transport on ZNP")
-            
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
-            self.ControllerLink.open_cie_connection()
-            self.pluginconf.pluginConf["ControllerInRawMode"] = True
-            
-        elif self.transport == "ZigpydeCONZ":
-            import zigpy
-            import zigpy_deconz
-            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH,
-                                      CONFIG_SCHEMA, SCHEMA_DEVICE)
-
-            from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-            #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-            #self.pythonModuleVersion["zigpy_deconz"] = (zigpy_deconz.__version__)
-            check_python_modules_version( self )
-            self.pluginParameters["Zigpy"] = True
-            self.log.logging("Plugin", "Status","Start Zigpy Transport on deCONZ")            
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
-            self.ControllerLink.open_cie_connection()
-            self.pluginconf.pluginConf["ControllerInRawMode"] = True
-            
-        elif self.transport == "ZigpyEZSP":
-            import bellows
-            import zigpy
-            from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH,
-                                      CONFIG_SCHEMA, SCHEMA_DEVICE)
-
-            from Classes.ZigpyTransport.Transport import ZigpyTransport
-
-            #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-            #self.pythonModuleVersion["zigpy_ezsp"] = (bellows.__version__)
-            check_python_modules_version( self )
-            self.zigbee_communication = "zigpy"
-            self.pluginParameters["Zigpy"] = True
-            self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
-
-            if Parameters["Mode2"] == "Socket":
-                SerialPort = "socket://" + Parameters["IP"] + ':' + Parameters["Port"]
-                self.transport += "Socket"
-            else:
-                SerialPort = Parameters["SerialPort"]
-
-            SerialPort = Parameters["SerialPort"]
-            
-            self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort)  
-            self.ControllerLink.open_cie_connection()
-            self.pluginconf.pluginConf["ControllerInRawMode"] = True
-          
-        else:
-            self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
-            self.onStop()
-            return
-
+        
+        start_zigbee_transport(self )
+        
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
             self.ControllerLink.open_cie_connection()
@@ -680,7 +545,7 @@ class BasePlugin:
             # Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ControllerLink)
             self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communication, self.readZclClusters, self.FirmwareVersion)
 
-            # Starting WebServer
+        # Starting WebServer
         if self.webserver is None:
             if Parameters["Mode4"].isdigit() or ':' in Parameters["Mode4"]:
                 start_web_server(self, Parameters["Mode4"], Parameters["HomeFolder"])
@@ -692,6 +557,8 @@ class BasePlugin:
         self.log.logging("Plugin", "Status", "Domoticz Widgets usage is at %s %% (%s units free)" % (
             round( ( ( 255 - how_many_slot_available( Devices )) / 255 ) * 100, 1 ), how_many_slot_available( Devices ) ))
         self.busy = False
+
+
 
     def onStop(self):  # sourcery skip: class-extract-method
         Domoticz.Log("onStop()")
@@ -1069,7 +936,171 @@ class BasePlugin:
         return True
 
 
+def start_zigbee_transport(self ):
+    
+    if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
+        check_python_modules_version( self )
+        _start_native_usb_zigate(self)
 
+    elif self.transport in ("PI", "V2-PI"):
+        _start_native_pi_zigate(self)
+
+    elif self.transport in ("Wifi", "V2-Wifi"):
+        _start_native_wifi_zigate(self)
+
+    elif self.transport == "None":
+        _start_fake_coordinator(self)
+
+    elif self.transport == "ZigpyZNP":
+        _start_zigpy_ZNP(self)
+        
+    elif self.transport == "ZigpydeCONZ":
+        _start_zigpy_deConz(self)
+                
+    elif self.transport == "ZigpyEZSP":
+        _start_zigpy_EZSP(self) 
+        
+    else:
+        self.log.logging("Plugin", "Error", "Unknown Transport comunication protocol : %s" % str(self.transport))
+        self.onStop()
+        return
+
+
+def _start_fake_coordinator(self):
+        from Classes.ZigateTransport.Transport import ZigateTransport
+        self.pluginconf.pluginConf["ControllerInRawMode"] = False
+        self.pluginParameters["Zigpy"] = False
+        self.log.logging("Plugin", "Status", "Transport mode set to None, no communication.")
+        self.FirmwareVersion = "031c"
+        self.PluginHealth["Firmware Update"] = {"Progress": "75 %", "Device": "1234"}
+    
+
+def _start_native_usb_zigate(self):
+    from Classes.ZigateTransport.Transport import ZigateTransport
+    
+    self.zigbee_communication = "native"
+    self.pluginParameters["Zigpy"] = False
+    self.ControllerLink= ZigateTransport(
+        self.HardwareID,
+        self.DomoticzBuild,
+        self.DomoticzMajor,
+        self.DomoticzMinor,
+        self.transport,
+        self.statistics,
+        self.pluginconf,
+        self.processFrame,
+        self.log,
+        serialPort=Parameters["SerialPort"],
+    )
+
+
+def _start_native_pi_zigate(self):
+    from Classes.ZigateTransport.Transport import ZigateTransport
+    check_python_modules_version( self )
+    self.pluginconf.pluginConf["ControllerInRawMode"] = False
+    switchPiZigate_mode(self, "run")
+    self.zigbee_communication = "native"
+    self.pluginParameters["Zigpy"] = False
+    self.ControllerLink= ZigateTransport(
+        self.HardwareID,
+        self.DomoticzBuild,
+        self.DomoticzMajor,
+        self.DomoticzMinor,
+        self.transport,
+        self.statistics,
+        self.pluginconf,
+        self.processFrame,
+        self.log,
+        serialPort=Parameters["SerialPort"],
+    )
+
+
+def _start_native_wifi_zigate(self):
+    from Classes.ZigateTransport.Transport import ZigateTransport
+    check_python_modules_version( self )
+    self.pluginconf.pluginConf["ControllerInRawMode"] = False
+    self.zigbee_communication = "native"
+    self.pluginParameters["Zigpy"] = False
+    self.ControllerLink= ZigateTransport(
+        self.HardwareID,
+        self.DomoticzBuild,
+        self.DomoticzMajor,
+        self.DomoticzMinor,
+        self.transport,
+        self.statistics,
+        self.pluginconf,
+        self.processFrame,
+        self.log,
+        wifiAddress=Parameters["Address"],
+        wifiPort=Parameters["Port"],
+    )
+
+
+def _start_zigpy_ZNP(self):
+    import zigpy
+    import zigpy_znp
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+
+    from Classes.ZigpyTransport.Transport import ZigpyTransport
+
+    #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+    # https://github.com/zigpy/zigpy-znp/issues/205
+    #self.pythonModuleVersion["zigpy_znp"] = import_version( 'zigpy-znp' )
+    
+    check_python_modules_version( self )
+    self.zigbee_communication = "zigpy"
+    self.pluginParameters["Zigpy"] = True
+    self.log.logging("Plugin", "Status", "Start Zigpy Transport on ZNP")
+    
+    self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
+    self.ControllerLink.open_cie_connection()
+    self.pluginconf.pluginConf["ControllerInRawMode"] = True
+    
+
+def _start_zigpy_deConz(self):
+    import zigpy
+    import zigpy_deconz
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+
+    from Classes.ZigpyTransport.Transport import ZigpyTransport
+
+    #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+    #self.pythonModuleVersion["zigpy_deconz"] = (zigpy_deconz.__version__)
+    check_python_modules_version( self )
+    self.pluginParameters["Zigpy"] = True
+    self.log.logging("Plugin", "Status","Start Zigpy Transport on deCONZ")            
+    self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
+    self.ControllerLink.open_cie_connection()
+    self.pluginconf.pluginConf["ControllerInRawMode"] = True
+    
+
+def _start_zigpy_EZSP(self):
+    import bellows
+    import zigpy
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+
+    from Classes.ZigpyTransport.Transport import ZigpyTransport
+
+    #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
+    #self.pythonModuleVersion["zigpy_ezsp"] = (bellows.__version__)
+    check_python_modules_version( self )
+    self.zigbee_communication = "zigpy"
+    self.pluginParameters["Zigpy"] = True
+    self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
+
+    if Parameters["Mode2"] == "Socket":
+        SerialPort = "socket://" + Parameters["IP"] + ':' + Parameters["Port"]
+        self.transport += "Socket"
+    else:
+        SerialPort = Parameters["SerialPort"]
+
+    SerialPort = Parameters["SerialPort"]
+    
+    self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort)  
+    self.ControllerLink.open_cie_connection()
+    self.pluginconf.pluginConf["ControllerInRawMode"] = True
+    
+    
 def zigateInit_Phase1(self):
     """
     Mainly managed Erase PDM if required
