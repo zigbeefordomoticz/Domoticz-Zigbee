@@ -18,6 +18,15 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## January 2024 - stable7 7.1.008 (2024.01)
+
+- [Issues] - Fix issues brought with 7.1.006 on deConz and Ezsp chipset.
+
+- [Technical] - Latest zigpy library
+- [Technical] - port from pkg_resources to importlib.metadata (pkg_resources becoming obsolete)
+- [Technical] - Introduce device conf parameter RELY_ON_EVAL_EXP (to rely on the EvalExp)
+- [Technical] - Add posibility to prevent the Options overwrite for Metering
+
 ## December 2023 - stable7 7.1.007 ( 2023.12 )
 
 - [Technical] - zigpy radio libraries upgrade
