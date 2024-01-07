@@ -1,7 +1,14 @@
-# coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
-# Author: pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import asyncio
 import asyncio.events
@@ -15,6 +22,7 @@ import traceback
 from threading import Thread
 from typing import Any, Optional
 
+import serial
 import zigpy.config
 import zigpy.device
 import zigpy.exceptions
@@ -31,8 +39,6 @@ from zigpy.exceptions import (APIException, ControllerException, DeliveryError,
                               InvalidResponse)
 from zigpy_znp.exceptions import (CommandNotRecognized, InvalidCommandResponse,
                                   InvalidFrame)
-
-import serial
 
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_0302_frame_content, build_plugin_8009_frame_content,
@@ -536,27 +542,33 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
 
 def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload):
-    
-    if int(NwkId, 16) >= 0xFFFB:  # Broadcast
+
+    if int(NwkId, 16) >= 0xFFFB:  
+        # Broadcast
         return int(NwkId, 16), "Broadcast"
-    
+
     elif addressmode == 0x01:
+        # Group
         return int(NwkId, 16), "Multicast"
-    
+
     elif addressmode in (0x02, 0x07):
+        # 0x02 Short address
+        # 0x07 Short address with No Ack (Zigate)
         try:
             destination = self.app.get_device(nwk=t.NWK(int(NwkId, 16)))
-            
+
         except KeyError:
-            self.log.logging( "TransportZigpy", "Error", "process_raw_command device not found destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" % (
-                NwkId, Profile, Cluster, sEp, dEp, sequence, payload))
+            self.log.logging( "TransportZigpy", "Error", f"_get_destination unable to get destination. Nwkid {NwkId} AddrMode {addressmode}")
             destination = None
+
         return destination, "Unicast"
-    
+
     elif addressmode in (0x03, 0x08):
+        # 0x03 IEEE
+        # 0x08 IEEE with No Ack (Zigate)
         return self.app.get_device(nwk=t.NWK(int(NwkId, 16))), "Unicast"    
-    
-    
+
+
 def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
     # Looks like Zigate return an int, while ZNP returns a status.type
     if nwkid == "0000":
