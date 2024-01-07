@@ -26,6 +26,7 @@ Release Numbering
 - [Technical] - port from pkg_resources to importlib.metadata (pkg_resources becoming obsolete)
 - [Technical] - Introduce device conf parameter RELY_ON_EVAL_EXP (to rely on the EvalExp)
 - [Technical] - Add posibility to prevent the Options overwrite for Metering
+- [Technical] - Interference scanning at start. Report if current channel above 75%
 
 ## December 2023 - stable7 7.1.007 ( 2023.12 )
 
