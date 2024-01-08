@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: tuya.py
 
@@ -1217,8 +1224,7 @@ def tuya_trv_calibration(self, nwkid, calibration):
         cluster_frame = "11"
         cmd = "00"  # Command
         if calibration < 0:
-            calibration = ( 0xffffffff - calibration + 1 )
-            #calibration = abs(int(hex(-calibration - pow(2, 32)), 16))
+            calibration = (0xffffffff - abs(calibration) + 1)
         data = "%08x" % calibration
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
