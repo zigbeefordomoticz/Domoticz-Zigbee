@@ -66,7 +66,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
                 self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
                 _retreived_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
 
-            self.log.logging("TransportZigpy", "Log", "Last backup retreived: %s" % _retreived_backup )
+            self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retreived_backup )
             self.backups.add_backup( backup=_retreived_backup )
 
     # If We need to Creat a new Zigbee network annd restore the last backup
