@@ -310,7 +310,7 @@ def scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, M
 
     self.log.logging('Input', 'Log', f"scene_mapping {MsgSrcAddr} {MsgEP} {MsgClusterId} {MsgCmd} {unknown_} {MsgDirection} {remote_scene_mapping_data}")
 
-    matching_criteria = (MsgCmd, unknown_, MsgDirection) if MsgDirection is not None else (MsgCmd, unknown_)
+    matching_criteria = f"{MsgCmd}_{unknown_}_{MsgDirection}" if MsgDirection is not None else f"{MsgCmd}_{unknown_}"
 
     cluster_mapping = remote_scene_mapping_data.get(MsgClusterId, {})
     device_mapping = cluster_mapping.get(matching_criteria, None)
