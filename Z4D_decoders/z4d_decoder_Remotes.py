@@ -51,6 +51,11 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
         self.log.logging('Input', 'Log', 'Decode8085 - No Model Name !')
         return
     _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
+
+    remote_scene_mapping_data = get_deviceconf_parameter_value(self, _ModelName, 'REMOTE_SCENE_MAPPING')
+    if remote_scene_mapping_data:
+        return scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_ )
+
     if _ModelName in ('TRADFRI remote control', 'Remote Control N2'):
         ikea_remote_control_8085(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
     elif _ModelName in ('ROM001',):
@@ -174,6 +179,11 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
     _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
+
+    remote_scene_mapping_data = get_deviceconf_parameter_value(self, _ModelName, 'REMOTE_SCENE_MAPPING')
+    if remote_scene_mapping_data:
+        return scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_ )
+
     self.log.logging('Input', 'Debug', 'Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Payload: %s Unknown: %s Model: %s' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgPayload, unknown_, _ModelName), MsgSrcAddr)
     if _ModelName in ('TRADFRI remote control', 'Remote Control N2'):
         ikea_remote_control_8095(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_)
@@ -281,6 +291,11 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
     check_duplicate_sqn(self, MsgSrcAddr, MsgEP, MsgClusterId, MsgSQN)
     timeStamped(self, MsgSrcAddr, 32935)
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
+
+    remote_scene_mapping_data = get_deviceconf_parameter_value(self, _ModelName, 'REMOTE_SCENE_MAPPING')
+    if remote_scene_mapping_data:
+        return scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unkown_, MsgDirection )
+
     if _ModelName in ('TRADFRI remote control',):
         ikea_remote_control_80A7(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_)
     elif _ModelName in ('Remote Control N2',):
@@ -288,3 +303,19 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
     else:
         self.log.logging('Input', 'Log', 'Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s' % (MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, Direction: %s, %s' % (MsgCmd, MsgDirection, unkown_)
+
+
+def scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd=None, unknown_=None, MsgDirection=None):
+    """Implementation based on Device JSON configuration."""
+
+    self.log.logging('Input', 'Log', f"scene_mapping {MsgSrcAddr} {MsgEP} {MsgClusterId} {MsgCmd} {unknown_} {MsgDirection} {remote_scene_mapping_data}")
+
+    matching_criteria = (MsgCmd, unknown_, MsgDirection) if MsgDirection is not None else (MsgCmd, unknown_)
+
+    cluster_mapping = remote_scene_mapping_data.get(MsgClusterId, {})
+    device_mapping = cluster_mapping.get(matching_criteria, None)
+
+    self.log.logging('Input', 'Log', f"   mapping found ( {MsgCmd} {unknown_} {MsgDirection}) -> {device_mapping}")
+
+    if device_mapping:
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, device_mapping)
