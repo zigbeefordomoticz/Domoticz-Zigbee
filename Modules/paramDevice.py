@@ -318,11 +318,11 @@ DEVICE_PARAMETERS = {
     "TS110ELightType": ts110e_light_type,
     "TS110ESwitch01Type": ts110e_switch01_type,
     "TS110ESwitch02Type": ts110e_switch02_type,
-    "TS011F_overTemperatureThreshold": tuya_ts011F_threshold_overTemperatureBreaker,
-    "TS011F_overPowerThreshold": tuya_ts011F_threshold_overPowerBreaker,
-    "TS011F_overCurrentThreshold": tuya_ts011F_threshold_overCurrentBreaker,
-    "TS011F_overVoltageThreshold": tuya_ts011F_threshold_overVoltageBreaker,
-    "TS011F_underVoltageThreshold": tuya_ts011F_threshold_underVoltageBreaker
+    "TS011F_overTemperatureBreaker": tuya_ts011F_threshold_overTemperatureBreaker,
+    "TS011F_overPowerBreaker": tuya_ts011F_threshold_overPowerBreaker,
+    "TS011F_overCurrentBreeaker": tuya_ts011F_threshold_overCurrentBreaker,
+    "TS011F_overVoltageBreaker": tuya_ts011F_threshold_overVoltageBreaker,
+    "TS011F_underVoltageBreaker": tuya_ts011F_threshold_underVoltageBreaker
 }
 
 def sanity_check_of_param(self, NwkId):
