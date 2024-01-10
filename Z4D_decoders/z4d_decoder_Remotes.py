@@ -374,6 +374,6 @@ def scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, M
 
 def missing_scene_mapping(self, NwkId, Ep, ClusterId, model, Cmd, Unknow, Direction):
 
-  self.log.logging( 'Input', 'Log', f'Device {NwkId] with model {model} requires a scene mapping entry in the config file')
+  self.log.logging( 'Input', 'Log', f'Device {NwkId} with model {model} requires a scene mapping entry in the config file')
   self.log.logging( 'Input', 'Log', f'Device "REMOTE_SCENE_MAPPING": { "{ClusterId}": { "{Cmd}_{Unknow}_{Direction}": <the mapped value for corresponding switch selector>}')
                                                                     
