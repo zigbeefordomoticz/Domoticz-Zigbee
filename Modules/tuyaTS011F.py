@@ -14,6 +14,8 @@ from Modules.basicOutputs import raw_APS_request
 from Modules.tools import get_and_inc_ZCL_SQN, get_device_config_param
 from Modules.zigateConsts import ZIGATE_EP
 
+def tuya_read_cluster_e001(self, Devices, NwkId, source_ep, clusterId, target_nwkid, target_ep, paypal):
+    self.log.logging("TuyaTS011F", "Debug", f"tuya_read_cluster_e001 - {clusterId} - {paypal}")
 
 
 def tuya_ts011F_threshold_overTemperatureBreaker( self, NwkId, enablement):
