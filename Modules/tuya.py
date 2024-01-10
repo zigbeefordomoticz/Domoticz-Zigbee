@@ -36,6 +36,7 @@ from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
 from Modules.tuyaTRV import tuya_eTRV_response
 from Modules.tuyaTS0601 import ts0601_response
 from Modules.zigateConsts import ZIGATE_EP
+from Modules.tuyaTS011F import tuya_read_cluster_e001
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
@@ -152,10 +153,13 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
     if NwkId not in self.ListOfDevices:
         return
-    if ClusterID != "ef00":
+
+    if ClusterID == "e001":
+        return tuya_read_cluster_e001(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload)
+
+    if ClusterID != "ef00" or "Model" not in self.ListOfDevices[NwkId]:
         return
-    if "Model" not in self.ListOfDevices[NwkId]:
-        return
+
     _ModelName = self.ListOfDevices[NwkId]["Model"]
 
     if len(MsgPayload) < 6:
