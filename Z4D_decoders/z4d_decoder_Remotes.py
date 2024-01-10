@@ -176,7 +176,7 @@ def Decode8085(self, Devices, MsgData, MsgLQI):
 
     else:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' % (MsgCmd, unknown_)
-        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgCmd, unknown_, None)
+        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData, MsgCmd, unknown_, None)
         
         
 def Decode8095(self, Devices, MsgData, MsgLQI):
@@ -318,7 +318,7 @@ def Decode8095(self, Devices, MsgData, MsgLQI):
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', MsgCmd)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' % (MsgCmd, unknown_)
-        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgCmd, unknown_, None)
+        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData, MsgCmd, unknown_, None)
         
 def Decode80A7(self, Devices, MsgData, MsgLQI):
     """Remote button pressed (LEFT/RIGHT)"""
@@ -353,7 +353,7 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
         ikea_remoteN2_control_80A7(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_)
     else:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, Direction: %s, %s' % (MsgCmd, MsgDirection, unkown_)
-        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgCmd, unkown_, MsgDirection)
+        missing_scene_mapping(self, MsgSrcAddr, MsgEP, MsgClusterId, _ModelName, MsgData, MsgCmd, unkown_, MsgDirection)
 
 
 def scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd=None, unknown_=None, MsgDirection=None):
@@ -372,9 +372,9 @@ def scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, M
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, device_mapping)
 
 
-def missing_scene_mapping(self, NwkId, Ep, ClusterId, model, Cmd, Unknow, Direction):
+def missing_scene_mapping(self, NwkId, Ep, ClusterId, model, Data, Cmd, Unknow, Direction):
 
-  self.log.logging( 'Input', 'Log', f'Device {NwkId} with model {model} requires a scene mapping entry in the config file')
-  self.log.logging('Input', 'Log', f'Device "REMOTE_SCENE_MAPPING": {{ "{ClusterId}": {{ "{Cmd}_{Unknow}_{Direction}": <the mapped value for corresponding switch selector> }} }}')
+    self.log.logging( 'Input', 'Log', f'Device {NwkId} with model {model} requires a scene mapping entry in the config file - msgdata: {Data[8:]}')
+    self.log.logging('Input', 'Log', f'Device "REMOTE_SCENE_MAPPING": {{ "{ClusterId}": {{ "{Cmd}_{Unknow}_{Direction}": <the mapped value for corresponding switch selector> }} }}')
 
                                                                     
