@@ -37,6 +37,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "log-error-history": {"Name": "log-error-history", "Verbs": {"GET"}, "function": self.rest_logErrorHistory},
         "new-hrdwr": {"Name": "new-hrdwr", "Verbs": {"GET"}, "function": self.rest_new_hrdwr},
         "nwk-stat": {"Name": "nwk_stat", "Verbs": {"GET", "DELETE"}, "function": self.rest_nwk_stat},
+        "non-optimized-device-configuration": {"Name": "non-optimized-device-configuration", "Verbs": {"GET"}, "function": self.rest_non_optimized_device_configuration},
         "ota-firmware-device-list": { "Name": "ota-firmware-list", "Verbs": {"GET"}, "function": self.rest_ota_devices_for_manufcode },
         "ota-firmware-list": {"Name": "ota-firmware-list", "Verbs": {"GET"}, "function": self.rest_ota_firmware_list},
         "ota-firmware-update": { "Name": "ota-firmware-update", "Verbs": {"PUT"}, "function": self.rest_ota_firmware_update },
