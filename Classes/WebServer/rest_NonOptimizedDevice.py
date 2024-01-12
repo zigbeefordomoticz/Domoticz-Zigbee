@@ -69,6 +69,7 @@ def construct_configuration_file(self, Nwkid):
         "ReadAttributes": _analyse_read_attributes_infos(self, device["ReadAttributes"] ),
         "Param": {},
         "GroupMembership": {},
+        "rawInfos": device
     }
 
 
