@@ -111,10 +111,14 @@ def _analyse_read_attributes_infos(self, read_attributes_input):
 
     read_attributes = {}
 
-    for _, clusters in read_attributes_input.items():
-        for cluster, cluster_info in clusters.items():
-            attribute_list = read_attributes.setdefault(cluster, [])
-            attribute_list.extend(attribute for attribute, status in cluster_info.get("Attributes", []) if status == "00" and attribute not in attribute_list)
+    for _, ep_data in read_attributes_input.get("Ep", {}).items():
+        for cluster, cluster_data in ep_data.items():
+            read_attributes[cluster] = []
+            for key, attribute_data in cluster_data.items():
+                if key == "Attributes":
+                    for attribute, status in attribute_data.items():
+                        if status == "00" and attribute not in read_attributes[cluster]:
+                            read_attributes[cluster].append( attribute )
             
     return read_attributes
 
