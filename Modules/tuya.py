@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: tuya.py
 
@@ -29,6 +36,7 @@ from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
 from Modules.tuyaTRV import tuya_eTRV_response
 from Modules.tuyaTS0601 import ts0601_response
 from Modules.zigateConsts import ZIGATE_EP
+from Modules.tuyaTS011F import tuya_read_cluster_e001
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
@@ -145,10 +153,13 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
     if NwkId not in self.ListOfDevices:
         return
-    if ClusterID != "ef00":
+
+    if ClusterID == "e001":
+        return tuya_read_cluster_e001(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload)
+
+    if ClusterID != "ef00" or "Model" not in self.ListOfDevices[NwkId]:
         return
-    if "Model" not in self.ListOfDevices[NwkId]:
-        return
+
     _ModelName = self.ListOfDevices[NwkId]["Model"]
 
     if len(MsgPayload) < 6:
@@ -1560,3 +1571,4 @@ def tuya_Move_To_Hue_Saturation_Brightness( self, NwkId, epout, hue, saturation,
     payload = "11" + sqn + "e1" + hue + saturation + brightness
     
     raw_APS_request(self, NwkId, epout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
+

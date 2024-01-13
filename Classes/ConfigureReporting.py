@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: ConfigureReporting.py
 
@@ -13,13 +20,14 @@
 
 import time
 
+from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
+                                             sqn_get_internal_sqn_from_app_sqn)
 from Modules.bindings import bindDevice, unbindDevice
-from Modules.paramDevice import get_device_config_param
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
-from Modules.tools import (deviceconf_device, get_isqn_datastruct,
-                           get_list_isqn_attr_datastruct,
+from Modules.tools import (deviceconf_device, get_device_config_param,
+                           get_isqn_datastruct, get_list_isqn_attr_datastruct,
                            get_list_isqn_int_attr_datastruct,
                            getClusterListforEP, is_ack_tobe_disabled,
                            is_attr_unvalid_datastruct, is_bind_ep, is_fake_ep,
@@ -31,9 +39,6 @@ from Modules.zigateConsts import (MAX_LOAD_ZIGATE, SIZE_DATA_TYPE, ZIGATE_EP,
                                   composite_value, discrete_value)
 from Zigbee.zclCommands import (zcl_configure_reporting_requestv2,
                                 zcl_read_report_config_request)
-
-from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL,
-                                             sqn_get_internal_sqn_from_app_sqn)
 
 CONFIGURE_REPORT_PERFORM_TIME = 21  # Reenforce will be done each xx hours
 

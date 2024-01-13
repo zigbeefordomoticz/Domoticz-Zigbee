@@ -1,14 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import time
 
-from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL)
+from Classes.ZigateTransport.sqnMgmt import TYPE_APP_ZCL
 from Modules.basicOutputs import handle_unknow_device
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate
-from Modules.paramDevice import get_device_config_param
-from Modules.tools import (get_deviceconf_parameter_value,
-                           timeStamped, updLQI, updSQN,
-                           zigpy_plugin_sanity_check)
+from Modules.tools import (get_device_config_param,
+                           get_deviceconf_parameter_value, timeStamped, updLQI,
+                           updSQN, zigpy_plugin_sanity_check)
 
 
 def Decode0400(self, Devices, MsgData, MsgLQI):
