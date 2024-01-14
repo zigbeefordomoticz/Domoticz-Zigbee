@@ -423,3 +423,9 @@ class NetworkEnergy:
                 )
 
         self.EnergyLevel[root][entry]["Status"] = "Completed"
+
+
+    def zigbee_zigpy_energy_scan(self):
+        """ Energy Scan via zigpy Api"""
+        
+        self.logging("Error", "Energy Scan with zigpy abstract layer not implemented yet")
