@@ -17,7 +17,7 @@ from Classes.WebServer.headerResponse import (prepResponseMessage,
 
 # curl  http://127.0.0.1:9440/rest-zigate/1/non-optimized-device-configuration/xyxz
 
-def rest_non_optimized_device_configuration(self, verb, data, parameters):
+def non_optmize_device_configuration(self, verb, data, parameters):
     """ REST API to respond with a JSON Device Configuration structure with what have been collected"""
 
     _response = prepResponseMessage(self, setupHeadersResponse())
@@ -125,15 +125,14 @@ def _analyse_read_attributes_infos(self, read_attributes_input):
 
 
 def _analyse_bind_infos(self, read_bind_infos, binding_infos): 
-    self.logging("Debug", f"_analyse_bind_infos  {read_bind_infos}")
-
     cluster_to_bind = set()
     binded_list = read_bind_infos.get("Devices", [])
-
+    
     for entry in binded_list:
-        cluster = entry.get("Cluster")
-        if cluster:
-            cluster_to_bind.add(cluster)
+        for item, data in entry.items():
+            cluster = data.get("Cluster")
+            if cluster:
+                cluster_to_bind.add(cluster)
 
     return list(cluster_to_bind)
 
@@ -142,19 +141,19 @@ def _analyse_read_configure_reporting_infos(self, read_configure_reporting_infos
     self.logging("Debug", f"_analyse_read_configure_reporting_infos  {read_configure_reporting_infos}")
 
     configure_resporting = {}
-    
+
     for ep, ep_data in read_configure_reporting_infos.get("Ep", {}).items():
         for cluster, cluster_data in ep_data.items():
-            configure_resporting[cluster] = {}
-            for attribute, attribute_data in cluster_data.items():
-                configure_resporting[cluster][attribute] = {
+            configure_resporting[cluster] = {
+                attribute: {
                     "Change": attribute_data.get("Change", {}),
                     "DataType": attribute_data.get("DataType", {}),
                     "MaxInterval": attribute_data.get("MaxInterval", {}),
                     "MinInterval": attribute_data.get("MinInterval", {}),
-                    "TimeOut": "0000"
+                    "TimeOut": "0000",
                 }
-                
+                for attribute, attribute_data in cluster_data.items()
+            }
     return configure_resporting
         
             
