@@ -81,7 +81,7 @@ class WebServer(object):
                                                 rest_logErrorHistoryClear,
                                                 rest_logPlugin)
     from Classes.WebServer.rest_NonOptimizedDevice import \
-        rest_non_optimized_device_configuration
+        non_optmize_device_configuration
     from Classes.WebServer.rest_Ota import (rest_ota_devices_for_manufcode,
                                             rest_ota_firmware_list,
                                             rest_ota_firmware_update)
