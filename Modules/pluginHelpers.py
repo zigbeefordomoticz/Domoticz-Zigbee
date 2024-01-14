@@ -139,7 +139,8 @@ def check_requirements(home_folder):
 
         try:
             installed_version = importlib.metadata.version(package)
-
+            
+            version = None
             if '==' in req_str:
                 version = re.split('==', req_str)[1].strip()
                 if installed_version != version:
@@ -168,26 +169,9 @@ def check_requirements(home_folder):
             Domoticz.Error(f"An unexpected error occurred: {e}")
             return True
 
+        Domoticz.Status("   - {req_str} version required {version} installed {installed_version}")
     return False
 
-
-#def list_all_modules_loaded(self):
-#    # Get a list of installed packages and their versions
-#    installed_packages = {pkg.key: pkg.version for pkg in pkg_resources.working_set}
-#
-#    # Get a list of modules imported by the main script
-#    main_modules = set(sys.modules.keys())
-#
-#    # Combine the lists
-#    all_modules = set(installed_packages.keys()) | main_modules
-#
-#    # Print the list of modules and their versions
-#    self.log.logging("Plugin", "Log", "=============================")
-#    for module_name in sorted(all_modules):
-#        version = installed_packages.get(module_name, "Not installed")
-#        self.log.logging("Plugin", "Log", f"{module_name}: {version}")
-#    self.log.logging("Plugin", "Log", "=============================")
-#
 
 def list_all_modules_loaded(self):
     # Get a list of modules imported by the main script
