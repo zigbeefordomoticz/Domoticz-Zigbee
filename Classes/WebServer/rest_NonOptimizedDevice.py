@@ -47,7 +47,7 @@ def construct_configuration_file(self, Nwkid):
         self.logging("Error", f"rest_non_optimized_device_configuration - unknow device {Nwkid}")
         return {}
     
-    model_name = self.ListOfDevices[ Nwkid ]["Model"] if "Model" not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ]["Model"] in ( '', {}) else ""
+    model_name = self.ListOfDevices[ Nwkid ]["Model"] if "Model" in self.ListOfDevices[ Nwkid ] and self.ListOfDevices[ Nwkid ]["Model"] not in ( '', {}) else ""
     self.logging("Debug", f"construct_configuration_file model_name {model_name}")
     device = self.ListOfDevices[ Nwkid ]
     
