@@ -13,8 +13,11 @@
 import asyncio
 import binascii
 import contextlib
+import json
 import logging
+import os.path
 import time
+from pathlib import Path
 
 import zigpy.application
 import zigpy.backups
@@ -428,3 +431,67 @@ def do_retreive_backup( self ):
     
     LOGGER.debug("Retreiving last backup")
     return handle_zigpy_retreive_last_backup( self )
+
+async def network_interference_scan(self):
+
+    self.log.logging( "NetworkEnergy", "Debug", "network_interference_scan")
+    
+    # Each scan period is 15.36ms. Scan for at least 200ms (2^4 + 1 periods) to
+    # pick up WiFi beacon frames.
+    results = await self.energy_scan( channels=t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
+    
+    self.log.logging( "NetworkEnergy", "Debug", "Network Energly Level Report: %s" % results)
+
+    _filename = Path( self.pluginconf.pluginConf["pluginReports"] ) / ("NetworkEnergy-v3-" + "%02d.json" % self.HardwareID)
+    if os.path.isdir( Path(self.pluginconf.pluginConf["pluginReports"]) ):
+
+        nbentries = 0
+        if os.path.isfile(_filename):
+            with open(_filename, "r") as fin:
+                data = fin.read().splitlines(True)
+                nbentries = len(data)
+
+        with open(_filename, "w") as fout:
+            # we need to short the list by todayNumReports - todayNumReports - 1
+            maxNumReports = self.pluginconf.pluginConf["numTopologyReports"]
+            start = (nbentries - maxNumReports) + 1 if nbentries >= maxNumReports else 0
+            self.log.logging( "NetworkEnergy", "Log", "Rpt max: %s , New Start: %s, Len:%s " % (maxNumReports, start, nbentries))
+
+            if nbentries != 0:
+                fout.write("\n")
+                fout.writelines(data[start:])
+            fout.write("\n")
+            json.dump(build_json_to_store(self, results), fout)
+    else:
+        self.log.logging( "NetworkEnergy", "Error", "Unable to get access to directory %s, please check PluginConf.txt" % (
+            self.pluginconf.pluginConf["pluginReports"]) )
+
+
+def build_json_to_store(self, scan_result):
+    """Build the energy report in a format to be stored and used by WebUI"""
+
+    timestamp = int(time.time())
+
+    self.log.logging("TransportZigpy", "Log", "Energy scan result:")
+
+    router = {
+        "_NwkId": "0000",
+        "MeshRouters": [ {
+            "_NwkId": "0000",
+            "ZDeviceName": "Zigbee Coordinator",
+            "Tx": 0,
+            "Fx": 0,
+            "Channels": scan_channel( self, scan_result )
+        }]
+    }
+    return {timestamp: [ router, ] }
+
+def scan_channel( self, scan_result ):
+    
+    list_channels = []
+    for channel, value in scan_result.items():
+        percentage = 100 * value / 255
+        self.log.logging("TransportZigpy", "Log", f"  [{channel}] : {percentage:.2f}%")
+        list_channels.append(  { "Channel": str(channel), "Level": int(value)} )
+        
+    return list_channels

@@ -210,6 +210,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
+    async def network_interference_scan(self):
+        await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
+
     def is_bellows(self):
         return False
     

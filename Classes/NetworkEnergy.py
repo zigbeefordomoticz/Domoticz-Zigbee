@@ -427,5 +427,5 @@ class NetworkEnergy:
 
     def zigbee_zigpy_energy_scan(self):
         """ Energy Scan via zigpy Api"""
-        
-        self.logging("Error", "Energy Scan with zigpy abstract layer not implemented yet")
+        self.logging("Debug", "zigbee_zigpy_energy_scan")
+        self.ControllerLink.sendData( "INTERFERENCE-SCAN", {})

@@ -450,6 +450,9 @@ async def dispatch_command(self, data):
 
     elif cmd == "SET-TX-POWER":
         await self.app.set_zigpy_tx_power(datas["Param1"])
+        
+    elif cmd == "INTERFERENCE-SCAN":
+        await self.app.network_interference_scan()
 
 
 async def _permit_to_joint(self, data):
