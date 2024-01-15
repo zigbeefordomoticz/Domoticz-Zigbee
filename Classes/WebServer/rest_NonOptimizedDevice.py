@@ -47,28 +47,25 @@ def construct_configuration_file(self, Nwkid):
         self.logging("Error", f"rest_non_optimized_device_configuration - unknow device {Nwkid}")
         return {}
     
-    if "Model" not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ]["Model"] in ( '', {}):
-        # Unknow model
-        self.logging("Error", f"rest_non_optimized_device_configuration - unknow Zigbee model {Nwkid}")
-        return {}
-    
-    model_name = self.ListOfDevices[ Nwkid ]["Model"]
+    model_name = self.ListOfDevices[ Nwkid ]["Model"] if "Model" not in self.ListOfDevices[ Nwkid ] or self.ListOfDevices[ Nwkid ]["Model"] in ( '', {}) else ""
     self.logging("Debug", f"construct_configuration_file model_name {model_name}")
     device = self.ListOfDevices[ Nwkid ]
     
     return {
         "Filename": f"{model_name}.json",
-        "_comment": "",
-        "_version": "",
-        "_blakadder": "",
-        "_source": "",
-        "Ep": _analyse_ep_infos(self, device.get("Ep", {})),
-        "Type": "",
-        "ClusterToBind": _analyse_bind_infos(self, device.get("BindingTable", {}), device.get("Bind", {})),
-        "ConfigureReporting": _analyse_read_configure_reporting_infos(self, device.get("ReadConfigureReporting", {}), device.get("ConfigureReporting", {})),
-        "ReadAttributes": _analyse_read_attributes_infos(self, device["ReadAttributes"] ),
-        "Param": {},
-        "GroupMembership": {},
+        "Configuration": {
+            "_comment": "",
+            "_version": "",
+            "_blakadder": "",
+            "_source": "",
+            "Ep": _analyse_ep_infos(self, device.get("Ep", {})),
+            "Type": "",
+            "ClusterToBind": _analyse_bind_infos(self, device.get("BindingTable", {}), device.get("Bind", {})),
+            "ConfigureReporting": _analyse_read_configure_reporting_infos(self, device.get("ReadConfigureReporting", {}), device.get("ConfigureReporting", {})),
+            "ReadAttributes": _analyse_read_attributes_infos(self, device["ReadAttributes"] ),
+            "Param": {},
+            "GroupMembership": {}
+        },
         "rawInfos": device
     }
 
@@ -76,12 +73,12 @@ def construct_configuration_file(self, Nwkid):
 def _analyse_ep_infos(self, endpoint):
     self.logging("Debug", f"_analyse_ep_infos  {endpoint}")
 
-    _ep_config = {"Ep": {}}
+    _ep_config = {}
 
     for ep_id, ep_content in endpoint.items():
         _list_clusters, _cluster_type, _type = _process_one_endpoint(self, ep_content)
-        _ep_config[ "Ep"][ ep_id ] = _list_clusters
-        _ep_config[ "Ep"][ ep_id ]["Type"] = _type or _cluster_type
+        _ep_config[ ep_id ] = _list_clusters
+        _ep_config[ ep_id ]["Type"] = _type or _cluster_type
     return _ep_config
     
                           
@@ -125,6 +122,9 @@ def _analyse_read_attributes_infos(self, read_attributes_input):
 
 
 def _analyse_bind_infos(self, read_bind_infos, binding_infos): 
+    self.logging("Debug", f"_analyse_bind_infos  {read_bind_infos}")
+    if not isinstance(read_bind_infos,dict ):
+        return
     cluster_to_bind = set()
     binded_list = read_bind_infos.get("Devices", [])
     
