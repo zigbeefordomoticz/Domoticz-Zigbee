@@ -427,5 +427,6 @@ class NetworkEnergy:
 
     def zigbee_zigpy_energy_scan(self):
         """ Energy Scan via zigpy Api"""
-        self.logging("Debug", "zigbee_zigpy_energy_scan")
+
+        self.logging("Log", "Start Network interferences scan")
         self.ControllerLink.sendData( "INTERFERENCE-SCAN", {})
