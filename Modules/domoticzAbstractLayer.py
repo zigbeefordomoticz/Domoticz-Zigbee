@@ -393,7 +393,7 @@ def device_touch_api(self, Devices, DeviceId_, Unit_):
 
     last_update_time_seconds = time.mktime(time.strptime(last_time, "%Y-%m-%d %H:%M:%S"))
 
-    if time.time() > last_update_time_seconds + DELAY_BETWEEN_TOUCH:
+    if time.time() > ( last_update_time_seconds + DELAY_BETWEEN_TOUCH):
         # Last Touch was done more than 30 seconds ago.
         Devices[DeviceId_].Units[Unit_].Touch() if DOMOTICZ_EXTENDED_API else Devices[Unit_].Touch()
         return
