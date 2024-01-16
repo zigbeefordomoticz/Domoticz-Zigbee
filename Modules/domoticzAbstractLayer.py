@@ -14,7 +14,7 @@ import Domoticz
 
 DOMOTICZ_EXTENDED_API = False
 
-DELAY_BETWEEN_TOUCH = 30
+DELAY_BETWEEN_TOUCH = 60
 
 
 def load_list_of_domoticz_widget(self, Devices):
