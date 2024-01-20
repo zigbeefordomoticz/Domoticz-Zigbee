@@ -27,16 +27,17 @@ from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
-                           get_and_inc_ZCL_SQN, is_ack_tobe_disabled, updSQN)
+                           get_and_inc_ZCL_SQN, get_deviceconf_parameter_value,
+                           is_ack_tobe_disabled, updSQN)
 from Modules.tuyaConst import (TUYA_MANUF_CODE, TUYA_SMART_DOOR_LOCK_MODEL,
                                TUYA_eTRV_MODEL)
 from Modules.tuyaSiren import tuya_siren2_response, tuya_siren_response
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 from Modules.tuyaTRV import tuya_eTRV_response
+from Modules.tuyaTS011F import tuya_read_cluster_e001
 from Modules.tuyaTS0601 import ts0601_response
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.tuyaTS011F import tuya_read_cluster_e001
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
@@ -86,7 +87,9 @@ def tuya_registration(self, nwkid, ty_data_request=False, parkside=False, tuya_r
     else:
         write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
 
-
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYA_CMD_FE", return_default=None):
+        tuya_cmd_0x0000_0xf0(self, nwkid)
+    
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific) / Tuya TY_DATA_QUERY 
     # (https://developer.tuya.com/en/docs/iot/tuya-zigbee-universal-docking-access-standard?id=K9ik6zvofpzql#subtitle-6-Private%20cluster)
     if ty_data_request:
@@ -124,9 +127,9 @@ def tuya_cmd_0x0000_0xf0(self, NwkId):
 
     # Seen at pairing of a WGH-JLCZ02 / TS011F and TS0201 and TS0601 (MOES BRT-100)
 
-        payload = "11" + get_and_inc_ZCL_SQN(self, NwkId) + "fe"
-        raw_APS_request( self, NwkId, '01', "0000", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, NwkId), )
-        self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % NwkId)
+    payload = "11" + get_and_inc_ZCL_SQN(self, NwkId) + "fe"
+    raw_APS_request( self, NwkId, '01', "0000", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, NwkId), )
+    self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % NwkId)
 
 
 def pollingTuya(self, key):
@@ -1571,4 +1574,3 @@ def tuya_Move_To_Hue_Saturation_Brightness( self, NwkId, epout, hue, saturation,
     payload = "11" + sqn + "e1" + hue + saturation + brightness
     
     raw_APS_request(self, NwkId, epout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
-
