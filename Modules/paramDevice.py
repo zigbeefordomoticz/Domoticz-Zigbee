@@ -17,6 +17,7 @@
 
 """
 
+from DevicesModules.custom_sonoff import SONOFF_DEVICE_PARAMETERS
 from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
                                   set_PIROccupiedToUnoccupiedDelay,
@@ -326,6 +327,9 @@ DEVICE_PARAMETERS = {
 }
 
 def sanity_check_of_param(self, NwkId):
+
+    DEVICE_PARAMETERS.update(SONOFF_DEVICE_PARAMETERS)
+
     param_data = self.ListOfDevices.get(NwkId, {}).get("Param", {})
     model_name = self.ListOfDevices.get(NwkId, {}).get("Model", "")
 
