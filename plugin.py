@@ -533,6 +533,11 @@ class BasePlugin:
         # Connect to Coordinator only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
         
+        
+        if len(self.ListOfDevices) > 10:
+            # Don't do Energy Scan if too many objects, as Energy scan don't make the difference between real traffic and noise
+            self.pluginconf.pluginConf["EnergyScanAtStatup"] = 0
+
         start_zigbee_transport(self )
         
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):

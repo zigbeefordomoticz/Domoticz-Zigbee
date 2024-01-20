@@ -279,6 +279,8 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
     if set_channel != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
 
+    if "EnergyScanAtStatup" in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["EnergyScanAtStatup"]:
+        config[zigpy.CONF_STARTUP_ENERGY_SCAN] = False
 
 async def _radio_startup(self, pluginconf, new_network, radiomodule):
     
@@ -334,6 +336,7 @@ def post_coordinator_startup(self, radiomodule):
     # Let send a 0302 to simulate an Off/on
     self.forwarder_queue.put( build_plugin_0302_frame_content( self, ) )
 
+    
 
 def display_network_infos(self):
     self.log.logging( "TransportZigpy", "Status", "Network settings")
