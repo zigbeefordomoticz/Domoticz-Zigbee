@@ -1212,9 +1212,9 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "0029":  # Heating operation state
         # bit #0 heat On/Off state
         # bit #1 cool on/off state
-        if value == 0x01:
-            # Heating
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", value, Attribute_="0124")
+        # Maj HeatingStatus
+        value = 1 if int(value) else 0
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", value, Attribute_="0124")
 
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Heating operation state:  %s" % value, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
