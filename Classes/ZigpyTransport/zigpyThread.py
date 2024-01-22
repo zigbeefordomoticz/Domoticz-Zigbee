@@ -280,7 +280,7 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
         config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
 
     if "EnergyScanAtStatup" in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["EnergyScanAtStatup"]:
-        config[zigpy.CONF_STARTUP_ENERGY_SCAN] = False
+        config[zigpy.config.CONF_STARTUP_ENERGY_SCAN] = False
 
 async def _radio_startup(self, pluginconf, new_network, radiomodule):
     
