@@ -51,10 +51,11 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     """
     self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
 
-    # Make sure the first thing we do is feed the watchdog
-    if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
-        await self.watchdog_feed()
-        self._watchdog_task = asyncio.create_task(self._watchdog_loop())
+    # 22 Jan. 2024 / Disabled in order to downgrade zigpy libraries
+    ## Make sure the first thing we do is feed the watchdog
+    #if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
+    #    await self.watchdog_feed()
+    #    self._watchdog_task = asyncio.create_task(self._watchdog_loop())
 
     # Retreive Last Backup
     _retreived_backup = _retreive_previous_backup(self)
