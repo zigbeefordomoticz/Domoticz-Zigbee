@@ -154,7 +154,6 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 
     try:
         if radiomodule == "ezsp":
-            self.log.logging("TransportZigpy", "Debug", "Starting radio %s port: %s" %( radiomodule, serialPort))
             import bellows.config as conf
 
             from Classes.ZigpyTransport.AppBellows import App_bellows as App
@@ -248,8 +247,6 @@ def znp_configuration_setup(self, conf, serialPort):
     if specific_endpoints(self):
         config[ conf.CONF_ZNP_CONFIG][ "prefer_endpoint_1" ] = False
     
-    self.log.logging("TransportZigpy", "Status", "Started radio znp port: %s" %( serialPort))
-
     if "TXpower_set" in self.pluginconf.pluginConf:
         config[conf.CONF_ZNP_CONFIG]["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
         
