@@ -535,18 +535,33 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         try:
             task = asyncio.create_task(
                 transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout) )
+            self.statistics._sent += 1
+
+        except (asyncio.TimeoutError, asyncio.exceptions.TimeoutError) as e:
+            self.log.logging("TransportZigpy", "Log", f"process_raw_command: TimeoutError {destination} {Profile} {Cluster} {payload}")
+            error_msg = "%s" % e
+            result = 0xB6
+
+        except (asyncio.CancelledError, asyncio.exceptions.CancelledError) as e:
+            self.log.logging("TransportZigpy", "Log", f"process_raw_command: CancelledError {destination} {Profile} {Cluster} {payload}")
+            error_msg = "%s" % e
+            result = 0xB6
+            
+        except AttributeError as e:
+            self.log.logging("TransportZigpy", "Log", f"process_raw_command: AttributeError {Profile} {type(Profile)} {Cluster} {type(Cluster)}")
+            error_msg = "%s" % e
+            result = 0xB6
 
         except DeliveryError as e:
             # This could be relevant to APS NACK after retry
             # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
             self.log.logging("TransportZigpy", "Debug", "process_raw_command - DeliveryError : %s" % e)
-            msg = "%s" % e
-            result = 0xB6
+            error_msg = "%s" % e
+            result = int(e.status) if hasattr(e, 'status') else 0xB6
 
     if result:
-        self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination, result, msg), )
-
-    self.statistics._sent += 1
+        self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination, result, error_msg), )
+        return
 
 
 def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload):
@@ -697,12 +712,12 @@ async def transport_request(self, destination, Profile, Cluster, sEp, dEp, seque
                 multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
                 await asyncio.sleep(multi * WAITING_TIME_BETWEEN_ATTEMPTS)
 
-            except AttributeError:
-                self.log.logging("TransportZigpy", "Log", f"transport_request: AttributeError {_ieee} {Profile} {type(Profile)} {Cluster} {type(Cluster)} - Max Attempts: {max_retry}")
-
+            except (asyncio.exceptions.CancelledError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, asyncio.TimeoutError, AttributeError, ):
+                # Stop here, we have a communication issue
+                raise
+        
             except DeliveryError as e:
-                await handle_delivery_error(self, e, destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout, attempt, max_retry, _ieee, _nwkid)
-                return
+                result = await handle_delivery_error(self, e, destination, Profile, Cluster, payload, ack_is_disable, use_ieee, extended_timeout, attempt, max_retry, _ieee, _nwkid)
 
     handle_transport_result(self, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
 
@@ -713,12 +728,14 @@ async def handle_delivery_error(self, e, destination, Profile, Cluster, payload,
     if attempt != (max_retry - 1):
         await asyncio.sleep(WAITING_TIME_BETWEEN_ATTEMPTS)
         self.log.logging("TransportZigpy", "Debug", f"ZigyTransport: process_raw_command {_ieee} {Profile} {type(Profile)} {Cluster} {type(Cluster)} RETRY: {attempt + 1}")
-        return
+        return None
 
     result = int(e.status) if hasattr(e, 'status') else 0xB6
 
     if _ieee not in self._currently_not_reachable:
         self._currently_not_reachable.append(_ieee)
+        
+    return result
 
 
 def handle_transport_result(self, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):

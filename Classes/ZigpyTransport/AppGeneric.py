@@ -57,20 +57,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         self._watchdog_task = asyncio.create_task(self._watchdog_loop())
 
     # Retreive Last Backup
-    _retreived_backup = None
-    if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
-        # In case of a fresh coordinator, let's load the latest backup
-        _retreived_backup = do_retreive_backup( self )
-        if _retreived_backup:
-            _retreived_backup = NetworkBackup.from_dict( _retreived_backup )
-
-        if _retreived_backup:
-            if self.pluginconf.pluginConf[ "OverWriteCoordinatorIEEEOnlyOnce"]:
-                self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
-                _retreived_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
-
-            self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retreived_backup )
-            self.backups.add_backup( backup=_retreived_backup )
+    _retreived_backup = _retreive_previous_backup(self)
 
     # If We need to Creat a new Zigbee network annd restore the last backup
     if force_form:
@@ -144,7 +131,24 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
-    
+
+def _retreive_previous_backup(self):
+    _retreived_backup = None
+    if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
+        # In case of a fresh coordinator, let's load the latest backup
+        _retreived_backup = do_retreive_backup( self )
+        if _retreived_backup:
+            _retreived_backup = NetworkBackup.from_dict( _retreived_backup )
+
+        if _retreived_backup:
+            if self.pluginconf.pluginConf[ "OverWriteCoordinatorIEEEOnlyOnce"]:
+                self.log.logging("TransportZigpy", "Log", "Allow eui64 overwrite only once !!!")
+                _retreived_backup.network_info.stack_specific.setdefault("ezsp", {})[ "i_understand_i_can_update_eui64_only_once_and_i_still_want_to_do_it"] = True
+
+            self.log.logging("TransportZigpy", "Debug", "Last backup retreived: %s" % _retreived_backup )
+            self.backups.add_backup( backup=_retreived_backup )
+    return _retreived_backup
+   
 
 def get_device(self, ieee=None, nwk=None):
     # LOGGER.debug("get_device nwk %s ieee %s" % (nwk, ieee))
