@@ -69,7 +69,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         LOGGER.info("startup Network Info: %s" %str(network_info))
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
-        version = int(self.state.node_info.version,16)
+        version = self.version
+        # Version with zigpy watchdog()
+        # version = int(self.state.node_info.version,16)
 
         # Trigger Version payload to plugin
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
@@ -88,8 +90,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=True))
 
-        if self._watchdog_task is not None:
-            self._watchdog_task.cancel()
+        # # Version with zigpy watchdog()
+        #if self._watchdog_task is not None:
+        #    self._watchdog_task.cancel()
 
         await self.disconnect()
         

@@ -52,24 +52,21 @@ def bellows_extract_versioning_for_plugin(self, brd_manuf, brd_name, version):
 
 
 # deConz
-def deconz_extract_versioning_for_plugin( self, deconz_model, deconz_manuf, version):
-    self.log.logging("TransportZigpy", "Log","deconz_extract_versioning_for_plugin Manuf: %s Name: %s Version: %s" %( deconz_manuf, deconz_model, version))
-        
-    deconz_version = "0x%08x" %version
-    
-    if deconz_model == "ConBee II":
-        return "40", deconz_version
-        
-    elif deconz_model == "RaspBee II":
-        return "41", deconz_version
-    
-    elif deconz_model == "RaspBee":
-        return "42", deconz_version
-    
-    elif deconz_model == "ConBee":
-        return "43", deconz_version
 
-    return "97", deconz_version
+# deConz
+def deconz_extract_versioning_for_plugin(self, deconz_model, deconz_manuf, version):
+    self.log.logging("TransportZigpy", "Debug", "deconz_extract_versioning_for_plugin Manuf: %s Name: %s Version: %s" % (deconz_manuf, deconz_model, "0x%08x" % version))
+
+    model_mapping = {
+        "conbee": "40",
+        "conbee ii": "40",
+        "raspbee ii": "41",
+        "raspbee": "42",
+        "conbee iii": "43"
+    }
+
+    deconz_version = "0x%08x" % version
+    return model_mapping.get(deconz_model.lower(), "97"), deconz_version
 
 
 # ZNP - for zigpy libs with watchdog
@@ -101,16 +98,3 @@ def deconz_extract_versioning_for_plugin( self, deconz_model, deconz_manuf, vers
 #     return firmware_branch, firmware_version, build
 # 
 # 
-# # deConz
-# def deconz_extract_versioning_for_plugin(self, deconz_model, deconz_manuf, version):
-#     self.log.logging("TransportZigpy", "Debug", "deconz_extract_versioning_for_plugin Manuf: %s Name: %s Version: %s" % (deconz_manuf, deconz_model, "0x%08x" % version))
-# 
-#     model_mapping = {
-#         "conbee ii": "40",
-#         "raspbee ii": "41",
-#         "raspbee": "42",
-#         "conbee iii": "43"
-#     }
-# 
-#     deconz_version = "0x%08x" % version
-#     return model_mapping.get(deconz_model.lower(), "97"), deconz_version
