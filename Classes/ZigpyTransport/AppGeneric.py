@@ -191,7 +191,7 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
     
     if str(ieee) in {"00:00:00:00:00:00:00:00", "ff:ff:ff:ff:ff:ff:ff:ff"}:
         # invalid ieee, drop
-        self.log.logging("TransportZigpy", "Log", "ignoring invalid neighbor: %s", ieee)
+        self.log.logging("TransportZigpy", "Log", "ignoring invalid neighbor: %s" %ieee)
         return
 
     ieee = t.EUI64(ieee)
