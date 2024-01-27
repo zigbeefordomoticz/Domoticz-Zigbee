@@ -789,10 +789,9 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0")
 
             if WidgetType == "Temp":
-                NewNvalue = round(value + adjvalue, 1)
                 NewSvalue = str(round(value + adjvalue, 1))
-                self.log.logging("Widget", "Debug", "------>  Temp update: %s - %s" % (NewNvalue, NewSvalue))
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
+                self.log.logging("Widget", "Debug", "------>  Temp update: %s" % (NewSvalue))
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Temp+Hum":
                 NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat}"
