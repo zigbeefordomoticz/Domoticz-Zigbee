@@ -73,25 +73,34 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
         
         # Trigger Version payload to plugin
-        version = self.state.node_info.version
-        znp_model = self.state.node_info.model
-        znp_manuf = self.state.node_info.manufacturer
         
+        # Version with watchdog
+        # version = self.state.node_info.version
+        # znp_model = self.state.node_info.model
+        # znp_manuf = self.state.node_info.manufacturer
+        # FirmwareBranch, FirmwareVersion, build = znp_extract_versioning_for_plugin( self, znp_model, znp_manuf, version)
+        # self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, "000000", FirmwareVersion, "" ))
+
+        version = self._znp.version        
+        znp_model = self.get_device(nwk=t.NWK(0x0000)).model
+        znp_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
+
+        FirmwareBranch, FirmwareMajorVersion, FirmwareVersion, build = znp_extract_versioning_for_plugin( self, znp_model, znp_manuf)
+        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, FirmwareMajorVersion, FirmwareVersion, build ))
+         
         self.log.logging("TransportZigpy", "Status", "ZNP Radio manufacturer: %s" %znp_manuf)
         self.log.logging("TransportZigpy", "Status", "ZNP Radio board model: %s" %znp_model)
         self.log.logging("TransportZigpy", "Status", "ZNP Radio version: %s" %version)
-
-        FirmwareBranch, FirmwareVersion, build = znp_extract_versioning_for_plugin( self, znp_model, znp_manuf, version)
-        self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, "000000", FirmwareVersion, "" ))
-        
+       
 
     async def shutdown(self) -> None:
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=True))
 
-        if self._watchdog_task is not None:
-            self._watchdog_task.cancel()
+        # Version with zigpy watchdog()
+        # if self._watchdog_task is not None:
+        #     self._watchdog_task.cancel()
 
         await self.disconnect()
 

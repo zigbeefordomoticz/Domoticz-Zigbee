@@ -51,10 +51,12 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     """
     self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
 
-    # Make sure the first thing we do is feed the watchdog
-    if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
-        await self.watchdog_feed()
-        self._watchdog_task = asyncio.create_task(self._watchdog_loop())
+    # 22 Jan. 2024 / Disabled in order to downgrade zigpy libraries
+    # https://github.com/zigpy/zigpy/discussions/1300
+    ## Make sure the first thing we do is feed the watchdog
+    #if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
+    #    await self.watchdog_feed()
+    #    self._watchdog_task = asyncio.create_task(self._watchdog_loop())
 
     # Retreive Last Backup
     _retreived_backup = _retreive_previous_backup(self)
@@ -189,7 +191,7 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
     
     if str(ieee) in {"00:00:00:00:00:00:00:00", "ff:ff:ff:ff:ff:ff:ff:ff"}:
         # invalid ieee, drop
-        self.log.logging("TransportZigpy", "Log", "ignoring invalid neighbor: %s", ieee)
+        self.log.logging("TransportZigpy", "Log", "ignoring invalid neighbor: %s" %ieee)
         return
 
     ieee = t.EUI64(ieee)
