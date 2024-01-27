@@ -105,6 +105,11 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=True))
+        
+        # # Version with zigpy watchdog()
+        # if self._watchdog_task is not None:
+        #     self._watchdog_task.cancel()
+
         await self.disconnect()
 
     # Only needed if the device require simple node descriptor from the coordinator
@@ -207,11 +212,14 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await super().form_network()
 
     async def remove_ieee(self, ieee):
-        await self.remove( ieee )
-
+        await self.remove( ieee )        
+        
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+
+    async def network_interference_scan(self):
+        await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
 
     def is_bellows(self):
         return True

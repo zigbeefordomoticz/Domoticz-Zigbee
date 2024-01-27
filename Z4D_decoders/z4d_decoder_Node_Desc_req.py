@@ -28,7 +28,7 @@ def Decode0042(self, Devices, MsgData, MsgLQI):
         
         controllerManufacturerCode = self.ListOfDevices['0000']['Manufacturer']
         controllerManufacturerCode = '0000'
-        self.log.logging('Input', 'Log', 'Decode0042 - %s/%s requested manuf code -responding with Manufacturer: %s' % (srcNwkId, srcEp, controllerManufacturerCode))
+        self.log.logging('Input', 'Debug', 'Decode0042 - %s/%s requested manuf code -responding with Manufacturer: %s' % (srcNwkId, srcEp, controllerManufacturerCode))
         manuf_code16 = '%04x' % struct.unpack('H', struct.pack('>H', int(controllerManufacturerCode, 16)))[0]
         max_in_size16 = '%04x' % struct.unpack('H', struct.pack('>H', int(self.ListOfDevices['0000']['Max Rx'], 16)))[0]
         max_out_size16 = '%04x' % struct.unpack('H', struct.pack('>H', int(self.ListOfDevices['0000']['Max Tx'], 16)))[0]

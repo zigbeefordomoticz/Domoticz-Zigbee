@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: tuya.py
 
@@ -679,7 +686,6 @@ eTRV_MATRIX = {
             "Calibration": 0x1B,
             "FanSpeed": 0x1c,
             "ChildLock": 0x28,
-            "Calibration": 0x1B,
             "SensorMode": 0x2B,
         },
     },
@@ -707,7 +713,6 @@ eTRV_MATRIX = {
             "Calibration": 0x1B,
             "FanSpeed": 0x1c,
             "ChildLock": 0x28,
-            "Calibration": 0x1B,
             "SensorMode": 0x2B,
         },
     },
@@ -857,7 +862,7 @@ eTRV_MATRIX = {
             "WindowDetection": 0x08,
             "ChildLock": 0x0d,
             "BoostTime": 0x67,       # => tuya_trv_boost_time() Type: 0x02 lenght 0x04
-            "Calibration": 0x69,
+            "Calibration": 0x22,
             "EcoMode": 0x6A,         # => tuya_trv_temporary_away() Type: 0x01 lenght 0x01
             "EcoTemp": 0x6B,         # => tuya_trv_eco_temp() Type: 02, lenght 0x04
             "MaxSetpoint": 0x6C,     # => tuya_trv_set_max_setpoint() Type 02, lenght 0x04
@@ -1217,8 +1222,7 @@ def tuya_trv_calibration(self, nwkid, calibration):
         cluster_frame = "11"
         cmd = "00"  # Command
         if calibration < 0:
-            calibration = ( 0xffffffff - calibration + 1 )
-            #calibration = abs(int(hex(-calibration - pow(2, 32)), 16))
+            calibration = (0xffffffff - abs(calibration) + 1)
         data = "%08x" % calibration
         tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 

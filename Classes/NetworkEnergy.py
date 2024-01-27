@@ -423,3 +423,10 @@ class NetworkEnergy:
                 )
 
         self.EnergyLevel[root][entry]["Status"] = "Completed"
+
+
+    def zigbee_zigpy_energy_scan(self):
+        """ Energy Scan via zigpy Api"""
+
+        self.logging("Log", "Start Network interferences scan")
+        self.ControllerLink.sendData( "INTERFERENCE-SCAN", {})

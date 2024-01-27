@@ -18,6 +18,16 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## January 2024 - stable7 7.1.008 (2024.01)
+
+- [Issues] - Fix issues brought with 7.1.006 on deConz and Ezsp chipset.
+
+- [Technical] - Downgrade zigpy radio lib (as the latest zigpy is not stable). Unfortunatly remove Conbee III compatibility
+- [Technical] - port from pkg_resources to importlib.metadata (pkg_resources becoming obsolete)
+- [Technical] - Introduce device conf parameter RELY_ON_EVAL_EXP (to rely on the EvalExp)
+- [Technical] - Add posibility to prevent the Options overwrite for Metering
+- [Technical] - Interference scanning at start. Report if current channel above 75%
+
 ## December 2023 - stable7 7.1.007 ( 2023.12 )
 
 - [Technical] - zigpy radio libraries upgrade

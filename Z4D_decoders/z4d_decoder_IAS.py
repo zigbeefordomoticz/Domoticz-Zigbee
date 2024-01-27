@@ -1,14 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import time
 
-from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL)
+from Classes.ZigateTransport.sqnMgmt import TYPE_APP_ZCL
 from Modules.basicOutputs import handle_unknow_device
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import lastSeenUpdate
-from Modules.paramDevice import get_device_config_param
-from Modules.tools import (get_deviceconf_parameter_value,
-                           timeStamped, updLQI, updSQN,
-                           zigpy_plugin_sanity_check)
+from Modules.tools import (get_device_config_param,
+                           get_deviceconf_parameter_value, timeStamped, updLQI,
+                           updSQN, zigpy_plugin_sanity_check)
 
 
 def Decode0400(self, Devices, MsgData, MsgLQI):
@@ -66,6 +76,9 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
         self.log.logging('Input', 'Error', error_message)
         return
     
+    ias_dic = self.ListOfDevices[MsgSrcAddr].setdefault('Ep', {}).setdefault(MsgEp, {}).setdefault(MsgClusterId, {})
+    ias_dic.setdefault('0002', {})
+
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
     
     if MsgSrcAddr not in self.ListOfDevices:
@@ -90,17 +103,6 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     if Model == 'PST03A-v2.2.5':
         Decode8401_PST03Av225(self, Devices, MsgSrcAddr, MsgEp, Model, MsgZoneStatus)
         return
-    
-    # alarm1 = int(MsgZoneStatus, 16) & 1
-    # alarm2 = int(MsgZoneStatus, 16) >> 1 & 1
-    # tamper = int(MsgZoneStatus, 16) >> 2 & 1
-    # battery = int(MsgZoneStatus, 16) >> 3 & 1
-    # suprrprt = int(MsgZoneStatus, 16) >> 4 & 1
-    # restrprt = int(MsgZoneStatus, 16) >> 5 & 1
-    # trouble = int(MsgZoneStatus, 16) >> 6 & 1
-    # acmain = int(MsgZoneStatus, 16) >> 7 & 1
-    # test = int(MsgZoneStatus, 16) >> 8 & 1
-    # battdef = int(MsgZoneStatus, 16) >> 9 & 1
     
     status_bits = [int(MsgZoneStatus, 16) >> i & 1 for i in range(10)]
     alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef = status_bits

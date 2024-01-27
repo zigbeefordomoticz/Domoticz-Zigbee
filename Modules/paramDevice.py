@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: paramDevice.py
 
@@ -10,6 +17,7 @@
 
 """
 
+from DevicesModules.custom_sonoff import SONOFF_DEVICE_PARAMETERS
 from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
                                   set_PIROccupiedToUnoccupiedDelay,
@@ -74,6 +82,11 @@ from Modules.tuyaTRV import (tuya_trv_boost_time, tuya_trv_calibration,
                              tuya_trv_set_opened_window_temp,
                              tuya_trv_thermostat_sensor_mode,
                              tuya_trv_window_detection)
+from Modules.tuyaTS011F import (tuya_ts011F_threshold_overCurrentBreaker,
+                                tuya_ts011F_threshold_overPowerBreaker,
+                                tuya_ts011F_threshold_overTemperatureBreaker,
+                                tuya_ts011F_threshold_overVoltageBreaker,
+                                tuya_ts011F_threshold_underVoltageBreaker)
 from Modules.tuyaTS0601 import (TS0601_COMMANDS, ts0601_actuator,
                                 ts0601_extract_data_point_infos)
 
@@ -305,10 +318,18 @@ DEVICE_PARAMETERS = {
     "AqaraMultiClick": enable_click_mode_aqara,
     "TS110ELightType": ts110e_light_type,
     "TS110ESwitch01Type": ts110e_switch01_type,
-    "TS110ESwitch02Type": ts110e_switch02_type
+    "TS110ESwitch02Type": ts110e_switch02_type,
+    "TS011F_overTemperatureBreaker": tuya_ts011F_threshold_overTemperatureBreaker,
+    "TS011F_overPowerBreaker": tuya_ts011F_threshold_overPowerBreaker,
+    "TS011F_overCurrentBreeaker": tuya_ts011F_threshold_overCurrentBreaker,
+    "TS011F_overVoltageBreaker": tuya_ts011F_threshold_overVoltageBreaker,
+    "TS011F_underVoltageBreaker": tuya_ts011F_threshold_underVoltageBreaker
 }
 
 def sanity_check_of_param(self, NwkId):
+
+    DEVICE_PARAMETERS.update(SONOFF_DEVICE_PARAMETERS)
+
     param_data = self.ListOfDevices.get(NwkId, {}).get("Param", {})
     model_name = self.ListOfDevices.get(NwkId, {}).get("Model", "")
 
@@ -319,19 +340,3 @@ def sanity_check_of_param(self, NwkId):
             DEVICE_PARAMETERS[param](self, NwkId, value)
 
 
-def get_device_config_param( self, NwkId, config_parameter):
-    
-    self.log.logging("Input", "Debug", "get_device_config_param: %s Config: %s" %( NwkId,config_parameter ))
-    
-    if NwkId not in self.ListOfDevices:
-        return None
-    if "Param" not in self.ListOfDevices[NwkId]:
-        return None
-    if config_parameter not in self.ListOfDevices[NwkId]["Param"]:
-        return None
-        
-        
-    self.log.logging("Input", "Debug", "get_device_config_param: %s Config: %s return %s" %( 
-        NwkId,config_parameter, self.ListOfDevices[NwkId]["Param"][ config_parameter ]))
-
-    return self.ListOfDevices[NwkId]["Param"][ config_parameter ]

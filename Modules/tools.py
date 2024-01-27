@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module : z_tools.py
 
@@ -1655,3 +1662,22 @@ def is_domoticz_touch(self):
     if self.DomoticzMajor >= 2022:
         return True
     return self.DomoticzMajor == 4 and self.DomoticzMinor >= 10547
+
+
+
+def get_device_config_param( self, NwkId, config_parameter):
+    
+    self.log.logging("Input", "Debug", "get_device_config_param: %s Config: %s" %( NwkId,config_parameter ))
+    
+    if NwkId not in self.ListOfDevices:
+        return None
+    if "Param" not in self.ListOfDevices[NwkId]:
+        return None
+    if config_parameter not in self.ListOfDevices[NwkId]["Param"]:
+        return None
+        
+        
+    self.log.logging("Input", "Debug", "get_device_config_param: %s Config: %s return %s" %( 
+        NwkId,config_parameter, self.ListOfDevices[NwkId]["Param"][ config_parameter ]))
+
+    return self.ListOfDevices[NwkId]["Param"][ config_parameter ]
