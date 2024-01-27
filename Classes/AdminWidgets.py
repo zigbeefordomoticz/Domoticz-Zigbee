@@ -23,9 +23,10 @@ DEVICEID_TXT_WIDGET_TXT = "Zigate Notifications"
 
 
 class AdminWidgets:
-    def __init__(self, log, PluginConf, Devices, ListOfDevices, HardwareID):
+    def __init__(self, log, PluginConf, pluginParameters, Devices, ListOfDevices, HardwareID):
 
         self.pluginconf = PluginConf
+        self.pluginParameters = pluginParameters
         self.Devices = Devices  # Point to the List of Domoticz Devices
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.HardwareID = HardwareID

@@ -86,6 +86,8 @@ class WebServer(object):
     from Classes.WebServer.rest_logging import (rest_logErrorHistory,
                                                 rest_logErrorHistoryClear,
                                                 rest_logPlugin)
+    from Classes.WebServer.rest_NonOptimizedDevice import \
+        non_optmize_device_configuration
     from Classes.WebServer.rest_Ota import (rest_ota_devices_for_manufcode,
                                             rest_ota_firmware_list,
                                             rest_ota_firmware_update)
@@ -419,7 +421,7 @@ class WebServer(object):
                 timestamp = parameters[0]
                 if timestamp in _scan:
                     for r in _scan[timestamp]:
-                        self.logging("Debug", "report: %s" % r)
+                        self.logging("Log", "report: %s" % r)
                         if r["_NwkId"] == "0000":
                             _response["Data"] = json.dumps(r["MeshRouters"], sort_keys=True)
                 else:

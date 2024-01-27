@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import binascii
 import json
@@ -8,8 +19,8 @@ from pathlib import Path
 from DevicesModules import FUNCTION_MODULE, FUNCTION_WITH_ACTIONS_MODULE
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
-from Modules.paramDevice import get_device_config_param
-from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
+from Modules.tools import (checkAndStoreAttributeValue,
+                           get_device_config_param, getAttributeValue)
 from Modules.zclClusterHelpers import (decoding_attribute_data,
                                        handle_model_name)
 

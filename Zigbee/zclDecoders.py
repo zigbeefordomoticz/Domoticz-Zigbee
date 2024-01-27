@@ -88,13 +88,15 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
         # Handle in inRawAPS
         return frame
 
+    # Do not log a message as this will be handled by the inRawAPS and delegated. (or we don't know those)
     if (
-        ClusterId in ( "ef00", "ff00")    # Do not log a message as this will be handled by the inRawAPS and delegated.
+        ClusterId in ( "ef00", "ff00")
         or ( ClusterId == "fc00" and ManufacturerCode == "100b")
         or ( ClusterId == "ffac" and ManufacturerCode == "113c")
-    ):
+        or ( ClusterId == "e001" )  # TS011F Plug does every 24 hours
+        ):
         return frame
-    
+
     self.log.logging( "zclDecoder", "Log", "zcl_decoders Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s" % (
         Command, SrcNwkId, SrcEndPoint, ClusterId, Data, GlobalCommand, Sqn, ManufacturerCode, ), )
 

@@ -14,7 +14,7 @@ import DomoticzEx as Domoticz
 
 DOMOTICZ_EXTENDED_API = True
 
-DELAY_BETWEEN_TOUCH = 30
+DELAY_BETWEEN_TOUCH = 60
 
 def is_domoticz_extended():
     return DOMOTICZ_EXTENDED_API
@@ -548,7 +548,7 @@ def device_touch_unit_api(self, Devices, DeviceId_, Unit_):
 
     last_update_time_seconds = time.mktime(time.strptime(last_time, "%Y-%m-%d %H:%M:%S"))
 
-    if time.time() > last_update_time_seconds + DELAY_BETWEEN_TOUCH:
+    if time.time() > ( last_update_time_seconds + DELAY_BETWEEN_TOUCH):
         # Last Touch was done more than 30 seconds ago.
         Devices[DeviceId_].Units[Unit_].Touch() if DOMOTICZ_EXTENDED_API else Devices[Unit_].Touch()
         return

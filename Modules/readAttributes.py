@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
+
 """
     Module: readAttrbutes
 
@@ -13,7 +21,7 @@
 
 import time
 
-import Modules.paramDevice
+
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
                                   send_zigatecmd_zcl_noack)
@@ -23,7 +31,8 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
                                        PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_TUYA,
                                        PREFIX_MACADDR_XIAOMI, TUYA_MANUF_CODE)
-from Modules.tools import (check_datastruct, get_deviceconf_parameter_value,
+from Modules.tools import (check_datastruct, get_device_config_param,
+                           get_deviceconf_parameter_value,
                            getListOfEpForCluster, is_ack_tobe_disabled,
                            is_attr_unvalid_datastruct, is_time_to_perform_work,
                            reset_attr_datastruct, set_isqn_datastruct,
@@ -81,7 +90,7 @@ ATTRIBUTES = {
 def get_max_read_attribute_value( self, nwkid=None):
     
     # This is about Read Configuration Reporting from a device
-    read_configuration_report_chunk = Modules.paramDevice.get_device_config_param( self, nwkid, "ReadAttributeChunk")
+    read_configuration_report_chunk = get_device_config_param( self, nwkid, "ReadAttributeChunk")
 
     if "PairingInProgress" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["PairingInProgress"]:
         read_configuration_report_chunk = self.pluginconf.pluginConf["ReadAttributeChunk"]

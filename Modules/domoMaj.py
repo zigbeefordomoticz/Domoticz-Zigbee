@@ -24,7 +24,8 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
                                update_domoticz_widget)
 from Modules.switchSelectorWidgets import (SWITCH_SELECTORS,
                                            get_force_update_value_mapping)
-from Modules.tools import str_round, zigpy_plugin_sanity_check
+from Modules.tools import (get_deviceconf_parameter_value, str_round,
+                           zigpy_plugin_sanity_check)
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
                             get_tarif_color, zlinky_sum_all_indexes)
@@ -365,7 +366,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                     )
                 ):
-                check_set_meter_widget( self, Devices, device_id_ieee, device_unit, 0)    
+                check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, 0)    
                 instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
                 summation = round(float(zlinky_sum_all_indexes( self, NwkId )), 2)
                 self.log.logging("ZLinky", "Debug", "------> Summation for Meter : %s" %summation)
@@ -376,9 +377,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 
             elif WidgetType == "Meter" and Attribute_ == "050f":
                 # We receive Instant Power
-                self.log.logging("Widget", "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: {Attribute_} received {value}")
-                check_set_meter_widget(self, Devices, device_id_ieee, device_unit, 0)
-                _, summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
+                check_set_meter_widget(self, Devices, NwkId, device_id_ieee, device_unit, 0)
+                _instant, summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
                 self.log.logging("Widget", "Debug", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}")
@@ -397,13 +397,18 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                         summation = int(float(value_0000))
 
                 instant = round(float(value), 2)
-                sValue = f"{instant};{summation}" if summation is not None else f"{instant};"
-
-                EnergyMeterMode = 0 if summation is not None else 1
-                check_set_meter_widget(self, Devices, device_id_ieee, device_unit, EnergyMeterMode)
-
-                self.log.logging("Widget", "Debug", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}")
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+                # Did we get Summation from Data Structure
+                if summation != 0:
+                    summation = int(float(summation))
+                    sValue = "%s;%s" % (instant, summation)
+                    # We got summation from Device, let's check that EnergyMeterMode is
+                    # correctly set to 0, if not adjust
+                    check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, 0)
+                else:
+                    sValue = "%s;" % (instant)
+                    check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, 1)
+                    # No summation retreive, so we make sure that EnergyMeterMode is
+                    # correctly set to 1 (compute), if not adjust
 
 
         if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
@@ -1522,11 +1527,13 @@ def _log_erratic_value_debug(self, NwkId, value_type, value, expected_min, expec
     self.log.logging("Widget", "Debug", f"Aberrant {value_type}: {value} (below {expected_min} or above {expected_max}) for device: {NwkId} [{consecutive_erratic_value}]", NwkId)
 
 
-def check_set_meter_widget( self, Devices, DeviceId, Unit, mode):
+def check_set_meter_widget( self, Devices, NwkId, DeviceId, Unit, mode):
     # Mode = 0 - From device (default)
     # Mode = 1 - Computed
 
-    sMode = "%s" %mode
+    do_not_over_write_option = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "DoNotOverWriteOptions")
+    if do_not_over_write_option:
+        return
 
     Options = {'EnergyMeterMode': '0'}
     
@@ -1538,6 +1545,7 @@ def check_set_meter_widget( self, Devices, DeviceId, Unit, mode):
         # Yes, let's retreive it
         Options = _device_options
 
+    sMode = "%s" %mode
     if Options["EnergyMeterMode"] != sMode:
         oldnValue, oldsValue = domo_read_nValue_sValue(self, Devices, DeviceId, Unit)
 

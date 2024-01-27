@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
+
 import struct
 
-import Modules.paramDevice
 from Modules.basicOutputs import (raw_APS_request, set_poweron_afteroffon,
                                   write_attribute)
 from Modules.domoMaj import MajDomoDevice
@@ -13,7 +20,7 @@ from Modules.readAttributes import (ReadAttributeRequest_0006_0000,
                                     ReadAttributeRequest_0006_400x,
                                     ReadAttributeRequest_0008_0000,
                                     ReadAttributeRequest_0406_philips_0030)
-from Modules.tools import (checkAndStoreAttributeValue,
+from Modules.tools import (checkAndStoreAttributeValue,get_device_config_param,
                            get_deviceconf_parameter_value, is_hex,
                            retreive_cmd_payload_from_8002)
 from Modules.zigateConsts import ZIGATE_EP
@@ -173,7 +180,7 @@ def philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     self.log.logging( "Philips", "Debug", "philips_dimmer_switch %s - %s/%s - reading self.ListOfDevices[%s]['Ep'][%s][%s][%s] = %s" % ( 
         MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId], ), MsgSrcAddr, )
 
-    rwl021_dimmer_step = Modules.paramDevice.get_device_config_param(self, MsgSrcAddr, "RWL021_Dimmer_step")
+    rwl021_dimmer_step = get_device_config_param(self, MsgSrcAddr, "RWL021_Dimmer_step")
     if rwl021_dimmer_step is None:
         rwl021_dimmer_step = 1
         

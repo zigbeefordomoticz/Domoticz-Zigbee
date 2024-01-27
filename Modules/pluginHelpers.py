@@ -1,19 +1,28 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
+import importlib.metadata
+import re
 import sys
-from importlib.metadata import version as import_version
 from pathlib import Path
 
-import pkg_resources
-
-from Modules.domoticzAbstractLayer import (domoticz_error_api,
-                                           domoticz_status_api)
+import DomoticzEx as Domoticz
 from Modules.tools import how_many_devices
 
 MODULES_VERSION = {
-    "zigpy": "0.60.1",
-    "zigpy_znp": "0.12.0",
-    "zigpy_deconz": "0.22.2",
-    "bellows": "0.37.3",
+    "zigpy": "0.59.0",
+    "zigpy_znp": "0.11.6",
+    "zigpy_deconz": "0.21.1",
+    "bellows": "0.36.8",
     }
 
 def networksize_update(self):
@@ -106,56 +115,88 @@ def _domoticz_not_compatible(self):
 
 
 def check_python_modules_version( self ):
-    
-
     flag = True
 
     for x in MODULES_VERSION:
-        if import_version( x ) != MODULES_VERSION[ x]:
+        if importlib.metadata.version( x ) != MODULES_VERSION[ x]:
             self.log.logging("Plugin", "Error", "The python module %s version %s loaded is not compatible as we are expecting this level %s" %(
-                x, import_version( x ), MODULES_VERSION[ x] ))
+                x, importlib.metadata.version( x ), MODULES_VERSION[ x] ))
             flag = False
             
     return flag
 
 
-def check_requirements( home_folder):
-
-    requirements_file = Path( home_folder + "requirements.txt" )
-    domoticz_status_api("Checking Python modules %s" %requirements_file)
+def check_requirements(home_folder):
+    requirements_file = Path(home_folder) / "requirements.txt"
+    Domoticz.Status("Checking Python modules %s" % requirements_file)
 
     with open(requirements_file, 'r') as file:
         requirements_list = file.readlines()
 
-    for req_str in list(requirements_list):
-        try:
-            pkg_resources.require(req_str.strip())
+    for req_str in requirements_list:
+        req_str = req_str.strip()
+        package = re.split(r'[<>!=]+', req_str)[0].strip()
 
-        except pkg_resources.DistributionNotFound:
-            domoticz_error_api("Looks like %s python module is not installed. Make sure to install the required python3 module" %(req_str.strip()))
-            domoticz_error_api("Use the command:")
-            domoticz_error_api("sudo python3 -m pip install -r requirements.txt --upgrade")
+        try:
+            installed_version = importlib.metadata.version(package)
+
+            if '==' in req_str:
+                version = re.split('==', req_str)[1].strip()
+                if installed_version != version:
+                    raise importlib.metadata.PackageNotFoundError
+            elif '>=' in req_str:
+                version = re.split('>=', req_str)[1].strip()
+                if installed_version < version:
+                    raise importlib.metadata.PackageNotFoundError
+            elif '<=' in req_str:
+                version = re.split('<=', req_str)[1].strip()
+                if installed_version > version:
+                    raise importlib.metadata.PackageNotFoundError
+
+        except importlib.metadata.PackageNotFoundError:
+            Domoticz.Error(f"Looks like {req_str} Python module is not installed or does not meet the required version. Requires {version}, Installed {installed_version}. "
+                           f"Make sure to install the required Python3 module with the correct version.")
+            Domoticz.Error("Use the command:")
+            Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
             return True
 
-        except pkg_resources.VersionConflict:
-            domoticz_error_api("Looks like %s python module is conflicting. Make sure to install the required python3 module" %(req_str.strip()))
-            domoticz_error_api("Use the command:")
-            domoticz_error_api("sudo python3 -m pip install -r requirements.txt --upgrade")
+        except importlib.metadata.MetadataError:
+            Domoticz.Error(f"An unexpected error occurred while checking {req_str}")
             return True
 
         except Exception as e:
-            domoticz_error_api(f"An unexpected error occurred: {e}")
+            Domoticz.Error(f"An unexpected error occurred: {e}")
+            return True
 
     return False
 
 
-def list_all_modules_loaded(self):
-    # Get a list of installed packages and their versions
-    installed_packages = {pkg.key: pkg.version for pkg in pkg_resources.working_set}
+#def list_all_modules_loaded(self):
+#    # Get a list of installed packages and their versions
+#    installed_packages = {pkg.key: pkg.version for pkg in pkg_resources.working_set}
+#
+#    # Get a list of modules imported by the main script
+#    main_modules = set(sys.modules.keys())
+#
+#    # Combine the lists
+#    all_modules = set(installed_packages.keys()) | main_modules
+#
+#    # Print the list of modules and their versions
+#    self.log.logging("Plugin", "Log", "=============================")
+#    for module_name in sorted(all_modules):
+#        version = installed_packages.get(module_name, "Not installed")
+#        self.log.logging("Plugin", "Log", f"{module_name}: {version}")
+#    self.log.logging("Plugin", "Log", "=============================")
+#
 
+def list_all_modules_loaded(self):
     # Get a list of modules imported by the main script
     main_modules = set(sys.modules.keys())
 
+    installed_packages = {
+        distribution.metadata["Name"].lower(): distribution.version
+        for distribution in importlib.metadata.distributions()
+    }
     # Combine the lists
     all_modules = set(installed_packages.keys()) | main_modules
 

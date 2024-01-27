@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
+
 """
     Module: pairingProcess.py
 
@@ -25,7 +33,6 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_WIZER_LEGACY,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.orvibo import OrviboRegistration
-from Modules.paramDevice import get_device_config_param
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
@@ -35,7 +42,8 @@ from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat)
 from Modules.thermostats import thermostat_Calibration
-from Modules.tools import (get_deviceconf_parameter_value,
+from Modules.tools import (get_device_config_param,
+                           get_deviceconf_parameter_value,
                            getListOfEpForCluster, is_fake_ep)
 from Modules.tuya import (tuya_cmd_ts004F, tuya_command_f0,
                           tuya_lighting_color_control, tuya_registration)

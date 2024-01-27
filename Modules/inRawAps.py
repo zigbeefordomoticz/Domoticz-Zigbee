@@ -192,6 +192,25 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
         else:
             self.log.logging("inRawAPS", "Log", "Unknown Window Covering Command: %s" % Command)
 
+    if cluster == "0201":  # Thermostat
+        if Command == "00":  # Setpoint Raise/Lower
+            # Data: 06020100004006a4016c075802400658024006fc036c0764054006
+            # Mode ( 0x00 Heat, 0x01 Coll, 0x02 Both) / Amount ( signed 8 bit int)
+            self.log.logging( "inRawAPS", "Debug", "inRawAps - Cluster 0201 Command 00 (Setpoint Raise/Lower) Data %s" %Data)
+
+        elif Command == "01":  # Set Weekly Schedule
+            self.log.logging( "inRawAPS", "Debug", "inRawAps - Cluster 0201 Command 01 (Set Weekly Schedule) Data %s" %Data)
+
+        elif Command == "02":  # Get weekly Schedule
+            self.log.logging( "inRawAPS", "Debug", "inRawAps - Cluster 0201 Command 02 (Get weekly Schedule) Data %s" %Data)
+
+        elif Command == "03":  # Clear Weekly schedule
+            self.log.logging( "inRawAPS", "Debug", "inRawAps - Cluster 0201 Command 03 (Clear Weekly schedule) Data %s" %Data)
+
+        elif Command == "04":  # Get Relay status Log
+            self.log.logging( "inRawAPS", "Debug", "inRawAps - Cluster 0201 Command 04 (Get Relay status Log) Data %s" %Data)
+        return
+
     if "Manufacturer" not in self.ListOfDevices[srcnwkid]:
         return
 
