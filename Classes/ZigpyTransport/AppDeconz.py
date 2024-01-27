@@ -53,6 +53,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
             await self.connect()
             await asyncio.sleep( 1 )
             await self.initialize(auto_form=True, force_form=force_form)
+
         except Exception as e:
             LOGGER.error("Couldn't start application", exc_info=e)
             await self.shutdown()
@@ -68,18 +69,19 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         LOGGER.info("startup Network Info: %s" %str(network_info))
         self.callBackFunction(build_plugin_8015_frame_content( self, network_info))
 
-        version = int(self.state.node_info.version,16)
-        
+        version = self.version
+        # Version with zigpy watchdog()
+        # version = int(self.state.node_info.version,16)
+
         # Trigger Version payload to plugin
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
         self.log.logging("TransportZigpy", "Status", "deConz Radio manufacturer: %s" %deconz_manuf)
         self.log.logging("TransportZigpy", "Status", "deConz Radio board model: %s" %deconz_model)
         self.log.logging("TransportZigpy", "Status", "deConz Radio version: 0x %x" %version )
-        
-        
+
         branch, version = deconz_extract_versioning_for_plugin( self, deconz_model, deconz_manuf, version)
-        
+
         self.callBackFunction(build_plugin_8010_frame_content( branch, "00", "0000", version))
 
 
@@ -87,7 +89,14 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         """Shutdown controller."""
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=True))
+
+        # # Version with zigpy watchdog()
+        #if self._watchdog_task is not None:
+        #    self._watchdog_task.cancel()
+
         await self.disconnect()
+        
+        await asyncio.sleep( 1 )
 
     async def register_endpoints(self):
         """
@@ -203,6 +212,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
+
+    async def network_interference_scan(self):
+        await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
 
     def is_bellows(self):
         return False

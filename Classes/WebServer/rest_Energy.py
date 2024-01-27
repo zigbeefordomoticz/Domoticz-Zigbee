@@ -14,13 +14,17 @@ from Classes.WebServer.headerResponse import (prepResponseMessage,
 
 def rest_req_nwk_inter(self, verb, data, parameters):
 
+    self.logging("Debug", "rest_req_nwk_inter")
     _response = prepResponseMessage(self, setupHeadersResponse())
     if verb == "GET":
         action = {"Name": "Nwk-Interferences", "TimeStamp": int(time())}
         _response["Data"] = json.dumps(action, sort_keys=True)
 
-        if self.pluginParameters["Mode2"] != "None" and self.networkenergy:
+        if self.zigbee_communication == 'zigate' and self.pluginParameters["Mode2"] != "None" and self.networkenergy:
             self.networkenergy.start_scan()
+
+        if self.zigbee_communication == 'zigpy' and self.pluginParameters["Mode2"] != "None" and self.networkenergy:
+            self.networkenergy.zigbee_zigpy_energy_scan()
 
     return _response
 
