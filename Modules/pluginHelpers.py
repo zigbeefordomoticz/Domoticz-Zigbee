@@ -17,6 +17,7 @@ from pathlib import Path
 
 import DomoticzEx as Domoticz
 from Modules.tools import how_many_devices
+from Modules.domoticzAbstractLayer import domoticz_error_api
 
 MODULES_VERSION = {
     "zigpy": "0.59.0",
