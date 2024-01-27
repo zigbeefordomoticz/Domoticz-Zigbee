@@ -369,7 +369,7 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=243, Subtype_=19, Switchtype_=0,)
     
     if idx == -1:
-        self.log.logging("WidgetCreation", "Error",  f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
+        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
     else:
         self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(idx)] = "Text"
 
