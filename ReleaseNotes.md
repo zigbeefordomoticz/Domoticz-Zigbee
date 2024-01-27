@@ -22,7 +22,7 @@ Release Numbering
 
 - [Issues] - Fix issues brought with 7.1.006 on deConz and Ezsp chipset.
 
-- [Technical] - Latest zigpy library
+- [Technical] - Downgrade zigpy radio lib (as the latest zigpy is not stable). Unfortunatly remove Conbee III compatibility
 - [Technical] - port from pkg_resources to importlib.metadata (pkg_resources becoming obsolete)
 - [Technical] - Introduce device conf parameter RELY_ON_EVAL_EXP (to rely on the EvalExp)
 - [Technical] - Add posibility to prevent the Options overwrite for Metering
