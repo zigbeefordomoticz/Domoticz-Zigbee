@@ -304,15 +304,8 @@ def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
     ieee = self.ListOfDevices.get(NwkId, {}).get("IEEE")
     if ieee is None:
         return
-
     update_battery_api(self, Devices, ieee, int(BatteryLvl))
      
-    for device_unit in Devices:
-        if Devices[device_unit].DeviceID != ieee:
-            continue
-        self.log.logging( "WidgetLevel3", "Debug", "Update_Battery_Device Battery: now: %s prev: %s (%15s)" % (
-            BatteryLvl, Devices[device_unit].BatteryLevel, Devices[device_unit].Name), )
-
 
 def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
     device_info = self.ListOfDevices.get(NwkId, {})
