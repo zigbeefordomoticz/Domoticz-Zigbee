@@ -328,15 +328,18 @@ DEVICE_PARAMETERS = {
 
 def sanity_check_of_param(self, NwkId):
 
+    self.log.logging("Heartbeat", "Log", f"sanity_check_of_param  {NwkId}")
     DEVICE_PARAMETERS.update(SONOFF_DEVICE_PARAMETERS)
 
     param_data = self.ListOfDevices.get(NwkId, {}).get("Param", {})
     model_name = self.ListOfDevices.get(NwkId, {}).get("Model", "")
 
     for param, value in param_data.items():
+        self.log.logging("Heartbeat", "Log", f"sanity_check_of_param  {param}, {value}")
+        
         if ts0601_extract_data_point_infos(self, model_name) and param in TS0601_COMMANDS:
+            self.log.logging("Heartbeat", "Log", f"sanity_check_of_param  {param} {value}")
             ts0601_actuator(self, NwkId, param, value)
+
         elif param in DEVICE_PARAMETERS:
             DEVICE_PARAMETERS[param](self, NwkId, value)
-
-

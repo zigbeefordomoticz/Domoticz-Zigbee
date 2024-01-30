@@ -58,9 +58,12 @@ def process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, d
         value = evaluate_expression_with_data(self, dps_mapping_item[ "EvalExp"], value)
     self.log.logging("Tuya0601", "Debug", "                - after evaluate_expression_with_data() value: %s" % (value), NwkId)
 
-    if "store_tuya_attribute" in dps_mapping_item:
+    if "store_tuya_value" in dps_mapping_item:
+        store_tuya_attribute(self, NwkId, dps_mapping_item["store_tuya_value"], value)
+
+    elif "store_tuya_attribute" in dps_mapping_item:
         store_tuya_attribute(self, NwkId, dps_mapping_item["store_tuya_attribute"], data)
-    
+
     return sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mapping_item )
    
     
@@ -90,7 +93,7 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
 
 
 def ts0601_actuator( self, NwkId, command, value=None):
-    self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s" %(
+    self.log.logging("Tuya0601", "Log", "ts0601_actuator - requesting %s %s" %(
         command, value))
 
     model_name = self.ListOfDevices[ NwkId ]["Model"] if "Model" in self.ListOfDevices[ NwkId ] else None
@@ -119,7 +122,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
         
     dp = int(str_dp, 16)
     
-    self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s %s" %(
+    self.log.logging("Tuya0601", "Log", "ts0601_actuator - requesting %s %s %s" %(
         command, dp, value))
 
     if command in TS0601_COMMANDS:
@@ -534,7 +537,8 @@ def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
     cluster_frame = "11"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     tuya_cmd(self, NwkId, Ep, cluster_frame, sqn, "00", action, data)
-   
+
+
 def ts0601_action_setpoint(self, NwkId, Ep, dp, value):
     # The Setpoint is coming in centi-degre (default)
     if value is None:
@@ -670,7 +674,7 @@ def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
     if value is None:
         return
 
-    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch - %s Switch Action: dp:%s value: %s" % (
+    self.log.logging("Tuya0601", "Debug", "ts0601_irrigation_mode - %s Switch Action: dp:%s value: %s" % (
         NwkId, dp, value))
     device_value = value
    
@@ -734,7 +738,89 @@ def ts0601_solar_siren_alarm_duration( self, NwkId, Ep, dp, duration=None):
     data = "%08x" % (duration)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
+
+def ts0601_dt1_tuya_command(self, NwkId, Ep, dp, value):
+    # Bool
+    if value is None:
+        return
+    self.log.logging("Tuya0601", "Log", f"ts0601_dt1_tuya_command - {NwkId} {Ep} {dp} {value}")
+    action = "%02x01" % dp 
+    data = "%02x" % (value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_dt2_tuya_command(self, NwkId, Ep, dp, value):
+    # 4 bytes value
+    if value is None:
+        return
+    self.log.logging("Tuya0601", "Log", f"ts0601_dt2_tuya_command - {NwkId} {Ep} {dp} {value}")
+    
+    action = "%02x02" % dp 
+    data = "%08x" % (value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_dt4_tuya_command(self, NwkId, Ep, dp, value):
+    # Enum8
+    if value is None:
+        return
+    self.log.logging("Tuya0601", "Log", f"ts0601_dt4_tuya_command - {NwkId} {Ep} {dp} {value}")
+    action = "%02x04" % dp 
+    data = "%02x" % (value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+    
+
+def ts0601_TuyaRadarSensitivity(self, NwkId, Ep, dp, value=None):
+    ts0601_dt4_tuya_command(self, NwkId, Ep, dp, value)
+
+
+def ts0601_TuyaPresenceSensitivity(self, NwkId, Ep, dp, value=None):
+    ts0601_dt4_tuya_command(self, NwkId, Ep, dp, value)
+
+
+def ts0601_TuyaRadarMaxRange(self, NwkId, Ep, dp, value=None):
+    ts0601_dt2_tuya_command(self, NwkId, Ep, dp, value)
+
+
+def ts0601_TuyaFadingTime(self, NwkId, Ep, dp, value=None):
+    ts0601_dt4_tuya_command(self, NwkId, Ep, dp, value)
+
+
+def ts0601_SmallDetectionSensitivity(self, NwkId, Ep, dp, value=None):
+    ts0601_dt4_tuya_command(self, NwkId, Ep, dp, value)
+
+
+def ts0601_MediumMotionDetectionSensitivity(self, NwkId, Ep, dp, value=None):
+    ts0601_dt4_tuya_command(self, NwkId, Ep, dp, value)
+
+
+def ts0601_LargeMotionDetectionSensitivity(self, NwkId, Ep, dp, value=None):
+    ts0601_dt4_tuya_command(self, NwkId, Ep, dp, value)
+
+
+def ts0601_SmallDetectionDistance(self, NwkId, Ep, dp, value=None):
+    ts0601_dt2_tuya_command(self, NwkId, Ep, dp, value)
+
+
+def ts0601_MediumMotionDetectionDistance(self, NwkId, Ep, dp, value=None):
+    ts0601_dt2_tuya_command(self, NwkId, Ep, dp, value)
+
+
+def ts0601_LargeMotionDetectionDistance(self, NwkId, Ep, dp, value=None):
+    ts0601_dt2_tuya_command(self, NwkId, Ep, dp, value)
+
+
 TS0601_COMMANDS = {
+    "TuyaPresenceSensitivity": ts0601_TuyaPresenceSensitivity,
+    "TuyaRadarSensitivity": ts0601_TuyaRadarSensitivity,
+    "TuyaRadarMaxRange": ts0601_TuyaRadarMaxRange,
+    "LargeMotionDetectionDistance": ts0601_LargeMotionDetectionDistance,
+    "MediumMotionDetectionDistance": ts0601_MediumMotionDetectionDistance,
+    "SmallDetectionDistance": ts0601_SmallDetectionDistance,
+    "LargeMotionDetectionSensitivity": ts0601_LargeMotionDetectionSensitivity,
+    "MediumMotionDetectionSensitivity": ts0601_MediumMotionDetectionSensitivity,
+    "SmallDetectionSensitivity": ts0601_SmallDetectionSensitivity,
+    "TuyaFadingTime": ts0601_TuyaFadingTime,
     "TRV7WindowDetection": ts0601_window_detection_mode,
     "TRV7ChildLock": ts0601_child_lock_mode,
     "TuyaIrrigationTarget": ts0601_irrigation_valve_target,
@@ -751,5 +837,5 @@ DP_ACTION_FUNCTION = {
     "TRV6SystemMode": ts0601_action_trv6_system_mode,
     "TRV7SystemMode": ts0601_action_trv7_system_mode,
     "TuyaAlarmSwitch": ts0601_action_siren_switch,
-    "TuyaTamperSwitch": ts0601_tamper_siren_switch
+    "TuyaTamperSwitch": ts0601_tamper_siren_switch,
 }
