@@ -11,6 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 from Modules.basicOutputs import write_attribute
+from Modules.readAttributes import ReadAttributeRequest_0406_0022
 from Modules.zigateConsts import ZIGATE_EP
 
 MANUFACTURER_CODE = "1286"
@@ -25,4 +26,4 @@ def sonoff_set_ultrasonic_occupancySensibility(self, nwkid, level):
     if level not in (1, 2, 3):
         return
     write_attribute( self, nwkid, ZIGATE_EP, "01", "0406", MANUFACTURER_CODE, "01", "0022", "20", "%02x" % level, ackIsDisabled=False)
-    ReadAttributeRequest_0406_sonoff_0022(self, nwkid)
+    ReadAttributeRequest_0406_0022(self, nwkid)
