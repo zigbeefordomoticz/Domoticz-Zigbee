@@ -201,7 +201,7 @@ DEVICE_PARAMETERS = {
     "PowerOnAfterOffOn": param_PowerOnAfterOffOn,
     "PIROccupiedToUnoccupiedDelay": common_PIROccupiedToUnoccupiedDelay,
     "PIRoccupancySensibility": common_PIR_occupancySensibility,
-    "occupancySensibility": philips_set_pir_occupancySensibility,
+    "occupancySensibility": common_PIR_occupancySensibility,
     "UltrasonicOccupiedToUnoccupiedDelay": common_Ultrasnonic_OccupiedToUnoccupiedDelay,
     "UltrasonicOccupancySensibility": common_Ultrasonic_occupancySensibility,
     "netatmoLedIfOn": legrand_enable_Led_IfOn_by_nwkid,
