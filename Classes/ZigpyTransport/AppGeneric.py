@@ -51,12 +51,11 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     """
     self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
 
-    # 22 Jan. 2024 / Disabled in order to downgrade zigpy libraries
-    # https://github.com/zigpy/zigpy/discussions/1300
-    ## Make sure the first thing we do is feed the watchdog
-    #if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
-    #    await self.watchdog_feed()
-    #    self._watchdog_task = asyncio.create_task(self._watchdog_loop())
+    # Make sure the first thing we do is feed the watchdog
+    if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
+        await self.watchdog_feed()
+        self._watchdog_task = asyncio.create_task(self._watchdog_loop())
+        await asyncio.sleep(1)
 
     # Retreive Last Backup
     _retreived_backup = _retreive_previous_backup(self)
@@ -197,11 +196,11 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
     ieee = t.EUI64(ieee)
     try:
         dev = self.get_device(ieee)
-        #time.sleep(2.0)
+        asyncio.sleep(1)
         self.log.logging("TransportZigpy", "Debug", "Device 0x%04x (%s) joined the network" %(nwk, ieee))
     except KeyError:
         dev = self.add_device(ieee, nwk)
-        #time.sleep(2.0)
+        asyncio.sleep(1)
         self.log.logging("TransportZigpy", "Debug", "New device 0x%04x (%s) joined the network" %(nwk, ieee))
 
     if dev.nwk != nwk:
