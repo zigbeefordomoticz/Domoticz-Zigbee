@@ -38,7 +38,7 @@ PHYSICAL_CONFIG_SET = {
 
 # Standard 
 def PIR_occupied_to_unoccupied_delay(self, nwkid, ep, value):
-    self.log.logging( "occupancySettings", "Log", f"PIR_occupied_to_unoccupied_delay for {nwkid}/{ep} - delay: {value}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"PIR_occupied_to_unoccupied_delay for {nwkid}/{ep} - delay: {value}", nwkid )
 
     write_attribute( 
         self, 
@@ -67,7 +67,7 @@ def current_PIR_OccupiedToUnoccupied_Delay(self, nwkid, ep):
 
 
 def PIR_unoccupied_to_occupied_delay(self, nwkid, ep, value):
-    self.log.logging( "occupancySettings", "Log", f"PIR_unoccupied_to_occupied_delay for {nwkid}/{ep} - delay: {value}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"PIR_unoccupied_to_occupied_delay for {nwkid}/{ep} - delay: {value}", nwkid )
 
     write_attribute( 
         self, 
@@ -84,7 +84,7 @@ def PIR_unoccupied_to_occupied_delay(self, nwkid, ep, value):
 
 
 def PIR_unoccupied_to_occupied_threshold(self, nwkid, ep, value):
-    self.log.logging( "occupancySettings", "Log", f"PIR_unoccupied_to_occupied_threshold for {nwkid}/{ep} - thershold: {value}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"PIR_unoccupied_to_occupied_threshold for {nwkid}/{ep} - thershold: {value}", nwkid )
 
     write_attribute( 
         self, 
@@ -114,7 +114,7 @@ def current_PIR_OccupiedToUnoccupied_Threshold(self, nwkid, ep):
 
 
 def Ultrasonic_occupied_to_unoccupied_delay(self, nwkid, ep, value):
-    self.log.logging( "occupancySettings", "Log", f"Ultrasonic_occupied_to_unoccupied_delay for {nwkid}/{ep} - delay: {value}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"Ultrasonic_occupied_to_unoccupied_delay for {nwkid}/{ep} - delay: {value}", nwkid )
 
     write_attribute( 
         self, 
@@ -143,7 +143,7 @@ def current_Ultrasonic_OccupiedToUnoccupied_Delay(self, nwkid, ep):
 
 
 def Ultrasonic_unoccupied_to_occupied_delay(self, nwkid, ep, value):
-    self.log.logging( "occupancySettings", "Log", f"Ultrasonic_unoccupied_to_occupied_delay for {nwkid}/{ep} - delay: {value}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"Ultrasonic_unoccupied_to_occupied_delay for {nwkid}/{ep} - delay: {value}", nwkid )
 
     write_attribute( 
         self, 
@@ -160,7 +160,7 @@ def Ultrasonic_unoccupied_to_occupied_delay(self, nwkid, ep, value):
 
 
 def Ultrasonic_unoccupied_to_occupied_threshold(self, nwkid, ep, value):
-    self.log.logging( "occupancySettings", "Log", f"Ultrasonic_unoccupied_to_occupied_threshold for {nwkid}/{ep} - thershold: {value}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"Ultrasonic_unoccupied_to_occupied_threshold for {nwkid}/{ep} - thershold: {value}", nwkid )
 
     write_attribute( 
         self, 
@@ -192,7 +192,7 @@ def current_Ultrasonic_unoccupied_to_occupied_threshold(self, nwkid, ep):
 
 def common_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
     
-    self.log.logging( "occupancySettings", "Log", f"common_PIROccupiedToUnoccupiedDelay for {nwkid} - delay: {delay}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"common_PIROccupiedToUnoccupiedDelay for {nwkid} - delay: {delay}", nwkid )
     
     # Determine EndPoints
     if is_philips_device(self, nwkid):
@@ -205,7 +205,7 @@ def common_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
     else:
         ListOfEp = getListOfEpForCluster(self, nwkid, OCCUPANCY_CLUSTER_ID)
 
-    self.log.logging( "occupancySettings", "Log", f"common_PIROccupiedToUnoccupiedDelay for {nwkid} - delay: {delay} found Endpoint {ListOfEp}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"common_PIROccupiedToUnoccupiedDelay for {nwkid} - delay: {delay} found Endpoint {ListOfEp}", nwkid )
     for ep in ListOfEp:
         current_delay = current_PIR_OccupiedToUnoccupied_Delay(self, nwkid, ep)
         if current_delay != delay:
@@ -214,7 +214,7 @@ def common_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
 
 
 def common_PIR_occupancySensibility(self, nwkid, sensibility):
-    self.log.logging( "occupancySettings", "Log", f"common_PIR_occupancySensibility for {nwkid} - sensibility: {sensibility}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"common_PIR_occupancySensibility for {nwkid} - sensibility: {sensibility}", nwkid )
     
     if is_philips_device(self, nwkid):
         philips_set_pir_occupancySensibility(self, nwkid, sensibility)
@@ -226,7 +226,7 @@ def common_PIR_occupancySensibility(self, nwkid, sensibility):
     else:
         ListOfEp = getListOfEpForCluster(self, nwkid, OCCUPANCY_CLUSTER_ID)
         
-    self.log.logging( "occupancySettings", "Log", f"common_Ultrasonic_occupancySensibility for {nwkid} - delay: {sensibility} found Endpoint {ListOfEp}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"common_Ultrasonic_occupancySensibility for {nwkid} - delay: {sensibility} found Endpoint {ListOfEp}", nwkid )
     for ep in ListOfEp:
         current_sensibility = current_PIR_OccupiedToUnoccupied_Threshold(self, nwkid, ep)
         if current_sensibility != sensibility:
@@ -235,12 +235,12 @@ def common_PIR_occupancySensibility(self, nwkid, sensibility):
 
 
 def common_Ultrasnonic_OccupiedToUnoccupiedDelay(self, nwkid, delay):
-    self.log.logging( "occupancySettings", "Log", f"common_Ultrasnonic_OccupiedToUnoccupiedDelay for {nwkid} - delay: {delay}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"common_Ultrasnonic_OccupiedToUnoccupiedDelay for {nwkid} - delay: {delay}", nwkid )
     
     # Determine EndPoints
     ListOfEp = getListOfEpForCluster(self, nwkid, OCCUPANCY_CLUSTER_ID)
 
-    self.log.logging( "occupancySettings", "Log", f"common_Ultrasnonic_OccupiedToUnoccupiedDelay for {nwkid} - delay: {delay} found Endpoint {ListOfEp}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"common_Ultrasnonic_OccupiedToUnoccupiedDelay for {nwkid} - delay: {delay} found Endpoint {ListOfEp}", nwkid )
     for ep in ListOfEp:
         current_delay = current_Ultrasonic_OccupiedToUnoccupied_Delay(self, nwkid, ep)
         if current_delay != delay:
@@ -249,7 +249,7 @@ def common_Ultrasnonic_OccupiedToUnoccupiedDelay(self, nwkid, delay):
 
 
 def common_Ultrasonic_occupancySensibility(self, nwkid, sensibility):
-    self.log.logging( "occupancySettings", "Log", f"common_Ultrasonic_occupancySensibility for {nwkid} - sensibility: {sensibility}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"common_Ultrasonic_occupancySensibility for {nwkid} - sensibility: {sensibility}", nwkid )
     
     # Determine EndPoints
     if is_sonoff_device(self, nwkid):
@@ -258,7 +258,7 @@ def common_Ultrasonic_occupancySensibility(self, nwkid, sensibility):
     else:
         ListOfEp = getListOfEpForCluster(self, nwkid, OCCUPANCY_CLUSTER_ID)
         
-    self.log.logging( "occupancySettings", "Log", f"common_Ultrasonic_occupancySensibility for {nwkid} - delay: {sensibility} found Endpoint {ListOfEp}", nwkid )
+    self.log.logging( "occupancySettings", "Debug", f"common_Ultrasonic_occupancySensibility for {nwkid} - delay: {sensibility} found Endpoint {ListOfEp}", nwkid )
     for ep in ListOfEp:
         current_sensibility = current_Ultrasonic_unoccupied_to_occupied_threshold(self, nwkid, ep)
         if current_sensibility != sensibility:
