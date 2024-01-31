@@ -11,7 +11,6 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 from Modules.basicOutputs import write_attribute
-from Modules.readAttributes import ReadAttributeRequest_0406_sonoff_0022
 from Modules.zigateConsts import ZIGATE_EP
 
 MANUFACTURER_CODE = "1286"

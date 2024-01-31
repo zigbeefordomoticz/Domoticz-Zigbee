@@ -21,15 +21,15 @@ from Modules.zigateConsts import ZIGATE_EP
 OCCUPANCY_CLUSTER_ID = "0406"
 
 PIR_CONFIG_SET = {
-    "PIROccupiedToUnoccupiedDelay": ( 0x0010, 0x21),
-    "PIRUnoccupiedToOccupiedDelay": ( 0x0011, 0x21),
-    "PIRUnoccupiedToOccupiedThreshold": ( 0x0012, 0x20)
+    "PIROccupiedToUnoccupiedDelay": ( "0010", "21"),
+    "PIRUnoccupiedToOccupiedDelay": ( "0011", "21"),
+    "PIRUnoccupiedToOccupiedThreshold": ( "0012", "20")
 }
 
 ULTRASONIC_CONFIG_SET = {
-    "UltrasonicOccupiedToUnoccupiedDelay": ( 0x0020, 0x21),
-    "UltrasonicUnoccupiedToOccupiedDelay": ( 0x0021, 0x21),
-    "UltrasonicUnoccupiedToOccupiedThreshold": ( 0x0022, 0x20)
+    "UltrasonicOccupiedToUnoccupiedDelay": ( "0020", "21"),
+    "UltrasonicUnoccupiedToOccupiedDelay": ( "0021", "21"),
+    "UltrasonicUnoccupiedToOccupiedThreshold": ( "0022", "20")
 }
 
 PHYSICAL_CONFIG_SET = {
@@ -48,13 +48,15 @@ def PIR_occupied_to_unoccupied_delay(self, nwkid, ep, value):
         OCCUPANCY_CLUSTER_ID, 
         "0000", 
         "00", 
-        "%04x" %PIR_CONFIG_SET[ "PIROccupiedToUnoccupiedDelay"][0], 
-        "%02x" %PIR_CONFIG_SET[ "PIROccupiedToUnoccupiedDelay"][1], 
+        PIR_CONFIG_SET[ "PIROccupiedToUnoccupiedDelay"][0], 
+        PIR_CONFIG_SET[ "PIROccupiedToUnoccupiedDelay"][1], 
         "%04x" %value, 
         ackIsDisabled=False, )
 
 
 def current_PIR_OccupiedToUnoccupied_Delay(self, nwkid, ep):
+    """ look in the plugin database for the the current value of the OccupiedToUnoccupied_Delay """
+    
     ep_data = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(ep, {}).get(OCCUPANCY_CLUSTER_ID, {})
     attribute_0010 = ep_data.get("0010", None)
 
@@ -75,8 +77,8 @@ def PIR_unoccupied_to_occupied_delay(self, nwkid, ep, value):
         OCCUPANCY_CLUSTER_ID, 
         "0000", 
         "00", 
-        "%04x" %PIR_CONFIG_SET[ "PIRUnoccupiedToOccupiedDelay"][0], 
-        "%02x" %PIR_CONFIG_SET[ "PIRUnoccupiedToOccupiedDelay"][1], 
+        PIR_CONFIG_SET[ "PIRUnoccupiedToOccupiedDelay"][0], 
+        PIR_CONFIG_SET[ "PIRUnoccupiedToOccupiedDelay"][1], 
         "%04x" %value, 
         ackIsDisabled=False, )
 
@@ -92,15 +94,18 @@ def PIR_unoccupied_to_occupied_threshold(self, nwkid, ep, value):
         OCCUPANCY_CLUSTER_ID, 
         "0000", 
         "00", 
-        "%04x" %PIR_CONFIG_SET[ "PIRUnoccupiedToOccupiedThreshold"][0], 
-        "%02x" %PIR_CONFIG_SET[ "PIRUnoccupiedToOccupiedThreshold"][1], 
+        PIR_CONFIG_SET[ "PIRUnoccupiedToOccupiedThreshold"][0], 
+        PIR_CONFIG_SET[ "PIRUnoccupiedToOccupiedThreshold"][1], 
         "%02x" %value, 
         ackIsDisabled=False, )
 
 
 def current_PIR_OccupiedToUnoccupied_Threshold(self, nwkid, ep):
+    """ look in the plugin database for the the current value of the OccupiedToUnoccupied_Threshold """
+    
+    target_attribute = PIR_CONFIG_SET[ "PIRUnoccupiedToOccupiedThreshold"][0]
     ep_data = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(ep, {}).get(OCCUPANCY_CLUSTER_ID, {})
-    attribute_0012 = ep_data.get("0012", None)
+    attribute_0012 = ep_data.get(target_attribute, None)
 
     if attribute_0012 is not None:
         return int(attribute_0012, 16) if isinstance(attribute_0012, str) else attribute_0012
@@ -119,10 +124,22 @@ def Ultrasonic_occupied_to_unoccupied_delay(self, nwkid, ep, value):
         OCCUPANCY_CLUSTER_ID, 
         "0000", 
         "00", 
-        "%04x" %PIR_CONFIG_SET[ "UltrasonicOccupiedToUnoccupiedDelay"][0], 
-        "%02x" %PIR_CONFIG_SET[ "UltrasonicOccupiedToUnoccupiedDelay"][1], 
+        PIR_CONFIG_SET[ "UltrasonicOccupiedToUnoccupiedDelay"][0], 
+        PIR_CONFIG_SET[ "UltrasonicOccupiedToUnoccupiedDelay"][1], 
         "%04x" %value, 
         ackIsDisabled=False, )
+
+
+def current_Ultrasonic_OccupiedToUnoccupied_Delay(self, nwkid, ep):
+    """ look in the plugin database for the the current value of the Ultrasonic_OccupiedToUnoccupied_Delay """
+    
+    ep_data = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(ep, {}).get(OCCUPANCY_CLUSTER_ID, {})
+    attribute_0010 = ep_data.get("0010", None)
+
+    if attribute_0010 is not None:
+        return int(attribute_0010, 16) if isinstance(attribute_0010, str) else attribute_0010
+    else:
+        return None
 
 
 def Ultrasonic_unoccupied_to_occupied_delay(self, nwkid, ep, value):
@@ -136,8 +153,8 @@ def Ultrasonic_unoccupied_to_occupied_delay(self, nwkid, ep, value):
         OCCUPANCY_CLUSTER_ID, 
         "0000", 
         "00", 
-        "%04x" %PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedDelay"][0], 
-        "%02x" %PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedDelay"][1], 
+        PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedDelay"][0], 
+        PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedDelay"][1], 
         "%04x" %value, 
         ackIsDisabled=False, )
 
@@ -153,15 +170,18 @@ def Ultrasonic_unoccupied_to_occupied_threshold(self, nwkid, ep, value):
         OCCUPANCY_CLUSTER_ID, 
         "0000", 
         "00", 
-        "%04x" %PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][0], 
-        "%02x" %PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][1], 
+        PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][0], 
+        PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][1], 
         "%02x" %value, 
         ackIsDisabled=False, )
 
 
 def current_Ultrasonic_unoccupied_to_occupied_threshold(self, nwkid, ep):
+    """ look in the plugin database for the the current value of the Ultrasonic_unoccupied_to_occupied_threshold """
+
+    target_attribute = PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][0]
     ep_data = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(ep, {}).get(OCCUPANCY_CLUSTER_ID, {})
-    attribute_0022 = ep_data.get("0022", None)
+    attribute_0022 = ep_data.get( target_attribute, None)
 
     if attribute_0022 is not None:
         return int(attribute_0022, 16) if isinstance(attribute_0022, str) else attribute_0022
@@ -171,6 +191,7 @@ def current_Ultrasonic_unoccupied_to_occupied_threshold(self, nwkid, ep):
 # paramDevice helpers
 
 def common_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
+    
     self.log.logging( "BasicOutput", "Log", f"common_PIROccupiedToUnoccupiedDelay for {nwkid} - delay: {delay}", nwkid )
     
     # Determine EndPoints
@@ -221,7 +242,7 @@ def common_Ultrasnonic_OccupiedToUnoccupiedDelay(self, nwkid, delay):
 
     self.log.logging( "BasicOutput", "Log", f"common_Ultrasnonic_OccupiedToUnoccupiedDelay for {nwkid} - delay: {delay} found Endpoint {ListOfEp}", nwkid )
     for ep in ListOfEp:
-        current_delay = current_PIR_OccupiedToUnoccupied_Delay(self, nwkid, ep)
+        current_delay = current_Ultrasonic_OccupiedToUnoccupied_Delay(self, nwkid, ep)
         if current_delay != delay:
             Ultrasonic_occupied_to_unoccupied_delay(self, nwkid, ep, delay)
     ReadAttributeRequest_0406_0020(self, nwkid)
