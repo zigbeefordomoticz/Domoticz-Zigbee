@@ -32,7 +32,7 @@ def zcl_raw_reset_device(self, nwkid, epin, epout):
      The sequence number used in the command.
     """
     
-    self.log.logging("zclCommand", "Debug", "zcl_raw_default_response %s" % nwkid)
+    self.log.logging("zclCommand", "Debug", "zcl_raw_reset_device %s" % nwkid)
     frame_control_field = "%02x" %0b0001_0001
     cmd = "00"
     cluster = "0000"
