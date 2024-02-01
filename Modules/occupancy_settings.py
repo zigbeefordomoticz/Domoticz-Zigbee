@@ -12,7 +12,7 @@
 
 from Modules.basicOutputs import write_attribute
 from Modules.develco import is_develco_device
-from Modules.sonoff import is_sonoff_device, sonoff_set_ultrasonic_occupancySensibility
+from DevicesModules.custom_sonoff import is_sonoff_device
 from Modules.philips import is_philips_device, philips_set_pir_occupancySensibility
 from Modules.readAttributes import ReadAttributeRequest_0406_0010, ReadAttributeRequest_0406_0012, ReadAttributeRequest_0406_0020, ReadAttributeRequest_0406_0022
 from Modules.tools import getListOfEpForCluster
