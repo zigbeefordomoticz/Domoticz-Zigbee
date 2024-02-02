@@ -35,9 +35,10 @@ def sonoff_open_window_detection(self, nwkid, detection):
 
 
 def sonoff_ultrasonic_illumination(self, nwkid, mode):
-    self.log.logging("Sonoff", "Debug", "sonoff_ultrasonic_illumination - Nwkid: %s Mode: %s" %(nwkid, mode))
-    write_attribute( self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", SONOFF_ILLUMINATION_ATTRIBUTE, "20", "%02x" % mode, ackIsDisabled=False)
-    ReadAttributeRequest_0406_0022(self, nwkid)
+    self.log.logging("Sonoff", "Error", "sonoff_ultrasonic_illumination - Nwkid: %s Mode: %s (DISABLED)" %(nwkid, mode))
+    #self.log.logging("Sonoff", "Debug", "sonoff_ultrasonic_illumination - Nwkid: %s Mode: %s" %(nwkid, mode))
+    #write_attribute( self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", SONOFF_ILLUMINATION_ATTRIBUTE, "20", "%02x" % mode, ackIsDisabled=False)
+    #ReadAttributeRequest_0406_0022(self, nwkid)
 
 
 SONOFF_DEVICE_PARAMETERS = {
