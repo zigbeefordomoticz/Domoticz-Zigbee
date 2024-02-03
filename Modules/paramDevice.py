@@ -89,8 +89,7 @@ from Modules.tuyaTS011F import (tuya_ts011F_threshold_overCurrentBreaker,
                                 tuya_ts011F_threshold_overTemperatureBreaker,
                                 tuya_ts011F_threshold_overVoltageBreaker,
                                 tuya_ts011F_threshold_underVoltageBreaker)
-from Modules.tuyaTS0601 import (TS0601_COMMANDS, ts0601_actuator,
-                                ts0601_extract_data_point_infos)
+from Modules.tuyaTS0601 import ts0601_extract_data_point_infos, ts0601_settings
 
 
 def Ballast_max_level(self, nwkid, max_level):
@@ -296,9 +295,9 @@ def sanity_check_of_param(self, NwkId):
     for param, value in param_data.items():
         self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param  {param}, {value}")
         
-        if ts0601_extract_data_point_infos(self, model_name) and param in TS0601_COMMANDS:
-            self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param  {param} {value}")
-            ts0601_actuator(self, NwkId, param, value)
+        dps_mapping = ts0601_extract_data_point_infos( self, model_name) 
+        if dps_mapping:
+            ts0601_settings( self, NwkId, dps_mapping, param, value)
 
         elif param in DEVICE_PARAMETERS:
             DEVICE_PARAMETERS[param](self, NwkId, value)
