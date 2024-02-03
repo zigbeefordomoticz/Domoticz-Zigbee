@@ -31,7 +31,7 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
     
     str_dp = "%02x" %dp
     if str_dp not in dps_mapping:
-        self.log.logging("Tuya0601", "Log", "ts0601_response - unknow dp %s %s %s %s %s" % (
+        self.log.logging("Tuya0601", "Log", "ts0601_response - warning/unknow dp %s %s %s %s %s" % (
             NwkId, str_dp, datatype, data, str(dps_mapping)), NwkId)
         store_tuya_attribute(self, NwkId, "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype) , data)
         return False
@@ -93,7 +93,7 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
 
 
 def ts0601_actuator( self, NwkId, command, value=None):
-    self.log.logging("Tuya0601", "Log", "ts0601_actuator - requesting %s %s" %(
+    self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s" %(
         command, value))
 
     model_name = self.ListOfDevices[ NwkId ]["Model"] if "Model" in self.ListOfDevices[ NwkId ] else None
@@ -122,7 +122,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
         
     dp = int(str_dp, 16)
     
-    self.log.logging("Tuya0601", "Log", "ts0601_actuator - requesting %s %s %s" %(
+    self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s %s" %(
         command, dp, value))
 
     if command in TS0601_COMMANDS:
@@ -338,7 +338,7 @@ def ts0601_summation_energy(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "Energy_%s" %ep, value)
 
 def ts0601_summation_energy_raw(self, Devices, nwkid, ep, value):
-    self.log.logging( "Tuya0601", "Log", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
+    self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0000")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", value)  # Store int
     store_tuya_attribute(self, nwkid, "ConsumedEnergy_%s" %ep, value)
@@ -479,7 +479,7 @@ def ts0601_smoke_concentration(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "042a", value)
 
 def ts0601_water_consumption(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_water_consumption - Nwkid: %s/%s WaterConsumtpion: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_water_consumption - Nwkid: %s/%s WaterConsumtpion: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "WaterConsumtpion", value)
     # The counter will be treated with the divider which is defined in the parameters in the application settings 
     # (menu setup-settings, tab counters). 
@@ -490,7 +490,7 @@ def ts0601_water_consumption(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "WaterCounter", value)
 
 def ts0601_sensor_irrigation_mode(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_sensor_irrigation_mode - Nwkid: %s/%s Mode: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_sensor_irrigation_mode - Nwkid: %s/%s Mode: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Mode", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0008", value)
    
@@ -537,11 +537,11 @@ DP_SENSOR_FUNCTION = {
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
-    self.log.logging("Tuya0601", "Log", "ts0601_tuya_cmd - %s %s %s %s" % (NwkId, Ep, action, data))
+    self.log.logging("Tuya0601", "Debug", "ts0601_tuya_cmd - %s %s %s %s" % (NwkId, Ep, action, data))
     
     cluster_frame = "11"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
-    self.log.logging("Tuya0601", "Log", "ts0601_tuya_cmd - %s %s sqn: %s" % (NwkId, Ep, sqn))
+    self.log.logging("Tuya0601", "Debug", "ts0601_tuya_cmd - %s %s sqn: %s" % (NwkId, Ep, sqn))
     tuya_cmd(self, NwkId, Ep, cluster_frame, sqn, "00", action, data)
 
 
@@ -561,7 +561,7 @@ def ts0601_tuya_action(self, NwkId, Ep, action, dp, dt, value):
         None
 
     """   
-    self.log.logging("Tuya0601", "Log", "ts0601_tuya_action - %s %s/%s dp: %s dt: %s value: %s" % (action, NwkId, Ep, dp, dt, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_tuya_action - %s %s/%s dp: %s dt: %s value: %s" % (action, NwkId, Ep, dp, dt, value))
     if value is None:
         return
 
@@ -573,7 +573,7 @@ def ts0601_tuya_action(self, NwkId, Ep, action, dp, dt, value):
 
     action = f"{dp:02x}{dt}"
     data = data_format % value
-    self.log.logging("Tuya0601", "Log", "ts0601_tuya_action - %s %s/%s action: %s data: %s" %(action, NwkId, Ep, action, data))
+    self.log.logging("Tuya0601", "Debug", "ts0601_tuya_action - %s %s/%s action: %s data: %s" %(action, NwkId, Ep, action, data))
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
@@ -582,30 +582,31 @@ def ts0601_action_setpoint(self, NwkId, Ep, dp, value):
     if value is None:
         return
 
-    self.log.logging("Tuya0601", "Log", "ts0601_action_setpoint - %s Setpoint: %s" % (NwkId, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_setpoint - %s Setpoint: %s" % (NwkId, value))
     
     action = "%02x02" % dp
     data = "%08x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
+
 def ts0601_settings( self, NwkId, dps_mapping, param, value):
     """ Handle in a more generic way TS0601 settings, by extracting Data Type from the config """
     
-    self.log.logging("Heartbeat", "Log", f"ts0601_settings  {NwkId}")
+    self.log.logging("Tuya0601", "Debug", f"ts0601_settings  {NwkId}")
     
     for key, dps_value in dps_mapping.items():
-        self.log.logging("Heartbeat", "Log", f"ts0601_settings  {key}:{dps_value}")
+        self.log.logging("Tuya0601", "Debug", f"ts0601_settings  {key}:{dps_value}")
         if "action_type" in dps_value and dps_value["action_type"] == param:
             dt = dps_value[ "data_type"] if "data_type" in dps_value else None
             if dt:
                 dp = int( key, 16)
-                self.log.logging("Heartbeat", "Log", f"ts0601_settings  {param} {dp} {dt} {value}")
+                self.log.logging("Tuya0601", "Debug", f"ts0601_settings  {param} {dp} {dt} {value}")
                 ts0601_tuya_action(self, NwkId, "01", param, dp, dt, value)
                 return
             
-        if param in TS0601_COMMANDS:
-            self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param  {param} {value}")
-            ts0601_actuator(self, NwkId, param, value)
+    if param in TS0601_COMMANDS:
+        self.log.logging("Tuya0601", "Debug", f"sanity_check_of_param  {param} {value}")
+        ts0601_actuator(self, NwkId, param, value)
 
 
 def ts0601_action_calibration(self, NwkId, Ep, dp, value=None):
@@ -760,7 +761,7 @@ def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
     if value is None:
         return
 
-    self.log.logging("Tuya0601", "Log", "ts0601_irrigation_valve_target - %s Switch Action: dp:%s value: %s" % (
+    self.log.logging("Tuya0601", "Debug", "ts0601_irrigation_valve_target - %s Switch Action: dp:%s value: %s" % (
         NwkId, dp, value))
 
     mode = get_tuya_attribute(self, NwkId, 'Mode')
@@ -776,7 +777,7 @@ def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
 def ts0601_solar_siren_alarm_melody( self, NwkId, Ep, dp, melody=None):
     if melody is None:
         return
-    self.log.logging("Tuya0601", "Log", "ts0601_solar_siren_alarm_melody - %s Switch Action: dp:%s value: %s" % (
+    self.log.logging("Tuya0601", "Debug", "ts0601_solar_siren_alarm_melody - %s Switch Action: dp:%s value: %s" % (
         NwkId, dp, melody))
     if melody is None:
         return
@@ -788,7 +789,7 @@ def ts0601_solar_siren_alarm_melody( self, NwkId, Ep, dp, melody=None):
 def ts0601_solar_siren_alarm_mode( self, NwkId, Ep, dp, mode=None):
     if mode is None:
         return
-    self.log.logging("Tuya0601", "Log", "ts0601_solar_siren_alarm_mode - %s Switch Action: dp:%s value: %s" % (
+    self.log.logging("Tuya0601", "Debug", "ts0601_solar_siren_alarm_mode - %s Switch Action: dp:%s value: %s" % (
         NwkId, dp, mode))
     if mode is None:
         return
@@ -800,7 +801,7 @@ def ts0601_solar_siren_alarm_mode( self, NwkId, Ep, dp, mode=None):
 def ts0601_solar_siren_alarm_duration( self, NwkId, Ep, dp, duration=None):
     if duration is None:
         return
-    self.log.logging("Tuya0601", "Log", "ts0601_solar_siren_alarm_duration - %s Switch Action: dp:%s value: %s" % (
+    self.log.logging("Tuya0601", "Debug", "ts0601_solar_siren_alarm_duration - %s Switch Action: dp:%s value: %s" % (
         NwkId, dp, duration))
     action = "%02x02" % dp  # I
     data = "%08x" % (duration)
