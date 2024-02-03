@@ -199,8 +199,8 @@ def xiaomi_flip_indicator_light(self, nwkid, mode):
         self, nwkid, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
-   
-def xiaomi_switch_operation_mode_opple(self, nwkid, mode):   
+
+def xiaomi_switch_operation_mode_opple_perline(self, nwkid, ep, mode):
     # Mode: 0x00 Decoupled
     #       0x01 Control_relay
     if nwkid not in self.ListOfDevices:
@@ -212,13 +212,19 @@ def xiaomi_switch_operation_mode_opple(self, nwkid, mode):
     Hattribute = "0200"
     data_type = "20"
     Hdata = "%02x" %mode
+    self.log.logging("Lumi", "Debug", "Write xiaomi_switch_operation_mode_opple AQARA Wireless Switch: %s/%s mode: %s" % (nwkid, ep, mode), nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
+   
+def xiaomi_switch_operation_mode_opple(self, nwkid, mode):   
     for _ep in getListOfEpForCluster(self, nwkid, "0006"):
-        self.log.logging("Lumi", "Debug", "Write xiaomi_switch_operation_mode_opple AQARA Wireless Switch: %s/%s" % (nwkid, _ep), nwkid)
-        write_attribute( 
-            self, nwkid, ZIGATE_EP, _ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, 
-            ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+        xiaomi_switch_operation_mode_opple_perline(self, nwkid, _ep, mode)
 
+def xiaomi_switch_operation_mode_opple_l1(self, nwkid, mode):   
+    xiaomi_switch_operation_mode_opple_perline(self, nwkid, "01", mode)
+
+def xiaomi_switch_operation_mode_opple_l2(self, nwkid, mode):   
+    xiaomi_switch_operation_mode_opple_perline(self, nwkid, "02", mode)
 
 def xiaomi_aqara_switch_mode_switch(self, nwkid, mode):
     # Mode: 0x04 Anti Flicker mode

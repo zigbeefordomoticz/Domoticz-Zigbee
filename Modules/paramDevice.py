@@ -39,6 +39,8 @@ from Modules.lumi import (RTCGQ14LM_trigger_indicator,
                           xiaomi_flip_indicator_light,
                           xiaomi_led_disabled_night, xiaomi_opple_mode,
                           xiaomi_switch_operation_mode_opple,
+                          xiaomi_switch_operation_mode_opple_l1,
+                          xiaomi_switch_operation_mode_opple_l2,
                           xiaomi_switch_power_outage_memory)
 from Modules.occupancy_settings import (
     common_PIR_occupancySensibility, common_PIROccupiedToUnoccupiedDelay,
@@ -266,6 +268,8 @@ DEVICE_PARAMETERS = {
     "AqaraOpple_led_disabled_night": xiaomi_led_disabled_night,
     "AqaraOpple_flip_indicator_light": xiaomi_flip_indicator_light,
     "AqaraOpple_switch_operation_mode_opple": xiaomi_switch_operation_mode_opple,
+    "AqaraOpple_switch_operation_mode_opple_l1": xiaomi_switch_operation_mode_opple_l1,
+    "AqaraOpple_switch_operation_mode_opple_l2": xiaomi_switch_operation_mode_opple_l2,
     "AqaraOpple_aqara_switch_mode_switch": xiaomi_aqara_switch_mode_switch,
     "AqaraOppleMode": xiaomi_opple_mode,
     "TuyaPIRKeepTime": tuya_pir_keep_time_lookup,
