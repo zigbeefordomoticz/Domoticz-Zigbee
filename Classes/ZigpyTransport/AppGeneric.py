@@ -54,7 +54,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     # Make sure the first thing we do is feed the watchdog
     if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
         await self.watchdog_feed()
-        self._watchdog_task = asyncio.create_task(self._watchdog_loop())
+        self._watchdog_task = asyncio.create_task(self._watchdog_loop(), name="watchdog_loop")
         await asyncio.sleep(1)
 
     # Retreive Last Backup
