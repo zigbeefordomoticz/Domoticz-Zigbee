@@ -20,7 +20,6 @@
 from DevicesModules.custom_sonoff import SONOFF_DEVICE_PARAMETERS
 from Modules.basicOutputs import (ballast_Configuration_max_level,
                                   ballast_Configuration_min_level,
-                                  set_PIROccupiedToUnoccupiedDelay,
                                   set_poweron_afteroffon)
 from Modules.danfoss import (danfoss_covered, danfoss_exercise_day_of_week,
                              danfoss_exercise_trigger_time,
@@ -43,11 +42,14 @@ from Modules.lumi import (RTCGQ14LM_trigger_indicator,
                           xiaomi_switch_operation_mode_opple_l1,
                           xiaomi_switch_operation_mode_opple_l2,
                           xiaomi_switch_power_outage_memory)
+from Modules.occupancy_settings import (
+    common_PIR_occupancySensibility, common_PIROccupiedToUnoccupiedDelay,
+    common_Ultrasnonic_OccupiedToUnoccupiedDelay,
+    common_Ultrasonic_occupancySensibility)
 from Modules.philips import (philips_led_indication,
                              philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
-from Modules.readAttributes import (ReadAttributeRequest_0006_400x,
-                                    ReadAttributeRequest_0406_0010)
+from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.schneider_wiser import (iTRV_open_window_detection,
                                      wiser_home_lockout_thermostat,
                                      wiser_lift_duration)
@@ -89,8 +91,7 @@ from Modules.tuyaTS011F import (tuya_ts011F_threshold_overCurrentBreaker,
                                 tuya_ts011F_threshold_overTemperatureBreaker,
                                 tuya_ts011F_threshold_overVoltageBreaker,
                                 tuya_ts011F_threshold_underVoltageBreaker)
-from Modules.tuyaTS0601 import (TS0601_COMMANDS, ts0601_actuator,
-                                ts0601_extract_data_point_infos)
+from Modules.tuyaTS0601 import ts0601_extract_data_point_infos, ts0601_settings
 
 
 def Ballast_max_level(self, nwkid, max_level):
@@ -99,52 +100,6 @@ def Ballast_max_level(self, nwkid, max_level):
 
 def Ballast_min_level(self, nwkid, min_level):
     ballast_Configuration_min_level(self, nwkid, min_level)
-
-
-def param_Occupancy_settings_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
-    # Based on Philips HUE
-    # 0x00 default
-    # The PIROccupiedToUnoccupiedDelay attribute is 16 bits in length and
-    # specifies the time delay, in seconds,before the PIR sensor changes to
-    # its unoccupied state after the last detection of movement in the sensed area.
-
-    if self.ListOfDevices[nwkid]["Manufacturer"] == "100b" or self.ListOfDevices[nwkid]["Manufacturer Name"] == "Philips":  # Philips
-        if "02" not in self.ListOfDevices[nwkid]["Ep"]:
-            return
-        if "0406" not in self.ListOfDevices[nwkid]["Ep"]["02"]:
-            return
-        if "0010" not in self.ListOfDevices[nwkid]["Ep"]["02"]["0406"]:
-            set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay)
-            ReadAttributeRequest_0406_0010(self, nwkid)
-            return
-        
-        current_delay = int(self.ListOfDevices[nwkid]["Ep"]["02"]["0406"]["0010"], 16) if isinstance( self.ListOfDevices[nwkid]["Ep"]["02"]["0406"]["0010"], str) else self.ListOfDevices[nwkid]["Ep"]["02"]["0406"]["0010"]
-        if current_delay != delay:
-            set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay)
-            ReadAttributeRequest_0406_0010(self, nwkid)
-
-    elif self.ListOfDevices[nwkid]["Manufacturer"] == "1015" or self.ListOfDevices[nwkid]["Manufacturer Name"] == "frient A/S":  # Frientd
-        # delay = 10 * delay # Tenth of seconds
-        for ep in ["22", "28", "29"]:
-            if ep == "28" and "PIROccupiedToUnoccupiedDelay_28" in self.ListOfDevices[nwkid]["Param"]:
-                delay = int(self.ListOfDevices[nwkid]["Param"]["PIROccupiedToUnoccupiedDelay_28"])
-            elif ep == "29" and "PIROccupiedToUnoccupiedDelay_29" in self.ListOfDevices[nwkid]["Param"]:
-                delay = int(self.ListOfDevices[nwkid]["Param"]["PIROccupiedToUnoccupiedDelay_29"])
-            if ep not in self.ListOfDevices[nwkid]["Ep"]:
-                continue
-            if "0406" not in self.ListOfDevices[nwkid]["Ep"][ep]:
-                continue
-            if "0010" not in self.ListOfDevices[nwkid]["Ep"][ep]["0406"]:
-                set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay, ListOfEp=[ep])
-                ReadAttributeRequest_0406_0010(self, nwkid)
-                return
-            current_delay = int(self.ListOfDevices[nwkid]["Ep"][ep]["0406"]["0010"], 16) if isinstance( self.ListOfDevices[nwkid]["Ep"][ep]["0406"]["0010"], str) else self.ListOfDevices[nwkid]["Ep"][ep]["0406"]["0010"]
-            if current_delay != delay:
-                set_PIROccupiedToUnoccupiedDelay(self, nwkid, delay, ListOfEp=[ep])
-                ReadAttributeRequest_0406_0010(self, nwkid)
-
-    else:
-        self.log.logging("Heartbeat", "Log", "=====> Unknown Manufacturer/Name")
 
 
 def param_PowerOnAfterOffOn(self, nwkid, mode):
@@ -245,8 +200,11 @@ def ias_sensitivity(self, nwkid, sensitivity):
 DEVICE_PARAMETERS = {
     "HueLedIndication": philips_led_indication,
     "PowerOnAfterOffOn": param_PowerOnAfterOffOn,
-    "PIROccupiedToUnoccupiedDelay": param_Occupancy_settings_PIROccupiedToUnoccupiedDelay,
-    "occupancySensibility": philips_set_pir_occupancySensibility,
+    "PIROccupiedToUnoccupiedDelay": common_PIROccupiedToUnoccupiedDelay,
+    "PIRoccupancySensibility": common_PIR_occupancySensibility,
+    "occupancySensibility": common_PIR_occupancySensibility,
+    "UltrasonicOccupiedToUnoccupiedDelay": common_Ultrasnonic_OccupiedToUnoccupiedDelay,
+    "UltrasonicOccupancySensibility": common_Ultrasonic_occupancySensibility,
     "netatmoLedIfOn": legrand_enable_Led_IfOn_by_nwkid,
     "netatmoLedInDark": legrand_enable_Led_InDark_by_nwkid,
     "netatmoLedShutter": legrand_enable_Led_Shutter_by_nwkid,
@@ -332,13 +290,18 @@ DEVICE_PARAMETERS = {
 
 def sanity_check_of_param(self, NwkId):
 
+    self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param  {NwkId}")
     DEVICE_PARAMETERS.update(SONOFF_DEVICE_PARAMETERS)
 
     param_data = self.ListOfDevices.get(NwkId, {}).get("Param", {})
     model_name = self.ListOfDevices.get(NwkId, {}).get("Model", "")
 
     for param, value in param_data.items():
-        if ts0601_extract_data_point_infos(self, model_name) and param in TS0601_COMMANDS:
-            ts0601_actuator(self, NwkId, param, value)
+        self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param  {param}, {value}")
+        
+        dps_mapping = ts0601_extract_data_point_infos( self, model_name) 
+        if dps_mapping:
+            ts0601_settings( self, NwkId, dps_mapping, param, value)
+
         elif param in DEVICE_PARAMETERS:
             DEVICE_PARAMETERS[param](self, NwkId, value)

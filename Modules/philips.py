@@ -27,6 +27,9 @@ from Modules.zigateConsts import ZIGATE_EP
 
 PHILIPS_POWERON_MODE = {0x00: "Off", 0x01: "On", 0xFF: "Previous state"}  # Off  # On  # Previous state
 
+def is_philips_device(self, nwkid):
+    return self.ListOfDevices[nwkid]["Manufacturer"] == "100b" or self.ListOfDevices[nwkid]["Manufacturer Name"] == "Philips"
+
 
 def pollingPhilips(self, key):
     """
@@ -161,6 +164,7 @@ def philips_set_poweron_after_offon_device(self, mode, nwkid):
     set_poweron_afteroffon(self, nwkid, OnOffMode=mode)
     ReadAttributeRequest_0006_400x(self, nwkid)
 
+
 def zigpy_philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, dstNWKID, dstEP, MsgPayload):
     #        1d/0b10/2400/0300/00/30|01|21|1800 (long press)
     #                                      xxxx -> duration
@@ -171,6 +175,7 @@ def zigpy_philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterI
     MsgAttrID = "%04x" %struct.unpack("H", struct.pack(">H", int( MsgPayload[10:14], 16)))[0] 
     MsgClusterData = MsgPayload[14 + 2:]
     philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+
 
 def philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData):
 
@@ -248,7 +253,6 @@ def philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
         self.log.logging( "Philips", "Debug", "philips_dimmer_switch - %s - %s/%s unknown attribute: %s %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )
     
-
 
 def _update_domoticz_widget( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, prev_onoffvalue, onoffValue, prev_lvlValue, lvlValue, duration ):
     # Update Domo
