@@ -1,6 +1,6 @@
-zigpy==0.61.0
+zigpy==0.62.0
 zigpy_znp==0.12.1
-zigpy_deconz==0.22.4
+zigpy_deconz==0.23.0
 bellows==0.37.6
 zigpy-cli==1.0.4
 dnspython==2.3.0
