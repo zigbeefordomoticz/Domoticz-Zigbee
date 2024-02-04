@@ -15,7 +15,7 @@
             "0006": { "Attributes": { "0000": { "Enabled": true, "Name": "OnOff", "DomoClusterType": "Switch", "ActionList": [ "check_store_value", "upd_domo_device"] }}},
             "0702": "",
             "0b04": { "Attributes": { "050b": { "Enabled": true, "Name": "ActivePower", "EvalFunc": "compute_electrical_measurement_conso", "ActionList": [ "check_store_value", "upd_domo_device" ] }}},
-            "0012": { "Attributes": { "0055": { "Enabled": true, "Name": "Decoupled_Switch", "UpdDomoDeviceWithCluster": "0006", "UpdDomoDeviceWithAttribute": "0000", "UpdDomoDeviceWithEp": "f1", "ActionList": [ "check_store_value", "upd_domo_device" ] }}},
+            "0012": { "Attributes": { "0055": { "Enabled": true, "Name": "Decoupled_Switch", "UpdDomoDeviceWithCluster": "0006", "DomoDeviceFormat": "str_2digits", "UpdDomoDeviceWithAttribute": "0000", "UpdDomoDeviceWithEp": "f1", "ActionList": [ "check_store_value", "upd_domo_device" ] }}},
             "0019": "",
             "fcc0": {
                 "Attributes": {
@@ -42,7 +42,7 @@
             "0004": "",
             "0005": "",
             "0006": "",
-            "0012": { "Attributes": { "0055": { "Enabled": true, "Name": "Decoupled_Switch", "UpdDomoDeviceWithCluster": "0006", "UpdDomoDeviceWithAttribute": "0000", "UpdDomoDeviceWithEp": "f2", "ActionList": [ "check_store_value", "upd_domo_device" ] }}},
+            "0012": { "Attributes": { "0055": { "Enabled": true, "Name": "Decoupled_Switch", "UpdDomoDeviceWithCluster": "0006", "DomoDeviceFormat": "str_2digits", "UpdDomoDeviceWithAttribute": "0000", "UpdDomoDeviceWithEp": "f2", "ActionList": [ "check_store_value", "upd_domo_device" ] }}},
             "fcc0": "",
             "Type": "Switch"
         },
@@ -58,7 +58,7 @@
             "Type": "Switch"
         }
     },
-     "FakeEp": [ "f1", "f2" ],
+    "FakeEp": [ "f1", "f2" ],
     "Type": "",
     "ClusterToBind": [ "0006", "0702", "0b04" ],
     "ConfigureReporting": {
