@@ -1,0 +1,16 @@
+{
+    "ClusterId": "0012",
+    "Description": "Multistate Input",
+    "Version": "1",
+    "Enabled": true,
+    "Attributes": {
+        "000e": {  "Enabled": true, "Name": "StateText", "DataType": "41" , "Acc": "RW" , "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "001c": {  "Enabled": true, "Name": "Description", "DataType": "41" , "Acc": "RW" , "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "004a": {  "Enabled": true, "Name": "NumberOfStates", "DataType": "21" , "Acc": "RW" , "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0051": {  "Enabled": true, "Name": "OutOfService", "DataType": "10" , "Acc": "RW" , "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0055": {  "Enabled": true, "Name": "PresentValue", "DataType": "21" , "Acc": "RW" , "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0067": {  "Enabled": true, "Name": "Reliability", "DataType": "30" , "Acc": "RW" , "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "006f": {  "Enabled": true, "Name": "StatusFlag", "DataType": "18" , "Acc": "RW" , "Mandatory": false, "ActionList": [ "check_store_value"] },
+        "0100": {  "Enabled": true, "Name": "ApplicationType", "DataType": "23" , "Acc": "RW" , "Mandatory": false, "ActionList": [ "check_store_value"] }
+    }
+}
