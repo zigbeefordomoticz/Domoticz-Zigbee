@@ -42,12 +42,9 @@ from Modules.lumi import (RTCGQ14LM_trigger_indicator,
                           xiaomi_switch_operation_mode_opple_l1,
                           xiaomi_switch_operation_mode_opple_l2,
                           xiaomi_switch_power_outage_memory)
-from Modules.occupancy_settings import (
-    common_PIR_occupancySensibility, common_PIROccupiedToUnoccupiedDelay,
-    common_Ultrasnonic_OccupiedToUnoccupiedDelay,
-    common_Ultrasonic_occupancySensibility)
+from Modules.occupancy_settings import OCCUPANCY_DEVICE_PARAMETERS
+from Modules.onoff_settings import ONOFF_DEVICE_PARAMETERS
 from Modules.philips import (philips_led_indication,
-                             philips_set_pir_occupancySensibility,
                              philips_set_poweron_after_offon_device)
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.schneider_wiser import (iTRV_open_window_detection,
@@ -199,12 +196,6 @@ def ias_sensitivity(self, nwkid, sensitivity):
 
 DEVICE_PARAMETERS = {
     "HueLedIndication": philips_led_indication,
-    "PowerOnAfterOffOn": param_PowerOnAfterOffOn,
-    "PIROccupiedToUnoccupiedDelay": common_PIROccupiedToUnoccupiedDelay,
-    "PIRoccupancySensibility": common_PIR_occupancySensibility,
-    "occupancySensibility": common_PIR_occupancySensibility,
-    "UltrasonicOccupiedToUnoccupiedDelay": common_Ultrasnonic_OccupiedToUnoccupiedDelay,
-    "UltrasonicOccupancySensibility": common_Ultrasonic_occupancySensibility,
     "netatmoLedIfOn": legrand_enable_Led_IfOn_by_nwkid,
     "netatmoLedInDark": legrand_enable_Led_InDark_by_nwkid,
     "netatmoLedShutter": legrand_enable_Led_Shutter_by_nwkid,
@@ -291,6 +282,9 @@ DEVICE_PARAMETERS = {
 def sanity_check_of_param(self, NwkId):
 
     self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param  {NwkId}")
+    DEVICE_PARAMETERS.update(ONOFF_DEVICE_PARAMETERS)
+    DEVICE_PARAMETERS.update(OCCUPANCY_DEVICE_PARAMETERS)
+    
     DEVICE_PARAMETERS.update(SONOFF_DEVICE_PARAMETERS)
 
     param_data = self.ListOfDevices.get(NwkId, {}).get("Param", {})
