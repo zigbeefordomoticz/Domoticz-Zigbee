@@ -125,7 +125,8 @@ async def start_zigpy_task(self, channel, extended_pan_id):
     self.log.logging( "TransportZigpy", "Debug", f"start_zigpy_task -extendedPANID {self.pluginconf.pluginConf['extendedPANID']} {extended_pan_id}", )
 
     task = asyncio.create_task(
-        radio_start(self, self.pluginconf, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id)
+        radio_start(self, self.pluginconf, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id),
+        name=f"radio_start-{self._radiomodule}-{self._serialPort}"
     )
     await asyncio.gather(task, return_exceptions=False)
     await asyncio.sleep(1)
@@ -531,7 +532,9 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
         try:
             task = asyncio.create_task(
-                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout) )
+                transport_request( self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=AckIsDisable, use_ieee=False, delay=delay, extended_timeout=extended_timeout),
+                name=f"transport_request-{destination}-{Cluster}-{Sqn}"
+                )
             self.statistics._sent += 1
 
         except (asyncio.TimeoutError, asyncio.exceptions.TimeoutError) as e:
@@ -758,7 +761,7 @@ async def _limit_concurrency(self, destination, sequence):
         self._concurrent_requests_semaphores_list[_ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
         self._currently_waiting_requests_list[_ieee] = 0
 
-    start_time = time.time()
+    start_time = time.monotonic()
     was_locked = self._concurrent_requests_semaphores_list[_ieee].locked()
 
     if was_locked:
@@ -774,8 +777,9 @@ async def _limit_concurrency(self, destination, sequence):
     try:
         async with self._concurrent_requests_semaphores_list[_ieee]:
             if was_locked:
-                self.log.logging( "TransportZigpy", "Debug", "Previously delayed request %s is now running, " "delayed by %0.2f seconds for %s" % (sequence, (time.time() - start_time), _nwkid), _nwkid, )
+                self.log.logging( "TransportZigpy", "Debug", "Previously delayed request %s is now running, " "delayed by %0.2f seconds for %s" % (sequence, (time.monotonic() - start_time), _nwkid), _nwkid, )
             yield
+
     finally:
         if was_locked:
             self._currently_waiting_requests_list[_ieee] -= 1
