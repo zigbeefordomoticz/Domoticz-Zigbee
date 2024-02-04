@@ -8,6 +8,9 @@ from Modules.readAttributes import ReadAttributeRequest_0006_400x
 
 ENKI_POWERON_MODE = {0x00: "Off", 0x01: "On", 0xFF: "Previous state"}  # Off  # On  # Previous state
 
+def is_enky_device(self, nwkid):
+    return self.ListOfDevices[nwkid]["Manufacturer"] == "1277"
+
 
 def enki_set_poweron_after_offon(self, mode):
     # call from WebServer

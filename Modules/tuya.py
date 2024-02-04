@@ -52,7 +52,12 @@ from Modules.zigateConsts import ZIGATE_EP
 #   0x03: string
 #   0x04: enum8 ( 0x00-0xff)
 #   0x05: bitmap ( 1,2, 4 bytes) as bits
-    
+
+def is_tuya_switch_relay(self, nwkid):
+    model = self.ListOfDevices[nwkid].get("Model", "")
+    return model in ( "TS0601-switch", "TS0601-2Gangs-switch", "TS0601-Energy", )
+
+
 def tuya_registration(self, nwkid, ty_data_request=False, parkside=False, tuya_registration_value=None):
     if "Model" not in self.ListOfDevices[nwkid]:
             return

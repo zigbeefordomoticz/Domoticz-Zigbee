@@ -299,6 +299,7 @@ SETTINGS = {
             "loggingBackupCount": { "type": "int", "default": 7, "current": None, "restart": 1, "hidden": False, "Advanced": False },
             "loggingMaxMegaBytes": { "type": "int", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False },
             "occupancySettings": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "onoffSettings": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "outRawAPS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "showTimeOutMsg": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "trackTransportError": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },

@@ -10,11 +10,15 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+from DevicesModules.custom_sonoff import is_sonoff_device
 from Modules.basicOutputs import write_attribute
 from Modules.develco import is_develco_device
-from DevicesModules.custom_sonoff import is_sonoff_device
-from Modules.philips import is_philips_device, philips_set_pir_occupancySensibility
-from Modules.readAttributes import ReadAttributeRequest_0406_0010, ReadAttributeRequest_0406_0012, ReadAttributeRequest_0406_0020, ReadAttributeRequest_0406_0022
+from Modules.philips import (is_philips_device,
+                             philips_set_pir_occupancySensibility)
+from Modules.readAttributes import (ReadAttributeRequest_0406_0010,
+                                    ReadAttributeRequest_0406_0012,
+                                    ReadAttributeRequest_0406_0020,
+                                    ReadAttributeRequest_0406_0022)
 from Modules.tools import getListOfEpForCluster
 from Modules.zigateConsts import ZIGATE_EP
 
@@ -265,4 +269,11 @@ def common_Ultrasonic_occupancySensibility(self, nwkid, sensibility):
             Ultrasonic_unoccupied_to_occupied_threshold(self, nwkid, ep, sensibility)
     ReadAttributeRequest_0406_0022(self, nwkid)
 
-    
+
+OCCUPANCY_DEVICE_PARAMETERS = {
+    "PIROccupiedToUnoccupiedDelay": common_PIROccupiedToUnoccupiedDelay,
+    "PIRoccupancySensibility": common_PIR_occupancySensibility,
+    "occupancySensibility": common_PIR_occupancySensibility,
+    "UltrasonicOccupiedToUnoccupiedDelay": common_Ultrasnonic_OccupiedToUnoccupiedDelay,
+    "UltrasonicOccupancySensibility": common_Ultrasonic_occupancySensibility,
+}
