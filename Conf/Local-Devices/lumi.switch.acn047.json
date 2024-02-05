@@ -49,10 +49,10 @@
             "Type": "Power"
         },
         "f1": {
-            "Type": "Switch"
+            "Type": "Button"
         },
         "f2": {
-            "Type": "Switch"
+            "Type": "Button"
         }
     },
     "FakeEp": [ "f1", "f2" ],
@@ -67,6 +67,7 @@
         "0019": []
     },
     "Param": {
-        "AqaraOpple_switch_operation_mode_opple": 1
+        "AqaraOpple_switch_operation_mode_opple": 1,
+        "AqaraOpple_switch_power_outage_memory": 1
     }
 }
