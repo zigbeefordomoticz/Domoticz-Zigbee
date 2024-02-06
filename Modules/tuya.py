@@ -1600,3 +1600,36 @@ def tuya_color_grandiant(self, NwkId, epout, on_gradiant=None, off_gradiant=None
 
     self.log.logging("Tuya", "Debug", f"tuya_color_grandiant {NwkId}, {epout}, payload: {payload}", NwkId)
     raw_APS_request(self, NwkId, epout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
+
+
+TUYA_DEVICE_PARAMETERS = {
+    "TuyaColorGradiantOnTime": tuya_color_grandiant,
+    "TuyaColorGradiantOffTime": tuya_color_grandiant,
+    "LightIndicator": tuya_switch_indicate_light,
+    "TuyaEnergyChildLock": tuya_energy_childLock,
+    "TuyaMotoReversal": tuya_window_cover_motor_reversal,
+    "TuyaBackLight": tuya_backlight_command,
+    "TuyaCurtainMode": tuya_curtain_mode,
+    "TuyaCalibrationTime": tuya_window_cover_calibration,
+    "TS004FMode": tuya_cmd_ts004F,
+    "moesCalibrationTime": tuya_window_cover_calibration,
+    "TuyaGarageOpenerRunTime": tuya_garage_run_time,
+    "TuyaSwitchMode": tuya_external_switch_mode,
+    "SmartSwitchBackLight": tuya_TS0004_back_light,
+    "SmartSwitchIndicateLight": tuya_TS0004_indicate_light,  
+    "SmartRelayStatus01": SmartRelayStatus01,
+    "SmartRelayStatus02": SmartRelayStatus02,
+    "SmartRelayStatus03": SmartRelayStatus03,
+    "SmartRelayStatus04": SmartRelayStatus04,
+    "ZG204Z_MotionSensivity": tuya_motion_zg204l_sensitivity,
+    "ZG204Z_MotionOccupancyTime": tuya_motion_zg204l_keeptime,
+    "RadarMotionSensitivity": tuya_radar_motion_sensitivity,
+    "RadarMotionMinRange": tuya_radar_motion_radar_min_range,
+    "RadarMotionMaxRange": tuya_radar_motion_radar_max_range,
+    "RadarMotionDelay": tuya_radar_motion_radar_detection_delay,
+    "RadarMotionFading": tuya_radar_motion_radar_fading_time,
+    "TuyaPIRKeepTime": tuya_pir_keep_time_lookup,
+    "TS110ELightType": ts110e_light_type,
+    "TS110ESwitch01Type": ts110e_switch01_type,
+    "TS110ESwitch02Type": ts110e_switch02_type,
+}

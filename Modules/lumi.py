@@ -1089,3 +1089,24 @@ def store_lumi_attribute(self, NwkId, Attribute, Value):
     if "LUMI" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["LUMI"] = {}
     self.ListOfDevices[NwkId]["LUMI"][Attribute] = Value
+
+
+LUMI_DEVICE_PARAMETERS = {
+    "vibrationAqarasensitivity": setXiaomiVibrationSensitivity,
+    "AqaraOpple_switch_power_outage_memory": xiaomi_switch_power_outage_memory,
+    "AqaraOpple_led_disabled_night": xiaomi_led_disabled_night,
+    "AqaraOpple_flip_indicator_light": xiaomi_flip_indicator_light,
+    "AqaraOpple_switch_operation_mode_opple": xiaomi_switch_operation_mode_opple,
+    "AqaraOpple_switch_operation_mode_opple_l1": xiaomi_switch_operation_mode_opple_l1,
+    "AqaraOpple_switch_operation_mode_opple_l2": xiaomi_switch_operation_mode_opple_l2,
+    "AqaraOpple_aqara_switch_mode_switch": xiaomi_aqara_switch_mode_switch,
+    "AqaraOppleMode": xiaomi_opple_mode,
+    "AqaraDetectionInterval": aqara_detection_interval,
+    "AqaraMultiClick": enable_click_mode_aqara,
+    "RTCZCGQ11LMMotionSensibility": RTCZCGQ11LM_motion_opple_sensitivity,
+    "RTCZCGQ11LMApproachDistance": RTCZCGQ11LM_motion_opple_approach_distance,
+    "RTCZCGQ11LMMonitoringMode": RTCZCGQ11LM_motion_opple_monitoring_mode,
+    "RTCGQ14LMTriggerIndicator": RTCGQ14LM_trigger_indicator,
+    
+
+}
