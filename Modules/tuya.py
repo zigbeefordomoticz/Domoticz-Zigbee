@@ -26,7 +26,7 @@ from Modules.basicOutputs import raw_APS_request, write_attribute
 from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
-from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
+from Modules.tools import (build_fcf, checkAndStoreAttributeValue,get_device_config_param,
                            get_and_inc_ZCL_SQN, get_deviceconf_parameter_value,
                            is_ack_tobe_disabled, updSQN)
 from Modules.tuyaConst import (TUYA_MANUF_CODE, TUYA_SMART_DOOR_LOCK_MODEL,
@@ -1578,4 +1578,25 @@ def tuya_Move_To_Hue_Saturation_Brightness( self, NwkId, epout, hue, saturation,
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     payload = "11" + sqn + "e1" + hue + saturation + brightness
     
+    raw_APS_request(self, NwkId, epout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
+
+
+def tuya_color_grandiant(self, NwkId, epout, on_gradiant=None, off_gradiant=None):
+    """ Tuya specific command which allows to define the gradiant time to switch On and to Switch off """
+
+    self.log.logging("Tuya", "Debug", f"tuya_color_grandiant {NwkId}, {epout}, {on_gradiant}, {off_gradiant}", NwkId)
+
+    on_gradiant = get_device_config_param( self, NwkId, "TuyaColorGradiantOnTime") or 10
+    off_gradiant = get_device_config_param( self, NwkId, "TuyaColorGradiantOffTime") or 10
+
+    cmd = "fb"
+    sqn = get_and_inc_ZCL_SQN(self, NwkId)
+
+    # gradiant should be expressed in tenth of second, while Tuya expect 1s = 1000
+    on_gradiant *= 100
+    off_gradiant *= 100
+
+    payload = "11" + sqn + cmd + "%08x" % on_gradiant + "%6x" %off_gradiant
+
+    self.log.logging("Tuya", "Debug", f"tuya_color_grandiant {NwkId}, {epout}, payload: {payload}", NwkId)
     raw_APS_request(self, NwkId, epout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
