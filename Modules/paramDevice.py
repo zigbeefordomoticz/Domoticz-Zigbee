@@ -60,7 +60,6 @@ def ias_sensitivity(self, nwkid, sensitivity):
         self.iaszonemgt.ias_sensitivity( nwkid, sensitivity)
 
 
-
 DEVICE_PARAMETERS = {
     "HueLedIndication": philips_led_indication,
     "netatmoLedIfOn": legrand_enable_Led_IfOn_by_nwkid,
@@ -78,9 +77,7 @@ DEVICE_PARAMETERS = {
     "IASsensitivity": ias_sensitivity,
 }
 
-    
-
-
+     
 def sanity_check_of_param(self, NwkId):
 
     self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param  {NwkId}")

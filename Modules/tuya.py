@@ -548,7 +548,7 @@ def tuya_energy_childLock(self, NwkId, lock=0x01):
     cmd = "00"  # Command
     action = "1d01"
     data = "%02x" % lock
-    self.log.logging("Tuya", "Debug", "tuya_energy_childLock - action: %s data: %s" % (action, data))
+    self.log.logging("tuyaSettings", "Debug", "tuya_energy_childLock - action: %s data: %s" % (action, data))
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
 
@@ -556,10 +556,10 @@ def tuya_switch_indicate_light(self, NwkId, light=0x01):
     # 0005 0f 04 0001 00 -- Indicate Off
     # 0004 0f 04 0001 01 -- Indicate Switch ( On when On)
     # 0006 0f 04 0001 02 -- Indicate Position (on when Off )
-    self.log.logging("Tuya", "Debug", "tuya_switch_indicate_light - %s Light: %s" % (NwkId, light), NwkId)
+    self.log.logging("tuyaSettings", "Debug", "tuya_switch_indicate_light - %s Light: %s" % (NwkId, light), NwkId)
     # determine which Endpoint
     if light not in (0x00, 0x01, 0x02):
-        self.log.logging("Tuya", "Error", "tuya_switch_indicate_light - Unexpected light: %s" % light)
+        self.log.logging("tuyaSettings", "Error", "tuya_switch_indicate_light - Unexpected light: %s" % light)
         return
         
     EPout = "01"
@@ -568,7 +568,7 @@ def tuya_switch_indicate_light(self, NwkId, light=0x01):
     cmd = "00"  # Command
     action = "0f04"
     data = "%02x" % light
-    self.log.logging("Tuya", "Debug", "tuya_switch_indicate_light - action: %s data: %s" % (action, data))
+    self.log.logging("tuyaSettings", "Debug", "tuya_switch_indicate_light - action: %s data: %s" % (action, data))
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
 
 
@@ -852,10 +852,10 @@ def tuya_dimmer_dimmer(self, NwkId, srcEp, percent):
 # Tuya Smart Cover Switch
 def tuya_window_cover_calibration(self, nwkid, duration):
     # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
-    self.log.logging( "Tuya", "Debug", "tuya_window_cover_calibration - Nwkid: %s Calibration %s" % (
+    self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - Nwkid: %s Calibration %s" % (
         nwkid, duration), nwkid, )
 
-    self.log.logging( "Tuya", "Debug", "tuya_window_cover_calibration - duration %s" % ( duration), nwkid, )
+    self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - duration %s" % ( duration), nwkid, )
     write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
 
 
@@ -1093,7 +1093,7 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
 def tuya_pir_keep_time_lookup( self, nwkid, keeptime):
     keeptime = min( keeptime // 30, 2)
     
-    self.log.logging("Tuya", "Debug", "tuya_pir_keep_time_lookup - keeptime duration %s secondes" % keeptime, nwkid)
+    self.log.logging("tuyaSettings", "Debug", "tuya_pir_keep_time_lookup - keeptime duration %s secondes" % keeptime, nwkid)
     EPout = "01"
     
     write_attribute(self, nwkid, ZIGATE_EP, EPout, "0500", "0000", "00", "f001", "20", "%02x" %keeptime, ackIsDisabled=False)
@@ -1140,7 +1140,7 @@ def tuya_garage_door_action( self, NwkId, onoff):
 def tuya_garage_run_time(self, NwkId, duration):
     # 0006/0402/0004/0000001e  30 secondes
     # 0007/0402/0004/0000003c  60 secondes
-    self.log.logging("Tuya", "Debug", "tuya_garage_run_time - duration %s" % duration, NwkId)
+    self.log.logging("tuyaSettings", "Debug", "tuya_garage_run_time - duration %s" % duration, NwkId)
     EPout = "01"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     cluster_frame = "11"
@@ -1176,9 +1176,9 @@ TUYA_SWITCH_MODE = {
 
 def tuya_external_switch_mode( self, NwkId, mode):
  
-    self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - mode %s" % mode, NwkId)
+    self.log.logging("tuyaSettings", "Debug", "tuya_external_switch_mode - mode %s" % mode, NwkId)
     if mode not in TUYA_SWITCH_MODE:
-        self.log.logging("Tuya", "Debug", "tuya_external_switch_mode - mode %s undefined" % mode, NwkId)
+        self.log.logging("tuyaSettings", "Debug", "tuya_external_switch_mode - mode %s undefined" % mode, NwkId)
         return
     EPout = "01"
     mode = "%02x" %TUYA_SWITCH_MODE[mode]
@@ -1365,7 +1365,7 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
 def tuya_motion_zg204l_sensitivity(self, nwkid, sensitivity):
     # {'low': 0, 'medium': 1, 'high': 2}
-    self.log.logging("Tuya", "Debug", "tuya_motion_zg204l_keeptime - %s mode: %s" % (nwkid, sensitivity))
+    self.log.logging("tuyaSettings", "Debug", "tuya_motion_zg204l_keeptime - %s mode: %s" % (nwkid, sensitivity))
     if sensitivity not in (0x00, 0x01, 0x02):
         return
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
@@ -1381,7 +1381,7 @@ def tuya_motion_zg204l_sensitivity(self, nwkid, sensitivity):
     
 def tuya_motion_zg204l_keeptime(self, nwkid, keep_time):
     # {'10': 0, '30': 1, '60': 2, '120': 3}
-    self.log.logging("Tuya", "Debug", "tuya_motion_zg204l_keeptime - %s mode: %s" % (nwkid, keep_time))
+    self.log.logging("tuyaSettings", "Debug", "tuya_motion_zg204l_keeptime - %s mode: %s" % (nwkid, keep_time))
     if keep_time not in (0x00, 0x01, 0x02, 0x03 ):
         return
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
@@ -1397,9 +1397,9 @@ def tuya_motion_zg204l_keeptime(self, nwkid, keep_time):
 
 def tuya_radar_motion_sensitivity(self, nwkid, mode):
     # 00/35/0202000400000000
-    self.log.logging("Tuya", "Debug", "tuya_radar_motion_sensitivity - %s mode: %s" % (nwkid, mode))
+    self.log.logging("tuyaSettings", "Debug", "tuya_radar_motion_sensitivity - %s mode: %s" % (nwkid, mode))
     if mode > 7 and mode < 0 :
-        self.log.logging("Tuya", "Error", "tuya_radar_motion_sensitivity - %s Invalid sensitivity: %s" % (nwkid, mode))
+        self.log.logging("tuyaSettings", "Error", "tuya_radar_motion_sensitivity - %s Invalid sensitivity: %s" % (nwkid, mode))
         return 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
@@ -1414,7 +1414,7 @@ def tuya_radar_motion_sensitivity(self, nwkid, mode):
 
 def tuya_radar_motion_radar_min_range(self, nwkid, mode):
     
-    self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_min_range - %s mode: %s" % (nwkid, mode))
+    self.log.logging("tuyaSettings", "Debug", "tuya_radar_motion_radar_min_range - %s mode: %s" % (nwkid, mode))
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
 
     action = "%02x02" % 0x03
@@ -1428,9 +1428,9 @@ def tuya_radar_motion_radar_min_range(self, nwkid, mode):
         
 def tuya_radar_motion_radar_max_range(self, nwkid, mode):
     
-    self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_max_range - %s mode: %s" % (nwkid, mode))
+    self.log.logging("tuyaSettings", "Debug", "tuya_radar_motion_radar_max_range - %s mode: %s" % (nwkid, mode))
     if mode > ( 10 * 100):
-        self.log.logging("Tuya", "Error", "tuya_radar_motion_radar_max_range - %s Invalid max range: %s cm" % (nwkid, mode))
+        self.log.logging("tuyaSettings", "Error", "tuya_radar_motion_radar_max_range - %s Invalid max range: %s cm" % (nwkid, mode))
         return 
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
@@ -1446,9 +1446,9 @@ def tuya_radar_motion_radar_max_range(self, nwkid, mode):
         
 def tuya_radar_motion_radar_detection_delay(self, nwkid, mode):
     
-    self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_detection_delay - %s mode: %s" % (nwkid, mode))
+    self.log.logging("tuyaSettings", "Debug", "tuya_radar_motion_radar_detection_delay - %s mode: %s" % (nwkid, mode))
     if mode > 100 and mode < 0:
-        self.log.logging("Tuya", "Error", "tuya_radar_motion_radar_detection_delay - %s Invalid delay: %s" % (nwkid, mode))
+        self.log.logging("tuyaSettings", "Error", "tuya_radar_motion_radar_detection_delay - %s Invalid delay: %s" % (nwkid, mode))
         return 
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
@@ -1464,9 +1464,9 @@ def tuya_radar_motion_radar_detection_delay(self, nwkid, mode):
         
 def tuya_radar_motion_radar_fading_time(self, nwkid, mode):
     
-    self.log.logging("Tuya", "Debug", "tuya_radar_motion_radar_fading_time - %s mode: %s" % (nwkid, mode))
+    self.log.logging("tuyaSettings", "Debug", "tuya_radar_motion_radar_fading_time - %s mode: %s" % (nwkid, mode))
     if mode > 15000 and mode < 0:
-        self.log.logging("Tuya", "Error", "tuya_radar_motion_radar_fading_time - %s Invalid delay: %s" % (nwkid, mode))
+        self.log.logging("tuyaSettings", "Error", "tuya_radar_motion_radar_fading_time - %s Invalid delay: %s" % (nwkid, mode))
         return 
 
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
@@ -1514,7 +1514,7 @@ def tuya_smart_door_lock(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
 def ts110e_light_type( self, NwkId, mode):
     # led: 0, incandescent: 1, halogen: 2
-    self.log.logging("Tuya", "Debug", "ts110e_light_type - mode %s" % mode, NwkId)
+    self.log.logging("tuyaSettings", "Debug", "ts110e_light_type - mode %s" % mode, NwkId)
     EPout = "01"
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
@@ -1527,7 +1527,7 @@ def ts110e_switch02_type( self, NwkId, mode):
 
 def ts110e_switch_type( self, NwkId, EPout, mode):
     # momentary: 0, toggle: 1, state: 2
-    self.log.logging("Tuya", "Debug", "ts110e_switch_type - mode %s" % mode, NwkId)
+    self.log.logging("tuyaSettings", "Debug", "ts110e_switch_type - mode %s" % mode, NwkId)
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
 
@@ -1581,24 +1581,25 @@ def tuya_Move_To_Hue_Saturation_Brightness( self, NwkId, epout, hue, saturation,
     raw_APS_request(self, NwkId, epout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
 
 
-def tuya_color_grandiant(self, NwkId, epout, on_gradiant=None, off_gradiant=None):
+def tuya_color_grandiant(self, NwkId, on_gradiant=None, off_gradiant=None):
     """ Tuya specific command which allows to define the gradiant time to switch On and to Switch off """
 
-    self.log.logging("Tuya", "Debug", f"tuya_color_grandiant {NwkId}, {epout}, {on_gradiant}, {off_gradiant}", NwkId)
+    self.log.logging("tuyaSettings", "Debug", f"tuya_color_grandiant {NwkId}, {on_gradiant}, {off_gradiant}", NwkId)
 
     on_gradiant = get_device_config_param( self, NwkId, "TuyaColorGradiantOnTime") or 10
     off_gradiant = get_device_config_param( self, NwkId, "TuyaColorGradiantOffTime") or 10
 
     cmd = "fb"
+    epout = "01"
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
 
     # gradiant should be expressed in tenth of second, while Tuya expect 1s = 1000
     on_gradiant *= 100
     off_gradiant *= 100
 
-    payload = "11" + sqn + cmd + "%08x" % on_gradiant + "%6x" %off_gradiant
+    payload = "11" + sqn + cmd + "%08x" % on_gradiant + "%06x" %off_gradiant
 
-    self.log.logging("Tuya", "Debug", f"tuya_color_grandiant {NwkId}, {epout}, payload: {payload}", NwkId)
+    self.log.logging("tuyaSettings", "Debug", f"tuya_color_grandiant {NwkId}, {epout}, payload: {payload}", NwkId)
     raw_APS_request(self, NwkId, epout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
 
 

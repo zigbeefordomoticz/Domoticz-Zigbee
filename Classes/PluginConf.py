@@ -302,6 +302,7 @@ SETTINGS = {
             "onoffSettings": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "outRawAPS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "showTimeOutMsg": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "tuyaSettings": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "trackTransportError": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
             "trackZclClustersIn": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
             "trackZclClustersOut": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
