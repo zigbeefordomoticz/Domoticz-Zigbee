@@ -19,10 +19,10 @@ import Domoticz
 from Modules.tools import how_many_devices
 
 MODULES_VERSION = {
-    "zigpy": "0.62.0",
+    "zigpy": "0.62.2",
     "zigpy_znp": "0.12.1",
     "zigpy_deconz": "0.23.0",
-    "bellows": "0.37.6",
+    "bellows": "0.38.0",
     }
 
 def networksize_update(self):

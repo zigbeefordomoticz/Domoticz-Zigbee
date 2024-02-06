@@ -1,7 +1,7 @@
-zigpy==0.62.0
+zigpy==0.62.2
 zigpy_znp==0.12.1
 zigpy_deconz==0.23.0
-bellows==0.37.6
+bellows==0.38.0
 zigpy-cli==1.0.4
 dnspython==2.3.0
 pyserial>=3.5
