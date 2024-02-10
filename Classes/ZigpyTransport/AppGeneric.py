@@ -196,11 +196,11 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
     ieee = t.EUI64(ieee)
     try:
         dev = self.get_device(ieee)
-        asyncio.sleep(1)
+        time.sleep(1.0)
         self.log.logging("TransportZigpy", "Debug", "Device 0x%04x (%s) joined the network" %(nwk, ieee))
     except KeyError:
         dev = self.add_device(ieee, nwk)
-        asyncio.sleep(1)
+        time.sleep(1.0)
         self.log.logging("TransportZigpy", "Debug", "New device 0x%04x (%s) joined the network" %(nwk, ieee))
 
     if dev.nwk != nwk:
