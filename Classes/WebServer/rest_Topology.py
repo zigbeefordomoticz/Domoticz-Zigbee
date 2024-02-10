@@ -403,10 +403,10 @@ def collect_routing_table(self, time_stamp=None):
     self.logging( "Debug", "collect_routing_table - TimeStamp: %s" %time_stamp)
     for father in self.ListOfDevices:
         self.logging( "Debug", f"check {father} child from routing table")
-        for child in extract_routes(self, father, time_stamp):
-            self.logging( "Debug", f"Found child {child} from routes table") 
+        for child in set( extract_routes(self, father, time_stamp) + collect_associated_devices( self, father, time_stamp) + collect_neighbours_devices( self, father, time_stamp) ):
+            self.logging( "Debug", f"Found child {child}") 
             if child not in self.ListOfDevices:
-                self.logging( "Debug", f"Found child {child} from routes table but not found in ListOfDevices") 
+                self.logging( "Debug", f"Found child {child} but not found in ListOfDevices") 
                 continue
             _relation = {
                 "Father": get_node_name( self, father), 
@@ -417,44 +417,6 @@ def collect_routing_table(self, time_stamp=None):
             self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append( _relation ) 
-        
-        self.logging( "Debug", f"check {father} child from associated table")
-        for child in collect_associated_devices( self, father, time_stamp):
-            self.logging( "Debug", f"Found child {child} from associated devices table") 
-            if child not in self.ListOfDevices:
-                self.logging( "Debug", f"Found child {child} but not found in ListOfDevices") 
-                continue
-            _relation = {
-                "Father": get_node_name( self, father), 
-                "Child": get_node_name( self, child), 
-                "_lnkqty": get_lqi_from_neighbours(self, father, child), 
-                "DeviceType": find_device_type(self, child)
-                }
-
-            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
-                _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
-            if _relation not in _topo:
-                _topo.append( _relation )
-                
-        self.logging( "Debug", f"check {father} child from Neigbours table") 
-        for child in collect_neighbours_devices( self, father, time_stamp):
-            self.logging( "Debug", f"Found child {child} from associated devices table") 
-            if child not in self.ListOfDevices:
-                self.logging( "Debug", f"Found child {child} but not found in ListOfDevices") 
-                continue
-            _relation = {
-                "Father": get_node_name( self, father), 
-                "Child": get_node_name( self, child), 
-                "_lnkqty": get_lqi_from_neighbours(self, father, child), 
-                "DeviceType": find_device_type(self, child)
-                }
-
-            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
-                _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
-            if _relation not in _topo:
-                _topo.append( _relation )
-                
-        self.logging( "Debug", f"check {father} child from Neigbours table") 
 
     return _topo
 
