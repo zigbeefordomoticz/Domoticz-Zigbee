@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: z_database.py
 
@@ -490,8 +497,12 @@ def checkDevices2LOD(self, Devices):
 
 def checkListOfDevice2Devices(self, Devices):
     for widget_idx, widget_info in self.ListOfDomoticzWidget.items():
+        self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {type(widget_idx)} - {widget_info} {type(widget_info)}")
+        
         device_id = widget_info["DeviceID"]
         widget_name = widget_info["Name"]
+
+        self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {device_id} {widget_name}")
 
         if len(device_id) == 4 or device_id.startswith(("Zigate-01-", "Zigate-02-", "Zigate-03-")):
             continue

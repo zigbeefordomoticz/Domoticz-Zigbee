@@ -97,7 +97,8 @@ class GroupsManagement(object):
         IEEE2NWK,
         DeviceConf,
         log,
-        readZclClusters
+        readZclClusters,
+        pluginParameters
     ):
         self.zigbee_communication = zigbee_communitation
         self.HB = 0
@@ -120,6 +121,7 @@ class GroupsManagement(object):
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
         self.readZclClusters = readZclClusters
+        self.pluginParameters = pluginParameters
         # Check if we have to open the old format
         if os.path.isfile(self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.pck" % hardwareID):
             # We are in the Migration from Old Group Managemet to new.

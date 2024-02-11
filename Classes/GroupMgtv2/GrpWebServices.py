@@ -140,7 +140,7 @@ def transform_web_to_group_devices_list(self, WebDeviceList):
         if Nwkid in self.ListOfDevices:
             IEEE = self.ListOfDevices[Nwkid]["IEEE"]
             Ep = item["Ep"]
-            DeviceList.append([Nwkid, Ep, IEEE])
+            DeviceList.extend([Nwkid, Ep, IEEE])
     return DeviceList
 
 
@@ -164,7 +164,7 @@ def newGroup(self, GrpName, item):
 
         # Add Device ( NwkID, Ep, IEEE) to Group GrpId
         if [NwkId, Ep, IEEE] not in DevicesList:
-            DevicesList.append([NwkId, Ep, IEEE])
+            DevicesList.extend( [NwkId, Ep, IEEE] )
         self.logging("Debug", " --  --  --  -- - > Tuple to add: %s " % str([NwkId, Ep, IEEE]))
     self.logging("Debug", " --  --  -- - > GroupCreation")
     create_new_group_and_attach_devices(self, GrpId, GrpName, DevicesList)
@@ -184,7 +184,7 @@ def updateGroup(self, GrpId, item):
 
     ikea5b = Ikea5BToBeAddedToListIfExist(self, GrpId)
     if ikea5b and ikea5b not in self.ListOfGroups[GrpId]["Devices"]:
-        self.ListOfGroups[GrpId]["Devices"].append(ikea5b)
+        self.ListOfGroups[GrpId]["Devices"].extend(ikea5b)
     self.logging("Debug", " --  -- - > Existing DeviceList: %s " % ExistingDevices)
 
     WhatToDo = compare_exitsing_with_new_list(self, ExistingDevices, TargetedDevices)

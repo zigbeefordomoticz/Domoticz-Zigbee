@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 
 import json
-import os
 from time import time
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Modules.domoticzAbstractLayer import (domoticz_error_api,
-                                           domoticz_log_api,
-                                           domoticz_status_api)
+from Modules.domoticzAbstractLayer import (
+    domo_browse_widgets, domo_read_Device_Idx, domo_read_Name,
+    domoticz_error_api, retreive_widgetid_from_deviceId_unit)
 
 LIST_CLUSTERTYPE_FOR_GROUPS = ( 
     "LvlControl", "Switch", "Plug",
@@ -29,6 +34,8 @@ LIST_CLUSTERTYPE_FOR_GROUPS = (
     "FanControl", "CAC221ACMode",
 )
 
+
+  
 def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
@@ -36,134 +43,147 @@ def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
     if verb != "GET":
         return _response
 
-    device_lst = []
-    _device = {}
-    _widget = {}
-    _device["_NwkId"] = "0000"
-    _device["WidgetList"] = []
+    device_lst = [ _coordinator_infos(self) ]
 
-    _widget["_ID"] = ""
-    _widget["Name"] = ""
-    _widget["IEEE"] = "0000000000000000"
-    _widget["Ep"] = "01"
-    _widget["ZDeviceName"] = "Zigate (Coordinator)"
+    for nwkid in self.ListOfDevices:
+        if nwkid == "0000":
+            # Done just before entering in the loop
+            continue
 
+        if not _is_ikea_round_remote_or_battery_enabled_or_main_powered(self, nwkid):
+            self.logging("Log", "rest_zGroup_lst_avlble_dev - %s not a Main Powered device." % nwkid)
+            continue
+
+        if not is_ready_for_widget_infos(self, nwkid):
+            self.logging("Log", "rest_zGroup_lst_avlble_dev - %s not all infos available skiping." % nwkid)
+            continue
+        
+        device_entry = self.ListOfDevices[nwkid]
+        device_entry_endpoints = self.ListOfDevices[nwkid]["Ep"]
+
+        _device = {"_NwkId": nwkid, "WidgetList": []}
+        for ep in device_entry_endpoints:
+            if _is_ikea_round_remote(self, nwkid, ep):
+                widgetID = ""
+                for iterDev in device_entry_endpoints["01"]["ClusterType"]:
+                    if device_entry_endpoints["01"]["ClusterType"][iterDev] == "Ikea_Round_5b":
+                        widgetID = iterDev
+                        widget = _build_device_widgetList_infos( self, widgetID, ep, self.ListOfDevices[nwkid]["ZDeviceName"] )
+                        _device["WidgetList"].extend( widget )
+                if _device not in device_lst:
+                    device_lst.append(_device)
+
+                continue  # Next Ep, as we can have only 1 Ikea round per group
+
+            if is_cluster_not_for_group( self, nwkid, ep):
+                continue
+
+            if "ClusterType" in device_entry_endpoints[ep]:
+                clusterType = device_entry_endpoints[ep]["ClusterType"]
+                for widgetID in clusterType:
+                    if clusterType[widgetID] not in LIST_CLUSTERTYPE_FOR_GROUPS:
+                        continue
+
+                    widget = _build_device_widgetList_infos( self, widgetID, ep, self.ListOfDevices[nwkid]["ZDeviceName"] )
+                    _device["WidgetList"].extend( widget )
+
+        if "ClusterType" in device_entry:
+            clusterType = device_entry["ClusterType"]
+
+            for widgetID in clusterType:
+                if clusterType[widgetID] not in LIST_CLUSTERTYPE_FOR_GROUPS:
+                    continue
+
+                widget = _build_device_widgetList_infos( self, widgetID, ep, self.ListOfDevices[nwkid]["ZDeviceName"] )
+                _device["WidgetList"].extend( widget)
+
+        if _device not in device_lst:
+            device_lst.append(_device)
+
+    self.logging("Log", "Response: %s" % device_lst)
+    _response["Data"] = json.dumps(device_lst, sort_keys=True)
+
+    return _response
+
+
+def is_ready_for_widget_infos(self, nwkid):
+    return "Ep" in self.ListOfDevices[nwkid] and "ZDeviceName" in self.ListOfDevices[nwkid] and "IEEE" in self.ListOfDevices[nwkid]
+
+
+def _is_ikea_round_remote_or_battery_enabled_or_main_powered(self, nwkid):
+    """ Check if Main Powered, GroupOnBattery is enabled or we have an Ikea Round 5B """
+    return (
+        "MacCapa" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["MacCapa"] == "8e"
+        or self.pluginconf.pluginConf["GroupOnBattery"]
+        or "Type" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Type"] == "Ikea_Round_5b"
+    )
+
+
+def _is_ikea_round_remote(self, nwkid, ep):
+    return "Type" in self.ListOfDevices[nwkid] and self.ListOfDevices[nwkid]["Type"] == "Ikea_Round_5b" and ep == "01" and "ClusterType" in self.ListOfDevices[nwkid]["Ep"]["01"]
+
+
+def _coordinator_infos(self):
+    _device = {"_NwkId": "0000", "WidgetList": []}
+    _widget = {
+        "_ID": "",
+        "Name": "",
+        "IEEE": "0000000000000000",
+        "Ep": "01",
+        "ZDeviceName": "Zigate (Coordinator)",
+    }
+    _device["WidgetList"].append(_widget)
     if self.ControllerData and "IEEE" in self.ControllerData:
         _widget["IEEE"] = self.ControllerData["IEEE"]
         _device["_NwkId"] = self.ControllerData["Short Address"]
 
-    _device["WidgetList"].append(_widget)
-    device_lst.append(_device)
+    return _device
 
-    for x in self.ListOfDevices:
-        if x == "0000":
+
+def is_cluster_not_for_group( self, nwkid, ep):
+
+    return (
+        "ClusterType" not in self.ListOfDevices[nwkid]
+        and "ClusterType" not in self.ListOfDevices[nwkid]["Ep"][ep]
+        and "0004" not in self.ListOfDevices[nwkid]["Ep"][ep]
+        and "0006" not in self.ListOfDevices[nwkid]["Ep"][ep]
+        and "0008" not in self.ListOfDevices[nwkid]["Ep"][ep]
+        and "0102" not in self.ListOfDevices[nwkid]["Ep"][ep]
+        and "0201" not in self.ListOfDevices[nwkid]["Ep"][ep]
+        and "0202" not in self.ListOfDevices[nwkid]["Ep"][ep]
+    )
+
+      
+def _build_device_widgetList_infos( self, widgetID, ep, ZDeviceName ):
+    self.logging("Debug", f"_build_device_widgetList_infos - for WidgetIdx {widgetID} ep {ep} Zname {ZDeviceName}")
+    widget_list = []
+    
+    for device_ieee, unit in domo_browse_widgets(self, self.Devices): 
+        widget_idx = retreive_widgetid_from_deviceId_unit(self, self.Devices, device_ieee, unit)
+        if widget_idx != int(widgetID):
             continue
-
-        if "MacCapa" not in self.ListOfDevices[x]:
-            self.logging("Debug", "rest_zGroup_lst_avlble_dev - no 'MacCapa' info found for %s!!!!" % x)
-            continue
-
-        IkeaRemote = False
-        if self.pluginconf.pluginConf["GroupOnBattery"] or ("Type" in self.ListOfDevices[x] and self.ListOfDevices[x]["Type"] == "Ikea_Round_5b"):
-            IkeaRemote = True
-
-        if not (self.ListOfDevices[x]["MacCapa"] == "8e" or IkeaRemote):
-            self.logging("Debug", "rest_zGroup_lst_avlble_dev - %s not a Main Powered device. " % x)
-            continue
-
-        if "Ep" in self.ListOfDevices[x] and "ZDeviceName" in self.ListOfDevices[x] and "IEEE" in self.ListOfDevices[x]:
-            _device = {"_NwkId": x, "WidgetList": []}
-            for ep in self.ListOfDevices[x]["Ep"]:
-                if "Type" in self.ListOfDevices[x] and self.ListOfDevices[x]["Type"] == "Ikea_Round_5b" and ep == "01" and "ClusterType" in self.ListOfDevices[x]["Ep"]["01"]:
-                    widgetID = ""
-                    for iterDev in self.ListOfDevices[x]["Ep"]["01"]["ClusterType"]:
-                        if self.ListOfDevices[x]["Ep"]["01"]["ClusterType"][iterDev] == "Ikea_Round_5b":
-                            widgetID = iterDev
-                            for widget in self.Devices:
-                                if self.Devices[widget].ID == int(widgetID):
-                                    _widget = {
-                                        "_ID": self.Devices[widget].ID,
-                                        "Name": self.Devices[widget].Name,
-                                        "IEEE": self.ListOfDevices[x]["IEEE"],
-                                        "Ep": ep,
-                                        "ZDeviceName": self.ListOfDevices[x]["ZDeviceName"],
-                                    }
-
-                                    if _widget not in _device["WidgetList"]:
-                                        _device["WidgetList"].append(_widget)
-                                    break
-                            if _device not in device_lst:
-                                device_lst.append(_device)
-                    continue  # Next Ep
-
-                if (
-                    "ClusterType" not in self.ListOfDevices[x]
-                    and "ClusterType" not in self.ListOfDevices[x]["Ep"][ep]
-                    and "0004" not in self.ListOfDevices[x]["Ep"][ep]
-                    and "0006" not in self.ListOfDevices[x]["Ep"][ep]
-                    and "0008" not in self.ListOfDevices[x]["Ep"][ep]
-                    and "0102" not in self.ListOfDevices[x]["Ep"][ep]
-                    and "0201" not in self.ListOfDevices[x]["Ep"][ep]
-                    and "0202" not in self.ListOfDevices[x]["Ep"][ep]
-                ):
-                    continue
-
-                if "ClusterType" in self.ListOfDevices[x]["Ep"][ep]:
-                    clusterType = self.ListOfDevices[x]["Ep"][ep]["ClusterType"]
-                    for widgetID in clusterType:
-                        if clusterType[widgetID] not in LIST_CLUSTERTYPE_FOR_GROUPS:
-                            continue
-
-                        for widget in self.Devices:
-                            if self.Devices[widget].ID == int(widgetID):
-                                _widget = {}
-                                _widget["_ID"] = self.Devices[widget].ID
-                                _widget["Name"] = self.Devices[widget].Name
-                                _widget["IEEE"] = self.ListOfDevices[x]["IEEE"]
-                                _widget["Ep"] = ep
-                                _widget["ZDeviceName"] = self.ListOfDevices[x]["ZDeviceName"]
-                                if _widget not in _device["WidgetList"]:
-                                    _device["WidgetList"].append(_widget)
-
-                elif "ClusterType" in self.ListOfDevices[x]:
-                    clusterType = self.ListOfDevices[x]["ClusterType"]
-
-                    for widgetID in clusterType:
-                        if clusterType[widgetID] not in LIST_CLUSTERTYPE_FOR_GROUPS:
-                            continue
-
-                        for widget in self.Devices:
-                            if self.Devices[widget].ID == int(widgetID):
-                                _widget = {}
-                                _widget["_ID"] = self.Devices[widget].ID
-                                _widget["Name"] = self.Devices[widget].Name
-                                _widget["IEEE"] = self.ListOfDevices[x]["IEEE"]
-                                _widget["Ep"] = ep
-                                _widget["ZDeviceName"] = self.ListOfDevices[x]["ZDeviceName"]
-                                if _widget not in _device["WidgetList"]:
-                                    _device["WidgetList"].append(_widget)
-
-        if _device not in device_lst:
-            device_lst.append(_device)
-    self.logging("Debug", "Response: %s" % device_lst)
-    _response["Data"] = json.dumps(device_lst, sort_keys=True)
-    return _response
+        widget = {
+            "_ID": domo_read_Device_Idx(self,self.Devices,device_ieee,unit,),
+            "Name": domo_read_Name( self, self.Devices, device_ieee, unit, ),
+            "IEEE": device_ieee,
+            "Ep": ep,
+            "ZDeviceName": ZDeviceName,
+        }
+        widget_list.append( widget )
+    return widget_list
 
 
 def rest_rescan_group(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
     _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-    action = {}
     if verb != "GET":
         return _response
     if self.groupmgt:
         self.groupmgt.ScanAllDevicesForGroupMemberShip()
     else:
         domoticz_error_api("rest_rescan_group Group not enabled!!!")
-    action["Name"] = "Full Scan"
-    action["TimeStamp"] = int(time())
-
+    action = {"Name": "Full Scan", "TimeStamp": int(time())}
     _response["Data"] = json.dumps(action, sort_keys=True)
 
     return _response
@@ -191,7 +211,7 @@ def rest_scan_devices_for_group(self, verb, data, parameter):
     # We receive a JSON with a list of NwkId to be scaned
     data = data.decode("utf8")
     data = json.loads(data)
-    self.logging("Debug", "rest_scan_devices_for_group - Trigger GroupMemberShip scan for devices: %s " % (data))
+    self.logging("Log", "rest_scan_devices_for_group - Trigger GroupMemberShip scan for devices: %s " % (data))
     self.groupmgt.ScanDevicesForGroupMemberShip(data)
     action = {"Name": "Scan of device requested.", "TimeStamp": int(time())}
     _response["Data"] = json.dumps(action, sort_keys=True)
@@ -202,115 +222,69 @@ def rest_zGroup(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
 
-    self.logging("Debug", "rest_zGroup - ListOfGroups = %s" % str(self.groupmgt))
+    self.logging("Log", "rest_zGroup")
 
     if verb == "GET":
-        if self.groupmgt is None:
-            return _response
-
-        ListOfGroups = self.groupmgt.ListOfGroups
-        if ListOfGroups is None or len(ListOfGroups) == 0:
-            return _response
-
-        if len(parameters) == 0:
-            zgroup_lst = []
-            for itergrp in ListOfGroups:
-                #if int(itergrp,16) == self.pluginconf.pluginConf["pingViaGroup"]:
-                #    continue
-
-                self.logging("Debug", "Process Group: %s" % itergrp)
-                zgroup = {
-                    "_GroupId": itergrp,
-                    "GroupName": ListOfGroups[itergrp]["Name"],
-                    "Devices": [],
-                }
-                for itemDevice in ListOfGroups[itergrp]["Devices"]:
-                    if len(itemDevice) == 2:
-                        dev, ep = itemDevice
-                        ieee = self.ListOfDevices[dev]["IEEE"]
-
-                    elif len(itemDevice) == 3:
-                        dev, ep, ieee = itemDevice
-
-                    self.logging("Debug", "--> add %s %s %s" % (dev, ep, ieee))
-                    _dev = {"_NwkId": dev, "Ep": ep, "IEEE": ieee}
-                    zgroup["Devices"].append(_dev)
-
-                if "WidgetStyle" in ListOfGroups[itergrp]:
-                    zgroup["WidgetStyle"] = ListOfGroups[itergrp]["WidgetStyle"]
-
-                if "Cluster" in ListOfGroups[itergrp]:
-                    zgroup["Cluster"] = ListOfGroups[itergrp]["Cluster"]
-
-                # Let's check if we don't have an Ikea Remote in the group
-                if "Tradfri Remote" in ListOfGroups[itergrp]:
-                    self.logging("Debug", "--> add Ikea Tradfri Remote")
-                    _dev = {
-                        "_NwkId": ListOfGroups[itergrp]["Tradfri Remote"][
-                            "Device Addr"
-                        ],
-                        "Unit": ListOfGroups[itergrp]["Tradfri Remote"][
-                            "Device Id"
-                        ],
-                        "Ep": ListOfGroups[itergrp]["Tradfri Remote"]["Ep"],
-                        "Color Mode": ListOfGroups[itergrp]["Tradfri Remote"][
-                            "Color Mode"
-                        ],
-                    }
-                    zgroup["Devices"].append(_dev)
-                zgroup_lst.append(zgroup)
-            self.logging("Debug", "zGroup: %s" % zgroup_lst)
-            _response["Data"] = json.dumps(zgroup_lst, sort_keys=True)
-
-        elif len(parameters) == 1:
-            if parameters[0] in ListOfGroups:
-                itemGroup = parameters[0]
-                zgroup = {
-                    "_GroupId": itemGroup,
-                    "GroupName": ListOfGroups[itemGroup]["Name"],
-                    "Devices": {},
-                }
-                for itemDevice in ListOfGroups[itemGroup]["Devices"]:
-                    if len(itemDevice) == 2:
-                        dev, ep = itemDevice
-                        _ieee = self.ListOfDevices[dev]["IEEE"]
-
-                    elif len(itemDevice) == 3:
-                        dev, ep, _ieee = itemDevice
-
-                    self.logging("Debug", "--> add %s %s" % (dev, ep))
-                    zgroup["Devices"][dev] = ep
-
-                # Let's check if we don't have an Ikea Remote in the group
-                if "Tradfri Remote" in ListOfGroups[itemGroup]:
-                    self.logging("Log", "--> add Ikea Tradfri Remote")
-                    _dev = {
-                        "_NwkId": ListOfGroups[itemGroup]["Tradfri Remote"][
-                            "Device Addr"
-                        ],
-                        "Ep": "01",
-                    }
-                    # zgroup["Devices"].append(_dev)  This looks very bad. Don't know where it is coming from
-                    zgroup["Devices"][ListOfGroups[itemGroup]["Tradfri Remote"]["Device Addr"]] = "01"
-                _response["Data"] = json.dumps(zgroup, sort_keys=True)
-
-        return _response
+        return _response if self.groupmgt is None else _zgroup_get(self, parameters)
 
     if verb == "PUT":
-        _response["Data"] = None
-        if not self.groupmgt:
-            domoticz_error_api("Looks like Group Management is not enabled")
-            _response["Data"] = {}
-            return _response
+        _zgroup_put( self, data, parameters)
 
-        ListOfGroups = self.groupmgt.ListOfGroups
-        grp_lst = []
-        if len(parameters) == 0:
-            data = data.decode("utf8")
-            _response["Data"] = {}
-            self.groupmgt.process_web_request(json.loads(data))
 
-        # end if len()
-    # end if Verb=
+def _zgroup_put( self, data, parameters):
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Data"] = None
+    if not self.groupmgt:
+        domoticz_error_api("Looks like Group Management is not enabled")
+        _response["Data"] = {}
+        return _response
 
+    ListOfGroups = self.groupmgt.ListOfGroups
+    grp_lst = []
+    if len(parameters) == 0:
+        data = data.decode("utf8")
+        _response["Data"] = {}
+        self.groupmgt.process_web_request(json.loads(data))
+
+    return _response
+
+
+def _zgroup_get(self, parameters):
+    self.logging("Log", f"zgroup_get - {parameters}")
+    _response = prepResponseMessage(self, setupHeadersResponse())
+
+    ListOfGroups = self.groupmgt.ListOfGroups
+    if ListOfGroups is None:
+        return _response
+    
+    zgroup_lst = []
+    for itergrp, group_info in ListOfGroups.items():
+        self.logging("Log", f"_zgroup_get - {itergrp} {group_info}")
+        if len(parameters) == 1 and itergrp != parameters[0]:
+            continue
+
+        zgroup = {
+            "_GroupId": itergrp,
+            "GroupName": group_info.get("Name", ""),
+            "Devices": [],
+        }
+        for itemDevice in group_info.get("Devices", []):
+            if len(itemDevice) == 2:
+                dev, ep = itemDevice
+                ieee = self.ListOfDevices.get(dev, {}).get("IEEE", "")
+            elif len(itemDevice) == 3:
+                dev, ep, ieee = itemDevice
+            zgroup["Devices"].append( {"_NwkId": dev, "Ep": ep, "IEEE": ieee} )
+
+        zgroup["WidgetStyle"] = group_info.get("WidgetStyle", "")
+        zgroup["Cluster"] = group_info.get("Cluster", "")
+
+        if "Tradfri Remote" in group_info:
+            zgroup["Devices"].append(  {"_NwkId": group_info["Tradfri Remote"]} )
+
+        self.logging("Log", f"Processed Group: {itergrp} {zgroup}")
+    
+        zgroup_lst.append(zgroup)
+        
+    _response["Data"] = json.dumps(zgroup_lst, sort_keys=True)
     return _response

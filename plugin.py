@@ -132,10 +132,10 @@ from Modules.command import mgtCommand
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
-from Modules.domoticzAbstractLayer import (find_legacy_DeviceID_from_unit,
-                                           how_many_legacy_slot_available,
-                                           is_domoticz_extended,
-                                           load_list_of_domoticz_widget)
+from Modules.domoticzAbstractLayer import (
+    domo_read_Name, find_legacy_DeviceID_from_unit,
+    how_many_legacy_slot_available, is_domoticz_extended,
+    load_list_of_domoticz_widget, retreive_widgetid_from_deviceId_unit)
 from Modules.domoTools import browse_and_reset_devices_if_needed
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
@@ -643,9 +643,13 @@ class BasePlugin:
 
     
 
-    def onDeviceRemoved(self, Unit):
+    def onDeviceRemoved(self, DeviceID, Unit):
+        #TODO
         if self.log:
             self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
+
+        if not is_domoticz_extended():
+            DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
 
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
@@ -804,36 +808,33 @@ class BasePlugin:
 
     def onCommand(self, DeviceID, Unit, Command, Level, Color):
         
-        if (
-            not self.VersionNewFashion
-            or self.pluginconf is None
-            or not self.log
-        ):
-            # Not yet ready
+        if ( not self.VersionNewFashion or self.pluginconf is None or not self.log ):
+            # Not yet ready, plugin not fully started, we drop the command
             return
 
         self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
         if not is_domoticz_extended():
             DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
-
+        
+        self.log.logging( "Command", "Log", f"Command: {DeviceID} {Unit}" )
+        
         # Let's check if this is End Node, or Group related.
         if DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
             mgtCommand(self, Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
 
-        elif self.groupmgt:
-            # if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
-            #    # Command belongs to a Zigate group
-            self.log.logging( "Command", "Debug", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, Devices[Unit].DeviceID), )
-            self.groupmgt.processCommand(Unit, Devices[Unit].DeviceID, Command, Level, Color)
+        elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+            # Command belongs to a Zigate group
+            self.log.logging( "Command", "Log", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, DeviceID), )
+            self.groupmgt.processCommand(Unit, DeviceID, Command, Level, Color)
 
-        elif Devices[Unit].DeviceID.find("Zigate-01-") != -1:
+        elif DeviceID.find("Zigate-01-") != -1:
             self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
             self.adminWidgets.handleCommand(self, Command)
 
         else:
-            self.log.logging( "Command", "Error", "onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" % (Devices[Unit].Name, Unit, Devices[Unit].DeviceID), )
+            self.log.logging( "Command", "Error", "onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" % (domo_read_Name( self, Devices, DeviceID, Unit, ), Unit, DeviceID), )
 
     def onDisconnect(self, Connection):
 
@@ -1056,7 +1057,8 @@ def _start_native_wifi_zigate(self):
 def _start_zigpy_ZNP(self):
     import zigpy
     import zigpy_znp
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
 
     from Classes.ZigpyTransport.Transport import ZigpyTransport
 
@@ -1077,7 +1079,8 @@ def _start_zigpy_ZNP(self):
 def _start_zigpy_deConz(self):
     import zigpy
     import zigpy_deconz
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
 
     from Classes.ZigpyTransport.Transport import ZigpyTransport
 
@@ -1094,7 +1097,8 @@ def _start_zigpy_deConz(self):
 def _start_zigpy_EZSP(self):
     import bellows
     import zigpy
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
 
     from Classes.ZigpyTransport.Transport import ZigpyTransport
 
@@ -1334,7 +1338,8 @@ def start_GrpManagement(self, homefolder):
         self.IEEE2NWK,
         self.DeviceConf, 
         self.log,
-        self.readZclClusters
+        self.readZclClusters,
+        self.pluginParameters,
     )
     if self.groupmgt and self.ControllerIEEE:
         self.groupmgt.updateZigateIEEE(self.ControllerIEEE)
