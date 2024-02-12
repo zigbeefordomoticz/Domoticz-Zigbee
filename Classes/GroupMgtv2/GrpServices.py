@@ -6,6 +6,7 @@
 
 from time import time
 
+from Classes.GroupMgtv2.GrpCallBackResponses import checkToCreateOrUpdateGroup
 from Classes.GroupMgtv2.GrpCommands import (
     add_group_member_ship, check_group_member_ship, look_for_group_member_ship,
     remove_group_member_ship, send_group_member_ship_identify_effect)
@@ -131,19 +132,11 @@ def addGroupMemberShip(self, NwkId, Ep, GroupId):
 
 
 def add_group_member_ship_from_remote(self, NwkId, Ep, GroupId):
-    # This is clall from plugin, when setting a group membership of a Legrand Remote
-    from Classes.GroupMgtv2.GrpCallBackResponses import \
-        checkToCreateOrUpdateGroup
 
-    if "GroupMemberShip" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["GroupMemberShip"] = {}
-    if Ep not in self.ListOfDevices[NwkId]["GroupMemberShip"]:
-        self.ListOfDevices[NwkId]["GroupMemberShip"][Ep] = {}
-    if GroupId not in self.ListOfDevices[NwkId]["GroupMemberShip"][Ep]:
-        self.ListOfDevices[NwkId]["GroupMemberShip"][Ep][GroupId] = {}
-    self.ListOfDevices[NwkId]["GroupMemberShip"][Ep][GroupId]["Status"] = "OK"
+    # This is called from a plugin when setting group membership for a Legrand Remote
+    group_membership = self.ListOfDevices.setdefault(NwkId, {}).setdefault("GroupMemberShip", {})
+    group_membership.setdefault(Ep, {})[GroupId] = {"Status": "OK"}
     checkToCreateOrUpdateGroup(self, NwkId, Ep, GroupId)
-
 
 def get_available_grp_id(self, start_range, stop_range):
     for x in range(start_range, stop_range, -1):
@@ -163,7 +156,7 @@ def create_new_group_and_attach_devices(self, GrpId, GrpName, DevicesList):
 
 
 def update_group_and_add_devices(self, GrpId, ToBeAddedDevices):
-    self.logging("Debug", " --  --  --  --  --  > UpdateGroupAndAddDevices ")
+    self.logging("Debug", f" --  --  --  --  --  > UpdateGroupAndAddDevices {GrpId} {ToBeAddedDevices}")
     for NwkId, ep, ieee in ToBeAddedDevices:
         NwkId = checkNwkIdAndUpdateIfAny(self, NwkId, ieee)
         # Ikea Tradfri Round5B will be added if required by checkIfIkeaRound5B
@@ -173,7 +166,7 @@ def update_group_and_add_devices(self, GrpId, ToBeAddedDevices):
 
 
 def update_group_and_remove_devices(self, GrpId, ToBeRemoveDevices):
-    self.logging("Debug", " --  --  --  --  --  > UpdateGroupAndRemoveDevices ")
+    self.logging("Debug", f" --  --  --  --  --  > UpdateGroupAndRemoveDevices {GrpId} {ToBeRemoveDevices}")
     for NwkId, ep, ieee in ToBeRemoveDevices:
         self.logging("Debug", "-- --  --  --  --  --  > Removing [%s %s %s]" % (NwkId, ep, ieee))
         NwkId = checkNwkIdAndUpdateIfAny(self, NwkId, ieee)

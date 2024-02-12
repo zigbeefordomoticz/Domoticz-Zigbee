@@ -644,65 +644,43 @@ class BasePlugin:
     
 
     def onDeviceRemoved(self, DeviceID, Unit):
-        #TODO
+        if not self.ControllerIEEE:
+            self.log.logging( "Plugin", "Error", "onDeviceRemoved - too early, coordinator and plugin initialisation not completed", )
+
         if self.log:
             self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
 
         if not is_domoticz_extended():
             DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
 
+        device_name = domo_read_Name( self, Devices, DeviceID, Unit, )
+        
         # Let's check if this is End Node, or Group related.
-        if Devices[Unit].DeviceID in self.IEEE2NWK:
-            IEEE = Devices[Unit].DeviceID
-            NwkId = self.IEEE2NWK[IEEE]
+        if DeviceID in self.IEEE2NWK:
+            NwkId = self.IEEE2NWK[DeviceID]
 
-            # Command belongs to a end node
-            self.log.logging("Plugin", "Status", "onDeviceRemoved - removing End Device")
-            fullyremoved = removeDeviceInList(self, Devices, Devices[Unit].DeviceID, Unit)
+            self.log.logging("Plugin", "Status", f"Removing Device {DeviceID} {device_name} in progress")
+            fullyremoved = removeDeviceInList(self, Devices, DeviceID, Unit)
 
             # We might have to remove also the Device from Groups
-            if fullyremoved and self.groupmgt:
-                self.groupmgt.RemoveNwkIdFromAllGroups(NwkId)
-
-            # We should call this only if All Widgets have been remved !
             if fullyremoved:
-                # Let see if enabled if we can fully remove this object from Zigate
-                if self.pluginconf.pluginConf["allowRemoveZigateDevice"]:
-                    IEEE = Devices[Unit].DeviceID
-                    # sending a Leave Request to device, so the device will send a leave
-                    leaveRequest(self, ShortAddr=NwkId, IEEE=IEEE)
+                if self.groupmgt:
+                    self.groupmgt.RemoveNwkIdFromAllGroups(NwkId)
 
-                    # for a remove in case device didn't send the leave
-                    if self.ControllerIEEE:
-                        #sendZigateCmd(self, "0026", self.ControllerIEEE + IEEE)
-                        zigate_remove_device(self, str(self.ControllerIEEE), str(IEEE) )
-                        self.log.logging(
-                            "Plugin",
-                            "Status",
-                            "onDeviceRemoved - removing Device %s -> %s from coordinator" % (Devices[Unit].Name, IEEE),
-                        )
-                    else:
-                        self.log.logging(
-                            "Plugin",
-                            "Error",
-                            "onDeviceRemoved - too early, coordinator and plugin initialisation not completed",
-                        )
-                else:
-                    self.log.logging(
-                        "Plugin",
-                        "Status",
-                        "onDeviceRemoved - device entry %s from coordinator not removed. You need to enable 'allowRemoveZigateDevice' parameter. Do consider that it works only for main powered devices."
-                        % Devices[Unit].DeviceID,
-                    )
+                # sending a Leave Request to device, so the device will send a leave
+                leaveRequest(self, ShortAddr=NwkId, IEEE=DeviceID)
 
-            self.log.logging("Plugin", "Debug", "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
+                # for a remove in case device didn't send the leave
+                zigate_remove_device(self, str(self.ControllerIEEE), str(DeviceID) )
+                self.log.logging( "Plugin", "Status", f"Request device {device_name} -> {DeviceID} to be removed from coordinator" )
+
+            self.log.logging("Plugin", "Debug", f"ListOfDevices :After REMOVE {self.ListOfDevices}")
             load_list_of_domoticz_widget(self, Devices)
             return
 
-        if self.groupmgt and Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
-            self.log.logging("Plugin", "Status", "onDeviceRemoved - removing Group of Devices")
-            # Command belongs to a Zigate group
-            self.groupmgt.FullRemoveOfGroup(Unit, Devices[Unit].DeviceID)
+        if self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+            self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be remove from Group(s)")
+            self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
 
     def onConnect(self, Connection, Status, Description):
 
@@ -1531,9 +1509,9 @@ def onStop():
     _plugin.onStop()
 
 
-def onDeviceRemoved(Unit):
+def onDeviceRemoved(DeviceID, Unit):
     global _plugin  # pylint: disable=global-variable-not-assigned
-    _plugin.onDeviceRemoved(Unit)
+    _plugin.onDeviceRemoved(DeviceID, Unit)
 
 
 def onConnect(Connection, Status, Description):

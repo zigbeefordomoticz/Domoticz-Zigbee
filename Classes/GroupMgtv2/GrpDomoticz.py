@@ -569,7 +569,6 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         "Cluster" in self.ListOfGroups[GrpId]
         and self.ListOfGroups[GrpId]["Cluster"] == "0102"
     ):  # Venetian store
-        #zigate_cmd = "00FA"
         if Command in ( "Off", "Close", ):
             nValue = 0
             sValue = "Off"
@@ -615,19 +614,13 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         update_domoticz_group_device(self, GrpId)
 
     elif Command in ( "On", "Open", ):
-        #zigate_cmd = "0092"
-        #zigate_param = "01"
-        nValue = "1"
+        nValue = 1
         sValue = "On"
         domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
         update_device_list_attribute(self, GrpId, "0006", "01")
         update_domoticz_group_device(self, GrpId)
         zcl_group_onoff_on(self, GrpId, ZIGATE_EP, EPout)
-
-        nValue = 1
-        sValue = "On"
-        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
     elif Command in ( "Stop",) and self.ListOfGroups[GrpId]["Cluster"] == "0102":
         # Windowscovering Stop

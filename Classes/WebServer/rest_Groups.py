@@ -51,11 +51,11 @@ def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
             continue
 
         if not _is_ikea_round_remote_or_battery_enabled_or_main_powered(self, nwkid):
-            self.logging("Log", "rest_zGroup_lst_avlble_dev - %s not a Main Powered device." % nwkid)
+            self.logging("Debug", "rest_zGroup_lst_avlble_dev - %s not a Main Powered device." % nwkid)
             continue
 
         if not is_ready_for_widget_infos(self, nwkid):
-            self.logging("Log", "rest_zGroup_lst_avlble_dev - %s not all infos available skiping." % nwkid)
+            self.logging("Debug", "rest_zGroup_lst_avlble_dev - %s not all infos available skiping." % nwkid)
             continue
         
         device_entry = self.ListOfDevices[nwkid]
@@ -100,7 +100,7 @@ def rest_zGroup_lst_avlble_dev(self, verb, data, parameters):
         if _device not in device_lst:
             device_lst.append(_device)
 
-    self.logging("Log", "Response: %s" % device_lst)
+    self.logging("Debug", "Response: %s" % device_lst)
     _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
     return _response
@@ -211,7 +211,7 @@ def rest_scan_devices_for_group(self, verb, data, parameter):
     # We receive a JSON with a list of NwkId to be scaned
     data = data.decode("utf8")
     data = json.loads(data)
-    self.logging("Log", "rest_scan_devices_for_group - Trigger GroupMemberShip scan for devices: %s " % (data))
+    self.logging("Debug", "rest_scan_devices_for_group - Trigger GroupMemberShip scan for devices: %s " % (data))
     self.groupmgt.ScanDevicesForGroupMemberShip(data)
     action = {"Name": "Scan of device requested.", "TimeStamp": int(time())}
     _response["Data"] = json.dumps(action, sort_keys=True)
@@ -222,7 +222,7 @@ def rest_zGroup(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
 
-    self.logging("Log", "rest_zGroup")
+    self.logging("Log", f"rest_zGroup {verb} {data} {parameters}")
 
     if verb == "GET":
         return _response if self.groupmgt is None else _zgroup_get(self, parameters)
@@ -250,7 +250,7 @@ def _zgroup_put( self, data, parameters):
 
 
 def _zgroup_get(self, parameters):
-    self.logging("Log", f"zgroup_get - {parameters}")
+    self.logging("Debug", f"zgroup_get - {parameters}")
     _response = prepResponseMessage(self, setupHeadersResponse())
 
     ListOfGroups = self.groupmgt.ListOfGroups
@@ -259,7 +259,7 @@ def _zgroup_get(self, parameters):
     
     zgroup_lst = []
     for itergrp, group_info in ListOfGroups.items():
-        self.logging("Log", f"_zgroup_get - {itergrp} {group_info}")
+        self.logging("Debug", f"_zgroup_get - {itergrp} {group_info}")
         if len(parameters) == 1 and itergrp != parameters[0]:
             continue
 
@@ -282,7 +282,7 @@ def _zgroup_get(self, parameters):
         if "Tradfri Remote" in group_info:
             zgroup["Devices"].append(  {"_NwkId": group_info["Tradfri Remote"]} )
 
-        self.logging("Log", f"Processed Group: {itergrp} {zgroup}")
+        self.logging("Debug", f"Processed Group: {itergrp} {zgroup}")
     
         zgroup_lst.append(zgroup)
         
