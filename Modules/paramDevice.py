@@ -23,6 +23,7 @@ from Modules.basicOutputs import (ballast_Configuration_max_level,
 from Modules.danfoss import (danfoss_covered, danfoss_exercise_day_of_week,
                              danfoss_exercise_trigger_time,
                              danfoss_orientation, danfoss_viewdirection)
+from Modules.ias_settings import IAS_DEVICE_PARAMETERS
 from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
                                      legrand_enable_Led_IfOn_by_nwkid,
                                      legrand_enable_Led_InDark_by_nwkid,
@@ -85,6 +86,7 @@ def sanity_check_of_param(self, NwkId):
     # Load specific settings
     DEVICE_PARAMETERS.update(ONOFF_DEVICE_PARAMETERS)
     DEVICE_PARAMETERS.update(OCCUPANCY_DEVICE_PARAMETERS)
+    DEVICE_PARAMETERS.update(IAS_DEVICE_PARAMETERS)
     
     # Load Manufacturer specific settings
     DEVICE_PARAMETERS.update(SONOFF_DEVICE_PARAMETERS)
