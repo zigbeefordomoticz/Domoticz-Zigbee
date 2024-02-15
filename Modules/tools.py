@@ -25,7 +25,7 @@ from pathlib import Path
 from Modules.database import WriteDeviceList
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.zigateConsts import HEARTBEAT
-from Modules.domoticzAbstractLayer import domo_read_Device_Idx
+from Modules.domoticzAbstractLayer import domo_read_Device_Idx, domo_read_Name
 
 
 def is_hex(s):
@@ -331,7 +331,7 @@ def removeDeviceInList(self, Devices, IEEE, Unit):
 
     nwkid = self.IEEE2NWK[IEEE]
     ID = domo_read_Device_Idx(self, Devices, IEEE, Unit,)
-
+    widget_name = domo_read_Name( self, Devices, IEEE, Unit, )
     if ( "ClusterTye" in self.ListOfDevices[nwkid] ):  
         # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
         if str(ID) in self.ListOfDevices[nwkid]["ClusterType"]:
@@ -367,9 +367,9 @@ def removeDeviceInList(self, Devices, IEEE, Unit):
         self.ListOfDevices[nwkid]["Status"] = "Removed"
 
         self.adminWidgets.updateNotificationWidget(
-            Devices, "Device fully removed %s with IEEE: %s" % (Devices[Unit].Name, IEEE)
+            Devices, "Device fully removed %s with IEEE: %s" % (widget_name, IEEE)
         )
-        self.log.logging("PluginTools", "Status", "Device %s with IEEE: %s fully removed from the system." % (Devices[Unit].Name, IEEE))
+        self.log.logging("PluginTools", "Status", "Device %s with IEEE: %s fully removed from the system." % (widget_name, IEEE))
         return True
     return False
 

@@ -22,6 +22,22 @@ DEVICEID_STATUS_WIDGET_TXT = "Zigate Status"
 DEVICEID_TXT_WIDGET_TXT = "Zigate Notifications"
 
 
+def _get_switch_selector_options(self, ):
+    if self.pluginconf.pluginConf["eraseZigatePDM"]:
+        return {
+            "LevelActions": "|||||||",
+            "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrollment|Perm. Enrollment|Interf Scan|LQI Report|Erase PDM",
+            "LevelOffHidden": "true",
+            "SelectorStyle": "0",
+        }
+        
+    return {
+            "LevelActions": "|||||||",
+            "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolmennt|Perm. Enrollment|Interf Scan|LQI Report",
+            "LevelOffHidden": "true",
+            "SelectorStyle": "0",
+        }
+
 class AdminWidgets:
     def __init__(self, log, PluginConf, pluginParameters, Devices, ListOfDevices, HardwareID):
 
@@ -38,28 +54,13 @@ class AdminWidgets:
     def createAdminWidget(self, Devices):
 
         deviceid_admin_widget = DEVICEID_ADMIN_WIDGET + "%02s" % self.HardwareID
-        
+
         if find_first_unit_widget_from_deviceID(self, Devices, deviceid_admin_widget ):
             return
-        
-        if self.pluginconf.pluginConf["eraseZigatePDM"]:
-            Options = {
-                "LevelActions": "|||||||",
-                "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrollment|Perm. Enrollment|Interf Scan|LQI Report|Erase PDM",
-                "LevelOffHidden": "true",
-                "SelectorStyle": "0",
-            }
-        else:
-            Options = {
-                "LevelActions": "|||||||",
-                "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolmennt|Perm. Enrollment|Interf Scan|LQI Report",
-                "LevelOffHidden": "true",
-                "SelectorStyle": "0",
-            }
 
         widget_name = DEVICEID_ADMIN_WIDGET_TXT + " %02s" % self.HardwareID
         unit = FreeUnit(self, Devices, deviceid_admin_widget, nbunit_=1)
-        ID = domo_create_api(self, Devices, deviceid_admin_widget, unit, widget_name, Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=Options,)
+        ID = domo_create_api(self, Devices, deviceid_admin_widget, unit, widget_name, Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=_get_switch_selector_options(self))
         if ID == -1:
             domoticz_error_api("createAdminWidget - Fail to create %s." % (widget_name))
         return
@@ -143,3 +144,5 @@ class AdminWidgets:
 
     def handleCommand(self, Command):
         return
+
+

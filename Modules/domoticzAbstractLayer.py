@@ -355,14 +355,7 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
             Type_ = 244
             Subtype_ = 62
             Switchtype_ = 18
-        myDev = domoticz_device_api_class( 
-            DeviceID=DeviceID_, 
-            Name=Name_, 
-            Unit=Unit_, 
-            Type=Type_, 
-            Subtype=Subtype_, 
-            Switchtype=Switchtype_,
-            Options=widgetOptions,)
+        myDev = domoticz_device_api_class( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, Switchtype=Switchtype_,Options=widgetOptions,)
                
     elif Image:     
         self.log.logging("AbstractDz", "Debug", "- based on Image %s" %Image)     
