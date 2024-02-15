@@ -482,11 +482,13 @@ def domo_update_witchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0,
         DeviceID_, Unit_, Type_, Subtype_, Switchtype_))
 
     if DOMOTICZ_EXTENDED_API:
-        Devices[DeviceID_].Units[Unit_].Type = Type_
-        Devices[DeviceID_].Units[Unit_].SubType = Subtype_
-        Devices[DeviceID_].Units[Unit_].SwitchType = Switchtype_
-        Devices[DeviceID_].Units[Unit_].Update(Log=True)
+        # Due to bug https://github.com/domoticz/domoticz/issues/6027 (on extended Framework )
         return
+        # Devices[DeviceID_].Units[Unit_].Type = Type_
+        # Devices[DeviceID_].Units[Unit_].SubType = Subtype_
+        # Devices[DeviceID_].Units[Unit_].SwitchType = Switchtype_
+        # Devices[DeviceID_].Units[Unit_].Update(Log=True)
+        # return
     
     nValue = Devices[Unit_].nValue
     sValue = Devices[Unit_].sValue
