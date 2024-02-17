@@ -624,6 +624,10 @@ def handle_device_specific_needs(self, Devices, NWKID):
     if "Model" not in self.ListOfDevices[NWKID]:
         return
 
+    # Do the Magic Read Attributes
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "TUYA_MAGIC_READ_ATTRIBUTES", return_default=False):
+        ReadAttributeRequest_0000_for_tuya( self, NWKID)
+
     # Tuya_regitration ?
     tuya_registration_parameter = get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "TUYA_REGISTRATION", return_default=None)
     ty_data_request = get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "TUYA_RESET_CMD", return_default=False) 
