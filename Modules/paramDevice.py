@@ -10,12 +10,6 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-"""
-    Module: paramDevice.py
-
-    Description: implement the parameter device specific
-
-"""
 
 from DevicesModules.custom_sonoff import SONOFF_DEVICE_PARAMETERS
 from Modules.basicOutputs import (ballast_Configuration_max_level,

@@ -11,12 +11,6 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 from Modules.basicOutputs import write_attribute
-from Modules.enki import enki_set_poweron_after_offon_device, is_enky_device
-from Modules.philips import is_philips_device
-from Modules.readAttributes import ReadAttributeRequest_0006_400x
-from Modules.tools import get_deviceconf_parameter_value, getListOfEpForCluster
-from Modules.tuya import (get_tuya_attribute, is_tuya_switch_relay,
-                          tuya_switch_relay_status)
 from Modules.zigateConsts import ZIGATE_EP
 
 IAS_CLUSTER_ID = "0500"

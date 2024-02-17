@@ -11,7 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 from Modules.basicOutputs import write_attribute
-from Modules.enki import enki_set_poweron_after_offon_device, is_enky_device
+from Modules.enki import is_enky_device
 from Modules.philips import is_philips_device
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
 from Modules.tools import get_deviceconf_parameter_value, getListOfEpForCluster
@@ -135,12 +135,11 @@ def common_onoff_startup_onoff_mode(self, nwkid, mode):
         ListOfEp = ["0b",]
 
     elif is_enky_device(self, nwkid):   # Enki Leroy Merlin
-        enki_set_poweron_after_offon_device(self, mode, nwkid)
-        return
+        ListOfEp = ["01",]
     
     elif is_tuya_switch_relay(self, nwkid):
         if get_tuya_attribute(self, nwkid, "RelayStatus") != mode:
-            tuya_switch_relay_status(self, nwkid, mode)
+            tuya_switch_relay_status(self, nwkid, status=mode)
         return        
         
     else:
