@@ -66,6 +66,11 @@ def onoff_startup_onoff_mode(self, nwkid, ep, value):
 
     self.log.logging( "onoffSettings", "Debug", f"onoff_startup_onoff_mode for {nwkid}/{ep} - value: {value}", nwkid )
 
+    if isinstance(value, str):
+        old_value = value
+        value = int(value)
+        self.log.logging( "onoffSettings", "Log", f"onoff_startup_onoff_mode for {nwkid}/{ep} - value: {old_value} converted to {value}", nwkid )
+
     write_attribute( 
         self, 
         nwkid,
