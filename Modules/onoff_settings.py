@@ -14,7 +14,8 @@ from Modules.basicOutputs import write_attribute
 from Modules.enki import is_enky_device
 from Modules.philips import is_philips_device
 from Modules.readAttributes import ReadAttributeRequest_0006_400x
-from Modules.tools import get_deviceconf_parameter_value, getListOfEpForCluster
+from Modules.tools import (get_deviceconf_parameter_value,
+                           getListOfEpForCluster, is_int)
 from Modules.tuya import (get_tuya_attribute, is_tuya_switch_relay,
                           tuya_switch_relay_status)
 from Modules.zigateConsts import ZIGATE_EP
@@ -67,9 +68,13 @@ def onoff_startup_onoff_mode(self, nwkid, ep, value):
     self.log.logging( "onoffSettings", "Debug", f"onoff_startup_onoff_mode for {nwkid}/{ep} - value: {value}", nwkid )
 
     if isinstance(value, str):
-        old_value = value
-        value = int(value)
-        self.log.logging( "onoffSettings", "Log", f"onoff_startup_onoff_mode for {nwkid}/{ep} - value: {old_value} converted to {value}", nwkid )
+        if is_int(value):
+            old_value = value
+            value = int(value)
+            self.log.logging( "onoffSettings", "Log", f"onoff_startup_onoff_mode for {nwkid}/{ep} - value: {old_value} converted to {value}", nwkid )
+        else:
+            self.log.logging( "onoffSettings", "Error", f"onoff_startup_onoff_mode for {nwkid}/{ep} - value error {value}", nwkid )
+            return
 
     write_attribute( 
         self, 
