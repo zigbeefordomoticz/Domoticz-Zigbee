@@ -240,7 +240,7 @@ def ezsp_configuration_setup(self, conf, serialPort):
 def znp_configuration_setup(self, conf, serialPort):
         
     config = {
-        conf.CONF_DEVICE: {"path": serialPort,}, 
+        conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, 
         conf.CONF_NWK: {},
         conf.CONF_ZNP_CONFIG: { },
         zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
@@ -256,7 +256,7 @@ def znp_configuration_setup(self, conf, serialPort):
 
 def deconz_configuration_setup(self, conf, serialPort):
     return {
-        conf.CONF_DEVICE: {"path": serialPort},
+        conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200},
         conf.CONF_NWK: {},
         zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
         # zigpy.config.CONF_STARTUP_ENERGY_SCAN: False
