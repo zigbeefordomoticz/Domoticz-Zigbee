@@ -17,8 +17,10 @@ from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.readAttributes import ReadAttributeRequest_0b04_050b
-from Modules.tools import (checkAndStoreAttributeValue, getListOfEpForCluster,
-                           is_ack_tobe_disabled, voltage2batteryP)
+from Modules.tools import (checkAndStoreAttributeValue,
+                           get_deviceconf_parameter_value,
+                           getListOfEpForCluster, is_ack_tobe_disabled,
+                           voltage2batteryP)
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, SIZE_DATA_TYPE, ZIGATE_EP
 
 XIAOMI_POWERMETER_EP = {
@@ -680,8 +682,6 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
     # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
     
-    # . 0328130521330008213 6010a2100000c2014102001122000 652001 662003 672000 682000 692001 6a2001 6b2003
-
     sBatteryLvl = retreive4Tag("0121", MsgClusterData)  # 16BitUint
     sTemp2 = retreive4Tag("0328", MsgClusterData)  # Device Temperature (int8)
     sModeSwitch = retreive4Tag("0421", MsgClusterData)  # Mode Switch4: 'anti_flicker_mode', 1: 'quick_mode'
@@ -704,7 +704,8 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     sVoltage = retreive8Tag("9639", MsgClusterData)  # Voltage
     sCurrent = retreive8Tag("9739", MsgClusterData)  # Ampere
     sPower = retreive8Tag("9839", MsgClusterData)  # Power Watt
-    
+    sConsumerConnected = retreive4Tag("9b10", MsgClusterData)[:2]
+
     # "lumi.motion.ac01"
     # 0328180521010008213/ 6010a2100000c2014102001122000 652001/ 662003/ 672000/ 682000/ 692001/ 6a2001/ 6b2003
     sPresence = retreive4Tag("6520", MsgClusterData)[:2]
@@ -714,7 +715,6 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     sApproachDistance = retreive4Tag("6920", MsgClusterData)[:2]
     s6a = retreive4Tag("6a20", MsgClusterData)[:2]
     s6b = retreive4Tag("6b20", MsgClusterData)[:2]
-
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac02":
         # "lumi.motion.ac02"
@@ -744,7 +744,6 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             store_lumi_attribute(self, MsgSrcAddr, "TriggerIndicator", sTriggerIndicator)
             self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s TriggerIndicator %s/%s" % (
                 MsgClusterId, MsgAttrID, MsgSrcAddr, sTriggerIndicator, int(sTriggerIndicator,16)), MsgSrcAddr, )
-
 
     if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.motion.ac01":
         if s68 != "":
@@ -787,7 +786,7 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.curtain.acn002":
         sBatteryLvl = retreive4Tag("6521", MsgClusterData)
         sHumid = ""
-            
+
     if sCountEvent != "":
         value = int(sCountEvent, 16)
         store_lumi_attribute(self, MsgSrcAddr, "EventCounter", value)
@@ -800,71 +799,90 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         )
 
     if sTemp2 != "":
-        self.log.logging(
-            "Lumi",
-            "Debug",
-            "lumi_private_cluster - %s/%s Saddr: %s sTemp2 %s Temp2 %s"
-            % (MsgClusterId, MsgAttrID, MsgSrcAddr, sTemp2, int(sTemp2, 16)),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s sTemp2 %s Temp2 %s" % (
+            MsgClusterId, MsgAttrID, MsgSrcAddr, sTemp2, int(sTemp2, 16)), MsgSrcAddr,)
         store_lumi_attribute(self, MsgSrcAddr, "DeviceTemperature", round(int(sTemp2, 16) / 100, 1))
+
+    if sConsumerConnected != "":
+        self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s sConsumerConnected %s" % (
+            MsgClusterId, MsgAttrID, MsgSrcAddr, sConsumerConnected), MsgSrcAddr,)
+        store_lumi_attribute(self, MsgSrcAddr, "ConsumerConnected", sConsumerConnected)
 
     if sConsumption != "":
         # Consumption/Summation
-        consumption = (struct.unpack("f", struct.pack(">I", int(sConsumption, 16)))[0]) * 1000
-        self.log.logging(
-            "Lumi",
-            "Debug",
-            "lumi_private_cluster - %s/%s Saddr: %s sConsumption %s Consumption %s"
-            % (MsgClusterId, MsgAttrID, MsgSrcAddr, sConsumption, consumption),
-        )
+        multiplier = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "SummationMeteringMultiplier")
+        divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "SummationMeteringDivisor")
+        if multiplier is None:
+            multiplier = 1000
+        if divisor is None:
+            divisor = 1
+
+        consumption = (struct.unpack("f", struct.pack(">I", int(sConsumption, 16)))[0])
+        consumption = round( (( consumption * multiplier ) / divisor ), 3)
+        
+        self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s sConsumption %s Consumption %s Multiplier: %s Divisor: %s" % (
+            MsgClusterId, MsgAttrID, MsgSrcAddr, sConsumption, consumption, multiplier, divisor ), )
         store_lumi_attribute(self, MsgSrcAddr, "Consumption", consumption)
-        if model in XIAOMI_POWERMETER_EP:
-            EPforMeter = XIAOMI_POWERMETER_EP[model]
-        else:
-            EPforMeter = MsgSrcEp
-        checkAndStoreAttributeValue(self, MsgSrcAddr, EPforMeter, "0702", "0000", consumption)
+        
+        EPforPower = get_xiaomi_metering_ep( self, MsgSrcAddr, MsgSrcEp, model )
+        checkAndStoreAttributeValue(self, MsgSrcAddr, EPforPower, "0702", "0000", consumption)
 
     if sVoltage != "":
+        divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "RMSVoltageDivisor")
+        multiplier = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "RMSVoltageMultiplier")
+        if multiplier is None:
+            multiplier = 1
+        if divisor is None:
+            divisor = 1
         voltage = struct.unpack("f", struct.pack(">I", int(sVoltage, 16)))[0]
-        self.log.logging(
-            "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s Voltage %s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, voltage)
-        )
+        voltage = round( (( voltage * multiplier ) / divisor ), 3)
+        
+        self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s Voltage %s multiplier %s divisor %s" % (
+            MsgClusterId, MsgAttrID, MsgSrcAddr, voltage, multiplier, divisor ) )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0001", "0000", voltage)
         store_lumi_attribute(self, MsgSrcAddr, "Voltage", voltage)
         # Update Voltage ( cluster 0001 )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0001", voltage)
 
     if sCurrent != "":
+        divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "RMSCurrentDivisor")
+        multiplier = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "RMSCurrentMultiplier")
+        if multiplier is None:
+            multiplier = 1
+        if divisor is None:
+            divisor = 1
+
         current = struct.unpack("f", struct.pack(">I", int(sCurrent, 16)))[0]
-        self.log.logging(
-            "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s Courant %s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, current)
-        )
+        current = round( (( current * multiplier ) / divisor ), 3 )
+
+        self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s Courant %s %s multiplier %s divisor %s" % (
+            MsgClusterId, MsgAttrID, MsgSrcAddr, sCurrent, current, multiplier, divisor ) )
+
         store_lumi_attribute(self, MsgSrcAddr, "Current", current)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0b04", current, Attribute_="0508" )
 
     if sPower != "":
+        multiplier = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "PowerMeteringMultiplier")
+        divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "PowerMeteringDivisor")
+        if multiplier is None:
+            multiplier = 1
+        if divisor is None:
+            divisor = 1
+
         # Instant Power
         power = struct.unpack("f", struct.pack(">I", int(sPower, 16)))[0]
+        power = round( (( power * multiplier ) / divisor ), 3)
         if power > 0x7FFFFFFFFFFFFFFF:
-            self.log.logging(
-                "Lumi",
-                "Eror",
-                "lumi_private_cluster - %s/%s Saddr: %s sPower %s Power %s (Overflow)"
-                % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPower, power),
-            )
+            self.log.logging( "Lumi", "Eror", "lumi_private_cluster - %s/%s Saddr: %s sPower %s Power %s (Overflow)" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPower, power), )
             return
-        self.log.logging(
-            "Lumi",
-            "Debug",
-            "lumi_private_cluster - %s/%s Saddr: %s sPower %s Power %s" % (MsgClusterId, MsgAttrID, MsgSrcAddr, sPower, power),
-        )
+        self.log.logging( "Lumi", "Debug", "lumi_private_cluster - %s/%s Saddr: %s sPower %s Power %s multiplier %s divisor %s" % (
+            MsgClusterId, MsgAttrID, MsgSrcAddr, sPower, power, multiplier, divisor ) )
+
         store_lumi_attribute(self, MsgSrcAddr, "Power", power)
-        if model in XIAOMI_POWERMETER_EP:
-            EPforPower = XIAOMI_POWERMETER_EP[model]
-        else:
-            EPforPower = MsgSrcEp
+        
+        EPforPower = get_xiaomi_metering_ep( self, MsgSrcAddr, MsgSrcEp, model )
         checkAndStoreAttributeValue(self, MsgSrcAddr, EPforPower, "0702", "0400", str(power))
-        # Update Power Widget
+
         MajDomoDevice(self, Devices, MsgSrcAddr, EPforPower, "0702", str(power))
 
     if sLighLevel != "":
@@ -893,12 +911,7 @@ def lumi_private_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         )
         store_lumi_attribute(self, MsgSrcAddr, "LQI", sLQI)
 
-    if (
-        sBatteryLvl != ""
-        and self.ListOfDevices[MsgSrcAddr]["MacCapa"] != "8e"
-        and self.ListOfDevices[MsgSrcAddr]["MacCapa"] != "84"
-        and self.ListOfDevices[MsgSrcAddr]["PowerSource"] != "Main"
-    ):
+    if ( sBatteryLvl != "" and self.ListOfDevices[MsgSrcAddr]["MacCapa"] != "8e" and self.ListOfDevices[MsgSrcAddr]["MacCapa"] != "84" and self.ListOfDevices[MsgSrcAddr]["PowerSource"] != "Main" ):
         voltage = "%s%s" % (str(sBatteryLvl[2:4]), str(sBatteryLvl[:2]))
         voltage = int(voltage, 16)
         ValueBattery = voltage2batteryP(voltage, 3150, 2750)
@@ -1010,9 +1023,15 @@ def lumi_cluster_fcc0(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttr
     else:
         self.log.logging( "Lumi", "Debug", "lumi_private_cluster %s - %s/%s Unknown attribute: %s value %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr, )
         store_lumi_attribute(self, MsgSrcAddr, MsgAttrID , MsgClusterData)
-    
-    
-    
+
+
+def get_xiaomi_metering_ep( self, nwkid, ep, model ):
+    xiaomi_meter_ep = get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "XIAOMI_METER_EP")
+    if xiaomi_meter_ep:
+        return xiaomi_meter_ep
+    return XIAOMI_POWERMETER_EP[model] if model in XIAOMI_POWERMETER_EP else ep
+
+
 def cube_decode(self, value, MsgSrcAddr):
     "https://github.com/sasu-drooz/Domoticz-Zigate/wiki/Aqara-Cube-decoding"
     value = int(value, 16)
@@ -1085,11 +1104,7 @@ def decode_vibrAngle(rawData):
 
 
 def store_lumi_attribute(self, NwkId, Attribute, Value):
-
-    if "LUMI" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["LUMI"] = {}
-    self.ListOfDevices[NwkId]["LUMI"][Attribute] = Value
-
+    self.ListOfDevices[NwkId].setdefault("LUMI", {})[Attribute] = Value
 
 LUMI_DEVICE_PARAMETERS = {
     "vibrationAqarasensitivity": setXiaomiVibrationSensitivity,
@@ -1107,6 +1122,4 @@ LUMI_DEVICE_PARAMETERS = {
     "RTCZCGQ11LMApproachDistance": RTCZCGQ11LM_motion_opple_approach_distance,
     "RTCZCGQ11LMMonitoringMode": RTCZCGQ11LM_motion_opple_monitoring_mode,
     "RTCGQ14LMTriggerIndicator": RTCGQ14LM_trigger_indicator,
-    
-
 }

@@ -599,22 +599,32 @@ def Cluster000c(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging("Cluster", "Debug", "%s/%s Out of service: %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == "0055":  # The PresentValueattribute  indicates the current value  of the  input,  output or value
+        xiaomi_power_endpoint = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "XIAOMI_POWER_EP")
+
         if self.ListOfDevices[MsgSrcAddr]["Model"] == "lumi.airmonitor.acn01":
             voc = decodeAttribute(self, MsgAttType, MsgClusterData)
-            self.log.logging("Cluster", "Log", "%s/%s Voc: %s" % (MsgSrcAddr, MsgSrcEp, voc), MsgSrcAddr)
+            self.log.logging("Cluster", "Debug", "%s/%s Voc: %s" % (MsgSrcAddr, MsgSrcEp, voc), MsgSrcAddr)
             if not checkValidValue(self, MsgSrcAddr, MsgAttType, voc):
-                self.log.logging( "Cluster", "Info", "Voc - invalid Data Value found : %s" % (
+                self.log.logging( "Cluster", "Debug", "Voc - invalid Data Value found : %s" % (
                     voc), MsgSrcAddr, )
                 return
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, voc)
             return
-            
+
+        if xiaomi_power_endpoint:
+            # The Power received via 0x0055
+            value = round(float(decodeAttribute(self, MsgAttType, MsgClusterData)), 3)
+            self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Xiaomi Power via PresentValue: %s:  %s " % (
+                MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, value), MsgSrcAddr, )
+            MajDomoDevice(self, Devices, MsgSrcAddr, xiaomi_power_endpoint, "0702", str(value))  # For to Power Cluster
+            return
+
         if getEPforClusterType(self, MsgSrcAddr, "Analog") and MsgAttType == "39":
             # We have an Analog Widget created, so we can consider it is not a Xiaomi Plug nor an Aqara/XCube
             self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Xiaomi attribute: %s:  %s " % (
                 MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData)), MsgSrcAddr, )
             if not checkValidValue(self, MsgSrcAddr, MsgAttType, MsgClusterData):
-                self.log.logging( "Cluster", "Info", "Cluster000c - MsgAttrID: %s MsgAttType: %s DataLen: %s : invalid Data Value found : %s" % (
+                self.log.logging( "Cluster", "Debug", "Cluster000c - MsgAttrID: %s MsgAttType: %s DataLen: %s : invalid Data Value found : %s" % (
                     MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
                 return
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(decodeAttribute(self, MsgAttType, MsgClusterData)),)
