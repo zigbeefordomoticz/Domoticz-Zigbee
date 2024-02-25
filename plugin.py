@@ -91,10 +91,11 @@
 """
 
 
-import DomoticzEx as Domoticz
-
+#import DomoticzEx as Domoticz
+import Domoticz
 try:
-    from DomoticzEx import Devices, Images, Parameters, Settings
+    #from DomoticzEx import Devices, Images, Parameters, Settings
+    from Domoticz import Devices, Images, Parameters, Settings
 except ImportError:
     pass
 
@@ -377,7 +378,6 @@ class BasePlugin:
         if not get_domoticz_version( self, Parameters["DomoticzVersion"] ):
             return
 
-
         # Import PluginConf.txt
         Domoticz.Log("load PluginConf")
         self.pluginconf = PluginConf(
@@ -568,6 +568,11 @@ class BasePlugin:
                     "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"]
                 )
 
+        if is_domoticz_extended():
+            self.log.logging( "Plugin", "Status", "Plugin is using Extended Framework")
+        else:
+            self.log.logging( "Plugin", "Status", "Plugin is using legacy Framework")
+
         if not is_domoticz_extended():
             self.log.logging("Plugin", "Status", "Domoticz Widgets usage is at %s %% (%s units free)" % (
                 round( ( ( 255 - how_many_legacy_slot_available( Devices)) / 255 ) * 100, 1 ), how_many_legacy_slot_available( Devices) ))
@@ -629,21 +634,9 @@ class BasePlugin:
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
-        #if self.pluginconf.pluginConf["Garbage"]:
-        #    
-        #    # Domoticz.Log( "Garbage Collected objects:")
-        #    # objects = gc.get_objects()
-        #    # for item in objects:
-        #    #     Domoticz.Log( "- %s" %str(item))
-#
-        #    # Print detected cycles (garbage collectors)
-        #    Domoticz.Log( "Garbage Collected detected cycles:")
-        #    for item in gc.garbage:
-        #        Domoticz.Log("- %s" %str(item))
 
-    
-
-    def onDeviceRemoved(self, DeviceID, Unit):
+    def onDeviceRemoved(self, Unit):
+        # def onDeviceRemoved(self, DeviceID, Unit):
         if not self.ControllerIEEE:
             self.log.logging( "Plugin", "Error", "onDeviceRemoved - too early, coordinator and plugin initialisation not completed", )
 
@@ -784,7 +777,8 @@ class BasePlugin:
     def zigpy_backup_available(self, backups):
         handle_zigpy_backup(self, backups)
 
-    def onCommand(self, DeviceID, Unit, Command, Level, Color):
+    #def onCommand(self, DeviceID, Unit, Command, Level, Color):
+    def onCommand(self, Unit, Command, Level, Color):
         
         if ( not self.VersionNewFashion or self.pluginconf is None or not self.log ):
             # Not yet ready, plugin not fully started, we drop the command
@@ -1509,9 +1503,11 @@ def onStop():
     _plugin.onStop()
 
 
-def onDeviceRemoved(DeviceID, Unit):
+#def onDeviceRemoved(DeviceID, Unit):
+def onDeviceRemoved( Unit):
     global _plugin  # pylint: disable=global-variable-not-assigned
-    _plugin.onDeviceRemoved(DeviceID, Unit)
+    #_plugin.onDeviceRemoved(DeviceID, Unit)
+    _plugin.onDeviceRemoved( Unit)
 
 
 def onConnect(Connection, Status, Description):
@@ -1524,9 +1520,11 @@ def onMessage(Connection, Data):
     _plugin.onMessage(Connection, Data)
 
 
-def onCommand(DeviceID, Unit, Command, Level, Color):
+#def onCommand(DeviceID, Unit, Command, Level, Color):
+def onCommand(Unit, Command, Level, Color):
     global _plugin
-    _plugin.onCommand(DeviceID, Unit, Command, Level, Color)
+    #_plugin.onCommand(DeviceID, Unit, Command, Level, Color)
+    _plugin.onCommand( Unit, Command, Level, Color)
 
 
 def onDisconnect(Connection):

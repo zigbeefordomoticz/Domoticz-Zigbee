@@ -398,7 +398,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
                 instant = round(float(value), 2)
                 # Did we get Summation from Data Structure
-                if summation != 0:
+                if summation is not None and summation != 0:
                     summation = int(float(summation))
                     sValue = "%s;%s" % (instant, summation)
                     # We got summation from Device, let's check that EnergyMeterMode is
@@ -811,7 +811,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             if WidgetType == "Humi":
                 NewSvalue = "%s" % humi_status
                 self.log.logging("Widget", "Debug", "------>  Humi update: %s - %s" % (value, NewSvalue))
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, value, NewSvalue, BatteryLevel, SignalLevel)
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Temp+Hum":
                 NewSvalue = f"{current_temp};{value};{humi_status}"

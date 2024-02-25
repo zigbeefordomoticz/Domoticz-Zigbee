@@ -17,9 +17,10 @@
 
 import time
 
-import DomoticzEx as Domoticz
-
-DOMOTICZ_EXTENDED_API = True
+#import DomoticzEx as Domoticz
+#DOMOTICZ_EXTENDED_API = True#
+import Domoticz as Domoticz
+DOMOTICZ_EXTENDED_API = False
 
 DELAY_BETWEEN_TOUCH = 60
 
@@ -633,7 +634,7 @@ def device_touch_api(self, Devices, DeviceId_):
     
     units = Devices[DeviceId_].Units if DOMOTICZ_EXTENDED_API and DeviceId_ in Devices else Devices
     
-    for unit in units:
+    for unit in list(units):
         device_touch_unit_api(self, Devices, DeviceId_, unit)
                 
 
