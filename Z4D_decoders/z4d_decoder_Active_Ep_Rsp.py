@@ -17,28 +17,34 @@ from Modules.errorCodes import DisplayStatusCode
 
 
 def Decode8045(self, Devices, MsgData, MsgLQI):
-    MsgDataSQN, MsgDataStatus, MsgDataShAddr, MsgDataEpCount, MsgDataEPlist = (
-        MsgData[:2], MsgData[2:4], MsgData[4:8], MsgData[8:10], MsgData[10:]
-    )
 
-    self.log.logging('Pairing', 'Debug', f'Decode8045 - Reception Active endpoint response: SQN: {MsgDataSQN} Status: {DisplayStatusCode(MsgDataStatus)} Short Addr: {MsgDataShAddr} List: {MsgDataEpCount} Ep List: {MsgDataEPlist}')
-
+    if len(MsgData) < 8:
+        self.log.logging('Pairing', 'Error', f'Decode8045 - received invalid payload {MsgData}')
+        return  
+    MsgDataSQN, MsgDataStatus, MsgDataShAddr = ( MsgData[:2], MsgData[2:4], MsgData[4:8] )
+  
     if MsgDataShAddr == '0000':
+        MsgDataEpCount, MsgDataEPlist = ( MsgData[8:10], MsgData[10:] )
         receiveZigateEpList(self, MsgDataEpCount, MsgDataEPlist)
         return
 
     if not DeviceExist(self, Devices, MsgDataShAddr):
         self.log.logging('Input', 'Log', f'Decode8045 - KeyError: MsgDataShAddr = {MsgDataShAddr}')
         return
-
     device = self.ListOfDevices[MsgDataShAddr]
-
     if device['Status'] == 'inDB':
         return
 
     device['Status'] = '8045'
     updSQN(self, MsgDataShAddr, MsgDataSQN)
     updLQI(self, MsgDataShAddr, MsgLQI)
+
+    if len(MsgData) < 10:
+        self.log.logging('Pairing', 'Error', f'Decode8045 - received invalid payload from {MsgDataShAddr} {MsgData}')
+        return
+    MsgDataEpCount, MsgDataEPlist = ( MsgData[8:10], MsgData[10:] )
+    
+    self.log.logging('Pairing', 'Debug', f'Decode8045 - Reception Active endpoint response: SQN: {MsgDataSQN} Status: {DisplayStatusCode(MsgDataStatus)} Short Addr: {MsgDataShAddr} List: {MsgDataEpCount} Ep List: {MsgDataEPlist}')
 
     for i in range(0, 2 * int(MsgDataEpCount, 16), 2):
         tmpEp = MsgDataEPlist[i:i + 2]

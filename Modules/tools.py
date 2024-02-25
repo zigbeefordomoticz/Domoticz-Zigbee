@@ -27,10 +27,14 @@ from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.zigateConsts import HEARTBEAT
 from Modules.domoticzAbstractLayer import domo_read_Device_Idx, domo_read_Name
 
+HEX_DIGIT = "0123456789abcdefABCDEF"
+INT_DIGIT = "0123456789"
 
 def is_hex(s):
-    hex_digits = set("0123456789abcdefABCDEF")
-    return all(char in hex_digits for char in s)
+    return all(char in HEX_DIGIT for char in s)
+
+def is_int(s):
+    return all(char in INT_DIGIT for char in s)
 
 def returnlen(taille, value):
     while len(value) < taille:

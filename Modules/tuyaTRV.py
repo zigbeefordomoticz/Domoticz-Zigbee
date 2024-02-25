@@ -1552,3 +1552,22 @@ def get_datapoint_command(self, nwkid, cmd):
         )
         return None
     return eTRV_MATRIX[_model_name]["ToDevice"][cmd]
+
+
+TUYA_TRV_DEVICE_PARAMETERS = {
+    "SensorMode": tuya_trv_thermostat_sensor_mode,
+    "BRT100WindowsDetection": tuya_trv_window_detection,
+    "BRT100ChildLock": tuya_trv_child_lock,
+    "TuyaTRV5_ChildLock": tuya_trv_child_lock,
+    "TuyaTRV5_EcoTemp": tuya_trv_set_eco_temperature,
+    "TuyaTRV5_ConfortTemp": tuya_trv_set_confort_temperature,
+    "TuyaTRV5_OpenedWindowTemp": tuya_trv_set_opened_window_temp,
+    "BRT100BoostDuration": tuya_trv_boost_time,
+    "TuyaTRV5_BoostTime": tuya_trv_boost_time,
+    "TuyaTRV5_Calibration": tuya_trv_calibration,
+    "TuyaTRV5_HolidaySetPoint": tuya_trv_holiday_setpoint,
+    "BRT100Calibration": tuya_trv_calibration,
+    "BRT100SetpointEco": tuya_trv_eco_temp,
+    "BRT100MaxSetpoint": tuya_trv_set_max_setpoint,
+    "BRT100MinSetpoint": tuya_trv_set_min_setpoint,
+}
