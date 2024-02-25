@@ -112,8 +112,8 @@ def createSwitchSelector(self, nbSelector, DeviceType=None, OffHidden=False, Sel
             Options["LevelNames"] += "BT %03s | " % bt
             Options["LevelActions"] += "|"
 
-        Options["LevelNames"] = Options["LevelNames"][:-2]  # Remove the last '| '
-        Options["LevelActions"] = Options["LevelActions"][:-1]  # Remove the last '|'
+        Options["LevelNames"] = Options["LevelNames"][:-2]      # Remove the last "| "
+        Options["LevelActions"] = Options["LevelActions"][:-1]  # Remove the last "|"
 
     if SelectorStyle:
         Options["SelectorStyle"] = "%s" % SelectorStyle
@@ -160,7 +160,7 @@ def over_write_type_from_deviceconf( self, Devices, NwkId):
     if NwkId not in self.ListOfDevices:
         self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s not found " % NwkId, NwkId )
         return
-    if 'Ep' not in self.ListOfDevices[ NwkId ]:
+    if "Ep" not in self.ListOfDevices[ NwkId ]:
         self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Ep' not found" % NwkId, NwkId )
         return
 
@@ -173,23 +173,23 @@ def over_write_type_from_deviceconf( self, Devices, NwkId):
         return
     _deviceConf = self.DeviceConf[ _model ]
 
-    for _ep in self.ListOfDevices[ NwkId ]['Ep']:
-        if _ep not in _deviceConf['Ep']:
+    for _ep in self.ListOfDevices[ NwkId ]["Ep"]:
+        if _ep not in _deviceConf["Ep"]:
             self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'ep: %s' not found in DeviceConf" % (NwkId, _ep), NwkId )
             continue
-        if "Type" not in _deviceConf['Ep'][ _ep ]:
+        if "Type" not in _deviceConf["Ep"][ _ep ]:
             self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Type' not found in DeviceConf" % (NwkId,), NwkId )
             continue
-        if "Type" in self.ListOfDevices[ NwkId ]['Ep'][ _ep ] and self.ListOfDevices[ NwkId ]['Ep'][ _ep ]["Type"] == _deviceConf['Ep'][ _ep ]["Type"]:
+        if "Type" in self.ListOfDevices[ NwkId ]["Ep"][ _ep ] and self.ListOfDevices[ NwkId ]["Ep"][ _ep ]["Type"] == _deviceConf["Ep"][ _ep ]["Type"]:
             self.log.logging( "WidgetCreation", "Debug", "over_write_type_from_deviceconf - NwkId : %s Device Type: %s == Device Conf Type: %s" % (
-                NwkId,self.ListOfDevices[ NwkId ]['Ep'][ _ep ]["Type"] , _deviceConf['Ep'][ _ep ]["Type"]), NwkId )
+                NwkId,self.ListOfDevices[ NwkId ]["Ep"][ _ep ]["Type"] , _deviceConf["Ep"][ _ep ]["Type"]), NwkId )
             continue
 
         self.log.logging(
             "WidgetCreation", "Debug", "over_write_type_from_deviceconf - Ep Overwrite Type with a new one %s on ep: %s" % (
-                _deviceConf['Ep'][ _ep ]["Type"], _ep), NwkId )
+                _deviceConf["Ep"][ _ep ]["Type"], _ep), NwkId )
 
-        self.ListOfDevices[ NwkId ]['Ep'][ _ep ]["Type"] = _deviceConf['Ep'][ _ep ]["Type"]
+        self.ListOfDevices[ NwkId ]["Ep"][ _ep ]["Type"] = _deviceConf["Ep"][ _ep ]["Type"]
 
 
 def extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType):
@@ -260,7 +260,7 @@ def CreateDomoDevice(self, Devices, NWKID):
     self.log.logging( "WidgetCreation", "Debug", "CreateDomoDevice - Ep to be processed : %s " % self.ListOfDevices[NWKID]["Ep"].keys(), NWKID )
     for Ep in self.ListOfDevices[NWKID]["Ep"]:
 
-        # Use 'type' at level EndPoint if existe
+        # Use "type" at level EndPoint if existe
         self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Process EP : %s GlobalEP: %s GlobalType: %s" %( 
             Ep, GlobalEP, str(GlobalType)), NWKID)
    
@@ -278,7 +278,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         # In case Type is issued from GetType functions, this is based on Clusters,
         # In such case and the device is a Bulb or a Dimmer Switch we will get a combinaison of Switch/LvlControl and ColorControlxxx
         # We want to avoid creating of 3 widgets while 1 is enought.
-        # if self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:
+        # if self.ListOfDevices[NWKID][ "Model"] not in self.DeviceConf:
         self.log.logging("WidgetCreation", "Debug", "---> Check if we need to reduce Type: %s" % Type)
         Type = cleanup_widget_Type(Type)
 
@@ -334,7 +334,7 @@ def update_widget_type_if_possible( self, Nwkid, widget_type):
         elif self.ListOfDevices[Nwkid]["ZDeviceID"] == "0200":
             return "VenetianInverted"
 
-    if ( widget_type == "LvlControl" and self.ListOfDevices[Nwkid]["Model"] in ('', {}) and self.ListOfDevices[Nwkid]["ProfileID"] == "0104" ):
+    if ( widget_type == "LvlControl" and self.ListOfDevices[Nwkid]["Model"] in ("", {}) and self.ListOfDevices[Nwkid]["ProfileID"] == "0104" ):
         if self.ListOfDevices[Nwkid]["ZDeviceID"] == "0202":
             # Windows Covering / Profalux -> Inverted
             return "BlindInverted"
@@ -385,7 +385,7 @@ def number_switch_selectors( widget_type ):
     if "LevelNames" not in SWITCH_SELECTORS[ widget_type ]:
         return 0
     levels = SWITCH_SELECTORS[ widget_type ]["LevelNames"]
-    return len( levels.split('|') )
+    return len( levels.split("|") )
 
 
 def off_hidden( widget_type ):
@@ -522,78 +522,344 @@ def set_default_value( self, Devices, unit, widget_record):
         nValue = widget_record["nValue"] 
         UpdateDevice_v2(self, Devices, unit, nValue, sValue, 0, 0, ForceUpdate_=True)
    
-
 SIMPLE_WIDGET = {
-    "Temp+Hum+Baro": { "widgetType": "Temp+Hum+Baro", },
-    "Temp+Hum": { "widgetType": "Temp+Hum", },
-    "Temp": { "widgetType": "Temperature", },
-    "Humi": { "widgetType": "Humidity", },
-    "Baro": { "widgetType": "Barometer", },
-    "AirQuality": { "widgetType": "Air Quality", },
-    "Power": { "widgetType": "Usage", },
-    "Meter": { "widgetType": "kWh", },
-    "ConsoMeter": { "Type": 113, "Subtype": 0, "Switchtype": 0, "sValue": "0", "nValue": 0},
-    "ProdMeter": { "Type": 113, "Subtype": 0, "Switchtype": 4, "sValue": "0", "nValue": 0},
-    "ProdPower": { "widgetType": "Usage", },
-    "Voltage": { "widgetType": "Voltage", },
-    "Voc": { "widgetType": "Custom", "Options": "1;ppm" },
-    "PM25": { "widgetType": "Custom", "Options": "1;ppm" },
-    "CH2O": { "widgetType": "Custom", "Options": "1;ppm" },
-    "SmokePPM": { "widgetType": "Custom", "Options": "1;ppm" },
-    "CarbonDioxyde": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;ppm", },
-    "CarbonMonoxyde": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;ppm", },
-    "Analog": { "Type": 0xF3, "Subtype": 31, "Switchtype": 0, "Options": "1;tbd", },
-    "Alarm": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
-    "Tamper": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
-    "Alarm_ZL": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
-    "Alarm_ZL2": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
-    "Alarm_ZL3": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
-    "AirPurifierAlarm": { "Type": 243, "Subtype": 22, "Switchtype": 0, },
-    "PowerFactor": { "Type": 243, "Subtype": 6, "Switchtype": 0, },
-    "Valve": { "Type": 243, "Subtype": 6, "Switchtype": 0, },
-    "FanSpeed": { "Type": 243, "Subtype": 6, "Switchtype": 0, },
-    "ThermoSetpoint": { "Type": 242, "Subtype": 1, },
-    "TempSetCurrent": { "Type": 242, "Subtype": 1, },
-    "Ampere": { "Type": 243, "Subtype": 23, },
-    "Ampere3": { "Type": 89, "Subtype": 1, },
-    "Door": { "Type": 244, "Subtype": 73, "Switchtype": 11, },
-    "DoorSensor": { "Type": 244, "Subtype": 73, "Switchtype": 11, },
-    "DoorLock": { "Type": 244, "Subtype": 73, "Switchtype": 19, },
-    "TuyaDoorLock": { "Type": 244, "Subtype": 73, "Switchtype": 19, },
-    "Motion": { "Type": 244, "Subtype": 73, "Switchtype": 8, },
-    "LivoloSWL": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
-    "LivoloSWR": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
-    "Smoke": { "Type": 244, "Subtype": 73, "Switchtype": 5, },
-    "Lux": { "Type": 246, "Subtype": 1, "Switchtype": 0, },
-    "Switch": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
-    "Plug": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 1, },
-    "SwitchButton": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
-    "PAC-SWITCH": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
-    "ShutterCalibration": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
-    "HeatingStatus": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 15, },
-    "ThermoOnOff": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 15, },
-    "HeatingSwitch": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 15, },
-    "Button": { "Type": 244, "Subtype": 73, "Switchtype": 9, },
-    "Strength": { "Type": 243, "Subtype": 31, },
-    "Orientation": { "Type": 243, "Subtype": 19, },
-    "Water": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 11, },
-    "P1Meter": { "Type": 250, "Subtype": 1, "Switchtype": 1, },
-    "P1Meter_ZL": { "Type": 250, "Subtype": 1, "Switchtype": 1, },
-    "ColorControlRGBWW": { "Type": 241, "Subtype": 0x04, "Switchtype": 7, },
-    "ColorControlFull": { "Type": 241, "Subtype": 0x07, "Switchtype": 7, },
-    "ColorControlWW": { "Type": 241, "Subtype": 0x08, "Switchtype": 7, },
-    "ColorControlRGBW": { "Type": 241, "Subtype": 0x01, "Switchtype": 7, },
-    "ColorControlRGBWZ": { "Type": 241, "Subtype": 0x02, "Switchtype": 7, },
-    "ColorControlRGB": { "Type": 241, "Subtype": 1, "Switchtype": 7, },
-    "LvlControl": { "Type": 244, "Subtype": 73, "Switchtype": 7 },
-    "SwitchAlarm": { "Type": 244, "Subtype": 73, "Switchtype": 0, "Image": 13 },
-    "TamperSwitch": { "Type": 244, "Subtype": 73, "Switchtype": 0, },
-    "Distance": { "Type": 243, "Subtype": 27, "Switchtype": 0},
-    "WaterCounter": { "Type": 243, "Subtype": 28, "Switchtype": 2, "Image": 22, "sValue": "0", "nValue": 0},
-    "GazMeter": { "Type": 251, "Subtype": 2, "Switchtype": 0, "sValue": "0", "nValue": 0},
-    "Counter": { "Type": 113, "Subtype": 0, "Switchtype": 0, "sValue": "0", "nValue": 0},
-    "Notification": {"Type":243, "Subtype":19, "Switchtype":0,}
+    "AirPurifierAlarm": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0
+    },
+    "AirQuality": {
+        "widgetType": "Air Quality"
+    },
+    "Alarm": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0
+    },
+    "Alarm_ZL": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0
+    },
+    "Alarm_ZL2": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0
+    },
+    "Alarm_ZL3": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0
+    },
+    "Ampere": {
+        "Type": 243,
+        "Subtype": 23
+    },
+    "Ampere3": {
+        "Type": 89,
+        "Subtype": 1
+    },
+    "Analog": {
+        "Type": 243,
+        "Subtype": 31,
+        "Switchtype": 0,
+        "Options": "1;tbd"
+    },
+    "Baro": {
+        "widgetType": "Barometer"
+    },
+    "Button": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 9
+    },
+    "CH2O": {
+        "widgetType": "Custom",
+        "Options": "1;ppm"
+    },
+    "CarbonDioxyde": {
+        "Type": 243,
+        "Subtype": 31,
+        "Switchtype": 0,
+        "Options": "1;ppm"
+    },
+    "CarbonMonoxyde": {
+        "Type": 243,
+        "Subtype": 31,
+        "Switchtype": 0,
+        "Options": "1;ppm"
+    },
+    "ColorControlFull": {
+        "Type": 241,
+        "Subtype": 7,
+        "Switchtype": 7
+    },
+    "ColorControlRGB": {
+        "Type": 241,
+        "Subtype": 1,
+        "Switchtype": 7
+    },
+    "ColorControlRGBW": {
+        "Type": 241,
+        "Subtype": 1,
+        "Switchtype": 7
+    },
+    "ColorControlRGBWW": {
+        "Type": 241,
+        "Subtype": 4,
+        "Switchtype": 7
+    },
+    "ColorControlRGBWZ": {
+        "Type": 241,
+        "Subtype": 2,
+        "Switchtype": 7
+    },
+    "ColorControlWW": {
+        "Type": 241,
+        "Subtype": 8,
+        "Switchtype": 7
+    },
+    "ConsoMeter": {
+        "Type": 113,
+        "Subtype": 0,
+        "Switchtype": 0,
+        "sValue": "0",
+        "nValue": 0
+    },
+    "Counter": {
+        "Type": 113,
+        "Subtype": 0,
+        "Switchtype": 0,
+        "sValue": "0",
+        "nValue": 0
+    },
+    "Distance": {
+        "Type": 243,
+        "Subtype": 27,
+        "Switchtype": 0
+    },
+    "Door": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 11
+    },
+    "DoorLock": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 19
+    },
+    "DoorSensor": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 11
+    },
+    "FanSpeed": {
+        "Type": 243,
+        "Subtype": 6,
+        "Switchtype": 0
+    },
+    "GazMeter": {
+        "Type": 251,
+        "Subtype": 2,
+        "Switchtype": 0,
+        "sValue": "0",
+        "nValue": 0
+    },
+    "HeatingStatus": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0,
+        "Image": 15
+    },
+    "HeatingSwitch": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0,
+        "Image": 15
+    },
+    "Humi": {
+        "widgetType": "Humidity"
+    },
+    "LivoloSWL": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "LivoloSWR": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "Lux": {
+        "Type": 246,
+        "Subtype": 1,
+        "Switchtype": 0
+    },
+    "LvlControl": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 7
+    },
+    "Meter": {
+        "widgetType": "kWh"
+    },
+    "Motion": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 8
+    },
+    "Notification": {
+        "Type": 243,
+        "Subtype": 19,
+        "Switchtype": 0
+    },
+    "Orientation": {
+        "Type": 243,
+        "Subtype": 19
+    },
+    "P1Meter": {
+        "Type": 250,
+        "Subtype": 1,
+        "Switchtype": 1
+    },
+    "P1Meter_ZL": {
+        "Type": 250,
+        "Subtype": 1,
+        "Switchtype": 1
+    },
+    "PAC-SWITCH": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "PM25": {
+        "widgetType": "Custom",
+        "Options": "1;ppm"
+    },
+    "Plug": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0,
+        "Image": 1
+    },
+    "Power": {
+        "widgetType": "Usage"
+    },
+    "PowerFactor": {
+        "Type": 243,
+        "Subtype": 6,
+        "Switchtype": 0
+    },
+    "ProdMeter": {
+        "Type": 113,
+        "Subtype": 0,
+        "Switchtype": 4,
+        "sValue": "0",
+        "nValue": 0
+    },
+    "ProdPower": {
+        "widgetType": "Usage"
+    },
+    "ShutterCalibration": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "Smoke": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 5
+    },
+    "SmokePPM": {
+        "widgetType": "Custom",
+        "Options": "1;ppm"
+    },
+    "Strength": {
+        "Type": 243,
+        "Subtype": 31
+    },
+    "Switch": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "SwitchAlarm": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0,
+        "Image": 13
+    },
+    "SwitchButton": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "Tamper": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0
+    },
+    "TamperSwitch": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "Temp": {
+        "widgetType": "Temperature"
+    },
+    "Temp+Hum": {
+        "widgetType": "Temp+Hum"
+    },
+    "Temp+Hum+Baro": {
+        "widgetType": "Temp+Hum+Baro"
+    },
+    "TempSetCurrent": {
+        "Type": 242,
+        "Subtype": 1
+    },
+    "ThermoOnOff": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0,
+        "Image": 15
+    },
+    "ThermoSetpoint": {
+        "Type": 242,
+        "Subtype": 1
+    },
+    "TuyaDoorLock": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 19
+    },
+    "Valve": {
+        "Type": 243,
+        "Subtype": 6,
+        "Switchtype": 0
+    },
+    "Voc": {
+        "widgetType": "Custom",
+        "Options": "1;ppm"
+    },
+    "Voltage": {
+        "widgetType": "Voltage"
+    },
+    "Water": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0,
+        "Image": 11
+    },
+    "WaterCounter": {
+        "Type": 243,
+        "Subtype": 28,
+        "Switchtype": 2,
+        "Image": 22,
+        "sValue": "0",
+        "nValue": 0
+    }
 }
+
 
 BLIND_DOMOTICZ_2022 = {
     # Blind old version before Domoticz 2023.1

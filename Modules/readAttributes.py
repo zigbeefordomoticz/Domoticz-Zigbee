@@ -1189,10 +1189,33 @@ def ReadAttributeRequest_0406_0010(self, key):
     for EPout in ListOfEp:
         ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0406", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+def ReadAttributeRequest_0406_0012(self, key):
+
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0406/0012- Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "0406")
+    listAttributes = [0x0012]
+    for EPout in ListOfEp:
+        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0406", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+
+def ReadAttributeRequest_0406_0020(self, key):
+
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0406/0020- Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "0406")
+    listAttributes = [0x0020]
+    for EPout in ListOfEp:
+        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0406", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+
+def ReadAttributeRequest_0406_0022(self, key):
+
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0406/0022- Key: %s " % key, nwkid=key)
+    ListOfEp = getListOfEpForCluster(self, key, "0406")
+    listAttributes = [0x0022]
+    for EPout in ListOfEp:
+        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0406", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_0406_philips_0030(self, key):
     manufacturer = "100b"
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0406/0010- Key: %s " % key, nwkid=key)
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0406/0030- Key: %s " % key, nwkid=key)
     ListOfEp = getListOfEpForCluster(self, key, "0406")
     listAttrSpecific = [0x0030]
     for EPout in ListOfEp:
@@ -1207,7 +1230,6 @@ def ReadAttributeRequest_0406_philips_0030(self, key):
             manufacturer=manufacturer,
             ackIsDisabled=is_ack_tobe_disabled(self, key),
         )
-
 
 def ReadAttributeRequest_0500(self, key):
 

@@ -10,23 +10,30 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-from Modules.zigateConsts import ZIGATE_EP
 from Modules.basicOutputs import write_attribute
+from Modules.readAttributes import ReadAttributeRequest_0406_0022
+from Modules.zigateConsts import ZIGATE_EP
+
+SONOFF_MAUFACTURER_NAME = "SONOFF"
+SONOFF_MANUFACTURER_ID = "1286"
 SONOFF_CLUSTER_ID = "fc11"
-SONOFF_MANUF_ID = "1286"
+SONOFF_ILLUMINATION_ATTRIBUTE = "2001"
+
+
+def is_sonoff_device(self, nwkid):
+    return self.ListOfDevices[nwkid]["Manufacturer"] == SONOFF_MANUFACTURER_ID or self.ListOfDevices[nwkid]["Manufacturer Name"] == SONOFF_MAUFACTURER_NAME
+
 
 def sonoff_child_lock(self, nwkid, lock_mode):
     self.log.logging("Sonoff", "Debug", "sonoff_child_lock - Nwkid: %s Mode: %s" % (nwkid, lock_mode))
-    write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUF_ID, "01", "0000", "10", "%02x" %lock_mode, ackIsDisabled=False)
+    write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", "0000", "10", "%02x" %lock_mode, ackIsDisabled=False)
 
-  
+
 def sonoff_open_window_detection(self, nwkid, detection):
     self.log.logging("Sonoff", "Debug", "sonoff_child_lock - Nwkid: %s Mode: %s" %(nwkid, detection))
-    write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUF_ID, "01", "6000", "10", "%02x" %detection, ackIsDisabled=False)
-
+    write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", "6000", "10", "%02x" %detection, ackIsDisabled=False)
 
 SONOFF_DEVICE_PARAMETERS = {
     "SonOffTRVChildLock": sonoff_child_lock,
-    "SonOffTRVWindowDectection": sonoff_open_window_detection
-
+    "SonOffTRVWindowDectection": sonoff_open_window_detection,
 }

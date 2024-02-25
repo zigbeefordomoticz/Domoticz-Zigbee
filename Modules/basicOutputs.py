@@ -602,38 +602,6 @@ def identifyEffect(self, nwkid, ep, effect="Blink"):
     return zcl_identify_trigger_effect(self, nwkid, ep, "%02x" %effect_command[effect], "%02x" % 0)
 
 
-
-def set_PIROccupiedToUnoccupiedDelay(self, key, delay, ListOfEp=None):
-
-    cluster_id = "0406"
-    attribute = "0010"
-    data_type = "21"
-    manuf_id = "0000"
-    manuf_spec = "00"
-    if ListOfEp is None:
-        ListOfEp = getListOfEpForCluster(self, key, cluster_id)
-    for EPout in ListOfEp:
-        data = "%04x" % delay
-        self.log.logging(
-            "BasicOutput", "Log", "set_PIROccupiedToUnoccupiedDelay for %s/%s - delay: %s" % (key, EPout, delay), key
-        )
-        if attribute in self.ListOfDevices[key]["Ep"][EPout][cluster_id]:
-            del self.ListOfDevices[key]["Ep"][EPout][cluster_id][attribute]
-        return write_attribute(
-            self,
-            key,
-            ZIGATE_EP,
-            EPout,
-            cluster_id,
-            manuf_id,
-            manuf_spec,
-            attribute,
-            data_type,
-            data,
-            ackIsDisabled=False,
-        )
-
-
 def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
     # OSRAM/LEDVANCE
     # 0xfc0f --> Command 0x01
