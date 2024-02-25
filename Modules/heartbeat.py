@@ -16,6 +16,7 @@ import time
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
+from Modules.domoticzAbstractLayer import is_device_ieee_in_domoticz_db
 from Modules.domoTools import timedOutDevice
 from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
                                     processNotinDBDevices)
@@ -23,6 +24,7 @@ from Modules.paramDevice import sanity_check_of_param
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttribute_ZLinkyIndex,
+                                    ReadAttributeReq,
                                     ReadAttributeReq_Scheduled_ZLinky,
                                     ReadAttributeReq_ZLinky,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
@@ -39,19 +41,18 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
-                                    ping_tuya_device,
-                                    ping_devices_via_group)
+                                    ping_devices_via_group, ping_tuya_device)
 from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
-                           get_device_nickname, getListOfEpForCluster, is_hex,
+                           get_device_nickname, getAttributeValue,
+                           getListOfEpForCluster, is_hex,
                            is_time_to_perform_work, mainPoweredDevice,
-                           night_shift_jobs, removeNwkInList, getAttributeValue)
+                           night_shift_jobs, removeNwkInList)
 from Modules.tuyaTRV import tuya_switch_online
 from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 from Zigbee.zdpCommands import (zdp_node_descriptor_request,
                                 zdp_NWK_address_request)
-from Modules.readAttributes import ReadAttributeReq
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -901,26 +902,7 @@ def processListOfDevices(self, Devices):
                         NWKID,
                     )
                 # Let's check if the device still exist in Domoticz
-                for Unit in Devices:
-                    if self.ListOfDevices[NWKID]["IEEE"] == Devices[Unit].DeviceID:
-                        self.log.logging(
-                            "Heartbeat",
-                            "Debug",
-                            "processListOfDevices - %s  is still connected cannot remove. NwkId: %s IEEE: %s "
-                            % (Devices[Unit].Name, NWKID, self.ListOfDevices[NWKID]["IEEE"]),
-                            NWKID,
-                        )
-                        fnd = True
-                        break
-                else:  # We browse the all Devices and didn't find any IEEE.
-                    if "IEEE" in self.ListOfDevices[NWKID]:
-                        self.log.logging( "Heartbeat", "Log", "processListOfDevices - No corresponding device in Domoticz for %s/%s" % (
-                            NWKID, str(self.ListOfDevices[NWKID]["IEEE"])) )
-                    else:
-                        self.log.logging( "Heartbeat", "Log", "processListOfDevices - No corresponding device in Domoticz for %s" % (NWKID))
-                    fnd = False
-
-                if not fnd:
+                if not is_device_ieee_in_domoticz_db(self, Devices, self.ListOfDevices[NWKID]["IEEE"]):
                     # Not devices found in Domoticz, so we are safe to remove it from Plugin
                     if self.ListOfDevices[NWKID]["IEEE"] in self.IEEE2NWK:
                         self.log.logging( "Heartbeat", "Status", "processListOfDevices - Removing %s / %s from IEEE2NWK." % (

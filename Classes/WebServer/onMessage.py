@@ -6,15 +6,17 @@
 import mimetypes
 import os
 import os.path
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 from time import gmtime, strftime
 from urllib.parse import urlparse
 
-import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Classes.WebServer.tools import MAX_KB_TO_SEND, DumpHTTPResponseToLog
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 
 
 def onMessage(self, Connection, Data):
@@ -24,15 +26,15 @@ def onMessage(self, Connection, Data):
 
     headerCode = "200 OK"
     if "Verb" not in Data:
-        Domoticz.Error("Invalid web request received, no Verb present")
+        domoticz_error_api("Invalid web request received, no Verb present")
         headerCode = "400 Bad Request"
 
     elif Data["Verb"] not in ("GET", "PUT", "POST", "DELETE"):
-        Domoticz.Error("Invalid web request received, only GET requests allowed (" + Data["Verb"] + ")")
+        domoticz_error_api("Invalid web request received, only GET requests allowed (" + Data["Verb"] + ")")
         headerCode = "405 Method Not Allowed"
 
     elif "URL" not in Data:
-        Domoticz.Error("Invalid web request received, no URL present")
+        domoticz_error_api("Invalid web request received, no URL present")
         headerCode = "400 Bad Request"
 
     parsed_url = urlparse(Data["URL"])
@@ -65,7 +67,7 @@ def onMessage(self, Connection, Data):
             # API Version 1
             self.do_rest(Connection, Data["Verb"], Data["Data"], parsed_query[1], parsed_query[2], parsed_query[3:])
         else:
-            Domoticz.Error("Unknown API  %s" % parsed_query)
+            domoticz_error_api("Unknown API  %s" % parsed_query)
             headerCode = "400 Bad Request"
             self.sendResponse(Connection, {"Status": headerCode})
         return
@@ -158,10 +160,10 @@ def send_file(self, Connection, webFilename, Data, _lastmodified, _response):
     _response["Status"] = "200 OK"
 
     if "Accept-Encoding" in Data["Headers"]:
-        self.logging( "Debug", "send_file  sendResponse %s %s" %(webFilename, _response))
+        #self.logging( "Debug", "send_file  sendResponse %s %s" %(webFilename, _response))
         self.sendResponse(Connection, _response, AcceptEncoding=Data["Headers"]["Accept-Encoding"])
     else:
-        self.logging( "Debug", "send_file  sendResponse %s %s" %(webFilename, _response))
+        #self.logging( "Debug", "send_file  sendResponse %s %s" %(webFilename, _response))
         self.sendResponse(Connection, _response)
     
 def get__range_and_send(self,Connection, webFilename, Data, _response ):

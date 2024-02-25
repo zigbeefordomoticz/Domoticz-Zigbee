@@ -1,25 +1,35 @@
-# !/usr/bin/env python3
-# coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import json
 
-import Domoticz
 from Classes.GroupMgtv2.GrpCommands import (set_hue_saturation,
                                             set_kelvin_color, set_rgb_color)
 from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
+from Modules.domoticzAbstractLayer import (
+    FreeUnit, domo_create_api, domo_delete_widget, domo_read_Name,
+    domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
+    domo_update_api, domo_update_name, domo_update_witchType_SubType_Type,
+    find_first_unit_widget_from_deviceID)
 from Modules.tools import Hex_Format, is_hex
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
 from Zigbee.zclCommands import (zcl_group_level_move_to_level,
+                                zcl_group_move_to_level_stop,
                                 zcl_group_move_to_level_with_onoff,
                                 zcl_group_onoff_off_noeffect,
                                 zcl_group_onoff_off_witheffect,
                                 zcl_group_onoff_on,
                                 zcl_group_window_covering_off,
                                 zcl_group_window_covering_on,
-                                zcl_group_move_to_level_stop,
                                 zcl_group_window_covering_stop)
 
 WIDGET_STYLE = {
@@ -37,56 +47,37 @@ WIDGET_STYLE = {
 }
 
 
-def unit_for_widget(self, GroupId):
-
-    for x in self.Devices:
-        if self.Devices[x].DeviceID == GroupId:
-            return x
-    return None
-
-
-def free_unit(Devices):
-    for x in range(1, 255):
-        if x not in Devices:
-            return x
-
-
 def create_domoticz_group_device(self, GroupName, GroupId):
-    " Create Device for just created group in Domoticz. "
+    """ Create Device for just created group in Domoticz. """
+    
+    self.logging("Debug", f"createDomoticzGroupDevice - {GroupName}, {GroupId}")
 
     if GroupName == "" or GroupId == "":
-        self.logging(
-            "Error", "createDomoticzGroupDevice - Invalid Group Name: %s or GroupdID: %s" % (GroupName, GroupId)
-        )
+        self.logging( "Error", "createDomoticzGroupDevice - Invalid Group Name: %s or GroupdID: %s" % (GroupName, GroupId) )
         return
 
-    for x in self.Devices:
-        if self.Devices[x].DeviceID == GroupId:
-            # self.logging( 'Error',"createDomoticzGroupDevice - existing group %s" %(self.Devices[x].Name))
-            return
+    if find_first_unit_widget_from_deviceID(self, self.Devices, GroupId):
+        self.logging( "Log", f"createDomoticzGroupDevice - {GroupId} exists alreday in Domoticz"  )
+        return
 
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
 
-    unit = free_unit(self.Devices)
+    unit = FreeUnit(self, self.Devices, GroupId, 1)
+    idx = domo_create_api(self, self.Devices, GroupId, unit, GroupName, Type_=Type_, Subtype_=Subtype_, Switchtype_=SwitchType_, widgetOptions=None, Image=None)
     self.logging("Debug", "createDomoticzGroupDevice - Unit: %s" % unit)
-    myDev = Domoticz.Device(
-        DeviceID=str(GroupId), Name=str(GroupName), Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=SwitchType_
-    )
-    myDev.Create()
-    ID = myDev.ID
-    if ID == -1:
-        self.logging("Error", "createDomoticzGroupDevice - failed to create Group device.")
+    if idx == -1:
+        self.logging("Error", f"createDomoticzGroupDevice - failed to create Group device. {GroupName} with unit {unit}")
         return
 
-    self.ListOfGroups[GroupId]["WidgetType"] = unit
+    self.ListOfGroups[GroupId]["WidgetType"] = idx
 
 
 def LookForGroupAndCreateIfNeeded(self, GroupId):
-
+    self.logging( "Debug", f"LookForGroupAndCreateIfNeeded - '{GroupId}'")
     if GroupId not in self.ListOfGroups:
         return
 
-    if unit_for_widget(self, GroupId):
+    if find_first_unit_widget_from_deviceID(self, self.Devices, GroupId):
         # Group Exist and has a valid unit
         update_domoticz_group_device_widget(self, GroupId)
         return
@@ -101,71 +92,45 @@ def LookForGroupAndCreateIfNeeded(self, GroupId):
 
 def update_domoticz_group_device_widget_name(self, GroupName, GroupId):
 
+    self.logging( "Debug", f"update_domoticz_group_device_widget_name - '{GroupName}' '{GroupId}'")
+
     if GroupName == "" or GroupId == "":
-        self.logging(
-            "Error",
-            "update_domoticz_group_device_widget_name - Invalid Group Name: %s or GroupdID: %s" % (GroupName, GroupId),
-        )
+        self.logging( "Error", "update_domoticz_group_device_widget_name - Invalid Group Name: %s or GroupdID: %s" % (GroupName, GroupId), )
         return
 
-    unit = unit_for_widget(self, GroupId)
+    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
-        self.logging(
-            "Debug",
-            "update_domoticz_group_device_widget_name - no unit found for GroupId: %s" % self.ListOfGroups[GroupId],
-        )
+        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        LookForGroupAndCreateIfNeeded(self, GroupId)
         return
 
-    nValue = self.Devices[unit].nValue
-    sValue = self.Devices[unit].sValue
-    self.Devices[unit].Update(nValue, sValue, Name=GroupName)
-
+    domo_update_name(self, self.Devices, GroupId, unit, GroupName)
     # Update Group Structure
     self.ListOfGroups[GroupId]["Name"] = GroupName
 
 
 def update_domoticz_group_device_widget(self, GroupId):
 
-    self.logging("Debug", "update_domoticz_group_device_widget GroupId: %s" % GroupId)
-    if GroupId == "":
-        self.logging("Error", "update_domoticz_group_device_widget - Invalid GroupdID: %s" % (GroupId))
-
-    unit = unit_for_widget(self, GroupId)
-    if unit is None:
-        self.logging(
-            "Debug", "update_domoticz_group_device_widget - no unit found for GroupId: %s" % self.ListOfGroups[GroupId]
-        )
-        return
-
-    Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
-
-    self.logging(
-        "Debug",
-        "      Looking to update Unit: %s from %s %s %s to %s %s %s"
-        % (
-            unit,
-            self.Devices[unit].Type,
-            self.Devices[unit].SubType,
-            self.Devices[unit].SwitchType,
-            Type_,
-            Subtype_,
-            SwitchType_,
-        ),
-    )
-
-    nValue = self.Devices[unit].nValue
-    sValue = self.Devices[unit].sValue
-    if (
-        Type_ != self.Devices[unit].Type
-        or Subtype_ != self.Devices[unit].SubType
-        or SwitchType_ != self.Devices[unit].SwitchType
-    ):
-        self.logging(
-            "Debug",
-            "update_domoticz_group_device_widget - Update Type:%s, Subtype:%s, Switchtype:%s"
-            % (Type_, Subtype_, SwitchType_),
-        )
-        self.Devices[unit].Update(nValue, sValue, Type=Type_, Subtype=Subtype_, Switchtype=SwitchType_)
+    # Due to bug https://github.com/domoticz/domoticz/issues/6027 (on extended Framework ), this function  is not supported anymore
+    
+    return
+    
+    # self.logging("Debug", "update_domoticz_group_device_widget GroupId: %s" % GroupId)
+    # if GroupId == "":
+    #     self.logging("Error", "update_domoticz_group_device_widget - Invalid GroupdID: %s" % (GroupId))
+# 
+    # unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
+    # if unit is None:
+    #     self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+    #     LookForGroupAndCreateIfNeeded(self, GroupId)
+    #     return
+# 
+    # Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
+    # current_switchType, current_Subtype, current_Type = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
+    # self.logging( "Debug", "      Looking to update Unit: %s from %s %s %s to %s %s %s"% (
+    #     unit, current_Type, current_Subtype, current_switchType, Type_, Subtype_, SwitchType_, ),)
+# 
+    # domo_update_witchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_)
 
 
 def best_group_widget(self, GroupId):
@@ -313,9 +278,10 @@ def update_domoticz_group_device(self, GroupId):
         self.logging( "Debug", "update_domoticz_group_device - no Devices for that group: %s" % self.ListOfGroups[GroupId])
         return
 
-    unit = unit_for_widget(self, GroupId)
+    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None:
-        self.logging( "Debug", "update_domoticz_group_device - no unit found for GroupId: %s" % self.ListOfGroups[GroupId])
+        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        LookForGroupAndCreateIfNeeded(self, GroupId)
         return
 
     Cluster = None
@@ -402,6 +368,7 @@ def update_domoticz_group_device(self, GroupId):
         GroupId, nValue, level), )
 
 
+    switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
     # At that stage
     # nValue == 0 if Off
     # nValue == 1 if Open/On
@@ -413,7 +380,7 @@ def update_domoticz_group_device(self, GroupId):
         sValue = "0"
         
     elif sValue is None and level:
-        if self.Devices[unit].SwitchType not in (13, 14, 15, 16):
+        if switchType not in (13, 14, 15, 16):
             # Not a Shutter/Blind
             analogValue = level
             if analogValue >= 255:
@@ -443,36 +410,31 @@ def update_domoticz_group_device(self, GroupId):
 
     elif sValue is None:
         if nValue == 0:
-            if self.Devices[unit].SwitchType not in (13, 14, 15, 16):
+            if switchType not in (13, 14, 15, 16):
                 sValue = "Close"
             else:
                 sValue = "Off"
 
         else:
-            if self.Devices[unit].SwitchType not in (13, 14, 15, 16):
+            if switchType not in (13, 14, 15, 16):
                 sValue = "Open"
             else:
                 sValue = "On"
 
+    current_nValue, current_sValue = domo_read_nValue_sValue(self, self.Devices, GroupId, unit)
+    group_name = domo_read_Name( self, self.Devices, GroupId, unit )
     self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > from %s:%s to %s:%s" % (
-        GroupId, self.Devices[unit].nValue, self.Devices[unit].sValue, nValue, sValue), )
-    if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
-        self.logging("Log", "UpdateGroup  - (%15s) %s:%s" % (self.Devices[unit].Name, nValue, sValue))
-        self.Devices[unit].Update(nValue, sValue)
+        GroupId, current_nValue, current_sValue, nValue, sValue), )
+    
+    
+    if nValue != current_nValue or sValue != current_sValue:
+        self.logging("Log", f"UpdateGroup  - ({group_name:>15}) {nValue}:{sValue}")
+        domo_update_api(self, self.Devices, GroupId, unit, nValue, sValue)
 
 
 def update_domoticz_group_name(self, GrpId, NewGrpName):
+    update_domoticz_group_device_widget_name(self, NewGrpName, GrpId)
 
-    unit = unit_for_widget(self, GrpId)
-    if unit is None:
-        self.logging("Debug", "update_domoticz_group_name - no unit found for GroupId: %s" % self.ListOfGroups[GrpId])
-        return
-
-    nValue = self.Devices[unit].nValue
-    sValue = self.Devices[unit].sValue
-
-    self.logging("Debug", "update_domoticz_group_name Update GroupId: %s to Name: %s" % (GrpId, NewGrpName))
-    self.Devices[unit].Update(nValue, sValue, Name=NewGrpName)
     return
 
 
@@ -491,15 +453,11 @@ def ValuesForVenetian(level):
 def remove_domoticz_group_device(self, GroupId):
     " User has removed the Domoticz Device corresponding to this group"
 
-    unit = unit_for_widget(self, GroupId)
+    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
     if unit is None and GroupId in self.ListOfGroups:
-        self.logging(
-            "Debug", "remove_domoticz_group_device - no unit found for GroupId: %s" % self.ListOfGroups[GroupId]
-        )
+        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
         return
-
-    if unit in self.Devices:
-        self.Devices[unit].Delete()
+    domo_delete_widget( self, self.Devices, GroupId, unit)
 
 
 def update_device_list_attribute(self, GroupId, cluster, value):
@@ -615,32 +573,25 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         "Cluster" in self.ListOfGroups[GrpId]
         and self.ListOfGroups[GrpId]["Cluster"] == "0102"
     ):  # Venetian store
-        #zigate_cmd = "00FA"
         if Command in ( "Off", "Close", ):
-            zigate_param = "00"
             nValue = 0
             sValue = "Off"
             update_device_list_attribute(self, GrpId, "0102", 0)
             zcl_group_window_covering_on(self, GrpId, ZIGATE_EP, EPout)
 
         if Command in ( "On", "Open",):
-            zigate_param = "01"
             nValue = 1
             sValue = "Off"
             zcl_group_window_covering_off(self, GrpId, ZIGATE_EP, EPout)
             update_device_list_attribute(self, GrpId, "0102", 100)
 
         if Command == "Stop":
-            zigate_param = "02"
             nValue = 2
             sValue = "50"
             zcl_group_window_covering_stop(self, GrpId, ZIGATE_EP, EPout)
             update_device_list_attribute(self, GrpId, "0102", 50)
 
-        self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
-        #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
-        #self.logging("Debug", "Group Command: %s %s-%s" % (Command, zigate_cmd, datas))
-        #self.ControllerLink.sendData(zigate_cmd, datas, ackIsDisabled=True)
+        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
         resetDevicesHearttBeat(self, GrpId)
         return
 
@@ -654,43 +605,26 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             elif self.pluginconf.pluginConf["GrpfadingOff"] == 255:
                 effect = "0001"  # No fade
 
-            #zigate_cmd = "0094"
-            #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + effect
             zcl_group_onoff_off_witheffect(self, GrpId, ZIGATE_EP, EPout, effect)
         else:
-            #zigate_cmd = "0092"
-            #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + "00"
             zcl_group_onoff_off_noeffect(self, GrpId, ZIGATE_EP, EPout)
-
-
-        #self.logging("Debug", "Command: %s %s" % (Command, datas))
-        #self.ControllerLink.sendData(zigate_cmd, datas, ackIsDisabled=True)
 
         # Update Device
         nValue = 0
         sValue = "Off"
-        self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
         update_device_list_attribute(self, GrpId, "0006", "00")
         update_domoticz_group_device(self, GrpId)
 
     elif Command in ( "On", "Open", ):
-        #zigate_cmd = "0092"
-        #zigate_param = "01"
-        nValue = "1"
+        nValue = 1
         sValue = "On"
-        self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
+
         update_device_list_attribute(self, GrpId, "0006", "01")
         update_domoticz_group_device(self, GrpId)
         zcl_group_onoff_on(self, GrpId, ZIGATE_EP, EPout)
-
-        #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
-        #self.logging("Debug", "Command: %s %s" % (Command, datas))
-        #self.ControllerLink.sendData(zigate_cmd, datas, ackIsDisabled=True)
-        # Update Device
-        nValue = 1
-        sValue = "On"
-        self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
 
     elif Command in ( "Stop",) and self.ListOfGroups[GrpId]["Cluster"] == "0102":
         # Windowscovering Stop
@@ -713,11 +647,6 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         
         # value = int(Level*255//100)
         value = "%02X" % int(Level * 255 // 100)
-        #zigate_cmd = "0081"
-        #zigate_param = OnOff + value + "0010"
-        #nValue = 1
-        #sValue = str(Level)
-        #self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
         update_device_list_attribute(self, GrpId, "0008", value)
         
         transitionMoveLevel = "%04x" % self.pluginconf.pluginConf["GrpmoveToLevel"]
@@ -730,14 +659,11 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         else:
             zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, transition=transitionMoveLevel)
 
-        #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
-        #self.logging("Debug", "Command: %s %s" % (Command, datas))
-        #self.ControllerLink.sendData(zigate_cmd, datas, ackIsDisabled=True)
         update_domoticz_group_device(self, GrpId)
         # Update Device
         nValue = 2
         sValue = str(Level)
-        self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
     elif Command == "Set Color":
         Hue_List = json.loads(Color_)
@@ -751,15 +677,8 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             # In case of m ==3, we will do the Setlevel
             OnOff = "01"  # 00 = off, 01 = on
             value = Hex_Format(2, round(1 + Level * 254 / 100))  # To prevent off state
-            #zigate_cmd = "0081"
-            #zigate_param = OnOff + value + transitionMoveLevel
-
-            #datas = "%02d" % ADDRESS_MODE["group"] + GrpId + ZIGATE_EP + EPout + zigate_param
-            #self.logging("Debug", "Command: %s - data: %s" % (zigate_cmd, datas))
             update_device_list_attribute(self, GrpId, "0008", value)
-            #self.ControllerLink.sendData(zigate_cmd, datas, ackIsDisabled=True)
-            
-            #zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, "0000")
+
             zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, value, transition="0000")
 
         if Hue_List["m"] == 1:
@@ -792,24 +711,12 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             value = int(level * 254 // 100)
             OnOff = "01"
             self.logging("Debug", "---------- Set Level: %s instead of Level: %s" % (value, Level))
-            #self.ControllerLink.sendData(
-            #    "0081",
-            #    "%02d" % ADDRESS_MODE["group"]
-            #    + GrpId
-            #    + ZIGATE_EP
-            #    + EPout
-            #    + OnOff
-            #    + Hex_Format(2, value)
-            #    + transitionMoveLevel,
-            #    ackIsDisabled=True,
-            #)
-            #zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", Hex_Format(2, value), transitionMoveLevel)
             zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, Hex_Format(2, value), transition=transitionMoveLevel)
 
         # Update Device
         nValue = 1
         sValue = str(Level)
-        self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_)
+        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue, Color=Color_), 
 
     # Request to force ReadAttribute to each devices part of that group
     resetDevicesHearttBeat(self, GrpId)

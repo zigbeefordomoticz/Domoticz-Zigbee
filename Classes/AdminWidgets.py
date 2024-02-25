@@ -10,8 +10,9 @@
 
 """
 
-import Domoticz
-from datetime import datetime
+from Modules.domoticzAbstractLayer import (
+    FreeUnit, domo_create_api, domo_read_nValue_sValue, domo_update_api,
+    domoticz_error_api, find_first_unit_widget_from_deviceID)
 
 DEVICEID_ADMIN_WIDGET = "Zigate-01-"
 DEVICEID_STATUS_WIDGET = "Zigate-02-"
@@ -21,91 +22,62 @@ DEVICEID_STATUS_WIDGET_TXT = "Zigate Status"
 DEVICEID_TXT_WIDGET_TXT = "Zigate Notifications"
 
 
+def _get_switch_selector_options(self, ):
+    if self.pluginconf.pluginConf["eraseZigatePDM"]:
+        return {
+            "LevelActions": "|||||||",
+            "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrollment|Perm. Enrollment|Interf Scan|LQI Report|Erase PDM",
+            "LevelOffHidden": "true",
+            "SelectorStyle": "0",
+        }
+        
+    return {
+            "LevelActions": "|||||||",
+            "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolmennt|Perm. Enrollment|Interf Scan|LQI Report",
+            "LevelOffHidden": "true",
+            "SelectorStyle": "0",
+        }
+
 class AdminWidgets:
-    def __init__(self, PluginConf, Devices, ListOfDevices, HardwareID):
+    def __init__(self, log, PluginConf, pluginParameters, Devices, ListOfDevices, HardwareID):
 
         self.pluginconf = PluginConf
+        self.pluginParameters = pluginParameters
         self.Devices = Devices  # Point to the List of Domoticz Devices
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.HardwareID = HardwareID
+        self.log = log 
         self.createStatusWidget(Devices)
         self.createNotificationWidget(Devices)
         # createAdminWidget( self, Devices )
 
-    def FreeUnit(self, Devices):
-        """
-        FreeUnit
-        Look for a Free Unit number.
-        """
-        for x in range(1, 255):
-            if x not in Devices:
-                return x
-
-        return len(Devices) + 1
-
     def createAdminWidget(self, Devices):
 
         deviceid_admin_widget = DEVICEID_ADMIN_WIDGET + "%02s" % self.HardwareID
-        unit = 0
-        for x in Devices:
-            if Devices[x].DeviceID == deviceid_admin_widget:
-                unit = x
-                break
-        if unit != 0:
+
+        if find_first_unit_widget_from_deviceID(self, Devices, deviceid_admin_widget ):
             return
 
-        if self.pluginconf.pluginConf["eraseZigatePDM"]:
-            Options = {
-                "LevelActions": "|||||||",
-                "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrollment|Perm. Enrollment|Interf Scan|LQI Report|Erase PDM",
-                "LevelOffHidden": "true",
-                "SelectorStyle": "0",
-            }
-        else:
-            Options = {
-                "LevelActions": "|||||||",
-                "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolmennt|Perm. Enrollment|Interf Scan|LQI Report",
-                "LevelOffHidden": "true",
-                "SelectorStyle": "0",
-            }
-
-        unit = self.FreeUnit(Devices)
         widget_name = DEVICEID_ADMIN_WIDGET_TXT + " %02s" % self.HardwareID
-        myDev = Domoticz.Device(
-            DeviceID=deviceid_admin_widget,
-            Name=widget_name,
-            Unit=unit,
-            Type=244,
-            Subtype=62,
-            Switchtype=18,
-            Options=Options,
-        )
-        myDev.Create()
-        ID = myDev.ID
-        if myDev.ID == -1:
-            Domoticz.Error("createAdminWidget - Fail to create %s. %s" % (widget_name, str(myDev)))
+        unit = FreeUnit(self, Devices, deviceid_admin_widget, nbunit_=1)
+        ID = domo_create_api(self, Devices, deviceid_admin_widget, unit, widget_name, Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=_get_switch_selector_options(self))
+        if ID == -1:
+            domoticz_error_api("createAdminWidget - Fail to create %s." % (widget_name))
         return
 
     def createStatusWidget(self, Devices):
 
         deviceid_status_widget = DEVICEID_STATUS_WIDGET + "%02s" % self.HardwareID
-        unit = 0
-        for x in Devices:
-            if Devices[x].DeviceID == deviceid_status_widget:
-                unit = x
-                break
-        if unit != 0:
+
+        if find_first_unit_widget_from_deviceID(self, Devices, deviceid_status_widget):
             return
 
-        unit = self.FreeUnit(Devices)
+        unit = FreeUnit(self, Devices, deviceid_status_widget, nbunit_=1)
         widget_name = DEVICEID_STATUS_WIDGET_TXT + " %02s" % self.HardwareID
-        myDev = Domoticz.Device(
-            DeviceID=deviceid_status_widget, Name=widget_name, Unit=unit, Type=243, Subtype=22, Switchtype=0
-        )
-        myDev.Create()
-        ID = myDev.ID
-        if myDev.ID == -1:
-            Domoticz.Error("createAdminWidget - Fail to create %s. %s" % (widget_name, str(myDev)))
+        ID = domo_create_api(self, Devices, deviceid_status_widget, unit, widget_name, Type_=243, Subtype_=22, Switchtype_=0,)
+        
+        if ID == -1:
+            domoticz_error_api("createAdminWidget - Fail to create %s." % (widget_name))
             return
 
         self.updateStatusWidget(Devices, "Off")
@@ -114,23 +86,14 @@ class AdminWidgets:
     def createNotificationWidget(self, Devices):
 
         deviceid_txt_widget = DEVICEID_TXT_WIDGET + "%02s" % self.HardwareID
-        unit = 0
-        for x in Devices:
-            if Devices[x].DeviceID == deviceid_txt_widget:
-                unit = x
-                break
-        if unit != 0:
+        if find_first_unit_widget_from_deviceID(self, Devices, deviceid_txt_widget ):
             return
 
-        unit = self.FreeUnit(Devices)
+        unit = FreeUnit(self, Devices, deviceid_txt_widget, nbunit_=1)
         widget_name = DEVICEID_TXT_WIDGET_TXT + " %02s" % self.HardwareID
-        myDev = Domoticz.Device(
-            DeviceID=deviceid_txt_widget, Name=widget_name, Unit=unit, Type=243, Subtype=19, Switchtype=0
-        )
-        myDev.Create()
-        ID = myDev.ID
-        if myDev.ID == -1:
-            Domoticz.Error("createNotificationWidget - Fail to create %s. %s" % (widget_name, str(myDev)))
+        ID = domo_create_api(self, Devices, deviceid_txt_widget, unit, widget_name, Type_=243, Subtype_=19, Switchtype_=0,)
+        if ID == -1:
+            domoticz_error_api("createNotificationWidget - Fail to create %s." % (widget_name))
             return
 
         return
@@ -147,42 +110,39 @@ class AdminWidgets:
         return
 
     def updateStatusWidget(self, Devices, statusType):
-
         STATUS_WIDGET = {"No Communication": 4, "Startup": 0, "Ready": 1, "Enrollment": 3, "Busy": 3}
 
         deviceid_status_widget = DEVICEID_STATUS_WIDGET + "%02s" % self.HardwareID
         if statusType not in STATUS_WIDGET:
             return
 
-        unit = 0
-        for x in Devices:
-            if Devices[x].DeviceID == deviceid_status_widget:
-                unit = x
-                break
-        if unit == 0:
+        unit = find_first_unit_widget_from_deviceID(self, Devices, deviceid_status_widget )
+        if not unit:
             return
 
         nValue = STATUS_WIDGET[statusType]
         sValue = str(statusType)
-        if sValue != Devices[unit].sValue:
-            Devices[unit].Update(nValue=nValue, sValue=sValue)
+        
+        _, cur_svalue = domo_read_nValue_sValue(self, Devices, deviceid_status_widget, unit)
+        
+        if sValue != cur_svalue:
+            domo_update_api(self, Devices, deviceid_status_widget, unit, nValue, sValue)
 
         return
 
     def updateNotificationWidget(self, Devices, notification):
         deviceid_txt_widget = DEVICEID_TXT_WIDGET + "%02s" % self.HardwareID
-        unit = 0
-        for x in Devices:
-            if Devices[x].DeviceID == deviceid_txt_widget:
-                unit = x
-                break
-        if unit == 0:
+        unit = find_first_unit_widget_from_deviceID(self, Devices, deviceid_txt_widget )
+        if not unit:
             return
 
-        nValue = 0
+        _, cur_svalue = domo_read_nValue_sValue(self, Devices, deviceid_txt_widget, unit)
+
         sValue = str(notification)
-        if sValue != Devices[unit].sValue:
-            Devices[unit].Update(nValue=nValue, sValue=sValue)
+        if sValue != cur_svalue:
+            domo_update_api(self, Devices, deviceid_txt_widget, unit, 0, sValue)
 
     def handleCommand(self, Command):
         return
+
+

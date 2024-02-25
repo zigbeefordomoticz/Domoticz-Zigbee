@@ -6,11 +6,13 @@
 import json
 from time import time
 
-import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.basicOutputs import (ZigatePermitToJoin, setExtendedPANID,
                                   start_Zigate, zigateBlueLed)
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.sendZigateCommand import (raw_APS_request, send_zigatecmd_raw,
                                        send_zigatecmd_zcl_ack,
@@ -32,17 +34,17 @@ def rest_new_hrdwr(self, verb, data, parameters):
 
     data = {}
     if len(parameters) != 1:
-        Domoticz.Error("rest_new_hrdwr - unexpected parameter %s " % parameters)
+        domoticz_error_api("rest_new_hrdwr - unexpected parameter %s " % parameters)
         _response["Data"] = {"unexpected parameter %s " % parameters}
         return _response
 
     if parameters[0] not in ("enable", "cancel", "disable"):
-        Domoticz.Error("rest_new_hrdwr - unexpected parameter %s " % parameters[0])
+        domoticz_error_api("rest_new_hrdwr - unexpected parameter %s " % parameters[0])
         _response["Data"] = {"unexpected parameter %s " % parameters[0]}
         return _response
 
     if parameters[0] == "enable":
-        Domoticz.Log("Enable Assisted pairing")
+        domoticz_log_api("Enable Assisted pairing")
         if len(self.DevicesInPairingMode):
             del self.DevicesInPairingMode
             self.DevicesInPairingMode = []
@@ -57,7 +59,7 @@ def rest_new_hrdwr(self, verb, data, parameters):
         return _response
 
     if parameters[0] in ("cancel", "disable"):
-        Domoticz.Log("Disable Assisted pairing")
+        domoticz_log_api("Disable Assisted pairing")
         if len(self.DevicesInPairingMode) != 0:
             del self.DevicesInPairingMode
             self.DevicesInPairingMode = []
@@ -121,9 +123,9 @@ def rest_rcv_nw_hrdwr(self, verb, data, parameters):
             self.DevicesInPairingMode.append(list(self.ListOfDevices.keys())[1])
             self.DevicesInPairingMode.append(list(self.ListOfDevices.keys())[2])
 
-    Domoticz.Log("Assisted Pairing: Polling: %s" % str(self.DevicesInPairingMode))
+    domoticz_log_api("Assisted Pairing: Polling: %s" % str(self.DevicesInPairingMode))
     if len(self.DevicesInPairingMode) == 0:
-        Domoticz.Log("--> Empty queue")
+        domoticz_log_api("--> Empty queue")
         _response["Data"] = json.dumps(data)
         return _response
 
@@ -137,9 +139,9 @@ def rest_rcv_nw_hrdwr(self, verb, data, parameters):
         newdev = {}
         newdev["NwkId"] = nwkid
 
-        Domoticz.Log("--> New device: %s" % nwkid)
+        domoticz_log_api("--> New device: %s" % nwkid)
         if "Status" not in self.ListOfDevices[nwkid]:
-            Domoticz.Error("Something went wrong as the device seems not be created")
+            domoticz_error_api("Something went wrong as the device seems not be created")
             data["NewDevices"].append(newdev)
             continue
 
@@ -149,22 +151,22 @@ def rest_rcv_nw_hrdwr(self, verb, data, parameters):
             continue
 
         elif self.ListOfDevices[nwkid]["Status"] == "UNKNOW" or (_fake == 2):
-            Domoticz.Log("--> UNKNOW , removed %s from List" % nwkid)
+            domoticz_log_api("--> UNKNOW , removed %s from List" % nwkid)
             self.DevicesInPairingMode.remove(nwkid)
             newdev["ProvisionStatus"] = "Failed"
             newdev["ProvisionStatusDesc"] = "Failed"
 
         elif self.ListOfDevices[nwkid]["Status"] == "inDB":
-            Domoticz.Log("--> inDB , removed %s from List" % nwkid)
+            domoticz_log_api("--> inDB , removed %s from List" % nwkid)
             self.DevicesInPairingMode.remove(nwkid)
             newdev["ProvisionStatus"] = "inDB"
             newdev["ProvisionStatusDesc"] = "inDB"
         else:
-            Domoticz.Log("--> Unexpected , removed %s from List" % nwkid)
+            domoticz_log_api("--> Unexpected , removed %s from List" % nwkid)
             self.DevicesInPairingMode.remove(nwkid)
             newdev["ProvisionStatus"] = "Unexpected"
             newdev["ProvisionStatusDesc"] = "Unexpected"
-            Domoticz.Error("Unexpected")
+            domoticz_error_api("Unexpected")
             continue
 
         newdev["IEEE"] = "Unknown"
@@ -220,11 +222,11 @@ def rest_rcv_nw_hrdwr(self, verb, data, parameters):
                     else:
                         cluster["ClusterDesc"] = "Unknown"
                     ep["Clusters"].append(cluster)
-                    Domoticz.Log("------> New Cluster: %s" % str(cluster))
+                    domoticz_log_api("------> New Cluster: %s" % str(cluster))
                 newdev["Ep"].append(ep)
-                Domoticz.Log("----> New Ep: %s" % str(ep))
+                domoticz_log_api("----> New Ep: %s" % str(ep))
         data["NewDevices"].append(newdev)
-        Domoticz.Log(" --> New Device: %s" % str(newdev))
+        domoticz_log_api(" --> New Device: %s" % str(newdev))
     # for nwkid in listOfPairedDevices:
 
     _response["Data"] = json.dumps(data)
@@ -235,7 +237,7 @@ def rest_full_reprovisionning(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
 
-    Domoticz.Log("rest_full_reprovisionning -->Verb: %s Data: %s Parameters: %s" % (verb, data, parameters))
+    domoticz_log_api("rest_full_reprovisionning -->Verb: %s Data: %s Parameters: %s" % (verb, data, parameters))
 
     if verb != "PUT":
         return _response
@@ -245,21 +247,21 @@ def rest_full_reprovisionning(self, verb, data, parameters):
     self.logging("Log", "Data: %s" % data)
 
     if "IEEE" not in data and "NWKID" not in data:
-        Domoticz.Error("rest_full_reprovisionning - unexpected parameter %s " % parameters)
+        domoticz_error_api("rest_full_reprovisionning - unexpected parameter %s " % parameters)
         _response["Data"] = {"unexpected parameter %s " % parameters}
         return _response
 
     if "IEEE" in data:
         key = data["IEEE"]
         if key not in self.IEEE2NWK:
-            Domoticz.Error("rest_full_reprovisionning - Unknown device %s " % key)
+            domoticz_error_api("rest_full_reprovisionning - Unknown device %s " % key)
             return _response
         nwkid = self.IEEE2NWK[key]
         _response["Data"] = {"IEEE %s set to Provisioning Requested at %s" % (key, int(time()))}
     else:
         nwkid = data["NWKID"]
         if nwkid not in self.ListOfDevices:
-            Domoticz.Error("rest_full_reprovisionning - Unknown device %s " % nwkid)
+            domoticz_error_api("rest_full_reprovisionning - Unknown device %s " % nwkid)
             return _response
         _response["Data"] = {"NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))}
 

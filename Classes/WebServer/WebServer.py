@@ -10,7 +10,6 @@ import os
 import os.path
 import time
 
-import Domoticz
 from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
@@ -18,6 +17,13 @@ from Modules.actuators import actuators
 from Modules.basicOutputs import (PermitToJoin, ZigatePermitToJoin,
                                   initiate_change_channel, setExtendedPANID,
                                   zigateBlueLed)
+from Modules.domoticzAbstractLayer import (domo_read_BatteryLevel,
+                                           domo_read_nValue_sValue,
+                                           domo_read_SignalLevel,
+                                           domo_read_TimedOut,
+                                           domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 from Modules.sendZigateCommand import sendZigateCmd
 from Modules.tools import is_hex
 from Modules.txPower import set_TxPower
@@ -113,6 +119,7 @@ class WebServer(object):
         HomeDirectory,
         hardwareID,
         Devices,
+        ListOfDomoticzWidget,
         ListOfDevices,
         IEEE2NWK,
         DeviceConf,
@@ -166,6 +173,7 @@ class WebServer(object):
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
         self.Devices = Devices
+        self.ListOfDomoticzWidget = ListOfDomoticzWidget
         self.readZclClusters = readZclClusters
         self.ControllerIEEE = None
 
@@ -247,7 +255,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
             self.logging("Status", "Erase ZiGate PDM")
-            Domoticz.Error("Erase ZiGate PDM non implémenté pour l'instant")
+            domoticz_error_api("Erase ZiGate PDM non implémenté pour l'instant")
             if self.pluginconf.pluginConf["eraseZigatePDM"]:
                 if self.pluginParameters["Mode2"] != "None" and self.zigbee_communication == "native":
                     sendZigateCmd(self, "0012", "")
@@ -402,7 +410,7 @@ class WebServer(object):
                     action = {"Name": "Report %s removed" % timestamp}
                     _response["Data"] = json.dumps(action, sort_keys=True)
                 else:
-                    Domoticz.Error("Removing Nwk-Energy %s not found" % timestamp)
+                    domoticz_error_api("Removing Nwk-Energy %s not found" % timestamp)
                     _response["Data"] = json.dumps([], sort_keys=True)
 
         elif verb == "GET":
@@ -582,7 +590,6 @@ class WebServer(object):
                     }
 
                     if SETTINGS[_theme]["param"][param]["type"] == "hex":
-                        Domoticz.Debug("--> %s: %s - %s" % (param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
                         if isinstance(self.pluginconf.pluginConf[param], int):
                             setting["current_value"] = "%x" % self.pluginconf.pluginConf[param]
                         else:
@@ -640,7 +647,7 @@ class WebServer(object):
                                 self.pluginconf.pluginConf["Certification"] = setting_lst[setting]["current"]
                                 self.pluginconf.pluginConf["CertificationCode"] = CERTIFICATION_CODE[setting_lst[setting]["current"]]
                             else:
-                                Domoticz.Error("Unknown Certification code %s (allow are CE and FCC)" % (setting_lst[setting]["current"]))
+                                domoticz_error_api("Unknown Certification code %s (allow are CE and FCC)" % (setting_lst[setting]["current"]))
                                 continue
 
                         elif param == "blueLedOnOff":
@@ -678,13 +685,13 @@ class WebServer(object):
                             
                         else:
                             if SETTINGS[_theme]["param"][param]["type"] == "hex":
-                                # Domoticz.Log("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
+                                # domoticz_log_api("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
                                 self.pluginconf.pluginConf[param] = int(str(setting_lst[setting]["current"]), 16)
                             else:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
 
                 if not found:
-                    Domoticz.Error("Unexpected parameter: %s" % setting)
+                    domoticz_error_api("Unexpected parameter: %s" % setting)
                     _response["Data"] = {"unexpected parameters %s" % setting}
 
             if upd:
@@ -738,63 +745,67 @@ class WebServer(object):
                     ZigatePermitToJoin(self, int(data["PermitToJoin"]))
         return _response
 
+
     def rest_Device(self, verb, data, parameters):
-        def getDeviceInfos(self, UnitId):
+
+        def getDeviceInfos(self, widget_idx):
+            device_id = self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+            unit = self.ListOfDomoticzWidget[widget_idx]["Unit"]
+            nValue, sValue = domo_read_nValue_sValue(self, self.Devices, device_id, unit)
+            SignalLevel = domo_read_SignalLevel(self, self.Devices, device_id, unit)
+            BatteryLevel = domo_read_BatteryLevel(self, self.Devices, device_id, unit)
+            TimedOut = domo_read_TimedOut(self, self.Devices, device_id)
+
             return {
-                "_DeviceID": self.Devices[UnitId].DeviceID,
-                "Name": self.Devices[UnitId].Name,
-                "ID": self.Devices[UnitId].ID,
-                "sValue": self.Devices[UnitId].sValue,
-                "nValue": self.Devices[UnitId].nValue,
-                "SignaleLevel": self.Devices[UnitId].SignalLevel,
-                "BatteryLevel": self.Devices[UnitId].BatteryLevel,
-                "TimedOut": self.Devices[UnitId].TimedOut,
-                # _dictDevices['Type'] = self.Devices[UnitId].Type
-                # _dictDevices['SwitchType'] = self.Devices[UnitId].SwitchType
+                "_DeviceID": device_id,
+                "Name": device_id,
+                "ID": widget_idx,
+                "sValue": sValue,
+                "nValue": nValue,
+                "SignalLevel": SignalLevel,
+                "BatteryLevel": BatteryLevel,
+                "TimedOut": TimedOut,
             }
 
-        _dictDevices = {}
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        if verb == "GET":
-            if self.Devices is None or len(self.Devices) == 0:
-                return _response
+        if verb != "GET":
+            return _response
+        
+        if not self.ListOfDomoticzWidget or len(self.ListOfDomoticzWidget) == 0:
+            return _response
 
-            if len(parameters) == 0:
-                # Return the Full List of ZiGate Domoticz Widget
-                device_lst = []
-                for x in self.Devices:
-                    if len(self.Devices[x].DeviceID) != 16:
-                        continue
+        if len(parameters) == 0:
+            # Return the Full List of ZiGate Domoticz Widget
+            device_lst = [
+                getDeviceInfos(widget_idx)
+                for widget_idx in self.ListOfDomoticzWidget
+                if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
+            ]
+            _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
-                    device_info = getDeviceInfos(self, x)
-                    device_lst.append(device_info)
-                _response["Data"] = json.dumps(device_lst, sort_keys=True)
+        elif len(parameters) == 1:
+            for widget_idx in self.ListOfDomoticzWidget:
+                if (
+                    len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
+                    and parameters[0] == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+                ):
+                    _response["Data"] = json.dumps(getDeviceInfos(widget_idx), sort_keys=True)
+                    break
 
-            elif len(parameters) == 1:
-                for x in self.Devices:
-                    if len(self.Devices[x].DeviceID) != 16:
-                        continue
+        else:
+            device_lst = [
+                getDeviceInfos(widget_idx)
+                for parm in parameters
+                for widget_idx in self.ListOfDomoticzWidget
+                if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
+                and parm == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+            ]
+            _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
-                    if parameters[0] == self.Devices[x].DeviceID:
-                        _dictDevices = device_info = getDeviceInfos(self, x)
-                        _response["Data"] = json.dumps(_dictDevices, sort_keys=True)
-                        break
-
-            else:
-                device_lst = []
-                for parm in parameters:
-                    device_info = {}
-                    for x in self.Devices:
-                        if len(self.Devices[x].DeviceID) != 16:
-                            continue
-
-                        if parm == self.Devices[x].DeviceID:
-                            device_info = getDeviceInfos(self, x)
-                            device_lst.append(device_info)
-                _response["Data"] = json.dumps(device_lst, sort_keys=True)
         return _response
+
 
     def rest_zDevice_name(self, verb, data, parameters):
 
@@ -807,16 +818,16 @@ class WebServer(object):
                 deviceId = parameters[0]
                 if len(deviceId) == 4:  # Short Network Addr
                     if deviceId not in self.ListOfDevices:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     nwkid = deviceId
                     ieee = self.ListOfDevices[deviceId]["IEEE"]
                 else:
                     if deviceId not in self.IEEE2NWK:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     ieee = deviceId
@@ -837,7 +848,7 @@ class WebServer(object):
 
         elif verb == "GET":
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
- 
+            
             if self.fake_mode():
                 _response["Data"] = json.dumps(dummy_zdevice_name(), sort_keys=True)
             else:
@@ -847,19 +858,7 @@ class WebServer(object):
                         continue
 
                     device = {"_NwkId": x}
-                    for item in (
-                        "Param",
-                        "ZDeviceName",
-                        "IEEE",
-                        "Model",
-                        "MacCapa",
-                        "Status",
-                        "ConsistencyCheck",
-                        "Health",
-                        "LQI",
-                        "Battery",
-                        "CertifiedDevice"
-                    ):
+                    for item in ( "Param", "ZDeviceName", "IEEE", "Model", "MacCapa", "Status", "ConsistencyCheck", "Health", "LQI", "Battery", "CertifiedDevice" ):
                         if item == "CertifiedDevice" and "CertifiedDevice" in self.ListOfDevices[x]:
                             device[item] = self.ListOfDevices[x][item]
 
@@ -905,21 +904,21 @@ class WebServer(object):
                     for ep in self.ListOfDevices[x]["Ep"]:
                         if "ClusterType" in self.ListOfDevices[x]["Ep"][ep]:
                             clusterType = self.ListOfDevices[x]["Ep"][ep]["ClusterType"]
-                            for widgetID in clusterType:
-                                for widget in self.Devices:
-                                    if self.Devices[widget].ID == int(widgetID):
-                                        self.logging("Debug", "Widget Name: %s %s" % (widgetID, self.Devices[widget].Name))
-                                        if self.Devices[widget].Name not in device["WidgetList"]:
-                                            device["WidgetList"].append(self.Devices[widget].Name)
+                            for widget_idx in clusterType:
+                                if int(widget_idx) in self.ListOfDomoticzWidget:
+                                    widget_name = self.ListOfDomoticzWidget[ int(widget_idx) ]["Name"]
+                                    
+                                    if widget_name not in device["WidgetList"]:
+                                        device["WidgetList"].append(widget_name)
 
                         elif "ClusterType" in self.ListOfDevices[x]:
                             clusterType = self.ListOfDevices[x]["ClusterType"]
-                            for widgetID in clusterType:
-                                for widget in self.Devices:
-                                    if self.Devices[widget].ID == int(widgetID):
-                                        self.logging("Debug", "Widget Name: %s %s" % (widgetID, self.Devices[widget].Name))
-                                        if self.Devices[widget].Name not in device["WidgetList"]:
-                                            device["WidgetList"].append(self.Devices[widget].Name)
+                            for widget_idx in clusterType:
+                                if int(widget_idx) in self.ListOfDomoticzWidget:
+                                    widget_name = self.ListOfDomoticzWidget[ int(widget_idx) ]["Name"]
+                                    
+                                    if widget_name not in device["WidgetList"]:
+                                        device["WidgetList"].append(widget_name)
 
                     if device not in device_lst:
                         device_lst.append(device)
@@ -962,7 +961,7 @@ class WebServer(object):
                             self.ListOfDevices[dev]["Param"], self.ListOfDevices[dev]["IEEE"], dev), )
                         self.ListOfDevices[dev]["CheckParam"] = True
                 else:
-                    Domoticz.Error("wrong data received: %s" % data)
+                    domoticz_error_api("wrong data received: %s" % data)
 
         return _response
 
@@ -976,16 +975,16 @@ class WebServer(object):
                 deviceId = parameters[0]
                 if len(deviceId) == 4:  # Short Network Addr
                     if deviceId not in self.ListOfDevices:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     nwkid = deviceId
                     ieee = self.ListOfDevice[deviceId]["IEEE"]
                 else:
                     if deviceId not in self.IEEE2NWK:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     ieee = deviceId
@@ -1075,14 +1074,11 @@ class WebServer(object):
                     # ClusterType
                     _widget_lst = []
                     if "ClusterType" in self.ListOfDevices[item]:
-                        for widgetId in self.ListOfDevices[item]["ClusterType"]:
-                            widget = {"_WidgetID": widgetId, "WidgetName": ""}
-                            for x in self.Devices:
-                                if self.Devices[x].ID == int(widgetId):
-                                    widget["WidgetName"] = self.Devices[x].Name
-                                    break
-
-                            widget["WidgetType"] = self.ListOfDevices[item]["ClusterType"][widgetId]
+                        for widget_idx in self.ListOfDevices[item]["ClusterType"]:
+                            widget = {"_WidgetID": widget_idx, "WidgetName": ""}
+                            if int(widget_idx) in self.ListOfDomoticzWidget:
+                                widget["WidgetName"] = self.ListOfDomoticzWidget[int(widget_idx)]["Name"]
+                            widget["WidgetType"] = self.ListOfDevices[item]["ClusterType"][widget_idx]
                             _widget_lst.append(widget)
 
                     # Ep informations
@@ -1095,14 +1091,11 @@ class WebServer(object):
                                     continue
 
                                 if cluster == "ClusterType":
-                                    for widgetId in self.ListOfDevices[item]["Ep"][epId]["ClusterType"]:
-                                        widget = {"_WidgetID": widgetId, "WidgetName": ""}
-                                        for x in self.Devices:
-                                            if self.Devices[x].ID == int(widgetId):
-                                                widget["WidgetName"] = self.Devices[x].Name
-                                                break
-
-                                        widget["WidgetType"] = self.ListOfDevices[item]["Ep"][epId]["ClusterType"][widgetId]
+                                    for widget_idx in self.ListOfDevices[item]["Ep"][epId]["ClusterType"]:
+                                        widget = {"_WidgetID": widget_idx, "WidgetName": ""}
+                                        if int(widget_idx) in self.ListOfDomoticzWidget:
+                                            widget["WidgetName"] = self.ListOfDomoticzWidget[int(widget_idx)]["Name"]
+                                        widget["WidgetType"] = self.ListOfDevices[item]["Ep"][epId]["ClusterType"][widget_idx]
                                         _widget_lst.append(widget)
                                     continue
 
@@ -1166,7 +1159,7 @@ class WebServer(object):
         return _response
 
     def rest_change_channel(self, verb, data, parameters):
-        Domoticz.Log("rest_change_channel - %s %s" % (verb, data))
+        domoticz_log_api("rest_change_channel - %s %s" % (verb, data))
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
@@ -1178,9 +1171,9 @@ class WebServer(object):
         if len(parameters) == 0:
             data = data.decode("utf8")
             data = json.loads(data)
-            Domoticz.Log("---> Data: %s" % str(data))
+            domoticz_log_api("---> Data: %s" % str(data))
             if "Channel" not in data:
-                Domoticz.Error("Unexpected request: %s" % data)
+                domoticz_error_api("Unexpected request: %s" % data)
                 _response["Data"] = {"Error": "Unknow verb"}
                 return _response
             channel = data["Channel"]
@@ -1194,7 +1187,7 @@ class WebServer(object):
 
     def rest_raw_command(self, verb, data, parameters):
 
-        Domoticz.Log("raw_command - %s %s" % (verb, data))
+        domoticz_log_api("raw_command - %s %s" % (verb, data))
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
@@ -1203,14 +1196,14 @@ class WebServer(object):
             if len(parameters) == 0:
                 data = data.decode("utf8")
                 data = json.loads(data)
-                Domoticz.Log("---> Data: %s" % str(data))
+                domoticz_log_api("---> Data: %s" % str(data))
                 if "Command" not in data and "payload" not in data:
-                    Domoticz.Error("Unexpected request: %s" % data)
+                    domoticz_error_api("Unexpected request: %s" % data)
                     _response["Data"] = json.dumps("Executing %s on %s" % (data["Command"], data["payload"]))
                     return _response
 
                 if not is_hex(data["Command"]) or (is_hex(data["Command"]) and int(data["Command"], 16) not in ZIGATE_COMMANDS):
-                    Domoticz.Error("raw_command - Unknown MessageType received %s" % data["Command"])
+                    domoticz_error_api("raw_command - Unknown MessageType received %s" % data["Command"])
                     _response["Data"] = json.dumps("Unknown MessageType received %s" % data["Command"])
                     return _response
 
@@ -1310,7 +1303,7 @@ class WebServer(object):
             if len(parameters) == 0:
                 data = data.decode("utf8")
                 data = validateJSON( self, data)
-                Domoticz.Log("---> Data: %s" % str(data))
+                domoticz_log_api("---> Data: %s" % str(data))
                 self.logging(
                     "Log",
                     "rest_dev_command - Command: %s on object: %s with extra %s %s" % (data["Command"], data["NwkId"], data["Value"], data["Color"]),
@@ -1388,14 +1381,14 @@ class WebServer(object):
             return _response
 
         if len(parameters) == 0:
-            Domoticz.Error("rest_dev_capabilities - expecting a device id! %s" % (parameters))
+            domoticz_error_api("rest_dev_capabilities - expecting a device id! %s" % (parameters))
             return _response
 
         if len(parameters) != 1:
             return
 
         if parameters[0] not in self.ListOfDevices and parameters[0] not in self.IEEE2NWK:
-            Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" % (parameters[0]))
+            domoticz_error_api("rest_dev_capabilities - Device %s doesn't exist" % (parameters[0]))
             return _response
 
         # Check Capabilities
@@ -1468,7 +1461,7 @@ class WebServer(object):
 
     def rest_zigate_mode(self, verb, data, parameters):
 
-        Domoticz.Log("rest_zigate_mode mode: %s" % parameters)
+        domoticz_log_api("rest_zigate_mode mode: %s" % parameters)
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":

@@ -7,12 +7,17 @@
 import json
 import os
 import os.path
-from time import time
 from pathlib import Path
+from time import time
 
-import Domoticz
-from Classes.WebServer.headerResponse import (prepResponseMessage, setupHeadersResponse)
-from Modules.zb_tables_management import get_device_table_entry, get_list_of_timestamps, remove_entry_from_all_tables
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
+from Modules.zb_tables_management import (get_device_table_entry,
+                                          get_list_of_timestamps,
+                                          remove_entry_from_all_tables)
 
 
 def rest_req_topologie(self, verb, data, parameters):
@@ -106,7 +111,7 @@ def rest_netTopologie(self, verb, data, parameters):
                 _response["Data"] = json.dumps(action, sort_keys=True)
                 
             else:
-                Domoticz.Error("Removing Topo Report %s not found" % timestamp)
+                domoticz_error_api("Removing Topo Report %s not found" % timestamp)
                 _response["Data"] = json.dumps([], sort_keys=True)
         return _response
 
@@ -284,17 +289,17 @@ def get_node_name( self, node):
 def check_sibbling(self, reportLQI):
     # for node1 in sorted(reportLQI):
     #    for node2 in list(reportLQI[node1]['Neighbours']):
-    #        Domoticz.Log("%s %s %s" %(node1, node2,reportLQI[node1]['Neighbours'][node2]['_relationshp'] ))
+    #        domoticz_log_api("%s %s %s" %(node1, node2,reportLQI[node1]['Neighbours'][node2]['_relationshp'] ))
 
     for node1 in list(reportLQI):
         for node2 in list(reportLQI[node1]["Neighbours"]):
             if reportLQI[node1]["Neighbours"][node2]["_relationshp"] != "Sibling":
                 continue
 
-            # Domoticz.Log("Search parent for sibling %s and %s" %(node1, node2))
+            # domoticz_log_api("Search parent for sibling %s and %s" %(node1, node2))
             parent1 = find_parent_for_node(reportLQI, node2)
             parent2 = find_parent_for_node(reportLQI, node1)
-            # Domoticz.Log("--parents found: %s + %s" %(parent1,parent2))
+            # domoticz_log_api("--parents found: %s + %s" %(parent1,parent2))
 
             if len(parent1) !=0 and len(parent2) == 0:
                 continue
@@ -316,7 +321,7 @@ def check_sibbling(self, reportLQI):
 
     # for node1 in sorted(reportLQI):
     #    for node2 in list(reportLQI[node1]['Neighbours']):
-    #        Domoticz.Log("%s %s %s" %(node1, node2,reportLQI[node1]['Neighbours'][node2]['_relationshp'] ))
+    #        domoticz_log_api("%s %s %s" %(node1, node2,reportLQI[node1]['Neighbours'][node2]['_relationshp'] ))
 
     return reportLQI
 
@@ -332,14 +337,14 @@ def find_parent_for_node(reportLQI, node):
 
     for y in list(reportLQI[node]["Neighbours"]):
         if reportLQI[node]["Neighbours"][y]["_relationshp"] == "Parent":
-            # Domoticz.Log("-- -- find %s Parent for %s" %(y, node))
+            # domoticz_log_api("-- -- find %s Parent for %s" %(y, node))
             if y not in parent:
                 parent.append(y)
 
     for x in list(reportLQI):
         if node in reportLQI[x]["Neighbours"]:
             if reportLQI[x]["Neighbours"][node]["_relationshp"] == "Child":
-                # Domoticz.Log("-- -- find %s Child for %s" %(y, node))
+                # domoticz_log_api("-- -- find %s Child for %s" %(y, node))
                 if x not in parent:
                     parent.append(x)
 

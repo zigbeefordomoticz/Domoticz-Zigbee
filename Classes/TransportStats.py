@@ -4,9 +4,13 @@
 # Author: zaraki673 & pipiche38
 #
 
-import Domoticz
+
 import json
 from time import time
+
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 
 
 class TransportStatistics:
@@ -59,11 +63,11 @@ class TransportStatistics:
         self._average_reading_zigpy_timing = int((self._cumul_reading_zigpy_timing / self._cnt_reading_zigpy_timing))
         if timing > self._max_reading_zigpy_timing:
             self._max_reading_zigpy_timing = timing
-            Domoticz.Log(
+            domoticz_log_api(
                 "Zigate Thread Serial Read Max: %s ms with an of average: %s ms"
                 % (self._max_reading_zigpy_timing, self._average_reading_zigpy_timing)
             )
-        Domoticz.Log(
+        domoticz_log_api(
             "Zigate Thread Serial Read Max: %s ms with an of average: %s ms"
             % (self._max_reading_zigpy_timing, self._average_reading_zigpy_timing)
         )
@@ -75,7 +79,7 @@ class TransportStatistics:
         self._average_reading_thread_timing = int((self._cumul_reading_thread_timing / self._cnt_reading_thread_timing))
         if timing > self._max_reading_thread_timing:
             self._max_reading_thread_timing = timing
-            Domoticz.Log(
+            domoticz_log_api(
                 "Zigate Thread Serial Read Max: %s ms with an of average: %s ms"
                 % (self._max_reading_thread_timing, self._average_reading_thread_timing)
             )
@@ -87,7 +91,7 @@ class TransportStatistics:
         self._averageTiming8000 = int((self._cumulTiming8000 / self._cntTiming8000))
         if timing > self._maxTiming8000:
             self._maxTiming8000 = timing
-            Domoticz.Log(
+            domoticz_log_api(
                 "Zigate command round trip 0x8000 Max: %s ms with an of average: %s ms"
                 % (self._maxTiming8000, self._averageTiming8000)
             )
@@ -99,7 +103,7 @@ class TransportStatistics:
         self._averageTiming8011 = int((self._cumulTiming8011 / self._cntTiming8011))
         if timing > self._maxTiming8011:
             self._maxTiming8011 = timing
-            Domoticz.Log(
+            domoticz_log_api(
                 "Zigate command round trip 0x8011 Max: %s ms with an of average: %s ms"
                 % (self._maxTiming8011, self._averageTiming8011)
             )
@@ -111,7 +115,7 @@ class TransportStatistics:
         self._averageTiming8012 = int((self._cumulTiming8012 / self._cntTiming8012))
         if timing > self._maxTiming8012:
             self._maxTiming8012 = timing
-            Domoticz.Log(
+            domoticz_log_api(
                 "Zigate command round trip 0x8012 Max: %s ms with an of average: %s ms"
                 % (self._maxTiming8012, self._averageTiming8012)
             )
@@ -123,7 +127,7 @@ class TransportStatistics:
         self._averageRxProcess = int((self._cumulRxProcess / self._cntRxProcess))
         if timing > self._maxRxProcesses:
             self._maxRxProcesses = timing
-            Domoticz.Log(
+            domoticz_log_api(
                 "Zigate receive message processing time Max: %s ms with an of average: %s ms"
                 % (self._maxRxProcesses, self._averageRxProcess)
             )
@@ -194,55 +198,55 @@ class TransportStatistics:
             return
         if self.sent() == 0 or self.received() == 0:
             return
-        Domoticz.Status("Statistics on message")
-        Domoticz.Status("   PDM load(s)      : %s" % self._pdmLoads)
-        Domoticz.Status("ZiGate reacting time")
-        Domoticz.Status("   Max              : %s sec" % (self._maxTiming8000))
-        Domoticz.Status("   Average          : %s sec" % (self._averageTiming8000))
-        Domoticz.Status("ZiGate processing time on Rx")
-        Domoticz.Status("   Max              : %s sec" % (self._maxRxProcesses))
-        Domoticz.Status("   Average          : %s sec" % (self._averageRxProcess))
-        Domoticz.Status("Sent:")
-        Domoticz.Status("   TX commands      : %s" % (self.sent()))
-        Domoticz.Status("   Max Load (Queue) : %s " % (self._MaxLoad))
-        Domoticz.Status("   Max aPDU (Queue) : %s " % (self._MaxaPdu))
-        Domoticz.Status("   Max nPDU (Queue) : %s " % (self._MaxnPdu))
-        Domoticz.Status(
+        domoticz_status_api("Statistics on message")
+        domoticz_status_api("   PDM load(s)      : %s" % self._pdmLoads)
+        domoticz_status_api("ZiGate reacting time")
+        domoticz_status_api("   Max              : %s sec" % (self._maxTiming8000))
+        domoticz_status_api("   Average          : %s sec" % (self._averageTiming8000))
+        domoticz_status_api("ZiGate processing time on Rx")
+        domoticz_status_api("   Max              : %s sec" % (self._maxRxProcesses))
+        domoticz_status_api("   Average          : %s sec" % (self._averageRxProcess))
+        domoticz_status_api("Sent:")
+        domoticz_status_api("   TX commands      : %s" % (self.sent()))
+        domoticz_status_api("   Max Load (Queue) : %s " % (self._MaxLoad))
+        domoticz_status_api("   Max aPDU (Queue) : %s " % (self._MaxaPdu))
+        domoticz_status_api("   Max nPDU (Queue) : %s " % (self._MaxnPdu))
+        domoticz_status_api(
             "   TX failed        : %s (%s" % (self.ackKOReceived(), round((self.ackKOReceived() / self.sent()) * 10, 2))
             + "%)"
         )
-        Domoticz.Status(
+        domoticz_status_api(
             "   TX timeout       : %s (%s" % (self.TOstatus(), round((self.TOstatus() / self.sent()) * 100, 2)) + "%)"
         )
-        Domoticz.Status(
+        domoticz_status_api(
             "   TX data timeout  : %s (%s" % (self.TOdata(), round((self.TOdata() / self.sent()) * 100, 2)) + "%)"
         )
-        Domoticz.Status(
+        domoticz_status_api(
             "   TX reTransmit    : %s (%s" % (self.reTx(), round((self.reTx() / self.sent()) * 100, 2)) + "%)"
         )
-        Domoticz.Status(
+        domoticz_status_api(
             "   TX APS Failure   : %s (%s" % (self.APSFailure(), round((self.APSFailure() / self.sent()) * 100, 2))
             + "%)"
         )
-        Domoticz.Status(
+        domoticz_status_api(
             "   TX APS Ack       : %s (%s" % (self.APSAck(), round((self.APSAck() / self.sent()) * 100, 2)) + "%)"
         )
-        Domoticz.Status(
+        domoticz_status_api(
             "   TX APS Nck       : %s (%s" % (self.APSNck(), round((self.APSNck() / self.sent()) * 100, 2)) + "%)"
         )
-        Domoticz.Status("Received:")
-        Domoticz.Status("   RX frame         : %s" % (self.received()))
-        Domoticz.Status(
+        domoticz_status_api("Received:")
+        domoticz_status_api("   RX frame         : %s" % (self.received()))
+        domoticz_status_api(
             "   RX crc errors    : %s (%s" % (self.crcErrors(), round((self.crcErrors() / self.received()) * 100, 2))
             + "%)"
         )
-        Domoticz.Status(
+        domoticz_status_api(
             "   RX lentgh errors : %s (%s"
             % (self.frameErrors(), round((self.frameErrors() / self.received()) * 100, 2))
             + "%)"
         )
-        Domoticz.Status("   RX clusters      : %s" % (self.clusterOK()))
-        Domoticz.Status("   RX clusters KO   : %s" % (self.clusterKO()))
+        domoticz_status_api("   RX clusters      : %s" % (self.clusterOK()))
+        domoticz_status_api("   RX clusters KO   : %s" % (self.clusterKO()))
         t0 = self.starttime()
         t1 = int(time())
         _days = 0
@@ -255,7 +259,7 @@ class TransportStatistics:
         _min = _duration // 60
         _duration = _duration % 60
         _sec = _duration % 60
-        Domoticz.Status("Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
+        domoticz_status_api("Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
 
     def writeReport(self):
 
