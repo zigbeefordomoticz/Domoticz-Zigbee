@@ -290,6 +290,7 @@ def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, Batter
     domo_update_api(self, Devices, DeviceId, Unit, nValue, sValue, SignalLevel=SignalLvl, BatteryLevel=BatteryLvl, TimedOut=0, Color=Color_)
 
     if self.pluginconf.pluginConf["logDeviceUpdate"]:
+        self.log.logging( "Widget", "Log", "UpdateDevice - (%15s) %s:%s" % (widget_name, nValue, sValue))
         domoticz_log_api("UpdateDevice - (%15s) %s:%s" % (widget_name, nValue, sValue))
         
     self.log.logging( "Widget", "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" % (
