@@ -137,3 +137,12 @@ def tuya_ts011F_e7(self, NwkId, ):
     self.log.logging("TuyaTS011F", "Debug", f"tuya_ts011F_e7 {payload}", NwkId)
 
     raw_APS_request(self, NwkId, "01", "e001", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
+
+
+TUYA_TS011F_DEVICE_PARAMETERS = {
+    "TS011F_overTemperatureBreaker": tuya_ts011F_threshold_overTemperatureBreaker,
+    "TS011F_overPowerBreaker": tuya_ts011F_threshold_overPowerBreaker,
+    "TS011F_overCurrentBreeaker": tuya_ts011F_threshold_overCurrentBreaker,
+    "TS011F_overVoltageBreaker": tuya_ts011F_threshold_overVoltageBreaker,
+    "TS011F_underVoltageBreaker": tuya_ts011F_threshold_underVoltageBreaker
+}

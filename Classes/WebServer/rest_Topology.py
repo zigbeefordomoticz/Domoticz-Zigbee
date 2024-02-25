@@ -51,7 +51,7 @@ def rest_netTopologie(self, verb, data, parameters):
 
         if not os.path.isfile(_filename):
             _response["Data"] = json.dumps({}, sort_keys=True)
-            self.logging("Log", "Filename: %s not found !!" % _filename)
+            self.logging("Debug", "Filename: %s not found !!" % _filename)
             return _response
 
         # Read the file, as we have anyway to do it
@@ -402,21 +402,11 @@ def collect_routing_table(self, time_stamp=None):
     _topo = []
     self.logging( "Debug", "collect_routing_table - TimeStamp: %s" %time_stamp)
     for father in self.ListOfDevices:
-        for child in extract_routes(self, father, time_stamp):
+        self.logging( "Debug", f"check {father} child from routing table")
+        for child in set( extract_routes(self, father, time_stamp) + collect_associated_devices( self, father, time_stamp) + collect_neighbours_devices( self, father, time_stamp) ):
+            self.logging( "Debug", f"Found child {child}") 
             if child not in self.ListOfDevices:
-                continue
-            _relation = {
-                "Father": get_node_name( self, father), 
-                "Child": get_node_name( self, child), 
-                "_lnkqty": get_lqi_from_neighbours(self, father, child), 
-                "DeviceType": find_device_type(self, child)
-                }
-            self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
-                _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
-            _topo.append( _relation ) 
-            
-        for child in collect_associated_devices( self, father, time_stamp):
-            if child not in self.ListOfDevices:
+                self.logging( "Debug", f"Found child {child} but not found in ListOfDevices") 
                 continue
             _relation = {
                 "Father": get_node_name( self, father), 
@@ -426,8 +416,8 @@ def collect_routing_table(self, time_stamp=None):
                 }
             self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
-            if _relation not in _topo:
-                _topo.append( _relation )
+            _topo.append( _relation ) 
+
     return _topo
 
        
@@ -435,7 +425,14 @@ def collect_associated_devices( self, node, time_stamp=None):
     last_associated_devices = get_device_table_entry(self, node, "AssociatedDevices", time_stamp)
     self.logging( "Debug", "collect_associated_devices %s -> %s" %(node, str(last_associated_devices)))
     return list(last_associated_devices)
-        
+
+
+def collect_neighbours_devices( self, node, time_stamp=None):
+    last_neighbours_devices = get_device_table_entry(self, node, "Neighbours", time_stamp)
+    self.logging( "Debug", "collect_neighbours_devices %s -> %s" %(node, str(last_neighbours_devices)))
+    keys_with_child_relation = [key for item in last_neighbours_devices for key, value in item.items() if value.get('_relationshp') == 'Child']
+    return list(keys_with_child_relation)
+           
         
 def extract_routes( self, node, time_stamp=None):
     node_routes = []

@@ -2066,3 +2066,10 @@ def get_local_temperature_from_wiserroom( self, NwkId, room=None):
 def wiser_lift_duration( self, nwkid, duration):
     if 0 < duration < 300:
         write_attribute( self, nwkid, ZIGATE_EP, "05", "0102", "105e", "01", "e000", "21", "%04x" % duration if 0 < duration < 300 else 120, ackIsDisabled=False)
+
+
+SCHNEIDER_DEVICE_PARAMETERS = {
+    "WiserLockThermostat": wiser_home_lockout_thermostat,
+    "WiseriTrvWindowOpen": iTRV_open_window_detection,
+    "WiserShutterDuration": wiser_lift_duration,
+}

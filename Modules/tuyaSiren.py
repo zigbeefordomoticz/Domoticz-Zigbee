@@ -488,6 +488,7 @@ def tuya_siren2_alarm_duration(self, nwkid, duration):
     data = "%08x" % duration
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
+
 def tuya_siren2_alarm_melody(self, nwkid, melody):
     # duration in second
 
@@ -499,7 +500,6 @@ def tuya_siren2_alarm_melody(self, nwkid, melody):
     action = "%04x" % struct.unpack("H", struct.pack(">H", 0x0415))[0]
     data = "%02x" % melody
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
-
 
 
 
@@ -515,3 +515,10 @@ def tuya_siren2_trigger(self, nwkid, onoff):
     action = "%04x" % struct.unpack("H", struct.pack(">H", 0x010d))[0]
     data = onoff
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
+
+
+TUYA_SIREN_DEVICE_PARAMETERS = {
+    "TuyaAlarmLevel": tuya_siren2_alarm_volume,
+    "TuyaAlarmDuration": tuya_siren2_alarm_duration,
+    "TuyaAlarmMelody": tuya_siren2_alarm_melody,
+}
