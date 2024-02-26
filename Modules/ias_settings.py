@@ -11,6 +11,8 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 from Modules.basicOutputs import write_attribute
+from Modules.tools import (get_deviceconf_parameter_value,
+                           getListOfEpForCluster, is_int)
 from Modules.zigateConsts import ZIGATE_EP
 
 IAS_CLUSTER_ID = "0500"
