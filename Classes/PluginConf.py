@@ -310,6 +310,7 @@ SETTINGS = {
             'trackZclClustersOut': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
             'trackZdpClustersIn': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
             'trackZdpClustersOut': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
+            'tuyaSettings': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
             'z4dCertifiedDevices': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
             'zclCommand': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
             'zclDecoder': {'type': 'bool','default': 0,'current': None,'restart': 0,'hidden': False,'Advanced': True},
