@@ -36,6 +36,14 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
 
 
+    def _add_db_listeners(self):
+        Classes.ZigpyTransport.AppGeneric._add_db_listeners(self)
+
+
+    def _remove_db_listeners(self):
+        Classes.ZigpyTransport.AppGeneric._remove_db_listeners(self)
+
+
     async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
         LOGGER.info("EZSP Configuration: %s", self.config)
@@ -103,13 +111,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             
     async def shutdown(self) -> None:
         """Shutdown controller."""
-        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup(await self.backups.create_backup(load_devices=True))
-        
-        if self._watchdog_task is not None:
-            self._watchdog_task.cancel()
-
-        await self.disconnect()
+        await Classes.ZigpyTransport.AppGeneric.shutdown(self)
 
     # Only needed if the device require simple node descriptor from the coordinator
     async def register_endpoints(self, endpoint=1):

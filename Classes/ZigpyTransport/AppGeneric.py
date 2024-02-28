@@ -41,7 +41,37 @@ ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
 
 
 async def _load_db(self) -> None:
-    pass
+    LOGGER.info("_load_db")
+    database_file = self.config[zigpy_conf.CONF_DATABASE]
+    if not database_file:
+        return
+
+    LOGGER.info("PersistingListener on %s" %database_file)
+    self._dblistener = await zigpy.appdb.PersistingListener.new(database_file, self)
+    await self._dblistener.load()
+    self._add_db_listeners()
+
+
+def _add_db_listeners(self):
+    LOGGER.info("_add_db_listeners")
+    if self._dblistener is None:
+        return
+
+    self.add_listener(self._dblistener)
+    self.groups.add_listener(self._dblistener)
+    self.backups.add_listener(self._dblistener)
+    self.topology.add_listener(self._dblistener)
+
+
+def _remove_db_listeners(self):
+    LOGGER.info("_remove_db_listeners")
+    if self._dblistener is None:
+        return
+
+    self.topology.remove_listener(self._dblistener)
+    self.backups.remove_listener(self._dblistener)
+    self.groups.remove_listener(self._dblistener)
+    self.remove_listener(self._dblistener)
 
 
 async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
@@ -132,6 +162,28 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
+async def shutdown(self) -> None:
+    """Shutdown controller."""
+    if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
+        self.callBackBackup(await self.backups.create_backup(load_devices=True))
+
+    if self._watchdog_task is not None:
+        self._watchdog_task.cancel()
+
+    try:
+        await self.disconnect()
+    except Exception:
+        LOGGER.warning("Failed to disconnect from radio", exc_info=True)  
+      
+    await asyncio.sleep( 1 )
+
+    if self._dblistener:
+        self._remove_db_listeners()
+        
+        try:
+            await self._dblistener.shutdown()
+        except Exception:
+            LOGGER.warning("Failed to disconnect from database", exc_info=True)
 
 def _retreive_previous_backup(self):
     _retreived_backup = None

@@ -55,6 +55,10 @@ MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6
 WAITING_TIME_BETWEEN_ATTEMPTS = 0.250
 
+#ZIGPY_SAVE_STATE_DB = "zigpy.db"
+ZIGPY_SAVE_STATE_DB = ":memory:"
+ZIGPY_SAVE_STATE_DB = None
+
 
 def stop_zigpy_thread(self):
     """ will send a STOP message to the writer_queue in order to stop the thread """
@@ -147,7 +151,7 @@ async def _shutdown_remaining_task(self):
     
     await asyncio.gather(*tasks, return_exceptions=True)
     await asyncio.sleep(1)
-
+    
 
 async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
@@ -186,7 +190,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 
     except Exception as e:
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
-            self.log.logging("%s" %traceback.format_exc())       
+            self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())       
 
     optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel)
 
@@ -212,12 +216,16 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
     else:
         new_network = False
 
+    self.log.logging( "TransportZigpy", "Log", "restore save state")
+    await self.app._load_db()
+
     await _radio_startup(self, pluginconf, new_network, radiomodule)
     self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
 
 
 def ezsp_configuration_setup(self, conf, serialPort):
     config = {
+        zigpy.config.CONF_DATABASE: ZIGPY_SAVE_STATE_DB,
         conf.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
         conf.CONF_NWK: {},
         conf.CONF_EZSP_CONFIG: {
@@ -240,6 +248,7 @@ def ezsp_configuration_setup(self, conf, serialPort):
 def znp_configuration_setup(self, conf, serialPort):
         
     config = {
+        zigpy.config.CONF_DATABASE: ZIGPY_SAVE_STATE_DB,
         conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, 
         conf.CONF_NWK: {},
         conf.CONF_ZNP_CONFIG: { },
@@ -256,6 +265,7 @@ def znp_configuration_setup(self, conf, serialPort):
 
 def deconz_configuration_setup(self, conf, serialPort):
     return {
+        zigpy.config.CONF_DATABASE: ZIGPY_SAVE_STATE_DB,
         conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200},
         conf.CONF_NWK: {},
         zigpy.config.CONF_TOPO_SCAN_ENABLED: False,

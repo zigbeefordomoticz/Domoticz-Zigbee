@@ -32,6 +32,15 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
         LOGGER.debug("_load_db")
 
+
+    def _add_db_listeners(self):
+        Classes.ZigpyTransport.AppGeneric._add_db_listeners(self)
+
+
+    def _remove_db_listeners(self):
+        Classes.ZigpyTransport.AppGeneric._remove_db_listeners(self)
+
+
     async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
         LOGGER.info("deCONZ Configuration: %s", self.config)
@@ -85,15 +94,8 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
     async def shutdown(self) -> None:
         """Shutdown controller."""
-        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-            self.callBackBackup(await self.backups.create_backup(load_devices=True))
+        await Classes.ZigpyTransport.AppGeneric.shutdown(self)
 
-        if self._watchdog_task is not None:
-            self._watchdog_task.cancel()
-
-        await self.disconnect()
-        
-        await asyncio.sleep( 1 )
 
     async def register_endpoints(self):
         """
