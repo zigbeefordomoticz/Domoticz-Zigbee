@@ -508,6 +508,7 @@ def configure_loggers(logger_names, mode):
 # Loggers configurations
 def configure_zigpy_loggers(mode):
     logger_names = [
+        "aiosqlite",
         "zigpy.application", "zigpy", "zigpy.zdo", "zigpy.zcl",
         "zigpy.profiles", "zigpy.quirks", "zigpy.ota",
         "zigpy.appdb_schemas", "zigpy.backups", "zigpy.device",
