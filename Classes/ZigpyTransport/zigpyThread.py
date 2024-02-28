@@ -19,6 +19,7 @@ import queue
 import sys
 import time
 import traceback
+from pathlib import Path
 from threading import Thread
 from typing import Any, Optional
 
@@ -54,10 +55,6 @@ WAITING_TIME_BETWEEN_ATTEMPS = 0.250
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6
 WAITING_TIME_BETWEEN_ATTEMPTS = 0.250
-
-#ZIGPY_SAVE_STATE_DB = "zigpy.db"
-ZIGPY_SAVE_STATE_DB = ":memory:"
-ZIGPY_SAVE_STATE_DB = None
 
 
 def stop_zigpy_thread(self):
@@ -192,6 +189,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
             self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
             self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())       
 
+
     optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel)
 
     try:
@@ -225,7 +223,6 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
 
 def ezsp_configuration_setup(self, conf, serialPort):
     config = {
-        zigpy.config.CONF_DATABASE: ZIGPY_SAVE_STATE_DB,
         conf.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
         conf.CONF_NWK: {},
         conf.CONF_EZSP_CONFIG: {
@@ -248,7 +245,6 @@ def ezsp_configuration_setup(self, conf, serialPort):
 def znp_configuration_setup(self, conf, serialPort):
         
     config = {
-        zigpy.config.CONF_DATABASE: ZIGPY_SAVE_STATE_DB,
         conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, 
         conf.CONF_NWK: {},
         conf.CONF_ZNP_CONFIG: { },
@@ -265,7 +261,6 @@ def znp_configuration_setup(self, conf, serialPort):
 
 def deconz_configuration_setup(self, conf, serialPort):
     return {
-        zigpy.config.CONF_DATABASE: ZIGPY_SAVE_STATE_DB,
         conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200},
         conf.CONF_NWK: {},
         zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
@@ -274,6 +269,13 @@ def deconz_configuration_setup(self, conf, serialPort):
     
 def optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel):
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )
+
+    if "enableZigpyPersistentInMemory" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]:
+        config[zigpy.config.CONF_DATABASE] = ":memory:"
+        
+    elif "enableZigpyPersistentInFile" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInFile"]:
+        data_folder = Path( self.pluginconf.pluginConf["pluginData"] )
+        config[zigpy.config.CONF_DATABASE] = str(data_folder / "zigpy_persistent.db")
 
     if "autoBackup" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoBackup"]:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = True
