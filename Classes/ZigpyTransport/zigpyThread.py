@@ -275,7 +275,7 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
         
     elif "enableZigpyPersistentInFile" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInFile"]:
         data_folder = Path( self.pluginconf.pluginConf["pluginData"] )
-        config[zigpy.config.CONF_DATABASE] = str(data_folder / "zigpy_persistent.db")
+        config[zigpy.config.CONF_DATABASE] = str(data_folder / ("zigpy_persistent_%02d.db"% self.hardwareid) )
 
     if "autoBackup" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoBackup"]:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = True
