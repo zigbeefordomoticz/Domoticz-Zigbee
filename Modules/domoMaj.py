@@ -475,7 +475,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                         # Update Text widget ( unit + 1 )
                         nValue = 0
                         sValue = value
-                        update_domoticz_widget(self, Devices, device_unit + 1, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit + 1, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
                     else:
                         self.log.logging("Widget", "Debug", "---------->  XCube update  with data = " + str(value), NwkId)
