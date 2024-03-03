@@ -293,6 +293,7 @@ SETTINGS = {
             "coordinatorCmd": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "enablePluginLogging": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": False },
             "inRawAPS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "iasSettings": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "logDeviceUpdate": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False },
             "logFORMAT": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True },
             "logThreadName": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
