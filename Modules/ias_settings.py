@@ -11,6 +11,8 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 from Modules.basicOutputs import write_attribute
+from Modules.tools import (get_deviceconf_parameter_value,
+                           getListOfEpForCluster, is_int)
 from Modules.zigateConsts import ZIGATE_EP
 
 IAS_CLUSTER_ID = "0500"
@@ -22,8 +24,14 @@ ONOFF_CONFIG_SET = {
     "CurrentZoneSensitivityLevel": ( "0013", "20")
 }
 
+def ias_CurrentZoneSensitivityLevel(self, nwkid, value):
+    self.log.logging( "onoffSettings", "Debug", f"ias_CurrentZoneSensitivityLevel for {nwkid} - sensitivity: {value}", nwkid )
+    ListOfEp = getListOfEpForCluster(self, nwkid, IAS_CLUSTER_ID)
+    for ep in ListOfEp:
+        ias_CurrentZoneSensitivityLevel_by_ep(self, nwkid, ep, value)
 
-def ias_CurrentZoneSensitivityLevel(self, nwkid, ep, value):
+
+def ias_CurrentZoneSensitivityLevel_by_ep(self, nwkid, ep, value):
     """ Allows an IAS Zone client to query and configure the IAS Zone server’s sensitivity level. """
     
     # The default value 0x00 is the device’s default sensitivity level as configured by the manufacturer. It MAY
