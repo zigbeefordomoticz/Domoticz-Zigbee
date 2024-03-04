@@ -287,11 +287,11 @@ def handle_leave(self, nwk, ieee):
 
 
 def handle_relays(self, nwk, relays) -> None:
-    self.log.logging("TransportZigpy", "Log","handle_relays (0x%04x %s)" %(nwk, str(relays)))
+    self.log.logging("TransportZigpy", "Debug","handle_relays (0x%04x %s)" %(nwk, str(relays)))
     """Called when a list of relaying devices is received."""
     super(type(self),self).handle_relays(nwk, relays)
 
-
+        
 def packet_received(
     self, 
     packet: t.ZigbeePacket
