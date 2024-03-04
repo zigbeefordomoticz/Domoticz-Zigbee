@@ -115,6 +115,17 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     
     value = MsgZoneStatus[2:4]
     
+    if get_device_config_param(self, MsgSrcAddr, 'HeimanDoorBellBuuton'):
+        self.log.logging('Input', 'Debug',f"Decode8401 HeimanDoorBellBuuton: {MsgSrcAddr} {zone_status_fields}", MsgSrcAddr)
+
+        button_pressed = ( 8000, 8004 )
+        if int(zone_status_fields,16) in button_pressed:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0006', '01')
+            tamper = int(zone_status_fields,16) & 1 << 2
+            if tamper:
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '01')
+        return
+        
     motion_via_IAS_alarm = get_device_config_param(self, MsgSrcAddr, 'MotionViaIASAlarm1')
     
     self.log.logging('Input', 'Debug', 'MotionViaIASAlarm1 = %s' % motion_via_IAS_alarm)
