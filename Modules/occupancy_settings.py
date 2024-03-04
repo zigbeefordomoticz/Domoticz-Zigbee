@@ -128,8 +128,8 @@ def Ultrasonic_occupied_to_unoccupied_delay(self, nwkid, ep, value):
         OCCUPANCY_CLUSTER_ID, 
         "0000", 
         "00", 
-        PIR_CONFIG_SET[ "UltrasonicOccupiedToUnoccupiedDelay"][0], 
-        PIR_CONFIG_SET[ "UltrasonicOccupiedToUnoccupiedDelay"][1], 
+        ULTRASONIC_CONFIG_SET[ "UltrasonicOccupiedToUnoccupiedDelay"][0], 
+        ULTRASONIC_CONFIG_SET[ "UltrasonicOccupiedToUnoccupiedDelay"][1], 
         "%04x" %value, 
         ackIsDisabled=False, )
 
@@ -157,8 +157,8 @@ def Ultrasonic_unoccupied_to_occupied_delay(self, nwkid, ep, value):
         OCCUPANCY_CLUSTER_ID, 
         "0000", 
         "00", 
-        PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedDelay"][0], 
-        PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedDelay"][1], 
+        ULTRASONIC_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedDelay"][0], 
+        ULTRASONIC_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedDelay"][1], 
         "%04x" %value, 
         ackIsDisabled=False, )
 
@@ -174,8 +174,8 @@ def Ultrasonic_unoccupied_to_occupied_threshold(self, nwkid, ep, value):
         OCCUPANCY_CLUSTER_ID, 
         "0000", 
         "00", 
-        PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][0], 
-        PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][1], 
+        ULTRASONIC_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][0], 
+        ULTRASONIC_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][1], 
         "%02x" %value, 
         ackIsDisabled=False, )
 
@@ -183,7 +183,7 @@ def Ultrasonic_unoccupied_to_occupied_threshold(self, nwkid, ep, value):
 def current_Ultrasonic_unoccupied_to_occupied_threshold(self, nwkid, ep):
     """ look in the plugin database for the the current value of the Ultrasonic_unoccupied_to_occupied_threshold """
 
-    target_attribute = PIR_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][0]
+    target_attribute = ULTRASONIC_CONFIG_SET[ "UltrasonicUnoccupiedToOccupiedThreshold"][0]
     ep_data = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(ep, {}).get(OCCUPANCY_CLUSTER_ID, {})
     attribute_0022 = ep_data.get( target_attribute, None)
 
