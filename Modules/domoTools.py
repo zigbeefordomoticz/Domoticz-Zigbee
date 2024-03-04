@@ -212,7 +212,7 @@ def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, n
 
     elif TimedOutSwitchButton and WidgetType in SWITCH_SELECTORS:
         if "ForceUpdate" in SWITCH_SELECTORS[WidgetType] and SWITCH_SELECTORS[WidgetType]["ForceUpdate"]:
-            reset_switch_selector_PushButton( self, Devices, nwkid, WidgetType, device_unit, SignalLevel, BatteryLvl, now, last_update, TimedOutSwitchButton, )
+            reset_switch_selector_PushButton( self, Devices, nwkid, WidgetType, device_ieee, device_unit, SignalLevel, BatteryLvl, now, last_update, TimedOutSwitchButton, )
 
 
 def retreive_reset_delays(self, nwkid):
