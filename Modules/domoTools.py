@@ -186,6 +186,8 @@ def _convert_LastUpdate( last_update ):
 
 def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, now):
 
+    self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {device_ieee} {device_unit}")
+    
     last_update = _convert_LastUpdate( domo_read_LastUpdate(self, Devices, device_ieee, device_unit,) )
     if last_update is None:
         return
@@ -207,11 +209,15 @@ def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, n
 
     SignalLevel, BatteryLvl = RetreiveSignalLvlBattery(self, nwkid)
 
+    self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {nwkid} WidgetType: {WidgetType} TimedOutMotion: {TimedOutMotion} TimedOutSwitchButton: {TimedOutSwitchButton}", nwkid)
+
     if TimedOutMotion and WidgetType in ("Motion", "Vibration"):
+        self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {nwkid} reset_motion", nwkid)
         reset_motion(self, Devices, nwkid, WidgetType, device_ieee, device_unit, SignalLevel, BatteryLvl, ID, now, last_update, TimedOutMotion)
 
     elif TimedOutSwitchButton and WidgetType in SWITCH_SELECTORS:
         if "ForceUpdate" in SWITCH_SELECTORS[WidgetType] and SWITCH_SELECTORS[WidgetType]["ForceUpdate"]:
+            self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {nwkid} reset_switch_selector", nwkid)
             reset_switch_selector_PushButton( self, Devices, nwkid, WidgetType, device_ieee, device_unit, SignalLevel, BatteryLvl, now, last_update, TimedOutSwitchButton, )
 
 
@@ -224,6 +230,7 @@ def retreive_reset_delays(self, nwkid):
         TimedOutMotion = int(params.get("resetMotiondelay", TimedOutMotion))
         TimedOutSwitchButton = params.get("resetSwitchSelectorPushButton", TimedOutSwitchButton)
 
+    self.log.logging("WidgetReset", "Debug", f"retreive_reset_delays {nwkid} {TimedOutMotion} {TimedOutSwitchButton}", nwkid)
     return TimedOutMotion, TimedOutSwitchButton
   
 
@@ -234,7 +241,7 @@ def reset_motion(self, Devices, NwkId, WidgetType, DeviceId_, Unit_, SignalLevel
         return
 
     domo_update_api(self, Devices, DeviceId_, Unit_, nValue=0, sValue="Off")
-    self.log.logging("WidgetLevel3", "Debug", "Last update of the device %s %s was %s ago" % (Unit_, WidgetType, (now - lastupdate)), NwkId)
+    self.log.logging("WidgetReset", "Debug", "Last update of the device %s %s was %s ago" % (Unit_, WidgetType, (now - lastupdate)), NwkId)
 
 
 def reset_switch_selector_PushButton(self, Devices, NwkId, WidgetType, DeviceId_, Unit_, SignalLevel, BatteryLvl, now, lastupdate, TimedOut):
@@ -250,7 +257,7 @@ def reset_switch_selector_PushButton(self, Devices, NwkId, WidgetType, DeviceId_
         sValue = "00"
 
     domo_update_api(self, Devices, DeviceId_, Unit_, nValue=0, sValue=sValue)
-    self.log.logging("WidgetLevel2", "Debug", "Last update of the device %s WidgetType: %s was %s ago" % (Unit_, WidgetType, (now - lastupdate)), NwkId)
+    self.log.logging("WidgetReset", "Debug", "Last update of the device %s WidgetType: %s was %s ago" % (Unit_, WidgetType, (now - lastupdate)), NwkId)
 
 
 def update_domoticz_widget(self, Devices, DeviceId, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_="", ForceUpdate_=False):
