@@ -247,6 +247,7 @@ def reset_motion(self, Devices, NwkId, WidgetType, DeviceId_, Unit_, SignalLevel
 def reset_switch_selector_PushButton(self, Devices, NwkId, WidgetType, DeviceId_, Unit_, SignalLevel, BatteryLvl, now, lastupdate, TimedOut):
     nValue, sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, Unit_)
 
+    self.log.logging("WidgetReset", "Debug", f"reset_switch_selector_PushButton {NwkId} {nValue}:{sValue} ({now} - {lastupdate}) = {(now - lastupdate)} <? {TimedOut}")
     if nValue == 0 or (now - lastupdate) < TimedOut:
         return
 
