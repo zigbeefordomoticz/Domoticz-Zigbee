@@ -152,6 +152,9 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     def handle_leave(self, nwk, ieee):
         Classes.ZigpyTransport.AppGeneric.handle_leave(self, nwk, ieee)
 
+    def handle_relays(self, nwk, relays) -> None:
+        Classes.ZigpyTransport.AppGeneric.handle_relays(self, nwk, relays)
+    
     def get_zigpy_version(self):
         return Classes.ZigpyTransport.AppGeneric.get_zigpy_version(self)
 
