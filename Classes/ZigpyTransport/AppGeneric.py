@@ -300,6 +300,10 @@ def packet_received(
     cluster = int(packet.cluster_id) if packet.cluster_id is not None else None
     src_ep = int(packet.src_ep) if packet.src_ep is not None else None
     dst_ep = int(packet.dst_ep) if packet.dst_ep is not None else None
+    source_route = packet.source_route
+
+    if source_route:
+        self.log.logging("trackReceivedRoute", "Log", f"packet_received from {sender} via {source_route}")
 
     # self.log.logging("TransportZigpy", "Log", " Src     : %s (%s)" %(sender,type(sender)))
     # self.log.logging("TransportZigpy", "Log", " AddrMod : %02X" %(addr_mode))
