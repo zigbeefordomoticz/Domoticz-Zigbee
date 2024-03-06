@@ -34,6 +34,7 @@ from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
+from Classes.ZigpyTransport.Transport import ZigpyTransport
 
 LOGGER = logging.getLogger(__name__)
 
@@ -162,6 +163,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
+
 async def shutdown(self) -> None:
     """Shutdown controller."""
     if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
@@ -184,6 +186,7 @@ async def shutdown(self) -> None:
             await self._dblistener.shutdown()
         except Exception:
             LOGGER.warning("Failed to disconnect from database", exc_info=True)
+
 
 def _retreive_previous_backup(self):
     _retreived_backup = None
@@ -215,6 +218,7 @@ def get_device(self, ieee=None, nwk=None):
         # We might have to check that the plugin and zigpy Dbs are in sync
         # Let's check if the tupple (dev.ieee, dev.nwk ) are aligned with plugin Db
         _update_nkdids_if_needed(self, dev.ieee, dev.nwk )
+
     except KeyError:
         # Not found in zigpy Db, let see if we can get it into the Plugin Db
         if self.callBackGetDevice:
@@ -250,13 +254,20 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
         dev = self.get_device(ieee)
         time.sleep(1.0)
         self.log.logging("TransportZigpy", "Debug", "Device 0x%04x (%s) joined the network" %(nwk, ieee))
+
     except KeyError:
         dev = self.add_device(ieee, nwk)
+        dev.update_last_seen()
+        new_join = True
         time.sleep(1.0)
         self.log.logging("TransportZigpy", "Debug", "New device 0x%04x (%s) joined the network" %(nwk, ieee))
 
+    else:
+        new_join = False
+        
     if dev.nwk != nwk:
         dev.nwk = nwk
+        new_join = True
         _update_nkdids_if_needed(self, ieee, dev.nwk )
         self.log.logging("TransportZigpy", "Debug", "Device %s changed id (0x%04x => 0x%04x)" %(ieee, dev.nwk, nwk))
 
@@ -366,6 +377,8 @@ def packet_received(
 
 
 def _update_nkdids_if_needed( self, ieee, new_nwkid ):
+    if not isinstance(self, ZigpyTransport):
+        return
     _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
     _nwk = new_nwkid.serialize()[::-1].hex()
     self.callBackUpdDevice(_ieee, _nwk)
@@ -499,6 +512,7 @@ def do_retreive_backup( self ):
     LOGGER.debug("Retreiving last backup")
     return handle_zigpy_retreive_last_backup( self )
 
+
 async def network_interference_scan(self):
 
     self.log.logging( "NetworkEnergy", "Debug", "network_interference_scan")
@@ -552,6 +566,7 @@ def build_json_to_store(self, scan_result):
         }]
     }
     return {timestamp: [ router, ] }
+
 
 def scan_channel( self, scan_result ):
     
