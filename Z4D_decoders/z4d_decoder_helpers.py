@@ -129,6 +129,10 @@ def check_duplicate_sqn(self, nwk_id, ep, cluster, sqn):
 def set_health_after_message_received(self, Nwkid):
     device = self.ListOfDevices.get(Nwkid, {})
     
+    if device.get("Status") in ("004d", "0043", "0045", "8045", "8043"):
+        # Pairing phase
+        return
+
     if "Health" not in device:
         device["Health"] = "Live"
     
