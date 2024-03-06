@@ -373,26 +373,32 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
     else:
         self.log.logging("AbstractDz", "Debug", "- default")   
         myDev = domoticz_device_api_class( DeviceID=DeviceID_, Name=Name_, Unit=Unit_, Type=Type_, Subtype=Subtype_, )
-        
 
     myDev.Create()
-    
+
     if DOMOTICZ_EXTENDED_API:
         self.log.logging("AbstractDz", "Debug", "domo_create_api status %s" %Devices[DeviceID_].Units[Unit_].ID)
         return Devices[DeviceID_].Units[Unit_].ID
 
     self.log.logging("AbstractDz", "Debug", "domo_create_api status %s" %myDev.ID)
+
+    # Update the ListOfWidgets index
+    load_list_of_domoticz_widget(self, Devices)
     return myDev.ID
 
 
 def domo_delete_widget( self, Devices, DeviceID_, Unit_):
     self.log.logging("AbstractDz", "Log", "domo_delete_widget: DeviceID_ : %s Unit_: %s " %( DeviceID_, Unit_))
-    
+
     if DOMOTICZ_EXTENDED_API:
         Devices[DeviceID_].Units[Unit_].Delete()
-        return
-    if Unit_ in self.Devices:
+        # Update the ListOfWidgets index
+        load_list_of_domoticz_widget(self, Devices)
+
+    elif Unit_ in self.Devices:
         self.Devices[Unit_].Delete()
+        # Update the ListOfWidgets index
+        load_list_of_domoticz_widget(self, Devices)
 
 
 def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel=None, BatteryLevel=None, TimedOut=None, Color="", Options=None, SuppressTriggers=False):
