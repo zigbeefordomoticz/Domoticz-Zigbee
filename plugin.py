@@ -498,8 +498,7 @@ class BasePlugin:
             self.onStop()
             return
         
-        # Import List of Domoticz Widgets
-
+        # Initialize List of Domoticz Widgets
         load_list_of_domoticz_widget(self, Devices)
         
         # Import DeviceList.txt Filename is : DeviceListName
@@ -896,7 +895,6 @@ class BasePlugin:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
-            load_list_of_domoticz_widget(self, Devices)
   
         _trigger_coordinator_backup( self )
 
