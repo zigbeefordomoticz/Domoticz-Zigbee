@@ -157,6 +157,9 @@ def load_list_of_domoticz_widget(self, Devices):
     """
     self.log.logging("AbstractDz", "Debug", "load_list_of_domoticz_widget")
 
+    # clean 
+    self.ListOfDomoticzWidget.clear()
+
     if DOMOTICZ_EXTENDED_API:
         for device_ieee in Devices:
             for unit_key in Devices[ device_ieee ].Units:
@@ -169,6 +172,7 @@ def load_list_of_domoticz_widget(self, Devices):
                     "Subtype": unit_data.SubType,
                 }
                 self.ListOfDomoticzWidget[unit_data.ID] = widget_info
+
     else:
         for unit_key, device in Devices.items():
             widget_info = {
