@@ -214,7 +214,7 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
     else:
         new_network = False
 
-    self.log.logging( "TransportZigpy", "Log", "restore save state")
+    self.log.logging( "TransportZigpy", "Status", "load zigpy db to restor last save state")
     await self.app._load_db()
 
     await _radio_startup(self, pluginconf, new_network, radiomodule)
