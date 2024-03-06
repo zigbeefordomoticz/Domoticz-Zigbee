@@ -58,9 +58,6 @@ class LoggingManagement:
         configure_zigpy_zigate_loggers("warning")
         configure_zigpy_deconz_loggers("warning")
 
-
-
-
         self.zigpy_login()
 
         start_logging_thread(self)

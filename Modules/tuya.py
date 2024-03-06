@@ -1603,6 +1603,17 @@ def tuya_color_grandiant(self, NwkId, on_gradiant=None, off_gradiant=None):
     raw_APS_request(self, NwkId, epout, "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
 
 
+def ts0224_alarm_volume(self, nwkid, volume=0):
+    self.log.logging("tuyaSettings", "Debug", f"ts0224_alarm_volume {nwkid}, Volume: {volume}", nwkid)
+
+    # Volume: 0: Mute, 50 High, 30 Medium, 10 Low
+    valid_values = [0, 10, 30, 50]
+    if volume not in valid_values:
+        volume = min(valid_values, key=lambda x: abs(x - volume))
+        self.log.logging("tuyaSettings", "Debug", f"ts0224_alarm_volume {nwkid}, Volume: {volume} corrected as invalid", nwkid)
+    write_attribute( self, nwkid, ZIGATE_EP, "01", "0502", "0000", "00", "0002","20", "%02x" %volume, ackIsDisabled=False, )
+
+
 TUYA_DEVICE_PARAMETERS = {
     "TuyaColorGradiantOnTime": tuya_color_grandiant,
     "TuyaColorGradiantOffTime": tuya_color_grandiant,
@@ -1633,4 +1644,5 @@ TUYA_DEVICE_PARAMETERS = {
     "TS110ELightType": ts110e_light_type,
     "TS110ESwitch01Type": ts110e_switch01_type,
     "TS110ESwitch02Type": ts110e_switch02_type,
+    "TuyaTS0224AlarmVolume": ts0224_alarm_volume
 }

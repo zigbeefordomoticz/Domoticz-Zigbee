@@ -72,7 +72,23 @@ ZONE_TYPE = {
 
 
 STROBE_LEVEL = {"Low": 0x00, "Medium": 0x01}
+
 SIRENE_MODE = ("both", "siren", "strobe", "stop")
+
+WARNING_DEVICE_MODES = {
+    "both": (0x01, 0x01),
+    "siren": (0x00, 0x01),
+    "stop": (0x00, 0x00),
+    "strobe": (0x01, 0x00)
+}
+
+SIREN_MODES = {
+    "both": (STROBE_LEVEL["Low"], 0x02, 0x01),
+    "siren": (0x00, 0x00, 0x02),
+    "stop": (0x00, 0x00, 0x00),
+    "strobe": (STROBE_LEVEL["Low"], 0x01, 0x00)
+}
+
 strobe_mode = 0x00
 
 
@@ -309,14 +325,18 @@ class IAS_Zone_Management:
         zcl_ias_wd_command_squawk(self, ZIGATE_EP, ep, NwkId, squawk_mode, strobe, squawk_level, ackIsDisabled=False)
 
     def warningMode(self, NwkId, ep, mode="both", siren_level=0x01, warning_duration=0x01, strobe_duty=0x32, strobe_level=0x00):
-
+        self.logging("Debug", f"warningMode {mode} {siren_level} {warning_duration} {strobe_duty} {strobe_level}")
+        
         if mode in ( "siren", "both") and "Param" in self.ListOfDevices[ NwkId ] and "sirenLevel" in self.ListOfDevices[ NwkId ]["Param"]:
             siren_level = self.ListOfDevices[ NwkId ]["Param"]["sirenLevel"]  
-        if mode in ( "strobe", "both") and "Param" in self.ListOfDevices[ NwkId ] and "sirenLevel" in self.ListOfDevices[ NwkId ]["Param"]:    
+
+        if mode in ( "strobe", "both") and "Param" in self.ListOfDevices[ NwkId ] and "strobeDutyCycle" in self.ListOfDevices[ NwkId ]["Param"]:    
             strobe_duty = self.ListOfDevices[ NwkId ]["Param"]["strobeDutyCycle"] 
     
         strobe_mode, warning_mode, strobe_level, warning_duration = ias_sirene_mode( self, NwkId , mode , warning_duration)
-        self.logging("Debug", f"warningMode - Mode: {bin(warning_mode)}, Duration: {warning_duration}, Duty: {strobe_duty}, Level: {strobe_level}")
+        
+        self.logging("Debug", f"warningMode - Mode: {warning_mode}, Duration: {warning_duration}, Duty: {strobe_duty}, Level: {strobe_level}")
+
         zcl_ias_wd_command_start_warning(self, ZIGATE_EP, ep, NwkId, warning_mode, strobe_mode, siren_level, warning_duration, strobe_duty, strobe_level, groupaddrmode=False, ackIsDisabled=False)
 
     def siren_both(self, NwkId, ep):
@@ -358,42 +378,19 @@ class IAS_Zone_Management:
         raw_APS_request(self, NwkId, ep, Cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
         return sqn
 
-    def ias_sensitivity(self, nwkid, sensitivity):
-        
-        if sensitivity not in ( 0, 1, 2):
-            return
-        write_attribute(self, nwkid, ZIGATE_EP, "01", "0500", "0000", "00", "0013", "20", "%02x" %sensitivity, ackIsDisabled=False)
-        
-        
 
 def ias_sirene_mode( self, NwkId , mode, warning_duration ):
+    self.logging("Debug", f"ias_sirene_mode - {NwkId} Mode: {mode}, Duration: {warning_duration}")
+    
     strobe_mode = warning_mode = strobe_level = 0x00
+
     if self.ListOfDevices[NwkId]["Model"] == "WarningDevice":
-        if mode == "both":
-            strobe_mode = 0x01
-            warning_mode = 0x01
-        elif mode == "siren":
-            warning_mode = 0x01
-        elif mode == "stop":
-            strobe_mode = 0x00
-            warning_mode = 0x00
-        elif mode == "strobe":
-            strobe_mode = 0x01
-            warning_mode = 0x00      
+        strobe_mode, warning_mode = WARNING_DEVICE_MODES.get(mode, (0x00, 0x00))
+
     elif mode in SIRENE_MODE:
-        if mode == "both":
-            strobe_level = STROBE_LEVEL["Low"]
-            strobe_mode = 0x02
-            warning_mode = 0x01
-        elif mode == "siren":
-            warning_mode = 0x02
-        elif mode == "stop":
-            strobe_mode = 0x00
-            warning_mode = 0x00         
-        elif mode == "strobe":
-            strobe_level = STROBE_LEVEL["Low"]
-            strobe_mode = 0x01
-            warning_mode = 0x00
+        strobe_level, strobe_mode, warning_mode = SIREN_MODES.get(mode, (0x00, 0x00, 0x00))
+
+    self.logging("Debug", f"ias_sirene_mode - before checking param {NwkId} warning_mode: {warning_mode}, strobe_mode: {strobe_mode}, strobe_level: {strobe_level}")
     if "Param" in self.ListOfDevices[NwkId]:
         if "alarmDuration" in self.ListOfDevices[NwkId]["Param"]:
             warning_duration = int(self.ListOfDevices[NwkId]["Param"]["alarmDuration"])
@@ -405,7 +402,9 @@ def ias_sirene_mode( self, NwkId , mode, warning_duration ):
             warning_mode = int(self.ListOfDevices[NwkId]["Param"]["alarmSirenCode"])
 
         if mode in ("strobe", "both") and "strobeLevel" in self.ListOfDevices[ NwkId ]["Param"]:
-            strobe_level = self.ListOfDevices[ NwkId ]["Param"]["strobeLevel"]        
+            strobe_level = self.ListOfDevices[ NwkId ]["Param"]["strobeLevel"]
+            
+        self.logging("Debug", f"ias_sirene_mode - after checking param {NwkId} warning_mode: {warning_mode}, strobe_mode: {strobe_mode}, strobe_level: {strobe_level}, warning_duration: {warning_duration}")     
 
     return strobe_mode, warning_mode, strobe_level, warning_duration
 

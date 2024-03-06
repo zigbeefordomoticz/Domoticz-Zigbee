@@ -18,6 +18,13 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## February 2024 - stable7 7.1.009 (2024.02)
+
+- [Technical] - Allow decoupled by Endpoint (for Aqara relay T2)
+- [Technical] - Enable new Tuya parameters for radar devices
+- [Technical] - refactor settings for Cluster OnOff, Occupancy, IAS sensitivity
+- [Technical] - Use of Neighbour table to finish the Topology report
+
 ## January 2024 - stable7 7.1.008 (2024.01)
 
 - [Issues] - Fix issues brought with 7.1.006 on deConz and Ezsp chipset.

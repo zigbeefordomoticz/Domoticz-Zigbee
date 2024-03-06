@@ -43,18 +43,6 @@ def Ballast_min_level(self, nwkid, min_level):
     ballast_Configuration_min_level(self, nwkid, min_level)
 
 
-def ias_wd_sirene_max_alarm_dureation( self, nwkid, duration):
-    if self.iaszonemgt:
-        Epout = getEpForCluster(self, nwkid, "0502", strict=True)
-        
-        if Epout is not None and len(Epout) == 1:
-            self.iaszonemgt.IAS_WD_Maximum_duration( nwkid, Epout[0], duration)
-
-def ias_sensitivity(self, nwkid, sensitivity):
-    if self.iaszonemgt:
-        self.iaszonemgt.ias_sensitivity( nwkid, sensitivity)
-
-
 DEVICE_PARAMETERS = {
     "HueLedIndication": philips_led_indication,
     "netatmoLedIfOn": legrand_enable_Led_IfOn_by_nwkid,
@@ -68,8 +56,6 @@ DEVICE_PARAMETERS = {
     "DanfossCovered": danfoss_covered,
     "DanfossTRVOrientation": danfoss_orientation,
     "DanfossViewDirection": danfoss_viewdirection,
-    "SireneMaxAlarmDuration": ias_wd_sirene_max_alarm_dureation,
-    "IASsensitivity": ias_sensitivity,
 }
 
      

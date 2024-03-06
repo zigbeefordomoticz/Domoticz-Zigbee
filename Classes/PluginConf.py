@@ -16,10 +16,8 @@ import os.path
 import time
 from pathlib import Path
 
-from Modules.domoticzAbstractLayer import (domoticz_error_api,
-                                           domoticz_log_api,
-                                           domoticz_status_api, getConfigItem,
-                                           setConfigItem)
+import Domoticz
+from Modules.domoticzAPI import getConfigItem, setConfigItem
 from Modules.tools import is_domoticz_db_available, is_hex
 
 SETTINGS = {
@@ -142,6 +140,7 @@ SETTINGS = {
             "pingDevicesFeq": { "type": "int", "default": 3600, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "resetPermit2Join": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "Ping": {"type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True},
+            "allowRemoveZigateDevice": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, "ZigpyRadio": "" },
             "eraseZigatePDM": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, "ZigpyRadio": "" },
             "Certification": { "type": "list", "list": {"CE regulation": "CE", "FCC regulation": "FCC"}, "default": "CE", "current": None, "restart": True, "hidden": False, "Advanced": False, "ZigpyRadio": "" },
             "CertificationCode": { "type": "int", "default": 1, "current": None, "restart": 1, "hidden": True, "Advanced": False, "ZigpyRadio": "" },
@@ -212,115 +211,111 @@ SETTINGS = {
     # Verbose
     "VerboseLogging": {
         "Order": 13,
-        "param": {
-            'AbstractDz': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'BasicOutput': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Binding': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'CasaIA': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Cluster': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Command': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ConfigureReporting': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'DZDB': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Danfoss': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Database': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'DeviceAnnoucement': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Enki': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Garbage': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True },
-            'Gledopto': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Groups': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Heartbeat': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Heiman': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'IAS': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Ikea': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Input': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'LQIthreshold': { 'type': 'int', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
-            'Legrand': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ListImportedModules': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Livolo': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Lumi': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'MatchingNwkId': { 'type': 'str', 'default': 'ffff', 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
-            'NXPExtendedErrorCode': { 'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'NetworkEnergy': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'NetworkMap': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'OTA': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Orvibo': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'PDM': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Pairing': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Philips': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'PiZigate': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Plugin': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'PluginTools': {'type': 'bool','default': 0,'current': None,'restart': 0,'hidden': False,'Advanced': True},
-            'Pluzzy': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'PollControl': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Profalux': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ReadAttributes': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Schneider': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Sonoff': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Thermostats': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ThreadCommunication': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ThreadDomoticz': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ThreadForwarder': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ThreadWriter': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Timing': { 'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True },
-            'Transport': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Transport8000': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Transport8002': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Transport8011': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Transport8012': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'TransportError': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'TransportFrwder': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'TransportPluginEncoder': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'TransportProto': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'TransportRder': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'TransportSerial': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'TransportTcpip': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'TransportWrter': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'TransportZigpy': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Tuya': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Tuya0601': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'TuyaTS011F': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'WebServer': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Widget': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'WidgetCreation': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'WidgetLevel2': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'WidgetLevel3': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'WidgetReset': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'WidgetUpdate': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'WriteAttributes': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ZLinky': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ZclClusters': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ZiGateReactTime': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'Zigpy': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ZigpyEZSP': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ZigpyZNP': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ZigpyZigate': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'ZigpydeCONZ': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'coordinatorCmd': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'enablePluginLogging': { 'type': 'bool', 'default': 1, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': False },
-            'inRawAPS': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'logDeviceUpdate': { 'type': 'bool', 'default': 1, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
-            'logFORMAT': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': True, 'Advanced': True },
-            'logThreadName': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
-            'loggingBackupCount': { 'type': 'int', 'default': 7, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': False },
-            'loggingMaxMegaBytes': { 'type': 'int', 'default': 0, 'current': None, 'restart': 1, 'hidden': False, 'Advanced': False },
-            'occupancySettings': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'onoffSettings': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'outRawAPS': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'showTimeOutMsg': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'trackReceivedRoute': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
-            'trackTransportError': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
-            'trackZclClustersIn': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
-            'trackZclClustersOut': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
-            'trackZdpClustersIn': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
-            'trackZdpClustersOut': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': False },
-            'tuyaSettings': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'z4dCertifiedDevices': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'zclCommand': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'zclDecoder': {'type': 'bool','default': 0,'current': None,'restart': 0,'hidden': False,'Advanced': True},
-            'zdpCommand': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'zdpDecoder': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True },
-            'zigateCommand': { 'type': 'bool', 'default': 0, 'current': None, 'restart': 0, 'hidden': False, 'Advanced': True }
-        }
+        "param": { 
+            "AbstractDz": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "BasicOutput": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Binding": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "CasaIA": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Cluster": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Command": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ConfigureReporting": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "DZDB": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Danfoss": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Database": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "DeviceAnnoucement": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Enki": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Garbage": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True },
+            "Gledopto": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Groups": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Heartbeat": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Heiman": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "IAS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Ikea": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Input": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "LQIthreshold": { "type": "int", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
+            "Legrand": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ListImportedModules": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Livolo": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Lumi": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "MatchingNwkId": { "type": "str", "default": "ffff", "current": None, "restart": 0, "hidden": False, "Advanced": False },
+            "NXPExtendedErrorCode": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "NetworkEnergy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "NetworkMap": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "OTA": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Orvibo": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "PDM": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Pairing": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Philips": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "PiZigate": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Plugin": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "PluginTools": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Pluzzy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "PollControl": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Profalux": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Schneider": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Sonoff": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Thermostats": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ThreadCommunication": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ThreadDomoticz": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ThreadForwarder": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ThreadWriter": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Timing": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True },
+            "Transport": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Transport8000": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Transport8002": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Transport8011": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Transport8012": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TransportError": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TransportFrwder": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TransportPluginEncoder": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TransportProto": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TransportRder": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TransportSerial": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TransportTcpip": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TransportWrter": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TransportZigpy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Tuya": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Tuya0601": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "TuyaTS011F": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "WebServer": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Widget": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "WidgetCreation": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "WriteAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ZLinky": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ZclClusters": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ZiGateReactTime": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Zigpy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ZigpyEZSP": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ZigpyZNP": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ZigpyZigate": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ZigpydeCONZ": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "coordinatorCmd": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "enablePluginLogging": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": False },
+            "inRawAPS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "iasSettings": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "logDeviceUpdate": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False },
+            "logFORMAT": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True },
+            "logThreadName": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
+            "loggingBackupCount": { "type": "int", "default": 7, "current": None, "restart": 1, "hidden": False, "Advanced": False },
+            "loggingMaxMegaBytes": { "type": "int", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False },
+            "occupancySettings": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "onoffSettings": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "outRawAPS": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "showTimeOutMsg": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "tuyaSettings": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "trackTransportError": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
+            "trackZclClustersIn": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
+            "trackZclClustersOut": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
+            "trackZdpClustersIn": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
+            "trackZdpClustersOut": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False },
+            "z4dCertifiedDevices": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "zclCommand": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "zclDecoder": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "zdpCommand": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "zdpDecoder": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "zigateCommand": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }
+        },
     },
     # Others
     "Others": {
@@ -505,17 +500,20 @@ def _load_Settings(self):
         if "TimeStamp" in _domoticz_pluginConf:
             dz_timestamp = _domoticz_pluginConf["TimeStamp"]
             _domoticz_pluginConf = _domoticz_pluginConf["b64Settings"]
-            domoticz_log_api( "Plugin data loaded where saved on %s" % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))) )
+            Domoticz.Log(
+                "Plugin data loaded where saved on %s"
+                % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)))
+            )
         if not isinstance(_domoticz_pluginConf, dict):
             _domoticz_pluginConf = {}
 
     txt_timestamp = 0
     if os.path.isfile(self.pluginConf["filename"]):
         txt_timestamp = os.path.getmtime(self.pluginConf["filename"])
-    domoticz_log_api("%s timestamp is %s" % (self.pluginConf["filename"], txt_timestamp))
+    Domoticz.Log("%s timestamp is %s" % (self.pluginConf["filename"], txt_timestamp))
 
     if dz_timestamp < txt_timestamp:
-        domoticz_log_api("Dz PluginConf is older than Json Dz: %s Json: %s" % (dz_timestamp, txt_timestamp))
+        Domoticz.Log("Dz PluginConf is older than Json Dz: %s Json: %s" % (dz_timestamp, txt_timestamp))
         # We should load the json file
 
     with open(self.pluginConf["filename"], "rt") as handle:
@@ -524,7 +522,7 @@ def _load_Settings(self):
             _pluginConf = json.load(handle)
 
         except json.decoder.JSONDecodeError as e:
-            domoticz_error_api("poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
+            Domoticz.Error("poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
             return
 
         for param in _pluginConf:
@@ -534,13 +532,13 @@ def _load_Settings(self):
     
     # Check Load
     if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"]:
-        domoticz_log_api("PluginConf Loaded from Dz: %s from Json: %s" % (len(_domoticz_pluginConf), len(_pluginConf)))
+        Domoticz.Log("PluginConf Loaded from Dz: %s from Json: %s" % (len(_domoticz_pluginConf), len(_pluginConf)))
         if _domoticz_pluginConf:
             for x in _pluginConf:
                 if x not in _domoticz_pluginConf:
-                    domoticz_error_api("-- %s is missing in Dz" % x)
+                    Domoticz.Error("-- %s is missing in Dz" % x)
                 elif _pluginConf[x] != _domoticz_pluginConf[x]:
-                    domoticz_error_api(
+                    Domoticz.Error(
                         "++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x])
                     )
 
@@ -572,9 +570,9 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
     try:
         PluginConf = eval(tmpPluginConf)
     except SyntaxError:
-        domoticz_error_api("Syntax Error in %s, all plugin parameters set to default" % filename)
+        Domoticz.Error("Syntax Error in %s, all plugin parameters set to default" % filename)
     except (NameError, TypeError, ZeroDivisionError):
-        domoticz_error_api("Error while importing %s, all plugin parameters set to default" % filename)
+        Domoticz.Error("Error while importing %s, all plugin parameters set to default" % filename)
     else:
         for theme in SETTINGS:
             for param in SETTINGS[theme]["param"]:
@@ -583,7 +581,7 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
                         if is_hex(PluginConf.get(param)):
                             self.pluginConf[param] = int(PluginConf[param], 16)
                         else:
-                            domoticz_error_api(
+                            Domoticz.Error(
                                 "Wrong parameter type for %s, keeping default %s"
                                 % (param, self.pluginConf[param]["default"])
                             )
@@ -593,7 +591,7 @@ def _import_oldfashon_param(self, tmpPluginConf, filename):
                         if PluginConf.get(param).isdigit():
                             self.pluginConf[param] = int(PluginConf[param])
                         else:
-                            domoticz_error_api(
+                            Domoticz.Error(
                                 "Wrong parameter type for %s, keeping default %s"
                                 % (param, self.pluginConf[param]["default"])
                             )
@@ -615,14 +613,14 @@ def _path_check(self):
                 continue
             _path_name = Path( self.pluginConf[param] )
             if not os.path.exists(_path_name):
-                domoticz_error_api("Cannot access path: %s" % _path_name)
+                Domoticz.Error("Cannot access path: %s" % _path_name)
             if self.pluginConf[param] != str( _path_name ):
                 if self.pluginConf["PosixPathUpdate"]:
-                    domoticz_status_api("Updating path from %s to %s" %( self.pluginConf[param], _path_name))
+                    Domoticz.Status("Updating path from %s to %s" %( self.pluginConf[param], _path_name))
                     self.pluginConf[param] = str( _path_name )
                     update_done = True
                 else:
-                    domoticz_error_api("Updating path from %s to %s is required, but no backward compatibility" %( self.pluginConf[param], _path_name))
+                    Domoticz.Error("Updating path from %s to %s is required, but no backward compatibility" %( self.pluginConf[param], _path_name))
 
     if update_done:
         self.write_Settings()
@@ -637,9 +635,9 @@ def _param_checking(self):
             if SETTINGS[theme]["param"][param]["type"] == "hex":
                 if isinstance(self.pluginConf[param], str):
                     self.pluginConf[param] = int(self.pluginConf[param], 16)
-                domoticz_status_api("%s set to 0x%x" % (param, self.pluginConf[param]))
+                Domoticz.Status("%s set to 0x%x" % (param, self.pluginConf[param]))
             else:
-                domoticz_status_api("%s set to %s" % (param, self.pluginConf[param]))
+                Domoticz.Status("%s set to %s" % (param, self.pluginConf[param]))
 
 
 def zigpy_setup(self):

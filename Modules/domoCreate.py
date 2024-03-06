@@ -300,14 +300,17 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             t = update_widget_type_if_possible( self, NWKID, t)
 
+            if t in ("Aqara", "XCube"):
+                # We expect Only 1 Type, so after the creation of the 2 Widgets break
+                create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t)
+                break
+
             if create_native_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
                 continue
 
             if create_switch_selector_widget( self, Devices, NWKID, DeviceID_IEEE, Ep, t):
                 continue
 
-            if t in ("Aqara", "XCube") and create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
-                continue
 
     # for Ep
     update_device_type( self, NWKID, GlobalType )
@@ -349,9 +352,17 @@ def update_widget_type_if_possible( self, Nwkid, widget_type):
     
 
 def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
+
     # Xiaomi Magic Cube, this one required 2 continuous widget.
-    self.ListOfDevices[NWKID]["Status"] = "inDB"
+
+    # Do not use the generic createDomoticzWidget , because this one required 2 continuous widget.
+    # usage later on is based on that assumption
+    #
+    # Xiaomi Magic Cube
+    self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - Xiaomi Magic Cube {NWKID} {DeviceID_IEEE} {Ep} {t}")
     
+    self.ListOfDevices[NWKID]["Status"] = "inDB"
+
     # Create the XCube Widget
     Options = createSwitchSelector(self, 10, DeviceType=t, OffHidden=True, SelectorStyle=1)
     unit = FreeUnit(self, Devices, DeviceID_IEEE, nbunit_=2)  # Look for 2 consecutive slots
@@ -362,17 +373,18 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
         self.ListOfDevices[NWKID]["Status"] = "failDB"
         self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
     else:
+        self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for '{t}'")
         self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(idx)] = t
 
     # Create the Status (Text) Widget to report Rotation angle
     unit += 1
-    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=243, Subtype_=19, Switchtype_=0,)
+    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, "Text", DeviceID_IEEE, Ep), Type_=243, Subtype_=19, Switchtype_=0,)
     
     if idx == -1:
-        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
+        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} Text {unit}")
     else:
+        self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for 'Text'")
         self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(idx)] = "Text"
-
 
 def number_switch_selectors( widget_type ):
     if widget_type not in SWITCH_SELECTORS:

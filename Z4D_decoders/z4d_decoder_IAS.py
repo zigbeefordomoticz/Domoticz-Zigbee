@@ -68,67 +68,71 @@ def Decode8400(self, Devices, MsgData, MsgLQI):
     
 def Decode8401(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'Decode8401 - Reception Zone status change notification: ' + MsgData)
-    
+
     zone_status_fields =_extract_zone_status_info(self, MsgData)
     MsgSQN, MsgEp, MsgClusterId, MsgSrcAddrMode, MsgSrcAddr, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay = zone_status_fields
     if zone_status_fields is None:
         error_message = f'Decode8401 - Reception Zone status change notification but incorrect Address Mode: {MsgSrcAddrMode} with MsgData {MsgData}'
         self.log.logging('Input', 'Error', error_message)
         return
-    
+
     ias_dic = self.ListOfDevices[MsgSrcAddr].setdefault('Ep', {}).setdefault(MsgEp, {}).setdefault(MsgClusterId, {})
     ias_dic.setdefault('0002', {})
 
     lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
-    
+
     if MsgSrcAddr not in self.ListOfDevices:
         self.log.logging('Input', 'Error', 'Decode8401 - unknown IAS device %s from plugin' % MsgSrcAddr)
         if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
             handle_unknow_device(self, MsgSrcAddr)
         return
-    
+
     if 'Health' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Health'] not in ('Disabled',):
         self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
-        
+
     timeStamped(self, MsgSrcAddr, 33793)
     updSQN(self, MsgSrcAddr, MsgSQN)
     updLQI(self, MsgSrcAddr, MsgLQI)
-    
-    Model = ''
-    if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-        Model = self.ListOfDevices[MsgSrcAddr]['Model']
-        
+
+    Model = self.ListOfDevices[MsgSrcAddr].get('Model', '')
     self.log.logging('Input', 'Debug', 'Decode8401 - MsgSQN: %s MsgSrcAddr: %s MsgEp:%s MsgClusterId: %s MsgZoneStatus: %s MsgExtStatus: %s MsgZoneID: %s MsgDelay: %s' % (MsgSQN, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay), MsgSrcAddr)
 
     if Model == 'PST03A-v2.2.5':
         Decode8401_PST03Av225(self, Devices, MsgSrcAddr, MsgEp, Model, MsgZoneStatus)
         return
-    
+
     status_bits = [int(MsgZoneStatus, 16) >> i & 1 for i in range(10)]
     alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef = status_bits
 
     _ensure_ep_cluster_structure(self, MsgSrcAddr, MsgEp, MsgClusterId)
-    
+
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]['0500']['0002'] = 'alarm1: %s, alarm2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s' % (alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef)
     self.log.logging('Input', 'Debug', 'IAS Zone for device:%s  - %s' % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]['0500']['0002']), MsgSrcAddr)
     self.log.logging('Input', 'Debug', 'Decode8401 MsgZoneStatus: %s ' % MsgZoneStatus[2:4], MsgSrcAddr)
-    
-    value = MsgZoneStatus[2:4]
-    
+
+    if get_device_config_param(self, MsgSrcAddr, 'HeimanDoorBellBuuton'):
+        self.log.logging('Input', 'Debug',f"Decode8401 HeimanDoorBellBuuton: {MsgSrcAddr} {MsgZoneStatus}", MsgSrcAddr)
+
+        button_pressed = ( 8000, 8004 )
+        if int(MsgZoneStatus,16) in button_pressed:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0006', '01')
+            tamper = int(MsgZoneStatus,16) & 1 << 2
+            if tamper:
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '01')
+        return
+
     motion_via_IAS_alarm = get_device_config_param(self, MsgSrcAddr, 'MotionViaIASAlarm1')
-    
     self.log.logging('Input', 'Debug', 'MotionViaIASAlarm1 = %s' % motion_via_IAS_alarm)
-    
+
     ias_alarm1_2_merged = get_deviceconf_parameter_value(self, Model, 'IASAlarmMerge', return_default=None)
-    
     self.log.logging('Input', 'Debug', 'IASAlarmMerge = %s' % ias_alarm1_2_merged)
-    
+
     if ias_alarm1_2_merged:
         self.log.logging('Input', 'Debug', 'IASAlarmMerge alarm1 %s alarm2 %s' % (alarm1, alarm2))
         combined_alarm = alarm2 << 1 | alarm1
         self.log.logging('Input', 'Debug', 'IASAlarmMerge combined value = %02d' % combined_alarm)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0006', '%02d' % combined_alarm)
-        
+
     elif motion_via_IAS_alarm is not None and motion_via_IAS_alarm == 1:
         self.log.logging('Input', 'Debug', 'Motion detected sending to MajDomo %s/%s %s' % (MsgSrcAddr, MsgEp, alarm1 or alarm2))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0406', '%02d' % (alarm1 or alarm2))
@@ -157,6 +161,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
 
         _update_ias_zone_status(self, MsgSrcAddr, MsgEp, MsgZoneStatus)
+
 
 def _extract_zone_status_info(self, msg_data):
     MsgSQN = msg_data[:2]
@@ -210,6 +215,7 @@ def _update_ias_zone_status(self, msg_src_addr, msg_ep, msg_zone_status):
         zone_status[status_name] = status_value
 
     zone_status['GlobalInfos'] = self.ListOfDevices.get(msg_src_addr, {}).get('Ep', {}).get(msg_ep, {}).get('0500', {}).get('0002', {})
+    zone_status['zoneStatus'] = msg_zone_status
     zone_status['TimeStamp'] = int(time.time())
 
        

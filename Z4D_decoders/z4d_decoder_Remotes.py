@@ -370,14 +370,14 @@ def Decode80A7(self, Devices, MsgData, MsgLQI):
 def scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd=None, unknown_=None, MsgDirection=None):
     """Implementation based on Device JSON configuration."""
 
-    self.log.logging('Input', 'Log', f"scene_mapping {MsgSrcAddr} {MsgEP} {MsgClusterId} {MsgCmd} {unknown_} {MsgDirection} {remote_scene_mapping_data}")
+    self.log.logging('Input', 'Debug', f"scene_mapping {MsgSrcAddr} {MsgEP} {MsgClusterId} {MsgCmd} {unknown_} {MsgDirection} {remote_scene_mapping_data}")
 
     matching_criteria = f"{MsgCmd}_{unknown_}_{MsgDirection}" if MsgDirection is not None else f"{MsgCmd}_{unknown_}"
 
     cluster_mapping = remote_scene_mapping_data.get(MsgClusterId, {})
     device_mapping = cluster_mapping.get(matching_criteria, None)
 
-    self.log.logging('Input', 'Log', f"   mapping found ( {MsgCmd} {unknown_} {MsgDirection}) -> {device_mapping}")
+    self.log.logging('Input', 'Debug', f"   mapping found ( {MsgCmd} {unknown_} {MsgDirection}) -> {device_mapping}")
 
     if device_mapping:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, device_mapping)
@@ -386,6 +386,6 @@ def scene_mapping(self, Devices, remote_scene_mapping_data, MsgSrcAddr, MsgEP, M
 def missing_scene_mapping(self, NwkId, Ep, ClusterId, model, Data, Cmd, Unknow, Direction):
 
     self.log.logging( 'Input', 'Log', f'Device {NwkId} with model {model} requires a scene mapping entry in the config file - msgdata: {Data[8:]}')
-    self.log.logging('Input', 'Log', f'Device "REMOTE_SCENE_MAPPING": {{ "{ClusterId}": {{ "{Cmd}_{Unknow}_{Direction}": <the mapped value for corresponding switch selector> }} }}')
+    self.log.logging( 'Input', 'Log', f'Device "REMOTE_SCENE_MAPPING": {{ "{ClusterId}": {{ "{Cmd}_{Unknow}_{Direction}": <the mapped value for corresponding switch selector> }} }}')
 
                                                                     
