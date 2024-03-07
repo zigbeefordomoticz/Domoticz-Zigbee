@@ -110,7 +110,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'IAS Zone for device:%s  - %s' % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]['0500']['0002']), MsgSrcAddr)
     self.log.logging('Input', 'Debug', 'Decode8401 MsgZoneStatus: %s ' % MsgZoneStatus[2:4], MsgSrcAddr)
 
-    heiman_door_bell_button = get_device_config_param(self, MsgSrcAddr, 'HeimanDoorBellButton')
+    heiman_door_bell_button = get_deviceconf_parameter_value(self, Model, "HeimanDoorBellButton", return_default=False)
     self.log.logging('Input', 'Debug', 'HeimanDoorBellButton = %s' % heiman_door_bell_button)
 
     if heiman_door_bell_button:
