@@ -28,6 +28,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def new(cls, config: dict, auto_form: bool = False, start_radio: bool = True) -> zigpy.application.ControllerApplication:
         LOGGER.debug("new")
 
+
     async def _load_db(self) -> None:
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
         LOGGER.debug("_load_db")
@@ -45,7 +46,8 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
         LOGGER.info("deCONZ Configuration: %s", self.config)
 
-    async def startup(self, HardwareID, pluginconf, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+
+    async def startup(self, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         self.log = log
         self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
@@ -55,6 +57,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.callBackBackup = callBackBackup
         self.HardwareID = HardwareID
         self.captureRxFrame = captureRxFrame
+        self.use_of_zigpy_persistent_db = use_of_zigpy_persistent_db
 
         await asyncio.sleep( 3 )
 
@@ -145,20 +148,26 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     def get_device(self, ieee=None, nwk=None):
         return Classes.ZigpyTransport.AppGeneric.get_device(self, ieee, nwk)
 
+
     def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK, *, handle_rejoin: bool = True,) -> None:
         return Classes.ZigpyTransport.AppGeneric.handle_join(self, nwk, ieee, parent_nwk)
+
             
     def get_device_ieee(self, nwk):
         return Classes.ZigpyTransport.AppGeneric.get_device_ieee(self, nwk)
 
+
     def handle_leave(self, nwk, ieee):
         Classes.ZigpyTransport.AppGeneric.handle_leave(self, nwk, ieee)
+
 
     def handle_relays(self, nwk, relays) -> None:
         Classes.ZigpyTransport.AppGeneric.handle_relays(self, nwk, relays)
 
+
     def packet_received(self, packet: t.ZigbeePacket) -> None:
         return Classes.ZigpyTransport.AppGeneric.packet_received(self,packet)
+
 
     def handle_message(
         self,
@@ -173,56 +182,72 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     ) -> None:
         return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message,dst_addressing=dst_addressing)                
 
+
     async def set_zigpy_tx_power(self, power):
         pass
         #await self._api.set_tx_power(power)
+
 
     async def set_led(self, mode):
         pass
         #await self._api.set_led(mode)
 
+
     async def set_certification(self, mode):
         pass
         #await self._api.set_certification(mode)
+
 
     async def get_time_server(self):
         pass
         #await self._api.get_time_server()
 
+
     async def set_time_server(self, newtime):
         pass
         #await self._api.set_time()
 
+
     async def get_firmware_version(self):
         pass
+
 
     async def erase_pdm(self):
         pass
 
+
     async def soft_reset(self):
         pass
+
 
     async def set_extended_pan_id(self, extended_pan_ip): 
         pass 
 
+
     async def set_channel(self):
         pass        
 
+
     async def remove_ieee(self, ieee):
         pass
+
 
     async def coordinator_backup( self ):
         if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
             self.callBackBackup(await self.backups.create_backup(load_devices=self.pluginconf.pluginConf["BackupFullDevices"]))
 
+
     async def network_interference_scan(self):
         await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
 
+
     def is_bellows(self):
         return False
+
     
     def is_znp(self):
         return False
+
     
     def is_deconz(self):
         return True

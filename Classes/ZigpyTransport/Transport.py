@@ -71,6 +71,8 @@ class ZigpyTransport(object):
 
         self.structured_log_command_file_handler = None
         instrument_log_command_open( self)
+        
+        self.use_of_zigpy_persistent_db = self.pluginconf.pluginConf["enableZigpyPersistentInFile"] or self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]
 
    
     def open_cie_connection(self):

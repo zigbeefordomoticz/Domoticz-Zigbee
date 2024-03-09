@@ -80,7 +80,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     Starts the network on a connected radio, optionally forming one with random
     settings if necessary.
     """
-    self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
+    self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s Logger: %s" %( auto_form, force_form, type(self), LOGGER))
 
     # Make sure the first thing we do is feed the watchdog
     if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
@@ -350,6 +350,22 @@ def packet_received(
         super(type(self),self).packet_received(packet)
         return
 
+    if self.use_of_zigpy_persistent_db:
+        try:
+            device = self.get_device_with_address(packet.src)
+            self.log.logging("TransportZigpy", "Debug", f"Known device {device}")
+
+        except KeyError:
+            self.log.logging("TransportZigpy", "Debug", "Unknown device %r", packet.src)
+
+            if packet.src.addr_mode == t.AddrMode.NWK:
+                # Manually send a ZDO IEEE address request to discover the device
+                task = asyncio.create_task(
+                    self._discover_unknown_device(packet.src.address),
+                    name=f"discover_unknown_device_from_packet-nwk={packet.src.address!r}",
+                )
+                return
+
     if cluster == 0x8034:
         # This has been handle via on_zdo_mgmt_leave_rsp()
         self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
@@ -367,8 +383,16 @@ def packet_received(
     plugin_frame = build_plugin_8002_frame_content(self, sender, profile, cluster, src_ep, dst_ep, message, packet.lqi, src_addrmode=addr_mode)
     self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (sender, plugin_frame))
     self.callBackFunction(plugin_frame)
+    
+    if self.use_of_zigpy_persistent_db and not device.initializing and not device.is_initialized:
+        self.log.logging("TransportZigpy", "Debug", f"Schedule initialize for {device}")
+        device.schedule_initialize()
 
-    return
+    if self.use_of_zigpy_persistent_db and device.is_initialized:
+        #TODO
+        # This trigger the write in the Persistent Db.
+        # This is a bit too much as we will do for every packet received
+        self.device_initialized( device )
 
 
 def _update_nkdids_if_needed( self, ieee, new_nwkid ):
@@ -384,6 +408,17 @@ def get_zigpy_version(self):
     LOGGER.debug("get_zigpy_version ake version number. !!")
     return self.version
 
+def get_device_with_address( self, address: t.AddrModeAddress ) -> zigpy.device.Device:
+        """Gets a `Device` object using the provided address mode address."""
+
+        if address.addr_mode == t.AddrMode.NWK:
+            return self.get_device(nwk=address.address)
+
+        elif address.addr_mode == t.AddrMode.IEEE:
+            return self.get_device(ieee=address.address)
+
+        else:
+            raise ValueError(f"Invalid address: {address!r}")
 
 async def register_specific_endpoints(self):
     """

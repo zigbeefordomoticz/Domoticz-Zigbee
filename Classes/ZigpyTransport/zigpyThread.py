@@ -126,7 +126,7 @@ async def start_zigpy_task(self, channel, extended_pan_id):
     self.log.logging( "TransportZigpy", "Debug", f"start_zigpy_task -extendedPANID {self.pluginconf.pluginConf['extendedPANID']} {extended_pan_id}", )
 
     task = asyncio.create_task(
-        radio_start(self, self.pluginconf, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id),
+        radio_start(self, self.pluginconf, self.use_of_zigpy_persistent_db, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id),
         name=f"radio_start-{self._radiomodule}-{self._serialPort}"
     )
     await asyncio.gather(task, return_exceptions=False)
@@ -150,7 +150,7 @@ async def _shutdown_remaining_task(self):
     await asyncio.sleep(1)
     
 
-async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
+async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
 
@@ -214,10 +214,11 @@ async def radio_start(self, pluginconf, radiomodule, serialPort, auto_form=False
     else:
         new_network = False
 
-    self.log.logging( "TransportZigpy", "Status", "load zigpy db to restor last save state")
-    await self.app._load_db()
+    if self.use_of_zigpy_persistent_db:
+        self.log.logging( "TransportZigpy", "Status", "Use of zigpy Persistent Db")
+        await self.app._load_db()
 
-    await _radio_startup(self, pluginconf, new_network, radiomodule)
+    await _radio_startup(self, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule)
     self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
 
 
@@ -266,7 +267,8 @@ def deconz_configuration_setup(self, conf, serialPort):
         zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
         # zigpy.config.CONF_STARTUP_ENERGY_SCAN: False
     }
-    
+
+
 def optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel):
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )
 
@@ -292,12 +294,14 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
     if "EnergyScanAtStatup" in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["EnergyScanAtStatup"]:
         config[zigpy.config.CONF_STARTUP_ENERGY_SCAN] = False
 
-async def _radio_startup(self, pluginconf, new_network, radiomodule):
+
+async def _radio_startup(self, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule):
     
     try:
         await self.app.startup(
             self.hardwareid,
             pluginconf,
+            use_of_zigpy_persistent_db,
             callBackHandleMessage=self.receiveData,
             callBackUpdDevice=self.ZigpyUpdDevice,
             callBackGetDevice=self.ZigpyGetDevice,
@@ -347,7 +351,6 @@ def post_coordinator_startup(self, radiomodule):
     self.forwarder_queue.put( build_plugin_0302_frame_content( self, ) )
 
     
-
 def display_network_infos(self):
     self.log.logging( "TransportZigpy", "Status", "Network settings")
     self.log.logging( "TransportZigpy", "Status", "  Device IEEE: %s" %self.app.state.node_info.ieee)
