@@ -252,6 +252,27 @@ SETTINGS = {
             "Pluzzy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "PollControl": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Profalux": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            
+            "Python/aiosqlite": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
+            "Python/zigpy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
+            "Python/zigpy-appdb": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
+            "Python/zigpy-application": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
+            "Python/zigpy-backups": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
+            "Python/zigpy-device": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Python/zigpy-endpoint": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
+            "Python/zigpy-group": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
+            "Python/zigpy-listeners": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
+            "Python/zigpy-state": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
+            "Python/zigpy-topology": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Python/zigpy-util": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Python/zigpy-config": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Python/zigpy-ota": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Python/zigpy-profiles": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Python/zigpy-quirks": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Python/zigpy-zcl": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True }, 
+            "Python/zigpy-zdo": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Python/Classes-ZigpyTransport-AppGeneric": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+
             "ReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Schneider": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Sonoff": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
@@ -630,6 +651,7 @@ def _path_check(self):
     if update_done:
         self.write_Settings()
 
+
 def _param_checking(self):
     # Let"s check the Type
     for theme in SETTINGS:
@@ -657,7 +679,8 @@ def zigpy_setup(self):
                     "hidden": False,
                     "Advanced": True,
                 }
-                                
+
+                               
 def setup_folder_parameters(self, homedir):
 
     for theme in SETTINGS:

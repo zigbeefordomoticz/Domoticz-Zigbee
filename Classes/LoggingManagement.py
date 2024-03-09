@@ -52,6 +52,8 @@ class LoggingManagement:
         self.debugZigate = False
         self.debugdeconz = False
         
+        self.reload_debug_settings = False
+        
         configure_zigpy_loggers("warning")
         configure_zigpy_znp_loggers("warning")
         configure_zigpy_ezsp_loggers("warning")
@@ -59,7 +61,7 @@ class LoggingManagement:
         configure_zigpy_deconz_loggers("warning")
 
         self.zigpy_login()
-
+        
         start_logging_thread(self)
 
         # Thread log filter configuration
@@ -75,8 +77,10 @@ class LoggingManagement:
     def reset_new_error(self):
         self._newError = False
 
+
     def is_new_error(self):
         return bool(self._newError and bool(self.LogErrorHistory))
+
 
     def zigpy_login(self):
         _configure_debug_mode(self, self.debugzigpy, "Zigpy", configure_zigpy_loggers)
@@ -84,6 +88,15 @@ class LoggingManagement:
         _configure_debug_mode(self, self.debugEZSP, "ZigpyEZSP", configure_zigpy_ezsp_loggers)
         _configure_debug_mode(self, self.debugZigate, "ZigpyZigate", configure_zigpy_zigate_loggers)
         _configure_debug_mode(self, self.debugdeconz, "ZigpydeCONZ", configure_zigpy_deconz_loggers)
+        
+        for param in self.pluginconf.pluginConf:
+            if 'Python/' in param:
+                logger_name = param.split('/')[1]
+                logger_name = logger_name.replace( '-', '.')
+                mode = self.pluginconf.pluginConf[param]
+
+                _set_logging_level = logging.DEBUG if mode == 1 else logging.WARNING
+                logging.getLogger(logger_name).setLevel(_set_logging_level)
 
     def loggingUpdatePluginVersion(self, Version):
         self.PluginVersion = Version
@@ -246,7 +259,9 @@ class LoggingManagement:
     def logging(self, module, logType, message, nwkid=None, context=None):
         #domoticz_log_api("%s %s %s %s %s %s %s" % (module, logType, message, nwkid, context, self.logging_thread, self.logging_queue))
         # Set python3 modules logging if required
-        self.zigpy_login()
+        if self.reload_debug_settings:
+            self.zigpy_login()
+            self.reload_debug_settings = False
 
         try:
             thread_id = threading.current_thread().native_id
@@ -494,8 +509,9 @@ def logging_thread(self):
             domoticz_error_api("logging_thread unexpected tuple %s" % (str(logging_tuple)))
     domoticz_log_api("logging_thread - ended")
 
+
 def configure_loggers(logger_names, mode):
-    #domoticz_log_api(f"configure_loggers({logger_names} with {_set_logging_level})")
+    domoticz_log_api(f"configure_loggers({logger_names} with {mode})")
     _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING
 
     for logger_name in logger_names:
@@ -514,7 +530,7 @@ def configure_zigpy_loggers(mode):
         "zigpy.ota",
         "zigpy.profiles",
         "zigpy.quirks",
-        "zigpy.zcl", "zigpy.zco"
+        "zigpy.zcl", "zigpy.zdo"
     ]
     configure_loggers(logger_names, mode)
 
@@ -561,7 +577,6 @@ def configure_zigpy_deconz_loggers(mode):
         "Classes.ZigpyTransport.AppGeneric"
     ]
     configure_loggers(logger_names, mode)
-
 
 # Main configuration function
 

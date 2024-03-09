@@ -620,7 +620,7 @@ class WebServer(object):
             for setting in setting_lst:
                 found = False
                 self.logging("Debug", "setting: %s = %s" % (setting, setting_lst[setting]["current"]))
-
+                self.log.reload_debug_settings = True
                 # Do we have to update ?
                 for _theme in SETTINGS:
                     for param in SETTINGS[_theme]["param"]:
@@ -682,7 +682,7 @@ class WebServer(object):
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]["current"]:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
                                 set_TxPower(self, self.pluginconf.pluginConf[param])
-                            
+
                         else:
                             if SETTINGS[_theme]["param"][param]["type"] == "hex":
                                 # domoticz_log_api("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
@@ -1511,8 +1511,6 @@ class WebServer(object):
             _response["Data"] = json.dumps(_battEnv, sort_keys=True)
         return _response
 
-
-        
     def logging(self, logType, message):
         self.log.logging("WebServer", logType, message)
 
