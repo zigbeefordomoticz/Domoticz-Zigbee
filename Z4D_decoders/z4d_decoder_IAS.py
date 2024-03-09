@@ -110,15 +110,13 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'IAS Zone for device:%s  - %s' % (MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]['0500']['0002']), MsgSrcAddr)
     self.log.logging('Input', 'Debug', 'Decode8401 MsgZoneStatus: %s ' % MsgZoneStatus[2:4], MsgSrcAddr)
 
-    if get_device_config_param(self, MsgSrcAddr, 'HeimanDoorBellBuuton'):
-        self.log.logging('Input', 'Debug',f"Decode8401 HeimanDoorBellBuuton: {MsgSrcAddr} {MsgZoneStatus}", MsgSrcAddr)
+    heiman_door_bell_button = get_deviceconf_parameter_value(self, Model, "HeimanDoorBellButton", return_default=False)
+    self.log.logging('Input', 'Debug', 'HeimanDoorBellButton = %s' % heiman_door_bell_button)
 
-        button_pressed = ( 8000, 8004 )
-        if int(MsgZoneStatus,16) in button_pressed:
+    if heiman_door_bell_button:
+        self.log.logging('Input', 'Debug',f"Decode8401 HeimanDoorBellButton: {MsgSrcAddr} {MsgZoneStatus}", MsgSrcAddr)
+        if tamper:
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0006', '01')
-            tamper = int(MsgZoneStatus,16) & 1 << 2
-            if tamper:
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '01')
         return
 
     motion_via_IAS_alarm = get_device_config_param(self, MsgSrcAddr, 'MotionViaIASAlarm1')
