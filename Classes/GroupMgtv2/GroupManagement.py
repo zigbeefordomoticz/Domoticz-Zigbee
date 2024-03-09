@@ -95,6 +95,7 @@ class GroupsManagement(object):
         Devices,
         ListOfDevices,
         IEEE2NWK,
+        ListOfDomoticzWidget,
         DeviceConf,
         log,
         readZclClusters,
@@ -122,6 +123,8 @@ class GroupsManagement(object):
         self.DomoticzMinor = DomoticzMinor
         self.readZclClusters = readZclClusters
         self.pluginParameters = pluginParameters
+        self.ListOfDomoticzWidget = ListOfDomoticzWidget
+        
         # Check if we have to open the old format
         if os.path.isfile(self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.pck" % hardwareID):
             # We are in the Migration from Old Group Managemet to new.

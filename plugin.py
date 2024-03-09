@@ -1306,6 +1306,7 @@ def start_GrpManagement(self, homefolder):
         Devices,
         self.ListOfDevices,
         self.IEEE2NWK,
+        self.ListOfDomoticzWidget,
         self.DeviceConf, 
         self.log,
         self.readZclClusters,
