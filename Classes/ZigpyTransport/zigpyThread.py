@@ -270,13 +270,13 @@ def deconz_configuration_setup(self, conf, serialPort):
 def optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel):
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )
 
-    if "enableZigpyPersistentInMemory" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]:
-        config[zigpy.config.CONF_DATABASE] = ":memory:"
-        
-    elif "enableZigpyPersistentInFile" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInFile"]:
+    if "enableZigpyPersistentInFile" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInFile"]:
         data_folder = Path( self.pluginconf.pluginConf["pluginData"] )
         config[zigpy.config.CONF_DATABASE] = str(data_folder / ("zigpy_persistent_%02d.db"% self.hardwareid) )
 
+    elif "enableZigpyPersistentInMemory" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]:
+        config[zigpy.config.CONF_DATABASE] = ":memory:"
+        
     if "autoBackup" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoBackup"]:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = True
         config[zigpy.config.CONF_NWK_BACKUP_PERIOD] = self.pluginconf.pluginConf["autoBackup"]
