@@ -258,16 +258,11 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
     except KeyError:
         dev = self.add_device(ieee, nwk)
         dev.update_last_seen()
-        new_join = True
         time.sleep(1.0)
         self.log.logging("TransportZigpy", "Debug", "New device 0x%04x (%s) joined the network" %(nwk, ieee))
 
-    else:
-        new_join = False
-        
     if dev.nwk != nwk:
         dev.nwk = nwk
-        new_join = True
         _update_nkdids_if_needed(self, ieee, dev.nwk )
         self.log.logging("TransportZigpy", "Debug", "Device %s changed id (0x%04x => 0x%04x)" %(ieee, dev.nwk, nwk))
 
