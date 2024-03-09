@@ -505,18 +505,23 @@ def configure_loggers(logger_names, mode):
 # Loggers configurations
 def configure_zigpy_loggers(mode):
     logger_names = [
+        "Classes.ZigpyTransport.AppGeneric",
         "aiosqlite",
-        "zigpy.application", "zigpy", "zigpy.zdo", "zigpy.zcl",
-        "zigpy.profiles", "zigpy.quirks", "zigpy.ota",
-        "zigpy.appdb_schemas", "zigpy.backups", "zigpy.device",
-        "zigpy.application", "zigpy.appdb", "zigpy.endpoint",
-        "zigpy.group", "zigpy.neighbor", "zigpy.topology"
+        "zigpy.appdb", "zigpy.application", "zigpy.backups", "zigpy.device",
+        "zigpy.endpoint", "zigpy.group", "zigpy.listeners", "zigpy.state", "zigpy.topology",
+        "zigpy.util",
+        "zigpy.config",
+        "zigpy.ota",
+        "zigpy.profiles",
+        "zigpy.quirks",
+        "zigpy.zcl", "zigpy.zco"
     ]
     configure_loggers(logger_names, mode)
 
 
 def configure_zigpy_znp_loggers(mode):
     logger_names = [
+        "AppZnp",
         "zigpy_znp", 
         "zigpy_znp.zigbee", 
         "zigpy_znp.zigbee.application", 
@@ -529,12 +534,13 @@ def configure_zigpy_znp_loggers(mode):
 
 def configure_zigpy_ezsp_loggers(mode):
     logger_names = [
+        "AppBellows",
         "bellows", 
         "bellows.zigbee", 
         "bellows.zigbee.application", 
         "bellows.zigbee.device", 
         "bellows.uart", 
-        "Classes.ZigpyTransport.AppBellows", 
+        "ZigpyTransport.AppBellows", 
         "Classes.ZigpyTransport.AppGeneric"
     ]
     configure_loggers(logger_names, mode)
@@ -551,7 +557,8 @@ def configure_zigpy_zigate_loggers(mode):
 def configure_zigpy_deconz_loggers(mode):
     logger_names = [
         "zigpy_deconz",
-        "Classes.ZigpyTransport.AppDeconz"
+        "ZigpyTransport.AppDeconz",
+        "Classes.ZigpyTransport.AppGeneric"
     ]
     configure_loggers(logger_names, mode)
 
