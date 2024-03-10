@@ -242,28 +242,29 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
             if WidgetType == "Power" and (Attribute_ in ("", "050f") or ClusterId == "000c"):  # kWh
                 if (( isinstance( value, (int, float)) and value < 0) or (float(value) < 0) ) and is_PowerNegative_widget( ClusterTypeList):
-                    self.log.logging("Widget", "Debug", "------>There is a PowerNegative widget and the value is negative. Skiping here", NwkId)
+                    self.log.logging(["Widget","Metering"], "Debug", "------>There is a PowerNegative widget and the value is negative. Skiping here", NwkId)
                     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
                     return
 
                 sValue = value
-                self.log.logging("Widget", "Debug", "------>Power  : %s" % sValue, NwkId)
+                self.log.logging(["Widget","Metering"], "Debug", "------>Power  : %s" % sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if WidgetType == "ProdPower" and Attribute_ == "":
                 if value > 0:
-                    self.log.logging("Widget", "Debug", "------>the value is Positive. Skiping here", NwkId)
+                    self.log.logging(["Widget","Metering"], "Debug", "------>the value is Positive. Skiping here", NwkId)
                     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
                     return
 
                 sValue = abs(value)
-                self.log.logging("Widget", "Debug", "------>PowerNegative  : %s" % sValue, NwkId)
+                self.log.logging(["Widget","Metering"], "Debug", "------>PowerNegative  : %s" % sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if WidgetType == "P1Meter" and Attribute_ == "0000":
-                self.log.logging("Widget", "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NwkId)
+                self.log.logging(["Widget","Metering"], "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NwkId)
                 # P1Meter report Instant and Cummulative Power.
-                # We need to retreive the Cummulative Power.
+                # Cummulative comes from Attribute 0000
+                # Instant Power needs to be retreived
                 cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0;0")
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 if "0702" in self.ListOfDevices[NwkId]["Ep"][Ep] and "0400" in self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]:
@@ -271,7 +272,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 usage1 = int(float(value))
 
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
-                self.log.logging("Widget", "Debug", "------>  P1Meter : " + sValue, NwkId)
+                self.log.logging(["Widget","Metering"], "Debug", "------>  P1Meter : " + sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if (
@@ -292,7 +293,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 
                 tarif_color = get_tarif_color( self, NwkId )
 
-                self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL : %s Attribute: %s  Color: %s (%s)" % (
+                self.log.logging(["ZLinky","Metering"], "Debug", "------>  P1Meter_ZL : %s Attribute: %s  Color: %s (%s)" % (
                     value, Attribute_, tarif_color, type(value)), NwkId)
                 
                 # P1Meter report Instant and Cummulative Power.
@@ -302,7 +303,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): retreive value: %s;%s;%s;%s;%s;%s" % (Ep, cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod), NwkId)
 
                 # We are so receiving a usage update
-                self.log.logging( "ZLinky", "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NwkId, )
+                self.log.logging( ["ZLinky","Metering"], "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NwkId, )
                 cons = get_instant_power(self, NwkId)
                 if Attribute_ in ("0000", "0100", "0104", "0108"):
                     # Usage 1
@@ -328,7 +329,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     cons = 0.0
 
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, cur_prod)
-                self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NwkId)
+                self.log.logging(["ZLinky","Metering"], "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
         if "Meter" in ClusterType:  # Meter Usage.
@@ -369,10 +370,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, 0)    
                 instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
                 summation = round(float(zlinky_sum_all_indexes( self, NwkId )), 2)
-                self.log.logging("ZLinky", "Debug", "------> Summation for Meter : %s" %summation)
+                self.log.logging(["ZLinky","Metering"], "Debug", "------> Summation for Meter : %s" %summation)
                 
                 sValue = "%s;%s" % (instant, summation)
-                self.log.logging("ZLinky", "Debug", "------>  : " + sValue)
+                self.log.logging(["ZLinky","Metering"], "Debug", "------>  : " + sValue)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
                 
             elif WidgetType == "Meter" and Attribute_ == "050f":
@@ -381,13 +382,13 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 _instant, summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
-                self.log.logging("Widget", "Debug", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}")
+                self.log.logging(["Widget","Metering"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}")
                 
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and ClusterId == "000c"):  # kWh
                 # We receive Instant
-                self.log.logging("Widget", "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: {Attribute_} received {value}")
+                self.log.logging(["Widget","Metering"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: {Attribute_} received {value}")
 
                 summation = None
                 ep_data = self.ListOfDevices[NwkId].get("Ep", {}).get(Ep, {})

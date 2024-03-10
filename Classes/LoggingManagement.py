@@ -274,22 +274,44 @@ class LoggingManagement:
                 context["StackTrace"] = get_stack_trace()
             else:
                 context = { "StackTrace": get_stack_trace() }
-            
-        if self.logging_thread and self.logging_queue:
-            logging_tuple = [
-                str(time.time()),
-                str(threading.current_thread().name),
-                str(thread_id),
-                str(module),
-                str(logType),
-                str(message),
-                str(nwkid),
-                str(context),
-            ]
-            self.logging_queue.put(logging_tuple)
-        else:
-            domoticz_log_api("%s" % message)
+                
+        # Do not enqueue if there is nothing to log.
+        if isinstance( module, str):
+            if _is_to_be_logged(self, logType, module):
+                enqueue_logging( self, thread_id, module, logType, message, nwkid, context )
 
+        elif isinstance( module, list):
+            for module_instance in module:
+                if _is_to_be_logged(self, logType, module_instance):
+                    enqueue_logging( self, thread_id, module_instance, logType, message, nwkid, context )
+            
+def _is_to_be_logged(self, logType, module):
+    if logType in ( "Log", "Status", "Error"):
+        return True
+    if module in self.pluginconf.pluginConf:
+        if self.pluginconf.pluginConf[module]:
+            return True
+    else:
+        domoticz_error_api("%s debug module unknown %s" % (module, module))
+        return True     
+    return False
+
+def enqueue_logging( self, thread_id, module, logType, message, nwkid, context ):
+    if self.logging_thread and self.logging_queue:
+        logging_tuple = [
+            str(time.time()),
+            str(threading.current_thread().name),
+            str(thread_id),
+            str(module),
+            str(logType),
+            str(message),
+            str(nwkid),
+            str(context),
+        ]
+        self.logging_queue.put(logging_tuple)
+    else:
+        domoticz_log_api("%s" % message)
+    
 
 def _loggingStatus(self, thread_name, message):
     if self.pluginconf.pluginConf["logThreadName"]:
@@ -485,23 +507,19 @@ def logging_thread(self):
                 domoticz_error_api("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
                 domoticz_error_api("      Error %s" % (str(e)))
                 return
+
             if logType == "Error":
                 loggingError(self, thread_name, module, message, nwkid, context)
+
             elif logType == "Debug":
                 # thread filter
-                threadFilter = [
-                    x for x in self.threadLogConfig if self.pluginconf.pluginConf["Thread" + self.threadLogConfig[x]] == 1
-                ]
+                threadFilter = [ x for x in self.threadLogConfig if self.pluginconf.pluginConf["Thread" + self.threadLogConfig[x]] == 1 ]
                 if threadFilter and thread_name not in threadFilter:
                     continue
+
                 thread_name=thread_name + " " + thread_id
-                pluginConfModule = str(module)
-                if pluginConfModule in self.pluginconf.pluginConf:
-                    if self.pluginconf.pluginConf[pluginConfModule]:
-                        _logginfilter(self, thread_name, message, nwkid)
-                else:
-                    domoticz_error_api("%s debug module unknown %s" % (pluginConfModule, module))
-                    _loggingDebug(self, thread_name, message)
+                _logginfilter(self, thread_name, message, nwkid)
+    
             else:
                 thread_name=thread_name + " " + thread_id
                 loggingDirector(self, thread_name, logType, message)
@@ -510,6 +528,8 @@ def logging_thread(self):
     domoticz_log_api("logging_thread - ended")
 
 
+   
+    
 def configure_loggers(logger_names, mode):
     domoticz_log_api(f"configure_loggers({logger_names} with {mode})")
     _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING
