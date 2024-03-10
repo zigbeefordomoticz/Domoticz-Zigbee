@@ -113,6 +113,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
 
     _action_list = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ActionList", model=device_model )
     formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, _ranges, _special_values, _eval_formula, _action_list, _eval_inputs, _force_value, value)
+    debug_logging(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value)
     if value is None:
         self.log.logging("ZclClusters", "Debug", "---> Value is None")
         return
@@ -284,7 +285,11 @@ def load_zcl_cluster(self):
             "Version": cluster_definition[ "Version" ],
             "Attributes": dict( cluster_definition[ "Attributes" ] )
         }
+        
+        if "Debug" in cluster_definition:
+            self.readZclClusters[ cluster_definition[ "ClusterId"] ]["Debug"] = cluster_definition[ "Debug" ]
 
+            
         self.log.logging("ZclClusters", "Status", " - ZCL Cluster %s - (V%s) %s loaded" %( 
             cluster_definition[ "ClusterId"], cluster_definition[ "Version" ], cluster_definition["Description"],))
 
@@ -326,9 +331,8 @@ def is_cluster_zcl_config_available( self, nwkid, ep, cluster, attribute=None):
         return True
 
     return is_generic_zcl_cluster( self, cluster, attribute)
-
-
-
+    
+    
 def is_manufacturer_specific_cluster(self, nwkid, ep, cluster):
     cluster_info = self.readZclClusters.get(cluster, {}).get("ManufSpecificCluster", False)
 
@@ -518,3 +522,23 @@ def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, de
     cluster_description = self.readZclClusters[ cluster ]["Description"] if self.readZclClusters and cluster in self.readZclClusters else "Unknown cluster"
     self.log.logging( "ZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s " %(
         nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, d, value, lqi ))        
+
+def debug_logging(self, nwkid, ep, cluster, attribute, dtype, attsize, raw_data, value):
+    
+    if not is_cluster_debug_mode(self, cluster):
+        return
+    
+    cluster_description = self.readZclClusters.get(cluster, {}).get("Description", "Unknown cluster")
+    attribute_description = self.readZclClusters.get(cluster, {}).get("Attributes", {}).get(attribute, {}).get("Name", "Unknown attribute")
+
+    self.log.logging( "ZclClusters", "Log", f"readZclCluster - 0x{cluster} {cluster_description} - attribute: 0x{attribute} {attribute_description} raw_data: {raw_data} value: {value}")
+
+
+def is_cluster_debug_mode(self, cluster):
+    if "Debug" not in self.readZclClusters[ cluster ]:
+        return False
+
+    debug_flag = self.readZclClusters[ cluster ]["Debug"]
+    if debug_flag in self.pluginconf.pluginConf:
+        return self.pluginconf.pluginConf[ debug_flag ]
+    return False
