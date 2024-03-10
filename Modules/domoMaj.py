@@ -267,8 +267,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 # Instant Power needs to be retreived
                 cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0;0")
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
-                if "0702" in self.ListOfDevices[NwkId]["Ep"][Ep] and "0400" in self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]:
-                    cons = round(float(self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]["0400"]), 2)
+                cons = _retreive_instant_power(self, NwkId, Ep)
                 usage1 = int(float(value))
 
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
@@ -388,16 +387,11 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
             elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and ClusterId == "000c"):  # kWh
                 # We receive Instant
-                self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: {Attribute_} received {value}")
+                self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: '{Attribute_}' received {value}")
 
-                summation = None
-                ep_data = self.ListOfDevices[NwkId].get("Ep", {}).get(Ep, {})
-                if "0702" in ep_data and "0000" in ep_data["0702"]:
-                    value_0000 = ep_data["0702"]["0000"]
-                    if value_0000 not in ({}, "", "0"):
-                        summation = int(float(value_0000))
-
+                summation = _retreive_summation_power(self, NwkId, Ep)
                 instant = round(float(value), 2)
+                
                 # Did we get Summation from Data Structure
                 if summation is not None and summation != 0:
                     summation = int(float(summation))
@@ -410,7 +404,9 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, 1)
                     # No summation retreive, so we make sure that EnergyMeterMode is
                     # correctly set to 1 (compute), if not adjust
-
+                    
+                self.log.logging("Widget", "Debug", f"------> Update Meter/Meter : {device_id_ieee} {device_unit} {sValue}")
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
         if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
             # /json.htm?type=command&param=udevice&idx=IDX&nvalue=0&svalue=INCREMENT
@@ -1660,3 +1656,24 @@ def temp_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
             self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s" % (
                 NwkId, e), NwkId)
     return 0
+
+
+def _retreive_instant_power(self, NwkId, Ep):
+    """ retreive Instant Power in 0x0702/0x0400 or 0x0b04/0x050b"""
+    
+    if "0702" in self.ListOfDevices[NwkId]["Ep"][Ep] and "0400" in self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]:
+        return round(float(self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]["0400"]), 2)
+    
+    if "0b04" in self.ListOfDevices[NwkId]["Ep"][Ep] and "050b" in self.ListOfDevices[NwkId]["Ep"][Ep]["0b04"]:
+        return round(float(self.ListOfDevices[NwkId]["Ep"][Ep]["050b"]["0b04"]), 2)
+    
+    return 0
+
+def _retreive_summation_power(self, NwkId, Ep):
+    
+    if "0702" in self.ListOfDevices[NwkId]["Ep"][Ep] and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]:
+        value_0000 = self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]["0000"]
+        if value_0000 not in ({}, "", "0"):
+            return  int(float(value_0000))
+
+    return None
