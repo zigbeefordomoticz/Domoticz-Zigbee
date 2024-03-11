@@ -111,41 +111,6 @@ def repair_dict_after_load(b64_dict, Attribute):
 
 
 # Devices helpers
-#def load_list_of_domoticz_widget(self, Devices):
-#    """Use at plugin start to creat an index of Domoticz Widget. It is also called after a Widget removal and when a new device has been paired.
-#
-#    Args:
-#        Devices (dictionary): Devices dictionary provided by the Domoticz framework
-#    """
-#    self.log.logging("AbstractDz", "Debug", "load_list_of_domoticz_widget")
-#
-#    if DOMOTICZ_EXTENDED_API:
-#        for device_key, device in Devices.items():
-#            unit_data = device.Units
-#            for unit_key, unit in unit_data.items():
-#                self.ListOfDomoticzWidget[unit.ID] = {
-#                    "Name": unit.Name,
-#                    "Unit": unit_key,
-#                    "DeviceID": device_key,
-#                    "Switchtype": unit.SwitchType,
-#                    "Subtype": unit.SubType,
-#                }
-#    else:
-#        for unit_key in Devices:
-#            self.log.logging( "AbstractDz", "Debug", f"Loading {unit_key}")
-#            unit_id = Devices[unit_key].ID
-#            self.ListOfDomoticzWidget[unit_id] = {
-#                "Name": Devices[unit_key].Name,
-#                "Unit": unit_key,
-#                "DeviceID": Devices[unit_key].DeviceID,
-#                "Switchtype": Devices[unit_key].SwitchType,
-#                "Subtype": Devices[unit_key].SubType,
-#            }
-#           
-#
-#
-#    for x in self.ListOfDomoticzWidget:
-#        self.log.logging( "AbstractDz", "Log", f"Loading Devices[{x}]: {self.ListOfDomoticzWidget[ x ]}")
 
 def load_list_of_domoticz_widget(self, Devices):
     """
@@ -340,7 +305,7 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
     self.log.logging("AbstractDz", "Debug", "domo_create_api DeviceID: %s,Name: %s,Unit: %s,TypeName: %s,Type: %s,Subtype: %s,Switchtype: %s, widgetOptions= %s, Image: %s" %(
         DeviceID_, Name_, Unit_, widgetType, Type_, Subtype_, Switchtype_, widgetOptions, Image,))
 
-    Name_ = f"{self.pluginParameters['Name']} - {Name_}"
+    Name_ = f"{self.pluginParameters['Name']} - {Name_}" if DOMOTICZ_EXTENDED_API else Name_
 
     # Determine the correct class to use based on the API type
     domoticz_device_api_class = Domoticz.Unit if DOMOTICZ_EXTENDED_API else Domoticz.Device
@@ -388,7 +353,7 @@ def domo_create_api(self, Devices, DeviceID_, Unit_, Name_, widgetType=None, Typ
 
 
 def domo_delete_widget( self, Devices, DeviceID_, Unit_):
-    self.log.logging("AbstractDz", "Log", "domo_delete_widget: DeviceID_ : %s Unit_: %s " %( DeviceID_, Unit_))
+    self.log.logging("AbstractDz", "Debug", "domo_delete_widget: DeviceID_ : %s Unit_: %s " %( DeviceID_, Unit_))
 
     if DOMOTICZ_EXTENDED_API:
         Devices[DeviceID_].Units[Unit_].Delete()
@@ -417,7 +382,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         Color (str, optional): Color . Defaults to "".
     """
     self.log.logging("AbstractDz", "Debug", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
-        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options))
+        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), DeviceID_)
 
     if DOMOTICZ_EXTENDED_API:
         Devices[DeviceID_].Units[Unit_].nValue = nValue
@@ -475,7 +440,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
 
 
 def domo_update_name(self, Devices, DeviceID_, Unit_, Name_):
-    self.log.logging("AbstractDz", "Log", "domo_update_name: DeviceID_ : %s Unit_: %s Name: %s" %(DeviceID_, Unit_, Name_))
+    self.log.logging("AbstractDz", "Debug", "domo_update_name: DeviceID_ : %s Unit_: %s Name: %s" %(DeviceID_, Unit_, Name_))
 
     if DOMOTICZ_EXTENDED_API and Devices[DeviceID_].Units[Unit_].Name != Name_:
             Devices[DeviceID_].Units[Unit_].Name = Name_
@@ -489,7 +454,7 @@ def domo_update_name(self, Devices, DeviceID_, Unit_, Name_):
 
 def domo_update_witchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0, Subtype_=0, Switchtype_=0):
  
-    self.log.logging("AbstractDz", "Log", "domo_update_witchType_SubType_Type DeviceID: %s,Unit: %s,Type: %s,Subtype: %s,Switchtype: %s" %(
+    self.log.logging("AbstractDz", "Debug", "domo_update_witchType_SubType_Type DeviceID: %s,Unit: %s,Type: %s,Subtype: %s,Switchtype: %s" %(
         DeviceID_, Unit_, Type_, Subtype_, Switchtype_))
 
     if DOMOTICZ_EXTENDED_API:
@@ -508,7 +473,7 @@ def domo_update_witchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0,
 
 def domo_browse_widgets(self, Devices):
     """ return list of DeviceId, Unit """
-    self.log.logging("AbstractDz", "Log", "domo_browse_widgets")
+    self.log.logging("AbstractDz", "Debug", "domo_browse_widgets")
 
     list_domoticz_widgets = []
     if DOMOTICZ_EXTENDED_API:
@@ -640,17 +605,23 @@ def _is_device_tobe_switched_off(self, Devices, DeviceID_, Unit_):
 
 def device_touch_api(self, Devices, DeviceId_):
     """Touch all Devices Widgets"""
-    #self.log.logging("AbstractDz", "Debug", f"device_touch_api: {DeviceId_}")
-    
-    units = Devices[DeviceId_].Units if DOMOTICZ_EXTENDED_API and DeviceId_ in Devices else Devices
-    
-    for unit in list(units):
-        device_touch_unit_api(self, Devices, DeviceId_, unit)
-                
+    self.log.logging("AbstractDz", "Debug", f"device_touch_api: {DeviceId_}")
 
-def device_touch_unit_api(self, Devices, DeviceId_, Unit_):
+    if DOMOTICZ_EXTENDED_API:
+        if DeviceId_ in Devices:
+            units = Devices[DeviceId_].Units
+            for unit in list(units):
+                _device_touch_unit_api(self, Devices, DeviceId_, unit)
+
+    else:
+        for unit in list(Devices):
+            if Devices[ unit ].DeviceID == DeviceId_:
+                _device_touch_unit_api(self, Devices, DeviceId_, unit)
+
+
+def _device_touch_unit_api(self, Devices, DeviceId_, Unit_):
     """ Touch one widget for a particular Device """
-    #self.log.logging("AbstractDz", "Debug", f"device_touch_unit_api: {DeviceId_} {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"device_touch_unit_api: {DeviceId_} {Unit_}")
 
     # In case of Meter Device (kWh), we must not touch it, otherwise it will destroy the metering
     # Type, Subtype, SwitchType 
