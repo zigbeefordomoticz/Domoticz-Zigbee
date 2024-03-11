@@ -535,6 +535,10 @@ def debug_logging(self, nwkid, ep, cluster, attribute, dtype, attsize, raw_data,
 
 
 def is_cluster_debug_mode(self, cluster):
+    if cluster not in self.readZclClusters:
+        self.log.logging( "ZclClusters", "Log", f"readZclCluster {cluster} not found !")
+        return
+
     if "Debug" not in self.readZclClusters[ cluster ]:
         return False
 
