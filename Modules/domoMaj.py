@@ -405,7 +405,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     # No summation retreive, so we make sure that EnergyMeterMode is
                     # correctly set to 1 (compute), if not adjust
                     
-                self.log.logging("Widget", "Debug", f"------> Update Meter/Meter : {device_id_ieee} {device_unit} {sValue}")
+                self.log.logging(["Widget","Electric"], "Debug", f"------> Update Meter/Meter : {device_id_ieee} {device_unit} {sValue}")
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
         if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
@@ -780,19 +780,19 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     NwkId, value, WidgetType), NwkId)
                 return
 
-            self.log.logging("Widget", "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
+            self.log.logging(["Widget", "Temperature"], "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
             adjvalue = temp_adjustement_value(self, Devices, NwkId, device_id_ieee, device_unit)
 
             current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0")
 
             if WidgetType == "Temp":
                 NewSvalue = str(round(value + adjvalue, 1))
-                self.log.logging("Widget", "Debug", "------>  Temp update: %s" % (NewSvalue))
+                self.log.logging(["Widget", "Temperature"], "Debug", "------>  Temp update: %s" % (NewSvalue))
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Temp+Hum":
                 NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat}"
-                self.log.logging("Widget", "Debug", "------>  Temp+Hum update:  %s" % (NewSvalue))
+                self.log.logging(["Widget", "Temperature", "Humidity"], "Debug", "------>  Temp+Hum update:  %s" % (NewSvalue))
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Temp+Hum+Baro":
@@ -800,42 +800,45 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):  # humidite
-            self.log.logging("Widget", "Debug", "------>  Humi: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
+            self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
             # Humidity Status
             humi_status = calculate_humidity_status(value)
             current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0")
 
             if WidgetType == "Humi":
                 NewSvalue = "%s" % humi_status
-                self.log.logging("Widget", "Debug", "------>  Humi update: %s - %s" % (value, NewSvalue))
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
+                self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi update: %s - %s" % (value, NewSvalue))
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, value, NewSvalue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Temp+Hum":
                 NewSvalue = f"{current_temp};{value};{humi_status}"
-                self.log.logging("Widget", "Debug", "------>  Temp+Hum update: %s" % (NewSvalue))
+                self.log.logging(["Widget", "Temperature", "Humidity"], "Debug", "------>  Temp+Hum update: %s" % (NewSvalue))
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Temp+Hum+Baro":
                 NewSvalue = f"{current_temp};{value};{humi_status};{current_baro};{current_baro_forecast}"
+                self.log.logging(["Widget", "Temperature", "Humidity", "Barometer"], "Debug", "------>  Temp+Hum+Baro update: %s" % (NewSvalue))
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Baro" and WidgetType in ("Baro", "Temp+Hum+Baro"):
-            self.log.logging("Widget", "Debug", "------>  Baro: %s, WidgetType: %s" % (value, WidgetType), NwkId)
+            self.log.logging(["Widget","Barometer"], "Debug", "------>  Baro: %s, WidgetType: %s" % (value, WidgetType), NwkId)
             
             adjvalue = baro_adjustement_value(self, Devices, NwkId, device_id_ieee, device_unit)
 
             baroValue = round((value + adjvalue), 1)
-            self.log.logging("Widget", "Debug", "------> Adj Value : %s from: %s to %s " % (adjvalue, value, baroValue), NwkId)
+            self.log.logging(["Widget","Barometer"], "Debug", "------> Adj Value : %s from: %s to %s " % (adjvalue, value, baroValue), NwkId)
             
             Bar_forecast = calculate_baro_forecast(baroValue)
             current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0")
 
             if WidgetType == "Baro":
                 NewSvalue = f"{baroValue};{Bar_forecast}"
+                self.log.logging(["Widget","Barometer"], "Debug", "------>  Baro: %s, WidgetType: %s" % (NewSvalue, WidgetType), NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
             elif WidgetType == "Temp+Hum+Baro":
                 NewSvalue = f"{current_temp};{current_humi};{current_hum_stat};{baroValue};{Bar_forecast}"
+                self.log.logging(["Widget", "Temperature", "Humidity", "Barometer"], "Debug", "------>  Temp+Hum+Baro update: %s" % (NewSvalue))
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
 
         if "BSO-Orientation" in ClusterType and WidgetType == "BSO-Orientation":
