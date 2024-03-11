@@ -3,6 +3,7 @@
     "Description": "Pressure Measurement",
     "Version": "1",
     "Enabled": true,
+    "Debug": "Barometer",
     "Attributes": {
         "0000": { 
             "Enabled": true,
