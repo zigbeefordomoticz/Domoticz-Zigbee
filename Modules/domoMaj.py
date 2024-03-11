@@ -776,7 +776,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             
             if check_erratic_value(self, NwkId, "Temp", value, -50, 100):
                 # We got an erratic value, no update to Domoticz
-                self.log.logging("Widget", "Debug", "%s Receive an erratic Temp: %s, WidgetType: >%s<" % (
+                self.log.logging(["Widget", "Temperature"], "Debug", "%s Receive an erratic Temp: %s, WidgetType: >%s<" % (
                     NwkId, value, WidgetType), NwkId)
                 return
 
