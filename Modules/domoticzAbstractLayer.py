@@ -657,7 +657,7 @@ def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
             for unit in Devices[ DeviceId_].Units:
                 _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, unit)
     else:
-        for unit in Devices:
+        for unit in list(Devices):
             if Devices[ unit ].DeviceID == DeviceId_:
                 timeout_legacy_device_unit_api(self, Devices, DeviceId_, unit, timeout_value)
     
@@ -686,12 +686,17 @@ def timeout_legacy_device_unit_api(self, Devices, DeviceId_, Unit_, timeout_valu
 
 def update_battery_api(self, Devices, DeviceId, battery_level):
     self.log.logging("AbstractDz", "Debug", f"timeout_widget_api: {DeviceId} to {battery_level}")
-            
-    units = Devices[DeviceId].Units if DOMOTICZ_EXTENDED_API and DeviceId in Devices else Devices
-    
-    for unit in units:
-        update_battery_device_unit_api(self, Devices, DeviceId, unit,battery_level)
-
+          
+    if DOMOTICZ_EXTENDED_API:
+        if  DeviceId in Devices:
+            units = Devices[DeviceId].Units
+            for unit in units:
+                update_battery_device_unit_api(self, Devices, DeviceId, unit,battery_level)
+    else:
+        for unit in list(Devices):
+            if Devices[ unit ].DeviceID == DeviceId:
+                update_battery_device_unit_api(self, Devices, DeviceId, unit,battery_level)
+  
         
 def update_battery_device_unit_api(self, Devices, DeviceId_, Unit_, battery_level):
 
