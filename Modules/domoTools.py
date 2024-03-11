@@ -116,13 +116,13 @@ def get_battery_level(self, NwkID):
     battery_info = self.ListOfDevices[NwkID].get("Battery", {})
 
     if battery_info and battery_info != {}:
-        self.log.logging( "Widget", "Debug", f"------>  From Battery NwkId: {NwkID} Battery: {battery_info} Type: {type(battery_info)}", NwkID, )
+        #self.log.logging( "Widget", "Debug", f"------>  From Battery NwkId: {NwkID} Battery: {battery_info} Type: {type(battery_info)}", NwkID, )
         if isinstance(battery_info, (float)):
             return int(round(battery_info))
         if isinstance(battery_info, (int)):
             return battery_info
     elif "IASBattery" in self.ListOfDevices[NwkID] and isinstance(self.ListOfDevices[NwkID]["IASBattery"], int):
-        self.log.logging( "Widget", "Debug", f"------>  From IASBattery NwkId: {NwkID} Battery: {self.ListOfDevices[NwkID]['IASBattery']} Type: {type(self.ListOfDevices[NwkID]['IASBattery'])}", NwkID, )
+        #self.log.logging( "Widget", "Debug", f"------>  From IASBattery NwkId: {NwkID} Battery: {self.ListOfDevices[NwkID]['IASBattery']} Type: {type(self.ListOfDevices[NwkID]['IASBattery'])}", NwkID, )
         return self.ListOfDevices[NwkID]["IASBattery"]
 
     return 255
@@ -186,7 +186,7 @@ def _convert_LastUpdate( last_update ):
 
 def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, now):
 
-    self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {device_ieee} {device_unit}")
+    #self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {device_ieee} {device_unit}")
     
     last_update = _convert_LastUpdate( domo_read_LastUpdate(self, Devices, device_ieee, device_unit,) )
     if last_update is None:
@@ -207,7 +207,7 @@ def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, n
     if WidgetType == "":
         return
 
-    self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {nwkid} WidgetType: {WidgetType} TimedOutMotion: {TimedOutMotion} TimedOutSwitchButton: {TimedOutSwitchButton}", nwkid)
+    #self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {nwkid} WidgetType: {WidgetType} TimedOutMotion: {TimedOutMotion} TimedOutSwitchButton: {TimedOutSwitchButton}", nwkid)
 
     if WidgetType in ("Motion", "Vibration"):
         if TimedOutMotion is None or TimedOutMotion == 0:
@@ -234,7 +234,7 @@ def retreive_reset_delays(self, nwkid):
         TimedOutMotion = int(params.get("resetMotiondelay", TimedOutMotion))
         TimedOutSwitchButton = params.get("resetSwitchSelectorPushButton", TimedOutSwitchButton)
 
-    self.log.logging("WidgetReset", "Debug", f"retreive_reset_delays {nwkid} {TimedOutMotion} {TimedOutSwitchButton}", nwkid)
+    #self.log.logging("WidgetReset", "Debug", f"retreive_reset_delays {nwkid} {TimedOutMotion} {TimedOutSwitchButton}", nwkid)
     return TimedOutMotion, TimedOutSwitchButton
   
 
@@ -251,13 +251,14 @@ def reset_motion(self, Devices, NwkId, WidgetType, DeviceId_, Unit_, SignalLevel
 def reset_switch_selector_PushButton(self, Devices, NwkId, WidgetType, DeviceId_, Unit_, SignalLevel, BatteryLvl, now, lastupdate, TimedOut):
     nValue, sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, Unit_)
 
-    self.log.logging("WidgetReset", "Debug", f"reset_switch_selector_PushButton {NwkId} {nValue}:{sValue} ({now} - {lastupdate}) = {(now - lastupdate)} <? {TimedOut}", NwkId)
+    #self.log.logging("WidgetReset", "Debug", f"reset_switch_selector_PushButton {NwkId} {nValue}:{sValue} ({now} - {lastupdate}) = {(now - lastupdate)} <? {TimedOut}", NwkId)
     if nValue == 0 or (now - lastupdate) < TimedOut:
-        self.log.logging("WidgetReset", "Debug", f"reset_switch_selector_PushButton {NwkId} too early or already Offs", NwkId)
+        #self.log.logging("WidgetReset", "Debug", f"reset_switch_selector_PushButton {NwkId} too early or already Offs", NwkId)
         return
 
     options = domo_read_Options(self, Devices, DeviceId_, Unit_)
-    sValue = "00" if "LevelOffHidden" in options else "0"
+    if "LevelOffHidden" in options and options["LevelOffHidden"] == "false":
+            sValue = "00"
 
     domo_update_api(self, Devices, DeviceId_, Unit_, nValue=0, sValue=sValue)
     self.log.logging("WidgetReset", "Debug", "reset_switch_selector_PushButton - Last update of the device %s WidgetType: %s was %s ago" % (Unit_, WidgetType, (now - lastupdate)), NwkId)
@@ -333,7 +334,7 @@ def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
 def lastSeenUpdate(self, Devices, NwkId=None):
     """Just touch the device widgets and if needed remove TimedOut flag"""
     
-    self.log.logging("WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId}")
+    #self.log.logging("WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId}")
 
     device_data = self.ListOfDevices.get(NwkId, {})
     if not device_data or "IEEE" not in device_data:
