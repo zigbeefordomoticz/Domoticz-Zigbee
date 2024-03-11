@@ -528,10 +528,7 @@ def logging_thread(self):
     domoticz_log_api("logging_thread - ended")
 
 
-   
-    
 def configure_loggers(logger_names, mode):
-    domoticz_log_api(f"configure_loggers({logger_names} with {mode})")
     _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING
 
     for logger_name in logger_names:
