@@ -880,7 +880,9 @@ class BasePlugin:
         processListOfDevices(self, Devices)
 
         # Reset Motion sensors
-        browse_and_reset_devices_if_needed(self, Devices)
+        if ( self.internalHB % 5 ) == 0:
+            # Will reset only every 5 seconds
+            browse_and_reset_devices_if_needed(self, Devices)
 
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)
