@@ -207,7 +207,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ("0508", "0908", "0a08"):
             # Retreive the previous values
             sValue = "%s;%s;%s" % (0, 0, 0)
-            ampere1, ampere2, ampere3 = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0")
+            ampere1, ampere2, ampere3 = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0")
             if ampere2 == ampere3 == '65535.0':
                 self.log.logging(["Widget", "Electric"], "Debug", "------>  Something going wrong ..... ampere %s %s %s" %(ampere1, ampere2, ampere3))
                 ampere2 = '0.0'
@@ -265,7 +265,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 # P1Meter report Instant and Cummulative Power.
                 # Cummulative comes from Attribute 0000
                 # Instant Power needs to be retreived
-                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0;0")
+                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0")
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 cons = _retreive_instant_power(self, NwkId, Ep)
                 usage1 = int(float(value))
@@ -297,7 +297,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 
                 # P1Meter report Instant and Cummulative Power.
                 # We need to retreive the Cummulative Power.
-                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0;0")
+                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0")
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): retreive value: %s;%s;%s;%s;%s;%s" % (Ep, cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod), NwkId)
 
@@ -366,8 +366,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                     )
                 ):
-                check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, 0)    
-                instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
+                check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)    
+                instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
                 summation = round(float(zlinky_sum_all_indexes( self, NwkId )), 2)
                 self.log.logging(["ZLinky","Electric"], "Debug", "------> Summation for Meter : %s" %summation)
                 
@@ -377,8 +377,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 
             elif WidgetType == "Meter" and Attribute_ == "050f":
                 # We receive Instant Power
-                check_set_meter_widget(self, Devices, NwkId, device_id_ieee, device_unit, 0)
-                _instant, summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0")
+                check_set_meter_widget(self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)
+                _instant, summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
                 self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}")
@@ -398,10 +398,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     sValue = "%s;%s" % (instant, summation)
                     # We got summation from Device, let's check that EnergyMeterMode is
                     # correctly set to 0, if not adjust
-                    check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, 0)
+                    check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)
                 else:
                     sValue = "%s;" % (instant)
-                    check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, 1)
+                    check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 1)
                     # No summation retreive, so we make sure that EnergyMeterMode is
                     # correctly set to 1 (compute), if not adjust
                     
@@ -783,7 +783,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging(["Widget", "Temperature"], "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
             adjvalue = temp_adjustement_value(self, Devices, NwkId, device_id_ieee, device_unit)
 
-            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0")
+            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0")
 
             if WidgetType == "Temp":
                 NewSvalue = str(round(value + adjvalue, 1))
@@ -803,7 +803,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
             # Humidity Status
             humi_status = calculate_humidity_status(value)
-            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0")
+            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0")
 
             if WidgetType == "Humi":
                 NewSvalue = "%s" % humi_status
@@ -829,7 +829,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging(["Widget","Barometer"], "Debug", "------> Adj Value : %s from: %s to %s " % (adjvalue, value, baroValue), NwkId)
             
             Bar_forecast = calculate_baro_forecast(baroValue)
-            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, "0;0;0;0;0")
+            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0")
 
             if WidgetType == "Baro":
                 NewSvalue = f"{baroValue};{Bar_forecast}"
@@ -1526,7 +1526,7 @@ def _log_erratic_value_debug(self, NwkId, value_type, value, expected_min, expec
     self.log.logging("Widget", "Debug", f"Aberrant {value_type}: {value} (below {expected_min} or above {expected_max}) for device: {NwkId} [{consecutive_erratic_value}]", NwkId)
 
 
-def check_set_meter_widget( self, Devices, NwkId, DeviceId, Unit, mode):
+def check_set_meter_widget( self, Devices, NwkId, DeviceId, Unit, oldnValue, oldsValue, mode):
     # Mode = 0 - From device (default)
     # Mode = 1 - Computed
 
@@ -1546,13 +1546,12 @@ def check_set_meter_widget( self, Devices, NwkId, DeviceId, Unit, mode):
 
     sMode = "%s" %mode
     if Options["EnergyMeterMode"] != sMode:
-        oldnValue, oldsValue = domo_read_nValue_sValue(self, Devices, DeviceId, Unit)
 
         Options = { "EnergyMeterMode": sMode }
         domo_update_api(self, Devices, DeviceId, Unit, oldnValue, oldsValue, Options=Options ,)
 
 
-def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
+def retrieve_data_from_current(self, Devices, DeviceID, Unit, current_nValue, current_svalue, _format):
     """
     Retrieve data from current.
 
@@ -1569,8 +1568,6 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, _format):
         retrieve_data_from_current(self, "Device1", 123, 1, "A;B;C")
         ['0', '0', '0']
     """
-    _, current_svalue = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
-
     if current_svalue == "":
         current_svalue = "0"
 
