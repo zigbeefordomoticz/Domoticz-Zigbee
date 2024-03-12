@@ -604,7 +604,7 @@ def processKnownDevices(self, Devices, NWKID):
 
     # If we reach this step, the device health is Live
     if "pingDeviceRetry" in self.ListOfDevices[NWKID]:
-        self.log.logging("Heartbeat", "Log", "processKnownDevices -  %s recover from Non Reachable" % NWKID, NWKID)
+        self.log.logging("Heartbeat", "Log", f"Device {NWKID} '{get_device_nickname(self, NwkId=NWKID)}' recover from Non Reachable", NWKID)
         del self.ListOfDevices[NWKID]["pingDeviceRetry"]
 
     model = self.ListOfDevices[NWKID]["Model"] if "Model" in self.ListOfDevices[NWKID] else ""
