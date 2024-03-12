@@ -22,6 +22,7 @@ from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (is_domoticz_touch,
                            is_domoticz_update_SuppressTriggers, lookupForIEEE)
 
+DELAY_BETWEEN_TOUCH = 120
 
 def RetreiveWidgetTypeList(self, Devices, device_id_ieee, NwkId, DeviceUnit=None):
     """
@@ -149,33 +150,58 @@ def WidgetForDeviceId(self, NwkId, DeviceId):
 
 
 def browse_and_reset_devices_if_needed(self, Devices):
+    self.log.logging("WidgetReset", "Debug", "browse_and_reset_devices_if_needed")
+    
     now = time.time()
     if is_domoticz_extended():
-        browse_and_rese_extended_domoticz_devices(self, Devices, now)
+        browse_and_reset_extended_domoticz_devices(self, Devices, now)
 
     else:
-        browse_and_rese_legacy_domoticz_devices(self, Devices, now)
+        browse_and_reset_legacy_domoticz_devices(self, Devices, now)
 
 
-def browse_and_rese_extended_domoticz_devices(self, Devices, now):
-    
+def browse_and_reset_extended_domoticz_devices(self, Devices, now):
+
     for device_ieee in Devices:
         if device_ieee not in self.IEEE2NWK:
             continue
         for device_unit in Devices[ device_ieee ].Units:
-            reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, now)
+            device_ieee, nwkid, WidgetType = _get_device_ieee_nwkid_widget(self, Devices, device_ieee=device_ieee, device_unit=device_unit)
+            reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid, WidgetType, now)
 
-         
-def browse_and_rese_legacy_domoticz_devices(self, Devices, now):
 
+def browse_and_reset_legacy_domoticz_devices(self, Devices, now):
+
+    self.log.logging("WidgetReset", "Debug", "browse_and_reset_legacy_domoticz_devices")
     for device_unit in list(Devices):
+        device_ieee, nwkid, WidgetType = _get_device_ieee_nwkid_widget(self, Devices, device_unit=device_unit)
+        if WidgetType is device_ieee is nwkid is None:
+            continue
+        reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid, WidgetType, now)
+
+
+def _get_device_ieee_nwkid_widget(self, Devices, device_ieee=None, device_unit=None):
+
+    if device_ieee is None:
         device_ieee = Devices[device_unit].DeviceID
         if device_ieee not in self.IEEE2NWK:
-            # Unknown !
-            continue
-        
-        reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, now)
-        
+            return None, None, None
+
+    nwkid = self.IEEE2NWK[device_ieee]
+    if nwkid not in self.ListOfDevices:
+        # If the NwkId is not found, it may have switch, let's check
+        ieee_retreived_from_nwkid = lookupForIEEE(self, nwkid, True)
+        if ieee_retreived_from_nwkid is None or device_ieee != ieee_retreived_from_nwkid:
+            return None, None, None
+
+    widget_idx = domo_read_Device_Idx(self, Devices, device_ieee, device_unit,)
+    WidgetType = WidgetForDeviceId(self, nwkid, widget_idx)
+
+    if WidgetType == "" or WidgetType not in ("Motion", "Vibration", SWITCH_SELECTORS):
+        return None, None, None
+    
+    return device_ieee, nwkid, WidgetType
+
 
 def _convert_LastUpdate( last_update ):
     try:
@@ -184,29 +210,16 @@ def _convert_LastUpdate( last_update ):
         return None
 
 
-def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, now):
+def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid,WidgetType, now):
 
-    #self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {device_ieee} {device_unit}")
+    self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {device_ieee} {device_unit}")
     
     last_update = _convert_LastUpdate( domo_read_LastUpdate(self, Devices, device_ieee, device_unit,) )
     if last_update is None:
         return
 
-    # Look for the corresponding Widget
-    nwkid = self.IEEE2NWK[device_ieee]
-    if nwkid not in self.ListOfDevices:
-        # If the NwkId is not found, it may have switch, let's check
-        ieee_retreived_from_nwkid = lookupForIEEE(self, nwkid, True)
-        if ieee_retreived_from_nwkid is None or device_ieee != ieee_retreived_from_nwkid:
-            return
-
     TimedOutMotion, TimedOutSwitchButton = retreive_reset_delays(self, nwkid)
-    ID = domo_read_Device_Idx(self, Devices, device_ieee, device_unit,)
-
-    WidgetType = WidgetForDeviceId(self, nwkid, ID)
-    if WidgetType == "":
-        return
-
+    
     #self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {nwkid} WidgetType: {WidgetType} TimedOutMotion: {TimedOutMotion} TimedOutSwitchButton: {TimedOutSwitchButton}", nwkid)
 
     if WidgetType in ("Motion", "Vibration"):
@@ -339,22 +352,25 @@ def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
 
 def lastSeenUpdate(self, Devices, NwkId=None):
     """Just touch the device widgets and if needed remove TimedOut flag"""
-    
-    #self.log.logging("WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId}")
+
+    now = int(time.time())
 
     device_data = self.ListOfDevices.get(NwkId, {})
     if not device_data or "IEEE" not in device_data:
         return
 
-    device_data.setdefault("Stamp", {"Time": {}, "MsgType": {}, "LastSeen": 0})
-    device_data["Stamp"].setdefault("LastSeen", 0)
     device_data.setdefault("ErrorManagement", 0)
-
     health_data = device_data.get("Health")
     if health_data not in ("Disabled", ):
         device_data["Health"] = "Live"
 
-    device_data["Stamp"]["LastSeen"] = int(time.time())
+    device_data_stamp = device_data.get( 'Stamp')
+    device_data_stamp.setdefault("LastSeen", 0)
+    if device_data_stamp.get("LastSeen") and now < ( int(device_data_stamp.get("LastSeen")) + DELAY_BETWEEN_TOUCH):
+        self.log.logging("WidgetLevel3", "Debug", f"lastSeenUpdate Nwkid {NwkId} too early {device_data_stamp.get('LastSeen')}")     
+        return
+
+    device_data_stamp["LastSeen"] = now
     _IEEE = device_data.get("IEEE", "")
 
     if not is_domoticz_touch(self):
