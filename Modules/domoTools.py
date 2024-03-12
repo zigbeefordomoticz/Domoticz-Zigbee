@@ -151,56 +151,18 @@ def WidgetForDeviceId(self, NwkId, DeviceId):
 
 def browse_and_reset_devices_if_needed(self, Devices):
     self.log.logging("WidgetReset", "Debug", "browse_and_reset_devices_if_needed")
-    
-    now = time.time()
-    if is_domoticz_extended():
-        browse_and_reset_extended_domoticz_devices(self, Devices, now)
 
-    else:
-        browse_and_reset_legacy_domoticz_devices(self, Devices, now)
-
-
-def browse_and_reset_extended_domoticz_devices(self, Devices, now):
-
-    for device_ieee in Devices:
+    for widget_idx in list(self.ListOfDomoticzWidget):
+        widget_info = self.ListOfDomoticzWidget[ widget_idx ]
+        unit_key = widget_info[ "Unit" ]
+        device_ieee = widget_info[ "DeviceID" ]
         if device_ieee not in self.IEEE2NWK:
             continue
-        for device_unit in Devices[ device_ieee ].Units:
-            device_ieee, nwkid, WidgetType, widget_idx = _get_device_ieee_nwkid_widget(self, Devices, device_ieee=device_ieee, device_unit=device_unit)
-            reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid, WidgetType, widget_idx, now)
 
-
-def browse_and_reset_legacy_domoticz_devices(self, Devices, now):
-
-    self.log.logging("WidgetReset", "Debug", "browse_and_reset_legacy_domoticz_devices")
-    for device_unit in list(Devices):
-        device_ieee, nwkid, WidgetType, widget_idx = _get_device_ieee_nwkid_widget(self, Devices, device_unit=device_unit)
-        if WidgetType is device_ieee is nwkid is None:
-            continue
-        reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid, WidgetType, widget_idx, now)
-
-
-def _get_device_ieee_nwkid_widget(self, Devices, device_ieee=None, device_unit=None):
-
-    if device_ieee is None:
-        device_ieee = Devices[device_unit].DeviceID
-        if device_ieee not in self.IEEE2NWK:
-            return None, None, None, None
-
-    nwkid = self.IEEE2NWK[device_ieee]
-    if nwkid not in self.ListOfDevices:
-        # If the NwkId is not found, it may have switch, let's check
-        ieee_retreived_from_nwkid = lookupForIEEE(self, nwkid, True)
-        if ieee_retreived_from_nwkid is None or device_ieee != ieee_retreived_from_nwkid:
-            return None, None, None, None
-
-    widget_idx = domo_read_Device_Idx(self, Devices, device_ieee, device_unit,)
-    WidgetType = WidgetForDeviceId(self, nwkid, widget_idx)
-
-    if WidgetType == "" or WidgetType not in ("Motion", "Vibration", SWITCH_SELECTORS):
-        return None, None, None, None
-    
-    return device_ieee, nwkid, WidgetType, widget_idx
+        nwkid = self.IEEE2NWK[device_ieee]
+        WidgetType = WidgetForDeviceId(self, nwkid, widget_idx)
+        if WidgetType in ( "Motion", "Vibration", SWITCH_SELECTORS):
+            reset_device_ieee_unit_if_needed( self, Devices, device_ieee, unit_key, nwkid, WidgetType, widget_idx, time.time())
 
 
 def _convert_LastUpdate( last_update ):
