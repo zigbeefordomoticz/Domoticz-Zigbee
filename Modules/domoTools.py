@@ -166,18 +166,18 @@ def browse_and_reset_extended_domoticz_devices(self, Devices, now):
         if device_ieee not in self.IEEE2NWK:
             continue
         for device_unit in Devices[ device_ieee ].Units:
-            device_ieee, nwkid, WidgetType = _get_device_ieee_nwkid_widget(self, Devices, device_ieee=device_ieee, device_unit=device_unit)
-            reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid, WidgetType, now)
+            device_ieee, nwkid, WidgetType, widget_idx = _get_device_ieee_nwkid_widget(self, Devices, device_ieee=device_ieee, device_unit=device_unit)
+            reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid, WidgetType, widget_idx, now)
 
 
 def browse_and_reset_legacy_domoticz_devices(self, Devices, now):
 
     self.log.logging("WidgetReset", "Debug", "browse_and_reset_legacy_domoticz_devices")
     for device_unit in list(Devices):
-        device_ieee, nwkid, WidgetType = _get_device_ieee_nwkid_widget(self, Devices, device_unit=device_unit)
+        device_ieee, nwkid, WidgetType, widget_idx = _get_device_ieee_nwkid_widget(self, Devices, device_unit=device_unit)
         if WidgetType is device_ieee is nwkid is None:
             continue
-        reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid, WidgetType, now)
+        reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid, WidgetType, widget_idx, now)
 
 
 def _get_device_ieee_nwkid_widget(self, Devices, device_ieee=None, device_unit=None):
@@ -200,7 +200,7 @@ def _get_device_ieee_nwkid_widget(self, Devices, device_ieee=None, device_unit=N
     if WidgetType == "" or WidgetType not in ("Motion", "Vibration", SWITCH_SELECTORS):
         return None, None, None
     
-    return device_ieee, nwkid, WidgetType
+    return device_ieee, nwkid, WidgetType, widget_idx
 
 
 def _convert_LastUpdate( last_update ):
@@ -210,7 +210,7 @@ def _convert_LastUpdate( last_update ):
         return None
 
 
-def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid,WidgetType, now):
+def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, nwkid, WidgetType, widget_idx, now):
 
     self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {device_ieee} {device_unit}")
     
@@ -227,7 +227,7 @@ def reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, n
             return
         self.log.logging("WidgetReset", "Debug", f"reset_device_ieee_unit_if_needed {nwkid} reset_motion {TimedOutMotion}", nwkid)
         SignalLevel, BatteryLvl = RetreiveSignalLvlBattery(self, nwkid)
-        reset_motion(self, Devices, nwkid, WidgetType, device_ieee, device_unit, SignalLevel, BatteryLvl, ID, now, last_update, TimedOutMotion)
+        reset_motion(self, Devices, nwkid, WidgetType, device_ieee, device_unit, SignalLevel, BatteryLvl, widget_idx, now, last_update, TimedOutMotion)
 
     elif WidgetType in SWITCH_SELECTORS:
         if TimedOutSwitchButton is None or TimedOutSwitchButton == 0:
