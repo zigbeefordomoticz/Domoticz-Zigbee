@@ -512,8 +512,7 @@ def domo_read_TimedOut( self, Devices, DeviceId_ ):
         return Devices[ DeviceId_].TimedOut
     
     # Legacy
-    return next(
-        ( 1 for x in Devices if Devices[x].DeviceID == DeviceId_ and Devices[x].TimedOut ), 0, )
+    return next( ( 1 for x in Devices if Devices[x].DeviceID == DeviceId_ and Devices[x].TimedOut ), 0, )
         
 
 def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_,):
@@ -586,7 +585,7 @@ def _is_meter_widget(self, Devices, DeviceID_, Unit_):
 
 
 def _is_device_tobe_switched_off(self, Devices, DeviceID_, Unit_):
-    self.log.logging("AbstractDz", "Debug", f"is_device_tobe_switched_off: {DeviceID_} {Unit_}")
+    #self.log.logging("AbstractDz", "Debug", f"is_device_tobe_switched_off: {DeviceID_} {Unit_}")
     
     if DOMOTICZ_EXTENDED_API:
         unit = Devices.get(DeviceID_).Units.get(Unit_) if Devices.get(DeviceID_) else None
@@ -676,14 +675,13 @@ def timeout_legacy_device_unit_api(self, Devices, DeviceId_, Unit_, timeout_valu
     if _TimedOut != timeout_value:
         # Update is required
         if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
-            _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, Unit_)
+            _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, Unit_, _nValue, _sValue,)
         else:
             domo_update_api(self, Devices, DeviceId_, Unit_, _nValue, _sValue, TimedOut=timeout_value)
-    #self.log.logging("Widget", "Debug", "timeout_legacy_device_unit_api DeviceId %s unit %s -> %s completed" % (DeviceId_, Unit_, bool(timeout_value)))
 
 
 def update_battery_api(self, Devices, DeviceId, battery_level):
-    #self.log.logging("AbstractDz", "Debug", f"timeout_widget_api: {DeviceId} to {battery_level}")
+    #self.log.logging("AbstractDz", "Debug", f"update_battery_api: {DeviceId} to {battery_level}")
           
     if DOMOTICZ_EXTENDED_API:
         if  DeviceId in Devices:
@@ -706,12 +704,13 @@ def update_battery_device_unit_api(self, Devices, DeviceId_, Unit_, battery_leve
     domo_update_api(self, Devices, DeviceId_, Unit_, nValue, sValue, BatteryLevel=battery_level,SuppressTriggers=True)        
 
 
-def _switch_off_widget_due_to_timedout(self, Devices, DevicesId, Unit):
+def _switch_off_widget_due_to_timedout(self, Devices, DevicesId, Unit, _nValue, _sValue,):
     #self.log.logging("Widget", "Debug", f"_switch_off_widget_due_to_timedout DeviceId {DevicesId} unit {Unit}")
     
-    _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DevicesId, Unit)
     if (_nValue == 1 and _sValue == "On") or _is_device_tobe_switched_off(self, Devices, DevicesId, Unit):
         domo_update_api(self, Devices, DevicesId, Unit, 0, "Off", TimedOut=1)
+    else:
+        domo_update_api(self, Devices, DevicesId, Unit, _nValue, _sValue, TimedOut=1)
         
     
 def domoticz_log_api( message):

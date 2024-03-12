@@ -320,6 +320,8 @@ def Update_Battery_Device( self, Devices, NwkId, BatteryLvl, ):
      
 
 def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
+    self.log.logging("WidgetLevel3", "Debug", f"timedOutDevice Object {NwkId} {MarkTimedOut}")
+
     device_info = self.ListOfDevices.get(NwkId, {})
     if not device_info.get("IEEE") or device_info.get("Health") == "Disabled":
         return
@@ -328,7 +330,11 @@ def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
     self.log.logging("WidgetLevel3", "Debug", f"timedOutDevice Object {NwkId} MarkTimedOut: {MarkTimedOut}")
 
     _IEEE = device_info["IEEE"]
-    timeout_widget_api(self, Devices, _IEEE, 1) if MarkTimedOut and not domo_read_TimedOut(self, Devices, _IEEE) else timeout_widget_api(self, Devices, _IEEE, 0)
+    
+    if MarkTimedOut and not domo_read_TimedOut(self, Devices, _IEEE):
+        timeout_widget_api(self, Devices, _IEEE, 1)
+    else:
+        timeout_widget_api(self, Devices, _IEEE, 0)
 
 
 def lastSeenUpdate(self, Devices, NwkId=None):
