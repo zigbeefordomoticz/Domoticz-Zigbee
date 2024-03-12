@@ -120,7 +120,7 @@ def load_list_of_domoticz_widget(self, Devices):
     Args:
         Devices (dictionary): Devices dictionary provided by the Domoticz framework
     """
-    self.log.logging("AbstractDz", "Debug", "load_list_of_domoticz_widget")
+    self.log.logging("AbstractDz", "Log", "load_list_of_domoticz_widget")
 
     # clean 
     self.ListOfDomoticzWidget.clear()
@@ -169,13 +169,13 @@ def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx ):
         
     """
     
-    #self.log.logging( "AbstractDz", "Debug", f"find_widget_unit_from_WidgetID - Widget_Idx: {Widget_Idx} ({type(Widget_Idx)})")
+    self.log.logging( "AbstractDz", "Debug", f"find_widget_unit_from_WidgetID - Widget_Idx: {Widget_Idx} ({type(Widget_Idx)})")
     
     Widget_Idx = int(Widget_Idx)
     if Widget_Idx in self.ListOfDomoticzWidget:
         return self.ListOfDomoticzWidget[Widget_Idx]['Unit']
 
-    #self.log.logging( "AbstractDz", "Log", f"- {Widget_Idx} Not Found in ListOfDomoticzWidget, looking the old way" )
+    self.log.logging( "AbstractDz", "Log", f"- {Widget_Idx} Not Found in ListOfDomoticzWidget, looking the old way" )
     # In case it is not found with the new way, let's keep the old way 
     # TO-DO: Remove
     
@@ -191,11 +191,13 @@ def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx ):
 
 
 def retreive_widgetid_from_deviceId_unit(self, Devices, DeviceId, Unit):
+    self.log.logging("AbstractDz", "Debug", f"retreive_widgetid_from_deviceId_unit: DeviceId: {DeviceId} Unit: {Unit}")
     return next( ( x for x in self.ListOfDomoticzWidget if self.ListOfDomoticzWidget[x]["DeviceID"] == DeviceId and self.ListOfDomoticzWidget[x]["Unit"] == Unit ), None, )
     
     
 def find_first_unit_widget_from_deviceID(self, Devices, DeviceID):
     """ return the first unit for a specific DeviceID else return None"""
+    self.log.logging("AbstractDz", "Debug", f"find_first_unit_widget_from_deviceID: {DeviceID}")
     if DOMOTICZ_EXTENDED_API:
         if DeviceID in Devices:
             for unit in Devices[DeviceID].Units:
@@ -206,6 +208,8 @@ def find_first_unit_widget_from_deviceID(self, Devices, DeviceID):
 
 
 def find_legacy_DeviceID_from_unit(self, Devices, Unit):
+    self.log.logging("AbstractDz", "Debug", f"find_legacy_DeviceID_from_unit: Unit: {Unit}")
+    
     return Devices[ Unit ].DeviceID if Unit in Devices else None    
 
     
@@ -218,7 +222,6 @@ def how_many_legacy_slot_available( Devices):
     Returns:
         int: number of available unit slot
     """
-
     return sum(x not in Devices for x in range( 1, 255 ))
     
 
@@ -275,7 +278,7 @@ def FreeUnit(self, Devices, DeviceId, nbunit_=1):
 
 
 def is_device_ieee_in_domoticz_db(self, Devices, DeviceID_):
-    #self.log.logging("AbstractDz", "Debug", f"is_device_ieee_in_domoticz_db: DeviceID: {DeviceID_}")
+    self.log.logging("AbstractDz", "Debug", f"is_device_ieee_in_domoticz_db: DeviceID: {DeviceID_}")
     
     return DOMOTICZ_EXTENDED_API and DeviceID_ in Devices or any(DeviceID_ == device.DeviceID for device in Devices.values())
 
@@ -379,8 +382,8 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         TimedOut (int, optional): Timeoud flag 0 to unset the Timeout. Defaults to None.
         Color (str, optional): Color . Defaults to "".
     """
-    #self.log.logging("AbstractDz", "Debug", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
-    #    DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), DeviceID_)
+    self.log.logging("AbstractDz", "Debug", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
+        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), DeviceID_)
 
     if DOMOTICZ_EXTENDED_API:
         Devices[DeviceID_].Units[Unit_].nValue = nValue
@@ -429,7 +432,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         update_params['Color'] = Color
 
     # Perform the update with the defined parameters
-    #self.log.logging("AbstractDz", "Debug", "domo_update_api: update_params %s" %(update_params))
+    self.log.logging("AbstractDz", "Debug", "domo_update_api: update_params %s" %(update_params))
     
     if SuppressTriggers:
         Devices[Unit_].Update(**update_params, SuppressTriggers=True,)
@@ -495,7 +498,7 @@ def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
     Returns:
         Tuple: A tuple containing the nValue and sValue of the device unit.
     """
-    #self.log.logging("AbstractDz", "Debug", "domo_read_nValue_sValue: DeviceID: %s Unit: %s" %(DeviceID, Unit))
+    self.log.logging("AbstractDz", "Debug", "domo_read_nValue_sValue: DeviceID: %s Unit: %s" %(DeviceID, Unit))
 
     if DOMOTICZ_EXTENDED_API:
         _unit = Devices[DeviceID].Units[Unit]
@@ -507,7 +510,7 @@ def domo_read_nValue_sValue(self, Devices, DeviceID, Unit):
 
 def domo_read_TimedOut( self, Devices, DeviceId_ ):
     """ Retreive TimedOut flag, stop as soon as 1 TimedOut widget detected """
-    #self.log.logging("AbstractDz", "Debug", f"domo_read_TimedOut: DeviceID: {DeviceId_}")
+    self.log.logging("AbstractDz", "Debug", f"domo_read_TimedOut: DeviceID: {DeviceId_}")
     if DOMOTICZ_EXTENDED_API and DeviceId_ in Devices:
         return Devices[ DeviceId_].TimedOut
     
@@ -516,42 +519,42 @@ def domo_read_TimedOut( self, Devices, DeviceId_ ):
         
 
 def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_,):
-    #self.log.logging("AbstractDz", "Debug", f"domo_read_LastUpdate: DeviceID: {DeviceId_} Unit {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"domo_read_LastUpdate: DeviceID: {DeviceId_} Unit {Unit_}")
     return ( Devices[DeviceId_].Units[Unit_].LastUpdate if DOMOTICZ_EXTENDED_API else Devices[Unit_].LastUpdate )
 
 
 def domo_read_BatteryLevel( self, Devices, DeviceId_, Unit_, ):
-    #self.log.logging("AbstractDz", "Debug", f"domo_read_BatteryLevel: DeviceID: {DeviceId_} Unit {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"domo_read_BatteryLevel: DeviceID: {DeviceId_} Unit {Unit_}")
     return ( Devices[DeviceId_].Units[Unit_].BatteryLevel if DOMOTICZ_EXTENDED_API else Devices[Unit_].BatteryLevel )
 
 
 def domo_read_SignalLevel( self, Devices, DeviceId_, Unit_, ):
-    #self.log.logging("AbstractDz", "Debug", f"domo_read_BatteryLevel: DeviceID: {DeviceId_} Unit {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"domo_read_BatteryLevel: DeviceID: {DeviceId_} Unit {Unit_}")
     return ( Devices[DeviceId_].Units[Unit_].SignalLevel if DOMOTICZ_EXTENDED_API else Devices[Unit_].SignalLevel )
 
 
 def domo_read_Color( self, Devices, DeviceId_, Unit_, ):
-    #self.log.logging("AbstractDz", "Debug", f"domo_read_Color: DeviceID: {DeviceId_} Unit {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"domo_read_Color: DeviceID: {DeviceId_} Unit {Unit_}")
     return ( Devices[DeviceId_].Units[Unit_].Color if DOMOTICZ_EXTENDED_API else Devices[Unit_].Color )
 
 
 def domo_read_Name( self, Devices, DeviceId_, Unit_, ):
-    #self.log.logging("AbstractDz", "Debug", f"domo_read_Name: DeviceID: {DeviceId_} Unit {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"domo_read_Name: DeviceID: {DeviceId_} Unit {Unit_}")
     return Devices[DeviceId_].Units[Unit_].Name if DOMOTICZ_EXTENDED_API else Devices[Unit_].Name
 
 
 def domo_read_Options( self, Devices, DeviceId_, Unit_,):
-    #self.log.logging("AbstractDz", "Debug", f"domo_read_Options: DeviceID: {DeviceId_} Unit {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"domo_read_Options: DeviceID: {DeviceId_} Unit {Unit_}")
     return ( Devices[DeviceId_].Units[Unit_].Options if DOMOTICZ_EXTENDED_API else Devices[Unit_].Options )
 
 
 def domo_read_Device_Idx(self, Devices, DeviceId_, Unit_,):
-    #self.log.logging("AbstractDz", "Debug", f"domo_read_Device_Idx: DeviceID: {DeviceId_} Unit {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"domo_read_Device_Idx: DeviceID: {DeviceId_} Unit {Unit_}")
     return ( Devices[DeviceId_].Units[Unit_].ID if DOMOTICZ_EXTENDED_API else Devices[Unit_].ID )    
 
 
 def domo_check_unit(self, Devices, DeviceId_, Unit_):
-    #self.log.logging("AbstractDz", "Debug", f"domo_check_unit: DeviceID: {DeviceId_} Unit {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"domo_check_unit: DeviceID: {DeviceId_} Unit {Unit_}")
     if DOMOTICZ_EXTENDED_API:
         return Unit_ in Devices[DeviceId_].Units
     else:
@@ -559,7 +562,7 @@ def domo_check_unit(self, Devices, DeviceId_, Unit_):
 
     
 def domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit):
-    #self.log.logging("AbstractDz", "Debug", f"domo_read_SwitchType_SubType_Type: DeviceID: {DeviceID} Unit {Unit}")
+    self.log.logging("AbstractDz", "Debug", f"domo_read_SwitchType_SubType_Type: DeviceID: {DeviceID} Unit {Unit}")
     if DOMOTICZ_EXTENDED_API:
         _unit = Devices[DeviceID].Units[Unit]
     else:
@@ -585,7 +588,7 @@ def _is_meter_widget(self, Devices, DeviceID_, Unit_):
 
 
 def _is_device_tobe_switched_off(self, Devices, DeviceID_, Unit_):
-    #self.log.logging("AbstractDz", "Debug", f"is_device_tobe_switched_off: {DeviceID_} {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"is_device_tobe_switched_off: {DeviceID_} {Unit_}")
     
     if DOMOTICZ_EXTENDED_API:
         unit = Devices.get(DeviceID_).Units.get(Unit_) if Devices.get(DeviceID_) else None
@@ -602,7 +605,7 @@ def _is_device_tobe_switched_off(self, Devices, DeviceID_, Unit_):
 
 def device_touch_api(self, Devices, DeviceId_):
     """Touch all Devices Widgets"""
-    #self.log.logging("AbstractDz", "Debug", f"device_touch_api: {DeviceId_}")
+    self.log.logging("AbstractDz", "Debug", f"device_touch_api: {DeviceId_}")
 
     if DOMOTICZ_EXTENDED_API:
         if DeviceId_ in Devices:
@@ -618,7 +621,7 @@ def device_touch_api(self, Devices, DeviceId_):
 
 def _device_touch_unit_api(self, Devices, DeviceId_, Unit_):
     """ Touch one widget for a particular Device """
-    #self.log.logging("AbstractDz", "Debug", f"device_touch_unit_api: {DeviceId_} {Unit_}")
+    self.log.logging("AbstractDz", "Debug", f"device_touch_unit_api: {DeviceId_} {Unit_}")
 
     # In case of Meter Device (kWh), we must not touch it, otherwise it will destroy the metering
     # Type, Subtype, SwitchType 
@@ -645,7 +648,7 @@ def _device_touch_unit_api(self, Devices, DeviceId_, Unit_):
 
 def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
     """ TimedOut all Device Widgets """
-    #self.log.logging("AbstractDz", "Debug", f"timeout_widget_api: {DeviceId_}")
+    self.log.logging("AbstractDz", "Debug", f"timeout_widget_api: {DeviceId_}")
     
     if DOMOTICZ_EXTENDED_API:
         Devices[ DeviceId_].TimedOut = timeout_value
@@ -662,15 +665,15 @@ def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
 def timeout_legacy_device_unit_api(self, Devices, DeviceId_, Unit_, timeout_value):
     """ TimedOut one Device widget """
     
-    #self.log.logging("AbstractDz", "Debug", f"timeout_legacy_device_unit_api: {DeviceId_} {Unit_} {timeout_value}")
+    self.log.logging("AbstractDz", "Debug", f"timeout_legacy_device_unit_api: {DeviceId_} {Unit_} {timeout_value}")
     if _is_meter_widget( self, Devices, DeviceId_, Unit_):
         return
     
     _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, Unit_)
     _TimedOut = domo_read_TimedOut( self, Devices, DeviceId_, )
     
-    #self.log.logging("Widget", "Debug", "timeout_legacy_device_unit_api unit %s -> %s from %s:%s %s" % (
-    #    Devices[Unit_].Name, bool(timeout_value), _nValue, _sValue, Devices[Unit_].TimedOut))
+    self.log.logging("Widget", "Debug", "timeout_legacy_device_unit_api unit %s -> %s from %s:%s %s" % (
+        Devices[Unit_].Name, bool(timeout_value), _nValue, _sValue, Devices[Unit_].TimedOut))
     
     if _TimedOut != timeout_value:
         # Update is required
@@ -681,7 +684,7 @@ def timeout_legacy_device_unit_api(self, Devices, DeviceId_, Unit_, timeout_valu
 
 
 def update_battery_api(self, Devices, DeviceId, battery_level):
-    #self.log.logging("AbstractDz", "Debug", f"update_battery_api: {DeviceId} to {battery_level}")
+    self.log.logging("AbstractDz", "Debug", f"update_battery_api: {DeviceId} to {battery_level}")
           
     if DOMOTICZ_EXTENDED_API:
         if  DeviceId in Devices:
@@ -695,7 +698,7 @@ def update_battery_api(self, Devices, DeviceId, battery_level):
   
         
 def update_battery_device_unit_api(self, Devices, DeviceId_, Unit_, battery_level):
-
+    self.log.logging("AbstractDz", "Debug", f"update_battery_device_unit_api: {DeviceId_} / {Unit_} to {battery_level}")
     if domo_read_BatteryLevel( self, Devices, DeviceId_, Unit_, ) == battery_level:
         return
 
@@ -705,7 +708,7 @@ def update_battery_device_unit_api(self, Devices, DeviceId_, Unit_, battery_leve
 
 
 def _switch_off_widget_due_to_timedout(self, Devices, DevicesId, Unit, _nValue, _sValue,):
-    #self.log.logging("Widget", "Debug", f"_switch_off_widget_due_to_timedout DeviceId {DevicesId} unit {Unit}")
+    self.log.logging("Widget", "Debug", f"_switch_off_widget_due_to_timedout DeviceId {DevicesId} unit {Unit}")
     
     if (_nValue == 1 and _sValue == "On") or _is_device_tobe_switched_off(self, Devices, DevicesId, Unit):
         domo_update_api(self, Devices, DevicesId, Unit, 0, "Off", TimedOut=1)
