@@ -185,20 +185,20 @@ def _get_device_ieee_nwkid_widget(self, Devices, device_ieee=None, device_unit=N
     if device_ieee is None:
         device_ieee = Devices[device_unit].DeviceID
         if device_ieee not in self.IEEE2NWK:
-            return None, None, None
+            return None, None, None, None
 
     nwkid = self.IEEE2NWK[device_ieee]
     if nwkid not in self.ListOfDevices:
         # If the NwkId is not found, it may have switch, let's check
         ieee_retreived_from_nwkid = lookupForIEEE(self, nwkid, True)
         if ieee_retreived_from_nwkid is None or device_ieee != ieee_retreived_from_nwkid:
-            return None, None, None
+            return None, None, None, None
 
     widget_idx = domo_read_Device_Idx(self, Devices, device_ieee, device_unit,)
     WidgetType = WidgetForDeviceId(self, nwkid, widget_idx)
 
     if WidgetType == "" or WidgetType not in ("Motion", "Vibration", SWITCH_SELECTORS):
-        return None, None, None
+        return None, None, None, None
     
     return device_ieee, nwkid, WidgetType, widget_idx
 
