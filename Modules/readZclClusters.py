@@ -114,6 +114,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     _action_list = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "ActionList", model=device_model )
     formated_logging( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, device_model, _name, _datatype, _ranges, _special_values, _eval_formula, _action_list, _eval_inputs, _force_value, value)
     debug_logging(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value)
+    
     if value is None:
         self.log.logging("ZclClusters", "Debug", "---> Value is None")
         return
@@ -536,7 +537,7 @@ def debug_logging(self, nwkid, ep, cluster, attribute, dtype, attsize, raw_data,
 
 def is_cluster_debug_mode(self, cluster):
     if cluster not in self.readZclClusters:
-        self.log.logging( "ZclClusters", "Log", f"readZclCluster {cluster} not found !")
+        self.log.logging( "ZclClusters", "Debug", f"readZclCluster {cluster} not found !")
         return
 
     if "Debug" not in self.readZclClusters[ cluster ]:
