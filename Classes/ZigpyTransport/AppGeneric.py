@@ -317,13 +317,6 @@ def packet_received(
     if source_route:
         self.log.logging("trackReceivedRoute", "Log", f"packet_received from {sender} via {source_route}")
 
-    # self.log.logging("TransportZigpy", "Log", " Src     : %s (%s)" %(sender,type(sender)))
-    # self.log.logging("TransportZigpy", "Log", " AddrMod : %02X" %(addr_mode))
-    # self.log.logging("TransportZigpy", "Log", " src Ep  : %02X" %(dst_ep))
-    # self.log.logging("TransportZigpy", "Log", " dst Ep  : %02x" %(dst_ep))
-    # self.log.logging("TransportZigpy", "Log", " Profile : %04X" %(profile))
-    # self.log.logging("TransportZigpy", "Log", " Cluster : %04X" %(cluster))
-    
     message = packet.data.serialize()
     hex_message = binascii.hexlify(message).decode("utf-8")
     dst_addressing = packet.dst.addr_mode if packet.dst else None
@@ -334,9 +327,6 @@ def packet_received(
     hex_message = binascii.hexlify(message).decode("utf-8")
     write_capture_rx_frames( self, packet.src, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing)
 
-    if sender is None or profile is None or cluster is None:
-        super(type(self),self).packet_received(packet)
-        
     if sender == 0x0000 or ( zigpy.zdo.ZDO_ENDPOINT in (packet.src_ep, packet.dst_ep)): 
         self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             sender, profile, cluster, src_ep, dst_ep, hex_message))
@@ -350,27 +340,12 @@ def packet_received(
         super(type(self),self).packet_received(packet)
         return
 
-    if self.use_of_zigpy_persistent_db:
-        try:
-            device = self.get_device_with_address(packet.src)
-            self.log.logging("TransportZigpy", "Debug", f"Known device {device}")
-
-        except KeyError:
-            self.log.logging("TransportZigpy", "Debug", "Unknown device %r", packet.src)
-
-            if packet.src.addr_mode == t.AddrMode.NWK:
-                # Manually send a ZDO IEEE address request to discover the device
-                task = asyncio.create_task(
-                    self._discover_unknown_device(packet.src.address),
-                    name=f"discover_unknown_device_from_packet-nwk={packet.src.address!r}",
-                )
-                return
-
     if cluster == 0x8034:
         # This has been handle via on_zdo_mgmt_leave_rsp()
         self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             sender, profile, cluster, src_ep, dst_ep, hex_message))
         self.callBackFunction( build_plugin_8047_frame_content(self, sender, hex_message) )
+        super(type(self),self).packet_received(packet)
         return
 
     packet.lqi = 0x00 if packet.lqi is None else packet.lqi
@@ -383,17 +358,8 @@ def packet_received(
     plugin_frame = build_plugin_8002_frame_content(self, sender, profile, cluster, src_ep, dst_ep, message, packet.lqi, src_addrmode=addr_mode)
     self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (sender, plugin_frame))
     self.callBackFunction(plugin_frame)
+    super(type(self),self).packet_received(packet)
     
-    if self.use_of_zigpy_persistent_db and not device.initializing and not device.is_initialized:
-        self.log.logging("TransportZigpy", "Debug", f"Schedule initialize for {device}")
-        device.schedule_initialize()
-
-    if self.use_of_zigpy_persistent_db and device.is_initialized:
-        #TODO
-        # This trigger the write in the Persistent Db.
-        # This is a bit too much as we will do for every packet received
-        self.device_initialized( device )
-
 
 def _update_nkdids_if_needed( self, ieee, new_nwkid ):
     if not isinstance(self, ZigpyTransport):
