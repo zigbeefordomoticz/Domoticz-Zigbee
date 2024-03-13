@@ -882,16 +882,9 @@ def processListOfDevices(self, Devices):
         # Known Devices
         if status == "inDB":
             processKnownDevices(self, Devices, NWKID)
-            self.log.logging( "Heartbeat", "Debug", "Check for reseting %s" %NWKID)
             
-            now = time.time()
-            device_ieee = self.ListOfDevices[NWKID]["IEEE"]
-            ClusterTypeList = RetreiveWidgetTypeList(self, Devices, device_ieee, NWKID)
-            for WidgetEp, Widget_Idx, WidgetType in ClusterTypeList:
-                device_unit = find_widget_unit_from_WidgetID(self, Devices, Widget_Idx )
-                if WidgetType in ( "Motion", "Vibration", SWITCH_SELECTORS):
-                    self.log.logging( "Heartbeat", "Log", "Candidate for reseting %s %s %s %s %s" %(device_ieee, device_unit, NWKID, WidgetType, Widget_Idx))
-                    reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, NWKID, WidgetType, Widget_Idx, now)
+            # Check and reset if needed Motion, Vibrator and Switch Selector
+            check_and_reset_device_if_needed(self, Devices, NWKID)
 
         elif status == "Leave":
             timedOutDevice(self, Devices, NwkId=NWKID)
@@ -901,21 +894,11 @@ def processListOfDevices(self, Devices):
             # We might have to remove this entry if the device get not reconnected.
             if ((int(self.ListOfDevices[NWKID]["Heartbeat"]) % 36) and int(self.ListOfDevices[NWKID]["Heartbeat"]) != 0) == 0:
                 if "ZDeviceName" in self.ListOfDevices[NWKID]:
-                    self.log.logging(
-                        "Heartbeat",
-                        "Debug",
-                        "processListOfDevices - Device: %s (%s) is in Status = 'Left' for %s HB"
-                        % (self.ListOfDevices[NWKID]["ZDeviceName"], NWKID, self.ListOfDevices[NWKID]["Heartbeat"]),
-                        NWKID,
-                    )
+                    self.log.logging( "Heartbeat", "Debug", "processListOfDevices - Device: %s (%s) is in Status = 'Left' for %s HB" % (
+                        self.ListOfDevices[NWKID]["ZDeviceName"], NWKID, self.ListOfDevices[NWKID]["Heartbeat"]), NWKID, )
                 else:
-                    self.log.logging(
-                        "Heartbeat",
-                        "Debug",
-                        "processListOfDevices - Device: (%s) is in Status = 'Left' for %s HB"
-                        % (NWKID, self.ListOfDevices[NWKID]["Heartbeat"]),
-                        NWKID,
-                    )
+                    self.log.logging( "Heartbeat", "Debug", "processListOfDevices - Device: (%s) is in Status = 'Left' for %s HB" % (
+                        NWKID, self.ListOfDevices[NWKID]["Heartbeat"]), NWKID, )
                 # Let's check if the device still exist in Domoticz
                 if not is_device_ieee_in_domoticz_db(self, Devices, self.ListOfDevices[NWKID]["IEEE"]):
                     # Not devices found in Domoticz, so we are safe to remove it from Plugin
@@ -962,11 +945,7 @@ def processListOfDevices(self, Devices):
             self.log.logging("Heartbeat", "Status", "Starting Network Topology")
             self.networkmap.start_scan()
         elif phase == 2:
-            self.log.logging(
-                "Heartbeat",
-                "Debug",
-                "processListOfDevices Topology scan is possible %s" % self.ControllerLink.loadTransmit(),
-            )
+            self.log.logging( "Heartbeat", "Debug", "processListOfDevices Topology scan is possible %s" % self.ControllerLink.loadTransmit(), )
             if self.ControllerLink.loadTransmit() < MAX_LOAD_ZIGATE:
                 self.networkmap.continue_scan()
 
@@ -978,6 +957,20 @@ def processListOfDevices(self, Devices):
     self.log.logging( "Heartbeat", "Debug", "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" % (
         self.HeartbeatCount, self.busy, self.CommiSSionning, self.ControllerLink.loadTransmit()), )
     return
+
+def check_and_reset_device_if_needed(self, Devices, Nwkid):
+
+    self.log.logging( "Heartbeat", "Debug", "Check for reseting %s" %Nwkid)
+
+    now = time.time()
+    device_ieee = self.ListOfDevices[Nwkid]["IEEE"]
+    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, device_ieee, Nwkid)
+    for WidgetEp, Widget_Idx, WidgetType in ClusterTypeList:
+        
+        if WidgetType in ( "Motion", "Vibration", SWITCH_SELECTORS):
+            device_unit = find_widget_unit_from_WidgetID(self, Devices, Widget_Idx )
+            self.log.logging( "Heartbeat", "Log", "Candidate for reseting %s %s %s %s %s" %(device_ieee, device_unit, Nwkid, WidgetType, Widget_Idx))
+            reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, Nwkid, WidgetType, Widget_Idx, now)
 
 
 def add_device_group_for_ping(self, NWKID):
