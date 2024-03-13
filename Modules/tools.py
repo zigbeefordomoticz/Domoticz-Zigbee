@@ -1446,6 +1446,7 @@ def how_many_devices(self):
     return routers, enddevices
 
 def get_deviceconf_parameter_value(self, model, attribute, return_default=None):
+    """ Retreive Configuration Attribute from Config file"""
     
     if model in ( '', {}):
         return return_default
@@ -1670,6 +1671,7 @@ def is_domoticz_touch(self):
 
 
 def get_device_config_param( self, NwkId, config_parameter):
+    """ Retreive config_parameter from the Param section in Config or Device"""
     
     self.log.logging("Input", "Debug", "get_device_config_param: %s Config: %s" %( NwkId,config_parameter ))
     
