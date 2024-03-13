@@ -16,10 +16,23 @@
 """
 
 import time
-
 #import DomoticzEx as Domoticz
 #DOMOTICZ_EXTENDED_API = True#
 import Domoticz as Domoticz
+
+DIMMABLE_WIDGETS = {
+    (7, 1, 241): { "Widget": "Dimmable_Light", "Name": "RGBW", "partially_opened_nValue": 15},
+    (7, 2, 241): { "Widget": "Dimmable_Light", "Name": "RGB", "partially_opened_nValue": 15},
+    (7, 4, 241): { "Widget": "Dimmable_Light", "Name": "RGBWW", "partially_opened_nValue": 15},
+    (7, 7, 241): { "Widget": "Dimmable_Light", "Name": "RGBWWZ", "partially_opened_nValue": 15},
+    (7, 8, 241): { "Widget": "Dimmable_Light", "Name": "WW Switch", "partially_opened_nValue": 15},
+    (7, 73, 244): { "Widget": "Dimmable_Switch", "Name": "Dimmer", "partially_opened_nValue": 2},
+    (14, 73, 244): { "Widget": "Blind", "Name": "Venetian Blinds US", "partially_opened_nValue": 17},
+    (13, 73, 244): { "Widget": "Blind", "Name": "Blind Percentage", "partially_opened_nValue": 2},
+    (15, 73, 244): { "Widget": "Blind", "Name": "Venetian Blinds EU", "partially_opened_nValue": 17},
+    (21, 73, 244): { "Widget": "Blind", "Name": "Blinds + Stop", "partially_opened_nValue": 2},
+}
+
 DOMOTICZ_EXTENDED_API = False
 
 DELAY_BETWEEN_TOUCH = 120
@@ -411,7 +424,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         except Exception as e:
             self.log.logging("AbstractDz", "Debug", f"domo_update_api: Cannot Write Attribute Option with {Options}")
 
-        Devices[DeviceID_].Units[Unit_].Update(Log=True)
+        Devices[DeviceID_].Units[Unit_].Update(Log=(not SuppressTriggers) )
         return
 
     # Legacy
@@ -422,22 +435,26 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
     }
     if SignalLevel is not None:
         update_params['SignalLevel'] = int(SignalLevel)
+
     if BatteryLevel is not None:
         update_params['BatteryLevel'] = int(BatteryLevel)
+
     if TimedOut is not None:
         update_params['TimedOut'] = TimedOut
+
     if Options is not None:
         update_params['Options'] = Options
+
     if Color != "":
         update_params['Color'] = Color
+        
+    if SuppressTriggers:
+        update_params['SuppressTriggers'] = True
 
     # Perform the update with the defined parameters
     self.log.logging("AbstractDz", "Debug", "domo_update_api: update_params %s" %(update_params))
-    
-    if SuppressTriggers:
-        Devices[Unit_].Update(**update_params, SuppressTriggers=True,)
-    else:
-        Devices[Unit_].Update(**update_params,)
+
+    Devices[Unit_].Update(**update_params)
 
 
 def domo_update_name(self, Devices, DeviceID_, Unit_, Name_):
@@ -520,22 +537,22 @@ def domo_read_TimedOut( self, Devices, DeviceId_ ):
 
 def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_,):
     self.log.logging("AbstractDz", "Debug", f"domo_read_LastUpdate: DeviceID: {DeviceId_} Unit {Unit_}")
-    return ( Devices[DeviceId_].Units[Unit_].LastUpdate if DOMOTICZ_EXTENDED_API else Devices[Unit_].LastUpdate )
+    return Devices[DeviceId_].Units[Unit_].LastUpdate if DOMOTICZ_EXTENDED_API else Devices[Unit_].LastUpdate
 
 
 def domo_read_BatteryLevel( self, Devices, DeviceId_, Unit_, ):
     self.log.logging("AbstractDz", "Debug", f"domo_read_BatteryLevel: DeviceID: {DeviceId_} Unit {Unit_}")
-    return ( Devices[DeviceId_].Units[Unit_].BatteryLevel if DOMOTICZ_EXTENDED_API else Devices[Unit_].BatteryLevel )
+    return Devices[DeviceId_].Units[Unit_].BatteryLevel if DOMOTICZ_EXTENDED_API else Devices[Unit_].BatteryLevel
 
 
 def domo_read_SignalLevel( self, Devices, DeviceId_, Unit_, ):
     self.log.logging("AbstractDz", "Debug", f"domo_read_BatteryLevel: DeviceID: {DeviceId_} Unit {Unit_}")
-    return ( Devices[DeviceId_].Units[Unit_].SignalLevel if DOMOTICZ_EXTENDED_API else Devices[Unit_].SignalLevel )
+    return Devices[DeviceId_].Units[Unit_].SignalLevel if DOMOTICZ_EXTENDED_API else Devices[Unit_].SignalLevel
 
 
 def domo_read_Color( self, Devices, DeviceId_, Unit_, ):
     self.log.logging("AbstractDz", "Debug", f"domo_read_Color: DeviceID: {DeviceId_} Unit {Unit_}")
-    return ( Devices[DeviceId_].Units[Unit_].Color if DOMOTICZ_EXTENDED_API else Devices[Unit_].Color )
+    return Devices[DeviceId_].Units[Unit_].Color if DOMOTICZ_EXTENDED_API else Devices[Unit_].Color
 
 
 def domo_read_Name( self, Devices, DeviceId_, Unit_, ):
@@ -545,12 +562,12 @@ def domo_read_Name( self, Devices, DeviceId_, Unit_, ):
 
 def domo_read_Options( self, Devices, DeviceId_, Unit_,):
     self.log.logging("AbstractDz", "Debug", f"domo_read_Options: DeviceID: {DeviceId_} Unit {Unit_}")
-    return ( Devices[DeviceId_].Units[Unit_].Options if DOMOTICZ_EXTENDED_API else Devices[Unit_].Options )
+    return Devices[DeviceId_].Units[Unit_].Options if DOMOTICZ_EXTENDED_API else Devices[Unit_].Options
 
 
 def domo_read_Device_Idx(self, Devices, DeviceId_, Unit_,):
     self.log.logging("AbstractDz", "Debug", f"domo_read_Device_Idx: DeviceID: {DeviceId_} Unit {Unit_}")
-    return ( Devices[DeviceId_].Units[Unit_].ID if DOMOTICZ_EXTENDED_API else Devices[Unit_].ID )    
+    return Devices[DeviceId_].Units[Unit_].ID if DOMOTICZ_EXTENDED_API else Devices[Unit_].ID
 
 
 def domo_check_unit(self, Devices, DeviceId_, Unit_):
@@ -607,19 +624,20 @@ def device_touch_api(self, Devices, DeviceId_):
     """Touch all Devices Widgets"""
     self.log.logging("AbstractDz", "Debug", f"device_touch_api: {DeviceId_}")
 
+    now = time.time()
     if DOMOTICZ_EXTENDED_API:
         if DeviceId_ in Devices:
             units = Devices[DeviceId_].Units
             for unit in list(units):
-                _device_touch_unit_api(self, Devices, DeviceId_, unit)
+                _device_touch_unit_api(self, Devices, DeviceId_, unit, now)
 
     else:
         for unit in list(Devices):
             if Devices[ unit ].DeviceID == DeviceId_:
-                _device_touch_unit_api(self, Devices, DeviceId_, unit)
+                _device_touch_unit_api(self, Devices, DeviceId_, unit, now)
 
 
-def _device_touch_unit_api(self, Devices, DeviceId_, Unit_):
+def _device_touch_unit_api(self, Devices, DeviceId_, Unit_, now):
     """ Touch one widget for a particular Device """
     self.log.logging("AbstractDz", "Debug", f"device_touch_unit_api: {DeviceId_} {Unit_}")
 
@@ -640,7 +658,7 @@ def _device_touch_unit_api(self, Devices, DeviceId_, Unit_):
 
     last_update_time_seconds = time.mktime(time.strptime(last_time, "%Y-%m-%d %H:%M:%S"))
 
-    if time.time() > ( last_update_time_seconds + DELAY_BETWEEN_TOUCH):
+    if now > ( last_update_time_seconds + DELAY_BETWEEN_TOUCH):
         # Last Touch was done more than 30 seconds ago.
         Devices[DeviceId_].Units[Unit_].Touch() if DOMOTICZ_EXTENDED_API else Devices[Unit_].Touch()
         return
@@ -749,18 +767,6 @@ def is_dimmable_blind(self, Devices, DeviceId, Unit):
     return None
 
 
-DIMMABLE_WIDGETS = {
-    (7, 1, 241): { "Widget": "Dimmable_Light", "Name": "RGBW", "partially_opened_nValue": 15},
-    (7, 2, 241): { "Widget": "Dimmable_Light", "Name": "RGB", "partially_opened_nValue": 15},
-    (7, 4, 241): { "Widget": "Dimmable_Light", "Name": "RGBWW", "partially_opened_nValue": 15},
-    (7, 7, 241): { "Widget": "Dimmable_Light", "Name": "RGBWWZ", "partially_opened_nValue": 15},
-    (7, 8, 241): { "Widget": "Dimmable_Light", "Name": "WW Switch", "partially_opened_nValue": 15},
-    (7, 73, 244): { "Widget": "Dimmable_Switch", "Name": "Dimmer", "partially_opened_nValue": 2},
-    (14, 73, 244): { "Widget": "Blind", "Name": "Venetian Blinds US", "partially_opened_nValue": 17},
-    (13, 73, 244): { "Widget": "Blind", "Name": "Blind Percentage", "partially_opened_nValue": 2},
-    (15, 73, 244): { "Widget": "Blind", "Name": "Venetian Blinds EU", "partially_opened_nValue": 17},
-    (21, 73, 244): { "Widget": "Blind", "Name": "Blinds + Stop", "partially_opened_nValue": 2},
-}
 
 def find_partially_opened_nValue(switch_type, sub_type, widget_type):
     key = (switch_type, sub_type, widget_type)
