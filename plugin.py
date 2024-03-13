@@ -137,7 +137,6 @@ from Modules.domoticzAbstractLayer import (
     domo_read_Name, find_legacy_DeviceID_from_unit,
     how_many_legacy_slot_available, is_domoticz_extended,
     load_list_of_domoticz_widget, retreive_widgetid_from_deviceId_unit)
-from Modules.domoTools import browse_and_reset_devices_if_needed
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.piZigate import switchPiZigate_mode
@@ -878,11 +877,6 @@ class BasePlugin:
 
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
-
-        # Reset Motion sensors
-        if ( self.internalHB % 5 ) == 0:
-            # Will reset only every 5 seconds
-            browse_and_reset_devices_if_needed(self, Devices)
 
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)

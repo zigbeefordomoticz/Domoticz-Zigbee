@@ -54,6 +54,11 @@ from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 from Zigbee.zdpCommands import (zdp_node_descriptor_request,
                                 zdp_NWK_address_request)
 
+from Modules.domoticzAbstractLayer import find_widget_unit_from_WidgetID
+from Modules.domoTools import reset_device_ieee_unit_if_needed, RetreiveWidgetTypeList
+from Modules.switchSelectorWidgets import SWITCH_SELECTORS
+
+
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
 # Network Topology start: 15' after plugin start
@@ -877,6 +882,16 @@ def processListOfDevices(self, Devices):
         # Known Devices
         if status == "inDB":
             processKnownDevices(self, Devices, NWKID)
+            self.log.logging( "Heartbeat", "Debug", "Check for reseting %s" %NWKID)
+            
+            now = time.time()
+            device_ieee = self.ListOfDevices[NWKID]["IEEE"]
+            ClusterTypeList = RetreiveWidgetTypeList(self, Devices, device_ieee, NWKID)
+            for WidgetEp, Widget_Idx, WidgetType in ClusterTypeList:
+                device_unit = find_widget_unit_from_WidgetID(self, Devices, Widget_Idx )
+                if WidgetType in ( "Motion", "Vibration", SWITCH_SELECTORS):
+                    self.log.logging( "Heartbeat", "Log", "Candidate for reseting %s %s %s %s %s" %(device_ieee, device_unit, NWKID, WidgetType, Widget_Idx))
+                    reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, NWKID, WidgetType, Widget_Idx, now)
 
         elif status == "Leave":
             timedOutDevice(self, Devices, NwkId=NWKID)
