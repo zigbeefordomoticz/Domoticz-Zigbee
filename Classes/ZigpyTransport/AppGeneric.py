@@ -328,13 +328,13 @@ def packet_received(
     write_capture_rx_frames( self, packet.src, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing)
 
     if sender == 0x0000 or ( zigpy.zdo.ZDO_ENDPOINT in (packet.src_ep, packet.dst_ep)): 
-        self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+        self.log.logging("TransportZigpy", "Debug", "packet_received from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             sender, profile, cluster, src_ep, dst_ep, hex_message))
         super(type(self),self).packet_received(packet)
 
     if cluster == 0x8036:
         # This has been handle via on_zdo_mgmt_permitjoin_rsp()
-        self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+        self.log.logging("TransportZigpy", "Debug", "packet_received 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             sender, profile, cluster, src_ep, dst_ep, hex_message))
         self.callBackFunction( build_plugin_8014_frame_content(self, sender, hex_message ) )
         super(type(self),self).packet_received(packet)
@@ -342,7 +342,7 @@ def packet_received(
 
     if cluster == 0x8034:
         # This has been handle via on_zdo_mgmt_leave_rsp()
-        self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+        self.log.logging("TransportZigpy", "Debug", "packet_received 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             sender, profile, cluster, src_ep, dst_ep, hex_message))
         self.callBackFunction( build_plugin_8047_frame_content(self, sender, hex_message) )
         super(type(self),self).packet_received(packet)
@@ -352,11 +352,11 @@ def packet_received(
     profile = 0x0000 if src_ep == dst_ep == 0x00 else profile
 
     if profile and cluster:
-        self.log.logging( "TransportZigpy", "Debug", "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" %( 
+        self.log.logging( "TransportZigpy", "Debug", "packet_received device: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" %( 
             sender, profile, cluster, src_ep, dst_ep, hex_message, packet.lqi), )
 
     plugin_frame = build_plugin_8002_frame_content(self, sender, profile, cluster, src_ep, dst_ep, message, packet.lqi, src_addrmode=addr_mode)
-    self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (sender, plugin_frame))
+    self.log.logging("TransportZigpy", "Debug", "packet_received Sender: %s frame for plugin: %s" % (sender, plugin_frame))
     self.callBackFunction(plugin_frame)
     super(type(self),self).packet_received(packet)
     
