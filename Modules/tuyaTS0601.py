@@ -125,15 +125,18 @@ def ts0601_actuator( self, NwkId, command, value=None):
     self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s %s" %(
         command, dp, value))
 
-    if command in TS0601_COMMANDS:
-        if len(TS0601_COMMANDS[ command ]) == 2:
-            dt = TS0601_COMMANDS[ command ][1]
-            ts0601_tuya_action(self, NwkId, "01", command, dp, dt, value)
-            return
+    if command in TS0601_COMMANDS and isinstance(TS0601_COMMANDS[ command ], list):
+        dt = TS0601_COMMANDS[ command ][1]
+        ts0601_tuya_action(self, NwkId, "01", command, dp, dt, value)
+        return
 
+    if command in TS0601_COMMANDS:
+        # TS0601_COMMANDS[ command ] is callable
         func = TS0601_COMMANDS[ command ]
+
     else:
         func = DP_ACTION_FUNCTION[ command ]
+
     if value is not None:
         func(self, NwkId, "01", dp, value )
     else:

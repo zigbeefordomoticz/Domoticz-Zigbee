@@ -71,7 +71,7 @@ def onoff_startup_onoff_mode(self, nwkid, ep, value):
         if is_int(value):
             old_value = value
             value = int(value)
-            self.log.logging( "onoffSettings", "Log", f"onoff_startup_onoff_mode for {nwkid}/{ep} - value: {old_value} converted to {value}", nwkid )
+            self.log.logging( "onoffSettings", "Debug", f"onoff_startup_onoff_mode for {nwkid}/{ep} - value: {old_value} converted to {value}", nwkid )
         else:
             self.log.logging( "onoffSettings", "Error", f"onoff_startup_onoff_mode for {nwkid}/{ep} - value error {value}", nwkid )
             return

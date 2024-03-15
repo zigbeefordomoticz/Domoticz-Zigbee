@@ -18,6 +18,9 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## March 2024 - stable7.1.009 (hotfix)
+- [Bug] - fix bugs generating error and preventing some Tuya features working
+
 ## February 2024 - stable7 7.1.009 (2024.02)
 
 - [Technical] - Allow decoupled by Endpoint (for Aqara relay T2)
