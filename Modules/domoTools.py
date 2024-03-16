@@ -311,6 +311,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         domo_update_api(self, Devices, DeviceID_, Unit, nValue, sValue, SignalLevel=SignalLvl, BatteryLevel=BatteryLvl, TimedOut=0, Color=Color_,)
 
         if self.pluginconf.pluginConf["logDeviceUpdate"]:
+            self.log.logging( "Widget", "Log", "UpdateDevice - (%15s) %s:%s" % (Devices[Unit].Name, nValue, sValue))
             domoticz_log_api( "UpdateDevice - (%15s) %s:%s" % (Devices[Unit].Name, nValue, sValue))
         self.log.logging( "Widget", "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" % (
             Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID], )
