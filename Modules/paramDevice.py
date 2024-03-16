@@ -12,53 +12,25 @@
 
 
 from DevicesModules.custom_sonoff import SONOFF_DEVICE_PARAMETERS
-from Modules.basicOutputs import (ballast_Configuration_max_level,
-                                  ballast_Configuration_min_level)
-from Modules.danfoss import (danfoss_covered, danfoss_exercise_day_of_week,
-                             danfoss_exercise_trigger_time,
-                             danfoss_orientation, danfoss_viewdirection)
+from Modules.ballast_settings import BALLAST_DEVICE_PARAMETERS
+from Modules.danfoss import DANFOSS_DEVICE_PARAMETERS
 from Modules.ias_settings import IAS_DEVICE_PARAMETERS
-from Modules.legrand_netatmo import (legrand_Dimmer_by_nwkid,
-                                     legrand_enable_Led_IfOn_by_nwkid,
-                                     legrand_enable_Led_InDark_by_nwkid,
-                                     legrand_enable_Led_Shutter_by_nwkid)
+from Modules.legrand_netatmo import LEGRAND_DEVICE_PARAMETERS
 from Modules.lumi import LUMI_DEVICE_PARAMETERS
 from Modules.occupancy_settings import OCCUPANCY_DEVICE_PARAMETERS
 from Modules.onoff_settings import ONOFF_DEVICE_PARAMETERS
-from Modules.philips import philips_led_indication
+from Modules.philips import PHILIPS_DEVICE_PARAMETERS
 from Modules.schneider_wiser import SCHNEIDER_DEVICE_PARAMETERS
-from Modules.tools import getEpForCluster
 from Modules.tuya import TUYA_DEVICE_PARAMETERS
 from Modules.tuyaSiren import TUYA_SIREN_DEVICE_PARAMETERS
 from Modules.tuyaTRV import TUYA_TRV_DEVICE_PARAMETERS
 from Modules.tuyaTS011F import TUYA_TS011F_DEVICE_PARAMETERS
 from Modules.tuyaTS0601 import ts0601_extract_data_point_infos, ts0601_settings
 
-
-def Ballast_max_level(self, nwkid, max_level):
-    ballast_Configuration_max_level(self, nwkid, max_level)
-
-
-def Ballast_min_level(self, nwkid, min_level):
-    ballast_Configuration_min_level(self, nwkid, min_level)
-
-
 DEVICE_PARAMETERS = {
-    "HueLedIndication": philips_led_indication,
-    "netatmoLedIfOn": legrand_enable_Led_IfOn_by_nwkid,
-    "netatmoLedInDark": legrand_enable_Led_InDark_by_nwkid,
-    "netatmoLedShutter": legrand_enable_Led_Shutter_by_nwkid,
-    "netatmoEnableDimmer": legrand_Dimmer_by_nwkid,
-    "BallastMaxLevel": Ballast_max_level,
-    "BallastMinLevel": Ballast_min_level,
-    "eTRVExerciseDay": danfoss_exercise_day_of_week,
-    "eTRVExerciseTime": danfoss_exercise_trigger_time,
-    "DanfossCovered": danfoss_covered,
-    "DanfossTRVOrientation": danfoss_orientation,
-    "DanfossViewDirection": danfoss_viewdirection,
 }
 
-     
+
 def sanity_check_of_param(self, NwkId):
 
     self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param  {NwkId}")
@@ -67,8 +39,17 @@ def sanity_check_of_param(self, NwkId):
     DEVICE_PARAMETERS.update(ONOFF_DEVICE_PARAMETERS)
     DEVICE_PARAMETERS.update(OCCUPANCY_DEVICE_PARAMETERS)
     DEVICE_PARAMETERS.update(IAS_DEVICE_PARAMETERS)
-    
+    DEVICE_PARAMETERS.update(BALLAST_DEVICE_PARAMETERS)
+
     # Load Manufacturer specific settings
+    DEVICE_PARAMETERS.update(DANFOSS_DEVICE_PARAMETERS)
+
+    DEVICE_PARAMETERS.update(LEGRAND_DEVICE_PARAMETERS)
+
+    DEVICE_PARAMETERS.update(LUMI_DEVICE_PARAMETERS)
+
+    DEVICE_PARAMETERS.update(PHILIPS_DEVICE_PARAMETERS)
+
     DEVICE_PARAMETERS.update(SONOFF_DEVICE_PARAMETERS)
 
     DEVICE_PARAMETERS.update(TUYA_DEVICE_PARAMETERS)
@@ -77,8 +58,6 @@ def sanity_check_of_param(self, NwkId):
     DEVICE_PARAMETERS.update(TUYA_SIREN_DEVICE_PARAMETERS)
 
     DEVICE_PARAMETERS.update(SCHNEIDER_DEVICE_PARAMETERS)
-    
-    DEVICE_PARAMETERS.update(LUMI_DEVICE_PARAMETERS)
 
     param_data = self.ListOfDevices.get(NwkId, {}).get("Param", {})
     model_name = self.ListOfDevices.get(NwkId, {}).get("Model", "")
@@ -91,4 +70,8 @@ def sanity_check_of_param(self, NwkId):
             ts0601_settings( self, NwkId, dps_mapping, param, value)
 
         elif param in DEVICE_PARAMETERS:
-            DEVICE_PARAMETERS[param](self, NwkId, value)
+            if callable( DEVICE_PARAMETERS[param] ):
+                DEVICE_PARAMETERS[param](self, NwkId, value)
+
+            elif "callable" in DEVICE_PARAMETERS[param]:
+                DEVICE_PARAMETERS[param]["callable"](self, NwkId, value)
