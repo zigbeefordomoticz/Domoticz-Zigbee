@@ -271,9 +271,9 @@ def common_Ultrasonic_occupancySensibility(self, nwkid, sensibility):
 
 
 OCCUPANCY_DEVICE_PARAMETERS = {
-    "PIROccupiedToUnoccupiedDelay": common_PIROccupiedToUnoccupiedDelay,
-    "PIRoccupancySensibility": common_PIR_occupancySensibility,
-    "occupancySensibility": common_PIR_occupancySensibility,
-    "UltrasonicOccupiedToUnoccupiedDelay": common_Ultrasnonic_OccupiedToUnoccupiedDelay,
-    "UltrasonicOccupancySensibility": common_Ultrasonic_occupancySensibility,
+    "PIROccupiedToUnoccupiedDelay": { "callable": "common_PIROccupiedToUnoccupiedDelay", "description": "The PIROccupiedToUnoccupiedDelay attribute specifies the time delay, in seconds,before the PIR sensor changes to its unoccupied state after the last detection of movement in the sensed area."},
+    "PIRoccupancySensibility": { "callable": "common_PIR_occupancySensibility", "description": "Sensitivity level of the Sensor 0 default, 1, High, 2 Max"},
+    "occupancySensibility": { "callable": "common_PIR_occupancySensibility", "description": "Sensitivity level of the Sensor 0 default, 1, High, 2 Max"},
+    "UltrasonicOccupiedToUnoccupiedDelay": { "callable": "common_Ultrasnonic_OccupiedToUnoccupiedDelay", "description": "specifies the time delay, in seconds,before the sensor changes to its unoccupied state after the last detection of movement in the sensed area."},
+    "UltrasonicOccupancySensibility": { "callable": "common_Ultrasonic_occupancySensibility", "description": "Sensitivity level of the Sensor 0 default, 1, High, 2 Max"}
 }
