@@ -93,6 +93,7 @@
 
 #import DomoticzEx as Domoticz
 import Domoticz
+
 try:
     #from DomoticzEx import Devices, Images, Parameters, Settings
     from Domoticz import Devices, Images, Parameters, Settings
@@ -139,6 +140,7 @@ from Modules.domoticzAbstractLayer import (
     load_list_of_domoticz_widget, retreive_widgetid_from_deviceId_unit)
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
+from Modules.paramDevice import initialize_device_settings
 from Modules.piZigate import switchPiZigate_mode
 from Modules.pluginHelpers import (check_firmware_level,
                                    check_python_modules_version,
@@ -291,6 +293,9 @@ class BasePlugin:
         # Zigpy
         self.zigbee_communication = None  # "zigpy" or "native"
         #self.pythonModuleVersion = {}
+        
+        self.device_settings = {}
+        initialize_device_settings(self)
 
     def onStart(self):
         Domoticz.Status( "Zigbee for Domoticz plugin starting")
@@ -1373,7 +1378,8 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.ModelManufMapping,
         self.DomoticzMajor,
         self.DomoticzMinor,
-        self.readZclClusters
+        self.readZclClusters,
+        self.device_settings
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)

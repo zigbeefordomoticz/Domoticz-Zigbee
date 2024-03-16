@@ -104,6 +104,7 @@ class WebServer(object):
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import (DumpHTTPResponseToLog,
                                          keepConnectionAlive)
+    from Classes.WebServer.rest_Device_Settings_Help import rest_device_settings_help
 
     hearbeats = 0
 
@@ -133,7 +134,8 @@ class WebServer(object):
         ModelManufMapping,
         DomoticzMajor,
         DomoticzMinor,
-        readZclClusters
+        readZclClusters,
+        device_settings
     ):
         self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
@@ -191,7 +193,7 @@ class WebServer(object):
             self.httpPort = httpPort
 
         mimetypes.init()
-
+        self.device_settings = device_settings
         self.FirmwareVersion = None
         # Start the WebServer
         self.startWebServer()

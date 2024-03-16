@@ -30,6 +30,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
         "dev-cap": {"Name": "dev-cap", "Verbs": {"GET"}, "function": self.rest_dev_capabilities},
         "dev-command": {"Name": "dev-command", "Verbs": {"PUT"}, "function": self.rest_dev_command},
         "device": {"Name": "device", "Verbs": {"GET"}, "function": self.rest_Device},
+        "device-settings-help": {"Name": "device-settings-help", "Verbs": {"GET"}, "function": self.rest_device_settings_help},
         "domoticz-env": {"Name": "domoticz-env", "Verbs": {"GET"}, "function": self.rest_domoticz_env},
         "help": {"Name": "help", "Verbs": {"GET"}, "function": None},
         "full-reprovisionning": {"Name": "full-reprovisionning", "Verbs": {"PUT"}, "function": self.rest_full_reprovisionning},

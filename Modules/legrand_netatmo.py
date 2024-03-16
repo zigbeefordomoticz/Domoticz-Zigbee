@@ -864,8 +864,8 @@ def is_zigate_bellow_or_equal_31c(self):
 
 LEGRAND_DEVICE_PARAMETERS = {
     "netatmoLedIfOn": { "callable": legrand_enable_Led_IfOn_by_nwkid,"description": "Enable Led if On, valid for model  'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch'. (0 or 1)"},
-    "netatmoLedInDark": { "callable": legrand_enable_Led_InDark_by_nwkid, "Enable Led if On, valid for model  'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch'. (0 or 1)": ""},
-    "netatmoLedShutter": { "callable": legrand_enable_Led_Shutter_by_nwkid, "Enable Led if On, valid for model  'Connected outlet', 'Shutter switch with neutral'. (0 or 1)": ""},
+    "netatmoLedInDark": { "callable": legrand_enable_Led_InDark_by_nwkid, "description": "Enable Led if On, valid for model  'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch'. (0 or 1)"},
+    "netatmoLedShutter": { "callable": legrand_enable_Led_Shutter_by_nwkid, "description": "Enable Led if On, valid for model  'Connected outlet', 'Shutter switch with neutral'. (0 or 1)"},
     "netatmoEnableDimmer": { "callable": legrand_Dimmer_by_nwkid, "description": "Enable dimming for 'Dimmer switch wo neutral'. (0 or 1)"},
 
 }
