@@ -62,7 +62,7 @@ class WebServer(object):
 
     from Classes.WebServer.com import (onConnect, onDisconnect, onStop,
                                        startWebServer)
-    from Classes.WebServer.dispatcher import do_rest
+    from Classes.WebServer.dispatcher import do_rest, setup_list_rest_commands
     from Classes.WebServer.onMessage import onMessage
     from Classes.WebServer.rest_Bindings import (rest_binding,
                                                  rest_binding_table_disp,
@@ -77,6 +77,8 @@ class WebServer(object):
     from Classes.WebServer.rest_CfgReporting import (
         rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config)
     from Classes.WebServer.rest_change_ModelName import rest_change_model_name
+    from Classes.WebServer.rest_Device_Settings_Help import \
+        rest_device_settings_help
     from Classes.WebServer.rest_Energy import (rest_req_nwk_full,
                                                rest_req_nwk_inter)
     from Classes.WebServer.rest_Groups import (rest_rescan_group,
@@ -104,7 +106,6 @@ class WebServer(object):
     from Classes.WebServer.sendresponse import sendResponse
     from Classes.WebServer.tools import (DumpHTTPResponseToLog,
                                          keepConnectionAlive)
-    from Classes.WebServer.rest_Device_Settings_Help import rest_device_settings_help
 
     hearbeats = 0
 
@@ -195,7 +196,9 @@ class WebServer(object):
         mimetypes.init()
         self.device_settings = device_settings
         self.FirmwareVersion = None
+        
         # Start the WebServer
+        self.setup_list_rest_commands( )
         self.startWebServer()
         self.certified_devices_update()
 
