@@ -80,6 +80,7 @@ CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 PING_DEVICE_VIA_GROUPID = 3567 // HEARTBEAT    # Secondes ( 59minutes et 45 secondes )
 FIRST_PING_VIA_GROUP = 127 // HEARTBEAT
 
+
 def attributeDiscovery(self, NwkId):
 
     rescheduleAction = False
@@ -599,12 +600,7 @@ def processKnownDevices(self, Devices, NWKID):
 
     # If device flag as Not Reachable, don't do anything
     if not health:
-        self.log.logging(
-            "Heartbeat",
-            "Debug",
-            "processKnownDevices -  %s stop here due to Health %s" % (NWKID, self.ListOfDevices[NWKID]["Health"]),
-            NWKID,
-        )
+        self.log.logging( "Heartbeat", "Debug", "processKnownDevices -  %s stop here due to Health %s" % (NWKID, self.ListOfDevices[NWKID]["Health"]), NWKID, )
         return
 
     # If we reach this step, the device health is Live
@@ -612,10 +608,12 @@ def processKnownDevices(self, Devices, NWKID):
         self.log.logging("Heartbeat", "Log", f"Device {NWKID} '{get_device_nickname(self, NwkId=NWKID)}' recover from Non Reachable", NWKID)
         del self.ListOfDevices[NWKID]["pingDeviceRetry"]
 
-    model = self.ListOfDevices[NWKID]["Model"] if "Model" in self.ListOfDevices[NWKID] else ""
-    enabledEndDevicePolling = bool(model in self.DeviceConf and "PollingEnabled" in self.DeviceConf[model] and self.DeviceConf[model]["PollingEnabled"])
+    model = self.ListOfDevices[NWKID].get("Model", "")
+    
+    enabledEndDevicePolling = bool(self.DeviceConf.get(model, {}).get("PollingEnabled", False))
 
-    if "CheckParam" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["CheckParam"] and intHB > (60 // HEARTBEAT):
+    check_param = self.ListOfDevices.get(NWKID, {}).get("CheckParam", False)
+    if check_param and self.HeartbeatCount > QUIET_AFTER_START and self.ControllerLink.loadTransmit() < 5:
         sanity_check_of_param(self, NWKID)
         self.ListOfDevices[NWKID]["CheckParam"] = False
 
@@ -662,75 +660,14 @@ def processKnownDevices(self, Devices, NWKID):
         and time.time() <= ( self.ListOfDevices[ NWKID ]["PairingTime"] + ( self.ControllerLink.loadTransmit() // 5 ) + 15 ) 
         ):
         # In case we have just finished the pairing give 3 minutes to finish.
-        self.log.logging(
-            "Heartbeat",
-            "Debug",
-            "processKnownDevices -  %s delay the next ReadAttribute to closed to the pairing %s" % (NWKID, self.ListOfDevices[ NWKID ]["PairingTime"],),
-            NWKID,
-        )
+        self.log.logging( "Heartbeat", "Debug", "processKnownDevices -  %s delay the next ReadAttribute to closed to the pairing %s" % (
+            NWKID, self.ListOfDevices[ NWKID ]["PairingTime"],), NWKID, )
         return
             
     if _doReadAttribute:
-        self.log.logging(
-            "Heartbeat",
-            "Log",
-            "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" % (NWKID, intHB, _mainPowered, _doReadAttribute),
-            NWKID,
-        )
-
-        
-        # Read Attributes if enabled
-        now = int(time.time())  # Will be used to trigger ReadAttributes
-        for tmpEp in self.ListOfDevices[NWKID]["Ep"]:
-            if tmpEp == "ClusterType":
-                continue
-
-            for Cluster in READ_ATTRIBUTES_REQUEST:
-                if Cluster in ("Type", "ClusterType", "ColorMode"):
-                    continue
-                if Cluster not in self.ListOfDevices[NWKID]["Ep"][tmpEp]:
-                    continue
-
-                if "Model" in self.ListOfDevices[NWKID]:
-                    if (
-                        self.ListOfDevices[NWKID]["Model"] == "lumi.ctrl_neutral1" and tmpEp != "02"
-                    ):  # All Eps other than '02' are blacklisted
-                        continue
-                    if self.ListOfDevices[NWKID]["Model"] == "lumi.ctrl_neutral2" and tmpEp not in ("02", "03"):
-                        continue
-
-                if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
-                    self.log.logging(
-                        "Heartbeat",
-                        "Debug",
-                        "--  -  %s skip ReadAttribute for now ... system too busy (%s/%s)"
-                        % (NWKID, self.busy, self.ControllerLink.loadTransmit()),
-                        NWKID,
-                    )
-                    rescheduleAction = True
-                    continue  # Do not break, so we can keep all clusters on the same states
-
-                func = READ_ATTRIBUTES_REQUEST[Cluster][0]
-                # For now it is a hack, but later we might put all parameters
-                if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
-                    timing = self.pluginconf.pluginConf[READ_ATTRIBUTES_REQUEST[Cluster][1]]
-                else:
-                    self.log.logging( "Heartbeat", "Error", "processKnownDevices - missing timing attribute for Cluster: %s - %s" % (
-                        Cluster, READ_ATTRIBUTES_REQUEST[Cluster][1]) )
-                    continue
-
-                # Let's check the timing
-                if not is_time_to_perform_work(self, "ReadAttributes", NWKID, tmpEp, Cluster, now, timing):
-                    continue
-
-                self.log.logging(
-                    "Heartbeat",
-                    "Debug",
-                    "-- -  %s/%s and time to request ReadAttribute for %s" % (NWKID, tmpEp, Cluster),
-                    NWKID,
-                )
-
-                func(self, NWKID)
+        self.log.logging( "Heartbeat", "Log", "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" % (
+            NWKID, intHB, _mainPowered, _doReadAttribute), NWKID, )
+        rescheduleAction = rescheduleAction or process_read_attributes(self, NWKID, model)
 
     # Call Schneider Reenforcement if needed
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
@@ -770,11 +707,60 @@ def processKnownDevices(self, Devices, NWKID):
     else: 
         if "LastPollingManufSpecificDevices" in self.ListOfDevices[ NWKID ]:
             del self.ListOfDevices[ NWKID ][ "LastPollingManufSpecificDevices"]
+
         if "LastCustomPolling" in self.ListOfDevices[ NWKID ]:
             del self.ListOfDevices[ NWKID ][ "LastCustomPolling"]
 
-
     return
+
+
+def process_read_attributes(self, Nwkid, model):
+    self.log.logging( "Heartbeat", "Log", f"process_read_attributes  -  for {Nwkid} {model}")
+    process_next_ep_later = False
+    now = int(time.time())  # Will be used to trigger ReadAttributes
+    
+    device_infos = self.ListOfDevices[Nwkid]
+    for ep in device_infos["Ep"]:
+        if ep == "ClusterType":
+            continue
+        
+        if model == "lumi.ctrl_neutral1" and ep != "02" :  # All Eps other than '02' are blacklisted
+            continue
+        
+        if model == "lumi.ctrl_neutral2" and ep not in ("02", "03"):
+            continue
+
+        for Cluster in READ_ATTRIBUTES_REQUEST:
+            # We process ALL available clusters for a particular EndPoint
+
+            if ( Cluster not in READ_ATTRIBUTES_REQUEST or Cluster not in device_infos["Ep"][ep] ):
+                continue
+
+            if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+                self.log.logging( "Heartbeat", "Debug", "process_read_attributes  -  %s skip ReadAttribute for now ... system too busy (%s/%s)" % (
+                    Nwkid, self.busy, self.ControllerLink.loadTransmit()), Nwkid, )
+                process_next_ep_later = True
+
+            if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
+                timing = self.pluginconf.pluginConf[READ_ATTRIBUTES_REQUEST[Cluster][1]]
+            else:
+                self.log.logging( "Heartbeat", "Error", "proprocess_read_attributescessKnownDevices - missing timing attribute for Cluster: %s - %s" % (
+                    Cluster, READ_ATTRIBUTES_REQUEST[Cluster][1]) )
+                continue
+
+            # Let's check the timing
+            if not is_time_to_perform_work(self, "ReadAttributes", Nwkid, ep, Cluster, now, timing):
+                continue
+
+            self.log.logging( "Heartbeat", "Debug", "process_read_attributes -  %s/%s and time to request ReadAttribute for %s" % (
+                Nwkid, ep, Cluster), Nwkid, )
+
+            func = READ_ATTRIBUTES_REQUEST[Cluster][0]
+            func(self, Nwkid)
+            
+            if process_next_ep_later:
+                return True
+    return False
 
 def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
     
