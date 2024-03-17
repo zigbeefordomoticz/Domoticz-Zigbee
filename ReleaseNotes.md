@@ -18,6 +18,9 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+## March 2024 - stable7.1.011 ( 2024.03.1)
+
+- [Hardware] - Tuya SOS remote
 
 ## March 2024 - stable7.1.010 ( 2024.03)
 
