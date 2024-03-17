@@ -705,7 +705,7 @@ def update_battery_api(self, Devices, DeviceId, battery_level):
     self.log.logging("AbstractDz", "Debug", f"update_battery_api: {DeviceId} to {battery_level}")
           
     if DOMOTICZ_EXTENDED_API:
-        if  DeviceId in Devices:
+        if DeviceId in Devices:
             units = Devices[DeviceId].Units
             for unit in units:
                 update_battery_device_unit_api(self, Devices, DeviceId, unit,battery_level)

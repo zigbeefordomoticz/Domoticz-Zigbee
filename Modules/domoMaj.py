@@ -1674,6 +1674,5 @@ def _retreive_summation_power(self, NwkId, Ep):
     if "0702" in self.ListOfDevices[NwkId]["Ep"][Ep] and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]:
         value_0000 = self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]["0000"]
         if value_0000 not in ({}, "", "0"):
-            return  int(float(value_0000))
-
+            return int(float(value_0000))
     return None
