@@ -205,6 +205,7 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
         
     except Exception as e:
             self.log.logging( "TransportZigpy", "Error", "Error while starting radio %s on port: %s - Error: %s" %( radiomodule, serialPort, e) )
+            return
 
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging( "TransportZigpy", "Status", "Coordinator initialisation requested  Channel %s(0x%02x) ExtendedPanId: 0x%016x" % (
@@ -214,7 +215,7 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
     else:
         new_network = False
 
-    if self.use_of_zigpy_persistent_db:
+    if self.use_of_zigpy_persistent_db and self.app:
         self.log.logging( "TransportZigpy", "Status", "Use of zigpy Persistent Db")
         await self.app._load_db()
 
@@ -226,11 +227,9 @@ def ezsp_configuration_setup(self, conf, serialPort):
     config = {
         conf.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
         conf.CONF_NWK: {},
-        conf.CONF_EZSP_CONFIG: {
-        },
-        zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
+        conf.CONF_EZSP_CONFIG: {},
         "handle_unknown_devices": True,
-        }
+    }
     
     if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
         self.log.logging("TransportZigpy", "Status", "Set The maximum number of end device children that Coordinater will support to 0")
@@ -249,8 +248,7 @@ def znp_configuration_setup(self, conf, serialPort):
         conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, 
         conf.CONF_NWK: {},
         conf.CONF_ZNP_CONFIG: { },
-        zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
-        }
+    }
     if specific_endpoints(self):
         config[ conf.CONF_ZNP_CONFIG][ "prefer_endpoint_1" ] = False
     
@@ -264,21 +262,29 @@ def deconz_configuration_setup(self, conf, serialPort):
     return {
         conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200},
         conf.CONF_NWK: {},
-        zigpy.config.CONF_TOPO_SCAN_ENABLED: False,
         # zigpy.config.CONF_STARTUP_ENERGY_SCAN: False
     }
 
 
 def optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel):
+
+    # Enable or not Source Routing based on zigpySourceRouting setting
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )
 
+    # Disable zigpy conf topo scan by default
+    config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = False
+
+    # Config Zigpy db. if not defined, there is no persistent Db.
     if "enableZigpyPersistentInFile" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInFile"]:
         data_folder = Path( self.pluginconf.pluginConf["pluginData"] )
         config[zigpy.config.CONF_DATABASE] = str(data_folder / ("zigpy_persistent_%02d.db"% self.hardwareid) )
+        config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = True
 
     elif "enableZigpyPersistentInMemory" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]:
         config[zigpy.config.CONF_DATABASE] = ":memory:"
-        
+        config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = True
+
+    # Manage coordinator auto backup
     if "autoBackup" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoBackup"]:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = True
         config[zigpy.config.CONF_NWK_BACKUP_PERIOD] = self.pluginconf.pluginConf["autoBackup"]
@@ -287,10 +293,11 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
 
     if set_extendedPanId != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % ( t.EUI64(t.uint64_t(set_extendedPanId).serialize()) )
-        
+
     if set_channel != 0:
         config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
 
+    # Do we do energy scan at startup. By default it is set to False. Plugin might override it in the case of low number of devices.
     if "EnergyScanAtStatup" in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["EnergyScanAtStatup"]:
         config[zigpy.config.CONF_STARTUP_ENERGY_SCAN] = False
 
