@@ -589,13 +589,13 @@ SWITCH_SELECTORS = {
         "ForceUpdate": False
     },
     "SOS": {
-        "00": (0, "No Alert"),
-        "01": (4, "Critical"),
+        "01": (1, "On"),
         "ForceUpdate": True
     },
     "Smoke": {
         "00": (0, "Off"),
         "01": (1, "On"),
+        "02": (1, "On"),
         "ForceUpdate": False
     },
     "Switch": {

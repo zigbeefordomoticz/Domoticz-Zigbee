@@ -117,7 +117,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
 
         elif Command == "02":
             # Emergency
-            MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "02")
+            MajDomoDevice(self, Devices, srcnwkid, srcep, "0006", "01")
 
         return
 
