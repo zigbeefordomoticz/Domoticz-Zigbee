@@ -1667,7 +1667,7 @@ def ReadAttributeRequest_fc11(self, key):
                 f"Request Legrand attributes info via Read Attribute request: {key} EPout = {ep_out}",
                 nwkid=key,
             )
-            ReadAttributeReq(self, key, ZIGATE_EP, ep_out, "fc11", list_attributes, ack_is_disabled=is_ack_tobe_disabled(self, key))
+            ReadAttributeReq(self, key, ZIGATE_EP, ep_out, "fc11", list_attributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 def ReadAttributeRequest_fc21(self, key):
     # Cluster PFX Profalux/ Manufacturer specific
