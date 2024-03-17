@@ -784,7 +784,7 @@ class WebServer(object):
         if len(parameters) == 0:
             # Return the Full List of ZiGate Domoticz Widget
             device_lst = [
-                getDeviceInfos(widget_idx)
+                getDeviceInfos(self, widget_idx)
                 for widget_idx in self.ListOfDomoticzWidget
                 if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
             ]
@@ -796,12 +796,12 @@ class WebServer(object):
                     len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
                     and parameters[0] == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
                 ):
-                    _response["Data"] = json.dumps(getDeviceInfos(widget_idx), sort_keys=True)
+                    _response["Data"] = json.dumps(getDeviceInfos(self, widget_idx), sort_keys=True)
                     break
 
         else:
             device_lst = [
-                getDeviceInfos(widget_idx)
+                getDeviceInfos(self, widget_idx)
                 for parm in parameters
                 for widget_idx in self.ListOfDomoticzWidget
                 if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
@@ -863,47 +863,54 @@ class WebServer(object):
                         continue
 
                     device = {"_NwkId": x}
-                    for item in ( "Param", "ZDeviceName", "IEEE", "Model", "MacCapa", "Status", "ConsistencyCheck", "Health", "LQI", "Battery", "CertifiedDevice" ):
-                        if item == "CertifiedDevice" and "CertifiedDevice" in self.ListOfDevices[x]:
+                    for item in ( "CheckParam", "Param", "ZDeviceName", "IEEE", "Model", "MacCapa", "Status", "ConsistencyCheck", "Health", "LQI", "Battery", "CertifiedDevice" ):
+                        if item not in self.ListOfDevices[x]:
+                            if item == "Param":
+                                device[item] = str({})
+                            if item == "CheckParam":
+                                device[item] = False
+                            else:
+                                device[item] = ""
+                            continue
+
+                        if item == "CertifiedDevice":
                             device[item] = self.ListOfDevices[x][item]
 
+                        elif item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, "") and "IASBattery" in self.ListOfDevices[x]:
+                            device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
 
-                        elif item in self.ListOfDevices[x]:
-                            if item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, ) and "IASBattery" in self.ListOfDevices[x]:
-                                device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
-                            elif item == "MacCapa":
-                                device["MacCapa"] = []
-                                mac_capability = int(self.ListOfDevices[x][item], 16)
-                                AltPAN = mac_capability & 0x00000001
-                                DeviceType = (mac_capability >> 1) & 1
-                                PowerSource = (mac_capability >> 2) & 1
-                                ReceiveonIdle = (mac_capability >> 3) & 1
-                                if DeviceType == 1:
-                                    device["MacCapa"].append("FFD")
-                                else:
-                                    device["MacCapa"].append("RFD")
-                                if ReceiveonIdle == 1:
-                                    device["MacCapa"].append("RxonIdle")
-                                if PowerSource == 1:
-                                    device["MacCapa"].append("MainPower")
-                                else:
-                                    device["MacCapa"].append("Battery")
-                                self.logging(
-                                    "Debug",
-                                    "decoded MacCapa from: %s to %s" % (self.ListOfDevices[x][item], str(device["MacCapa"])),
-                                )
-                            elif item == "Param":
-                                device[item] = str(self.ListOfDevices[x][item])
+                        elif item == "CheckParam":
+                            device["CheckParam"] = True if self.ListOfDevices[x]["CheckParam"] else False
+
+                        elif item == "MacCapa":
+                            device["MacCapa"] = []
+                            mac_capability = int(self.ListOfDevices[x][item], 16)
+                            AltPAN = mac_capability & 0x00000001
+                            DeviceType = (mac_capability >> 1) & 1
+                            PowerSource = (mac_capability >> 2) & 1
+                            ReceiveonIdle = (mac_capability >> 3) & 1
+                            if DeviceType == 1:
+                                device["MacCapa"].append("FFD")
                             else:
-                                if self.ListOfDevices[x][item] == {}:
-                                    device[item] = ""
-                                else:
-                                    device[item] = self.ListOfDevices[x][item]
+                                device["MacCapa"].append("RFD")
+                            if ReceiveonIdle == 1:
+                                device["MacCapa"].append("RxonIdle")
+                            if PowerSource == 1:
+                                device["MacCapa"].append("MainPower")
+                            else:
+                                device["MacCapa"].append("Battery")
+                            self.logging( "Debug", "decoded MacCapa from: %s to %s" % (
+                                self.ListOfDevices[x][item], str(device["MacCapa"])), )
+
                         elif item == "Param":
-                            # Seems unknown, so let's create it
-                            device[item] = str({})
+                            device[item] = str(self.ListOfDevices[x][item])
+
                         else:
-                            device[item] = ""
+                            if self.ListOfDevices[x][item] == {}:
+                                device[item] = ""
+                            else:
+                                device[item] = self.ListOfDevices[x][item]
+                                    
 
                     device["WidgetList"] = []
                     for ep in self.ListOfDevices[x]["Ep"]:
@@ -1033,6 +1040,8 @@ class WebServer(object):
                         "App Version",
                         "Stack Version",
                         "HW Version",
+                        "Param",
+                        "CheckParam"
                     ):
                         if attribut == "Battery" and attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item]["Battery"] in ( {}, ) and "IASBattery" in self.ListOfDevices[item]:
@@ -1040,6 +1049,12 @@ class WebServer(object):
                             elif isinstance( self.ListOfDevices[item]["Battery"], int):
                                 device[attribut] = self.ListOfDevices[item]["Battery"]
                                 device["BatteryInside"] = True
+                                
+                        elif item == "CheckParam":
+                            device[attribut] = True if "CheckParam" in self.ListOfDevices[item] and self.ListOfDevices[item]["CheckParam"] else False
+        
+                        elif item == "Param":
+                            device[attribut] = str(self.ListOfDevices[item][attribut])
 
                         elif attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
