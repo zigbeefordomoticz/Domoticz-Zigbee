@@ -356,27 +356,27 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
 
 
 def ReadAttributeRequest_0000_for_pairing(self, key):
-    self.log.logging("ReadAttributes", "Log", "--> Not full scope", nwkid=key)
-    self.log.logging("ReadAttributes", "Log", "--> Build list of Attributes", nwkid=key)
+    self.log.logging("ReadAttributes", "Debug", "--> Not full scope", nwkid=key)
+    self.log.logging("ReadAttributes", "Debug", "--> Build list of Attributes", nwkid=key)
 
     listAttributes = []
     ListOfEp = getListOfEpForCluster(self, key, "0000")
-    self.log.logging("ReadAttributes", "Log", "--> ListOfEp with 0x0000: %s" %str(ListOfEp), nwkid=key)
+    self.log.logging("ReadAttributes", "Debug", "--> ListOfEp with 0x0000: %s" %str(ListOfEp), nwkid=key)
     if len(ListOfEp) == 0 and "Ep" in self.ListOfDevices[key]:
         for x in self.ListOfDevices[ key ]["Ep"]:
             ListOfEp.append( x )
 
-    self.log.logging("ReadAttributes", "Log", "--> Build list Eps for Cluster Basic %s" %str(ListOfEp), nwkid=key)
+    self.log.logging("ReadAttributes", "Debug", "--> Build list Eps for Cluster Basic %s" %str(ListOfEp), nwkid=key)
 
     # Do we Have Manufacturer
     if ListOfEp and self.ListOfDevices[key]["Manufacturer Name"] in [ {}, ""]:
-        self.log.logging("ReadAttributes", "Log", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
+        self.log.logging("ReadAttributes", "Debug", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
         if 0x0004 not in listAttributes:
             listAttributes.append(0x0004)
 
     # Do We have Model Name
     if ( ListOfEp and self.ListOfDevices[key]["Model"] in [ {}, ""] ):
-        self.log.logging("ReadAttributes", "Log", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
+        self.log.logging("ReadAttributes", "Debug", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
         if 0x0005 not in listAttributes:
             listAttributes.append(0x0005)
 
@@ -386,14 +386,14 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             listAttributes.append(0x0010)
 
     elif self.ListOfDevices[key]["Manufacturer"] == "Legrand":
-        self.log.logging("ReadAttributes", "Log", "----> Adding: %s" % "f000", nwkid=key)
+        self.log.logging("ReadAttributes", "Debug", "----> Adding: %s" % "f000", nwkid=key)
         if 0x4000 not in listAttributes:
             listAttributes.append(0x4000)
         if 0xF000 not in listAttributes:
             listAttributes.append(0xF000)
             
     elif self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
-        self.log.logging("ReadAttributes", "Log", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
+        self.log.logging("ReadAttributes", "Debug", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
         listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
 
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
@@ -402,18 +402,18 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     ieee = self.ListOfDevices[ key ]['IEEE']
     if len(ListOfEp) == 0:
         # We don't have yet any Endpoint information , we will then try several known Endpoint, and luckly we will get some answers
-        self.log.logging( "ReadAttributes", "Log", "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
+        self.log.logging( "ReadAttributes", "Debug", "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
 
         if ( ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
-            self.log.logging( "ReadAttributes", "Log", "Request Basic  Opple : " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
+            self.log.logging( "ReadAttributes", "Debug", "Request Basic  Opple : " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
         elif ( ieee[: len(DEVELCO_PREFIX)] in DEVELCO_PREFIX):
-            self.log.logging( "ReadAttributes", "Log", "Request Basic  Develco : " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
+            self.log.logging( "ReadAttributes", "Debug", "Request Basic  Develco : " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
             ReadAttributeReq(self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
             
         elif ieee[:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:  
-            self.log.logging( "ReadAttributes", "Log", "Request Basic  Tuya : " + key + " EPout = " + "01", nwkid=key, )
+            self.log.logging( "ReadAttributes", "Debug", "Request Basic  Tuya : " + key + " EPout = " + "01", nwkid=key, )
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
             
@@ -494,7 +494,7 @@ def ReadAttributeRequest_0000_for_general(self, key):
         manufacturer_code = "0000"
 
         if self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
-            self.log.logging("ReadAttributes", "Log", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
+            self.log.logging("ReadAttributes", "Debug", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
             listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
 
         elif (

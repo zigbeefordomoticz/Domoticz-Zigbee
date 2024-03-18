@@ -665,7 +665,7 @@ def processKnownDevices(self, Devices, NWKID):
         return
             
     if _doReadAttribute:
-        self.log.logging( "Heartbeat", "Log", "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" % (
+        self.log.logging( "Heartbeat", "Debug", "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" % (
             NWKID, intHB, _mainPowered, _doReadAttribute), NWKID, )
         rescheduleAction = rescheduleAction or process_read_attributes(self, NWKID, model)
 
@@ -715,7 +715,7 @@ def processKnownDevices(self, Devices, NWKID):
 
 
 def process_read_attributes(self, Nwkid, model):
-    self.log.logging( "Heartbeat", "Log", f"process_read_attributes  -  for {Nwkid} {model}")
+    self.log.logging( "Heartbeat", "Debug", f"process_read_attributes  -  for {Nwkid} {model}")
     process_next_ep_later = False
     now = int(time.time())  # Will be used to trigger ReadAttributes
     
@@ -745,7 +745,7 @@ def process_read_attributes(self, Nwkid, model):
                 timing = self.pluginconf.pluginConf[READ_ATTRIBUTES_REQUEST[Cluster][1]]
             else:
                 self.log.logging( "Heartbeat", "Error", "proprocess_read_attributescessKnownDevices - missing timing attribute for Cluster: %s - %s" % (
-                    Cluster, READ_ATTRIBUTES_REQUEST[Cluster][1]) )
+                    Cluster, READ_ATTRIBUTES_REQUEST[Cluster][1]), Nwkid )
                 continue
 
             # Let's check the timing

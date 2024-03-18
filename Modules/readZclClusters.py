@@ -91,8 +91,20 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     if _ranges is not None:
         checking_ranges = _check_range( self, value, MsgAttType, _ranges, )
         if checking_ranges is not None and not checking_ranges:
+            _context = {
+                "Source": str(Source),
+                "Model": str(device_model),
+                "MsgClusterId": str(MsgClusterId),
+                "MsgSrcEp": str(MsgSrcEp),
+                "MsgAttrID": str(MsgAttrID),
+                "MsgAttType": str(MsgAttType),
+                "MsgAttSize": str(MsgAttSize),
+                "MsgClusterData": str(MsgClusterData),
+                "checking_ranges": str(checking_ranges),
+                "ranges": str(_ranges),
+            }
             self.log.logging("ZclClusters", "Error", " %s/%s %s %s . value out of ranges : %s -> %s" %( 
-                MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, str(_ranges) ))
+                MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, str(_ranges) ),nwkid=MsgSrcAddr, context=_context )
     
     _eval_inputs = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExpCustomVariables", model=device_model)
     _function = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalFunc", model=device_model)
