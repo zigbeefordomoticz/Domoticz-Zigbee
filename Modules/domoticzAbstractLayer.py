@@ -467,7 +467,7 @@ def domo_update_name(self, Devices, DeviceID_, Unit_, Name_):
         
     nValue = Devices[Unit_].nValue
     sValue = Devices[Unit_].sValue
-    Devices[Unit_].Update(nValue, sValue, Name=Name_)
+    Devices[Unit_].Update(nValue=nValue, sValue=sValue, Name=Name_)
 
 
 def domo_update_witchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0, Subtype_=0, Switchtype_=0):
@@ -486,7 +486,7 @@ def domo_update_witchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0,
     
     nValue = Devices[Unit_].nValue
     sValue = Devices[Unit_].sValue
-    Devices[Unit_].Update(nValue, sValue, Type=Type_, SubType=Subtype_, SwitchType=Switchtype_)
+    Devices[Unit_].Update(nValue=nValue, sValue=sValue, Type=Type_, SubType=Subtype_, SwitchType=Switchtype_)
 
 
 def domo_browse_widgets(self, Devices):
