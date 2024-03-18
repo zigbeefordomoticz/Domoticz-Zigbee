@@ -843,6 +843,7 @@ def processListOfDevices(self, Devices):
 
         if "Param" in self.ListOfDevices[NWKID] and "Disabled" in self.ListOfDevices[NWKID]["Param"]:
             if self.ListOfDevices[NWKID]["Param"]["Disabled"] and self.ListOfDevices[NWKID]["Health"] == "Disabled":
+                self.ListOfDevices[NWKID]["CheckParam"] = False
                 continue
             
             if not self.ListOfDevices[NWKID]["Param"]["Disabled"] and self.ListOfDevices[NWKID]["Health"] == "Disabled":
