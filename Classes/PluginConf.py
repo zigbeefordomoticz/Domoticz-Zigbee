@@ -317,6 +317,7 @@ SETTINGS = {
             "ZiGateReactTime": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Zigpy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ZigpyEZSP": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ZigpyTopology": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ZigpyZNP": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ZigpyZigate": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ZigpydeCONZ": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
