@@ -279,10 +279,12 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
         data_folder = Path( self.pluginconf.pluginConf["pluginData"] )
         config[zigpy.config.CONF_DATABASE] = str(data_folder / ("zigpy_persistent_%02d.db"% self.hardwareid) )
         config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = True
+        config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 4 * 60  # 4 Hours
 
     elif "enableZigpyPersistentInMemory" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]:
         config[zigpy.config.CONF_DATABASE] = ":memory:"
         config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = True
+        config[zigpy.config.CONF_TOPO_SCAN_PERIOD] = 4 * 60  # 4 Hours
 
     # Manage coordinator auto backup
     if "autoBackup" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoBackup"]:
