@@ -4,7 +4,7 @@
 # Author: deufo, badz & pipiche38
 #
 
-import asyncio
+import collections
 import logging
 
 import bellows.config as bellows_conf
@@ -248,6 +248,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
     async def network_interference_scan(self):
         await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
+
+
+    def get_topology(self):
+        return self.topology.neighbors, self.topology.routes
 
 
     def is_bellows(self):

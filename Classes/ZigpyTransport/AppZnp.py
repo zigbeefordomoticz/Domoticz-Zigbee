@@ -207,6 +207,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
 
 
+    def get_topology(self):
+        return self.topology.neighbors, self.topology.routes
+
+
     def is_bellows(self):
         return False
 
