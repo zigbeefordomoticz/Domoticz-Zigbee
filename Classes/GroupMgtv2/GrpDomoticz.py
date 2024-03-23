@@ -18,7 +18,7 @@ from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.domoticzAbstractLayer import (
     FreeUnit, domo_create_api, domo_delete_widget, domo_read_Name,
     domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
-    domo_update_api, domo_update_name, domo_update_witchType_SubType_Type,
+    domo_update_api, domo_update_name, domo_update_SwitchType_SubType_Type,
     find_first_unit_widget_from_deviceID)
 from Modules.tools import Hex_Format, is_hex
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
@@ -111,26 +111,22 @@ def update_domoticz_group_device_widget_name(self, GroupName, GroupId):
 
 def update_domoticz_group_device_widget(self, GroupId):
 
-    # Due to bug https://github.com/domoticz/domoticz/issues/6027 (on extended Framework ), this function  is not supported anymore
-    
-    return
-    
-    # self.logging("Debug", "update_domoticz_group_device_widget GroupId: %s" % GroupId)
-    # if GroupId == "":
-    #     self.logging("Error", "update_domoticz_group_device_widget - Invalid GroupdID: %s" % (GroupId))
-# 
-    # unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
-    # if unit is None:
-    #     self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
-    #     LookForGroupAndCreateIfNeeded(self, GroupId)
-    #     return
-# 
-    # Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
-    # current_switchType, current_Subtype, current_Type = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
-    # self.logging( "Debug", "      Looking to update Unit: %s from %s %s %s to %s %s %s"% (
-    #     unit, current_Type, current_Subtype, current_switchType, Type_, Subtype_, SwitchType_, ),)
-# 
-    # domo_update_witchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_)
+    self.logging("Debug", "update_domoticz_group_device_widget GroupId: %s" % GroupId)
+    if GroupId == "":
+        self.logging("Error", "update_domoticz_group_device_widget - Invalid GroupdID: %s" % (GroupId))
+
+    unit = find_first_unit_widget_from_deviceID(self, self.Devices, GroupId)
+    if unit is None:
+        self.logging( "Debug", f"update_domoticz_group_device_widget_name - no unit found for GroupId {GroupId} - {self.ListOfGroups[GroupId]}" )
+        LookForGroupAndCreateIfNeeded(self, GroupId)
+        return
+
+    Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
+    current_switchType, current_Subtype, current_Type = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
+    self.logging( "Debug", "      Looking to update Unit: %s from %s %s %s to %s %s %s"% (
+        unit, current_Type, current_Subtype, current_switchType, Type_, Subtype_, SwitchType_, ),)
+
+    domo_update_SwitchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_)
 
 
 def best_group_widget(self, GroupId):

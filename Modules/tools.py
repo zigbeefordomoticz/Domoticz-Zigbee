@@ -1379,19 +1379,13 @@ def is_domoticz_db_available(self):
 
     return True
 
-
 def get_device_nickname(self, NwkId=None, Ieee=None):
-    if Ieee and Ieee in self.IEEE2NWK:
-        NwkId = self.IEEE2NWK[Ieee]
+    if Ieee:
+        NwkId = self.IEEE2NWK.get(Ieee, NwkId)
 
-    device_name = self.ListOfDevices.get(NwkId, {}).get('ZDeviceName', None)
+    return self.ListOfDevices.get(NwkId, {}).get('ZDeviceName', "")
+
     
-    if device_name and device_name not in ('', {}):
-        return device_name
-
-    return None
-
-
 def extract_info_from_8085(MsgData):
     step_mod = MsgData[14:16]
     up_down = MsgData[16:18] if len(MsgData) >= 18 else None
@@ -1575,8 +1569,6 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
         return
            
     device_name = get_device_nickname( self, NwkId=NwkId)
-    if device_name is None:
-        device_name = ""
 
     self.log.logging("Plugin", "Log", "We have detected a working device %s (%s) Model: %s not optimized with the plugin. " %( 
         get_device_nickname( self, NwkId=NwkId), NwkId, Model, ))

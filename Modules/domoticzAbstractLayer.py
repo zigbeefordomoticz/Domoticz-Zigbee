@@ -470,19 +470,18 @@ def domo_update_name(self, Devices, DeviceID_, Unit_, Name_):
     Devices[Unit_].Update(nValue=nValue, sValue=sValue, Name=Name_)
 
 
-def domo_update_witchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0, Subtype_=0, Switchtype_=0):
+def domo_update_SwitchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0, Subtype_=0, Switchtype_=0):
  
-    self.log.logging("AbstractDz", "Debug", "domo_update_witchType_SubType_Type DeviceID: %s,Unit: %s,Type: %s,Subtype: %s,Switchtype: %s" %(
+    self.log.logging("AbstractDz", "Debug", "domo_update_SwitchType_SubType_Type DeviceID: %s,Unit: %s,Type: %s,Subtype: %s,Switchtype: %s" %(
         DeviceID_, Unit_, Type_, Subtype_, Switchtype_))
 
     if DOMOTICZ_EXTENDED_API:
         # Due to bug https://github.com/domoticz/domoticz/issues/6027 (on extended Framework )
-        return
         # Devices[DeviceID_].Units[Unit_].Type = Type_
         # Devices[DeviceID_].Units[Unit_].SubType = Subtype_
         # Devices[DeviceID_].Units[Unit_].SwitchType = Switchtype_
         # Devices[DeviceID_].Units[Unit_].Update(Log=True)
-        # return
+        return
     
     nValue = Devices[Unit_].nValue
     sValue = Devices[Unit_].sValue
