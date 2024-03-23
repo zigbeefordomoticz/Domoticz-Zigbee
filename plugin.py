@@ -165,6 +165,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
+from Classes.ZigpyTopology import ZigpyTopology
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -199,6 +200,7 @@ class BasePlugin:
         self.ControllerLink= None
         self.groupmgt = None
         self.networkmap = None
+        self.zigpy_topology = None
         self.networkenergy = None
         self.domoticzdb_DeviceStatus = None  # Object allowing direct access to Domoticz DB DeviceSatus
         self.domoticzdb_Hardware = None  # Object allowing direct access to Domoticz DB Hardware
@@ -842,6 +844,10 @@ class BasePlugin:
             if (self.internalHB % HEARTBEAT) != 0:
                 return
             self.HeartbeatCount += 1
+            
+        if self.zigpy_topology and (self.internalHB % 60) == 0:
+            self.log.logging("Plugin", "Log", "onHeartbeat request update zigpy topology")
+            self.zigpy_topology.retreive_infos_from_zigpy()
 
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
@@ -1249,6 +1255,12 @@ def zigateInit_Phase3(self):
         self.networkmap = NetworkMap(
             self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
         )
+    
+    if self.zigpy_topology is None:
+        self.zigpy_topology = ZigpyTopology(
+            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, Devices, self.HardwareID, self.log
+        )
+
     if self.networkmap:
         self.webserver.update_networkmap(self.networkmap)
 
