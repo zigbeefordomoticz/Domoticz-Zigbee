@@ -175,25 +175,36 @@ class IAS_Zone_Management:
         set_IAS_CIE_Address(self, NwkId, Epout)
         del self.ListOfDevices[NwkId]["Param"]["ForceIASRegistrationEp"]
 
-    def IAS_CIE_service_discovery_response( self, NwkId, ep, Data):
+
+    def IAS_CIE_service_discovery_response(self, NwkId, ep, Data):
         self.logging("Debug", f"IAS device Enrollment for {NwkId} - received a Read Attribute Response on Discovery Request for Ep: {ep}")
         attributes = retreive_attributes(self, Data)
         self.logging("Debug", f"         Attributes : {attributes}")
-        if IAS_ATTRIBUT_ZONE_STATE not in attributes:
+
+        zone_state_attr = attributes.get(IAS_ATTRIBUT_ZONE_STATE, {})
+        zone_state_status = zone_state_attr.get("Status")
+
+        if zone_state_status is None:
             self.logging("Debug", f"IAS device Enrollment for {NwkId} - Attribute {IAS_ATTRIBUT_ZONE_STATE} not found in {attributes}")
             return
-        if attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Status"] != "00":
-            self.logging("Debug", f"IAS device Enrollment for {NwkId} - Attribute {IAS_ATTRIBUT_ZONE_STATE} Status: {attributes[ IAS_ATTRIBUT_ZONE_STATE ]['Status']}")
-            
-        if attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Value"] == "00":
+
+        if zone_state_status != "00":
+            self.logging("Debug", f"IAS device Enrollment for {NwkId} - Attribute {IAS_ATTRIBUT_ZONE_STATE} Status: {zone_state_status}")
+            return
+
+        zone_state_value = zone_state_attr.get("Value")
+        if zone_state_value is None:
+            return
+
+        if zone_state_value == "00":
             # Not Enrolled, let's start the process
-            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "set IAS CIE Address"
+            self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "set IAS CIE Address"
             set_IAS_CIE_Address(self, NwkId, ep)
-        elif attributes[ IAS_ATTRIBUT_ZONE_STATE ]["Value"] == "01":
+        elif zone_state_value == "01":
             # Enrolled, let's req the IAS ICE address
             check_IAS_CIE_Address(self, NwkId, ep)
-            self.ListOfDevices[ NwkId ]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "Enrolled"
-          
+            self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Ep"][ep]["Status"] = "Enrolled"
+
         if is_device_enrollment_completed(self, NwkId):
             self.ListOfDevices[NwkId]["IAS"]["Auto-Enrollment"]["Status"] = "Enrolled"
 
