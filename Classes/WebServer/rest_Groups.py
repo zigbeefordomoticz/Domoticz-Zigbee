@@ -278,6 +278,8 @@ def _zgroup_get(self, parameters):
 
         zgroup["WidgetStyle"] = group_info.get("WidgetStyle", "")
         zgroup["Cluster"] = group_info.get("Cluster", "")
+        zgroup["nValue"] = group_info.get("nValue", "")
+        zgroup["sValue"] = group_info.get("sValue", "")
 
         if "Tradfri Remote" in group_info:
             zgroup["Devices"].append(  {"_NwkId": group_info["Tradfri Remote"]} )
