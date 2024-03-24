@@ -421,9 +421,10 @@ def update_domoticz_group_device(self, GroupId):
     group_name = domo_read_Name( self, self.Devices, GroupId, unit )
     self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > from %s:%s to %s:%s" % (
         GroupId, current_nValue, current_sValue, nValue, sValue), )
-    
-    
+
     if nValue != current_nValue or sValue != current_sValue:
+        self.ListOfGroups[GroupId]["nValue"] = nValue
+        self.ListOfGroups[GroupId]["nValue"] = sValue
         self.logging("Log", f"UpdateGroup  - ({group_name:>15}) {nValue}:{sValue}")
         domo_update_api(self, self.Devices, GroupId, unit, nValue, sValue)
 
