@@ -458,16 +458,19 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
 
 
 def domo_update_name(self, Devices, DeviceID_, Unit_, Name_):
-    self.log.logging("AbstractDz", "Debug", "domo_update_name: DeviceID_ : %s Unit_: %s Name: %s" %(DeviceID_, Unit_, Name_))
+    self.log.logging("AbstractDz", "Log", "domo_update_name: DeviceID_ : %s Unit_: %s Name: %s" %(DeviceID_, Unit_, Name_))
 
     if DOMOTICZ_EXTENDED_API and Devices[DeviceID_].Units[Unit_].Name != Name_:
             Devices[DeviceID_].Units[Unit_].Name = Name_
             Devices[DeviceID_].Units[Unit_].Update(Log=True)
             return
-        
-    nValue = Devices[Unit_].nValue
-    sValue = Devices[Unit_].sValue
-    Devices[Unit_].Update(nValue=nValue, sValue=sValue, Name=Name_)
+
+    update_params = {
+        'nValue': Devices[Unit_].nValue,
+        'sValue': Devices[Unit_].sValue,
+        'Name': Name_,
+    }
+    Devices[Unit_].Update(**update_params)
 
 
 def domo_update_SwitchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0, Subtype_=0, Switchtype_=0):
@@ -478,14 +481,19 @@ def domo_update_SwitchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0
     if DOMOTICZ_EXTENDED_API:
         # Due to bug https://github.com/domoticz/domoticz/issues/6027 (on extended Framework )
         # Devices[DeviceID_].Units[Unit_].Type = Type_
-        # Devices[DeviceID_].Units[Unit_].SubType = Subtype_
-        # Devices[DeviceID_].Units[Unit_].SwitchType = Switchtype_
+        # Devices[DeviceID_].Units[Unit_].Subtype = Subtype_
+        # Devices[DeviceID_].Units[Unit_].Switchtype = Switchtype_
         # Devices[DeviceID_].Units[Unit_].Update(Log=True)
         return
     
-    nValue = Devices[Unit_].nValue
-    sValue = Devices[Unit_].sValue
-    Devices[Unit_].Update(nValue=nValue, sValue=sValue, Type=Type_, SubType=Subtype_, SwitchType=Switchtype_)
+    update_params = {
+        'nValue': Devices[Unit_].nValue,
+        'sValue': Devices[Unit_].sValue,
+        'Type': Type_,
+        'Subtype': Subtype_,
+        'Switchtype': Switchtype_
+    }
+    Devices[Unit_].Update(**update_params)
 
 
 def domo_browse_widgets(self, Devices):
