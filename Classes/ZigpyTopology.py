@@ -10,8 +10,9 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-import zigpy.types as t
 import traceback
+
+import zigpy.types as t
 
 
 class ZigpyTopology:
@@ -27,30 +28,19 @@ class ZigpyTopology:
         self.log = log
         self.FirmwareVersion = None
 
-        self._NetworkMapPhase = 0
-        self.LQIreqInProgress = []
-        self.LQIticks = 0
+        self.neighbors_table = {}
 
 
     def retreive_infos_from_zigpy(self):
         self.log.logging("ZigpyTopology", "Log", "retreive_infos_from_zigpy")
         try:
             neighbors, routes = self.ControllerLink.app.get_topology()
-            self.ListOfDevices[ "0000" ][ "ZigpyNeighbors"] = list( build_zigpy_neighbors(self, neighbors) )
-            self.ListOfDevices[ "0000" ][ "ZigpyRoutes"] = list( build_zigpy_routes(self, routes) )
+            self.ListOfDevices[ "0000" ][ "ZigpyNeighbors"] = build_zigpy_neighbors(self, neighbors)
+            self.ListOfDevices[ "0000" ][ "ZigpyRoutes"] = build_zigpy_routes(self, routes)
         except Exception as e:
             self.log.logging("ZigpyTopology", "Log", f"Error while requesting get_topology() - {e}")
             self.log.logging("ZigpyTopology", "Log", f"{(traceback.format_exc())}")
     
-
-    def log_zigpy_routes(self):
-        self.log.logging("ZigpyTopology", "Log", "Routes Table")
-        for ieee, route_info in self.zigpy_routes.items():
-            ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
-            for route in route_info:
-                dst_nwk = route.DstNWK
-                self.log.logging("ZigpyTopology", "Log", f" - {ieee}: {dst_nwk}")
-
 
 def build_zigpy_neighbors(self, neighbors):
     """ Build a list of Neighbor tuples """
@@ -64,30 +54,102 @@ def build_zigpy_neighbors(self, neighbors):
         
         nwkid_parent = self.IEEE2NWK[ ieee_parent ]
         for neighbor in neighbor_list:
-
-            ieee_neighbor = "%016x" % t.uint64_t.deserialize(neighbor.ieee.serialize())[0]
-            if ieee_neighbor not in ieee2nwk_keys:
+            neighbor_info_dict = parse_neigbor_infos(neighbor)
+            
+            if neighbor_info_dict["ieee_neighbor"] not in ieee2nwk_keys:
                 continue
 
-            nwkid_neighbor = neighbor.nwk.serialize()[::-1].hex()
-            if nwkid_neighbor not in self.ListOfDevices:
+            if neighbor_info_dict["nwkid_neighbor"] not in self.ListOfDevices:
                 continue
+            
+            add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict)
+            #relation_ship_tuple = retreive_relationship( nwkid_parent, neighbor_info_dict)
+            #if relation_ship_tuple:
+            #    raw_neighbors_set.add( relation_ship_tuple )
 
-            relationship = neighbor.relationship
-            if relationship == 0x00:  # Relationship.Parent
-                raw_neighbors_set.add( (nwkid_neighbor, nwkid_parent, "child") )
+    return self.neighbors_table
 
-            elif relationship == 0x01:  # Relationship.Child
-                raw_neighbors_set.add( (nwkid_parent, nwkid_neighbor, "child") )
+def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict):
+    nwkid_neighbor = neighbor_info_dict["nwkid_neighbor"]
+    
+    if nwkid_neighbor not in self.neighbors_table:
+        self.neighbors_table[ nwkid_neighbor ] = {
+            "ieee": neighbor_info_dict[ "ieee_neighbor"],
+            "device_type": neighbor_info_dict[ "device_type"],
+            "rx_on_when_idle": neighbor_info_dict[ "rx_on_when_idle"],
+            "relationship": [],  # Initialize as empty list
+            "permit_joining": neighbor_info_dict[ "permit_joining"],
+            "lqi_from_device": neighbor_info_dict[ "lqi"],
+        }
+        
+    # Check if the relationship exists before adding it
+    relationship_exists = any(
+        rel["nwkid"] == nwkid_parent and rel["ieee"] == ieee_parent
+        for rel in self.neighbors_table[nwkid_neighbor]["relationship"]
+    )
+    
+    # Add relationship if it doesn't exist already
+    if not relationship_exists:
+        self.neighbors_table[nwkid_neighbor]["relationship"].append({
+            "nwkid": nwkid_parent,
+            "ieee": ieee_parent,
+            "relationship": neighbor_info_dict["relationship"]
+        })
 
-            elif relationship == 0x02:  # Relationship.Sibling
-                raw_neighbors_set.add( (nwkid_parent, nwkid_neighbor, "sibling") )
-                
-    return convert_siblings( raw_neighbors_set )
+
+def parse_neigbor_infos( neighbor ):
+    return {
+        "ieee_neighbor": "%016x" % t.uint64_t.deserialize(neighbor.ieee.serialize())[0],
+        "nwkid_neighbor": neighbor.nwk.serialize()[::-1].hex(),
+        "device_type": convert_device_type_code(neighbor.device_type),
+        "rx_on_when_idle": convert_rx_on_when_idle(neighbor.rx_on_when_idle),
+        "relationship": convert_relationship_code(neighbor.relationship),
+        "permit_joining": convert_permit_joining(neighbor.permit_joining),
+        "lqi": neighbor.lqi
+    }
+
+
+def convert_relationship_code(code):
+    relationship_mapping = {
+        0x00: "parent",
+        0x01: "child",
+        0x02: "sibling",
+        0x03: "none_of_above",
+        0x04: "previous_child"
+    }
+    return relationship_mapping.get(code, "unknown")
+
+
+def convert_device_type_code(code):
+    device_type_mapping = {
+        0x00: "coordinator",
+        0x01: "router",
+        0x02: "end_device",
+        0x03: "unknown"
+    }
+    return device_type_mapping.get(code, "unknown")
+
+
+def convert_rx_on_when_idle(code):
+    rx_on_when_idle_mapping = {
+        0x00: "off",
+        0x01: "on",
+        0x02: "unknown"
+    }
+    return rx_on_when_idle_mapping.get(code, "unknown")
+
+   
+def convert_permit_joining(code):
+    permit_joining_mapping = {
+        0x00: "off",
+        0x01: "on",
+        0x02: "unknown"
+    }
+    return permit_joining_mapping.get(code, "unknown")
 
 
 def build_zigpy_routes(self, zigpy_routes):
-    raw_root = set()
+    raw_root = {}
     ieee2nwk_keys = set(self.IEEE2NWK.keys())
 
     for ieee, route_info in zigpy_routes.items():
@@ -95,17 +157,54 @@ def build_zigpy_routes(self, zigpy_routes):
         if ieee not in ieee2nwk_keys:
             continue
         nwkid = self.IEEE2NWK[ ieee ]
+        if nwkid not in raw_root:
+            raw_root[ nwkid ] = []
 
         for route in route_info:
-            dst_nwk = route.DstNWK.serialize()[::-1].hex()
+            route_dict = parse_route_infos( route)
+            dst_nwk = route_dict["dst_nwk"]
             if dst_nwk not in self.ListOfDevices:
                 continue
-            route_tuple = (nwkid, dst_nwk)
-            reverse_route_tuple = (dst_nwk, nwkid)
-            if route_tuple not in raw_root and reverse_route_tuple not in raw_root:
-                raw_root.add(route_tuple)           
+            raw_root[ nwkid ].append( route_dict)
     return raw_root
 
+
+def parse_route_infos( route):
+    return {
+        "dst_nwk": route.DstNWK.serialize()[::-1].hex(),
+        "route_status": convert_route_status_code(route.RouteStatus),
+        "memory_constrained": route.MemoryConstrained,
+        "many_to_one": route.RouteRecordRequired,
+        "route_record_required": route.RouteRecordRequired,
+        "next_hop": route.NextHop.serialize()[::-1].hex()
+    }
+    
+
+def convert_route_status_code(code):
+    route_status_mapping = {
+        0x00: "active",
+        0x01: "discovery_underway",
+        0x02: "discovery_failed",
+        0x03: "inactive",
+        0x04: "validation_underway",
+    }
+    return route_status_mapping.get(code, "unknown")
+
+
+def retreive_relationship( nwkid_parent, neighbor_info_dict):
+    nwkid_relationship = neighbor_info_dict["relationship"]
+    nwkid_neighbor = neighbor_info_dict["nwkid_neighbor"]
+
+    if nwkid_relationship == 0x00:  # Relationship.Parent
+        return (nwkid_neighbor, nwkid_parent, "child")
+
+    elif nwkid_relationship == 0x01:  # Relationship.Child
+        return (nwkid_parent, nwkid_neighbor, "child")
+
+    elif nwkid_relationship == 0x02:  # Relationship.Sibling
+        return (nwkid_parent, nwkid_neighbor, "sibling")
+
+    return None
 
 
 def find_parent(node, relationships):
