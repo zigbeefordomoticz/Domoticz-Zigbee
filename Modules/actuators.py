@@ -235,6 +235,7 @@ def get_all_transition_mode( self, Nwkid):
             transitionHue = "%04x" % int(self.ListOfDevices[Nwkid]["Param"]["moveToHueSatu"])
     return transitionMoveLevel , transitionRGB , transitionMoveLevel ,transitionHue , transitionTemp
 
+
 def actuator_setcolor(self, nwkid, EPout, value, Color):
     
     Hue_List = json.loads(Color)
@@ -287,12 +288,17 @@ def handle_color_mode_2(self, nwkid, EPout, Hue_List):
     # t is 0 > 255
     TempKelvin = int(((255 - int(Hue_List["t"])) * (6500 - 1700) / 255) + 1700)
     TempMired = 1000000 // TempKelvin
+
+    if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "WSRangeForTradfri", return_default=False):
+        # Looks like Tradfri might have some limitation
+        self.log.logging( "Command", "Debug", "handle_color_mode_2 bring TempMired into the Tradfri Range 250,454", nwkid )
+        TempMired = max(250, min(TempMired, 454))
+
     self.log.logging( "Command", "Debug", "handle_color_mode_2 Set Temp Kelvin: %s-%s" % (TempMired, Hex_Format(4, TempMired)), nwkid )
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)
     zcl_move_to_colour_temperature( self, nwkid, EPout, Hex_Format(4, TempMired), transitionTemp)
-    
 
-            
+
 def handle_color_mode_3(self, nwkid, EPout, Hue_List):
     # Color. Valid fields: r, g, b.
     x, y = rgb_to_xy((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
@@ -305,7 +311,8 @@ def handle_color_mode_3(self, nwkid, EPout, Hue_List):
     if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYAColorControlRgbMode", return_default=None):
         tuya_color_control_rgbMode( self, nwkid, "01")  
     zcl_move_to_colour(self, nwkid, EPout, Hex_Format(4, x), Hex_Format(4, y), transitionRGB)
-    
+
+
 def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
     # Gledopto GL_008
     # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
@@ -335,7 +342,8 @@ def handle_color_mode_4(self, nwkid, EPout, Hue_List ):
     if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYAColorControlRgbMode", return_default=None):
         tuya_color_control_rgbMode( self, nwkid, "01")
     zcl_move_hue_and_saturation(self, nwkid, EPout, Hex_Format(2, hue), Hex_Format(2, saturation), transitionRGB)
-    
+
+
 def handle_color_mode_9998( self, nwkid, EPout, Hue_List, value):
     transitionMoveLevel , transitionRGB , transitionMoveLevel , transitionHue , transitionTemp = get_all_transition_mode( self, nwkid)    
     _h, _s, _l = rgb_to_hsl((int(Hue_List["r"]), int(Hue_List["g"]), int(Hue_List["b"])))
@@ -374,6 +382,7 @@ def handle_color_mode_tuya( self, nwkid, EPout, Hue_List, value):
     if get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "TUYAColorControlRgbMode", return_default=None):
         tuya_color_control_rgbMode( self, nwkid, "01")
     tuya_Move_To_Hue_Saturation( self, nwkid, EPout, hue, saturation, transitionHue, value )
+
 
 def actuator_identify(self, nwkid, ep, value=None):
 
@@ -416,6 +425,7 @@ def decode_color_capabilities(capabilities_value):
         for feature, bitmask in capabilities.items()
         if capabilities_value & bitmask
     ]
+
 
 def device_color_capabilities( self, nwkid, ep):
     self.log.logging( "Command", "Debug", "device_color_capabilities %s %s" % (nwkid, ep), nwkid)

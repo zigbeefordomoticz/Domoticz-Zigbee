@@ -18,6 +18,20 @@ Release Numbering
 - Odd numbers --> Stable/6
 - Even numbers  --> Beta/6 (dev branch)
 
+
+## March 2024 - stable7.1.011 ( 2024.03.1)
+
+- [Hardware] - Tuya SOS remote
+
+## March 2024 - stable7.1.010 ( 2024.03)
+
+- [Hardware] - define Temp and Humi Max,Min for Sonoff Temp/Humi
+- [Issue] - Fix XCube/Aqara regression introduce in a previous release
+- [Technical] - Define IAS settings
+- [Technical] - Code for TS0224 Alarlm volume
+- [Hardware] - Integrate Door Bell from Heiman
+- [Hardware] - Take in consideration White Color temp mirred limitation and use a specific range
+
 ## March 2024 - stable7.1.009 (hotfix)
 - [Bug] - fix bugs generating error and preventing some Tuya features working
 
