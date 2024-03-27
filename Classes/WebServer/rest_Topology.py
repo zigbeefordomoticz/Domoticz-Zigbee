@@ -268,34 +268,40 @@ def collect_routing_table(self, time_stamp=None):
     _topo = []
     prevent_duplicate_tuple = []
     self.logging( "Debug", "collect_routing_table - TimeStamp: %s" %time_stamp)
-    for father in self.ListOfDevices:
-        self.logging( "Debug", f"check {father} child from routing table")
-        _associated_devices = collect_associated_devices( self, father, time_stamp)
-        _neighbor_devices = collect_neighbours_devices( self, father, time_stamp)
-        _routing_devices = extract_routes(self, father, time_stamp)
+    for node1 in self.ListOfDevices:
+        self.logging( "Debug", f"check {node1} child from routing table")
+        _neighbor_devices = collect_neighbours_devices( self, node1, time_stamp)
+        _routing_devices = extract_routes(self, node1, time_stamp)
         
-        for child in set( _neighbor_devices + _routing_devices + _associated_devices ):
-            self.logging( "Debug", f"Found child {child}") 
-            if child not in self.ListOfDevices:
-                self.logging( "Debug", f"Found child {child} but not found in ListOfDevices") 
+        for node2 in set( _neighbor_devices + _routing_devices ):
+            self.logging( "Debug", f"Found child {node2}") 
+            if node2 not in self.ListOfDevices:
+                self.logging( "Debug", f"Found child {node2} but not found in ListOfDevices") 
                 continue
-            if ( father, child) not in prevent_duplicate_tuple:
-                prevent_duplicate_tuple.append( ( father, child) )
-                _relation = {
-                    "Father": get_node_name( self, father), 
-                    "Child": get_node_name( self, child), 
-                    "_lnkqty": get_lqi_from_neighbours(self, father, child), 
-                    "DeviceType": find_device_type(self, child),
-                    "_relationship": get_relationship_neighbours(self, father, child)
-                }
+
+            if ( node1, node2) not in prevent_duplicate_tuple:
+                prevent_duplicate_tuple.append( ( node1, node2) )
+                new_entry = build_relation_ship_dict(self, node1, node2,)
+
+                if new_entry["_relationship"] == "" and node2 in _routing_devices:
+                    # Route between node1 and node2 exist
+                    new_entry["_relationship"] = "route"
 
                 self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %11s %s" % (
-                    _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"], _relation["_relationship"]),)
-                _topo.append( _relation ) 
+                    new_entry["Father"], node1, new_entry["Child"], node2, new_entry["_lnkqty"], new_entry["DeviceType"], new_entry["_relationship"]),)
+                _topo.append( new_entry ) 
 
     return _topo
 
-       
+def build_relation_ship_dict(self, node1, node2,):
+    return {
+        "Father": get_node_name( self, node1), 
+        "Child": get_node_name( self, node2), 
+        "_lnkqty": get_lqi_from_neighbours(self, node1, node2), 
+        "DeviceType": find_device_type(self, node2),
+        "_relationship": get_relationship_neighbours(self, node1, node2)
+    }
+  
 def collect_associated_devices( self, node, time_stamp=None):
     last_associated_devices = get_device_table_entry(self, node, "AssociatedDevices", time_stamp)
     self.logging( "Debug", "collect_associated_devices %s -> %s" %(node, str(last_associated_devices)))
@@ -318,15 +324,25 @@ def extract_routes( self, node, time_stamp=None):
         
 
 def get_lqi_from_neighbours(self, node1, node2, time_stamp=None):
-    # Take the LQI from the latest report
-    for neighbor in get_device_table_entry(self, node1, "Neighbours", time_stamp):
-        if node2 in neighbor:
-            return neighbor[ node2 ]["_lnkqty"] 
-    return 1
+    return next(
+        (
+            neighbor[node2]["_lnkqty"]
+            for neighbor in get_device_table_entry(
+                self, node1, "Neighbours", time_stamp
+            )
+            if node2 in neighbor
+        ),
+        1,
+    )
 
 def get_relationship_neighbours(self, node1, node2, time_stamp=None):
-    # Take the LQI from the latest report
-    for neigbor in get_device_table_entry(self, node1, "Neighbours", time_stamp):
-        if node2 in neigbor:
-            return neigbor[ node2 ]["_relationshp"]
-    return ""
+    return next(
+        (
+            neigbor[node2]["_relationshp"]
+            for neigbor in get_device_table_entry(
+                self, node1, "Neighbours", time_stamp
+            )
+            if node2 in neigbor
+        ),
+        "",
+    )
