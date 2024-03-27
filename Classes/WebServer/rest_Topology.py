@@ -270,36 +270,35 @@ def collect_routing_table(self, time_stamp=None):
     self.logging( "Debug", "collect_routing_table - TimeStamp: %s" %time_stamp)
     for node1 in self.ListOfDevices:
         self.logging( "Debug", f"check {node1} child from routing table")
-        _neighbor_devices = collect_neighbours_devices( self, node1, time_stamp)
-        _routing_devices = extract_routes(self, node1, time_stamp)
+        routes_list = extract_routes(self, node1, time_stamp) 
         
-        for node2 in set( _neighbor_devices + _routing_devices ):
-            self.logging( "Debug", f"Found child {node2}") 
+        for node2 in set( collect_neighbours_devices( self, node1, time_stamp) ):
+            self.logging( "Debug", f"Neighbor relation {node2}") 
             if node2 not in self.ListOfDevices:
-                self.logging( "Debug", f"Found child {node2} but not found in ListOfDevices") 
+                self.logging( "Debug", f"Found relation {node2} but not found in ListOfDevices") 
                 continue
 
             if ( node1, node2) not in prevent_duplicate_tuple:
                 prevent_duplicate_tuple.append( ( node1, node2) )
                 new_entry = build_relation_ship_dict(self, node1, node2,)
 
-                if new_entry["_relationship"] == "" and node2 in _routing_devices:
-                    # Route between node1 and node2 exist
-                    new_entry["_relationship"] = "route"
-
-                self.logging( "Log", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %11s %s" % (
-                    new_entry["Father"], node1, new_entry["Child"], node2, new_entry["_lnkqty"], new_entry["DeviceType"], new_entry["_relationship"]),)
+                if node2 in routes_list:
+                    new_entry["Route"] = "Route"
+                    
+                self.logging( "Log", "Relationship (Neighbours) - %15.15s (%s) - %15.15s (%s) %3s %11s %5s %s" % (
+                    new_entry["Father"], node1, new_entry["Child"], node2, new_entry["_lnkqty"], new_entry["DeviceType"], new_entry["_relationship"], new_entry["Route"]),)
                 _topo.append( new_entry ) 
 
     return _topo
 
-def build_relation_ship_dict(self, node1, node2,):
+def build_relation_ship_dict(self, node1, node2):
     return {
         "Father": get_node_name( self, node1), 
         "Child": get_node_name( self, node2), 
         "_lnkqty": get_lqi_from_neighbours(self, node1, node2), 
         "DeviceType": find_device_type(self, node2),
-        "_relationship": get_relationship_neighbours(self, node1, node2)
+        "_relationship": get_relationship_neighbours(self, node1, node2),
+        "Route": ""
     }
   
 def collect_associated_devices( self, node, time_stamp=None):
