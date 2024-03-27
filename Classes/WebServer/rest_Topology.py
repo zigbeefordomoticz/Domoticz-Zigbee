@@ -291,6 +291,8 @@ def collect_routing_table(self, time_stamp=None):
                     
                 self.logging( "Log", "| %15.15s (%5.5s) | %15.15s (%5.5s) | %4.4s | %11.11s | %9.9s | %5.5s |" % (
                     new_entry["Father"], node1, new_entry["Child"], node2, new_entry["_lnkqty"], new_entry["DeviceType"], new_entry["_relationship"], new_entry["Route"]),)
+                del new_entry["Route"]
+                del new_entry["_relationship"]
                 _topo.append( new_entry ) 
 
     return _topo
