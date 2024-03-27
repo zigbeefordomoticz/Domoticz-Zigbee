@@ -15,9 +15,24 @@ If you want to contribue , please let us know , we are looking for help in vario
 
 Release Numbering
 
-- Odd numbers --> Stable/6
-- Even numbers  --> Beta/6 (dev branch)
+- Odd numbers --> Stable/7
+- Even numbers  --> Beta/7 (dev branch)
 
+## -
+
+- [Technical] - Refactor Topology
+- [Technical] - Upgrade to latest zigpy radio libs
+- [Technical] - In Memory Persistent Zigpy Db
+- [Technical] - Finalize Domoticz API abstract layer, and readiness to Extended Framework
+- [Technical] - Performance improvment, reducing CPU% and providing better responsivness (imporvment of logging facility)
+- [Technical] - Adding List of Widgets, nValue:sValue in Groups
+- [Technical] - Imporving debuging, and allow to select python module level
+- [Technical] - Do not Touch() and Lastseen so often.
+- [Technical] - Refactor few domoticz related functions.
+
+- [WebUI] - New API to get the list of device settings parameters (/device-settings-help)
+- [WebUI] - Provides color status of device parameters sync.
+- [WebUI] - AngularJS 17 upgrade
 
 ## March 2024 - stable7.1.011 ( 2024.03.1)
 
@@ -33,6 +48,7 @@ Release Numbering
 - [Hardware] - Take in consideration White Color temp mirred limitation and use a specific range
 
 ## March 2024 - stable7.1.009 (hotfix)
+
 - [Bug] - fix bugs generating error and preventing some Tuya features working
 
 ## February 2024 - stable7 7.1.009 (2024.02)
