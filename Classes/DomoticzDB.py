@@ -18,7 +18,6 @@ import socket
 import time
 import urllib.request
 import ssl
-import Domoticz
 
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Classes.LoggingManagement import LoggingManagement

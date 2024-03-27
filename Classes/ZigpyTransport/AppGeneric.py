@@ -34,6 +34,7 @@ from Classes.ZigpyTransport.instrumentation import write_capture_rx_frames
 from Classes.ZigpyTransport.plugin_encoders import (
     build_plugin_8002_frame_content, build_plugin_8014_frame_content,
     build_plugin_8047_frame_content, build_plugin_8048_frame_content)
+from Classes.ZigpyTransport.Transport import ZigpyTransport
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +42,37 @@ ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
 
 
 async def _load_db(self) -> None:
-    pass
+    LOGGER.info("_load_db")
+    database_file = self.config[zigpy_conf.CONF_DATABASE]
+    if not database_file:
+        return
+
+    LOGGER.info("PersistingListener on %s" %database_file)
+    self._dblistener = await zigpy.appdb.PersistingListener.new(database_file, self)
+    await self._dblistener.load()
+    self._add_db_listeners()
+
+
+def _add_db_listeners(self):
+    LOGGER.info("_add_db_listeners")
+    if self._dblistener is None:
+        return
+
+    self.add_listener(self._dblistener)
+    self.groups.add_listener(self._dblistener)
+    self.backups.add_listener(self._dblistener)
+    self.topology.add_listener(self._dblistener)
+
+
+def _remove_db_listeners(self):
+    LOGGER.info("_remove_db_listeners")
+    if self._dblistener is None:
+        return
+
+    self.topology.remove_listener(self._dblistener)
+    self.backups.remove_listener(self._dblistener)
+    self.groups.remove_listener(self._dblistener)
+    self.remove_listener(self._dblistener)
 
 
 async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
@@ -49,14 +80,13 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     Starts the network on a connected radio, optionally forming one with random
     settings if necessary.
     """
-    self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s" %( auto_form, force_form, type(self)))
+    self.log.logging("TransportZigpy", "Log", "AppGeneric:initialize auto_form: %s force_form: %s Class: %s Logger: %s" %( auto_form, force_form, type(self), LOGGER))
 
-    # 22 Jan. 2024 / Disabled in order to downgrade zigpy libraries
-    # https://github.com/zigpy/zigpy/discussions/1300
-    ## Make sure the first thing we do is feed the watchdog
-    #if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
-    #    await self.watchdog_feed()
-    #    self._watchdog_task = asyncio.create_task(self._watchdog_loop())
+    # Make sure the first thing we do is feed the watchdog
+    if self.config[zigpy_conf.CONF_WATCHDOG_ENABLED]:
+        await self.watchdog_feed()
+        self._watchdog_task = asyncio.create_task(self._watchdog_loop(), name="watchdog_loop")
+        await asyncio.sleep(1)
 
     # Retreive Last Backup
     _retreived_backup = _retreive_previous_backup(self)
@@ -134,6 +164,30 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
 
+async def shutdown(self) -> None:
+    """Shutdown controller."""
+    if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
+        self.callBackBackup(await self.backups.create_backup(load_devices=True))
+
+    if self._watchdog_task is not None:
+        self._watchdog_task.cancel()
+
+    try:
+        await self.disconnect()
+    except Exception:
+        LOGGER.warning("Failed to disconnect from radio", exc_info=True)  
+      
+    await asyncio.sleep( 1 )
+
+    if self._dblistener:
+        self._remove_db_listeners()
+        
+        try:
+            await self._dblistener.shutdown()
+        except Exception:
+            LOGGER.warning("Failed to disconnect from database", exc_info=True)
+
+
 def _retreive_previous_backup(self):
     _retreived_backup = None
     if "autoRestore" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["autoRestore"]:
@@ -164,6 +218,7 @@ def get_device(self, ieee=None, nwk=None):
         # We might have to check that the plugin and zigpy Dbs are in sync
         # Let's check if the tupple (dev.ieee, dev.nwk ) are aligned with plugin Db
         _update_nkdids_if_needed(self, dev.ieee, dev.nwk )
+
     except KeyError:
         # Not found in zigpy Db, let see if we can get it into the Plugin Db
         if self.callBackGetDevice:
@@ -197,11 +252,13 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
     ieee = t.EUI64(ieee)
     try:
         dev = self.get_device(ieee)
-        #time.sleep(2.0)
+        time.sleep(1.0)
         self.log.logging("TransportZigpy", "Debug", "Device 0x%04x (%s) joined the network" %(nwk, ieee))
+
     except KeyError:
         dev = self.add_device(ieee, nwk)
-        #time.sleep(2.0)
+        dev.update_last_seen()
+        time.sleep(1.0)
         self.log.logging("TransportZigpy", "Debug", "New device 0x%04x (%s) joined the network" %(nwk, ieee))
 
     if dev.nwk != nwk:
@@ -230,11 +287,18 @@ def get_device_ieee(self, nwk):
 
 def handle_leave(self, nwk, ieee):
     self.log.logging("TransportZigpy", "Debug","handle_leave (0x%04x %s)" %(nwk, ieee))
+    super(type(self),self).handle_leave(nwk, ieee)
     plugin_frame = build_plugin_8048_frame_content(self, ieee)
     self.callBackFunction(plugin_frame)
-    super(type(self),self).handle_leave(nwk, ieee)
+    
 
 
+def handle_relays(self, nwk, relays) -> None:
+    self.log.logging("TransportZigpy", "Debug","handle_relays (0x%04x %s)" %(nwk, str(relays)))
+    """Called when a list of relaying devices is received."""
+    super(type(self),self).handle_relays(nwk, relays)
+
+        
 def packet_received(
     self, 
     packet: t.ZigbeePacket
@@ -249,14 +313,11 @@ def packet_received(
     cluster = int(packet.cluster_id) if packet.cluster_id is not None else None
     src_ep = int(packet.src_ep) if packet.src_ep is not None else None
     dst_ep = int(packet.dst_ep) if packet.dst_ep is not None else None
+    source_route = packet.source_route
 
-    # self.log.logging("TransportZigpy", "Log", " Src     : %s (%s)" %(sender,type(sender)))
-    # self.log.logging("TransportZigpy", "Log", " AddrMod : %02X" %(addr_mode))
-    # self.log.logging("TransportZigpy", "Log", " src Ep  : %02X" %(dst_ep))
-    # self.log.logging("TransportZigpy", "Log", " dst Ep  : %02x" %(dst_ep))
-    # self.log.logging("TransportZigpy", "Log", " Profile : %04X" %(profile))
-    # self.log.logging("TransportZigpy", "Log", " Cluster : %04X" %(cluster))
-    
+    if source_route:
+        self.log.logging("trackReceivedRoute", "Log", f"packet_received from {sender} via {source_route}")
+
     message = packet.data.serialize()
     hex_message = binascii.hexlify(message).decode("utf-8")
     dst_addressing = packet.dst.addr_mode if packet.dst else None
@@ -267,17 +328,14 @@ def packet_received(
     hex_message = binascii.hexlify(message).decode("utf-8")
     write_capture_rx_frames( self, packet.src, profile, cluster, src_ep, dst_ep, message, hex_message, dst_addressing)
 
-    if sender is None or profile is None or cluster is None:
-        super(type(self),self).packet_received(packet)
-        
     if sender == 0x0000 or ( zigpy.zdo.ZDO_ENDPOINT in (packet.src_ep, packet.dst_ep)): 
-        self.log.logging("TransportZigpy", "Debug", "handle_message from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+        self.log.logging("TransportZigpy", "Debug", "packet_received from Controller Sender: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             sender, profile, cluster, src_ep, dst_ep, hex_message))
         super(type(self),self).packet_received(packet)
 
     if cluster == 0x8036:
         # This has been handle via on_zdo_mgmt_permitjoin_rsp()
-        self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+        self.log.logging("TransportZigpy", "Debug", "packet_received 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             sender, profile, cluster, src_ep, dst_ep, hex_message))
         self.callBackFunction( build_plugin_8014_frame_content(self, sender, hex_message ) )
         super(type(self),self).packet_received(packet)
@@ -285,26 +343,28 @@ def packet_received(
 
     if cluster == 0x8034:
         # This has been handle via on_zdo_mgmt_leave_rsp()
-        self.log.logging("TransportZigpy", "Debug", "handle_message 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
+        self.log.logging("TransportZigpy", "Debug", "packet_received 0x8036: %s Profile: %04x Cluster: %04x srcEp: %02x dstEp: %02x message: %s" %(
             sender, profile, cluster, src_ep, dst_ep, hex_message))
         self.callBackFunction( build_plugin_8047_frame_content(self, sender, hex_message) )
+        super(type(self),self).packet_received(packet)
         return
 
     packet.lqi = 0x00 if packet.lqi is None else packet.lqi
     profile = 0x0000 if src_ep == dst_ep == 0x00 else profile
 
     if profile and cluster:
-        self.log.logging( "TransportZigpy", "Debug", "handle_message device 2: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" %( 
+        self.log.logging( "TransportZigpy", "Debug", "packet_received device: %s Profile: %04x Cluster: %04x sEP: %s dEp: %s message: %s lqi: %s" %( 
             sender, profile, cluster, src_ep, dst_ep, hex_message, packet.lqi), )
 
     plugin_frame = build_plugin_8002_frame_content(self, sender, profile, cluster, src_ep, dst_ep, message, packet.lqi, src_addrmode=addr_mode)
-    self.log.logging("TransportZigpy", "Debug", "handle_message Sender: %s frame for plugin: %s" % (sender, plugin_frame))
+    self.log.logging("TransportZigpy", "Debug", "packet_received Sender: %s frame for plugin: %s" % (sender, plugin_frame))
     self.callBackFunction(plugin_frame)
-
-    return
-
+    super(type(self),self).packet_received(packet)
+    
 
 def _update_nkdids_if_needed( self, ieee, new_nwkid ):
+    if not isinstance(self, ZigpyTransport):
+        return
     _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
     _nwk = new_nwkid.serialize()[::-1].hex()
     self.callBackUpdDevice(_ieee, _nwk)
@@ -315,6 +375,17 @@ def get_zigpy_version(self):
     LOGGER.debug("get_zigpy_version ake version number. !!")
     return self.version
 
+def get_device_with_address( self, address: t.AddrModeAddress ) -> zigpy.device.Device:
+        """Gets a `Device` object using the provided address mode address."""
+
+        if address.addr_mode == t.AddrMode.NWK:
+            return self.get_device(nwk=address.address)
+
+        elif address.addr_mode == t.AddrMode.IEEE:
+            return self.get_device(ieee=address.address)
+
+        else:
+            raise ValueError(f"Invalid address: {address!r}")
 
 async def register_specific_endpoints(self):
     """
@@ -438,6 +509,7 @@ def do_retreive_backup( self ):
     LOGGER.debug("Retreiving last backup")
     return handle_zigpy_retreive_last_backup( self )
 
+
 async def network_interference_scan(self):
 
     self.log.logging( "NetworkEnergy", "Debug", "network_interference_scan")
@@ -491,6 +563,7 @@ def build_json_to_store(self, scan_result):
         }]
     }
     return {timestamp: [ router, ] }
+
 
 def scan_channel( self, scan_result ):
     

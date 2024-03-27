@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
-<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="7.1">
+<plugin key="Zigate" name="Zigbee for domoticz plugin (zigpy enabled)" author="pipiche38" version="7.2">
     <description>
         <h1> Plugin Zigbee for domoticz</h1><br/>
             <br/><h2> Informations</h2><br/>
@@ -83,12 +90,12 @@
 </plugin>
 """
 
-import pathlib
-import sys
 
+#import DomoticzEx as Domoticz
 import Domoticz
 
 try:
+    #from DomoticzEx import Devices, Images, Parameters, Settings
     from Domoticz import Devices, Images, Parameters, Settings
 except ImportError:
     pass
@@ -97,6 +104,8 @@ import gc
 import json
 import os
 import os.path
+import pathlib
+import sys
 import threading
 import time
 
@@ -125,11 +134,13 @@ from Modules.command import mgtCommand
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
-from Modules.domoticzAbstractLayer import (how_many_slot_available,
-                                           load_list_of_domoticz_widget)
-from Modules.domoTools import ResetDevice
+from Modules.domoticzAbstractLayer import (
+    domo_read_Name, find_legacy_DeviceID_from_unit,
+    how_many_legacy_slot_available, is_domoticz_extended,
+    load_list_of_domoticz_widget, retreive_widgetid_from_deviceId_unit)
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
+from Modules.paramDevice import initialize_device_settings
 from Modules.piZigate import switchPiZigate_mode
 from Modules.pluginHelpers import (check_firmware_level,
                                    check_python_modules_version,
@@ -282,6 +293,9 @@ class BasePlugin:
         # Zigpy
         self.zigbee_communication = None  # "zigpy" or "native"
         #self.pythonModuleVersion = {}
+        
+        self.device_settings = {}
+        initialize_device_settings(self)
 
     def onStart(self):
         Domoticz.Status( "Zigbee for Domoticz plugin starting")
@@ -367,7 +381,6 @@ class BasePlugin:
         
         if not get_domoticz_version( self, Parameters["DomoticzVersion"] ):
             return
-
 
         # Import PluginConf.txt
         Domoticz.Log("load PluginConf")
@@ -467,7 +480,7 @@ class BasePlugin:
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
         # Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
 
-        self.adminWidgets = AdminWidgets(self.pluginconf, Devices, self.ListOfDevices, self.HardwareID)
+        self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID)
         self.adminWidgets.updateStatusWidget(Devices, "Startup")
 
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
@@ -489,8 +502,7 @@ class BasePlugin:
             self.onStop()
             return
         
-        # Import List of Domoticz Widgets
-        self.ListOfDomoticzWidget = {}
+        # Initialize List of Domoticz Widgets
         load_list_of_domoticz_widget(self, Devices)
         
         # Import DeviceList.txt Filename is : DeviceListName
@@ -559,8 +571,14 @@ class BasePlugin:
                     "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"]
                 )
 
-        self.log.logging("Plugin", "Status", "Domoticz Widgets usage is at %s %% (%s units free)" % (
-            round( ( ( 255 - how_many_slot_available( Devices )) / 255 ) * 100, 1 ), how_many_slot_available( Devices ) ))
+        if is_domoticz_extended():
+            self.log.logging( "Plugin", "Status", "Plugin is using Extended Framework")
+        else:
+            self.log.logging( "Plugin", "Status", "Plugin is using legacy Framework")
+
+        if not is_domoticz_extended():
+            self.log.logging("Plugin", "Status", "Domoticz Widgets usage is at %s %% (%s units free)" % (
+                round( ( ( 255 - how_many_legacy_slot_available( Devices)) / 255 ) * 100, 1 ), how_many_legacy_slot_available( Devices) ))
         self.busy = False
 
 
@@ -619,77 +637,46 @@ class BasePlugin:
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
-        #if self.pluginconf.pluginConf["Garbage"]:
-        #    
-        #    # Domoticz.Log( "Garbage Collected objects:")
-        #    # objects = gc.get_objects()
-        #    # for item in objects:
-        #    #     Domoticz.Log( "- %s" %str(item))
-#
-        #    # Print detected cycles (garbage collectors)
-        #    Domoticz.Log( "Garbage Collected detected cycles:")
-        #    for item in gc.garbage:
-        #        Domoticz.Log("- %s" %str(item))
-
-    
 
     def onDeviceRemoved(self, Unit):
+        # def onDeviceRemoved(self, DeviceID, Unit):
+        if not self.ControllerIEEE:
+            self.log.logging( "Plugin", "Error", "onDeviceRemoved - too early, coordinator and plugin initialisation not completed", )
+
         if self.log:
             self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
 
-        # Let's check if this is End Node, or Group related.
-        if Devices[Unit].DeviceID in self.IEEE2NWK:
-            IEEE = Devices[Unit].DeviceID
-            NwkId = self.IEEE2NWK[IEEE]
+        if not is_domoticz_extended():
+            DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
 
-            # Command belongs to a end node
-            self.log.logging("Plugin", "Status", "onDeviceRemoved - removing End Device")
-            fullyremoved = removeDeviceInList(self, Devices, Devices[Unit].DeviceID, Unit)
+        device_name = domo_read_Name( self, Devices, DeviceID, Unit, )
+        
+        # Let's check if this is End Node, or Group related.
+        if DeviceID in self.IEEE2NWK:
+            NwkId = self.IEEE2NWK[DeviceID]
+
+            self.log.logging("Plugin", "Status", f"Removing Device {DeviceID} {device_name} in progress")
+            fullyremoved = removeDeviceInList(self, Devices, DeviceID, Unit)
 
             # We might have to remove also the Device from Groups
-            if fullyremoved and self.groupmgt:
-                self.groupmgt.RemoveNwkIdFromAllGroups(NwkId)
-
-            # We should call this only if All Widgets have been remved !
             if fullyremoved:
-                # Let see if enabled if we can fully remove this object from Zigate
-                if self.pluginconf.pluginConf["allowRemoveZigateDevice"]:
-                    IEEE = Devices[Unit].DeviceID
-                    # sending a Leave Request to device, so the device will send a leave
-                    leaveRequest(self, ShortAddr=NwkId, IEEE=IEEE)
+                if self.groupmgt:
+                    self.groupmgt.RemoveNwkIdFromAllGroups(NwkId)
 
-                    # for a remove in case device didn't send the leave
-                    if self.ControllerIEEE:
-                        #sendZigateCmd(self, "0026", self.ControllerIEEE + IEEE)
-                        zigate_remove_device(self, str(self.ControllerIEEE), str(IEEE) )
-                        self.log.logging(
-                            "Plugin",
-                            "Status",
-                            "onDeviceRemoved - removing Device %s -> %s from coordinator" % (Devices[Unit].Name, IEEE),
-                        )
-                    else:
-                        self.log.logging(
-                            "Plugin",
-                            "Error",
-                            "onDeviceRemoved - too early, coordinator and plugin initialisation not completed",
-                        )
-                else:
-                    self.log.logging(
-                        "Plugin",
-                        "Status",
-                        "onDeviceRemoved - device entry %s from coordinator not removed. You need to enable 'allowRemoveZigateDevice' parameter. Do consider that it works only for main powered devices."
-                        % Devices[Unit].DeviceID,
-                    )
+                # sending a Leave Request to device, so the device will send a leave
+                leaveRequest(self, ShortAddr=NwkId, IEEE=DeviceID)
 
-            self.log.logging("Plugin", "Debug", "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
-            self.ListOfDomoticzWidget = {}
+                # for a remove in case device didn't send the leave
+                zigate_remove_device(self, str(self.ControllerIEEE), str(DeviceID) )
+                self.log.logging( "Plugin", "Status", f"Request device {device_name} -> {DeviceID} to be removed from coordinator" )
+
+            self.log.logging("Plugin", "Debug", f"ListOfDevices :After REMOVE {self.ListOfDevices}")
             load_list_of_domoticz_widget(self, Devices)
             return
 
-        if self.groupmgt and Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
-            self.log.logging("Plugin", "Status", "onDeviceRemoved - removing Group of Devices")
-            # Command belongs to a Zigate group
-            self.groupmgt.FullRemoveOfGroup(Unit, Devices[Unit].DeviceID)
+        if self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+            self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be remove from Group(s)")
+            self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
 
     def onConnect(self, Connection, Status, Description):
 
@@ -793,35 +780,36 @@ class BasePlugin:
     def zigpy_backup_available(self, backups):
         handle_zigpy_backup(self, backups)
 
-
+    #def onCommand(self, DeviceID, Unit, Command, Level, Color):
     def onCommand(self, Unit, Command, Level, Color):
-        if (
-            not self.VersionNewFashion
-            or self.pluginconf is None
-            or not self.log
-        ):
-            # Not yet ready
+        
+        if ( not self.VersionNewFashion or self.pluginconf is None or not self.log ):
+            # Not yet ready, plugin not fully started, we drop the command
             return
 
         self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
+        if not is_domoticz_extended():
+            DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
+        
+        self.log.logging( "Command", "Log", f"Command: {DeviceID} {Unit}" )
+        
         # Let's check if this is End Node, or Group related.
-        if Devices[Unit].DeviceID in self.IEEE2NWK:
+        if DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
-            mgtCommand(self, Devices, Unit, Command, Level, Color)
+            mgtCommand(self, Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
 
-        elif self.groupmgt:
-            # if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
-            #    # Command belongs to a Zigate group
-            self.log.logging( "Command", "Debug", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, Devices[Unit].DeviceID), )
-            self.groupmgt.processCommand(Unit, Devices[Unit].DeviceID, Command, Level, Color)
+        elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+            # Command belongs to a Zigate group
+            self.log.logging( "Command", "Log", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, DeviceID), )
+            self.groupmgt.processCommand(Unit, DeviceID, Command, Level, Color)
 
-        elif Devices[Unit].DeviceID.find("Zigate-01-") != -1:
+        elif DeviceID.find("Zigate-01-") != -1:
             self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
             self.adminWidgets.handleCommand(self, Command)
 
         else:
-            self.log.logging( "Command", "Error", "onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" % (Devices[Unit].Name, Unit, Devices[Unit].DeviceID), )
+            self.log.logging( "Command", "Error", "onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" % (domo_read_Name( self, Devices, DeviceID, Unit, ), Unit, DeviceID), )
 
     def onDisconnect(self, Connection):
 
@@ -895,9 +883,6 @@ class BasePlugin:
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
 
-        # Reset Motion sensors
-        ResetDevice(self, Devices)
-
         # Check and Update Heating demand for Wiser if applicable (this will be check in the call)
         wiser_thermostat_monitoring_heating_demand(self, Devices)
         # Group Management
@@ -911,7 +896,6 @@ class BasePlugin:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
             networksize_update(self)
-            load_list_of_domoticz_widget(self, Devices)
   
         _trigger_coordinator_backup( self )
 
@@ -1044,7 +1028,8 @@ def _start_native_wifi_zigate(self):
 def _start_zigpy_ZNP(self):
     import zigpy
     import zigpy_znp
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
 
     from Classes.ZigpyTransport.Transport import ZigpyTransport
 
@@ -1065,7 +1050,8 @@ def _start_zigpy_ZNP(self):
 def _start_zigpy_deConz(self):
     import zigpy
     import zigpy_deconz
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
 
     from Classes.ZigpyTransport.Transport import ZigpyTransport
 
@@ -1082,7 +1068,8 @@ def _start_zigpy_deConz(self):
 def _start_zigpy_EZSP(self):
     import bellows
     import zigpy
-    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA, SCHEMA_DEVICE)
+    from zigpy.config import (CONF_DEVICE, CONF_DEVICE_PATH, CONFIG_SCHEMA,
+                              SCHEMA_DEVICE)
 
     from Classes.ZigpyTransport.Transport import ZigpyTransport
 
@@ -1320,9 +1307,11 @@ def start_GrpManagement(self, homefolder):
         Devices,
         self.ListOfDevices,
         self.IEEE2NWK,
+        self.ListOfDomoticzWidget,
         self.DeviceConf, 
         self.log,
-        self.readZclClusters
+        self.readZclClusters,
+        self.pluginParameters,
     )
     if self.groupmgt and self.ControllerIEEE:
         self.groupmgt.updateZigateIEEE(self.ControllerIEEE)
@@ -1362,7 +1351,7 @@ def start_OTAManagement(self, homefolder):
 
 
 def start_web_server(self, webserver_port, webserver_homefolder):
-
+ 
     self.log.logging("Plugin", "Status", "Start Web Server connection")
     self.webserver = WebServer(
         self.zigbee_communication,
@@ -1375,6 +1364,7 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         webserver_homefolder,
         self.HardwareID,
         Devices,
+        self.ListOfDomoticzWidget, 
         self.ListOfDevices,
         self.IEEE2NWK,
         self.DeviceConf,
@@ -1388,7 +1378,8 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.ModelManufMapping,
         self.DomoticzMajor,
         self.DomoticzMinor,
-        self.readZclClusters
+        self.readZclClusters,
+        self.device_settings
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)
@@ -1513,9 +1504,11 @@ def onStop():
     _plugin.onStop()
 
 
-def onDeviceRemoved(Unit):
+#def onDeviceRemoved(DeviceID, Unit):
+def onDeviceRemoved( Unit):
     global _plugin  # pylint: disable=global-variable-not-assigned
-    _plugin.onDeviceRemoved(Unit)
+    #_plugin.onDeviceRemoved(DeviceID, Unit)
+    _plugin.onDeviceRemoved( Unit)
 
 
 def onConnect(Connection, Status, Description):
@@ -1528,9 +1521,11 @@ def onMessage(Connection, Data):
     _plugin.onMessage(Connection, Data)
 
 
-def onCommand(Unit, Command, Level, Hue):
-    global _plugin  # pylint: disable=global-variable-not-assigned
-    _plugin.onCommand(Unit, Command, Level, Hue)
+#def onCommand(DeviceID, Unit, Command, Level, Color):
+def onCommand(Unit, Command, Level, Color):
+    global _plugin
+    #_plugin.onCommand(DeviceID, Unit, Command, Level, Color)
+    _plugin.onCommand( Unit, Command, Level, Color)
 
 
 def onDisconnect(Connection):
@@ -1705,7 +1700,7 @@ def _coordinator_ready( self ):
         ) 
         and (self.internalHB % 10) == 0
     ):
-        self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Mostlikly there is a communication issue" % (self.internalHB), )
+        self.log.logging( "Plugin", "Error", "[%3s] I have hard time to get Coordinator Version. Most likely there is a communication issue" % (self.internalHB), )
         
     if (
         ( self.transport == "ZigpyZNP" and self.internalHB > ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP )

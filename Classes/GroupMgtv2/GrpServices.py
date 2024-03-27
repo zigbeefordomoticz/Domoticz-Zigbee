@@ -3,36 +3,24 @@
 #
 # Author: pipiche38
 #
-import Domoticz
 
 from time import time
 
+from Classes.GroupMgtv2.GrpCallBackResponses import checkToCreateOrUpdateGroup
+from Classes.GroupMgtv2.GrpCommands import (
+    add_group_member_ship, check_group_member_ship, look_for_group_member_ship,
+    remove_group_member_ship, send_group_member_ship_identify_effect)
+from Classes.GroupMgtv2.GrpDatabase import (check_if_group_empty,
+                                            checkNwkIdAndUpdateIfAny,
+                                            create_group, remove_group,
+                                            remove_nwkid_from_all_groups)
+from Classes.GroupMgtv2.GrpDomoticz import (create_domoticz_group_device,
+                                            remove_domoticz_group_device,
+                                            update_domoticz_group_name)
+from Classes.GroupMgtv2.GrpIkeaRemote import (checkIfIkeaRound5BToBeAdded,
+                                              checkIfIkeaRound5BToBeRemoved)
 from Modules.tools import mainPoweredDevice
 from Modules.zigateConsts import LEGRAND_REMOTES
-
-from Classes.GroupMgtv2.GrpDomoticz import (
-    create_domoticz_group_device,
-    remove_domoticz_group_device,
-    update_domoticz_group_name,
-)
-
-from Classes.GroupMgtv2.GrpIkeaRemote import checkIfIkeaRound5BToBeAdded, checkIfIkeaRound5BToBeRemoved
-
-# remove_domoticz_group_device, update_domoticz_group_device
-from Classes.GroupMgtv2.GrpDatabase import (
-    create_group,
-    checkNwkIdAndUpdateIfAny,
-    remove_nwkid_from_all_groups,
-    check_if_group_empty,
-    remove_group,
-)
-from Classes.GroupMgtv2.GrpCommands import (
-    remove_group_member_ship,
-    add_group_member_ship,
-    check_group_member_ship,
-    look_for_group_member_ship,
-    send_group_member_ship_identify_effect,
-)
 
 
 def SendGroupIdentifyEffect(self, GrpId):
@@ -144,18 +132,11 @@ def addGroupMemberShip(self, NwkId, Ep, GroupId):
 
 
 def add_group_member_ship_from_remote(self, NwkId, Ep, GroupId):
-    # This is clall from plugin, when setting a group membership of a Legrand Remote
-    from Classes.GroupMgtv2.GrpCallBackResponses import checkToCreateOrUpdateGroup
 
-    if "GroupMemberShip" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["GroupMemberShip"] = {}
-    if Ep not in self.ListOfDevices[NwkId]["GroupMemberShip"]:
-        self.ListOfDevices[NwkId]["GroupMemberShip"][Ep] = {}
-    if GroupId not in self.ListOfDevices[NwkId]["GroupMemberShip"][Ep]:
-        self.ListOfDevices[NwkId]["GroupMemberShip"][Ep][GroupId] = {}
-    self.ListOfDevices[NwkId]["GroupMemberShip"][Ep][GroupId]["Status"] = "OK"
+    # This is called from a plugin when setting group membership for a Legrand Remote
+    group_membership = self.ListOfDevices.setdefault(NwkId, {}).setdefault("GroupMemberShip", {})
+    group_membership.setdefault(Ep, {})[GroupId] = {"Status": "OK"}
     checkToCreateOrUpdateGroup(self, NwkId, Ep, GroupId)
-
 
 def get_available_grp_id(self, start_range, stop_range):
     for x in range(start_range, stop_range, -1):
@@ -175,7 +156,7 @@ def create_new_group_and_attach_devices(self, GrpId, GrpName, DevicesList):
 
 
 def update_group_and_add_devices(self, GrpId, ToBeAddedDevices):
-    self.logging("Debug", " --  --  --  --  --  > UpdateGroupAndAddDevices ")
+    self.logging("Debug", f" --  --  --  --  --  > UpdateGroupAndAddDevices {GrpId} {ToBeAddedDevices}")
     for NwkId, ep, ieee in ToBeAddedDevices:
         NwkId = checkNwkIdAndUpdateIfAny(self, NwkId, ieee)
         # Ikea Tradfri Round5B will be added if required by checkIfIkeaRound5B
@@ -185,7 +166,7 @@ def update_group_and_add_devices(self, GrpId, ToBeAddedDevices):
 
 
 def update_group_and_remove_devices(self, GrpId, ToBeRemoveDevices):
-    self.logging("Debug", " --  --  --  --  --  > UpdateGroupAndRemoveDevices ")
+    self.logging("Debug", f" --  --  --  --  --  > UpdateGroupAndRemoveDevices {GrpId} {ToBeRemoveDevices}")
     for NwkId, ep, ieee in ToBeRemoveDevices:
         self.logging("Debug", "-- --  --  --  --  --  > Removing [%s %s %s]" % (NwkId, ep, ieee))
         NwkId = checkNwkIdAndUpdateIfAny(self, NwkId, ieee)

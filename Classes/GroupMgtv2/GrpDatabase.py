@@ -20,8 +20,10 @@ import json
 import os
 import time
 
-import Domoticz
-from Modules.domoticzAPI import getConfigItem, setConfigItem
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api, getConfigItem,
+                                           setConfigItem)
 from Modules.tools import is_domoticz_db_available
 
 
@@ -62,9 +64,9 @@ def load_groups_list_from_json(self):
         txt_timestamp = 0
         if os.path.isfile(self.GroupListFileName):
             txt_timestamp = os.path.getmtime(self.GroupListFileName)
-        Domoticz.Log("%s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
+        domoticz_log_api("%s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
         if dz_timestamp < txt_timestamp:
-            Domoticz.Log("Dz Group is older than Json Dz: %s Json: %s" % (dz_timestamp, txt_timestamp))
+            domoticz_log_api("Dz Group is older than Json Dz: %s Json: %s" % (dz_timestamp, txt_timestamp))
             # We should load the json file
 
         if not isinstance(_domoticz_grouplist, dict):
@@ -78,7 +80,7 @@ def load_groups_list_from_json(self):
         self.ListOfGroups = json.load(handle)
 
     if is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
-        Domoticz.Log("GroupList Loaded from Dz: %s from Json: %s" % (len(_domoticz_grouplist), len(self.ListOfGroups)))
+        domoticz_log_api("GroupList Loaded from Dz: %s from Json: %s" % (len(_domoticz_grouplist), len(self.ListOfGroups)))
 
 
 def build_group_list_from_list_of_devices(self):

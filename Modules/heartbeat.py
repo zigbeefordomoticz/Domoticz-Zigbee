@@ -16,6 +16,7 @@ import time
 from Modules.basicOutputs import getListofAttribute
 from Modules.casaia import pollingCasaia
 from Modules.danfoss import danfoss_room_sensor_polling
+from Modules.domoticzAbstractLayer import is_device_ieee_in_domoticz_db
 from Modules.domoTools import timedOutDevice
 from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
                                     processNotinDBDevices)
@@ -23,6 +24,7 @@ from Modules.paramDevice import sanity_check_of_param
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttribute_ZLinkyIndex,
+                                    ReadAttributeReq,
                                     ReadAttributeReq_Scheduled_ZLinky,
                                     ReadAttributeReq_ZLinky,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
@@ -39,19 +41,23 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
-                                    ping_tuya_device,
-                                    ping_devices_via_group)
+                                    ping_devices_via_group, ping_tuya_device)
 from Modules.schneider_wiser import schneiderRenforceent
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
-                           get_device_nickname, getListOfEpForCluster, is_hex,
+                           get_device_nickname, getAttributeValue,
+                           getListOfEpForCluster, is_hex,
                            is_time_to_perform_work, mainPoweredDevice,
-                           night_shift_jobs, removeNwkInList, getAttributeValue)
+                           night_shift_jobs, removeNwkInList)
 from Modules.tuyaTRV import tuya_switch_online
 from Modules.zb_tables_management import mgmt_rtg, mgtm_binding
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
 from Zigbee.zdpCommands import (zdp_node_descriptor_request,
                                 zdp_NWK_address_request)
-from Modules.readAttributes import ReadAttributeReq
+
+from Modules.domoticzAbstractLayer import find_widget_unit_from_WidgetID
+from Modules.domoTools import reset_device_ieee_unit_if_needed, RetreiveWidgetTypeList
+from Modules.switchSelectorWidgets import SWITCH_SELECTORS
+
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
@@ -73,6 +79,7 @@ ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 7)
 CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 PING_DEVICE_VIA_GROUPID = 3567 // HEARTBEAT    # Secondes ( 59minutes et 45 secondes )
 FIRST_PING_VIA_GROUP = 127 // HEARTBEAT
+
 
 def attributeDiscovery(self, NwkId):
 
@@ -593,23 +600,20 @@ def processKnownDevices(self, Devices, NWKID):
 
     # If device flag as Not Reachable, don't do anything
     if not health:
-        self.log.logging(
-            "Heartbeat",
-            "Debug",
-            "processKnownDevices -  %s stop here due to Health %s" % (NWKID, self.ListOfDevices[NWKID]["Health"]),
-            NWKID,
-        )
+        self.log.logging( "Heartbeat", "Debug", "processKnownDevices -  %s stop here due to Health %s" % (NWKID, self.ListOfDevices[NWKID]["Health"]), NWKID, )
         return
 
     # If we reach this step, the device health is Live
     if "pingDeviceRetry" in self.ListOfDevices[NWKID]:
-        self.log.logging("Heartbeat", "Log", "processKnownDevices -  %s recover from Non Reachable" % NWKID, NWKID)
+        self.log.logging("Heartbeat", "Log", f"Device {NWKID} '{get_device_nickname(self, NwkId=NWKID)}' recover from Non Reachable", NWKID)
         del self.ListOfDevices[NWKID]["pingDeviceRetry"]
 
-    model = self.ListOfDevices[NWKID]["Model"] if "Model" in self.ListOfDevices[NWKID] else ""
-    enabledEndDevicePolling = bool(model in self.DeviceConf and "PollingEnabled" in self.DeviceConf[model] and self.DeviceConf[model]["PollingEnabled"])
+    model = self.ListOfDevices[NWKID].get("Model", "")
+    
+    enabledEndDevicePolling = bool(self.DeviceConf.get(model, {}).get("PollingEnabled", False))
 
-    if "CheckParam" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["CheckParam"] and intHB > (60 // HEARTBEAT):
+    check_param = self.ListOfDevices.get(NWKID, {}).get("CheckParam", False)
+    if check_param and self.HeartbeatCount > QUIET_AFTER_START and self.ControllerLink.loadTransmit() < 5:
         sanity_check_of_param(self, NWKID)
         self.ListOfDevices[NWKID]["CheckParam"] = False
 
@@ -656,75 +660,14 @@ def processKnownDevices(self, Devices, NWKID):
         and time.time() <= ( self.ListOfDevices[ NWKID ]["PairingTime"] + ( self.ControllerLink.loadTransmit() // 5 ) + 15 ) 
         ):
         # In case we have just finished the pairing give 3 minutes to finish.
-        self.log.logging(
-            "Heartbeat",
-            "Debug",
-            "processKnownDevices -  %s delay the next ReadAttribute to closed to the pairing %s" % (NWKID, self.ListOfDevices[ NWKID ]["PairingTime"],),
-            NWKID,
-        )
+        self.log.logging( "Heartbeat", "Debug", "processKnownDevices -  %s delay the next ReadAttribute to closed to the pairing %s" % (
+            NWKID, self.ListOfDevices[ NWKID ]["PairingTime"],), NWKID, )
         return
             
     if _doReadAttribute:
-        self.log.logging(
-            "Heartbeat",
-            "Log",
-            "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" % (NWKID, intHB, _mainPowered, _doReadAttribute),
-            NWKID,
-        )
-
-        
-        # Read Attributes if enabled
-        now = int(time.time())  # Will be used to trigger ReadAttributes
-        for tmpEp in self.ListOfDevices[NWKID]["Ep"]:
-            if tmpEp == "ClusterType":
-                continue
-
-            for Cluster in READ_ATTRIBUTES_REQUEST:
-                if Cluster in ("Type", "ClusterType", "ColorMode"):
-                    continue
-                if Cluster not in self.ListOfDevices[NWKID]["Ep"][tmpEp]:
-                    continue
-
-                if "Model" in self.ListOfDevices[NWKID]:
-                    if (
-                        self.ListOfDevices[NWKID]["Model"] == "lumi.ctrl_neutral1" and tmpEp != "02"
-                    ):  # All Eps other than '02' are blacklisted
-                        continue
-                    if self.ListOfDevices[NWKID]["Model"] == "lumi.ctrl_neutral2" and tmpEp not in ("02", "03"):
-                        continue
-
-                if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
-                    self.log.logging(
-                        "Heartbeat",
-                        "Debug",
-                        "--  -  %s skip ReadAttribute for now ... system too busy (%s/%s)"
-                        % (NWKID, self.busy, self.ControllerLink.loadTransmit()),
-                        NWKID,
-                    )
-                    rescheduleAction = True
-                    continue  # Do not break, so we can keep all clusters on the same states
-
-                func = READ_ATTRIBUTES_REQUEST[Cluster][0]
-                # For now it is a hack, but later we might put all parameters
-                if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
-                    timing = self.pluginconf.pluginConf[READ_ATTRIBUTES_REQUEST[Cluster][1]]
-                else:
-                    self.log.logging( "Heartbeat", "Error", "processKnownDevices - missing timing attribute for Cluster: %s - %s" % (
-                        Cluster, READ_ATTRIBUTES_REQUEST[Cluster][1]) )
-                    continue
-
-                # Let's check the timing
-                if not is_time_to_perform_work(self, "ReadAttributes", NWKID, tmpEp, Cluster, now, timing):
-                    continue
-
-                self.log.logging(
-                    "Heartbeat",
-                    "Debug",
-                    "-- -  %s/%s and time to request ReadAttribute for %s" % (NWKID, tmpEp, Cluster),
-                    NWKID,
-                )
-
-                func(self, NWKID)
+        self.log.logging( "Heartbeat", "Debug", "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" % (
+            NWKID, intHB, _mainPowered, _doReadAttribute), NWKID, )
+        rescheduleAction = rescheduleAction or process_read_attributes(self, NWKID, model)
 
     # Call Schneider Reenforcement if needed
     if self.pluginconf.pluginConf["reenforcementWiser"] and (self.HeartbeatCount % self.pluginconf.pluginConf["reenforcementWiser"]) == 0:
@@ -764,11 +707,60 @@ def processKnownDevices(self, Devices, NWKID):
     else: 
         if "LastPollingManufSpecificDevices" in self.ListOfDevices[ NWKID ]:
             del self.ListOfDevices[ NWKID ][ "LastPollingManufSpecificDevices"]
+
         if "LastCustomPolling" in self.ListOfDevices[ NWKID ]:
             del self.ListOfDevices[ NWKID ][ "LastCustomPolling"]
 
-
     return
+
+
+def process_read_attributes(self, Nwkid, model):
+    self.log.logging( "Heartbeat", "Debug", f"process_read_attributes  -  for {Nwkid} {model}")
+    process_next_ep_later = False
+    now = int(time.time())  # Will be used to trigger ReadAttributes
+    
+    device_infos = self.ListOfDevices[Nwkid]
+    for ep in device_infos["Ep"]:
+        if ep == "ClusterType":
+            continue
+        
+        if model == "lumi.ctrl_neutral1" and ep != "02" :  # All Eps other than '02' are blacklisted
+            continue
+        
+        if model == "lumi.ctrl_neutral2" and ep not in ("02", "03"):
+            continue
+
+        for Cluster in READ_ATTRIBUTES_REQUEST:
+            # We process ALL available clusters for a particular EndPoint
+
+            if ( Cluster not in READ_ATTRIBUTES_REQUEST or Cluster not in device_infos["Ep"][ep] ):
+                continue
+
+            if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+                self.log.logging( "Heartbeat", "Debug", "process_read_attributes  -  %s skip ReadAttribute for now ... system too busy (%s/%s)" % (
+                    Nwkid, self.busy, self.ControllerLink.loadTransmit()), Nwkid, )
+                process_next_ep_later = True
+
+            if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
+                timing = self.pluginconf.pluginConf[READ_ATTRIBUTES_REQUEST[Cluster][1]]
+            else:
+                self.log.logging( "Heartbeat", "Error", "proprocess_read_attributescessKnownDevices - missing timing attribute for Cluster: %s - %s" % (
+                    Cluster, READ_ATTRIBUTES_REQUEST[Cluster][1]), Nwkid )
+                continue
+
+            # Let's check the timing
+            if not is_time_to_perform_work(self, "ReadAttributes", Nwkid, ep, Cluster, now, timing):
+                continue
+
+            self.log.logging( "Heartbeat", "Debug", "process_read_attributes -  %s/%s and time to request ReadAttribute for %s" % (
+                Nwkid, ep, Cluster), Nwkid, )
+
+            func = READ_ATTRIBUTES_REQUEST[Cluster][0]
+            func(self, Nwkid)
+            
+            if process_next_ep_later:
+                return True
+    return False
 
 def check_configuration_reporting(self, NWKID, _mainPowered, intHB):
     
@@ -851,6 +843,7 @@ def processListOfDevices(self, Devices):
 
         if "Param" in self.ListOfDevices[NWKID] and "Disabled" in self.ListOfDevices[NWKID]["Param"]:
             if self.ListOfDevices[NWKID]["Param"]["Disabled"] and self.ListOfDevices[NWKID]["Health"] == "Disabled":
+                self.ListOfDevices[NWKID]["CheckParam"] = False
                 continue
             
             if not self.ListOfDevices[NWKID]["Param"]["Disabled"] and self.ListOfDevices[NWKID]["Health"] == "Disabled":
@@ -876,6 +869,9 @@ def processListOfDevices(self, Devices):
         # Known Devices
         if status == "inDB":
             processKnownDevices(self, Devices, NWKID)
+            
+            # Check and reset if needed Motion, Vibrator and Switch Selector
+            check_and_reset_device_if_needed(self, Devices, NWKID)
 
         elif status == "Leave":
             timedOutDevice(self, Devices, NwkId=NWKID)
@@ -885,42 +881,13 @@ def processListOfDevices(self, Devices):
             # We might have to remove this entry if the device get not reconnected.
             if ((int(self.ListOfDevices[NWKID]["Heartbeat"]) % 36) and int(self.ListOfDevices[NWKID]["Heartbeat"]) != 0) == 0:
                 if "ZDeviceName" in self.ListOfDevices[NWKID]:
-                    self.log.logging(
-                        "Heartbeat",
-                        "Debug",
-                        "processListOfDevices - Device: %s (%s) is in Status = 'Left' for %s HB"
-                        % (self.ListOfDevices[NWKID]["ZDeviceName"], NWKID, self.ListOfDevices[NWKID]["Heartbeat"]),
-                        NWKID,
-                    )
+                    self.log.logging( "Heartbeat", "Debug", "processListOfDevices - Device: %s (%s) is in Status = 'Left' for %s HB" % (
+                        self.ListOfDevices[NWKID]["ZDeviceName"], NWKID, self.ListOfDevices[NWKID]["Heartbeat"]), NWKID, )
                 else:
-                    self.log.logging(
-                        "Heartbeat",
-                        "Debug",
-                        "processListOfDevices - Device: (%s) is in Status = 'Left' for %s HB"
-                        % (NWKID, self.ListOfDevices[NWKID]["Heartbeat"]),
-                        NWKID,
-                    )
+                    self.log.logging( "Heartbeat", "Debug", "processListOfDevices - Device: (%s) is in Status = 'Left' for %s HB" % (
+                        NWKID, self.ListOfDevices[NWKID]["Heartbeat"]), NWKID, )
                 # Let's check if the device still exist in Domoticz
-                for Unit in Devices:
-                    if self.ListOfDevices[NWKID]["IEEE"] == Devices[Unit].DeviceID:
-                        self.log.logging(
-                            "Heartbeat",
-                            "Debug",
-                            "processListOfDevices - %s  is still connected cannot remove. NwkId: %s IEEE: %s "
-                            % (Devices[Unit].Name, NWKID, self.ListOfDevices[NWKID]["IEEE"]),
-                            NWKID,
-                        )
-                        fnd = True
-                        break
-                else:  # We browse the all Devices and didn't find any IEEE.
-                    if "IEEE" in self.ListOfDevices[NWKID]:
-                        self.log.logging( "Heartbeat", "Log", "processListOfDevices - No corresponding device in Domoticz for %s/%s" % (
-                            NWKID, str(self.ListOfDevices[NWKID]["IEEE"])) )
-                    else:
-                        self.log.logging( "Heartbeat", "Log", "processListOfDevices - No corresponding device in Domoticz for %s" % (NWKID))
-                    fnd = False
-
-                if not fnd:
+                if not is_device_ieee_in_domoticz_db(self, Devices, self.ListOfDevices[NWKID]["IEEE"]):
                     # Not devices found in Domoticz, so we are safe to remove it from Plugin
                     if self.ListOfDevices[NWKID]["IEEE"] in self.IEEE2NWK:
                         self.log.logging( "Heartbeat", "Status", "processListOfDevices - Removing %s / %s from IEEE2NWK." % (
@@ -965,11 +932,7 @@ def processListOfDevices(self, Devices):
             self.log.logging("Heartbeat", "Status", "Starting Network Topology")
             self.networkmap.start_scan()
         elif phase == 2:
-            self.log.logging(
-                "Heartbeat",
-                "Debug",
-                "processListOfDevices Topology scan is possible %s" % self.ControllerLink.loadTransmit(),
-            )
+            self.log.logging( "Heartbeat", "Debug", "processListOfDevices Topology scan is possible %s" % self.ControllerLink.loadTransmit(), )
             if self.ControllerLink.loadTransmit() < MAX_LOAD_ZIGATE:
                 self.networkmap.continue_scan()
 
@@ -981,6 +944,20 @@ def processListOfDevices(self, Devices):
     self.log.logging( "Heartbeat", "Debug", "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" % (
         self.HeartbeatCount, self.busy, self.CommiSSionning, self.ControllerLink.loadTransmit()), )
     return
+
+def check_and_reset_device_if_needed(self, Devices, Nwkid):
+
+    self.log.logging( "Heartbeat", "Debug", "Check for reseting %s" %Nwkid)
+
+    now = time.time()
+    device_ieee = self.ListOfDevices[Nwkid]["IEEE"]
+    ClusterTypeList = RetreiveWidgetTypeList(self, Devices, device_ieee, Nwkid)
+    for WidgetEp, Widget_Idx, WidgetType in ClusterTypeList:
+        
+        if WidgetType in ( "Motion", "Vibration", SWITCH_SELECTORS):
+            device_unit = find_widget_unit_from_WidgetID(self, Devices, Widget_Idx )
+            self.log.logging( "Heartbeat", "Debug", "Candidate for reseting %s %s %s %s %s" %(device_ieee, device_unit, Nwkid, WidgetType, Widget_Idx))
+            reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, Nwkid, WidgetType, Widget_Idx, now)
 
 
 def add_device_group_for_ping(self, NWKID):

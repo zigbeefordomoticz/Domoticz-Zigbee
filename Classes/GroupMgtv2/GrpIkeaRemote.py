@@ -1,8 +1,10 @@
-import Domoticz
 
-from Modules.zigateConsts import ADDRESS_MODE
-from Classes.GroupMgtv2.GrpDomoticz import update_domoticz_group_device_widget
 from Classes.GroupMgtv2.GrpCommands import set_kelvin_color, set_rgb_color
+from Classes.GroupMgtv2.GrpDomoticz import update_domoticz_group_device_widget
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
+from Modules.zigateConsts import ADDRESS_MODE
 
 
 def checkIfIkeaRound5BToBeAdded(self, NwkId, ep, ieee, GrpId):
@@ -28,7 +30,7 @@ def checkIfIkeaRound5BToBeAdded(self, NwkId, ep, ieee, GrpId):
                 self.ListOfGroups[GrpId]["Tradfri Remote"]["Device Id"] = DomoDeviceUnit
                 self.ListOfGroups[GrpId]["Tradfri Remote"]["IEEE"] = ieee
                 self.ListOfGroups[GrpId]["Tradfri Remote"]["Color Mode"] = None
-                Domoticz.Log("--> %s" % (self.ListOfGroups[GrpId]))
+                domoticz_log_api("--> %s" % (self.ListOfGroups[GrpId]))
                 #
                 update_domoticz_group_device_widget(self, GrpId)
                 return True

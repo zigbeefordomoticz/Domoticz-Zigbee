@@ -513,22 +513,6 @@ def removeZigateDevice(self, IEEE):
     #return send_zigatecmd_raw(self, "0026", ParentAddr + ChildAddr)
 
 
-def ballast_Configuration_max_level(self, nwkid, value):
-    ListOfEp = getListOfEpForCluster(self, nwkid, "0301")
-    if ListOfEp:
-        for EPout in ListOfEp:
-            write_attribute(
-                self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0011", "20", "%02x" % value, ackIsDisabled=False
-            )
-            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0011", ackIsDisabled=False)
-
-
-def ballast_Configuration_min_level(self, nwkid, value):
-    ListOfEp = getListOfEpForCluster(self, nwkid, "0301")
-    if ListOfEp:
-        for EPout in ListOfEp:
-            write_attribute( self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0010", "20", "%02x" % value, ackIsDisabled=False)
-            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0010", ackIsDisabled=False)
 
 def read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=False):
     return zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled)

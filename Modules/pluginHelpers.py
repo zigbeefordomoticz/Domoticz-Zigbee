@@ -15,14 +15,17 @@ import re
 import sys
 from pathlib import Path
 
-import Domoticz
+#import DomoticzEx as Domoticz
+import Domoticz as Domoticz
+
 from Modules.tools import how_many_devices
+from Modules.domoticzAbstractLayer import domoticz_error_api
 
 MODULES_VERSION = {
-    "zigpy": "0.59.0",
-    "zigpy_znp": "0.11.6",
-    "zigpy_deconz": "0.21.1",
-    "bellows": "0.36.8",
+    "zigpy": "0.63.5",
+    "zigpy_znp": "0.12.1",
+    "zigpy_deconz": "0.23.1",
+    "bellows": "0.38.1",
     }
 
 def networksize_update(self):
@@ -76,7 +79,7 @@ def get_domoticz_version( self, domoticz_version  ):
         return _old_fashon_domoticz(self, lst_version, domoticz_version)
     
     if len(lst_version) != 3:
-        Domoticz.Error( "Domoticz version %s unknown not supported, please upgrade to a more recent"% (
+        domoticz_error_api( "Domoticz version %s unknown not supported, please upgrade to a more recent"% (
             domoticz_version) )
         return _domoticz_not_compatible(self)
 
@@ -97,7 +100,7 @@ def _old_fashon_domoticz(self, lst_version, domoticz_version):
         return True
     
     # Old fashon Versioning
-    Domoticz.Error( "Domoticz version %s %s %s not supported, please upgrade to a more recent" % (
+    domoticz_error_api( "Domoticz version %s %s %s not supported, please upgrade to a more recent" % (
         domoticz_version, major, minor) )
     return _domoticz_not_compatible(self)
 

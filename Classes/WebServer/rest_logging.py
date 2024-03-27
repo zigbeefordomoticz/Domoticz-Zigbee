@@ -1,9 +1,15 @@
 
 
-import Domoticz
+
 import json
 import os
-from Classes.WebServer.headerResponse import prepResponseMessage, setupHeadersResponse
+
+from Classes.WebServer.headerResponse import (prepResponseMessage,
+                                              setupHeadersResponse)
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
+
 
 def rest_logErrorHistory(self, verb, data, parameters):
 
@@ -15,7 +21,7 @@ def rest_logErrorHistory(self, verb, data, parameters):
                 _response["Data"] = json.dumps(self.log.LogErrorHistory, sort_keys=False)
                 self.log.reset_new_error()
             except Exception as e:
-                Domoticz.Error("rest_logErrorHistory - Exception %s while saving: %s" % (e, str(self.log.LogErrorHistory)))
+                domoticz_error_api("rest_logErrorHistory - Exception %s while saving: %s" % (e, str(self.log.LogErrorHistory)))
     return _response
 
 def rest_logErrorHistoryClear(self, verb, data, parameters):

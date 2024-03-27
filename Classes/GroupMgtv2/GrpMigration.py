@@ -4,7 +4,11 @@
 # Author: pipiche38
 #
 
-import Domoticz
+
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
+
 
 
 def migrateIfTradfriRemote(self, GrpId):
@@ -12,7 +16,7 @@ def migrateIfTradfriRemote(self, GrpId):
     if "Tradfri Remote" not in self.ListOfGroups[GrpId]:
         return
     NwkId = self.ListOfGroups[GrpId]["Tradfri Remote"]["Device Addr"]
-    Domoticz.Status("Migration of Ikea Tradfri %s in Group %s" % (NwkId, GrpId))
+    domoticz_status_api("Migration of Ikea Tradfri %s in Group %s" % (NwkId, GrpId))
 
     if "Ep" not in self.ListOfGroups[GrpId]["Tradfri Remote"]:
         self.ListOfGroups[GrpId]["Tradfri Remote"]["Ep"] = "01"
@@ -48,13 +52,13 @@ def migrateTupleToList(self, GrpId, tupleItem):
         self.ListOfGroups[GrpId]["Devices"].remove((NwkId, Ep, Ieee))
         self.ListOfGroups[GrpId]["Devices"].append([NwkId, Ep, Ieee])
 
-    Domoticz.Status("--- --- NwkId: %s Ep: %s Ieee: %s" % (NwkId, Ep, Ieee))
+    domoticz_status_api("--- --- NwkId: %s Ep: %s Ieee: %s" % (NwkId, Ep, Ieee))
     if NwkId not in self.ListOfDevices:
         self.logging("Error", "migrateTupleToList - NwkId: %s not found in current database" % NwkId)
         if Ieee not in self.IEEE2NWK:
             return
         NwkId = self.IEEE2NWK[Ieee]
-        Domoticz.Status("---> Retreive new NwkId: %s from Ieee: %s" % (NwkId, Ieee))
+        domoticz_status_api("---> Retreive new NwkId: %s from Ieee: %s" % (NwkId, Ieee))
 
     if "GroupMemberShip" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["GroupMemberShip"] = {}
@@ -71,9 +75,9 @@ def migrateTupleToList(self, GrpId, tupleItem):
 
 def GrpMgtv2Migration(self):
 
-    Domoticz.Status("Group Migration to new format")
+    domoticz_status_api("Group Migration to new format")
     for GrpId in self.ListOfGroups:
-        Domoticz.Status("--- GroupId: %s" % GrpId)
+        domoticz_status_api("--- GroupId: %s" % GrpId)
         migrateIfTradfriRemote(self, GrpId)
 
         for item in list(self.ListOfGroups[GrpId]["Devices"]):

@@ -6,10 +6,12 @@
 import json
 from time import time
 
-import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.casaia import DEVICE_ID
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 
 
 def rest_casa_device_list(self, verb, data, parameters):  # Ok 10/11/2020
@@ -30,7 +32,7 @@ def rest_casa_device_list(self, verb, data, parameters):  # Ok 10/11/2020
 
 
 def fake_list_casaia_ac201():
-    Domoticz.Log("fake_list_casaia_ac201")
+    domoticz_log_api("fake_list_casaia_ac201")
 
     return [
         {"NwkId": "aef3", "IEEE": "3c6a2cfffed012345", "Model": "AC201A", "Name": "Clim Bureau", "IRCode": "1234"},
@@ -79,7 +81,7 @@ def rest_casa_device_ircode_update(self, verb, data, parameters):
             continue
 
         if x["NwkId"] in self.ListOfDevices and "CASA.IA" in self.ListOfDevices[x["NwkId"]]:
-            Domoticz.Log("Updating : %s with %s" % (x["NwkId"], x["IRCode"]))
+            domoticz_log_api("Updating : %s with %s" % (x["NwkId"], x["IRCode"]))
             if self.ListOfDevices[x["NwkId"]] and "Model" in self.ListOfDevices[x["NwkId"]]:
                 self.ListOfDevices[x["NwkId"]]["CASA.IA"][DEVICE_ID]["IRCode"] = x["IRCode"]
 

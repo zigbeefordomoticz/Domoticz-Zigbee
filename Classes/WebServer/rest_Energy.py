@@ -7,7 +7,6 @@
 import json
 from time import time
 
-import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 

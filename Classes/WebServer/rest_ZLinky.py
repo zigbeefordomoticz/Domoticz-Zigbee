@@ -1,6 +1,5 @@
 import json
 
-import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.tools import get_device_nickname

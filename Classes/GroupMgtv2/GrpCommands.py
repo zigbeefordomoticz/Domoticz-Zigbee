@@ -6,19 +6,19 @@
 # All operations to and from Zigate
 
 
-import Domoticz
+
 from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
-from Zigbee.zclCommands import (zcl_add_group_membership,
-                                 zcl_check_group_member_ship,
-                                 zcl_group_identify_trigger_effect,
-                                 zcl_group_move_hue_and_saturation,
-                                 zcl_group_move_to_colour,
-                                 zcl_group_move_to_colour_temperature,
-                                 zcl_look_for_group_member_ship,
-                                 zcl_remove_all_groups,
-                                 zcl_remove_group_member_ship,
-                                 zcl_send_group_member_ship_identify)
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
+from Zigbee.zclCommands import (zcl_add_group_membership,
+                                zcl_check_group_member_ship,
+                                zcl_group_identify_trigger_effect,
+                                zcl_group_move_hue_and_saturation,
+                                zcl_group_move_to_colour,
+                                zcl_group_move_to_colour_temperature,
+                                zcl_look_for_group_member_ship,
+                                zcl_remove_all_groups,
+                                zcl_remove_group_member_ship,
+                                zcl_send_group_member_ship_identify)
 
 GRP_CMD_WITHOUT_ACK = False
 # Group Management Command

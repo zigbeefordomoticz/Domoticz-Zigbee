@@ -3,6 +3,7 @@
     "Description": "Occupancy Sensing",
     "Version": "1",
     "Enabled": true,
+    "Debug": "Occupancy",
     "Attributes": {
         "0000": { 
             "Enabled": true,

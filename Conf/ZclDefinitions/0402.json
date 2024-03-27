@@ -3,6 +3,7 @@
     "Description": "Temperature Measurement",
     "Version": "1",
     "Enabled": true,
+    "Debug": "Temperature",
     "Attributes": {
         "0000": { 
             "Enabled": true,

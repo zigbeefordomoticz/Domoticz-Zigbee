@@ -11,7 +11,6 @@ import time
 from queue import PriorityQueue, Queue
 from threading import Semaphore
 
-import Domoticz
 from Classes.ZigateTransport.forwarderThread import start_forwarder_thread
 from Classes.ZigateTransport.readDecoder import decode_and_split_message
 from Classes.ZigateTransport.readerThread import (open_zigate_and_start_reader,
@@ -22,6 +21,7 @@ from Classes.ZigateTransport.tools import (
     initialize_command_protocol_parameters, stop_waiting_on_queues,
     waiting_for_end_thread)
 from Classes.ZigateTransport.writerThread import start_writer_thread
+from Modules.domoticzAbstractLayer import domoticz_connection
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 
 
@@ -131,7 +131,7 @@ class ZigateTransport(object):
             self._wifiPort = wifiPort
 
         else:
-            Domoticz.Error("Unknown Transport Mode: >%s<" % transport)
+            self.logging_transport("Error", "Unknown Transport Mode: >%s<" % transport)
             self._transp = "None"
 
     # for Statistics usage
@@ -352,9 +352,7 @@ def open_connection(self):
         if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
             result = open_zigate_and_start_reader(self, "serial")
         else:
-            self._connection = Domoticz.Connection(
-                Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200
-            )
+            self._connection = domoticz_connection( name="ZiGate", transport="Serial", protocol="None", address=self._serialPort, port=None, baud=115200)
             result = self._connection
         if result:
             start_writer_thread(self)
@@ -365,8 +363,8 @@ def open_connection(self):
         if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
             result = open_zigate_and_start_reader(self, "tcpip")
         else:
-            self._connection = Domoticz.Connection(
-                Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=self._wifiAddress, Port=self._wifiPort
+            self._connection = domoticz_connection( 
+                name="Zigate", transport="TCP/IP", Protocol="None ", address=self._wifiAddress, port=self._wifiPort
             )
             result = self._connection
         if result:

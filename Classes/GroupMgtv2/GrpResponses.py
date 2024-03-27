@@ -5,15 +5,14 @@
 #
 
 # All operations to and from Zigate
-import Domoticz
 
 from time import time
 
-from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
-from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-
-from Classes.GroupMgtv2.GrpCallBackResponses import checkToCreateOrUpdateGroup, checkToRemoveGroup
+from Classes.GroupMgtv2.GrpCallBackResponses import (
+    checkToCreateOrUpdateGroup, checkToRemoveGroup)
 from Classes.GroupMgtv2.GrpCommands import check_group_member_ship
+from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
+from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 
 
 # Group Management Command

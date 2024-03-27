@@ -4,7 +4,8 @@ from Modules.sendZigateCommand import raw_APS_request
 
 
 def Decode0041(self, Devices, MsgData, MsgLQI):
-    self.log.logging('Input', 'Debug', 'Decode0041 - IEEE_addr_req: %s' % MsgData)
+    self.log.logging('Input', 'Debug', 'Decode0041 - IEEE_addr_req: %s %s %s' % (MsgData, self.ControllerNWKID, self.ControllerIEEE))
+    
     sqn = MsgData[:2]
     srcNwkId = MsgData[2:6]
     srcEp = MsgData[6:8]

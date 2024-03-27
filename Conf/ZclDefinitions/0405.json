@@ -3,6 +3,7 @@
     "Description": "Relative Humidity Measurement",
     "Version": "1",
     "Enabled": true,
+    "Debug": "Humidity",
     "Attributes": {
         "0000": { 
             "Enabled": true,
