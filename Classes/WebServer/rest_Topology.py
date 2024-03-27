@@ -265,6 +265,10 @@ def find_device_type(self, node):
 
 def collect_routing_table(self, time_stamp=None):
     
+    self.logging( "Log", "Relationships (Neighbours table)")
+    self.logging( "Log", "| %15.15s (%5.5s) | %15.15s (%5.5s) | %4.4s | %11.11s | %9.9s | %5.5s |" % (
+        "Node1", "nwkid", "Node2", "nwkid", "LQI", "Dev. Type", "Relation", "Route Flag"),)
+
     _topo = []
     prevent_duplicate_tuple = []
     self.logging( "Debug", "collect_routing_table - TimeStamp: %s" %time_stamp)
@@ -283,9 +287,9 @@ def collect_routing_table(self, time_stamp=None):
                 new_entry = build_relation_ship_dict(self, node1, node2,)
 
                 if node2 in routes_list:
-                    new_entry["Route"] = "Route"
+                    new_entry["Route"] = "Yes"
                     
-                self.logging( "Log", "Relationship (Neighbours) - %15.15s (%s) - %15.15s (%s) %3s %11s %5s %s" % (
+                self.logging( "Log", "| %15.15s (%5.5s) | %15.15s (%5.5s) | %4.4s | %11.11s | %9.9s | %5.5s |" % (
                     new_entry["Father"], node1, new_entry["Child"], node2, new_entry["_lnkqty"], new_entry["DeviceType"], new_entry["_relationship"], new_entry["Route"]),)
                 _topo.append( new_entry ) 
 
