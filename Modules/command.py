@@ -751,35 +751,11 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         Nwkid, EPout, Unit, DeviceType, Level), Nwkid, )
 
     if DeviceType == "ThermoSetpoint":
-        self.log.logging( "Command", "Debug", "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (Nwkid, EPout, Unit, DeviceType, Level), Nwkid, )
-        value = int(float(Level) * 100)
-        thermostat_Setpoint(self, Nwkid, value)
-        Level = round(float(Level), 2)
-        # Normalize SetPoint value with 2 digits
-        Level = str_round(float(Level), 2)  # 2 decimals
-        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-
-        # Let's force a refresh of Attribute in the next Heartbeat
-        request_read_device_status(self, Nwkid)
+        _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
         return
 
     if DeviceType == "TempSetCurrent":
-        self.log.logging(
-            "Command",
-            "Debug",
-            "mgtCommand : Set Temp for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
-            % (Nwkid, EPout, Unit, DeviceType, Level),
-            Nwkid,
-        )
-        value = int(float(Level) * 100)
-        schneider_temp_Setcurrent(self, Nwkid, value)
-        Level = round(float(Level), 2)
-        # Normalize SetPoint value with 2 digits
-        Level = str_round(float(Level), 2)  # 2 decimals
-        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-
-        # Let's force a refresh of Attribute in the next Heartbeat
-        request_read_device_status(self, Nwkid)
+        _set_level_set_current_temp(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev)
         return
 
     if DeviceType == "ThermoModeEHZBRTS":
@@ -792,34 +768,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         return
 
     if DeviceType == "HACTMODE":
-        self.log.logging(
-            "Command",
-            "Debug",
-            "mgtCommand : Set Level for HACT Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
-            % (Nwkid, EPout, Unit, DeviceType, Level),
-            Nwkid,
-        )
-        if "Schneider Wiser" not in self.ListOfDevices[Nwkid]:
-            self.ListOfDevices[Nwkid]["Schneider Wiser"] = {}
-
-        if "HACT Mode" not in self.ListOfDevices[Nwkid]["Schneider Wiser"]:
-            self.ListOfDevices[Nwkid]["Schneider Wiser"]["HACT Mode"] = ""
-
-        if Level == 10:  # Conventional
-            update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
-            self.ListOfDevices[Nwkid]["Schneider Wiser"]["HACT Mode"] = "conventional"
-            schneider_hact_heater_type(self, Nwkid, "conventional")
-
-        elif Level == 20:  # fip
-            update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
-            self.ListOfDevices[Nwkid]["Schneider Wiser"]["HACT Mode"] = "FIP"
-            schneider_hact_heater_type(self, Nwkid, "fip")
-
-        else:
-            self.log.logging("Command", "Error", "Unknown mode %s for HACTMODE for device %s" % (Level, Nwkid))
-
-        # Let's force a refresh of Attribute in the next Heartbeat
-        request_read_device_status(self, Nwkid)
+        _set_level_hact_mode(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev)
         return
 
     if DeviceType == "LegranCableMode":
@@ -1182,6 +1131,91 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
 
     # Let's force a refresh of Attribute in the next Heartbeat
     request_read_device_status(self, Nwkid)
+
+def _set_level_hact_mode(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev):
+    self.log.logging(
+        "Command",
+        "Debug",
+        "mgtCommand : Set Level for HACT Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
+        % (Nwkid, EPout, Unit, DeviceType, Level),
+        Nwkid,
+    )
+    if "Schneider Wiser" not in self.ListOfDevices[Nwkid]:
+        self.ListOfDevices[Nwkid]["Schneider Wiser"] = {}
+
+    if "HACT Mode" not in self.ListOfDevices[Nwkid]["Schneider Wiser"]:
+        self.ListOfDevices[Nwkid]["Schneider Wiser"]["HACT Mode"] = ""
+
+    if Level == 10:  # Conventional
+        update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+        self.ListOfDevices[Nwkid]["Schneider Wiser"]["HACT Mode"] = "conventional"
+        schneider_hact_heater_type(self, Nwkid, "conventional")
+
+    elif Level == 20:  # fip
+        update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+        self.ListOfDevices[Nwkid]["Schneider Wiser"]["HACT Mode"] = "FIP"
+        schneider_hact_heater_type(self, Nwkid, "fip")
+
+    else:
+        self.log.logging("Command", "Error", "Unknown mode %s for HACTMODE for device %s" % (Level, Nwkid))
+
+    # Let's force a refresh of Attribute in the next Heartbeat
+    request_read_device_status(self, Nwkid)
+    return
+
+def _set_level_set_current_temp(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev):
+    # Log the command
+    self.log.logging(
+        "Command",
+        "Debug",
+        f"mgtCommand : Set Temp for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}",
+        Nwkid,
+    )
+
+    # Convert Level to the appropriate format for temperature
+    value = int(float(Level) * 100)
+
+    # Set current temperature
+    schneider_temp_Setcurrent(self, Nwkid, value)
+
+    # Normalize Level value with 2 digits
+    Level = round(float(Level), 2)
+
+    # Update Domoticz widget
+    update_domoticz_widget(
+        self, Devices, DeviceID, Unit, 0, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
+    )
+
+    # Request a refresh of attribute in the next Heartbeat
+    request_read_device_status(self, Nwkid)
+    return
+
+def _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev ):
+    # Log the command
+    self.log.logging(
+        "Command",
+        "Debug",
+        f"mgtCommand : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}",
+        Nwkid,
+    )
+
+    # Convert Level to the appropriate format for thermostat
+    value = int(float(Level) * 100)
+
+    # Set thermostat setpoint
+    thermostat_Setpoint(self, Nwkid, value)
+
+    # Normalize Level value with 2 digits
+    Level = round(float(Level), 2)
+
+    # Update Domoticz widget
+    update_domoticz_widget(
+        self, Devices, DeviceID, Unit, 0, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev
+    )
+
+    # Request a refresh of attribute in the next Heartbeat
+    request_read_device_status(self, Nwkid)
+    return
 
 
 def _set_level_fan_control(self, Devices, DeviceID, Unit, BatteryLevel, SignalLevel, forceUpdateDev, DeviceType, Nwkid, EPout, Level, _model_name):
