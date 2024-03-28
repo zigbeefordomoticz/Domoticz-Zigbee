@@ -891,21 +891,21 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         if "Schneider Wiser" not in self.ListOfDevices[Nwkid]:
             self.ListOfDevices[Nwkid]["Schneider Wiser"] = {}
 
-        if ( Level in FIL_PILOT_MODE and "Model" in self.ListOfDevices[Nwkid] ):
-            if self.ListOfDevices[Nwkid]["Model"] == "EH-ZB-HACT":
+        if ( Level in FIL_PILOT_MODE and _model_name ):
+            if _model_name == "EH-ZB-HACT":
                 self.log.logging( "Command", "Debug","mgtCommand : -----> HACT -> Fil Pilote mode: %s - %s" % (
                     Level, FIL_PILOT_MODE[Level]),Nwkid, )
                 self.ListOfDevices[Nwkid]["Schneider Wiser"]["HACT FIP Mode"] = FIL_PILOT_MODE[Level]
                 schneider_hact_fip_mode(self, Nwkid, FIL_PILOT_MODE[Level])
                 update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev, )
 
-            elif self.ListOfDevices[Nwkid]["Model"] == "Cable outlet":
+            elif _model_name == "Cable outlet":
                 self.log.logging( "Command", "Debug", "mgtCommand : -----> Fil Pilote mode: %s - %s" % (
                     Level, FIL_PILOT_MODE[Level]), Nwkid, )
                 legrand_fc40(self, Nwkid, FIL_PILOT_MODE[Level])
                 update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level) // 10, Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev, )
 
-            elif self.ListOfDevices[Nwkid]["Model"] in ( "SIN-4-FP-21_EQU", "SIN-4-FP-21"):
+            elif _model_name in ( "SIN-4-FP-21_EQU", "SIN-4-FP-21"):
                 ADEO_FIP_ONOFF_COMMAND = {
                     10: 1,
                     20: 4,
@@ -1034,7 +1034,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             Nwkid,
         )
         
-        if "Model" in self.ListOfDevices[ Nwkid ] and self.ListOfDevices[ Nwkid ][ "Model" ] == "TS0601-_TZE200_b6wax7g0":
+        if _model_name == "TS0601-_TZE200_b6wax7g0":
             self.log.logging("Command", "Debug", "ThermoMode_4 - requested Level: %s" % Level, Nwkid)
             # 0x00 - Auto, 0x01 - Manual, 0x02 - Temp Hand, 0x03 - Holliday   
             tuya_trv_brt100_set_mode(self, Nwkid, int(Level / 10) - 1)
@@ -1054,18 +1054,18 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             Nwkid,
         )
         
-        if "Model" in self.ListOfDevices[ Nwkid ] and self.ListOfDevices[ Nwkid ][ "Model" ] == "TS0601-_TZE200_chyvmhay":
+        if _model_name == "TS0601-_TZE200_chyvmhay":
             # 1: // manual 2: // away 0: // auto
             tuya_lidl_set_mode( self, Nwkid, int(Level / 10) - 1 )
             update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             
-        elif "Model" in self.ListOfDevices[ Nwkid ] and self.ListOfDevices[ Nwkid ][ "Model" ] == "TS0601-_TZE200_dzuqwsyg":
+        elif _model_name == "TS0601-_TZE200_dzuqwsyg":
             tuya_trv_onoff(self, Nwkid, 0x01)
 
             tuya_coil_fan_thermostat(self, Nwkid, int(Level / 10) - 1)
             update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             
-        elif "Model" in self.ListOfDevices[ Nwkid ] and self.ListOfDevices[ Nwkid ][ "Model" ] == "TS0601-eTRV5":
+        elif _model_name == "TS0601-eTRV5":
             # "fr-FR": {"LevelNames": "Arrêt|Auto|Manual|Away"}},
             # Off: 00 -> Will get Command Off, so not here
             # Auto:10 -> 00 [0] Scheduled/auto 
@@ -1090,86 +1090,26 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             ikea_air_purifier_mode( self, Nwkid, EPout, mode)
         
     if DeviceType == "FanControl":
-
-        if "Model" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Model"] == "AC201A":
-            casaia_ac201_fan_control(self, Nwkid, Level)
-            return
-
-        if "Model" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Model"] == "TS0601-_TZE200_dzuqwsyg":
-            self.log.logging(
-                "Command",
-                "Debug",
-                "mgtCommand : Fan Control: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
-                % (Nwkid, EPout, Unit, DeviceType, Level),
-                Nwkid,
-            )
-
-            FAN_SPEED_MAPPING = {
-                10: 0x03,
-                20: 0x00,
-                30: 0x01,
-                40: 0x02,
-            }
-            if Level in FAN_SPEED_MAPPING:
-                tuya_fan_speed(self, Nwkid, FAN_SPEED_MAPPING[ Level ])
-                update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-                return 
-            
-            self.log.logging(
-                "Command",
-                "Debug",
-                "mgtCommand : Fan Control not expected Level : %s EPout: %s Unit: %s DeviceType: %s Level: %s "
-                % (Nwkid, EPout, Unit, DeviceType, Level),
-                Nwkid,
-            )
-            
-        FAN_MODE = {
-            0: "Off",
-            20: "Low",
-            30: "Medium",
-            40: "High",
-            10: "Auto",
-        }
-
-        if Level in FAN_MODE:
-            change_fan_mode(self, Nwkid, EPout, FAN_MODE[Level])
-        request_read_device_status(self, Nwkid)
+        _set_level_fan_control(self, Devices, DeviceID, Unit, BatteryLevel, SignalLevel, forceUpdateDev, DeviceType, Nwkid, EPout, Level, _model_name)
 
     if DeviceType == "ACSwing":
         if Level == 10:
             casaia_swing_OnOff(self, Nwkid, "01")
-            # update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
 
     if DeviceType == "ACMode_2":
-        if Level == 10:
-            casaia_system_mode(self, Nwkid, "Cool")
-            # update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-        elif Level == 20:
-            casaia_system_mode(self, Nwkid, "Heat")
-            # update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-        elif Level == 30:
-            casaia_system_mode(self, Nwkid, "Dry")
-            # update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-        elif Level == 40:
-            casaia_system_mode(self, Nwkid, "Fan")
-            # update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        _set_level_acmode_2(self, Nwkid, EPout, Level)
         return
 
     if DeviceType == "BSO-Volet":
         if profalux:
             # Transform slider % into analog value
-            lift = (255 * Level) // 100
-            if Level == 0:
-                lift = 1
-            elif Level > 255:
-                lift = 255
+            lift = min(max((255 * Level) // 100, 1), 255)
 
             self.log.logging(
                 "Command",
                 "Debug",
-                "mgtCommand : profalux_MoveToLiftAndTilt: %s BSO-Volet Lift: Level:%s Lift: %s"
-                % (Nwkid, Level, lift),
+                f"mgtCommand : profalux_MoveToLiftAndTilt: {Nwkid} BSO-Volet Lift: Level: {Level} Lift: {lift}",
                 Nwkid,
             )
             profalux_MoveToLiftAndTilt(self, Nwkid, level=lift)
@@ -1180,90 +1120,19 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             self.log.logging(
                 "Command",
                 "Debug",
-                "mgtCommand : profalux_MoveToLiftAndTilt:  %s BSO-Orientation : Level: %s Tilt: %s"
-                % (Nwkid, Level, Tilt),
+                f"mgtCommand : profalux_MoveToLiftAndTilt: {Nwkid} BSO-Orientation : Level: {Level} Tilt: {Tilt}",
                 Nwkid,
             )
             profalux_MoveToLiftAndTilt(self, Nwkid, tilt=Tilt)
 
-    elif DeviceType == "WindowCovering":  # Blind Inverted
-        if Level == 0:
-            Level = 1
-        elif Level >= 100:
-            Level = 99
-        value = "%02x" % Level
-        self.log.logging(
-            "Command",
-            "Debug",
-            "WindowCovering - Lift Percentage Command - %s/%s Level: 0x%s %s" % (Nwkid, EPout, value, Level),
-            Nwkid,
-        )
-        actuator_setlevel(self, Nwkid, EPout, Level, "WindowCovering")
-
-    elif DeviceType in ("Venetian", "Vanne", "Curtain",):
-        if Level == 0:
-            Level = 1
-        elif Level >= 100:
-            Level = 99
-        value = "%02x" % Level
-        self.log.logging(
-            "Command",
-            "Debug",
-            "Venetian blind - Lift Percentage Command - %s/%s Level: 0x%s %s" % (Nwkid, EPout, value, Level),
-            Nwkid,
-        )
-        actuator_setlevel(self, Nwkid, EPout, Level, "WindowCovering")
-        
-        if DeviceType in ( "CurtainInverted", "Curtain"):
-            # Refresh will be done via the Report Attribute
-            return
-
-    elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
-        Level = 100 - Level
-        if Level == 0:
-            Level = 1
-        elif Level >= 100:
-            Level = 99
-        value = "%02x" % Level
-        self.log.logging(
-            "Command",
-            "Debug",
-            "VenetianInverted blind - Lift Percentage Command - %s/%s Level: 0x%s %s"
-            % (Nwkid, EPout, value, Level),
-            Nwkid,
-        )
-        actuator_setlevel(self, Nwkid, EPout, Level, "WindowCovering")
-        
-        if DeviceType in ( "CurtainInverted", "Curtain"):
-            # Refresh will be done via the Report Attribute
-            return
+    elif DeviceType in ( "WindowCovering", "Venetian", "Vanne", "Curtain", "VenetianInverted", "VanneInverted", "CurtainInverted"):
+        _set_level_windows_covering(self, DeviceType, Nwkid, EPout, Level)
 
     elif DeviceType == "AlarmWD":
-        self.log.logging("Command", "Debug", "Alarm WarningDevice - value: %s" % Level)
-        if Level == 0:  # Stop
-            self.iaszonemgt.alarm_off(Nwkid, EPout)
-        elif Level == 10:  # Alarm
-            self.iaszonemgt.alarm_on(Nwkid, EPout)
-        elif Level == 20:  # Siren Only
-            self.iaszonemgt.siren_only(Nwkid, EPout)
-        elif Level == 30:  # Strobe Only
-            self.iaszonemgt.strobe_only(Nwkid, EPout)
-        elif Level == 40:  # Armed - Squawk
-            self.iaszonemgt.write_IAS_WD_Squawk(Nwkid, EPout, "armed")
-        elif Level == 50:  # Disarmed
-            self.iaszonemgt.write_IAS_WD_Squawk(Nwkid, EPout, "disarmed")
+        _set_level_alarm_wd(self, Nwkid, EPout, Level)
 
     elif DeviceType == "TuyaSiren":
-        if Level == 10:
-            tuya_siren_alarm(self, Nwkid, 0x01, 1)
-        elif Level == 20:
-            tuya_siren_alarm(self, Nwkid, 0x01, 2)
-        elif Level == 30:
-            tuya_siren_alarm(self, Nwkid, 0x01, 3)
-        elif Level == 40:
-            tuya_siren_alarm(self, Nwkid, 0x01, 4)
-        elif Level == 50:
-            tuya_siren_alarm(self, Nwkid, 0x01, 5)
+        _set_level_tuya_siren(self, Nwkid, EPout, Level)
 
     elif DeviceType == "TuyaSirenHumi":
         if Level == 10:
@@ -1274,13 +1143,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             tuya_siren_temp_alarm(self, Nwkid, 0x01)
 
     elif DeviceType == "Toggle":
-        self.log.logging("Command", "Debug", "Toggle switch - value: %s" % Level)
-        if Level == 10:  # Off
-            actuators(self, Nwkid, EPout, "Off", "Switch")
-        elif Level == 20:  # On
-            actuators(self, Nwkid, EPout, "On", "Switch")
-        elif Level == 30:  # Toggle
-            actuators(self, Nwkid, EPout, "Toggle", "Switch")
+        _set_level_device_toggle(self, Nwkid, EPout, Level)
 
     elif _model_name in ("TS0601-dimmer", "TS0601-2Gangs-dimmer"):
         cur_nValue, _ = domo_read_nValue_sValue(self, Devices, DeviceID, Unit)
@@ -1292,20 +1155,17 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     elif _model_name == "TS0601-curtain":
         tuya_curtain_lvl(self, Nwkid, (Level))
 
-    else:
-        if profalux:
-            actuator_setlevel(self, Nwkid, EPout, Level, "Light", "0000", withOnOff=False)
-            #sendZigateCmd(self, "0081", "02" + Nwkid + ZIGATE_EP + EPout + OnOff + value + "0000")
-        else:
-            if Level > 1 and get_deviceconf_parameter_value(self, _model_name, "ForceSwitchOnformoveToLevel", return_default=False):
-                actuator_on(self, Nwkid, EPout, "Light")
-            transitionMoveLevel = "0010"  # Compatibility. It was 0010 before
-            if "Param" in self.ListOfDevices[Nwkid] and "moveToLevel" in self.ListOfDevices[Nwkid]["Param"]:
-                transitionMoveLevel = "%04x" % int(self.ListOfDevices[Nwkid]["Param"]["moveToLevel"])
-            actuator_setlevel(self, Nwkid, EPout, Level, "Light", transitionMoveLevel, withOnOff=True )
-            #sendZigateCmd(self, "0081", "02" + Nwkid + ZIGATE_EP + EPout + OnOff + value + transitionMoveLevel)
+    elif profalux:
+        actuator_setlevel(self, Nwkid, EPout, Level, "Light", "0000", withOnOff=False)
 
-                      
+    else:
+        if Level > 1 and get_deviceconf_parameter_value(self, _model_name, "ForceSwitchOnformoveToLevel", return_default=False):
+            actuator_on(self, Nwkid, EPout, "Light")
+
+        transitionMoveLevel = self.ListOfDevices[Nwkid].get("Param", {}).get("moveToLevel", "0010")
+        actuator_setlevel(self, Nwkid, EPout, Level, "Light", transitionMoveLevel, withOnOff=True)
+
+    # Domoticz widget update
     if is_dimmable_blind(self, Devices, DeviceID, Unit) and Level in ( 0, 50, 100):
         if Level == 0:
             update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "0", BatteryLevel, SignalLevel)
@@ -1324,6 +1184,128 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     request_read_device_status(self, Nwkid)
 
 
+def _set_level_fan_control(self, Devices, DeviceID, Unit, BatteryLevel, SignalLevel, forceUpdateDev, DeviceType, Nwkid, EPout, Level, _model_name):
+    if _model_name == "AC201A":
+        casaia_ac201_fan_control(self, Nwkid, Level)
+        return
+
+    if _model_name == "TS0601-_TZE200_dzuqwsyg":
+        self.log.logging(
+            "Command",
+            "Debug",
+            "mgtCommand : Fan Control: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
+            % (Nwkid, EPout, Unit, DeviceType, Level),
+            Nwkid,
+        )
+
+        FAN_SPEED_MAPPING = {
+            10: 0x03,
+            20: 0x00,
+            30: 0x01,
+            40: 0x02,
+        }
+        if Level in FAN_SPEED_MAPPING:
+            tuya_fan_speed(self, Nwkid, FAN_SPEED_MAPPING[ Level ])
+            update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return 
+        
+        self.log.logging(
+            "Command",
+            "Debug",
+            "mgtCommand : Fan Control not expected Level : %s EPout: %s Unit: %s DeviceType: %s Level: %s "
+            % (Nwkid, EPout, Unit, DeviceType, Level),
+            Nwkid,
+        )
+        
+    FAN_MODE = {
+        0: "Off",
+        20: "Low",
+        30: "Medium",
+        40: "High",
+        10: "Auto",
+    }
+
+    if Level in FAN_MODE:
+        change_fan_mode(self, Nwkid, EPout, FAN_MODE[Level])
+    request_read_device_status(self, Nwkid)
+
+
+def _set_level_acmode_2(self, Nwkid, EPout, Level):
+    if Level == 10:
+        casaia_system_mode(self, Nwkid, "Cool")
+    elif Level == 20:
+        casaia_system_mode(self, Nwkid, "Heat")
+    elif Level == 30:
+        casaia_system_mode(self, Nwkid, "Dry")
+    elif Level == 40:
+        casaia_system_mode(self, Nwkid, "Fan")
+
+
+def _set_level_windows_covering(self, DeviceType, Nwkid, EPout, Level):
+    if DeviceType in ("WindowCovering", "Venetian", "Vanne", "Curtain"):
+        Level = min(max(Level, 1), 99)
+    elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
+        Level = min(max(100 - Level, 1), 99)
+
+    value = "%02x" % Level
+    if DeviceType == "WindowCovering":
+        log_message = f"WindowCovering - Lift Percentage Command - {Nwkid}/{EPout} Level: 0x{value} {Level}"
+    else:
+        log_message = (
+            f"Venetian blind - Lift Percentage Command - {Nwkid}/{EPout} Level: 0x{value} {Level}"
+        )
+        if DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
+            log_message = (
+                f"VenetianInverted blind - Lift Percentage Command - {Nwkid}/{EPout} Level: 0x{value} {Level}"
+            )
+
+    self.log.logging("Command", "Debug", log_message, Nwkid)
+    actuator_setlevel(self, Nwkid, EPout, Level, "WindowCovering")
+
+    if DeviceType in ("CurtainInverted", "Curtain"):
+        # Refresh will be done via the Report Attribute
+        return
+
+
+def _set_level_alarm_wd(self, Nwkid, EPout, Level):
+    self.log.logging("Command", "Debug", "Alarm WarningDevice - value: %s" % Level)
+    if Level == 0:  # Stop
+        self.iaszonemgt.alarm_off(Nwkid, EPout)
+    elif Level == 10:  # Alarm
+        self.iaszonemgt.alarm_on(Nwkid, EPout)
+    elif Level == 20:  # Siren Only
+        self.iaszonemgt.siren_only(Nwkid, EPout)
+    elif Level == 30:  # Strobe Only
+        self.iaszonemgt.strobe_only(Nwkid, EPout)
+    elif Level == 40:  # Armed - Squawk
+        self.iaszonemgt.write_IAS_WD_Squawk(Nwkid, EPout, "armed")
+    elif Level == 50:  # Disarmed
+        self.iaszonemgt.write_IAS_WD_Squawk(Nwkid, EPout, "disarmed")
+
+   
+def _set_level_tuya_siren(self, Nwkid, EPout, Level):
+    if Level == 10:
+        tuya_siren_alarm(self, Nwkid, 0x01, 1)
+    elif Level == 20:
+        tuya_siren_alarm(self, Nwkid, 0x01, 2)
+    elif Level == 30:
+        tuya_siren_alarm(self, Nwkid, 0x01, 3)
+    elif Level == 40:
+        tuya_siren_alarm(self, Nwkid, 0x01, 4)
+    elif Level == 50:
+        tuya_siren_alarm(self, Nwkid, 0x01, 5)
+    
+
+def _set_level_device_toggle(self, Nwkid, EPout, Level):
+    self.log.logging("Command", "Debug", "Toggle switch - value: %s" % Level)
+    if Level == 10:  # Off
+        actuators(self, Nwkid, EPout, "Off", "Switch")
+    elif Level == 20:  # On
+        actuators(self, Nwkid, EPout, "On", "Switch")
+    elif Level == 30:  # Toggle
+        actuators(self, Nwkid, EPout, "Toggle", "Switch")
+
+  
 def handle_command_setcolor(self,Devices, DeviceID, Unit, Level, Color, Nwkid, EPout, DeviceType, _model_name, profalux, BatteryLevel, SignalLevel, forceUpdateDev):    
 
     self.log.logging( "Command", "Debug", "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" % (
