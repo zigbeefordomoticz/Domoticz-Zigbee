@@ -47,6 +47,8 @@ def rest_netTopologie(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
     _topo = {}
+    _filename = None
+
     if not self.pluginconf.pluginConf["TopologyV2"]:
         _pluginDReports = Path( self.pluginconf.pluginConf["pluginReports"] )
         _filename = _pluginDReports / ("NetworkTopology-v3-%02d.json" % self.hardwareID)
