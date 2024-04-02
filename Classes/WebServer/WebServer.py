@@ -249,6 +249,9 @@ class WebServer(object):
 
             if self.groupmgt:
                 health["GroupStatus"] = self.groupmgt.GroupStatus
+                
+            if self.networkmap and self.networkmap.NetworkMapPhase():
+                health["Topology"] = "In Progress"
 
             _response["Data"] = json.dumps(health, sort_keys=True)
 
