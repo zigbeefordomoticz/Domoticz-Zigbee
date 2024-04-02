@@ -21,7 +21,6 @@ from Modules.zb_tables_management import (get_device_table_entry,
 
 
 def rest_req_topologie(self, verb, data, parameters):
-
     _response = prepResponseMessage(self, setupHeadersResponse())
 
     if verb == "GET":
@@ -30,7 +29,10 @@ def rest_req_topologie(self, verb, data, parameters):
 
         self.logging("Status", "Request a Start of Network Topology scan")
         if self.networkmap:
-            if not self.networkmap.NetworkMapPhase():
+            if self.pluginconf.pluginConf["ZigpyTopology"] and self.zigbee_communication == "zigpy":
+                self.ControllerLink.sendData( "ZIGPY-TOPOLOGY-SCAN", {})
+            elif not self.networkmap.NetworkMapPhase():
+                # Legacy Topology
                 self.networkmap.start_scan()
             else:
                 self.logging("Error", "Cannot start Network Topology as one is in progress...")
