@@ -245,6 +245,10 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         return self.topology.neighbors, self.topology.routes
 
 
+    def is_zigpy_topology_in_progress(self):
+        return Classes.ZigpyTransport.AppGeneric.is_zigpy_topology_in_progress(self)
+
+
     def is_bellows(self):
         return False
 
