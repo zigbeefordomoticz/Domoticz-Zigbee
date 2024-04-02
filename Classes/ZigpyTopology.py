@@ -40,7 +40,11 @@ class ZigpyTopology:
         except Exception as e:
             self.log.logging("ZigpyTopology", "Log", f"Error while requesting get_topology() - {e}")
             self.log.logging("ZigpyTopology", "Log", f"{(traceback.format_exc())}")
-    
+
+
+    def is_zigpy_topology_in_progress(self):
+        return self.ControllerLink.app.is_zigpy_topology_in_progress()
+
 
 def build_zigpy_neighbors(self, neighbors):
     """ Build a list of Neighbor tuples """
