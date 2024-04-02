@@ -258,6 +258,10 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         return Classes.ZigpyTransport.AppGeneric.is_zigpy_topology_in_progress(self)
 
 
+    async def start_topology_scan(self):
+        await self.topology.scan()
+
+
     def is_bellows(self):
         return True
 

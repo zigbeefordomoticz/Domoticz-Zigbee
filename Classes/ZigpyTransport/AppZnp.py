@@ -215,6 +215,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         return Classes.ZigpyTransport.AppGeneric.is_zigpy_topology_in_progress(self)
 
 
+    async def start_topology_scan(self):
+        self.topology.scan()
+
+
     def is_bellows(self):
         return False
 

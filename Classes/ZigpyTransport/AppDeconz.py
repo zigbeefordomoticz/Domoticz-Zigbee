@@ -249,6 +249,10 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         return Classes.ZigpyTransport.AppGeneric.is_zigpy_topology_in_progress(self)
 
 
+    async def start_topology_scan(self):
+        self.topology.scan()
+
+
     def is_bellows(self):
         return False
 
