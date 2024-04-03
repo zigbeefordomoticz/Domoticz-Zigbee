@@ -924,7 +924,7 @@ class BasePlugin:
             zigate_get_time(self)
             #sendZigateCmd(self, "0017", "")
 
-        if self.zigbee_communication == "zigpy" and self.pluginconf.pluginConf["ZigpyTopology"] and  self.zigpy_topology:
+        if self.zigbee_communication == "zigpy" and self.pluginconf.pluginConf["ZigpyTopology"] and  self.zigpy_topology and self.HeartbeatCount % (60 // HEARTBEAT) == 0:
             retreive_zigpy_topology_data(self)
 
         self.busy = _check_if_busy(self)
@@ -933,20 +933,29 @@ class BasePlugin:
 
 def retreive_zigpy_topology_data(self):
     # Determine sync period based on existing data
+    if self.zigpy_topology is None:
+        return
+    
+    if self.zigpy_topology.is_zigpy_topology_in_progress():
+        # Scan in progress
+        self.zigpy_topology.new_scan_detected = True
+        return
+
+    if self.zigpy_topology.new_scan_detected:
+        # Scan is completed. Time for a backup
+        self.zigpy_topology.save_topology_report()
+        self.zigpy_topology.new_scan_detected = False
+        return
+    
     coordinator_data = self.ListOfDevices.get("0000", {})
     if "ZigpyNeighbors" in coordinator_data and "ZigpyRoutes" in coordinator_data:
-        sync_period = 60 * 60   # every hour
-    else:
-        sync_period = 15 * 60   # every 15 minutes
-        
-    sync = (self.HeartbeatCount % (sync_period // HEARTBEAT)) == 0
-    if sync:
-        self.log.logging("Plugin", "Log", "onHeartbeat request update zigpy topology data")
-        self.zigpy_topology.retreive_infos_from_zigpy()
-        coordinator_data = self.ListOfDevices.get("0000", {})
-        if "ZigpyNeighbors" not in coordinator_data and "ZigpyRoutes" not in coordinator_data:
-            self.log.logging("Plugin", "Log", "onHeartbeat request zigpy topology scan as not data available")
-            self.ControllerLink.sendData("ZIGPY-TOPOLOGY-SCAN", {})
+        return
+    
+    self.zigpy_topology.copy_zigpy_infos_to_plugin()
+    coordinator_data = self.ListOfDevices.get("0000", {})
+    if "ZigpyNeighbors" not in coordinator_data and "ZigpyRoutes" not in coordinator_data:
+        self.log.logging("Plugin", "Log", "onHeartbeat request zigpy topology scan as not data available")
+        self.ControllerLink.sendData("ZIGPY-TOPOLOGY-SCAN", {})
     
 def start_zigbee_transport(self ):
     

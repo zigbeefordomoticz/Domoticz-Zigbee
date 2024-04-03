@@ -10,11 +10,15 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import json
+import os.path
 import traceback
+from pathlib import Path
+import time
 
 import zigpy.types as t
 
-
+ZIGPY_TOPOLOGY_REPORT_FILENAME = "Zigpy-Topology-"
 class ZigpyTopology:
     
     def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, IEEE2NWK, Devices, HardwareID, log):
@@ -27,24 +31,69 @@ class ZigpyTopology:
         self.HardwareID = HardwareID
         self.log = log
         self.FirmwareVersion = None
-
+        self.new_scan_detected = None
         self.neighbors_table = {}
 
 
-    def retreive_infos_from_zigpy(self):
-        self.log.logging("ZigpyTopology", "Log", "retreive_infos_from_zigpy")
-        try:
+    def copy_zigpy_infos_to_plugin(self, neighbors_list=None, routes_list=None):
+        if neighbors_list is None and routes_list is None:
             neighbors, routes = self.ControllerLink.app.get_topology()
-            self.ListOfDevices[ "0000" ][ "ZigpyNeighbors"] = build_zigpy_neighbors(self, neighbors)
-            self.ListOfDevices[ "0000" ][ "ZigpyRoutes"] = build_zigpy_routes(self, routes)
+            neighbors_list = build_zigpy_neighbors(self, neighbors)
+            routes_list = build_zigpy_routes(self, routes)
+
+        self.log.logging("ZigpyTopology", "Log", "copy_zigpy_infos_to_plugin")
+        try:
+            self.ListOfDevices[ "0000" ][ "ZigpyNeighbors"] = neighbors_list
+            self.ListOfDevices[ "0000" ][ "ZigpyRoutes"] = routes_list
+
         except Exception as e:
-            self.log.logging("ZigpyTopology", "Log", f"Error while requesting get_topology() - {e}")
-            self.log.logging("ZigpyTopology", "Log", f"{(traceback.format_exc())}")
+            self.log.logging("ZigpyTopology", "Debug", f"Error while requesting get_topology() - {e}")
+            self.log.logging("ZigpyTopology", "Debug", f"{(traceback.format_exc())}")
+
+
+    def save_topology_report(self):
+        self.log.logging("ZigpyTopology", "Debug", "save_topology_report")
+        neighbors, routes = self.ControllerLink.app.get_topology()
+        neighbors_list = build_zigpy_neighbors(self, neighbors)
+        routes_list = build_zigpy_routes(self, routes)
+        self.copy_zigpy_infos_to_plugin(neighbors_list, routes_list)
+        save_report_to_file(self, time.time(), neighbors_list, routes_list)
 
 
     def is_zigpy_topology_in_progress(self):
         return self.ControllerLink.app.is_zigpy_topology_in_progress()
 
+
+def save_report_to_file(self, time_stamp, neighbors, routes):
+    self.log.logging("ZigpyTopology", "Debug", "save_report_to_file")
+    zigpy_topology_reports_filename = Path( self.pluginconf.pluginConf["pluginReports"] ) / ( ZIGPY_TOPOLOGY_REPORT_FILENAME + "%02d.json" % self.HardwareID)
+    if not os.path.isdir( Path(self.pluginconf.pluginConf["pluginReports"]) ):
+        self.log.logging("ZigpyTopology", "Error", "save_report_to_file: Unable to get access to directory %s, please check PluginConf.json" % (self.pluginconf.pluginConf["pluginReports"]), )
+        return
+
+    new_report = { time_stamp: { "Neighbors": neighbors, "Routes":routes }}
+    available_reports = read_topology_report(zigpy_topology_reports_filename)
+
+    available_reports.append(new_report)
+    if len(available_reports) > self.pluginconf.pluginConf["numTopologyReports"]:
+        available_reports.pop(0)  # Remove the first entry    
+
+    write_json_file(zigpy_topology_reports_filename, available_reports)
+
+
+def read_topology_report(file_path):
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+        return data
+    else:
+        return []
+
+
+def write_json_file(file_path, data):
+    with open(file_path, 'w') as file:
+        json.dump(data, file, indent=4)
+        
 
 def build_zigpy_neighbors(self, neighbors):
     """ Build a list of Neighbor tuples """
@@ -65,41 +114,41 @@ def build_zigpy_neighbors(self, neighbors):
 
             if neighbor_info_dict["nwkid_neighbor"] not in self.ListOfDevices:
                 continue
-            
+        
+            self.log.logging("ZigpyTopology", "Debug", f"build_zigpy_neighbors adding {nwkid_parent} with {neighbor_info_dict}")
             add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict)
-            #relation_ship_tuple = retreive_relationship( nwkid_parent, neighbor_info_dict)
-            #if relation_ship_tuple:
-            #    raw_neighbors_set.add( relation_ship_tuple )
-
     return self.neighbors_table
+
 
 def add_to_neighbors_table( self, ieee_parent, nwkid_parent, neighbor_info_dict):
     nwkid_neighbor = neighbor_info_dict["nwkid_neighbor"]
+    ieee_neighbor = neighbor_info_dict["ieee_neighbor"]
     
-    if nwkid_neighbor not in self.neighbors_table:
-        self.neighbors_table[ nwkid_neighbor ] = {
-            "ieee": neighbor_info_dict[ "ieee_neighbor"],
-            "device_type": neighbor_info_dict[ "device_type"],
-            "rx_on_when_idle": neighbor_info_dict[ "rx_on_when_idle"],
+    if nwkid_parent not in self.neighbors_table:
+        self.neighbors_table[ nwkid_parent ] = {
+            "ieee": ieee_parent,
             "relationship": [],  # Initialize as empty list
-            "permit_joining": neighbor_info_dict[ "permit_joining"],
-            "lqi_from_device": neighbor_info_dict[ "lqi"],
         }
         
     # Check if the relationship exists before adding it
     relationship_exists = any(
-        rel["nwkid"] == nwkid_parent and rel["ieee"] == ieee_parent
-        for rel in self.neighbors_table[nwkid_neighbor]["relationship"]
+        rel["nwkid"] == nwkid_neighbor and rel["ieee"] == ieee_neighbor
+        for rel in self.neighbors_table[nwkid_parent]["relationship"]
     )
-    
+            
     # Add relationship if it doesn't exist already
     if not relationship_exists:
-        self.neighbors_table[nwkid_neighbor]["relationship"].append({
-            "nwkid": nwkid_parent,
-            "ieee": ieee_parent,
-            "relationship": neighbor_info_dict["relationship"]
-        })
-
+        self.neighbors_table[nwkid_parent]["relationship"].append(
+            { "nwkid": nwkid_neighbor,
+                "ieee": ieee_neighbor,
+                "relationship": neighbor_info_dict["relationship"],
+                "device_type": neighbor_info_dict[ "device_type"],
+                "rx_on_when_idle": neighbor_info_dict[ "rx_on_when_idle"],
+                "lqi_from_device": neighbor_info_dict[ "lqi"],
+                "permit_joining": neighbor_info_dict[ "permit_joining"]}
+        )
+        self.log.logging("ZigpyTopology", "Debug", f"build_zigpy_neighbors adding relation {self.neighbors_table[nwkid_parent]['relationship']}")
+        
 
 def parse_neigbor_infos( neighbor ):
     return {

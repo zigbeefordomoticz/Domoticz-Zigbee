@@ -19,6 +19,7 @@ from Modules.zb_tables_management import (get_device_table_entry,
                                           get_list_of_timestamps,
                                           remove_entry_from_all_tables)
 
+ZIGPY_TOPOLOGY_REPORT_FILENAME = "Zigpy-Topology-"
 
 def rest_req_topologie(self, verb, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
@@ -42,7 +43,32 @@ def rest_req_topologie(self, verb, data, parameters):
 
 def dummy_topology_report( ):
     
-    return [{"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Zigbee Coordinator", "_lnkqty": 58}, {"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 252}, {"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 241}, {"Child": "OnOff Ikea", "DeviceType": "End Device", "Father": "IAS Sirene", "_lnkqty": 255}, {"Child": "Repeater", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 254}, {"Child": "Repeater", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 196}, {"Child": "Repeater", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 254}, {"Child": "Motion frient", "DeviceType": "End Device", "Father": "Repeater", "_lnkqty": 168}, {"Child": "Dim Ikea", "DeviceType": "End Device", "Father": "Repeater", "_lnkqty": 89}, {"Child": "Led LKex", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 254}, {"Child": "Led LKex", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 244}, {"Child": "Lumi Door", "DeviceType": "End Device", "Father": "Led LKex", "_lnkqty": 211}, {"Child": "Wiser Thermostat", "DeviceType": "End Device", "Father": "Led LKex", "_lnkqty": 223}, {"Child": "Led Ikea", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 60}, {"Child": "Led Ikea", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 101}, {"Child": "Remote Tradfri", "DeviceType": "End Device", "Father": "Led Ikea", "_lnkqty": 194}, {"Child": "Inter Shutter Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 133}, {"Child": "Inter Shutter Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 241}, {"Child": "Inter Shutter Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 164}, {"Child": "Lumi Motion", "DeviceType": "End Device", "Father": "Inter Shutter Legrand", "_lnkqty": 242}, {"Child": "Inter Dimmer Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 254}, {"Child": "Inter Dimmer Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 215}, {"Child": "Inter Dimmer Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 254}, {"Child": "Micromodule Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 252}, {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 252}, {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 252}]
+    return [{"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Zigbee Coordinator", "_lnkqty": 58}, 
+            {"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 252}, 
+            {"Child": "IAS Sirene", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 241}, 
+            {"Child": "OnOff Ikea", "DeviceType": "End Device", "Father": "IAS Sirene", "_lnkqty": 255}, 
+            {"Child": "Repeater", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 254}, 
+            {"Child": "Repeater", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 196}, 
+            {"Child": "Repeater", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 254}, 
+            {"Child": "Motion frient", "DeviceType": "End Device", "Father": "Repeater", "_lnkqty": 168}, 
+            {"Child": "Dim Ikea", "DeviceType": "End Device", "Father": "Repeater", "_lnkqty": 89}, 
+            {"Child": "Led LKex", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 254}, 
+            {"Child": "Led LKex", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 244}, 
+            {"Child": "Lumi Door", "DeviceType": "End Device", "Father": "Led LKex", "_lnkqty": 211}, 
+            {"Child": "Wiser Thermostat", "DeviceType": "End Device", "Father": "Led LKex", "_lnkqty": 223}, 
+            {"Child": "Led Ikea", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 60}, 
+            {"Child": "Led Ikea", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 101}, 
+            {"Child": "Remote Tradfri", "DeviceType": "End Device", "Father": "Led Ikea", "_lnkqty": 194}, 
+            {"Child": "Inter Shutter Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 133},
+            {"Child": "Inter Shutter Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 241}, 
+            {"Child": "Inter Shutter Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 164}, 
+            {"Child": "Lumi Motion", "DeviceType": "End Device", "Father": "Inter Shutter Legrand", "_lnkqty": 242},
+            {"Child": "Inter Dimmer Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 254}, 
+            {"Child": "Inter Dimmer Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 215}, 
+            {"Child": "Inter Dimmer Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 254}, 
+            {"Child": "Micromodule Legrand", "DeviceType": "Coordinator", "Father": "Zigbee Coordinator", "_lnkqty": 252}, 
+            {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 252}, 
+            {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 252}]
 
 
 
@@ -77,18 +103,24 @@ def rest_netTopologie(self, verb, data, parameters):
 
     if verb == "DELETE":
         if len(parameters) == 0:
-            os.remove(_filename)
+            if self.pluginconf.pluginConf["ZigpyTopology"]:
+                # Zigpy Topology
+                save_report_to_file_after_deletion(self, [])
+
+            elif not self.pluginconf.pluginConf["TopologyV2"]:
+                os.remove(_filename)
+
             action = {"Name": "File-Removed", "FileName": _filename}
             _response["Data"] = json.dumps(action, sort_keys=True)
 
-
         elif len(parameters) == 1:
             timestamp = parameters[0]
-            if self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
+            if self.pluginconf.pluginConf["ZigpyTopology"]:
+                # Zigpy Topology
+                save_report_to_file_after_deletion(self, remove_specific_entry(self, timestamp, read_zigpy_topology_report(self)))
+                
+            elif self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
                 remove_entry_from_all_tables( self, timestamp )
-                action = {"Name": "Report %s removed" % timestamp}
-                _response["Data"] = json.dumps(action, sort_keys=True)
-
 
             elif timestamp in _topo:
                 self.logging("Debug", "Removing Report: %s from %s records" % (timestamp, len(_topo)))
@@ -109,12 +141,9 @@ def rest_netTopologie(self, verb, data, parameters):
                         handle.write(line)
                     handle.truncate()
 
-                action = {"Name": "Report %s removed" % timestamp}
-                _response["Data"] = json.dumps(action, sort_keys=True)
+            action = {"Name": "Report %s removed" % timestamp}
+            _response["Data"] = json.dumps(action, sort_keys=True)
                 
-            else:
-                domoticz_error_api("Removing Topo Report %s not found" % timestamp)
-                _response["Data"] = json.dumps([], sort_keys=True)
         return _response
 
     if verb == "GET":
@@ -122,6 +151,10 @@ def rest_netTopologie(self, verb, data, parameters):
             # Send list of Time Stamps
             if self.fake_mode():
                 _timestamps_lst = [1643561599, 1643564628]
+            
+            elif self.pluginconf.pluginConf["ZigpyTopology"]:
+                # Zigpy Report
+                _timestamps_lst = return_time_stamps_list(self, read_zigpy_topology_report(self))
                 
             elif self.pluginconf.pluginConf["TopologyV2"]:
                 _timestamps_lst = get_list_of_timestamps( self, "0000", "Neighbours")
@@ -132,6 +165,10 @@ def rest_netTopologie(self, verb, data, parameters):
 
             if self.fake_mode():
                 _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
+                
+            elif self.pluginconf.pluginConf["ZigpyTopology"]:
+                timestamp = parameters[0]
+                _response["Data"] = json.dumps(normalized_one_report_for_webui(self, timestamp, read_zigpy_topology_report(self)))
                 
             elif self.pluginconf.pluginConf["TopologyV2"]:
                 timestamp = parameters[0]
@@ -403,7 +440,6 @@ def find_device_type(self, node):
     return None
 
 
-
 def collect_routing_table(self, time_stamp=None):
     
     _topo = []
@@ -420,7 +456,7 @@ def collect_routing_table(self, time_stamp=None):
                 "Child": get_node_name( self, child), 
                 "_lnkqty": get_lqi_from_neighbours(self, father, child), 
                 "DeviceType": find_device_type(self, child)
-                }
+            }
             self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append( _relation ) 
@@ -458,3 +494,93 @@ def get_lqi_from_neighbours(self, father, child, time_stamp=None):
                 continue
             return item2[ node ]["_lnkqty"] 
     return 1
+
+# Zigpy Topology helpers
+
+def zigpy_topology_filename(self):
+    return Path( self.pluginconf.pluginConf["pluginReports"] ) / ( ZIGPY_TOPOLOGY_REPORT_FILENAME + "%02d.json" % self.hardwareID)
+
+
+def read_zigpy_topology_report(self):
+    """ open the Zigpy Topology Report and return a list of entries (timestamps)"""
+
+    self.logging( "Debug", "read_zigpy_topology_report")
+    zigpy_topology_reports_filename = zigpy_topology_filename(self)
+    if not os.path.isdir( Path(self.pluginconf.pluginConf["pluginReports"]) ):
+        self.logging( "Error", "read_zigpy_topology_report: Unable to get access to directory %s, please check PluginConf.json" % (self.pluginconf.pluginConf["pluginReports"]), )
+        return
+
+    if os.path.exists(zigpy_topology_reports_filename):
+        with open(zigpy_topology_reports_filename, 'r') as file:
+            data = json.load(file)
+        return data
+    else:
+        return []
+
+
+def save_report_to_file_after_deletion(self, report):
+    """ Save a new version of the report (after deletion of one entry)"""
+    self.logging("Debug", "save_report_to_file_after_deletion")
+    zigpy_topology_reports_filename = zigpy_topology_filename(self)
+    if not os.path.isdir( Path(self.pluginconf.pluginConf["pluginReports"]) ):
+        self.logging( "Error", "save_report_to_file_after_deletion: Unable to get access to directory %s, please check PluginConf.json" % (self.pluginconf.pluginConf["pluginReports"]), )
+        return
+
+    with open(zigpy_topology_reports_filename, 'w') as file:
+        json.dump(report, file, indent=4)
+
+    
+def return_time_stamps_list(self, zigpy_report_list):
+    """ return list of timestamps"""
+    return [list(entry.keys())[0] for entry in zigpy_report_list]
+
+
+def remove_specific_entry(self, timestatmp_to_remove, zigpy_report_list):
+    """ remove one specific entry based on timestamp and return the new report list"""
+    return [entry for entry in zigpy_report_list if list(entry.keys())[0] != timestatmp_to_remove]
+
+
+def normalize_device_type(self, device_type):
+
+    if device_type == "end_device":
+        return "End Device"
+    if device_type == "coordinator":
+        return "Coordinator"
+    return "Router" if device_type == "router" else None
+
+
+def normalized_one_report_for_webui(self, timestamp, zigpy_report_list):
+    self.logging("Debug", "normalized_one_report_for_webui %s (%s)" %(timestamp, type(timestamp)))
+
+    target_report = next( ( entry for entry in zigpy_report_list if list(entry.keys())[0] == timestamp ), None, )
+    neighbors = target_report[ timestamp ].get( "Neighbors",{})
+    route = target_report[ timestamp ].get( "Routes",{})
+    topology = []
+    for node1_nwkid in neighbors:
+        self.logging("Debug", "   neighbors %s" %node1_nwkid)
+        if node1_nwkid not in self.ListOfDevices:
+            self.logging( "Debug", f"Found child {node1_nwkid} but not found in ListOfDevices") 
+            continue
+
+        for neigbor_node2 in neighbors[ node1_nwkid]["relationship"]:
+            node2_nwkid = neigbor_node2["nwkid"]
+            node2_device_type = neigbor_node2["device_type"]
+            node2_lqi = neigbor_node2["lqi_from_device"]
+
+            if node2_nwkid not in self.ListOfDevices:
+                self.logging( "Log", f"Found child {node2_nwkid} but not found in ListOfDevices") 
+                continue
+
+            relation = {
+                "Child": get_node_name( self, node2_nwkid),
+                "DeviceType": normalize_device_type(self, node2_device_type),
+                "Father": get_node_name( self, node1_nwkid), 
+                "_lnkqty": node2_lqi,
+                }
+            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
+                relation["Father"], node1_nwkid, relation["Child"], node2_nwkid, relation["_lnkqty"], relation["DeviceType"]),)
+
+            if relation not in topology:
+                topology.append( relation )
+
+    return topology
