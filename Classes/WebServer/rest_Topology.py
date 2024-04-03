@@ -33,7 +33,7 @@ def rest_req_topologie(self, verb, data, parameters):
 
         self.logging("Status", "Request a Start of Network Topology scan")
         if self.networkmap:
-            if self.pluginconf.pluginConf["ZigpyTopology"] and self.zigbee_communication == "zigpy":
+            if self.pluginconf.pluginConf["ZigpyTopologyReport"] and self.zigbee_communication == "zigpy":
                 self.ControllerLink.sendData( "ZIGPY-TOPOLOGY-SCAN", {})
             elif not self.networkmap.NetworkMapPhase():
                 # Legacy Topology
@@ -92,7 +92,7 @@ def rest_netTopologie(self, verb, data, parameters):
 def rest_netTopologie_delete(self, verb, data, parameters, _response, _filename):
     
     if len(parameters) == 0:
-        if self.pluginconf.pluginConf["ZigpyTopology"]:
+        if self.pluginconf.pluginConf["ZigpyTopologyReport"]:
             # Zigpy Topology
             save_report_to_file_after_deletion(self, [])
 
@@ -104,7 +104,7 @@ def rest_netTopologie_delete(self, verb, data, parameters, _response, _filename)
 
     elif len(parameters) == 1:
         timestamp = parameters[0]
-        if self.pluginconf.pluginConf["ZigpyTopology"]:
+        if self.pluginconf.pluginConf["ZigpyTopologyReport"]:
             # Zigpy Topology
             save_report_to_file_after_deletion(self, remove_specific_entry(self, timestamp, read_zigpy_topology_report(self)))
             
