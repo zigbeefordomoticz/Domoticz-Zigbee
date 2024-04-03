@@ -73,6 +73,7 @@ def dummy_topology_report( ):
             {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 252}, 
             {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 252}]
 
+
 def rest_netTopologie(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
@@ -83,99 +84,84 @@ def rest_netTopologie(self, verb, data, parameters):
         return rest_netTopologie_delete(self, verb, data, parameters, _response, _filename)
 
     if verb == "GET":
-        rest_netTopologie_get(self, verb, data, parameters, _response, _filename)
+        return rest_netTopologie_get(self, verb, data, parameters, _response, _filename)
 
     return _response
 
-    if verb == "GET":
-        rest_netTopologie_get(self, verb, data, parameters, _response, _filename)
-
-    return _response
 
 def rest_netTopologie_delete(self, verb, data, parameters, _response, _filename):
     
-        if len(parameters) == 0:
-            if self.pluginconf.pluginConf["ZigpyTopology"]:
-                # Zigpy Topology
-                save_report_to_file_after_deletion(self, [])
+    if len(parameters) == 0:
+        if self.pluginconf.pluginConf["ZigpyTopology"]:
+            # Zigpy Topology
+            save_report_to_file_after_deletion(self, [])
 
-            elif not self.pluginconf.pluginConf["TopologyV2"]:
-                os.remove(_filename)
+        elif not self.pluginconf.pluginConf["TopologyV2"]:
+            os.remove(_filename)
 
-            action = {"Name": "File-Removed", "FileName": _filename}
-            _response["Data"] = json.dumps(action, sort_keys=True)
-
-        elif len(parameters) == 1:
-            timestamp = parameters[0]
-            if self.pluginconf.pluginConf["ZigpyTopology"]:
-                # Zigpy Topology
-                save_report_to_file_after_deletion(self, remove_specific_entry(self, timestamp, read_zigpy_topology_report(self)))
-                
-            elif self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
-                remove_entry_from_all_tables( self, timestamp )
-
-            else:
-                _topo, _timestamps_lst = extract_list_of_legacy_report(self, _response, _filename)
-                if timestamp in _topo:
-                    return rest_netTopologie_delete_legacy(self, verb, data, parameters, _response, timestamp, _topo, _filename)
-
-            action = {"Name": "Report %s removed" % timestamp}
-            _response["Data"] = json.dumps(action, sort_keys=True)  
-        return _response
-
-
-def rest_netTopologie_get(self, verb, data, parameters, _response, _filename, ):
-        if len(parameters) == 0:
-            # Send list of Time Stamps
-            if self.fake_mode():
-                _timestamps_lst = [1643561599, 1643564628]
-            
-            elif self.pluginconf.pluginConf["ZigpyTopologyReport"]:
-                # Zigpy Report
-                _timestamps_lst = return_time_stamps_list(self, read_zigpy_topology_report(self))
-                
-            elif self.pluginconf.pluginConf["TopologyV2"]:
-                _timestamps_lst = get_list_of_timestamps( self, "0000", "Neighbours")
-                
-            else:
-                _topo, _timestamps_lst = extract_list_of_legacy_report(self, _response, _filename)
+        action = {"Name": "File-Removed", "FileName": _filename}
+        _response["Data"] = json.dumps(action, sort_keys=True)
 
     elif len(parameters) == 1:
         timestamp = parameters[0]
-        if self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
-            remove_entry_from_all_tables( self, timestamp )
-            action = {"Name": "Report %s removed" % timestamp}
-            _response["Data"] = json.dumps(action, sort_keys=True)
-
-        elif timestamp in _topo:
-            return rest_netTopologie_delete_legacy(self, verb, data, parameters, _response, timestamp, _topo, _filename)
+        if self.pluginconf.pluginConf["ZigpyTopology"]:
+            # Zigpy Topology
+            save_report_to_file_after_deletion(self, remove_specific_entry(self, timestamp, read_zigpy_topology_report(self)))
             
+        elif self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
+            remove_entry_from_all_tables( self, timestamp )
+
         else:
-            domoticz_error_api("Removing Topo Report %s not found" % timestamp)
-            _response["Data"] = json.dumps([], sort_keys=True)
+            _topo, _timestamps_lst = extract_list_of_legacy_report(self, _response, _filename)
+            if timestamp in _topo:
+                return rest_netTopologie_delete_legacy(self, verb, data, parameters, _response, timestamp, _topo, _filename)
+
+        action = {"Name": "Report %s removed" % timestamp}
+        _response["Data"] = json.dumps(action, sort_keys=True)  
     return _response
 
 
-            if self.fake_mode():
-                _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
-                
-            elif self.pluginconf.pluginConf["ZigpyTopologyReport"]:
-                timestamp = parameters[0]
-                _response["Data"] = json.dumps(normalized_one_report_for_webui(self, timestamp, read_zigpy_topology_report(self)))
-                
-            elif self.pluginconf.pluginConf["TopologyV2"]:
-                timestamp = parameters[0]
-                _response["Data"] = json.dumps(collect_routing_table(self,timestamp ), sort_keys=True)
+def rest_netTopologie_get(self, verb, data, parameters, _response, _filename, ):
+    if len(parameters) == 0:
+        # Send list of Time Stamps
+        if self.fake_mode():
+            _timestamps_lst = [1643561599, 1643564628]
+        
+        elif self.pluginconf.pluginConf["ZigpyTopologyReport"]:
+            # Zigpy Report
+            _timestamps_lst = return_time_stamps_list(self, read_zigpy_topology_report(self))
+            
+        elif self.pluginconf.pluginConf["TopologyV2"]:
+            _timestamps_lst = get_list_of_timestamps( self, "0000", "Neighbours")
+            
+        else:
+            _topo, _timestamps_lst = extract_list_of_legacy_report(self, _response, _filename)
 
+        _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
+
+    elif len(parameters) == 1:
+
+        if self.fake_mode():
+            _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
+            
+        elif self.pluginconf.pluginConf["ZigpyTopologyReport"]:
+            timestamp = parameters[0]
+            _response["Data"] = json.dumps(normalized_one_report_for_webui(self, timestamp, read_zigpy_topology_report(self)))
+            
+        elif self.pluginconf.pluginConf["TopologyV2"]:
+            timestamp = parameters[0]
+            _response["Data"] = json.dumps(collect_routing_table(self,timestamp ), sort_keys=True)
+
+        else:
+            timestamp = parameters[0]
+            _topo, _timestamps_lst = extract_list_of_legacy_report(self, _response, _filename)
+            if timestamp in _topo:
+                self.logging("Debug", "Topology sent: %s" % _topo[timestamp])
+                _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
             else:
-                timestamp = parameters[0]
-                _topo, _timestamps_lst = extract_list_of_legacy_report(self, _response, _filename)
-                if timestamp in _topo:
-                    self.logging("Debug", "Topology sent: %s" % _topo[timestamp])
-                    _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
-                else:
-                    _response["Data"] = json.dumps([], sort_keys=True)
-    
+                _response["Data"] = json.dumps([], sort_keys=True)
+    return _response
+
 
 def rest_netTopologie_delete_legacy(self, verb, data, parameters, _response, timestamp, _topo, _filename):
     self.logging("Debug", "Removing Report: %s from %s records" % (timestamp, len(_topo)))
@@ -199,30 +185,6 @@ def rest_netTopologie_delete_legacy(self, verb, data, parameters, _response, tim
     action = {"Name": "Report %s removed" % timestamp}
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
-    
-    
-def rest_netTopologie_get(self, verb, data, parameters, _response, _topo=None):
-    if len(parameters) == 0:
-        if self.fake_mode():
-            _timestamps_lst = [1643561599, 1643564628]
-        elif self.pluginconf.pluginConf["TopologyV2"]:
-            _timestamps_lst = get_list_of_timestamps(self, "0000", "Neighbours")
-        _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
-
-    elif len(parameters) == 1:
-        if self.fake_mode():
-            _response["Data"] = json.dumps(dummy_topology_report(), sort_keys=True)
-
-        elif self.pluginconf.pluginConf["TopologyV2"]:
-            timestamp = parameters[0]
-            _response["Data"] = json.dumps(collect_routing_table(self, timestamp), sort_keys=True)
-
-        elif _topo:
-            timestamp = parameters[0]
-            _response["Data"] = json.dumps(_topo.get(timestamp, []), sort_keys=True)
-
-    return _response
-
 
 
 def extract_list_of_legacy_report(self, _response, _filename):
@@ -309,16 +271,16 @@ def extract_legacy_report(self, reportLQI):
                 continue
 
 
-            _check_duplicate.append(( _father, _child))
+            _check_duplicate.append(( node1, node2))
 
             # Build the relation for the graph
             _relation = {
-                "Father": _father_name,
-                "Child": _child_name,
+                "Father": node1_name,
+                "Child": node2_name,
                 "_lnkqty": int(
                     reportLQI[item]["Neighbours"][x]["_lnkqty"], 16
                 ),
-                "DeviceType": _devicetype,
+                "DeviceType": reportLQI[node1]["Neighbours"][x]["_devicetype"],
 
             }
             self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
@@ -508,7 +470,6 @@ def build_relation_ship_dict(self, node1, node2):
     }
 
 
-
 def get_relationship_neighbours(self, node1, node2, time_stamp=None):
     return next(
         (
@@ -521,6 +482,7 @@ def get_relationship_neighbours(self, node1, node2, time_stamp=None):
         "",
     )
 
+
 def collect_associated_devices( self, node, time_stamp=None):
     last_associated_devices = get_device_table_entry(self, node, "AssociatedDevices", time_stamp)
     self.logging( "Debug", "collect_associated_devices %s -> %s" %(node, str(last_associated_devices)))
@@ -532,7 +494,7 @@ def collect_neighbours_devices( self, node, time_stamp=None):
     self.logging( "Debug", "collect_neighbours_devices %s -> %s" %(node, str(last_neighbours_devices)))
     keys_with_child_relation = [key for item in last_neighbours_devices for key, value in item.items()]
     return list(keys_with_child_relation)
-           
+    
         
 def extract_routes( self, node, time_stamp=None):
     node_routes = []
@@ -541,7 +503,6 @@ def extract_routes( self, node, time_stamp=None):
         node_routes.extend(item for item in route if route[item]["Status"] == "Active (0)")
     return node_routes            
         
-
 
 def get_lqi_from_neighbours(self, father, child, time_stamp=None):
     # Take the LQI from the latest report
