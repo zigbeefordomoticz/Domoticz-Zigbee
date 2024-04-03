@@ -250,7 +250,7 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
 
     async def start_topology_scan(self):
-        self.topology.scan()
+        await self.topology.scan()
 
 
     def is_bellows(self):

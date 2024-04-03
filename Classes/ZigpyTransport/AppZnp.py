@@ -216,7 +216,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
 
     async def start_topology_scan(self):
-        self.topology.scan()
+        await self.topology.scan()
 
 
     def is_bellows(self):
