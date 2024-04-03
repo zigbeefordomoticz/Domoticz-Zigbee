@@ -924,7 +924,7 @@ class BasePlugin:
             zigate_get_time(self)
             #sendZigateCmd(self, "0017", "")
 
-        if self.zigbee_communication == "zigpy" and self.pluginconf.pluginConf["ZigpyTopology"] and  self.zigpy_topology and self.HeartbeatCount % (60 // HEARTBEAT) == 0:
+        if self.zigbee_communication == "zigpy" and self.pluginconf.pluginConf["ZigpyTopologyReport"] and  self.zigpy_topology and self.HeartbeatCount % (60 // HEARTBEAT) == 0:
             retreive_zigpy_topology_data(self)
 
         self.busy = _check_if_busy(self)
