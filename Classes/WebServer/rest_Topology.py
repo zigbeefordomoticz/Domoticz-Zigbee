@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import json
 import os
@@ -12,9 +18,6 @@ from time import time
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Modules.domoticzAbstractLayer import (domoticz_error_api,
-                                           domoticz_log_api,
-                                           domoticz_status_api)
 from Modules.zb_tables_management import (get_device_table_entry,
                                           get_list_of_timestamps,
                                           remove_entry_from_all_tables)
@@ -71,37 +74,23 @@ def dummy_topology_report( ):
             {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 252}]
 
 
-
 def rest_netTopologie(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
-
-    if not self.pluginconf.pluginConf["TopologyV2"]:
-        _pluginDReports = Path( self.pluginconf.pluginConf["pluginReports"] )
-        _filename = _pluginDReports / ("NetworkTopology-v3-%02d.json" % self.hardwareID)
-
-        self.logging("Debug", "Filename: %s" % _filename)
-
-        if not os.path.isfile(_filename):
-            _response["Data"] = json.dumps({}, sort_keys=True)
-            self.logging("Debug", "Filename: %s not found !!" % _filename)
-            return _response
-
-        # Read the file, as we have anyway to do it
-        _topo = {}  # All Topo reports
-        _timestamps_lst = []  # Just the list of Timestamps
-        with open(_filename, "rt") as handle:
-            for line in handle:
-                if line[0] != "{" and line[-1] != "}":
-                    continue
-                entry = json.loads(line)
-                for _ts in entry:
-                    _timestamps_lst.append(int(_ts))
-                    _topo[_ts] = []  # List of Father -> Child relation for one TimeStamp
-                    reportLQI = entry[_ts]
-                    _topo[_ts] = extract_report(self, reportLQI)
-
+    _pluginDReports = Path( self.pluginconf.pluginConf["pluginReports"] )
+    _filename = _pluginDReports / ("NetworkTopology-v3-%02d.json" % self.hardwareID)
+    
     if verb == "DELETE":
+        return rest_netTopologie_delete(self, verb, data, parameters, _response, _filename)
+
+    if verb == "GET":
+        rest_netTopologie_get(self, verb, data, parameters, _response, _filename)
+
+    return _response
+
+
+def rest_netTopologie_delete(self, verb, data, parameters, _response, _filename):
+    
         if len(parameters) == 0:
             if self.pluginconf.pluginConf["ZigpyTopology"]:
                 # Zigpy Topology
@@ -122,42 +111,31 @@ def rest_netTopologie(self, verb, data, parameters):
             elif self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
                 remove_entry_from_all_tables( self, timestamp )
 
-            elif timestamp in _topo:
-                self.logging("Debug", "Removing Report: %s from %s records" % (timestamp, len(_topo)))
-                with open(_filename, "r+") as handle:
-                    d = handle.readlines()
-                    handle.seek(0)
-                    for line in d:
-                        if line[0] != "{" and line[-1] != "}":
-                            handle.write(line)
-                            continue
-                        entry = json.loads(line)
-                        entry_ts = entry.keys()
-                        if len(entry_ts) != 1:
-                            continue
-                        if timestamp in entry_ts:
-                            self.logging("Debug", "--------> Skiping %s" % timestamp)
-                            continue
-                        handle.write(line)
-                    handle.truncate()
+            else:
+                _topo, _timestamps_lst = extract_list_of_legacy_report(self, _response, _filename)
+                if timestamp in _topo:
+                    return rest_netTopologie_delete_legacy(self, verb, data, parameters, _response, timestamp, _topo, _filename)
 
             action = {"Name": "Report %s removed" % timestamp}
-            _response["Data"] = json.dumps(action, sort_keys=True)
-                
+            _response["Data"] = json.dumps(action, sort_keys=True)  
         return _response
 
-    if verb == "GET":
+
+def rest_netTopologie_get(self, verb, data, parameters, _response, _filename, ):
         if len(parameters) == 0:
             # Send list of Time Stamps
             if self.fake_mode():
                 _timestamps_lst = [1643561599, 1643564628]
             
-            elif self.pluginconf.pluginConf["ZigpyTopology"]:
+            elif self.pluginconf.pluginConf["ZigpyTopologyReport"]:
                 # Zigpy Report
                 _timestamps_lst = return_time_stamps_list(self, read_zigpy_topology_report(self))
                 
             elif self.pluginconf.pluginConf["TopologyV2"]:
                 _timestamps_lst = get_list_of_timestamps( self, "0000", "Neighbours")
+                
+            else:
+                _topo, _timestamps_lst = extract_list_of_legacy_report(self, _response, _filename)
 
             _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
@@ -166,7 +144,7 @@ def rest_netTopologie(self, verb, data, parameters):
             if self.fake_mode():
                 _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
                 
-            elif self.pluginconf.pluginConf["ZigpyTopology"]:
+            elif self.pluginconf.pluginConf["ZigpyTopologyReport"]:
                 timestamp = parameters[0]
                 _response["Data"] = json.dumps(normalized_one_report_for_webui(self, timestamp, read_zigpy_topology_report(self)))
                 
@@ -176,12 +154,35 @@ def rest_netTopologie(self, verb, data, parameters):
 
             else:
                 timestamp = parameters[0]
+                _topo, _timestamps_lst = extract_list_of_legacy_report(self, _response, _filename)
                 if timestamp in _topo:
-                    self.logging("Debug", "Topologie sent: %s" % _topo[timestamp])
+                    self.logging("Debug", "Topology sent: %s" % _topo[timestamp])
                     _response["Data"] = json.dumps(_topo[timestamp], sort_keys=True)
                 else:
                     _response["Data"] = json.dumps([], sort_keys=True)
+    
+    
+def rest_netTopologie_delete_legacy(self, verb, data, parameters, _response, timestamp, _topo, _filename):
+    self.logging("Debug", "Removing Report: %s from %s records" % (timestamp, len(_topo)))
+    with open(_filename, "r+") as handle:
+        d = handle.readlines()
+        handle.seek(0)
+        for line in d:
+            if line[0] != "{" and line[-1] != "}":
+                handle.write(line)
+                continue
+            entry = json.loads(line)
+            entry_ts = entry.keys()
+            if len(entry_ts) != 1:
+                continue
+            if timestamp in entry_ts:
+                self.logging("Debug", "--------> Skiping %s" % timestamp)
+                continue
+            handle.write(line)
+        handle.truncate()
 
+    action = {"Name": "Report %s removed" % timestamp}
+    _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
 
 
@@ -195,7 +196,31 @@ def is_sibling_required(reportLQI):
     return False
 
 
-def extract_report(self, reportLQI):
+def extract_list_of_legacy_report(self, _response, _filename):
+    self.logging("Debug", "Filename: %s" % _filename)
+
+    if not os.path.isfile(_filename):
+        _response["Data"] = json.dumps({}, sort_keys=True)
+        self.logging("Debug", "Filename: %s not found !!" % _filename)
+        return _response
+
+    # Read the file, as we have anyway to do it
+    _topo = {}  # All Topo reports
+    _timestamps_lst = []  # Just the list of Timestamps
+    with open(_filename, "rt") as handle:
+        for line in handle:
+            if line[0] != "{" and line[-1] != "}":
+                continue
+            entry = json.loads(line)
+            for _ts in entry:
+                _timestamps_lst.append(int(_ts))
+                _topo[_ts] = []  # List of Father -> Child relation for one TimeStamp
+                reportLQI = entry[_ts]
+                _topo[_ts] = extract_legacy_report(self, reportLQI)
+    return _topo, _timestamps_lst
+
+    
+def extract_legacy_report(self, reportLQI):
     _check_duplicate = []  # List of tuble ( item, x) to prevent adding twice the same relation
 
     _topo = []  # Use to store the list to be send to the Browser
@@ -287,27 +312,30 @@ def extract_report(self, reportLQI):
             if ( _father, _child) in _check_duplicate or ( _child, _father) in _check_duplicate:
                 self.logging( "Debug", "Skip (%s,%s) as there is already %s" % ( item, x, str(_check_duplicate)))
                 continue
-            
+
             _check_duplicate.append(( _father, _child))
 
             # Build the relation for the graph
-            _relation = {}
-            _relation["Father"] = _father_name
-            _relation["Child"] = _child_name
-            _relation["_lnkqty"] = int(reportLQI[item]["Neighbours"][x]["_lnkqty"], 16)
-            _relation["DeviceType"] = _devicetype
-            
+            _relation = {
+                "Father": _father_name,
+                "Child": _child_name,
+                "_lnkqty": int(
+                    reportLQI[item]["Neighbours"][x]["_lnkqty"], 16
+                ),
+                "DeviceType": _devicetype,
+            }
             self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
                 _relation["Father"], _father, _relation["Child"], _child, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append(_relation)
-            
+
     self.logging("Debug", "WebUI report" )
     for x in _topo:
         self.logging( "Debug", "Relationship - %15.15s - %15.15s %3s %s" % (
             x["Father"], x["Child"], x["_lnkqty"], x["DeviceType"]),)
- 
+
     del _check_duplicate
     return _topo
+
 
 def get_device_type( self, node):
     if node not in self.ListOfDevices:
@@ -315,7 +343,8 @@ def get_device_type( self, node):
     if "LogicalType" not in self.ListOfDevices[ node ]:
         return '??'
     return self.ListOfDevices[ node ]["LogicalType"]
-        
+
+
 def get_node_name( self, node):
     if node == "0000":
         return "Zigbee Coordinator"
@@ -324,7 +353,8 @@ def get_node_name( self, node):
     if "ZDeviceName" in self.ListOfDevices[node] and self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
             return self.ListOfDevices[node]["ZDeviceName"]
     return node
-    
+
+
 def check_sibbling(self, reportLQI):
     # for node1 in sorted(reportLQI):
     #    for node2 in list(reportLQI[node1]['Neighbours']):
@@ -375,17 +405,12 @@ def find_parent_for_node(reportLQI, node):
         return parent
 
     for y in list(reportLQI[node]["Neighbours"]):
-        if reportLQI[node]["Neighbours"][y]["_relationshp"] == "Parent":
-            # domoticz_log_api("-- -- find %s Parent for %s" %(y, node))
-            if y not in parent:
-                parent.append(y)
+        if reportLQI[node]["Neighbours"][y]["_relationshp"] == "Parent" and y not in parent:
+            parent.append(y)
 
     for x in list(reportLQI):
-        if node in reportLQI[x]["Neighbours"]:
-            if reportLQI[x]["Neighbours"][node]["_relationshp"] == "Child":
-                # domoticz_log_api("-- -- find %s Child for %s" %(y, node))
-                if x not in parent:
-                    parent.append(x)
+        if node in reportLQI[x]["Neighbours"] and reportLQI[x]["Neighbours"][node]["_relationshp"] == "Child" and x not in parent:
+            parent.append(x)
 
     return parent
 
@@ -396,9 +421,7 @@ def add_relationship(self, reportLQI, node1, node2, relation_node, relation_ship
         return reportLQI
 
     if node1 not in reportLQI:
-        reportLQI[node1] = {}
-        reportLQI[node1]["Neighbours"] = {}
-
+        reportLQI[node1] = {"Neighbours": {}}
     if (
         relation_node in reportLQI[node1]["Neighbours"]
         and reportLQI[node1]["Neighbours"][relation_node]["_relationshp"] == relation_ship
@@ -409,20 +432,20 @@ def add_relationship(self, reportLQI, node1, node2, relation_node, relation_ship
         # ZiGate
         _devicetype = "Coordinator"
 
+    elif node2 in reportLQI[node1]["Neighbours"]:
+        _devicetype = (
+            reportLQI[node1]["Neighbours"][node2]["_devicetype"]
+            if "_devicetype" in reportLQI[node1]["Neighbours"][node2]
+            else find_device_type(self, node2)
+        )
     else:
-        if node2 in reportLQI[node1]["Neighbours"]:
-            if "_devicetype" in reportLQI[node1]["Neighbours"][node2]:
-                _devicetype = reportLQI[node1]["Neighbours"][node2]["_devicetype"]
-            else:
-                _devicetype = find_device_type(self, node2)
-        else:
-            _devicetype = find_device_type(self, node2)
+        _devicetype = find_device_type(self, node2)
 
-    reportLQI[node1]["Neighbours"][relation_node] = {}
-    reportLQI[node1]["Neighbours"][relation_node]["_relationshp"] = relation_ship
-    reportLQI[node1]["Neighbours"][relation_node]["_lnkqty"] = _linkqty
-    reportLQI[node1]["Neighbours"][relation_node]["_devicetype"] = _devicetype
-
+    reportLQI[node1]["Neighbours"][relation_node] = {
+        "_relationshp": relation_ship,
+        "_lnkqty": _linkqty,
+        "_devicetype": _devicetype,
+    }
     return reportLQI
 
 
@@ -443,27 +466,56 @@ def find_device_type(self, node):
 def collect_routing_table(self, time_stamp=None):
     
     _topo = []
+    prevent_duplicate_tuple = []
     self.logging( "Debug", "collect_routing_table - TimeStamp: %s" %time_stamp)
-    for father in self.ListOfDevices:
-        self.logging( "Debug", f"check {father} child from routing table")
-        for child in set( extract_routes(self, father, time_stamp) + collect_associated_devices( self, father, time_stamp) + collect_neighbours_devices( self, father, time_stamp) ):
-            self.logging( "Debug", f"Found child {child}") 
-            if child not in self.ListOfDevices:
-                self.logging( "Debug", f"Found child {child} but not found in ListOfDevices") 
+    for node1 in self.ListOfDevices:
+        self.logging( "Debug", f"check {node1} child from routing table")
+        routes_list = extract_routes(self, node1, time_stamp)
+        for node2 in set( collect_neighbours_devices( self, node1, time_stamp) ):
+            self.logging( "Debug", f"Found child {node2}") 
+            if node2 not in self.ListOfDevices:
+                self.logging( "Debug", f"Found child {node2} but not found in ListOfDevices") 
                 continue
-            _relation = {
-                "Father": get_node_name( self, father), 
-                "Child": get_node_name( self, child), 
-                "_lnkqty": get_lqi_from_neighbours(self, father, child), 
-                "DeviceType": find_device_type(self, child)
-            }
-            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
-                _relation["Father"], father, _relation["Child"], child, _relation["_lnkqty"], _relation["DeviceType"]),)
-            _topo.append( _relation ) 
+            
+            if ( node1, node2) not in prevent_duplicate_tuple:
+                prevent_duplicate_tuple.append( ( node1, node2) )
+                new_entry = build_relation_ship_dict(self, node1, node2,)
 
+                if node2 in routes_list:
+                    new_entry["Route"] = "Yes"
+                    
+                self.logging( "Log", "| %15.15s (%5.5s) | %15.15s (%5.5s) | %4.4s | %11.11s | %9.9s | %5.5s |" % (
+                    new_entry["Father"], node1, new_entry["Child"], node2, new_entry["_lnkqty"], new_entry["DeviceType"], new_entry["_relationship"], new_entry["Route"]),)
+                del new_entry["Route"]
+                del new_entry["_relationship"]
+                _topo.append( new_entry ) 
     return _topo
 
-       
+
+def build_relation_ship_dict(self, node1, node2):
+    return {
+        "Father": get_node_name( self, node1), 
+        "Child": get_node_name( self, node2), 
+        "_lnkqty": get_lqi_from_neighbours(self, node1, node2), 
+        "DeviceType": find_device_type(self, node2),
+        "_relationship": get_relationship_neighbours(self, node1, node2),
+        "Route": ""
+    }
+
+
+def get_relationship_neighbours(self, node1, node2, time_stamp=None):
+    return next(
+        (
+            neigbor[node2]["_relationshp"]
+            for neigbor in get_device_table_entry(
+                self, node1, "Neighbours", time_stamp
+            )
+            if node2 in neigbor
+        ),
+        "",
+    )
+
+
 def collect_associated_devices( self, node, time_stamp=None):
     last_associated_devices = get_device_table_entry(self, node, "AssociatedDevices", time_stamp)
     self.logging( "Debug", "collect_associated_devices %s -> %s" %(node, str(last_associated_devices)))
@@ -495,8 +547,8 @@ def get_lqi_from_neighbours(self, father, child, time_stamp=None):
             return item2[ node ]["_lnkqty"] 
     return 1
 
-# Zigpy Topology helpers
 
+# Zigpy Topology helpers
 def zigpy_topology_filename(self):
     return Path( self.pluginconf.pluginConf["pluginReports"] ) / ( ZIGPY_TOPOLOGY_REPORT_FILENAME + "%02d.json" % self.hardwareID)
 
