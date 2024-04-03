@@ -275,10 +275,14 @@ def _zgroup_get(self, parameters):
             elif len(itemDevice) == 3:
                 dev, ep, ieee = itemDevice
             zgroup["Devices"].append( {"_NwkId": dev, "Ep": ep, "IEEE": ieee} )
-
-        zgroup["WidgetStyle"] = group_info.get("WidgetStyle", "")
         zgroup["Cluster"] = group_info.get("Cluster", "")
-
+        zgroup["WidgetStyle"] = group_info.get("WidgetStyle", "")
+        zgroup["Switchtype"] = group_info.get("Switchtype", "")
+        zgroup["Subtype"] = group_info.get("Subtype", "")
+        zgroup["prev_nValue"] = group_info.get("prev_nValue", "")
+        zgroup["prev_sValue"] = group_info.get("prev_sValue", "")
+        zgroup["nValue"] = group_info.get("nValue", "")
+        zgroup["sValue"] = group_info.get("sValue", "")
         if "Tradfri Remote" in group_info:
             zgroup["Devices"].append(  {"_NwkId": group_info["Tradfri Remote"]} )
 

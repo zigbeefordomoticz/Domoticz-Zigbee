@@ -891,9 +891,9 @@ class BasePlugin:
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
 
-        # Write the ListOfDevice every 5 minutes or immediatly if we have remove or added a Device
+        # Write the ListOfDevice every 15 minutes or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
-            WriteDeviceList(self, ( (5 * 60) // HEARTBEAT) )  
+            WriteDeviceList(self, ( (15 * 60) // HEARTBEAT) )
 
         else:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")

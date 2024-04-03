@@ -73,7 +73,6 @@ def dummy_topology_report( ):
             {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led LKex", "_lnkqty": 252}, 
             {"Child": "Micromodule Legrand", "DeviceType": "Router", "Father": "Led Ikea", "_lnkqty": 252}]
 
-
 def rest_netTopologie(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
@@ -88,6 +87,10 @@ def rest_netTopologie(self, verb, data, parameters):
 
     return _response
 
+    if verb == "GET":
+        rest_netTopologie_get(self, verb, data, parameters, _response, _filename)
+
+    return _response
 
 def rest_netTopologie_delete(self, verb, data, parameters, _response, _filename):
     
@@ -137,9 +140,21 @@ def rest_netTopologie_get(self, verb, data, parameters, _response, _filename, ):
             else:
                 _topo, _timestamps_lst = extract_list_of_legacy_report(self, _response, _filename)
 
-            _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
+    elif len(parameters) == 1:
+        timestamp = parameters[0]
+        if self.pluginconf.pluginConf["TopologyV2"] and len(self.ControllerData):
+            remove_entry_from_all_tables( self, timestamp )
+            action = {"Name": "Report %s removed" % timestamp}
+            _response["Data"] = json.dumps(action, sort_keys=True)
 
-        elif len(parameters) == 1:
+        elif timestamp in _topo:
+            return rest_netTopologie_delete_legacy(self, verb, data, parameters, _response, timestamp, _topo, _filename)
+            
+        else:
+            domoticz_error_api("Removing Topo Report %s not found" % timestamp)
+            _response["Data"] = json.dumps([], sort_keys=True)
+    return _response
+
 
             if self.fake_mode():
                 _response["Data"] = json.dumps(dummy_topology_report( ), sort_keys=True)
@@ -161,7 +176,7 @@ def rest_netTopologie_get(self, verb, data, parameters, _response, _filename, ):
                 else:
                     _response["Data"] = json.dumps([], sort_keys=True)
     
-    
+
 def rest_netTopologie_delete_legacy(self, verb, data, parameters, _response, timestamp, _topo, _filename):
     self.logging("Debug", "Removing Report: %s from %s records" % (timestamp, len(_topo)))
     with open(_filename, "r+") as handle:
@@ -184,16 +199,30 @@ def rest_netTopologie_delete_legacy(self, verb, data, parameters, _response, tim
     action = {"Name": "Report %s removed" % timestamp}
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
+    
+    
+def rest_netTopologie_get(self, verb, data, parameters, _response, _topo=None):
+    if len(parameters) == 0:
+        if self.fake_mode():
+            _timestamps_lst = [1643561599, 1643564628]
+        elif self.pluginconf.pluginConf["TopologyV2"]:
+            _timestamps_lst = get_list_of_timestamps(self, "0000", "Neighbours")
+        _response["Data"] = json.dumps(_timestamps_lst, sort_keys=True)
 
+    elif len(parameters) == 1:
+        if self.fake_mode():
+            _response["Data"] = json.dumps(dummy_topology_report(), sort_keys=True)
 
-def is_sibling_required(reportLQI):
-    # Do We have a relationship between 2 nodes, but it is not a Parent/Child,
-    # let's enable Sibling check to get it.
-    for x in reportLQI:
-        for y in reportLQI[x]["Neighbours"]:
-            if reportLQI[x]["Neighbours"][y]["_relationshp"] == "None":
-                return True
-    return False
+        elif self.pluginconf.pluginConf["TopologyV2"]:
+            timestamp = parameters[0]
+            _response["Data"] = json.dumps(collect_routing_table(self, timestamp), sort_keys=True)
+
+        elif _topo:
+            timestamp = parameters[0]
+            _response["Data"] = json.dumps(_topo.get(timestamp, []), sort_keys=True)
+
+    return _response
+
 
 
 def extract_list_of_legacy_report(self, _response, _filename):
@@ -237,81 +266,48 @@ def extract_legacy_report(self, reportLQI):
                 reportLQI[item]["Neighbours"][x]["_relationshp"]
             ))
 
-    if is_sibling_required(reportLQI) or self.pluginconf.pluginConf["Sibling"]:
-        reportLQI = check_sibbling(self, reportLQI)
-
-    self.logging("Debug", "AFTER Sibling report" )
-    for item in reportLQI:
-        for x in reportLQI[item]["Neighbours"]:
-            self.logging("Debug", "%s - %s - %s - %s - %s - %s" %(
-                get_node_name( self, item),
-                reportLQI[item]["Neighbours"][x]["_relationshp"],
-                get_node_name( self, x),
-                reportLQI[item]["Neighbours"][x]["_devicetype"],
-                reportLQI[item]["Neighbours"][x]["_lnkqty"],
-                reportLQI[item]["Neighbours"][x]["_relationshp"]
-            ))
-
-    for item in reportLQI:
-        
-        if item != "0000" and item not in self.ListOfDevices:
+    for node1 in reportLQI:
+        if node1 != "0000" and node1 not in self.ListOfDevices:
+            # We remove nodes which are unknown
             continue
 
         # Get the Nickname
-        item_name = get_node_name( self, item)
+        node1_name = get_node_name( self, item)
 
-        self.logging("Debug", "extract_report - found item: %s - %s" %(item, item_name))
+        self.logging("Debug", "extract_report - found item: %s - %s" %(node1, node1_name))
 
         # Let browse the neighbours
-        for x in reportLQI[item]["Neighbours"]:
+        for node2 in reportLQI[node1]["Neighbours"]:
             # Check it exists
-            if x != "0000" and x not in self.ListOfDevices:
-                continue
-
-            # Check it is not the main item
-            if item == x:
+            if (node1 == node2) or (node2 != "0000" and node2 not in self.ListOfDevices):
+                # We remove nodes which are unknown
                 continue
 
             # Get nickname
-            x_name = get_node_name( self, x)
+            node2_name = get_node_name( self, node2)
 
             self.logging("Debug2", "                     ---> %15s (%s) %s %s %s" % (
-                x_name, x, 
-                reportLQI[item]["Neighbours"][x]["_relationshp"],
-                reportLQI[item]["Neighbours"][x]["_devicetype"],
-                int(reportLQI[item]["Neighbours"][x]["_lnkqty"], 16) ))
+                node2_name, node2, 
+                reportLQI[node1]["Neighbours"][x]["_relationshp"],
+                reportLQI[node1]["Neighbours"][x]["_devicetype"],
+                int(reportLQI[node1]["Neighbours"][node2]["_lnkqty"], 16) ))
 
-            # Report only Child relationship
-            if "Neighbours" not in reportLQI[item]:
-                self.logging("Error", "Missing attribute :%s for (%s,%s)" % ("Neighbours", item, x))
+            if "Neighbours" not in reportLQI[node1]:
+                self.logging("Error", "Missing attribute :%s for (%s,%s)" % ("Neighbours", node1, node2))
                 continue
 
             for attribute in ( "_relationshp", "_lnkqty", "_devicetype", ):
-                if attribute not in reportLQI[item]["Neighbours"][x]:
-                    self.logging("Error", "Missing attribute :%s for (%s,%s)" % (attribute, item, x))
+                if attribute not in reportLQI[node1]["Neighbours"][node2]:
+                    self.logging("Error", "Missing attribute :%s for (%s,%s)" % (attribute, node1, node2))
                     continue
 
-            # We need to reorganise in Father/Child relationship.
-            if reportLQI[item]["Neighbours"][x]["_relationshp"] in ("Former Child", "None", "Sibling"):
+            if reportLQI[node1]["Neighbours"][node2]["_relationshp"] in ("Former Child", "None"):
                 continue
 
-            if reportLQI[item]["Neighbours"][x]["_relationshp"] == "Parent":
-                _father = item
-                _father_name = item_name
-                _child = x
-                _devicetype = get_device_type(self, x)
-                _child_name = x_name
-
-            elif reportLQI[item]["Neighbours"][x]["_relationshp"] == "Child":
-                _father = x
-                _father_name = x_name
-                _child = item
-                _devicetype = get_device_type(self, item)
-                _child_name = item_name
-
-            if ( _father, _child) in _check_duplicate or ( _child, _father) in _check_duplicate:
-                self.logging( "Debug", "Skip (%s,%s) as there is already %s" % ( item, x, str(_check_duplicate)))
+            if ( node1, node2) in _check_duplicate or ( node2, node1) in _check_duplicate:
+                self.logging( "Debug", "Skip (%s,%s) as there is already %s" % ( node1, x, str(_check_duplicate)))
                 continue
+
 
             _check_duplicate.append(( _father, _child))
 
@@ -323,17 +319,20 @@ def extract_legacy_report(self, reportLQI):
                     reportLQI[item]["Neighbours"][x]["_lnkqty"], 16
                 ),
                 "DeviceType": _devicetype,
+
             }
             self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
-                _relation["Father"], _father, _relation["Child"], _child, _relation["_lnkqty"], _relation["DeviceType"]),)
+                _relation["Father"], node1, _relation["Child"], node2, _relation["_lnkqty"], _relation["DeviceType"]),)
             _topo.append(_relation)
 
     self.logging("Debug", "WebUI report" )
+
     for x in _topo:
         self.logging( "Debug", "Relationship - %15.15s - %15.15s %3s %s" % (
             x["Father"], x["Child"], x["_lnkqty"], x["DeviceType"]),)
 
     del _check_duplicate
+
     return _topo
 
 
@@ -353,7 +352,6 @@ def get_node_name( self, node):
     if "ZDeviceName" in self.ListOfDevices[node] and self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
             return self.ListOfDevices[node]["ZDeviceName"]
     return node
-
 
 def check_sibbling(self, reportLQI):
     # for node1 in sorted(reportLQI):
@@ -465,11 +463,16 @@ def find_device_type(self, node):
 
 def collect_routing_table(self, time_stamp=None):
     
+    self.logging( "Log", "Relationships (Neighbours table)")
+    self.logging( "Log", "| %15.15s (%5.5s) | %15.15s (%5.5s) | %4.4s | %11.11s | %9.9s | %5.5s |" % (
+        "Node1", "nwkid", "Node2", "nwkid", "LQI", "Dev. Type", "Relation", "Route Flag"),)
+
     _topo = []
     prevent_duplicate_tuple = []
     self.logging( "Debug", "collect_routing_table - TimeStamp: %s" %time_stamp)
     for node1 in self.ListOfDevices:
         self.logging( "Debug", f"check {node1} child from routing table")
+
         routes_list = extract_routes(self, node1, time_stamp)
         for node2 in set( collect_neighbours_devices( self, node1, time_stamp) ):
             self.logging( "Debug", f"Found child {node2}") 
@@ -477,6 +480,7 @@ def collect_routing_table(self, time_stamp=None):
                 self.logging( "Debug", f"Found child {node2} but not found in ListOfDevices") 
                 continue
             
+
             if ( node1, node2) not in prevent_duplicate_tuple:
                 prevent_duplicate_tuple.append( ( node1, node2) )
                 new_entry = build_relation_ship_dict(self, node1, node2,)
@@ -489,6 +493,7 @@ def collect_routing_table(self, time_stamp=None):
                 del new_entry["Route"]
                 del new_entry["_relationship"]
                 _topo.append( new_entry ) 
+
     return _topo
 
 
@@ -503,6 +508,7 @@ def build_relation_ship_dict(self, node1, node2):
     }
 
 
+
 def get_relationship_neighbours(self, node1, node2, time_stamp=None):
     return next(
         (
@@ -515,7 +521,6 @@ def get_relationship_neighbours(self, node1, node2, time_stamp=None):
         "",
     )
 
-
 def collect_associated_devices( self, node, time_stamp=None):
     last_associated_devices = get_device_table_entry(self, node, "AssociatedDevices", time_stamp)
     self.logging( "Debug", "collect_associated_devices %s -> %s" %(node, str(last_associated_devices)))
@@ -525,18 +530,18 @@ def collect_associated_devices( self, node, time_stamp=None):
 def collect_neighbours_devices( self, node, time_stamp=None):
     last_neighbours_devices = get_device_table_entry(self, node, "Neighbours", time_stamp)
     self.logging( "Debug", "collect_neighbours_devices %s -> %s" %(node, str(last_neighbours_devices)))
-    keys_with_child_relation = [key for item in last_neighbours_devices for key, value in item.items() if value.get('_relationshp') == 'Child']
+    keys_with_child_relation = [key for item in last_neighbours_devices for key, value in item.items()]
     return list(keys_with_child_relation)
            
         
 def extract_routes( self, node, time_stamp=None):
     node_routes = []
-    
     for route in get_device_table_entry(self, node, "RoutingTable", time_stamp):
         self.logging( "Debug","---> route: %s" %route)
         node_routes.extend(item for item in route if route[item]["Status"] == "Active (0)")
     return node_routes            
         
+
 
 def get_lqi_from_neighbours(self, father, child, time_stamp=None):
     # Take the LQI from the latest report

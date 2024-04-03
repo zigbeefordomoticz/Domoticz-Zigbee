@@ -280,9 +280,7 @@ def update_domoticz_group_device(self, GroupId):
         LookForGroupAndCreateIfNeeded(self, GroupId)
         return
 
-    Cluster = None
-    if "Cluster" in self.ListOfGroups[GroupId]:
-        Cluster = self.ListOfGroups[GroupId]["Cluster"]
+    Cluster = self.ListOfGroups[GroupId].get("Cluster")
 
     countStop = countOn = countOff = 0
     nValue = 0 if self.pluginconf.pluginConf["OnIfOneOn"] else 1
@@ -421,9 +419,15 @@ def update_domoticz_group_device(self, GroupId):
     group_name = domo_read_Name( self, self.Devices, GroupId, unit )
     self.logging( "Debug", "update_domoticz_group_device - Processing: Group: %s ==  > from %s:%s to %s:%s" % (
         GroupId, current_nValue, current_sValue, nValue, sValue), )
-    
-    
+
     if nValue != current_nValue or sValue != current_sValue:
+        self.ListOfGroups[GroupId]["nValue"] = nValue
+        self.ListOfGroups[GroupId]["sValue"] = sValue
+        self.ListOfGroups[GroupId]["prev_nValue"] = current_nValue
+        self.ListOfGroups[GroupId]["prev_sValue"] = current_sValue
+
+        self.ListOfGroups[GroupId]["Switchtype"] = switchType
+        self.ListOfGroups[GroupId]["Subtype"] = switchType
         self.logging("Log", f"UpdateGroup  - ({group_name:>15}) {nValue}:{sValue}")
         domo_update_api(self, self.Devices, GroupId, unit, nValue, sValue)
 

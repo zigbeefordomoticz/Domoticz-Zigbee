@@ -249,6 +249,9 @@ class WebServer(object):
 
             if self.groupmgt:
                 health["GroupStatus"] = self.groupmgt.GroupStatus
+                
+            if self.networkmap and self.networkmap.NetworkMapPhase():
+                health["Topology"] = "In Progress"
 
             _response["Data"] = json.dumps(health, sort_keys=True)
 
@@ -1560,7 +1563,7 @@ def decode_device_param(self, nwkid, param):
         return {}
 
     try:
-        return json.loads(replace_single_quotes_with_double(param))
+        return json.loads(replace_single_quotes_with_double(remove_last_comma(param)))
 
     except json.JSONDecodeError as err:
         _device_name = get_device_nickname(self, NwkId=nwkid)
@@ -1581,6 +1584,14 @@ def replace_single_quotes_with_double(json_string):
     """
     return json_string.replace("'", "\"")
 
+
+def remove_last_comma(json_string):
+    """ remove last comma if any"""
+    if json_string.endswith(', }'):
+        return json_string[:-3] + "}"
+    elif json_string.endswith(',}'):
+        return json_string[:-2] + "}"
+    return json_string
 
 
 def get_plugin_parameters(self, filter=False):

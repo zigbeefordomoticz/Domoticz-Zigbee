@@ -767,6 +767,12 @@ SIMPLE_WIDGET = {
     "ProdPower": {
         "widgetType": "Usage"
     },
+    "SOS": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 9,
+        "Image": 13
+    },
     "ShutterCalibration": {
         "Type": 244,
         "Subtype": 73,
