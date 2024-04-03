@@ -574,3 +574,9 @@ def scan_channel( self, scan_result ):
         list_channels.append(  { "Channel": str(channel), "Level": int(value)} )
         
     return list_channels
+
+
+def is_zigpy_topology_in_progress(self):
+
+    zigpy_topology = self.topology
+    return zigpy_topology._scan_task is not None and not zigpy_topology._scan_task.done()

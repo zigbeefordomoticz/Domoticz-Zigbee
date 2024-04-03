@@ -479,6 +479,9 @@ async def dispatch_command(self, data):
     elif cmd == "INTERFERENCE-SCAN":
         await self.app.network_interference_scan()
 
+    elif cmd == "ZIGPY-TOPOLOGY-SCAN":
+        await self.app.start_topology_scan()
+
 
 async def _permit_to_joint(self, data):
     log = self.log
