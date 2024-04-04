@@ -22,7 +22,7 @@ from Modules.tools import how_many_devices
 from Modules.domoticzAbstractLayer import domoticz_error_api
 
 MODULES_VERSION = {
-    "zigpy": "0.63.5",
+    "zigpy": "0.63.4",
     "zigpy_znp": "0.12.1",
     "zigpy_deconz": "0.23.1",
     "bellows": "0.38.1",
