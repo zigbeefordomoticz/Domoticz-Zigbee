@@ -1,11 +1,11 @@
 # Seamlessly Integrate and Empower Your Zigbee Devices with DomoticZ Using the ZigBeeForDomoticz Plugin
 
-![Zigbee for Domoticz](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/stable6/images/Z4D-200.png?raw=true )
+![Zigbee for Domoticz](https://github.com/zigbeefordomoticz/Domoticz-Zigbee/blob/stable7/images/Z4D-200.png?raw=true )
 
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/zigbeefordomoticz/Domoticz-Zigbee.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee "Percentage of issues still open")
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/zigbeefordomoticz/Domoticz-Zigbee.svg)](http://isitmaintained.com/project/zigbeefordomoticz/Domoticz-Zigbee "Average time to resolve an issue")
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/pipiche "Donate via PayPal")
-[![CodeFactor](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/badge/stable6)](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/overview/stable6)
+[![CodeFactor](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/badge/stable7)](https://www.codefactor.io/repository/github/zigbeefordomoticz/domoticz-zigbee/overview/stable7)
 
 ZigBeeForDomoticz serves as an advanced plugin designed to seamlessly integrate Zigbee devices into the [Domoticz home automation software](https://www.domoticz.com/) software. By utilizing a Zigbee coordinator (such as ZigBee hubs, gateways, bridges, controllers, adapters, dongles, sticks, or keys), this plugin establishes a reliable connection with Zigbee-enabled devices.
 
