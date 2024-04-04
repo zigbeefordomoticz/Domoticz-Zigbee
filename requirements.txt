@@ -1,4 +1,4 @@
-zigpy==0.63.4
+zigpy==0.63.5
 zigpy_znp==0.12.1
 zigpy_deconz==0.23.1
 bellows==0.38.1
@@ -9,3 +9,4 @@ z4d-certified-devices
 charset-normalizer==2.0.11
 distro
 pyserial-asyncio-fast
+jsonschema==4.17.3
