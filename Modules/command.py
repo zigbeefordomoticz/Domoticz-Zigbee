@@ -262,9 +262,7 @@ def handle_command_stop(self,Devices, DeviceID, Unit, Nwkid, EPout, DeviceType, 
         if _model_name in ("PR412", "CPR412", "CPR412-E"):
             profalux_stop(self, Nwkid)
         else:
-            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             actuator_stop( self, Nwkid, EPout, "WindowCovering")
-            #sendZigateCmd(self, "00FA", "02" + Nwkid + ZIGATE_EP + EPout + "02")
             
         if DeviceType in ( "CurtainInverted", "Curtain"):
             # Refresh will be done via the Report Attribute
@@ -273,7 +271,6 @@ def handle_command_stop(self,Devices, DeviceID, Unit, Nwkid, EPout, DeviceType, 
         update_domoticz_widget(self, Devices, DeviceID, Unit, 17, "0", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
     else:
         actuator_stop( self, Nwkid, EPout, "Light")
-        #sendZigateCmd(self, "0083", "02" + Nwkid + ZIGATE_EP + EPout + "02")
 
     # Let's force a refresh of Attribute in the next Heartbeat
     request_read_device_status(self, Nwkid)
@@ -317,7 +314,6 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         else:
             self.log.logging("Command", "Debug", "mgtCommand : Off for Tuya ParkSide Water Time - OnOff Mode")
             actuator_off(self, Nwkid, EPout, "Light")
-            #sendZigateCmd(self, "0092", "02" + Nwkid + ZIGATE_EP + EPout + "00")
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
 
@@ -466,15 +462,12 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
 
     elif DeviceType == "WindowCovering":
         actuator_off(self, Nwkid, EPout, "WindowCovering")
-        #sendZigateCmd(self, "00FA", "02" + Nwkid + ZIGATE_EP + EPout + "01")  # Blind inverted (On, for Close)
 
     elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
         if "Model" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Model"] in ("PR412", "CPR412", "CPR412-E"):
             actuator_on(self, Nwkid, EPout, "Light")
-            #sendZigateCmd(self, "0092", "02" + Nwkid + ZIGATE_EP + EPout + "01")
         else:
             actuator_on(self, Nwkid, EPout, "WindowCovering")
-            #sendZigateCmd( self, "00FA", "02" + Nwkid + ZIGATE_EP + EPout + "01")  # Venetian Inverted/Blind (On, for Close)
             
         if DeviceType in ( "CurtainInverted", "Curtain"):
             # Refresh will be done via the Report Attribute
@@ -484,7 +477,6 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
     elif DeviceType in ( "Venetian", "Vanne", "Curtain"):
         if "Model" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Model"] in ( "PR412", "CPR412", "CPR412-E"):
             actuator_off(self, Nwkid, EPout, "Light")
-            #sendZigateCmd(self, "0092", "02" + Nwkid + ZIGATE_EP + EPout + "00")
         elif (
             DeviceType in ("Vanne", "Curtain",) 
             or "Model" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Model"] in ( "TS130F",)
@@ -497,7 +489,6 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
 
         else:
             actuator_on(self, Nwkid, EPout, "WindowCovering")
-            #sendZigateCmd(self, "00FA", "02" + Nwkid + ZIGATE_EP + EPout + "00")  # Venetian /Blind (Off, for Close)
 
     elif DeviceType == "AlarmWD":
         self.iaszonemgt.alarm_off(Nwkid, EPout)
@@ -524,7 +515,6 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         # Remaining Slider widget
         if profalux:  # Profalux are define as LvlControl but should be managed as Blind Inverted
             actuator_setlevel(self, Nwkid, EPout, 0, "Light", "0000", withOnOff=False)
-            #sendZigateCmd(self, "0081", "02" + Nwkid + ZIGATE_EP + EPout + "01" + "%02X" % 0 + "0000")
         else:
             if (
                 "Param" in self.ListOfDevices[Nwkid]
@@ -542,16 +532,13 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
                 self.log.logging("Command", "Debug", "mgtCommand : %s fading Off effect: %s" % (Nwkid, effect))
                 # Increase brightness by 20% (if possible) in 0.5 seconds then fade to off in 1 second (default)
                 actuator_off(self, Nwkid, EPout, "Light", effect)
-                #sendZigateCmd(self, "0094", "02" + Nwkid + ZIGATE_EP + EPout + effect)
             else:
                 actuator_off(self, Nwkid, EPout, "Light")
-                #sendZigateCmd(self, "0092", "02" + Nwkid + ZIGATE_EP + EPout + "00")
 
         # Making a trick for the GLEDOPTO LED STRIP.
         if _model_name == "GLEDOPTO" and EPout == "0a":
             # When switching off the WW channel, make sure to switch Off the RGB channel
             actuator_off(self, Nwkid, "0b", "Light")
-            #sendZigateCmd(self, "0092", "02" + Nwkid + ZIGATE_EP + "0b" + "00")
 
     # Update Devices
     if is_dimmable_blind(self, Devices, DeviceID, Unit):
@@ -619,7 +606,6 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         else:
             self.log.logging("Command", "Debug", "mgtCommand : On for Tuya ParkSide Water Time - OnOff Mode")
             actuator_on(self, Nwkid, EPout, "Light")
-            #sendZigateCmd(self, "0092", "02" + Nwkid + ZIGATE_EP + EPout + "01")
 
     if _model_name in ("TS0601-Energy",):
         tuya_energy_onoff(self, Nwkid, "01")
@@ -663,9 +649,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         profalux_MoveToLiftAndTilt(self, Nwkid, level=255)
 
     elif DeviceType == "WindowCovering":
-        # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
         actuator_on(self, Nwkid, EPout, "WindowCovering")
-        #sendZigateCmd(self, "00FA", "02" + Nwkid + ZIGATE_EP + EPout + "00")  # Blind inverted (Off, for Open)
 
     elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
         if "Model" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Model"] in ("PR412", "CPR412", "CPR412-E"):
@@ -680,14 +664,12 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
     elif DeviceType in ("Venetian", "Vanne", "Curtain"):
         if "Model" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Model"] in ("PR412", "CPR412", "CPR412-E"):
             actuator_on(self, Nwkid, EPout, "Light")
-            #sendZigateCmd(self, "0092", "02" + Nwkid + ZIGATE_EP + EPout + "01")    
                 
         elif DeviceType in ( "Vanne", "Curtain",) or "Model" in self.ListOfDevices[Nwkid] and self.ListOfDevices[Nwkid]["Model"] in ( "TS130F",):
             actuator_on(self, Nwkid, EPout, "WindowCovering")
 
         else:
             actuator_off(self, Nwkid, EPout, "WindowCovering")
-            #sendZigateCmd(self, "00FA", "02" + Nwkid + ZIGATE_EP + EPout + "01")  # Venetian/Blind (On, for Open)
             
         if DeviceType in ( "CurtainInverted", "Curtain"):
             # Refresh will be done via the Report Attribute
@@ -714,10 +696,8 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         # Remaining Slider widget
         if profalux:
             actuator_setlevel(self, Nwkid, EPout, 255, "Light", "0000", withOnOff=False)
-            #sendZigateCmd(self, "0081", "02" + Nwkid + ZIGATE_EP + EPout + "01" + "%02X" % 255 + "0000")
         else:
             actuator_on(self, Nwkid, EPout, "Light")
-            #sendZigateCmd(self, "0092", "02" + Nwkid + ZIGATE_EP + EPout + "01")
 
     if is_dimmable_blind(self, Devices, DeviceID, Unit):
         update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "100", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -1295,7 +1275,6 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     else:
         if profalux:
             actuator_setlevel(self, Nwkid, EPout, Level, "Light", "0000", withOnOff=False)
-            #sendZigateCmd(self, "0081", "02" + Nwkid + ZIGATE_EP + EPout + OnOff + value + "0000")
         else:
             if Level > 1 and get_deviceconf_parameter_value(self, _model_name, "ForceSwitchOnformoveToLevel", return_default=False):
                 actuator_on(self, Nwkid, EPout, "Light")
@@ -1303,10 +1282,9 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             if "Param" in self.ListOfDevices[Nwkid] and "moveToLevel" in self.ListOfDevices[Nwkid]["Param"]:
                 transitionMoveLevel = "%04x" % int(self.ListOfDevices[Nwkid]["Param"]["moveToLevel"])
             actuator_setlevel(self, Nwkid, EPout, Level, "Light", transitionMoveLevel, withOnOff=True )
-            #sendZigateCmd(self, "0081", "02" + Nwkid + ZIGATE_EP + EPout + OnOff + value + transitionMoveLevel)
 
-                      
-    if is_dimmable_blind(self, Devices, DeviceID, Unit) and Level in ( 0, 50, 100):
+    dimmable_blind = is_dimmable_blind(self, Devices, DeviceID, Unit)
+    if dimmable_blind and Level in ( 0, 50, 100):
         if Level == 0:
             update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "0", BatteryLevel, SignalLevel)
         
@@ -1315,9 +1293,11 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         
         elif Level == 50:
             update_domoticz_widget(self, Devices, DeviceID, Unit, 17, "0", BatteryLevel, SignalLevel)
-        
+
     else:
-        partially_opened_nValue = is_dimmable_blind(self, Devices, DeviceID, Unit) or is_dimmable_light(self, Devices, DeviceID, Unit) or is_dimmable_switch(self, Devices, DeviceID, Unit)
+        partially_opened_nValue = dimmable_blind or is_dimmable_light(self, Devices, DeviceID, Unit) or is_dimmable_switch(self, Devices, DeviceID, Unit)
+        if partially_opened_nValue is None:
+            partially_opened_nValue = 1
         update_domoticz_widget(self, Devices, DeviceID, Unit, partially_opened_nValue, str(Level), BatteryLevel, SignalLevel)
 
     # Let's force a refresh of Attribute in the next Heartbeat
