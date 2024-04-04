@@ -138,8 +138,11 @@ def check_requirements(home_folder):
 
     for req_str in requirements_list:
         req_str = req_str.strip()
-        package = re.split(r'[<>!=]+', req_str)[0].strip()
+        if req_str == '-c constraints.txt':
+            continue
 
+        package = re.split(r'[<>!=]+', req_str)[0].strip()
+        version = None
         try:
             installed_version = importlib.metadata.version(package)
 
