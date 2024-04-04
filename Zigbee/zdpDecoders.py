@@ -379,7 +379,7 @@ def buildframe_management_nwk_discovery_response(self, SrcNwkId, SrcEndPoint, Cl
 
 def buildframe_management_lqi_response(self, SrcNwkId, SrcEndPoint, ClusterId, Payload, frame):
     if len(Payload) < 10:
-        self.log.logging("zdpDecoder", "Error", "buildframe_management_lqi_response not a Mgt LQI Resp frame %s" % (Payload))
+        self.log.logging("zdpDecoder", "Debug", "buildframe_management_lqi_response not a Mgt LQI Resp frame %s" % (Payload))
         return frame
 
     self.log.logging("zdpDecoder", "Debug", "buildframe_management_lqi_response")
