@@ -798,8 +798,6 @@ class BasePlugin:
         if not is_domoticz_extended():
             DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
         
-        self.log.logging( "Command", "Log", f"Command: {DeviceID} {Unit}" )
-        
         # Let's check if this is End Node, or Group related.
         if DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
