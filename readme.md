@@ -27,7 +27,7 @@ Der wiki ist auf [Deutsch](https://zigbeefordomoticz.github.io/wiki/nl-dut/) ver
 * Support for `stable6` is deprecated. We recommend upgrading to the latest version, stable7.
 * The `stable7` branch is located at origin and represents the most stable environment for the plugin.
 * The `develop`branch is deprecated
-* The `develop7` branch runs parallel to `stable7` and serves as the primary branch for ongoing development. This is where you can access the latest features, but please be aware that potential bugs may also be present.
+* The `wip-develop` branch runs parallel to `stable7` and serves as the primary branch for ongoing development. This is where you can access the latest features, but please be aware that potential bugs may also be present.
 
 ### Working branches
 
