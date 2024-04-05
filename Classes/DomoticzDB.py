@@ -329,7 +329,9 @@ class DomoticzDB_DeviceStatus:
         result = self.get_device_status( ID)
         if result is None:
             return 0
-        
+
+        if 'result' not in result:
+            return 0
         AdjValue = 0
         for x in result['result']:
             AdjValue = x[attribute]    
