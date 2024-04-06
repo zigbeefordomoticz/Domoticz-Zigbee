@@ -1,8 +1,14 @@
-# !/usr/bin/env python3
-# coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import socket
 from threading import Thread
@@ -50,10 +56,10 @@ def start_tcpip_reader_thread(self):
 
 
 def shutdown_reader_thread(self):
-    self.logging_reader("Debug", "shutdown_reader_thread %s" % self.running)
+    self.logging_reader("Debug", f"shutdown_reader_thread {self.running}")
 
     if self._connection:
-        if isinstance(self._connection, serial.serialposix.Serial):
+        if isinstance(self._connection, serial.Serial):
             self.logging_reader("Log", "Flush and cancel_read")
             serial_reset_line_in(self)
             serial_reset_line_out(self)
@@ -61,16 +67,17 @@ def shutdown_reader_thread(self):
 
         elif isinstance(self._connection, socket.socket):
             self.logging_reader("Log", "shutdown socket")
-            if self._connection:
-                try:
-                    self._connection.shutdown(socket.SHUT_RDWR)
-                except Exception:
-                    pass
+            try:
+                self._connection.shutdown(socket.SHUT_RDWR)
+            except OSError as e:
+                self.logging_reader("Error", f"Error while shutting down socket: {e}")
 
         else:
-            self.logging_reader("Log", "unknown connection: %s" % str(self._connection))
+            self.logging_reader("Log", f"unknown connection: {self._connection}")
 
         self.logging_reader("Log", "close connection")
-        if self._connection:
+        try:
             self._connection.close()
-        self.logging_reader("Log", "Connection closed")
+            self.logging_reader("Log", "Connection closed")
+        except Exception as e:
+            self.logging_reader("Error", f"Error while closing connection: {e}")
