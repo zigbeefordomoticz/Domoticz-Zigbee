@@ -190,7 +190,7 @@ def find_widget_unit_from_WidgetID(self, Devices, Widget_Idx ):
     if Widget_Idx in self.ListOfDomoticzWidget:
         return self.ListOfDomoticzWidget[Widget_Idx]['Unit']
 
-    self.log.logging( "AbstractDz", "Log", f"- {Widget_Idx} Not Found in ListOfDomoticzWidget, looking the old way" )
+    self.log.logging( "AbstractDz", "Log", f"Plugin looks for Domoticz Widget Id {Widget_Idx} which do not exist !!" )
     # In case it is not found with the new way, let's keep the old way 
     # TO-DO: Remove
     
@@ -549,9 +549,19 @@ def domo_read_TimedOut( self, Devices, DeviceId_ ):
     return next( ( 1 for x in Devices if Devices[x].DeviceID == DeviceId_ and Devices[x].TimedOut ), 0, )
         
 
-def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_,):
+def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_):
     self.log.logging("AbstractDz", "Debug", f"domo_read_LastUpdate: DeviceID: {DeviceId_} Unit {Unit_}")
-    return Devices[DeviceId_].Units[Unit_].LastUpdate if DOMOTICZ_EXTENDED_API else Devices[Unit_].LastUpdate
+
+    if DOMOTICZ_EXTENDED_API:
+        device = Devices.get(DeviceId_)
+        if device:
+            return device.Units.get(Unit_).LastUpdate if device.Units else None
+    else:
+        device = Devices.get(Unit_)
+        if device:
+            return device.LastUpdate
+
+    return None
 
 
 def domo_read_BatteryLevel( self, Devices, DeviceId_, Unit_, ):
