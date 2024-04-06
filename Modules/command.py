@@ -975,7 +975,9 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         if Level > 1 and get_deviceconf_parameter_value(self, model_name, "ForceSwitchOnformoveToLevel", return_default=False):
             actuator_on(self, Nwkid, EPout, "Light")
 
-        transitionMoveLevel = self.ListOfDevices[Nwkid].get("Param", {}).get("moveToLevel", "0010")
+        move_to_level = self.ListOfDevices.get(Nwkid, {}).get("Param", {}).get("moveToLevel")
+        transitionMoveLevel = f"{int(move_to_level):04x}" if move_to_level is not None else "0010"
+
         actuator_setlevel(self, Nwkid, EPout, Level, "Light", transitionMoveLevel, withOnOff=True)
 
     # Domoticz widget update
