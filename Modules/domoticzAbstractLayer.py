@@ -31,6 +31,8 @@ DIMMABLE_WIDGETS = {
     (13, 73, 244): { "Widget": "Blind", "Name": "Blind Percentage", "partially_opened_nValue": 2},
     (15, 73, 244): { "Widget": "Blind", "Name": "Venetian Blinds EU", "partially_opened_nValue": 17},
     (21, 73, 244): { "Widget": "Blind", "Name": "Blinds + Stop", "partially_opened_nValue": 2},
+    (3, 73, 244): { "Widget": "Blind", "Name": "BSO-Volet", "partially_opened_nValue": 17},
+
 }
 
 DOMOTICZ_EXTENDED_API = False
