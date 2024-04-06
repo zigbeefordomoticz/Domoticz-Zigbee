@@ -14,6 +14,7 @@ import socket
 from threading import Thread
 
 import serial
+
 from Classes.ZigateTransport.readSerial import (open_serial,
                                                 serial_read_write_from_zigate,
                                                 serial_reset_line_in,
