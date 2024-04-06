@@ -63,9 +63,17 @@ def stop_zigpy_thread(self):
     self.writer_queue.put_nowait("STOP")
     self.zigpy_running = False
 
+    # Make sure top the manualy started task
+    if self.manual_topology_scan_task:
+        self.manual_topology_scan_task.cancel()
+
+    if self.manual_interference_scan_task:
+        self.manual_interference_scan_task.cancel()
+
 
 def start_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread (1)")
+
     if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -75,28 +83,29 @@ def start_zigpy_thread(self):
 def setup_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Starting zigpy thread (1)")
     self.zigpy_loop = get_or_create_eventloop()
-    
+
     if self.zigpy_loop:
         self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Starting zigpy thread")
-        
+
         self.zigpy_thread = Thread(name=f"ZigpyCom_{self.hardwareid}", target=zigpy_thread, args=(self,))
-        self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - zigpy thread setup done")
-        
         self.zigpy_thread.start()
+
         self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - zigpy thread started")
 
 
 def get_or_create_eventloop():
-    loop = None
     try:
         loop = asyncio.get_event_loop()
 
     except RuntimeError as ex:
         if "There is no current event loop in thread" in str(ex):
             loop = asyncio.new_event_loop()
-     
-    asyncio.set_event_loop( loop )
-    return loop   
+            asyncio.set_event_loop(loop)
+    else:
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+    return loop
 
 
 def zigpy_thread(self):
@@ -376,7 +385,7 @@ def display_network_infos(self):
 async def worker_loop(self):
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
-    self.writer_queue = queue.Queue()
+    self.writer_queue = queue.Queue()  # We MUST use queue and not asyncio.Queue, because it is not compatible with the Domoticz framework
 
     while self.zigpy_running and self.writer_queue is not None:
         self.log.logging("TransportZigpy", "Debug", "wait for command")
@@ -385,7 +394,8 @@ async def worker_loop(self):
 
         if command_to_send is None:
             continue
-        elif command_to_send == "STOP":
+
+        if command_to_send == "STOP":
             # Shutting down
             self.log.logging("TransportZigpy", "Debug", "worker_loop - Shutting down ... exit.")
             self.zigpy_running = False
@@ -394,8 +404,8 @@ async def worker_loop(self):
         data = json.loads(command_to_send)
         self.log.logging("TransportZigpy", "Debug", f"got a command {data['cmd']} ({type(data['cmd'])})")
 
-        if self.pluginconf.pluginConf["ZiGateReactTime"]:
-            t_start = 1000 * time.time()
+        if self.pluginconf.pluginConf.get("ZiGateReactTime", False):
+            t_start = int(1000 * time.time())
 
         try:
             await dispatch_command(self, data)
@@ -403,7 +413,7 @@ async def worker_loop(self):
         except (DeliveryError, APIException, ControllerException, InvalidFrame, 
                 CommandNotRecognized, ValueError, InvalidResponse, 
                 InvalidCommandResponse, asyncio.TimeoutError, RuntimeError) as e:
-            log_exception(self, type(e).__name__, e, data["cmd"], data["datas"])
+            log_exception(self, type(e).__name__, e, data.get("cmd", ""), data.get("datas", ""))
             if isinstance(e, (APIException, ControllerException)):
                 await asyncio.sleep(1.0)
 
@@ -411,16 +421,16 @@ async def worker_loop(self):
             self.log.logging("TransportZigpy", "Error", f"Error while receiving a Plugin command: >{e}<")
             handle_thread_error(self, e, data)
 
-        if self.pluginconf.pluginConf["ZiGateReactTime"]:
-            t_end = 1000 * time.time()
-            t_elapse = int(t_end - t_start)
+        if self.pluginconf.pluginConf.get("ZiGateReactTime", False):
+            t_end = int(1000 * time.time())
+            t_elapse = t_end - t_start
             self.statistics.add_timing_zigpy(t_elapse)
             if t_elapse > 1000:
-                self.log.logging( "TransportZigpy", "Log", "process_raw_command (zigpyThread) spend more than 1s (%s ms) frame: %s" % (t_elapse, data), )
+                self.log.logging("TransportZigpy", "Log", f"process_raw_command (zigpyThread) spent more than 1s ({t_elapse} ms) frame: {data}")
 
 
 async def get_next_command(self):
-    """ Get the next command in the writer Queue """
+    """Get the next command in the writer Queue."""
     while True:
         try:
             return self.writer_queue.get_nowait()
@@ -429,7 +439,7 @@ async def get_next_command(self):
             await asyncio.sleep(0.100)
 
         except Exception as e:
-            self.log.logging( "TransportZigpy", "Log", f"Error in get_next_command: {e}")
+            self.log.logging("TransportZigpy", "Log", f"Error in get_next_command: {e}")
             return None
 
 
@@ -477,10 +487,11 @@ async def dispatch_command(self, data):
         await self.app.set_zigpy_tx_power(datas["Param1"])
         
     elif cmd == "INTERFERENCE-SCAN":
-        await self.app.network_interference_scan()
+        self.manual_interference_scan_task = asyncio.create_task( self.app.network_interference_scan(), name="INTERFERENCE-SCAN")
 
     elif cmd == "ZIGPY-TOPOLOGY-SCAN":
-        await self.app.start_topology_scan()
+        self.manual_topology_scan_task = asyncio.create_task( self.app.start_topology_scan(), name="ZIGPY-TOPOLOGY-SCAN")
+
 
 
 async def _permit_to_joint(self, data):
@@ -528,9 +539,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     extended_timeout = not data.get("RxOnIdle", False) and not self.pluginconf.pluginConf["PluginRetrys"]
     self.log.logging( "TransportZigpy", "Debug", f"process_raw_command: extended_timeout {extended_timeout}")
                      
-    delay = data["Delay"] if "Delay" in data else None
-    self.log.logging( "TransportZigpy", "Debug", "process_raw_command: process_raw_command ready to request Function: %s NwkId: %04x/%s Cluster: %04x Seq: %02x Payload: %s AddrMode: %02x EnableAck: %s, Sqn: %s, Delay: %s, Extended_TO: %s" % (
-        Function, int(NwkId, 16), dEp, Cluster, sequence, binascii.hexlify(payload).decode("utf-8"), addressmode, not AckIsDisable, Sqn, delay,extended_timeout ), )
+    delay = data.get("Delay", None)
+    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: process_raw_command ready to request Function: {Function} NwkId: {NwkId}/{dEp} Cluster: {Cluster} Seq: {sequence} Payload: {payload.hex()} AddrMode: {addressmode} EnableAck: {not AckIsDisable}, Sqn: {Sqn}, Delay: {delay}, Extended_TO: {extended_timeout}")
 
     destination, transport_needs = _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload)
     
@@ -538,24 +548,21 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
         return
     
     if transport_needs == "Broadcast":
-        self.log.logging("TransportZigpy", "Debug", "process_raw_command Broadcast: %s" % NwkId)
+        self.log.logging("TransportZigpy", "Debug", f"process_raw_command Broadcast: {NwkId}")
         result, msg = await self.app.broadcast( Profile, Cluster, sEp, dEp, 0x0, 0x0, sequence, payload, )
         await asyncio.sleep( 2 * WAITING_TIME_BETWEEN_ATTEMPTS)
 
     elif addressmode == 0x01:
         # Group Mode
         destination = int(NwkId, 16)
-        self.log.logging("TransportZigpy", "Debug", "process_raw_command Multicast: %s" % destination)
+        self.log.logging("TransportZigpy", "Debug", f"process_raw_command Multicast: {destination}")
         result, msg = await self.app.mrequest(destination, Profile, Cluster, sEp, sequence, payload)
         await asyncio.sleep( 2 * WAITING_TIME_BETWEEN_ATTEMPTS)
 
     elif transport_needs == "Unicast":
-        self.log.logging( "TransportZigpy", "Debug", "process_raw_command Unicast destination: %s Profile: %s Cluster: %s sEp: %s dEp: %s Seq: %s Payload: %s" % (
-            destination, Profile, Cluster, sEp, dEp, sequence, payload))
+        self.log.logging("TransportZigpy", "Debug", f"process_raw_command Unicast destination: {destination} Profile: {Profile} Cluster: {Cluster} sEp: {sEp} dEp: {dEp} Seq: {sequence} Payload: {payload.hex()}")
 
-        if self.pluginconf.pluginConf["ForceAPSAck"]:
-            self.log.logging( "TransportZigpy", "Debug", "    Forcing Ack by setting AckIsDisable = False and so ack_is_disable == False" ) 
-            AckIsDisable = False
+        AckIsDisable = False if self.pluginconf.pluginConf["ForceAPSAck"] else AckIsDisable
 
         try:
             task = asyncio.create_task(
@@ -566,28 +573,28 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
 
         except (asyncio.TimeoutError, asyncio.exceptions.TimeoutError) as e:
             self.log.logging("TransportZigpy", "Log", f"process_raw_command: TimeoutError {destination} {Profile} {Cluster} {payload}")
-            error_msg = "%s" % e
+            error_msg = str(e)
             result = 0xB6
 
         except (asyncio.CancelledError, asyncio.exceptions.CancelledError) as e:
             self.log.logging("TransportZigpy", "Log", f"process_raw_command: CancelledError {destination} {Profile} {Cluster} {payload}")
-            error_msg = "%s" % e
+            error_msg = str(e)
             result = 0xB6
             
         except AttributeError as e:
             self.log.logging("TransportZigpy", "Log", f"process_raw_command: AttributeError {Profile} {type(Profile)} {Cluster} {type(Cluster)}")
-            error_msg = "%s" % e
+            error_msg = str(e)
             result = 0xB6
 
         except DeliveryError as e:
             # This could be relevant to APS NACK after retry
             # Request failed after 5 attempts: <Status.MAC_NO_ACK: 233>
-            self.log.logging("TransportZigpy", "Debug", "process_raw_command - DeliveryError : %s" % e)
-            error_msg = "%s" % e
+            self.log.logging("TransportZigpy", "Debug", f"process_raw_command - DeliveryError : {e}")
+            error_msg = str(e)
             result = int(e.status) if hasattr(e, 'status') else 0xB6
 
     if result:
-        self.log.logging( "TransportZigpy", "Debug", "ZigyTransport: process_raw_command completed NwkId: %s result: %s msg: %s" % (destination, result, error_msg), )
+        self.log.logging("TransportZigpy", "Debug", f"ZigyTransport: process_raw_command completed NwkId: {destination} result: {result} msg: {error_msg}")
         return
 
 
@@ -781,31 +788,34 @@ async def _limit_concurrency(self, destination, sequence):
     Async context manager that prevents devices from being overwhelmed by requests.
     Mainly a thin wrapper around `asyncio.Semaphore` that logs when it has to wait.
     """
-    _ieee = str(destination.ieee)
-    _nwkid = destination.nwk.serialize()[::-1].hex()
+    ieee = str(destination.ieee)
+    nwkid = destination.nwk.serialize()[::-1].hex()
 
-    if _ieee not in self._concurrent_requests_semaphores_list:
-        self._concurrent_requests_semaphores_list[_ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
-        self._currently_waiting_requests_list[_ieee] = 0
+    # Create semaphore if it doesn't exist for the given IEEE
+    if ieee not in self._concurrent_requests_semaphores_list:
+        self._concurrent_requests_semaphores_list[ieee] = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS_PER_DEVICE)
+        self._currently_waiting_requests_list[ieee] = 0
 
     start_time = time.monotonic()
-    was_locked = self._concurrent_requests_semaphores_list[_ieee].locked()
+    was_locked = self._concurrent_requests_semaphores_list[ieee].locked()
 
+    # Log when waiting due to max concurrency
     if was_locked:
-        self._currently_waiting_requests_list[_ieee] += 1
-        self.log.logging( "TransportZigpy", "Debug", "Max concurrency reached for %s, delaying request %s (%s enqueued)" % (
-            _nwkid, sequence, self._currently_waiting_requests_list[_ieee]), _nwkid, )
+        self._currently_waiting_requests_list[ieee] += 1
+        self.log.logging("TransportZigpy", "Debug", f"Max concurrency reached for {nwkid}, delaying request {sequence} ({self._currently_waiting_requests_list[ieee]} enqueued)", nwkid)
 
     try:
-        async with self._concurrent_requests_semaphores_list[_ieee]:
+        async with self._concurrent_requests_semaphores_list[ieee]:
+            # Log when a previously delayed request starts running
             if was_locked:
-                self.log.logging( "TransportZigpy", "Debug", "Previously delayed request %s is now running, " "delayed by %0.2f seconds for %s" % (
-                    sequence, (time.monotonic() - start_time), _nwkid), _nwkid, )
+                elapsed_time = time.monotonic() - start_time
+                self.log.logging("TransportZigpy", "Debug", f"Previously delayed request {sequence} is now running, delayed by {elapsed_time:.2f} seconds for {nwkid}", nwkid)
             yield
 
     finally:
         if was_locked:
-            self._currently_waiting_requests_list[_ieee] -= 1
+            # Decrement the waiting count if a request is processed
+            self._currently_waiting_requests_list[ieee] -= 1
 
 
 def specific_endpoints(self):
