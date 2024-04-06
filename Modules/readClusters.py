@@ -141,14 +141,7 @@ def storeReadAttributeStatus(self, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClu
 def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, Source=None, ):
 
     if MsgSrcAddr not in self.ListOfDevices:
-        _context = {
-            "MsgClusterId": str(MsgClusterId),
-            "MsgSrcEp": str(MsgSrcEp),
-            "MsgAttrID": str(MsgAttrID),
-            "MsgAttType": str(MsgAttType),
-            "MsgAttSize": str(MsgAttSize),
-            "MsgClusterData": str(MsgClusterData),
-        }
+        _context = create_context(MsgClusterId, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
         self.log.logging("Cluster", "Error", "ReadCluster - unknown device: %s" % (MsgSrcAddr), MsgSrcAddr, _context)
         return
 
@@ -195,14 +188,7 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
 
     else:
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
-        _context = {
-            "MsgClusterId": str(MsgClusterId),
-            "MsgSrcEp": str(MsgSrcEp),
-            "MsgAttrID": str(MsgAttrID),
-            "MsgAttType": str(MsgAttType),
-            "MsgAttSize": str(MsgAttSize),
-            "MsgClusterData": str(MsgClusterData),
-        }
+        _context = create_context(MsgClusterId, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
 
         self.log.logging( "Cluster", "Error", "ReadCluster - Warning - unknow %s/%s Cluster: %s Attribute: %s Status: %s DataType: %s DataSize: %s Data: %s" %(
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, _context, )
@@ -890,14 +876,7 @@ def Cluster0101(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500", "01")
 
         else:
-            _context = {
-                "MsgClusterId": str(MsgClusterId),
-                "MsgSrcEp": str(MsgSrcEp),
-                "MsgAttrID": str(MsgAttrID),
-                "MsgAttType": str(MsgAttType),
-                "MsgAttSize": str(MsgAttSize),
-                "MsgClusterData": str(MsgClusterData),
-            }
+            _context = create_context(MsgClusterId, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
             self.log.logging(
                 "Cluster",
                 "Error",
@@ -1924,57 +1903,14 @@ def Clusterfe03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     #  - UI,ButtonPressCenterDown
     #  - UI,ButtonPressPlusDown
     #  - ENV,-32768,2637,4777
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s"
-        % (
-            MsgClusterId,
-            MsgSrcAddr,
-            MsgSrcEp,
-            MsgAttrID,
-            MsgAttType,
-            MsgAttSize,
-            decodeAttribute(
-                self,
-                MsgAttType,
-                MsgClusterData,
-            ),
-        ),
-        MsgSrcAddr,
-    )
-    checkAndStoreAttributeValue(
-        self,
-        MsgSrcAddr,
-        MsgSrcEp,
-        MsgClusterId,
-        MsgAttrID,
-        decodeAttribute(
-            self,
-            MsgAttType,
-            MsgClusterData,
-        ),
-    )
+    model_name = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
 
 
 def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
-
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-        MsgSrcAddr,
-    )
+    model_name = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
 
     if MsgAttrID not in ("0001", "0002", "0003", "0004"):
-        _context = {
-            "MsgClusterId": str(MsgClusterId),
-            "MsgSrcEp": str(MsgSrcEp),
-            "MsgAttrID": str(MsgAttrID),
-            "MsgAttType": str(MsgAttType),
-            "MsgAttSize": str(MsgAttSize),
-            "MsgClusterData": str(MsgClusterData),
-        }
+        _context = create_context(MsgClusterId, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
         self.log.logging(
             "Cluster",
             "Error",
@@ -1984,7 +1920,7 @@ def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         )
         return
 
-    if "Model" in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]["Model"] == "ROM001":
+    if model_name == "ROM001":
         if MsgAttrID == "0001":  # On button
             self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s - ON Button detected" % (MsgClusterId, MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0008", "on")
@@ -2002,28 +1938,20 @@ def Clusterfc00(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     if get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "HUE_RWL"):
         philips_dimmer_switch(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
     
-    
+
+def pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData):
+    """pre-process a clustre/attribuute and return model name"""
+    log_message = f"ReadCluster {MsgClusterId} - {MsgSrcAddr}/{MsgSrcEp} Attribute: {MsgAttrID} Type: {MsgAttType} Size: {MsgAttSize} Data: {MsgClusterData}"
+    self.log.logging("Cluster", "Debug", log_message, MsgSrcAddr)
+
+    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, decodeAttribute(self, MsgAttType, MsgClusterData))
+
+    return self.ListOfDevices.get(MsgSrcAddr, {}).get("Model")
 
 def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
-
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-        MsgSrcAddr,
-    )
-
-    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-        MsgSrcAddr,
-    )
-
-    if "Model" not in self.ListOfDevices[MsgSrcAddr]:
+    model = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
+    if model is None:
         return
-    model = self.ListOfDevices[MsgSrcAddr]["Model"]
 
     if "Legrand" not in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]["Legrand"] = {}
@@ -2065,38 +1993,15 @@ def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
 def Clusterfc03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # Philips cluster - NOT IMPLEMENTED
-
-    self.log.logging(
-        "Cluster",
-        "Info",
-        "ReadCluster unimplemented %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-        MsgSrcAddr,
-    )
-    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
-    if "Model" not in self.ListOfDevices[MsgSrcAddr]:
+    model = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
+    if model is None:
         return
 
 
 def Clusterfc40(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
-
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-        MsgSrcAddr,
-    )
-
-    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-        MsgSrcAddr,
-    )
-
-    if "Model" not in self.ListOfDevices[MsgSrcAddr]:
+    model = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
+    if model is None:
         return
-    # model = self.ListOfDevices[MsgSrcAddr]["Model"]
 
     if "Legrand" not in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]["Legrand"] = {}
@@ -2115,37 +2020,44 @@ def Clusterfc21(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     # FC21 : PFX Cluster Profalux
     # Attribute 0x0001 => Orientation ( value between 0 to 90)
-
-    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
-
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
-        MsgSrcAddr,
-    )
-
+    model = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
     if MsgAttrID == "0001":
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster %s - %s/%s Orientation BSO: %s - %s °" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, int(MsgClusterData, 16)),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Orientation BSO: %s - %s °" % (
+            MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, int(MsgClusterData, 16)), MsgSrcAddr, )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
 def Clusterfc57(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
-    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (
-        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr,)
-    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+    model = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
+    
 
 def Clusterfc7d(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
-    self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" % (
-        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr,)
-
-    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+    model = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
+    
     ikea_air_purifier_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
+def create_context(MsgClusterId, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData):
+    """
+    Create a context dictionary from the provided message attributes.
+
+    Args:
+    - MsgClusterId: The ID of the message cluster.
+    - MsgSrcEp: The source endpoint of the message.
+    - MsgAttrID: The attribute ID of the message.
+    - MsgAttType: The attribute type of the message.
+    - MsgAttSize: The attribute size of the message.
+    - MsgClusterData: The data of the message cluster.
+
+    Returns:
+    - A dictionary containing the context information.
+    """
+    return {
+        "MsgClusterId": str(MsgClusterId),
+        "MsgSrcEp": str(MsgSrcEp),
+        "MsgAttrID": str(MsgAttrID),
+        "MsgAttType": str(MsgAttType),
+        "MsgAttSize": str(MsgAttSize),
+        "MsgClusterData": str(MsgClusterData),
+    }
 
 DECODE_CLUSTER = {
     "0006": Cluster0006,
