@@ -71,7 +71,10 @@ class ZigpyTransport(object):
 
         self.structured_log_command_file_handler = None
         instrument_log_command_open( self)
-        
+
+        self.manual_topology_scan_task = None   # Store topology task when manual started
+        self.manual_interference_scan_task = None   # Store topology task when manual started
+
         self.use_of_zigpy_persistent_db = self.pluginconf.pluginConf["enableZigpyPersistentInFile"] or self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]
 
    
