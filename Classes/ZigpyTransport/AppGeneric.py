@@ -387,120 +387,37 @@ def get_device_with_address( self, address: t.AddrModeAddress ) -> zigpy.device.
         else:
             raise ValueError(f"Invalid address: {address!r}")
 
+
 async def register_specific_endpoints(self):
     """
     Registers all necessary endpoints.
     The exact order in which this method is called depends on the radio module.
     """
 
-    # Wiser2 (new generation 0x03)
-    if "Wiser2" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Wiser2"]:
-        self.log.logging("TransportZigpy", "Status","Adding Wiser2 Endpoint 0x%x" %0x03)
-        await self.add_endpoint(
-            zdo_types.SimpleDescriptor(
-                endpoint=0x03,
-                profile=zigpy.profiles.zha.PROFILE_ID,
-                device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-                device_version=0b0000,
-                input_clusters=[
-                    zigpy.zcl.clusters.general.Basic.cluster_id,
-                    zigpy.zcl.clusters.hvac.Thermostat.cluster_id,
-                    ],
-                output_clusters=[
-                    ],
-            )
-        )
+    # Endpoint configurations
+    endpoint_configs = {
+        "Wiser2": (0x03, [zigpy.zcl.clusters.general.Basic.cluster_id, zigpy.zcl.clusters.hvac.Thermostat.cluster_id], []),
+        "Livolo": (0x08, [zigpy.zcl.clusters.general.Basic.cluster_id, zigpy.zcl.clusters.general.OnOff.cluster_id], [zigpy.zcl.clusters.security.IasZone.cluster_id]),
+        "Orvibo": (0x0a, [zigpy.zcl.clusters.general.Basic.cluster_id], []),
+        "Wiser": (0x0b, [zigpy.zcl.clusters.general.Basic.cluster_id, zigpy.zcl.clusters.hvac.Thermostat.cluster_id], []),
+        "Terncy": (0x6e, [zigpy.zcl.clusters.general.Basic.cluster_id], []),
+        "Konke": (0x15, [zigpy.zcl.clusters.general.Basic.cluster_id, zigpy.zcl.clusters.general.OnOff.cluster_id], [zigpy.zcl.clusters.security.IasZone.cluster_id]),
+    }
 
-    # Livolo Switch 0x08
-    if "Livolo" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Livolo"]:
-        self.log.logging("TransportZigpy", "Status","Adding Livolo Endpoint 0x%x" %0x08)
-        await self.add_endpoint(
-            zdo_types.SimpleDescriptor(
-                endpoint=0x08,
-                profile=zigpy.profiles.zha.PROFILE_ID,
-                device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-                device_version=0b0000,
-                input_clusters=[
-                    zigpy.zcl.clusters.general.Basic.cluster_id,
-                    zigpy.zcl.clusters.general.OnOff.cluster_id,
-                    ],
-                output_clusters=[
-                    zigpy.zcl.clusters.security.IasZone.cluster_id,
-                    ],
+    # Iterate through endpoint configurations
+    for plugin, (endpoint, input_clusters, output_clusters) in endpoint_configs.items():
+        if plugin in self.pluginconf.pluginConf and self.pluginconf.pluginConf[plugin]:
+            self.log.logging("TransportZigpy", "Status", f"Adding {plugin} Endpoint 0x{endpoint:x}")
+            await self.add_endpoint(
+                zdo_types.SimpleDescriptor(
+                    endpoint=endpoint,
+                    profile=zigpy.profiles.zha.PROFILE_ID,
+                    device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
+                    device_version=0b0000,
+                    input_clusters=input_clusters,
+                    output_clusters=output_clusters,
+                )
             )
-        )
-
-    # Orvibo 0x0a
-    if "Orvibo" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Orvibo"]:
-        self.log.logging("TransportZigpy", "Status","Adding Orvibo Endpoint 0x%x" %0x0a)
-        await self.add_endpoint(
-            zdo_types.SimpleDescriptor(
-                endpoint=0x0a,
-                profile=zigpy.profiles.zha.PROFILE_ID,
-                device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-                device_version=0b0000,
-                input_clusters=[
-                    zigpy.zcl.clusters.general.Basic.cluster_id,
-                    ],
-                output_clusters=[
-                    ],
-            )
-        )
-
-    # Wiser Legacy 0x0b
-    if "Wiser" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Wiser"]:
-        self.log.logging("TransportZigpy", "Status","Adding Wiser legacy Endpoint 0x%x" %0x0b)
-        await self.add_endpoint(
-            zdo_types.SimpleDescriptor(
-                endpoint=0x0b,
-                profile=zigpy.profiles.zha.PROFILE_ID,
-                device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-                device_version=0b0000,
-                input_clusters=[
-                    zigpy.zcl.clusters.general.Basic.cluster_id,
-                    zigpy.zcl.clusters.hvac.Thermostat.cluster_id,
-                    ],
-                output_clusters=[
-                    ],
-            )
-        )
-
-
-    # Terncy 0x6e
-    if "Terncy" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Terncy"]:
-        self.log.logging("TransportZigpy", "Status","Adding Terncy Endpoint 0x%x" %0x6e)
-        await self.add_endpoint(
-            zdo_types.SimpleDescriptor(
-                endpoint=0x6e,
-                profile=zigpy.profiles.zha.PROFILE_ID,
-                device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-                device_version=0b0000,
-                input_clusters=[
-                    zigpy.zcl.clusters.general.Basic.cluster_id,
-                    ],
-                output_clusters=[
-                    ],
-            )
-        )
-
-    # Konke 0x15
-    if "Konke" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["Konke"]:
-        self.log.logging("TransportZigpy", "Status","Adding Konke Endpoint 0x%x" %0x15)
-        await self.add_endpoint(
-            zdo_types.SimpleDescriptor(
-                endpoint=0x15,
-                profile=zigpy.profiles.zha.PROFILE_ID,
-                device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-                device_version=0b0000,
-                input_clusters=[
-                    zigpy.zcl.clusters.general.Basic.cluster_id,
-                    zigpy.zcl.clusters.general.OnOff.cluster_id,
-                    ],
-                output_clusters=[
-                    zigpy.zcl.clusters.security.IasZone.cluster_id,
-                    ],
-            )
-        )
 
 
 def do_retreive_backup( self ):
