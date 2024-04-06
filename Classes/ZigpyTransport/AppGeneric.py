@@ -166,11 +166,26 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
 async def shutdown(self) -> None:
     """Shutdown controller."""
+    LOGGER.info("Zigpy shutdown")
+
     if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
         self.callBackBackup(await self.backups.create_backup(load_devices=True))
 
+    # Cancel watchdog task if it exists
     if self._watchdog_task is not None:
         self._watchdog_task.cancel()
+
+    # Stop periodic broadcasts for OTA
+    if self.ota:
+        self.ota.stop_periodic_broadcasts()
+
+    # Stop periodic backups
+    if self.backups:
+        self.backups.stop_periodic_backups()
+
+    # Stop periodic scans for topology
+    if self.topology:
+        self.topology.stop_periodic_scans()
 
     try:
         await self.disconnect()
@@ -566,7 +581,6 @@ def build_json_to_store(self, scan_result):
 
 
 def scan_channel( self, scan_result ):
-    
     list_channels = []
     for channel, value in scan_result.items():
         percentage = 100 * value / 255
@@ -577,6 +591,6 @@ def scan_channel( self, scan_result ):
 
 
 def is_zigpy_topology_in_progress(self):
-
     zigpy_topology = self.topology
     return zigpy_topology._scan_task is not None and not zigpy_topology._scan_task.done()
+
