@@ -400,6 +400,11 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
     self.log.logging("AbstractDz", "Debug", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
         DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), DeviceID_)
 
+    if nValue is None:
+        self.log.logging("AbstractDz", "Error", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
+            DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), DeviceID_)
+        return
+
     if DOMOTICZ_EXTENDED_API:
         Devices[DeviceID_].Units[Unit_].nValue = nValue
         Devices[DeviceID_].Units[Unit_].sValue = sValue

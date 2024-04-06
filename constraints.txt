@@ -1,0 +1,9 @@
+charset-normalizer==2.0.11
+zigpy==0.63.5
+zigpy_znp==0.12.1
+zigpy_deconz==0.23.1
+bellows==0.38.1
+dnspython==2.3.0
+pyserial>=3.5
+charset-normalizer==2.0.11
+jsonschema==4.17.3

@@ -462,7 +462,7 @@ class BasePlugin:
             # https://github.com/python/cpython/issues/91375
             self.log.logging("Plugin", "Status", "Multi instances plugin detected. Enable zigpy workaround")
             sys.modules["_asyncio"] = None
-        
+
         if "LogLevel" not in self.pluginParameters:
             log_level = self.domoticzdb_Hardware.get_loglevel_value()
             if log_level:
@@ -584,7 +584,6 @@ class BasePlugin:
         self.busy = False
 
 
-
     def onStop(self):  # sourcery skip: class-extract-method
         Domoticz.Log("onStop()")
         uninstall_Z4D_to_domoticz_custom_ui()
@@ -680,6 +679,7 @@ class BasePlugin:
             self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be remove from Group(s)")
             self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
 
+
     def onConnect(self, Connection, Status, Description):
 
         self.log.logging("Plugin", "Debug", "onConnect called with status: %s" % Status)
@@ -726,6 +726,7 @@ class BasePlugin:
 
         return True
 
+
     def onMessage(self, Connection, Data):
         # self.log.logging( 'Plugin', 'Debug', "onMessage called on Connection " + " Data = '" +str(Data) + "'")
         if self.webserver and isinstance(Data, dict):
@@ -739,6 +740,7 @@ class BasePlugin:
         self.connectionState = 1
         self.ControllerLink.on_message(Data)
 
+
     def processFrame(self, Data):
         if not self.VersionNewFashion:
             return
@@ -748,9 +750,11 @@ class BasePlugin:
         # stop_time = int(time.time() *1000)
         # Domoticz.Log("### Completion: %s is %s ms" %(Data, ( stop_time - start_time)))
 
+
     def zigpy_chk_upd_device(self, ieee, nwkid ):
         chk_and_update_IEEE_NWKID(self, nwkid, ieee)
-        
+
+
     def zigpy_get_device(self, ieee=None, nwkid=None):
         # allow to inter-connect zigpy world and plugin
         self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s)" %( ieee, nwkid))
@@ -779,22 +783,20 @@ class BasePlugin:
         self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
         return int(nwkid,16) ,int(ieee,16)
 
+
     def zigpy_backup_available(self, backups):
         handle_zigpy_backup(self, backups)
 
     #def onCommand(self, DeviceID, Unit, Command, Level, Color):
     def onCommand(self, Unit, Command, Level, Color):
-        
-        if ( not self.VersionNewFashion or self.pluginconf is None or not self.log ):
-            # Not yet ready, plugin not fully started, we drop the command
+        if (  self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None or not self.log ):
+            self.log.logging( "Command", "Log", "onCommand - Not yet ready, plugin not fully started, we drop the command")
             return
 
         self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
         if not is_domoticz_extended():
             DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
-        
-        self.log.logging( "Command", "Log", f"Command: {DeviceID} {Unit}" )
         
         # Let's check if this is End Node, or Group related.
         if DeviceID in self.IEEE2NWK:
@@ -941,22 +943,25 @@ def retreive_zigpy_topology_data(self):
         self.zigpy_topology.new_scan_detected = True
         return
 
-    if self.zigpy_topology.new_scan_detected:
+    is_manual_scan = self.ListOfDevices["0000"].get("ZigpyTopologyRequested", False)
+    if self.zigpy_topology.new_scan_detected and ( self.pluginconf.pluginConf["ZigpyTopologyReportAutoBackup"] or is_manual_scan):
         # Scan is completed. Time for a backup
         self.zigpy_topology.save_topology_report()
         self.zigpy_topology.new_scan_detected = False
+        self.ListOfDevices["0000"]["ZigpyTopologyRequested"] = False
         return
     
     coordinator_data = self.ListOfDevices.get("0000", {})
     if "ZigpyNeighbors" in coordinator_data and "ZigpyRoutes" in coordinator_data:
         return
-    
+
     self.zigpy_topology.copy_zigpy_infos_to_plugin()
     coordinator_data = self.ListOfDevices.get("0000", {})
     if "ZigpyNeighbors" not in coordinator_data and "ZigpyRoutes" not in coordinator_data:
         self.log.logging("Plugin", "Log", "onHeartbeat request zigpy topology scan as not data available")
         self.ControllerLink.sendData("ZIGPY-TOPOLOGY-SCAN", {})
-    
+
+
 def start_zigbee_transport(self ):
     
     if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):

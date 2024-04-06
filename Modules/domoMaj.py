@@ -1189,7 +1189,7 @@ def _domo_convert_windows_covering( self, value, Devices, DeviceId, Unit, NwkId,
 
 
 def _domo_convert_colorcontrol( self, value ):
-    return getDimmerLevelOfColor(self, value)
+    return get_dimmer_level_of_color(self, value)
 
   
 def _domo_convert_strenght( value ):
@@ -1233,7 +1233,7 @@ def _domo_convert_level_control( self, Devices, DeviceId, Unit, value, NwkId, sw
 
     elif WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
         if prev_nValue != 0 or prev_sValue != "Off":
-            nValue, sValue = getDimmerLevelOfColor(self, value)
+            nValue, sValue = get_dimmer_level_of_color(self, value)
             return nValue, str(sValue), False
 
     elif WidgetType == "LegrandSelector":
@@ -1459,17 +1459,14 @@ def CheckUpdateGroup(self, NwkId, Ep, ClusterId):
         self.groupmgt.checkAndTriggerIfMajGroupNeeded(NwkId, Ep, ClusterId)
 
 
-def getDimmerLevelOfColor(self, value):
-    nValue = 1
-    analogValue = value if isinstance(value, int) else int(value, 16)
+def get_dimmer_level_of_color(self, value):
+    n_value = 15  # https://github.com/zigbeefordomoticz/Domoticz-Zigbee/issues/1680
+    analog_value = value if isinstance(value, int) else int(value, 16)
 
-    if analogValue >= 255:
-        sValue = 100
-    else:
-        sValue = min(round((analogValue / 255) * 100), 100)
-        sValue = max(sValue, 1) if sValue > 0 else 0
+    s_value = 100 if analog_value >= 255 else min(round((analog_value / 255) * 100), 100)
+    s_value = max(s_value, 1) if s_value > 0 else 0
 
-    return nValue, sValue
+    return n_value, s_value
 
 
 def check_erratic_value(self, NwkId, value_type, value, expected_min, expected_max):
@@ -1592,26 +1589,24 @@ def retrieve_data_from_current(self, Devices, DeviceID, Unit, current_nValue, cu
 
 
 def normalized_lvl_value( switchType, value ):
-    
+
     # Normalize sValue vs. analog value coomming from a ReadAttribute
-    analogValue = value if isinstance( value, int) else int(value, 16)
+    analog_value = value if isinstance( value, int) else int(value, 16)
 
-    if analogValue >= 255:
-        normalized_value = 255
+    # Ensure analog value is within valid range
+    analog_value = min(max(analog_value, 0), 255)
 
-    normalized_value = round(((analogValue * 100) / 255))
-    normalized_value = min(normalized_value, 100)
-    if normalized_value == 0 and analogValue > 0:
-        normalized_value = 1
+    # Normalize analog value to percentage (0-100)
+    normalized_value = round((analog_value / 255) * 100)
 
     # Looks like in the case of the Profalux shutter, we never get 0 or 100
     if switchType in (13, 14, 15, 16):
-        if normalized_value == 1 and analogValue == 1:
+        if normalized_value == 1 and analog_value == 1:
             normalized_value = 0
-        if normalized_value == 99 and analogValue == 254:
+        if normalized_value == 99 and analog_value == 254:
             normalized_value = 100
 
-    return normalized_value
+    return max(normalized_value, 1)  # Ensure normalized value is at least 1
 
 
 def is_PowerNegative_widget( ClusterTypeList):
@@ -1660,19 +1655,24 @@ def temp_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
 
 def _retreive_instant_power(self, NwkId, Ep):
     """ retreive Instant Power in 0x0702/0x0400 or 0x0b04/0x050b"""
-    
-    if "0702" in self.ListOfDevices[NwkId]["Ep"][Ep] and "0400" in self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]:
-        return round(float(self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]["0400"]), 2)
-    
-    if "0b04" in self.ListOfDevices[NwkId]["Ep"][Ep] and "050b" in self.ListOfDevices[NwkId]["Ep"][Ep]["0b04"]:
-        return round(float(self.ListOfDevices[NwkId]["Ep"][Ep]["050b"]["0b04"]), 2)
-    
-    return 0
+
+    ep_data = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(Ep, {})
+    if "0702" in ep_data and "0400" in ep_data["0702"]:
+        return round(float(ep_data["0702"]["0400"]), 2)
+
+    if "0b04" in ep_data and "050b" in ep_data["0b04"]:
+        return round(float(ep_data["0b04"]["050b"]), 2)
+
+    return 0    
+
 
 def _retreive_summation_power(self, NwkId, Ep):
-    
-    if "0702" in self.ListOfDevices[NwkId]["Ep"][Ep] and "0000" in self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]:
-        value_0000 = self.ListOfDevices[NwkId]["Ep"][Ep]["0702"]["0000"]
+
+    ep_data = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(Ep, {})
+
+    if "0702" in ep_data and "0000" in ep_data["0702"]:
+        value_0000 = ep_data["0702"]["0000"]
         if value_0000 not in ({}, "", "0"):
             return int(float(value_0000))
+
     return None

@@ -34,7 +34,10 @@ def rest_req_topologie(self, verb, data, parameters):
         self.logging("Status", "Request a Start of Network Topology scan")
         if self.networkmap:
             if self.pluginconf.pluginConf["ZigpyTopologyReport"] and self.zigbee_communication == "zigpy":
+                # Zigpy Topology report
+                self.ListOfDevices["0000"]["ZigpyTopologyRequested"] = True
                 self.ControllerLink.sendData( "ZIGPY-TOPOLOGY-SCAN", {})
+
             elif not self.networkmap.NetworkMapPhase():
                 # Legacy Topology
                 self.networkmap.start_scan()

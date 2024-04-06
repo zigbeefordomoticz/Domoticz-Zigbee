@@ -821,7 +821,7 @@ def get_ffac_endpoint(self, NwkId):
 
 
 def store_casaia_attribute(self, NwkId, Attribute, Value, device_id=None):
-    self.log.logging("CasaIA", "Log", "store_casaia_attribute %s %s %s %s" % (NwkId, Attribute, Value, device_id))
+    self.log.logging("CasaIA", "Debug", "store_casaia_attribute %s %s %s %s" % (NwkId, Attribute, Value, device_id))
     if "CASA.IA" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["CASA.IA"] = {}
     if device_id:

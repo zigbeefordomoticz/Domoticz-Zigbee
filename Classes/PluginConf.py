@@ -61,6 +61,9 @@ SETTINGS = {
             "OverWriteCoordinatorIEEEOnlyOnce": {"type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": True, "ZigpyRadio": "ezsp"},
             "autoBackup": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "autoRestore": {"type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True,},
+
+            "ZigpyTopologyReport": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "ZigpyTopologyReportAutoBackup": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
     
             "PluginRetrys": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "CaptureRxFrames": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
@@ -102,7 +105,6 @@ SETTINGS = {
         "Order": 7,
         "param": {
             "TopologyV2": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
-            "ZigpyTopologyReport": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "Sibling": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, "ZigpyRadio": "" },
             "Lang": { "type": "str", "default": "en-US", "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "numTopologyReports": { "type": "int", "default": 4, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
@@ -518,7 +520,6 @@ class PluginConf:
         with open(pluginConfFile, "wt") as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
-            
 
         if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
             setConfigItem(Key="PluginConf", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
@@ -562,8 +563,6 @@ def _load_Settings(self):
         for param in _pluginConf:
             self.pluginConf[param] = _pluginConf[param]
 
-
-    
     # Check Load
     if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"]:
         Domoticz.Log("PluginConf Loaded from Dz: %s from Json: %s" % (len(_domoticz_pluginConf), len(_pluginConf)))
@@ -576,6 +575,10 @@ def _load_Settings(self):
                         "++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x])
                     )
 
+    # Overwrite Zigpy parameters if we are running native Zigate
+    if self.zigbee_communication != "zigpy":
+        # Force to 0 as this parameter is only relevant to Zigpy
+        self.pluginConf["ZigpyTopologyReport"] = False
 
 def _load_oldfashon(self, homedir, hardwareid):
     # Import PluginConf.txt

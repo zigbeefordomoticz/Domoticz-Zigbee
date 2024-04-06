@@ -219,7 +219,6 @@ def handle_command_stop(self,Devices, DeviceID, Unit, Nwkid, EPout, DeviceType, 
         if model_name in ("PR412", "CPR412", "CPR412-E"):
             profalux_stop(self, Nwkid)
         else:
-            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             actuator_stop( self, Nwkid, EPout, "WindowCovering")
             
         if DeviceType in ( "CurtainInverted", "Curtain"):
@@ -408,6 +407,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
             actuator_off(self, Nwkid, EPout, "Light")
 
         elif ( DeviceType in ("Vanne", "Curtain",) or model_name in ( "TS130F",) ):
+
             actuator_off(self, Nwkid, EPout, "WindowCovering")
             
         elif DeviceType in ( "CurtainInverted", "Curtain"):
@@ -572,7 +572,6 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         profalux_MoveToLiftAndTilt(self, Nwkid, level=255)
 
     elif DeviceType == "WindowCovering":
-        # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
         actuator_on(self, Nwkid, EPout, "WindowCovering")
 
     elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
@@ -593,11 +592,13 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
             actuator_on(self, Nwkid, EPout, "WindowCovering")
 
         elif DeviceType in ( "CurtainInverted", "Curtain"):
-            # Refresh will be done via the Report Attribute
             return
-
+       
         else:
             actuator_off(self, Nwkid, EPout, "WindowCovering")
+            
+            # Refresh will be done via the Report Attribute
+            return
 
     elif DeviceType == "HeatingSwitch":
         thermostat_Mode(self, Nwkid, "Heat")
@@ -618,6 +619,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
 
     elif profalux:
             actuator_setlevel(self, Nwkid, EPout, 255, "Light", "0000", withOnOff=False)
+
     else:
         actuator_on(self, Nwkid, EPout, "Light")
 
@@ -986,9 +988,11 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         
         elif Level == 50:
             update_domoticz_widget(self, Devices, DeviceID, Unit, 17, "0", BatteryLevel, SignalLevel)
-        
+
     else:
-        partially_opened_nValue = is_dimmable_blind(self, Devices, DeviceID, Unit) or is_dimmable_light(self, Devices, DeviceID, Unit) or is_dimmable_switch(self, Devices, DeviceID, Unit)
+        partially_opened_nValue = dimmable_blind or is_dimmable_light(self, Devices, DeviceID, Unit) or is_dimmable_switch(self, Devices, DeviceID, Unit)
+        if partially_opened_nValue is None:
+            partially_opened_nValue = 1
         update_domoticz_widget(self, Devices, DeviceID, Unit, partially_opened_nValue, str(Level), BatteryLevel, SignalLevel)
 
     # Let's force a refresh of Attribute in the next Heartbeat
