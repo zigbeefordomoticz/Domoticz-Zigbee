@@ -130,7 +130,7 @@ from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
 from Modules.casaia import restart_plugin_reset_ModuleIRCode
 from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
                                     checkPluginVersion)
-from Modules.command import mgtCommand
+from Modules.command import domoticz_command
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
@@ -799,7 +799,7 @@ class BasePlugin:
         # Let's check if this is End Node, or Group related.
         if DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
-            mgtCommand(self, Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
+            domoticz_command(self, Devices, DeviceID, Unit, self.IEEE2NWK[ DeviceID], Command, Level, Color)
 
         elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
             # Command belongs to a Zigate group
