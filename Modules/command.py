@@ -980,7 +980,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
 
     # Domoticz widget update
     dimmable_blind = is_dimmable_blind(self, Devices, DeviceID, Unit)
-    if  dimmable_blind and Level in ( 0, 50, 100):
+    if dimmable_blind and Level in ( 0, 50, 100):
         if Level == 0:
             update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "0", BatteryLevel, SignalLevel)
         
