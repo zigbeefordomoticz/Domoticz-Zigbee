@@ -626,6 +626,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
     if is_dimmable_blind(self, Devices, DeviceID, Unit):
         # (13, 14, 15, 16)
         update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "100", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+
     else:
         previous_level = get_previous_switch_level(self, Nwkid, EPout)
         self.log.logging( "Command", "Debug", "handle_command_on : Previous Level was %s" % (
@@ -1023,7 +1024,7 @@ def get_previous_switch_level(self, Nwkid, Ep):
     if isinstance(switch_level, int):
         return switch_level
     
-    self.log.logging( "Command", "Error", f"get_previous_switch_level : level is bizarre >{switch_level}<", Nwkid, )
+    self.log.logging( "Command", "Debug", f"get_previous_switch_level : Mostlikely a non-dimmable device >{switch_level}<", Nwkid, )
     return None
 
 
