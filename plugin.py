@@ -165,6 +165,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
+from Classes.ZigpyTopology import ZigpyTopology
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -199,6 +200,7 @@ class BasePlugin:
         self.ControllerLink= None
         self.groupmgt = None
         self.networkmap = None
+        self.zigpy_topology = None
         self.networkenergy = None
         self.domoticzdb_DeviceStatus = None  # Object allowing direct access to Domoticz DB DeviceSatus
         self.domoticzdb_Hardware = None  # Object allowing direct access to Domoticz DB Hardware
@@ -842,7 +844,7 @@ class BasePlugin:
             if (self.internalHB % HEARTBEAT) != 0:
                 return
             self.HeartbeatCount += 1
-
+            
         # Quiet a bad hack. In order to get the needs for ZigateRestart
         # from WebServer
         if "startZigateNeeded" in self.ControllerData and self.ControllerData["startZigateNeeded"]:
@@ -889,9 +891,10 @@ class BasePlugin:
         if self.groupmgt:
             self.groupmgt.hearbeat_group_mgt()
 
-        # Write the ListOfDevice every 5 minutes or immediatly if we have remove or added a Device
+        # Write the ListOfDevice every 15 minutes or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
-            WriteDeviceList(self, ( (5 * 60) // HEARTBEAT) )  
+            WriteDeviceList(self, ( (15 * 60) // HEARTBEAT) )
+
         else:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)  # write immediatly
@@ -921,10 +924,39 @@ class BasePlugin:
             zigate_get_time(self)
             #sendZigateCmd(self, "0017", "")
 
+        if self.zigbee_communication == "zigpy" and self.pluginconf.pluginConf["ZigpyTopologyReport"] and self.zigpy_topology and self.HeartbeatCount % (60 // HEARTBEAT) == 0:
+            retreive_zigpy_topology_data(self)
+
         self.busy = _check_if_busy(self)
         return True
 
 
+def retreive_zigpy_topology_data(self):
+    # Determine sync period based on existing data
+    if self.zigpy_topology is None:
+        return
+    
+    if self.zigpy_topology.is_zigpy_topology_in_progress():
+        # Scan in progress
+        self.zigpy_topology.new_scan_detected = True
+        return
+
+    if self.zigpy_topology.new_scan_detected:
+        # Scan is completed. Time for a backup
+        self.zigpy_topology.save_topology_report()
+        self.zigpy_topology.new_scan_detected = False
+        return
+    
+    coordinator_data = self.ListOfDevices.get("0000", {})
+    if "ZigpyNeighbors" in coordinator_data and "ZigpyRoutes" in coordinator_data:
+        return
+    
+    self.zigpy_topology.copy_zigpy_infos_to_plugin()
+    coordinator_data = self.ListOfDevices.get("0000", {})
+    if "ZigpyNeighbors" not in coordinator_data and "ZigpyRoutes" not in coordinator_data:
+        self.log.logging("Plugin", "Log", "onHeartbeat request zigpy topology scan as not data available")
+        self.ControllerLink.sendData("ZIGPY-TOPOLOGY-SCAN", {})
+    
 def start_zigbee_transport(self ):
     
     if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
@@ -1249,6 +1281,12 @@ def zigateInit_Phase3(self):
         self.networkmap = NetworkMap(
             self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
         )
+    
+    if self.zigpy_topology is None:
+        self.zigpy_topology = ZigpyTopology(
+            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, Devices, self.HardwareID, self.log
+        )
+
     if self.networkmap:
         self.webserver.update_networkmap(self.networkmap)
 

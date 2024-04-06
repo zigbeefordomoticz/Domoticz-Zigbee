@@ -241,6 +241,18 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.network_interference_scan(self)
 
 
+    def get_topology(self):
+        return self.topology.neighbors, self.topology.routes
+
+
+    def is_zigpy_topology_in_progress(self):
+        return Classes.ZigpyTransport.AppGeneric.is_zigpy_topology_in_progress(self)
+
+
+    async def start_topology_scan(self):
+        await self.topology.scan()
+
+
     def is_bellows(self):
         return False
 
