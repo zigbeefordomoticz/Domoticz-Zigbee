@@ -519,20 +519,21 @@ class BasePlugin:
             )
             self.onStop()
             return
-            
 
-        self.log.logging("Plugin", "Debug", "ListOfDevices : ")
-        for e in self.ListOfDevices.items():
-            self.log.logging("Plugin", "Debug", " " + str(e))
+        # Log ListOfDevices dictionary
+        self.log.logging("Plugin", "Debug", "ListOfDevices:")
+        for key, value in self.ListOfDevices.items():
+            self.log.logging("Plugin", "Debug", f" {key}: {value}")
 
-        self.log.logging("Plugin", "Debug", "IEEE2NWK      : ")
-        for e in self.IEEE2NWK.items():
-            self.log.logging("Plugin", "Debug", "  " + str(e))
+        # Log IEEE2NWK dictionary
+        self.log.logging("Plugin", "Debug", "IEEE2NWK:")
+        for key, value in self.IEEE2NWK.items():
+            self.log.logging("Plugin", "Debug", f" {key}: {value}")
 
         # Check proper match against Domoticz Devices
         checkListOfDevice2Devices(self, Devices)
         checkDevices2LOD(self, Devices)
-        
+    
         for x in self.ListOfDevices:
             # Fixing Profalux Model is required
             if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] in ( "", {} ):
@@ -546,14 +547,13 @@ class BasePlugin:
 
         # Connect to Coordinator only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
-        
-        
+
         if len(self.ListOfDevices) > 10:
             # Don't do Energy Scan if too many objects, as Energy scan don't make the difference between real traffic and noise
             self.pluginconf.pluginConf["EnergyScanAtStatup"] = 0
 
         start_zigbee_transport(self )
-        
+
         if self.transport not in ("ZigpyZNP", "ZigpydeCONZ", "ZigpyEZSP", "ZigpyZiGate", "None" ):
             self.log.logging("Plugin", "Debug", "Establish Zigate connection")
             self.ControllerLink.open_cie_connection()
@@ -574,70 +574,74 @@ class BasePlugin:
                 )
 
         if is_domoticz_extended():
-            self.log.logging( "Plugin", "Status", "Plugin is using Extended Framework")
+            framework_status = "Extended Framework"
         else:
-            self.log.logging( "Plugin", "Status", "Plugin is using legacy Framework")
+            framework_status = "legacy Framework"
+            free_slots = how_many_legacy_slot_available(Devices)
+            usage_percentage = round(((255 - free_slots) / 255) * 100, 1)
+            self.log.logging("Plugin", "Status", f"Domoticz Widgets usage is at {usage_percentage}% ({free_slots} units free)")
 
-        if not is_domoticz_extended():
-            self.log.logging("Plugin", "Status", "Domoticz Widgets usage is at %s %% (%s units free)" % (
-                round( ( ( 255 - how_many_legacy_slot_available( Devices)) / 255 ) * 100, 1 ), how_many_legacy_slot_available( Devices) ))
+        self.log.logging("Plugin", "Status", f"Plugin started with !! {framework_status} !!")
+
         self.busy = False
 
 
-    def onStop(self):  # sourcery skip: class-extract-method
+    def onStop(self):
+        """
+        Performs cleanup actions when the plugin is stopped.
+
+        Stops various plugin functionalities and saves plugin database.
+
+        Returns:
+            None
+        """
         Domoticz.Log("onStop()")
+
+        # Uninstall Z4D custom UI from Domoticz
         uninstall_Z4D_to_domoticz_custom_ui()
-        
+
+        # Log imported modules if configured
         if self.pluginconf and self.pluginconf.pluginConf["ListImportedModules"]:
             list_all_modules_loaded(self)
 
+        # Log onStop event
         if self.pluginconf and self.log:
             self.log.logging("Plugin", "Log", "onStop called")
-            self.log.logging("Plugin", "Log", "onStop calling (1) domoticzDb DeviceStatus closed")
-            
-        if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop calling (3) Transport off")
-            
+
+        # Close CIE connection and shutdown transport thread
         if self.pluginconf and self.ControllerLink:
             self.ControllerLink.thread_transport_shutdown()
             self.ControllerLink.close_cie_connection()
 
-        if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop calling (4) WebServer off")
-            
+        # Stop WebServer
         if self.pluginconf and self.webserver:
             self.webserver.onStop()
-            
-        if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop called (4) WebServer off")
-            
-        if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop calling (5) Plugin Database saved")
-          
+
+        # Save plugin database
         if self.pluginconf:
             WriteDeviceList(self, 0)
-        
-        if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop called (5) Plugin Database saved")
 
+        # Print and save statistics if configured
         if self.pluginconf and self.statistics:
             self.statistics.printSummary()
             self.statistics.writeReport()
 
+        # Close logging management
         if self.pluginconf and self.log:
-            self.log.logging("Plugin", "Log", "onStop calling (6) Close Logging Management")
+            self.log.logging("Plugin", "Log", "Closing Logging Management")
             self.log.closeLogFile()
-            self.log.logging("Plugin", "Log", "onStop called (6) Close Logging Management")
 
+        # Log running threads that need to be shutdown
         for thread in threading.enumerate():
             if thread.name != threading.current_thread().name:
-                Domoticz.Log( "'" + thread.name + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+                Domoticz.Log("'" + thread.name + "' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
+        # Update plugin health status
         self.PluginHealth["Flag"] = 3
         self.PluginHealth["Txt"] = "No Communication"
+
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
-
 
     def onDeviceRemoved(self, Unit):
         # def onDeviceRemoved(self, DeviceID, Unit):
@@ -1493,24 +1497,32 @@ def pingZigate(self):
 
                 
 def debuging_information(self, mode):
-    self.log.logging("Plugin", mode, "Is GC enabled: %s" % gc.isenabled())
-    self.log.logging("Plugin", mode, "DomoticzVersion: %s" % Parameters["DomoticzVersion"])
-    for x in self.pluginParameters:
-        self.log.logging("Plugin", mode, "Parameters[%s] %s" % (x, self.pluginParameters[x]))
+    """
+    Logs debugging information based on the provided mode.
 
-    self.log.logging("Plugin", mode, "Debug: %s" % Parameters["Mode6"])
-    self.log.logging("Plugin", mode, "Python Version - %s" % sys.version)
-    self.log.logging("Plugin", mode, "DomoticzVersion: %s" % Parameters["DomoticzVersion"])
-    self.log.logging("Plugin", mode, "DomoticzHash: %s" % Parameters["DomoticzHash"])
-    self.log.logging("Plugin", mode, "DomoticzBuildTime: %s" % Parameters["DomoticzBuildTime"])
-    self.log.logging("Plugin", mode, "Startup Folder: %s" % Parameters["StartupFolder"])
-    self.log.logging("Plugin", mode, "Home Folder: %s" % Parameters["HomeFolder"])
-    self.log.logging("Plugin", mode, "User Data Folder: %s" % Parameters["UserDataFolder"])
-    self.log.logging("Plugin", mode, "Web Root Folder: %s" % Parameters["WebRoot"])
-    self.log.logging("Plugin", mode, "Database: %s" % Parameters["Database"])
-    self.log.logging("Plugin", mode, "Opening DomoticzDB in raw")
-    self.log.logging("Plugin", mode, "   - DeviceStatus table")
+    Args:
+        mode (str): Logging mode.
 
+    Returns:
+        None
+    """
+    debug_info = {
+        "Is GC enabled": gc.isenabled(),
+        "DomoticzVersion": Parameters["DomoticzVersion"],
+        "Debug": Parameters["Mode6"],
+        "Python Version": sys.version,
+        "DomoticzHash": Parameters["DomoticzHash"],
+        "DomoticzBuildTime": Parameters["DomoticzBuildTime"],
+        "Startup Folder": Parameters["StartupFolder"],
+        "Home Folder": Parameters["HomeFolder"],
+        "User Data Folder": Parameters["UserDataFolder"],
+        "Web Root Folder": Parameters["WebRoot"],
+        "Database": Parameters["Database"]
+    }
+
+    # Log debug information
+    for info_name, info_value in debug_info.items():
+        self.log.logging("Plugin", mode, "%s: %s" % (info_name, info_value))
 
  
 global _plugin  # pylint: disable=global-variable-not-assigned
