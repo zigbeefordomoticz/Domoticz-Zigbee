@@ -1002,65 +1002,45 @@ def _start_fake_coordinator(self):
     
 
 def _start_native_usb_zigate(self):
-    from Classes.ZigateTransport.Transport import ZigateTransport
-    
-    self.zigbee_communication = "native"
-    self.pluginParameters["Zigpy"] = False
-    self.ControllerLink= ZigateTransport(
-        self.HardwareID,
-        self.DomoticzBuild,
-        self.DomoticzMajor,
-        self.DomoticzMinor,
-        self.transport,
-        self.statistics,
-        self.pluginconf,
-        self.processFrame,
-        self.log,
-        serialPort=Parameters["SerialPort"],
-    )
+    _start_native_zigate(self, serialPort=Parameters["SerialPort"])
 
 
 def _start_native_pi_zigate(self):
-    from Classes.ZigateTransport.Transport import ZigateTransport
-    check_python_modules_version( self )
-    self.pluginconf.pluginConf["ControllerInRawMode"] = False
     switchPiZigate_mode(self, "run")
-    self.zigbee_communication = "native"
-    self.pluginParameters["Zigpy"] = False
-    self.ControllerLink= ZigateTransport(
-        self.HardwareID,
-        self.DomoticzBuild,
-        self.DomoticzMajor,
-        self.DomoticzMinor,
-        self.transport,
-        self.statistics,
-        self.pluginconf,
-        self.processFrame,
-        self.log,
-        serialPort=Parameters["SerialPort"],
-    )
+    _start_native_zigate(self, serialPort=Parameters["SerialPort"])
 
 
 def _start_native_wifi_zigate(self):
+    _start_native_zigate(self, wifiAddress=Parameters["Address"], wifiPort=Parameters["Port"])
+
+
+def _start_native_zigate(self, serialPort=None, wifiAddress=None, wifiPort=None):
     from Classes.ZigateTransport.Transport import ZigateTransport
-    check_python_modules_version( self )
+    check_python_modules_version(self)
     self.pluginconf.pluginConf["ControllerInRawMode"] = False
     self.zigbee_communication = "native"
     self.pluginParameters["Zigpy"] = False
-    self.ControllerLink= ZigateTransport(
-        self.HardwareID,
-        self.DomoticzBuild,
-        self.DomoticzMajor,
-        self.DomoticzMinor,
-        self.transport,
-        self.statistics,
-        self.pluginconf,
-        self.processFrame,
-        self.log,
-        wifiAddress=Parameters["Address"],
-        wifiPort=Parameters["Port"],
-    )
+    
+    kwargs = {
+        "HardwareID": self.HardwareID,
+        "DomoticzBuild": self.DomoticzBuild,
+        "DomoticzMajor": self.DomoticzMajor,
+        "DomoticzMinor": self.DomoticzMinor,
+        "transport": self.transport,
+        "statistics": self.statistics,
+        "pluginconf": self.pluginconf,
+        "processFrame": self.processFrame,
+        "log": self.log,
+    }
+    if serialPort:
+        kwargs["serialPort"] = serialPort
+    if wifiAddress:
+        kwargs["wifiAddress"] = wifiAddress
+    if wifiPort:
+        kwargs["wifiPort"] = wifiPort
 
+    self.ControllerLink = ZigateTransport(**kwargs)   
+        
 
 def _start_zigpy_ZNP(self):
     import zigpy

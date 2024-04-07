@@ -1,8 +1,14 @@
-# !/usr/bin/env python3
-# coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import json
 import queue
@@ -26,16 +32,17 @@ from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 
 
 class ZigateTransport(object):
+
     def __init__(
         self,
-        hardwareid,
+        HardwareID,
         DomoticzBuild,
         DomoticzMajor,
         DomoticzMinor,
         transport,
         statistics,
         pluginconf,
-        F_out,
+        processFrame,
         log,
         serialPort=None,
         wifiAddress=None,
@@ -44,7 +51,7 @@ class ZigateTransport(object):
         self.zigbee_communication = "native"
         
         # Call back function to send back to plugin
-        self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
+        self.F_out = processFrame  # Function to call to bring the decoded Frame at plugin
 
         # Logging
         self.log = log
@@ -59,7 +66,7 @@ class ZigateTransport(object):
         self.pluginconf = pluginconf
 
         # Communication/Transport link attributes
-        self.hardwareid = hardwareid
+        self.hardwareid = HardwareID
         self._connection = None  # connection handle
         self._ReqRcv = bytearray()  # on going receive buffer
         self._last_raw_message = bytearray()
