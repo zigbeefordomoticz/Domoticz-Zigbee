@@ -371,7 +371,7 @@ def send_timesynchronisation(self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, ser
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     field1, field2, field3 = "0d", "80", "29"
 
-    EPOCTime = datetime(1970, 1, 1)
+    EPOCTime = datetime(1970, 1, 1, tzinfo=timezone.utc)
     now = datetime.now(timezone.utc)
     UTCTime_in_sec = int((now - EPOCTime).total_seconds())
     LOCALtime_in_sec = int((utc_to_local(now) - EPOCTime).total_seconds())
