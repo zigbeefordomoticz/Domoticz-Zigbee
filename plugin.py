@@ -955,15 +955,14 @@ def retreive_zigpy_topology_data(self):
         self.ListOfDevices["0000"]["ZigpyTopologyRequested"] = False
         return
     
-    coordinator_data = self.ListOfDevices.get("0000", {})
-    if "ZigpyNeighbors" in coordinator_data and "ZigpyRoutes" in coordinator_data:
-        return
-
-    self.zigpy_topology.copy_zigpy_infos_to_plugin()
-    coordinator_data = self.ListOfDevices.get("0000", {})
-    if "ZigpyNeighbors" not in coordinator_data and "ZigpyRoutes" not in coordinator_data:
-        self.log.logging("Plugin", "Log", "onHeartbeat request zigpy topology scan as not data available")
-        self.ControllerLink.sendData("ZIGPY-TOPOLOGY-SCAN", {})
+    # coordinator_data = self.ListOfDevices.get("0000", {})
+    # if "ZigpyNeighbors" in coordinator_data and "ZigpyRoutes" in coordinator_data:
+    #     return
+    # self.zigpy_topology.copy_zigpy_infos_to_plugin()
+    # coordinator_data = self.ListOfDevices.get("0000", {})
+    # if "ZigpyNeighbors" not in coordinator_data and "ZigpyRoutes" not in coordinator_data:
+    #     self.log.logging("Plugin", "Log", "onHeartbeat request zigpy topology scan as not data available")
+    #     self.ControllerLink.sendData("ZIGPY-TOPOLOGY-SCAN", {})
 
 
 def start_zigbee_transport(self ):
