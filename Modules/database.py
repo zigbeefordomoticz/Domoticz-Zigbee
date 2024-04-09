@@ -186,7 +186,11 @@ def LoadDeviceList(self):
     self.DeviceListSize = os.path.getsize(_DeviceListFileName)
 
     cleanup_table_entries( self)
-    
+
+    if self.pluginconf.pluginConf["ZigpyTopologyReport"]:
+        # Cleanup the old Topology data
+        remove_legacy_topology_datas(self)
+        
     for addr in self.ListOfDevices:
         # Fixing mistake done in the code.
         fixing_consumption_lumi(self, addr)
@@ -845,6 +849,12 @@ def load_new_param_definition(self):
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["InvertShutter"]
             elif param == "netatmoReleaseButton":
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["EnableReleaseButton"]
+
+
+def remove_legacy_topology_datas(self):
+    for device_info in self.ListOfDevices.values():
+        for table_name in ("RoutingTable", "AssociatedDevices", "Neighbours"):
+            device_info.pop(table_name, None)
 
 
 def cleanup_table_entries( self):
