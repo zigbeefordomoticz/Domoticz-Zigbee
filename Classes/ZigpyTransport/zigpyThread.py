@@ -165,29 +165,29 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
 
     try:
         if radiomodule == "ezsp":
-            import bellows.config as conf
+            import bellows.config as radio_specific_conf
 
             from Classes.ZigpyTransport.AppBellows import App_bellows as App
 
-            config = ezsp_configuration_setup(self, conf, serialPort)
+            config = ezsp_configuration_setup(self, radio_specific_conf, serialPort)
 
             self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
 
         elif radiomodule =="znp":
-            import zigpy_znp.config as conf
+            import zigpy_znp.config as radio_specific_conf
 
             from Classes.ZigpyTransport.AppZnp import App_znp as App
 
-            config = znp_configuration_setup(self, conf, serialPort)
+            config = znp_configuration_setup(self, radio_specific_conf, serialPort)
 
             self.log.logging("TransportZigpy", "Status", "Started radio znp port: %s" %(serialPort))
 
         elif radiomodule =="deCONZ":
-            import zigpy_deconz.config as conf
+            import zigpy_deconz.config as radio_specific_conf
 
             from Classes.ZigpyTransport.AppDeconz import App_deconz as App
 
-            config = deconz_configuration_setup(self, conf, serialPort)
+            config = deconz_configuration_setup(self, radio_specific_conf, serialPort)
 
             self.log.logging("TransportZigpy", "Status", "Started radio deconz port: %s" %(serialPort))
 
@@ -199,19 +199,16 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
             self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())       
 
 
-    optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel)
+    optional_configuration_setup(self, config, radio_specific_conf, set_extendedPanId, set_channel)
 
     try:
-        if radiomodule in ["znp", "deCONZ"]:
+        if radiomodule in ["znp", "deCONZ", "ezsp"]:
             self.app = App(config)
-
-        elif radiomodule == "ezsp":
-            self.app = App(conf.CONFIG_SCHEMA(config))
 
         else:
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
             return
-        
+
     except Exception as e:
             self.log.logging( "TransportZigpy", "Error", "Error while starting radio %s on port: %s - Error: %s" %( radiomodule, serialPort, e) )
             return
@@ -232,54 +229,67 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
     self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
 
 
-def ezsp_configuration_setup(self, conf, serialPort):
+def ezsp_configuration_setup(self, bellows_conf, serialPort):
     config = {
-        conf.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
-        conf.CONF_NWK: {},
-        conf.CONF_EZSP_CONFIG: {},
+        zigpy.config.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
+        zigpy.config.CONF_NWK: {},
+        bellows_conf.CONF_EZSP_CONFIG: {},
+        zigpy.config.CONF_OTA: {},
         "handle_unknown_devices": True,
     }
     
     if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
         self.log.logging("TransportZigpy", "Status", "Set The maximum number of end device children that Coordinater will support to 0")
-        config[conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
+        config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
         
     if self.pluginconf.pluginConf["TXpower_set"]:
         self.log.logging("TransportZigpy", "Status", "Enables boost power mode and the alternate transmitter output.")
-        config[conf.CONF_EZSP_CONFIG]["CONFIG_TX_POWER_MODE"] = 0x3
+        config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_TX_POWER_MODE"] = 0x3
         
     return config
 
 
-def znp_configuration_setup(self, conf, serialPort):
+def znp_configuration_setup(self, znp_conf, serialPort):
         
     config = {
-        conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, 
-        conf.CONF_NWK: {},
-        conf.CONF_ZNP_CONFIG: { },
+        zigpy.config.CONF_DEVICE: {"path": serialPort, "baudrate": 115200}, 
+        zigpy.config.CONF_NWK: {},
+        znp_conf.CONF_ZNP_CONFIG: { },
+        zigpy.config.CONF_OTA: {},
     }
     if specific_endpoints(self):
-        config[ conf.CONF_ZNP_CONFIG][ "prefer_endpoint_1" ] = False
+        config[ znp_conf.CONF_ZNP_CONFIG][ "prefer_endpoint_1" ] = False
     
     if "TXpower_set" in self.pluginconf.pluginConf:
-        config[conf.CONF_ZNP_CONFIG]["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
+        config[znp_conf.CONF_ZNP_CONFIG]["tx_power"] = int(self.pluginconf.pluginConf["TXpower_set"])
         
     return config
 
 
-def deconz_configuration_setup(self, conf, serialPort):
+def deconz_configuration_setup(self, deconz_conf, serialPort):
     return {
-        conf.CONF_DEVICE: {"path": serialPort, "baudrate": 115200},
-        conf.CONF_NWK: {},
-        # zigpy.config.CONF_STARTUP_ENERGY_SCAN: False
+        zigpy.config.CONF_DEVICE: {"path": serialPort, "baudrate": 115200},
+        zigpy.config.CONF_NWK: {},
+        zigpy.config.CONF_OTA: {},
     }
 
 
 def optional_configuration_setup(self, config, conf, set_extendedPanId, set_channel):
 
+    # In case we have to set the Extended PAN Id
+    if set_extendedPanId != 0:
+        config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % ( t.EUI64(t.uint64_t(set_extendedPanId).serialize()) )
+
+    # In case we have to force the Channel
+    if set_channel != 0:
+        config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
+
     # Enable or not Source Routing based on zigpySourceRouting setting
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )
-
+    
+    # Disable Zigpy OTA
+    config[zigpy.config.CONF_OTA][zigpy.config.CONF_OTA_ENABLED] = False
+    
     # Disable zigpy conf topo scan by default
     config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = False
 
@@ -301,12 +311,6 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
         config[zigpy.config.CONF_NWK_BACKUP_PERIOD] = self.pluginconf.pluginConf["autoBackup"]
     else:
         config[zigpy.config.CONF_NWK_BACKUP_ENABLED] = False
-
-    if set_extendedPanId != 0:
-        config[conf.CONF_NWK][conf.CONF_NWK_EXTENDED_PAN_ID] = "%s" % ( t.EUI64(t.uint64_t(set_extendedPanId).serialize()) )
-
-    if set_channel != 0:
-        config[conf.CONF_NWK][conf.CONF_NWK_CHANNEL] = set_channel
 
     # Do we do energy scan at startup. By default it is set to False. Plugin might override it in the case of low number of devices.
     if "EnergyScanAtStatup" in self.pluginconf.pluginConf and not self.pluginconf.pluginConf["EnergyScanAtStatup"]:

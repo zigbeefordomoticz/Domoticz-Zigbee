@@ -31,7 +31,6 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
     async def _load_db(self) -> None:
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
-        LOGGER.debug("_load_db")
 
 
     def _add_db_listeners(self):

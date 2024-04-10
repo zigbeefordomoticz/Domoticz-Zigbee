@@ -42,7 +42,6 @@ ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
 
 
 async def _load_db(self) -> None:
-    LOGGER.info("_load_db")
     database_file = self.config[zigpy_conf.CONF_DATABASE]
     if not database_file:
         return
@@ -54,7 +53,6 @@ async def _load_db(self) -> None:
 
 
 def _add_db_listeners(self):
-    LOGGER.info("_add_db_listeners")
     if self._dblistener is None:
         return
 
@@ -65,7 +63,6 @@ def _add_db_listeners(self):
 
 
 def _remove_db_listeners(self):
-    LOGGER.info("_remove_db_listeners")
     if self._dblistener is None:
         return
 
@@ -176,15 +173,15 @@ async def shutdown(self) -> None:
         self._watchdog_task.cancel()
 
     # Stop periodic broadcasts for OTA
-    if self.ota:
+    if self.ota is not None:
         self.ota.stop_periodic_broadcasts()
 
     # Stop periodic backups
-    if self.backups:
+    if self.backups is not None:
         self.backups.stop_periodic_backups()
 
     # Stop periodic scans for topology
-    if self.topology:
+    if self.topology is not None:
         self.topology.stop_periodic_scans()
 
     try:
@@ -194,7 +191,7 @@ async def shutdown(self) -> None:
       
     await asyncio.sleep( 1 )
 
-    if self._dblistener:
+    if self._dblistener is not None:
         self._remove_db_listeners()
         
         try:
