@@ -205,43 +205,33 @@ def linky_mode( self, nwkid , protocol=False):
 
     return None
 
-def get_linky_mode_from_ep(self, nwkid ):
-    if "Ep" not in self.ListOfDevices[ nwkid ]:
-        return None
-    if "01" not in self.ListOfDevices[ nwkid ]["Ep"]:
-        return None
-    if "ff66" not in self.ListOfDevices[ nwkid ]["Ep"]["01"]:
-        return None
-    if "0300" not in self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]:
-        return None
-    if self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"] not in ZLINKY_MODE:
-        return None
-    return self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"]
-    
-def linky_device_conf(self, nwkid):
 
-    if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
-        mode = get_linky_mode_from_ep(self, nwkid )
-        # Let check if we have in the Cluster infos
-        if mode is None:
+def get_linky_mode_from_ep(self, nwkid):
+    ep = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get("01", {}).get("ff66", {}).get("0300")
+    return ep if ep in ZLINKY_MODE else None
+
+
+def linky_device_conf(self, nwkid):
+    device = self.ListOfDevices.get(nwkid, {})
+    zlinky_info = device.get('ZLinky', {})
+    protocol_linky = zlinky_info.get('PROTOCOL Linky')
+
+    if not protocol_linky:
+        mode = get_linky_mode_from_ep(self, nwkid)
+        if mode:
+            self.log.logging("Cluster", "Status", f"linky_device_conf {nwkid} found 0xff66/0x0300: {mode}")
+            zlinky_info['PROTOCOL Linky'] = mode
+            return ZLINKY_MODE[mode]["Conf"]
+        else:
             return "ZLinky_TIC"
 
-        self.log.logging( "Cluster", "Status", "linky_device_conf %s found 0xff66/0x0300: %s" %( nwkid, mode ))
-
-        # Fix ZLinky data structure
-        self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] = mode
-        return ZLINKY_MODE[ mode ]["Conf"]
-
-    if 'PROTOCOL Linky' not in self.ListOfDevices[ nwkid ]['ZLinky']:
-        return "ZLinky_TIC"
-
-    if self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] not in ZLINKY_MODE:
+    if protocol_linky not in ZLINKY_MODE:
         return "ZLinky_TIC"
     
-    self.log.logging( "Cluster", "Debug", "linky_device_conf %s found Protocol Linky: %s" %( nwkid, self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ))
+    self.log.logging("Cluster", "Debug", f"linky_device_conf {nwkid} found Protocol Linky: {protocol_linky}")
+    return ZLINKY_MODE[protocol_linky]["Conf"]
 
-    return ZLINKY_MODE[ self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ]["Conf"]
-    
+ 
 def linky_upgrade_authorized( current_model, new_model ):
 
     return (
@@ -360,7 +350,7 @@ def decode_STEG(stge):
     except ValueError:
         return {}
 
-    attributes = {
+    STEG_ATTRIBUTES = {
         'contact_sec': stge & 0x00000001,
         'organe_coupure': (stge & 0x0000000E) >> 1,
         'etat_cache_bornes': (stge & 0x00000010) >> 4,
@@ -382,7 +372,7 @@ def decode_STEG(stge):
     }
 
     # Decode mapped values
-    mapped_attributes = {
+    STEG_ATTRIBUTES_MAPPING = {
         'contact_sec': CONTACT_SEC,
         'etat_cache_bornes': ETAT_CACHE_BORNES,
         'mode_fonctionnement': FONCTION_PROD_CONSO,
@@ -397,34 +387,26 @@ def decode_STEG(stge):
     }
 
     # Decode mapped values for applicable attributes
-    for attr, mapping in mapped_attributes.items():
-        if attr in attributes and attributes[attr] in mapping:
-            attributes[attr] = mapping[attributes[attr]]
+    for attr, mapping in STEG_ATTRIBUTES_MAPPING.items():
+        if attr in STEG_ATTRIBUTES and STEG_ATTRIBUTES[attr] in mapping:
+            STEG_ATTRIBUTES[attr] = mapping[STEG_ATTRIBUTES[attr]]
 
-    return attributes
+    return STEG_ATTRIBUTES
 
 
-def zlinky_sum_all_indexes( self, nwkid ):
+def zlinky_sum_all_indexes(self, nwkid):
+    zlinky_info = self.ListOfDevices.get(nwkid, {}).get("ZLinky", {})
+    index_mid_info = zlinky_info.get("INDEX_MID", {})
 
-    if "ZLinky" not in self.ListOfDevices[nwkid]:
-        return 0
-    if "INDEX_MID" not in self.ListOfDevices[nwkid]["ZLinky"]:
-        return 0
-    if "CompteurTotalisateur" not in self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]:
-        return 0
+    return index_mid_info.get("CompteurTotalisateur", 0)
 
-    return self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]["CompteurTotalisateur"]
 
 def zlinky_totalisateur(self, nwkid, attribute, value):
+    zlinky_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("ZLinky", {})
+    index_mid_info = zlinky_info.setdefault("INDEX_MID", {"CompteurTotalisateur": 0})
 
-    if "ZLinky" not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid]["ZLinky"] = {}
-    if "INDEX_MID" not in self.ListOfDevices[nwkid]["ZLinky"]:
-        self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"] = {"CompteurTotalisateur": 0}
-    previous_index = 0
-    if attribute in self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]:
-        previous_index = self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"][ attribute ]["Compteur"]
-
+    previous_index = index_mid_info.get(attribute, {}).get("Compteur", 0)
     increment = value - previous_index
-    self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]["CompteurTotalisateur"] += increment
-    self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"][ attribute ] = { "TimeStamp": time.time() , "Compteur": value}
+
+    index_mid_info["CompteurTotalisateur"] += increment
+    index_mid_info[attribute] = {"TimeStamp": time.time(), "Compteur": value}
