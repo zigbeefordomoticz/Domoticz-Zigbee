@@ -380,7 +380,7 @@ def ts0601_instant_power(self, Devices, nwkid, ep, value):
 def ts0601_voltage(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_voltage - Voltage %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0001", value)
-    store_tuya_attribute(self, nwkid, "Voltage", value)
+    store_tuya_attribute(self, nwkid, "Voltage_%s" %ep, value)
 
 def ts0601_trv7_system_mode(self, Devices, nwkid, ep, value):
     # Auto 0, Manual 1, Off 2
