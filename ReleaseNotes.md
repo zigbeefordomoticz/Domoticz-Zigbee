@@ -29,6 +29,9 @@ Release Numbering
 - [Technical] - Imporving debuging, and allow to select python module level
 - [Technical] - Do not Touch() and Lastseen so often.
 - [Technical] - Refactor few domoticz related functions.
+- [Technical] - datetime.utcnow() deprecated, use a new way.
+- [Technical] - disable OTA in zigpy radio libs.
+- [Technical] - Several refactoring, code simplification
 
 - [WebUI] - New API to get the list of device settings parameters (/device-settings-help)
 - [WebUI] - Provides color status of device parameters sync.
