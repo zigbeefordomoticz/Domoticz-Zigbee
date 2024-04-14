@@ -32,10 +32,13 @@ Release Numbering
 - [Technical] - datetime.utcnow() deprecated, use a new way.
 - [Technical] - disable OTA in zigpy radio libs.
 - [Technical] - Several refactoring, code simplification
+- [Technical] - Automatically restart plugin in case of connection lost with coordination (zigpy)
+- [Technical] - Add Tuya sensors for Pool sensors ( PhMeter, EC, OPR, Salinity)
 
 - [WebUI] - New API to get the list of device settings parameters (/device-settings-help)
 - [WebUI] - Provides color status of device parameters sync.
 - [WebUI] - AngularJS 17 upgrade
+- [WebUI] - Cookie to manage the number of devices to be displayed in Device Management
 
 ## March 2024 - stable7.1.011 ( 2024.03.1)
 
