@@ -310,9 +310,10 @@ class BasePlugin:
     
         assert sys.version_info >= (3, 8)  # nosec
         
-        if check_requirements( Parameters[ "HomeFolder"] ):
-            self.onStop()
-            return
+        if self.pluginconf.pluginConf["internetAccess"]:
+            if check_requirements( Parameters[ "HomeFolder"] ):
+                self.onStop()
+                return
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
