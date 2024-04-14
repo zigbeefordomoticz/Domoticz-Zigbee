@@ -471,15 +471,48 @@ def ts0601_windowdetection(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0500", value)
     store_tuya_attribute(self, nwkid, "OpenWindow", value)
 
+
 def ts0601_smoke_detection(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_smoke_detection - Nwkid: %s/%s Smoke State: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "SmokeState", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0500", value)
 
+
 def ts0601_smoke_concentration(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_smoke_concentration - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "SmokePPM", value)
     MajDomoDevice(self, Devices, nwkid, ep, "042a", value)
+
+
+def ts0601_phMeter(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_phMeter - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "phMeter", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "phMeter", value)
+
+
+def ts0601_ec(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_ec - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Electric Conductivity", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "ec", value)
+
+
+def ts0601_orp(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_orp - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Oxidation Reduction Potential", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "orp", value)
+
+
+def ts0601_freeChlorine(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_freeChlorine - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Free chlorine", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "freeChlorine", value)
+
+
+def ts0601_salinity(self, Devices, nwkid, ep, value):    
+    self.log.logging("Tuya0601", "Debug", "ts0601_salinity - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Salt", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "salinity", value)
+
 
 def ts0601_water_consumption(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_water_consumption - Nwkid: %s/%s WaterConsumtpion: %s" % (nwkid, ep, value))
@@ -492,11 +525,13 @@ def ts0601_water_consumption(self, Devices, nwkid, ep, value):
     # The volume (or counter) of the day (in the top right corner).
     MajDomoDevice(self, Devices, nwkid, ep, "WaterCounter", value)
 
+
 def ts0601_sensor_irrigation_mode(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_sensor_irrigation_mode - Nwkid: %s/%s Mode: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Mode", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0008", value)
-   
+
+
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
@@ -536,7 +571,13 @@ DP_SENSOR_FUNCTION = {
     "smoke_ppm": ts0601_smoke_concentration,
     "water_consumption": ts0601_water_consumption,
     "power_factor": ts0601_power_factor,
-    "presence_state": ts0601_tuya_presence_state
+    "presence_state": ts0601_tuya_presence_state,
+    "phMeter": ts0601_phMeter,
+    "ec": ts0601_ec,
+    "orp": ts0601_orp,
+    "freeChlorine": ts0601_freeChlorine,
+    "salinity": ts0601_salinity
+
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):

@@ -723,6 +723,32 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             svalue = "%s" % (nvalue,)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
          
+        if ClusterType == "phMeter" and WidgetType == "phMeter":
+            nvalue = int(value)
+            svalue = "%s" % (nvalue,)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+
+        if ClusterType == "ec" and WidgetType == "ec":
+            nvalue = int(value)
+            svalue = "%s" % (nvalue,)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+
+        if ClusterType == "orp" and WidgetType == "orp":
+            nvalue = int(value)
+            svalue = "%s" % (nvalue,)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+
+        if ClusterType == "freeChlorine" and WidgetType == "freeChlorine":
+            nvalue = int(value)
+            svalue = "%s" % (nvalue,)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+
+        if ClusterType == "salinity" and WidgetType == "salinity":
+            nvalue = int(value)
+            svalue = "%s" % (nvalue,)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+
+
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
             nValue = 0
             sValue = "%s %% used" %( value, )

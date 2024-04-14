@@ -483,7 +483,12 @@ CLUSTER_TO_TYPE = {
     "Distance": "Distance",
     "TamperSwitch": "TamperSwitch",
     "Notification": "Notification",
-    "PWFactor": "PWFactor"
+    "PWFactor": "PWFactor",
+    "phMeter": "phMeter",
+    "ec": "ec",
+    "orp": "orp",
+    "freeChlorine": "freeChlorine",
+    "salinity": "salinity",
 }
 
 def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", ModelName=""):

@@ -787,6 +787,13 @@ SIMPLE_WIDGET = {
         "widgetType": "Custom",
         "Options": "1;ppm"
     },
+    
+    "phMeter": { "widgetType": "Custom", "Options": "1;ph" },
+    "ec": { "widgetType": "Custom", "Options": "1;µS/cm" },
+    "orp": { "widgetType": "Custom", "Options": "1;mV" },
+    "freeChlorine": { "widgetType": "Custom", "Options": "1;mg/L" },
+    "salinity": { "widgetType": "Custom", "Options": "1;ppm" },
+
     "Strength": {
         "Type": 243,
         "Subtype": 31
