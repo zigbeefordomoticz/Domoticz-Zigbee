@@ -46,7 +46,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         LOGGER.info("deCONZ Configuration: %s", self.config)
 
 
-    async def startup(self, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+        """Starts a network, optionally forming one with random settings if necessary."""
+
         self.log = log
         self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
@@ -54,9 +56,13 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackBackup = callBackBackup
+        self.callBackRestartPlugin = callBackRestartPlugin
         self.HardwareID = HardwareID
         self.captureRxFrame = captureRxFrame
         self.use_of_zigpy_persistent_db = use_of_zigpy_persistent_db
+
+        self.shutting_down = False
+        self.restarting = False
 
         await asyncio.sleep( 3 )
 
@@ -97,6 +103,11 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
     async def shutdown(self) -> None:
         """Shutdown controller."""
         await Classes.ZigpyTransport.AppGeneric.shutdown(self)
+
+
+    def connection_lost(self, exc: Exception) -> None:
+        """Handle connection lost event."""
+        Classes.ZigpyTransport.AppGeneric.connection_lost(self, exc)
 
 
     async def register_endpoints(self):

@@ -21,7 +21,7 @@ from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
 
 
 class ZigpyTransport(object):
-    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_backup_available, log, statistics, hardwareid, radiomodule, serialPort):
+    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort):
         self.zigbee_communication = "zigpy"
         self.pluginParameters = pluginParameters
         self.pluginconf = pluginconf
@@ -29,6 +29,7 @@ class ZigpyTransport(object):
         self.ZigpyUpdDevice = zigpy_upd_device
         self.ZigpyGetDevice = zigpy_get_device
         self.ZigpyBackupAvailable = zigpy_backup_available
+        self.restart_plugin = restart_plugin
         self.log = log
         self.statistics = statistics
         self.hardwareid = hardwareid

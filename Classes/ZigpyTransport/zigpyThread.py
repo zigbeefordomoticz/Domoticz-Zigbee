@@ -328,6 +328,7 @@ async def _radio_startup(self, pluginconf, use_of_zigpy_persistent_db, new_netwo
             callBackUpdDevice=self.ZigpyUpdDevice,
             callBackGetDevice=self.ZigpyGetDevice,
             callBackBackup=self.ZigpyBackupAvailable,
+            callBackRestartPlugin=self.restart_plugin,
             captureRxFrame=self.captureRxFrame,
             auto_form=True,
             force_form=new_network,
@@ -495,7 +496,6 @@ async def dispatch_command(self, data):
 
     elif cmd == "ZIGPY-TOPOLOGY-SCAN":
         self.manual_topology_scan_task = asyncio.create_task( self.app.start_topology_scan(), name="ZIGPY-TOPOLOGY-SCAN")
-
 
 
 async def _permit_to_joint(self, data):

@@ -117,19 +117,22 @@ def _domoticz_not_compatible(self):
     return False
 
 
-def check_python_modules_version( self ):
-    flag = True
+def check_python_modules_version(self):
+    if self.pluginconf.pluginConf["internetAccess"]:
+        return True
 
-    for x in MODULES_VERSION:
-        if importlib.metadata.version( x ) != MODULES_VERSION[ x]:
-            self.log.logging("Plugin", "Error", "The python module %s version %s loaded is not compatible as we are expecting this level %s" %(
-                x, importlib.metadata.version( x ), MODULES_VERSION[ x] ))
-            flag = False
-            
-    return flag
+    for module, expected_version in MODULES_VERSION.items():
+        current_version = importlib.metadata.version(module)
+        if current_version != expected_version:
+            self.log.logging("Plugin", "Error", "The Python module %s version %s loaded is not compatible. Expected version: %s" % (
+                module, current_version, expected_version))
+            return False
+
+    return True
 
 
 def check_requirements(home_folder):
+
     requirements_file = Path(home_folder) / "requirements.txt"
     Domoticz.Status("Checking Python modules %s" % requirements_file)
 
@@ -176,24 +179,6 @@ def check_requirements(home_folder):
 
     return False
 
-
-#def list_all_modules_loaded(self):
-#    # Get a list of installed packages and their versions
-#    installed_packages = {pkg.key: pkg.version for pkg in pkg_resources.working_set}
-#
-#    # Get a list of modules imported by the main script
-#    main_modules = set(sys.modules.keys())
-#
-#    # Combine the lists
-#    all_modules = set(installed_packages.keys()) | main_modules
-#
-#    # Print the list of modules and their versions
-#    self.log.logging("Plugin", "Log", "=============================")
-#    for module_name in sorted(all_modules):
-#        version = installed_packages.get(module_name, "Not installed")
-#        self.log.logging("Plugin", "Log", f"{module_name}: {version}")
-#    self.log.logging("Plugin", "Log", "=============================")
-#
 
 def list_all_modules_loaded(self):
     # Get a list of modules imported by the main script
