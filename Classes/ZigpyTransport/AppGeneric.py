@@ -164,9 +164,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 async def shutdown(self) -> None:
     """Shutdown controller."""
     LOGGER.info("Zigpy shutdown")
+    self.shutting_down = True
 
-    if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
-        self.callBackBackup(await self.backups.create_backup(load_devices=True))
+    await _create_backup(self)
 
     # Cancel watchdog task if it exists
     if self._watchdog_task is not None:
@@ -184,20 +184,48 @@ async def shutdown(self) -> None:
     if self.topology is not None:
         self.topology.stop_periodic_scans()
 
+    await _disconnect(self)
+    await _shutdown_db_listeners(self)
+
+
+async def _create_backup(self) -> None:
+    """ Create a coordinator backup"""
+    try:
+        if self.config[zigpy_conf.CONF_NWK_BACKUP_ENABLED]:
+            self.callBackBackup(await self.backups.create_backup(load_devices=True))
+    except Exception:
+        LOGGER.warning("Failed to create backup", exc_info=False)
+
+
+async def _disconnect(self) -> None:
+    """ disconect from the radio"""
     try:
         await self.disconnect()
     except Exception:
-        LOGGER.warning("Failed to disconnect from radio", exc_info=True)  
-      
-    await asyncio.sleep( 1 )
+        LOGGER.warning("Failed to disconnect from radio", exc_info=True)
+    finally:
+        await asyncio.sleep(1)
 
+
+async def _shutdown_db_listeners(self) -> None:
+    """ shutdown the database listener"""
     if self._dblistener is not None:
-        self._remove_db_listeners()
-        
         try:
+            self._remove_db_listeners()
             await self._dblistener.shutdown()
         except Exception:
             LOGGER.warning("Failed to disconnect from database", exc_info=True)
+
+
+def connection_lost(self, exc: Exception) -> None:
+    """Handle connection lost event."""
+    LOGGER.warning("Connection to the radio was lost: %r", exc)
+
+    if self.shutting_down or self.restarting:
+        return
+
+    self.restarting = True
+    self.callBackRestartPlugin()
 
 
 def _retreive_previous_backup(self):
@@ -303,7 +331,6 @@ def handle_leave(self, nwk, ieee):
     plugin_frame = build_plugin_8048_frame_content(self, ieee)
     self.callBackFunction(plugin_frame)
     
-
 
 def handle_relays(self, nwk, relays) -> None:
     self.log.logging("TransportZigpy", "Debug","handle_relays (0x%04x %s)" %(nwk, str(relays)))
@@ -507,4 +534,3 @@ def scan_channel( self, scan_result ):
 def is_zigpy_topology_in_progress(self):
     zigpy_topology = self.topology
     return zigpy_topology._scan_task is not None and not zigpy_topology._scan_task.done()
-

@@ -4,7 +4,6 @@
 # Author: deufo, badz & pipiche38
 #
 
-import collections
 import logging
 
 import bellows.config as bellows_conf
@@ -15,6 +14,7 @@ import zigpy.device
 import zigpy.types as zigpy_t
 import zigpy.zdo.types as zdo_types
 from bellows.exception import EzspError
+from zigpy.zdo import ZDO
 
 import Classes.ZigpyTransport.AppGeneric
 from Classes.ZigpyTransport.firmwareversionHelper import \
@@ -49,7 +49,9 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         LOGGER.info("EZSP Configuration: %s", self.config)
 
 
-    async def startup(self, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+        """Starts a network, optionally forming one with random settings if necessary."""
+ 
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
@@ -59,17 +61,18 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.callBackGetDevice = callBackGetDevice
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackBackup = callBackBackup
+        self.callBackRestartPlugin = callBackRestartPlugin
         self.HardwareID = HardwareID
         self.captureRxFrame = captureRxFrame
         self.use_of_zigpy_persistent_db = use_of_zigpy_persistent_db
 
-        """
-        Starts a network, optionally forming one with random settings if necessary.
-        """
+        self.shutting_down = False
+        self.restarting = False
 
         try:
             await self.connect()
             await self.initialize(auto_form=True, force_form=force_form)
+
         except Exception as e:
             LOGGER.error("Couldn't start application", exc_info=e)
             await self.shutdown()
@@ -115,6 +118,11 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
     async def shutdown(self) -> None:
         """Shutdown controller."""
         await Classes.ZigpyTransport.AppGeneric.shutdown(self)
+
+
+    def connection_lost(self, exc: Exception) -> None:
+        """Handle connection lost event."""
+        Classes.ZigpyTransport.AppGeneric.connection_lost(self, exc)
 
 
     async def register_endpoints(self, endpoint=1):

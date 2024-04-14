@@ -49,7 +49,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         LOGGER.info("ZNP Configuration: %s", self.config)
 
 
-    async def startup(self, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+        """Starts a network, optionally forming one with random settings if necessary."""
+
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
@@ -59,16 +61,16 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.callBackUpdDevice = callBackUpdDevice
         self.callBackGetDevice = callBackGetDevice
         self.callBackBackup = callBackBackup
+        self.callBackRestartPlugin = callBackRestartPlugin
         self.HardwareID = HardwareID
         self.captureRxFrame = captureRxFrame
         self.use_of_zigpy_persistent_db = use_of_zigpy_persistent_db
-        
+
+        self.shutting_down = False
+        self.restarting = False
+
         # Pipiche : 24-Oct-2022 Disabling CONF_MAX_CONCURRENT_REQUESTS so the default will be used ( 16 )
         # self.znp_config[znp_conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
-
-        """
-        Starts a network, optionally forming one with random settings if necessary.
-        """
 
         try:
             await self.connect()
@@ -101,6 +103,11 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
     async def shutdown(self) -> None:
         """Shutdown controller."""
         await Classes.ZigpyTransport.AppGeneric.shutdown(self)
+
+
+    def connection_lost(self, exc: Exception) -> None:
+        """Handle connection lost event."""
+        Classes.ZigpyTransport.AppGeneric.connection_lost(self, exc)
 
 
     async def register_endpoints(self):

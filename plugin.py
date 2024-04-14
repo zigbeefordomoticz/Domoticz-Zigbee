@@ -309,11 +309,6 @@ class BasePlugin:
             _current_python_version_major, _current_python_version_minor))
     
         assert sys.version_info >= (3, 8)  # nosec
-        
-        if self.pluginconf.pluginConf["internetAccess"]:
-            if check_requirements( Parameters[ "HomeFolder"] ):
-                self.onStop()
-                return
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
@@ -390,6 +385,11 @@ class BasePlugin:
         self.pluginconf = PluginConf(
             self.zigbee_communication, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
+
+        if self.pluginconf.pluginConf["internetAccess"]:
+            if check_requirements( Parameters[ "HomeFolder"] ):
+                self.onStop()
+                return
 
         #if self.pluginconf.pluginConf["Garbage"]:
         #    # Enable the cycle detector
@@ -792,6 +792,14 @@ class BasePlugin:
     def zigpy_backup_available(self, backups):
         handle_zigpy_backup(self, backups)
 
+
+    def restart_plugin(self):
+        """ This is used as a call back function for zigpy connection_lost handling"""
+        error_message = "Connection lost with coordinator, restarting plugin"
+        self.log.logging("Plugin", "Error", error_message)
+        self.adminWidgets.updateNotificationWidget(Devices, error_message)
+        restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
+
     #def onCommand(self, DeviceID, Unit, Command, Level, Color):
     def onCommand(self, Unit, Command, Level, Color):
         if (  self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None or not self.log ):
@@ -1063,7 +1071,9 @@ def _start_zigpy_ZNP(self):
     self.pluginParameters["Zigpy"] = True
     self.log.logging("Plugin", "Status", "Start Zigpy Transport on ZNP")
     
-    self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"])  
+    self.ControllerLink= ZigpyTransport(
+        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"]
+        )
     self.ControllerLink.open_cie_connection()
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
@@ -1081,7 +1091,9 @@ def _start_zigpy_deConz(self):
     check_python_modules_version( self )
     self.pluginParameters["Zigpy"] = True
     self.log.logging("Plugin", "Status","Start Zigpy Transport on deCONZ")            
-    self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"])  
+    self.ControllerLink= ZigpyTransport(
+        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"]
+        )
     self.ControllerLink.open_cie_connection()
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
@@ -1109,7 +1121,9 @@ def _start_zigpy_EZSP(self):
 
     SerialPort = Parameters["SerialPort"]
     
-    self.ControllerLink= ZigpyTransport( self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort)  
+    self.ControllerLink= ZigpyTransport(
+        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort
+        )
     self.ControllerLink.open_cie_connection()
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
