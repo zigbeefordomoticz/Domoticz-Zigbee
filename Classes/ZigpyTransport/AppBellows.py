@@ -14,7 +14,6 @@ import zigpy.device
 import zigpy.types as zigpy_t
 import zigpy.zdo.types as zdo_types
 from bellows.exception import EzspError
-from zigpy.zdo import ZDO
 
 import Classes.ZigpyTransport.AppGeneric
 from Classes.ZigpyTransport.firmwareversionHelper import \
