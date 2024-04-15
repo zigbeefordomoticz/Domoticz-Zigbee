@@ -1,11 +1,17 @@
-# !/usr/bin/env python3
-# coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 
-from Modules.tools import lookupForIEEE
+from Modules.tools import lookupForIEEE, upd_RSSI
 from Modules.zigateConsts import ADDRESS_MODE
 from Zigbee.zclDecoders import zcl_decoders
 from Zigbee.zdpDecoders import zdp_decoders
@@ -39,7 +45,14 @@ def decode8002_and_process(self, frame):
             
         self.log.logging("Transport8002", "Log", "decode8002_and_process unknown NwkId: %s for ZCL frame %s" % (SrcNwkId,frame))
         return None
-    
+
+    if self.zigbee_communication == "zigpy":
+        rssi = self.ControllerLink.app.get_device_rssi( z4d_nwk=SrcNwkId)
+        
+        if rssi is not None:
+            upd_RSSI(self, SrcNwkId, rssi)
+
+
     # Z-Stack doesn't provide Profile Information, so we should assumed that if it is not 0x0000 (ZDP) it is then ZCL
     frame = zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame)
     self.log.logging("Transport8002", "Debug", "decode8002_and_process return ZCL frame: %s" % frame)

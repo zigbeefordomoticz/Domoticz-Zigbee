@@ -482,6 +482,24 @@ def updLQI(self, key, LQI):
     return
 
 
+def upd_RSSI(self, nwkid, rssi_value):
+    # Ensure the device exists in the dictionary
+    if nwkid not in self.ListOfDevices:
+        return
+    
+    # Update RSSI value directly
+    self.ListOfDevices[nwkid]["RSSI"] = rssi_value
+
+    # Initialize RollingRSSI list if it doesn't exist
+    self.ListOfDevices[nwkid].setdefault("RollingRSSI", [])
+
+    # Add RSSI to RollingRSSI list
+    self.ListOfDevices[nwkid]["RollingRSSI"].append(rssi_value)
+
+    # Keep RollingRSSI list size at most 10 elements
+    self.ListOfDevices[nwkid]["RollingRSSI"] = self.ListOfDevices[nwkid]["RollingRSSI"][-10:]
+
+
 # Those functions will be use with the new DeviceConf structutre
 
 def is_fake_ep( self, nwkid, ep):

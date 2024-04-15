@@ -6,7 +6,7 @@
 # This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
 # (C) 2015-2024
 #
-# Initial authors: zaraki673 & pipiche38 & badz
+# Initial authors: badz & pipiche38 & badz
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
@@ -25,7 +25,7 @@ import zigpy.config as zigpy_conf
 import zigpy.const as const
 import zigpy.device
 import zigpy.exceptions
-import zigpy.types as t
+import zigpy.types as zigpy_t
 import zigpy.zdo
 import zigpy.zdo.types as zdo_types
 from zigpy.backups import NetworkBackup
@@ -145,7 +145,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     if self.config[zigpy_conf.CONF_STARTUP_ENERGY_SCAN]:
         # Each scan period is 15.36ms. Scan for at least 200ms (2^4 + 1 periods) to
         # pick up WiFi beacon frames.
-        results = await self.energy_scan( channels=t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
+        results = await self.energy_scan( channels=zigpy_t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
 
         if results[self.state.network_info.channel] > ENERGY_SCAN_WARN_THRESHOLD:
             self.log.logging("TransportZigpy", "Error", "WARNING - Zigbee channel %s utilization is %0.2f%%!" %(
@@ -265,11 +265,11 @@ def get_device(self, ieee=None, nwk=None):
             if nwk is not None:
                 nwk = nwk.serialize()[::-1].hex()
             if ieee is not None:
-                ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+                ieee = "%016x" % zigpy_t.uint64_t.deserialize(ieee.serialize())[0]
             zfd_dev = self.callBackGetDevice(ieee, nwk)
             if zfd_dev is not None:
                 (nwk, ieee) = zfd_dev
-                dev = self.add_device(t.EUI64(t.uint64_t(ieee).serialize()),nwk)
+                dev = self.add_device(zigpy_t.EUI64(zigpy_t.uint64_t(ieee).serialize()),nwk)
 
     if dev is not None:
         return dev
@@ -278,7 +278,7 @@ def get_device(self, ieee=None, nwk=None):
     raise KeyError
 
 
-def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
+def handle_join(self, nwk: zigpy_t.NWK, ieee: zigpy_t.EUI64, parent_nwk: zigpy_t.NWK) -> None:
     """
     Called when a device joins or announces itself on the network.
     """
@@ -289,7 +289,7 @@ def handle_join(self, nwk: t.NWK, ieee: t.EUI64, parent_nwk: t.NWK) -> None:
         self.log.logging("TransportZigpy", "Log", "ignoring invalid neighbor: %s" %ieee)
         return
 
-    ieee = t.EUI64(ieee)
+    ieee = zigpy_t.EUI64(ieee)
     try:
         dev = self.get_device(ieee)
         time.sleep(1.0)
@@ -321,7 +321,7 @@ def get_device_ieee(self, nwk):
         return None
     
     if dev.ieee:
-        return "%016x" % t.uint64_t.deserialize(dev.ieee.serialize())[0]
+        return "%016x" % zigpy_t.uint64_t.deserialize(dev.ieee.serialize())[0]
     return None
 
 
@@ -340,7 +340,7 @@ def handle_relays(self, nwk, relays) -> None:
         
 def packet_received(
     self, 
-    packet: t.ZigbeePacket
+    packet: zigpy_t.ZigbeePacket
     ) -> None:
 
     """Notify zigpy of a received Zigbee packet.""" 
@@ -404,7 +404,7 @@ def packet_received(
 def _update_nkdids_if_needed( self, ieee, new_nwkid ):
     if not isinstance(self, ZigpyTransport):
         return
-    _ieee = "%016x" % t.uint64_t.deserialize(ieee.serialize())[0]
+    _ieee = "%016x" % zigpy_t.uint64_t.deserialize(ieee.serialize())[0]
     _nwk = new_nwkid.serialize()[::-1].hex()
     self.callBackUpdDevice(_ieee, _nwk)
 
@@ -414,13 +414,13 @@ def get_zigpy_version(self):
     LOGGER.debug("get_zigpy_version ake version number. !!")
     return self.version
 
-def get_device_with_address( self, address: t.AddrModeAddress ) -> zigpy.device.Device:
+def get_device_with_address( self, address: zigpy_t.AddrModeAddress ) -> zigpy.device.Device:
         """Gets a `Device` object using the provided address mode address."""
 
-        if address.addr_mode == t.AddrMode.NWK:
+        if address.addr_mode == zigpy_t.AddrMode.NWK:
             return self.get_device(nwk=address.address)
 
-        elif address.addr_mode == t.AddrMode.IEEE:
+        elif address.addr_mode == zigpy_t.AddrMode.IEEE:
             return self.get_device(ieee=address.address)
 
         else:
@@ -472,7 +472,7 @@ async def network_interference_scan(self):
     
     # Each scan period is 15.36ms. Scan for at least 200ms (2^4 + 1 periods) to
     # pick up WiFi beacon frames.
-    results = await self.energy_scan( channels=t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
+    results = await self.energy_scan( channels=zigpy_t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
     
     self.log.logging( "NetworkEnergy", "Debug", "Network Energly Level Report: %s" % results)
 
@@ -534,3 +534,14 @@ def scan_channel( self, scan_result ):
 def is_zigpy_topology_in_progress(self):
     zigpy_topology = self.topology
     return zigpy_topology._scan_task is not None and not zigpy_topology._scan_task.done()
+
+
+def get_device_rssi(self, z4d_ieee=None, z4d_nwk=None):
+    """ retreive RSSI of the device nwk or ieee """
+
+    try:
+        nwk = zigpy_t.NWK.convert(z4d_nwk)
+        dev = super(type(self),self).get_device(None, nwk)
+        return dev.rssi
+    except KeyError:
+        return None

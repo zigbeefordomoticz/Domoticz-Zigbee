@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: badz & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: badz & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import logging
 
@@ -224,6 +230,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
     async def start_topology_scan(self):
         await self.topology.scan()
+
+
+    def get_device_rssi(self, z4d_ieee=None, z4d_nwk=None):
+        return Classes.ZigpyTransport.AppGeneric.get_device_rssi(self, z4d_ieee, z4d_nwk)
 
 
     def is_bellows(self):
