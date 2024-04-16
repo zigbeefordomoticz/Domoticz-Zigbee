@@ -1093,6 +1093,7 @@ def _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, Batt
 
     return
 
+
 def _set_level_fan_control(self, Devices, DeviceID, Unit, BatteryLevel, SignalLevel, forceUpdateDev, DeviceType, Nwkid, EPout, Level, model_name):
     if model_name == "AC201A":
         casaia_ac201_fan_control(self, Nwkid, Level)
@@ -1168,17 +1169,22 @@ def _set_level_windows_covering(self, DeviceType, Nwkid, EPout, Level):
 
 
 def handle_alarm_command(self, Nwkid, EPout, Level):
-    action_mapping = {
+    ias_action_mapping = {
         0: self.iaszonemgt.alarm_off,
         10: self.iaszonemgt.alarm_on,
         20: self.iaszonemgt.siren_only,
         30: self.iaszonemgt.strobe_only,
-        40: lambda: self.iaszonemgt.write_IAS_WD_Squawk(Nwkid, EPout, "armed"),
-        50: lambda: self.iaszonemgt.write_IAS_WD_Squawk(Nwkid, EPout, "disarmed"),
+        40: self.iaszonemgt.write_IAS_WD_Squawk,
+        50: self.iaszonemgt.write_IAS_WD_Squawk,
     }
-    action = action_mapping.get(Level)
-    if action:
-        action()
+
+    if Level in ias_action_mapping:
+        action = ias_action_mapping.get(Level)
+        if Level in (40, 50):
+            mode = "armed" if Level == 40 else "disarmed"
+            action(Nwkid, EPout, mode)
+        else:
+            action(Nwkid, EPout)
     else:
         self.log.logging("Command", "Error", "Invalid alarm level: %s" % Level)
 
