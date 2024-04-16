@@ -7,3 +7,4 @@ dnspython==2.6.1
 pyserial>=3.5
 charset-normalizer==2.0.11
 jsonschema==4.17.3
+cryptography<=40.0.2
