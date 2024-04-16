@@ -120,6 +120,7 @@ BUILD_ATTRIBUTES = (
     "ReadAttributes",
     "WriteAttributes",
     "LQI",
+    "RSSI",
     "SQN",
     "Stamp",
     "Health",
