@@ -73,7 +73,6 @@ def stop_zigpy_thread(self):
 
 def start_zigpy_thread(self):
     self.log.logging("TransportZigpy", "Debug", "start_zigpy_thread - Starting zigpy thread (1)")
-
     if sys.platform == "win32" and (3, 8, 0) <= sys.version_info < (3, 9, 0):
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -81,36 +80,28 @@ def start_zigpy_thread(self):
 
 
 def setup_zigpy_thread(self):
-    self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Starting zigpy thread (1)")
-    self.zigpy_loop = get_or_create_eventloop()
+    self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Starting zigpy thread")
+    self.zigpy_thread = Thread(name=f"ZigpyCom_{self.hardwareid}", target=zigpy_thread, args=(self,))
+    self.zigpy_thread.start()
 
-    if self.zigpy_loop:
-        self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - Starting zigpy thread")
-
-        self.zigpy_thread = Thread(name=f"ZigpyCom_{self.hardwareid}", target=zigpy_thread, args=(self,))
-        self.zigpy_thread.start()
-
-        self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - zigpy thread started")
-
-
-def get_or_create_eventloop():
-    try:
-        loop = asyncio.get_event_loop()
-
-    except RuntimeError as ex:
-        if "There is no current event loop in thread" in str(ex):
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-    else:
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-    return loop
+    self.log.logging("TransportZigpy", "Debug", "setup_zigpy_thread - zigpy thread started")
 
 
 def zigpy_thread(self):
-    self.zigpy_loop.run_until_complete(start_zigpy_task(self, channel=0, extended_pan_id=0))
-    self.zigpy_loop.close()
+    self.zigpy_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(self.zigpy_loop)
+
+    if self.pluginconf.pluginConf["EventLoopInstrumentation"]:
+        self.zigpy_loop.set_debug(enabled=True)
+
+    self.log.logging("TransportZigpy", "Log", "zigpy_thread starting event loop : %s" %self.zigpy_loop)
+    try:
+        self.zigpy_loop.run_until_complete(start_zigpy_task(self, channel=0, extended_pan_id=0))
+    except Exception as e:
+        self.log.logging("TransportZigpy", "Error", "zigpy_thread error when starting %s" %e)
+
+    finally:
+        self.zigpy_loop.close()
 
 
 async def start_zigpy_task(self, channel, extended_pan_id):
@@ -231,13 +222,17 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
 
 def ezsp_configuration_setup(self, bellows_conf, serialPort):
     config = {
-        zigpy.config.CONF_DEVICE: { "path": serialPort, "baudrate": 115200}, 
+        zigpy.config.CONF_DEVICE: { zigpy.config.CONF_DEVICE_PATH: serialPort, zigpy.config.CONF_DEVICE_BAUDRATE: 115200},
         zigpy.config.CONF_NWK: {},
         bellows_conf.CONF_EZSP_CONFIG: {},
         zigpy.config.CONF_OTA: {},
         "handle_unknown_devices": True,
     }
-    
+
+    if not self.pluginconf.pluginConf["EventLoopThread"]:
+        self.log.logging("TransportZigpy", "Status", "Disable Bellows specific EventLoop thread")
+        config[bellows_conf.CONF_USE_THREAD] = False
+
     if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
         self.log.logging("TransportZigpy", "Status", "Set The maximum number of end device children that Coordinater will support to 0")
         config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0

@@ -380,6 +380,8 @@ SETTINGS = {
             "useDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "enableZigpyPersistentInFile": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "enableZigpyPersistentInMemory": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            "EventLoopInstrumentation": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            "EventLoopThread": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
         },
     },
     "Reserved": {
