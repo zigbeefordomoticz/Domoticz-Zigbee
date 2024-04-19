@@ -46,21 +46,13 @@ class LoggingManagement:
         self.logging_thread = None
         self._startTime = int(time.time())
 
-        self.debugzigpy = False
-        self.debugZNP = False
-        self.debugEZSP = False
-        self.debugZigate = False
-        self.debugdeconz = False
+        self.debugZigpy = None
+        self.debugZNP = None
+        self.debugEZSP = None
+        self.debugZigate = None
+        self.debugdeconz = None
         
-        self.reload_debug_settings = False
-        
-        configure_zigpy_loggers("warning")
-        configure_zigpy_znp_loggers("warning")
-        configure_zigpy_ezsp_loggers("warning")
-        configure_zigpy_zigate_loggers("warning")
-        configure_zigpy_deconz_loggers("warning")
-
-        self.zigpy_login()
+        self.reload_debug_settings = True
         
         start_logging_thread(self)
 
@@ -83,20 +75,24 @@ class LoggingManagement:
 
 
     def zigpy_login(self):
-        _configure_debug_mode(self, self.debugzigpy, "Zigpy", configure_zigpy_loggers)
-        _configure_debug_mode(self, self.debugZNP, "ZigpyZNP", configure_zigpy_znp_loggers)
-        _configure_debug_mode(self, self.debugEZSP, "ZigpyEZSP", configure_zigpy_ezsp_loggers)
-        _configure_debug_mode(self, self.debugZigate, "ZigpyZigate", configure_zigpy_zigate_loggers)
-        _configure_debug_mode(self, self.debugdeconz, "ZigpydeCONZ", configure_zigpy_deconz_loggers)
+        self.reload_debug_settings = False
+
+        _configure_debug_mode(self, "Zigpy", configure_zigpy_loggers)
+        _configure_debug_mode(self, "ZigpyZNP", configure_zigpy_znp_loggers)
+        _configure_debug_mode(self, "ZigpyEZSP", configure_zigpy_ezsp_loggers)
+        _configure_debug_mode(self, "ZigpyZigate", configure_zigpy_zigate_loggers)
+        _configure_debug_mode(self, "ZigpydeCONZ", configure_zigpy_deconz_loggers)
         
+        default_mode = logging.INFO if self.pluginconf.pluginConf["ZigpyDebugModeInfo"] else logging.WARNING
         for param in self.pluginconf.pluginConf:
             if 'Python/' in param:
                 logger_name = param.split('/')[1]
                 logger_name = logger_name.replace( '-', '.')
                 mode = self.pluginconf.pluginConf[param]
 
-                _set_logging_level = logging.DEBUG if mode == 1 else logging.WARNING
-                logging.getLogger(logger_name).setLevel(_set_logging_level)
+                _set_logging_level = logging.DEBUG if mode == 1 else default_mode
+                if logging.getLogger(logger_name).level != _set_logging_level:
+                    logging.getLogger(logger_name).setLevel(_set_logging_level)
 
     def loggingUpdatePluginVersion(self, Version):
         self.PluginVersion = Version
@@ -257,11 +253,6 @@ class LoggingManagement:
 
 
     def logging(self, module, logType, message, nwkid=None, context=None):
-        #domoticz_log_api("%s %s %s %s %s %s %s" % (module, logType, message, nwkid, context, self.logging_thread, self.logging_queue))
-        # Set python3 modules logging if required
-        if self.reload_debug_settings:
-            self.zigpy_login()
-            self.reload_debug_settings = False
 
         try:
             thread_id = threading.current_thread().native_id
@@ -284,7 +275,8 @@ class LoggingManagement:
             for module_instance in module:
                 if _is_to_be_logged(self, logType, module_instance):
                     enqueue_logging( self, thread_id, module_instance, logType, message, nwkid, context )
-            
+
+    
 def _is_to_be_logged(self, logType, module):
     if logType in ( "Log", "Status", "Error"):
         return True
@@ -295,6 +287,7 @@ def _is_to_be_logged(self, logType, module):
         domoticz_error_api("%s debug module unknown %s" % (module, module))
         return True     
     return False
+
 
 def enqueue_logging( self, thread_id, module, logType, message, nwkid, context ):
     if self.logging_thread and self.logging_queue:
@@ -484,24 +477,22 @@ def logging_thread(self):
         # We loop until self.running is set to False,
         # which indicate plugin shutdown
         logging_tuple = self.logging_queue.get()
+        
         if len(logging_tuple) == 2:
-            timing, command = logging_tuple
+            _, command = logging_tuple
             if command == "QUIT":
                 domoticz_log_api("logging_thread Exit requested")
                 break
+
         elif len(logging_tuple) == 8:
-            (
-                timing,
-                thread_name,
-                thread_id,
-                module,
-                logType,
-                message,
-                nwkid,
-                context,
-            ) = logging_tuple
+            ( _, thread_name, thread_id, module, logType, message, nwkid, context, ) = logging_tuple
+
+            if self.reload_debug_settings:
+                self.zigpy_login()
+
             try:
                 context = eval(context)
+
             except Exception as e:
                 domoticz_error_api("Something went wrong and catch: context: %s" % str(context))
                 domoticz_error_api("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
@@ -528,15 +519,30 @@ def logging_thread(self):
     domoticz_log_api("logging_thread - ended")
 
 
-def configure_loggers(logger_names, mode):
-    _set_logging_level = logging.DEBUG if mode == "debug" else logging.WARNING
-
+def configure_loggers(self, logger_names, mode):
+    #domoticz_log_api( f"configure_loggers - {logger_names} {mode}")
+    if mode == "debug":
+        _set_logging_level = logging.DEBUG
+    elif mode == "warning":
+        _set_logging_level = logging.WARNING
+    elif mode == "info":
+        _set_logging_level = logging.INFO
+    else:
+        domoticz_error_api( f"configure_loggers error {logger_names} - {mode}")
+        
     for logger_name in logger_names:
+        #domoticz_log_api( f"     - {logger_name} {_set_logging_level}")
         logging.getLogger(logger_name).setLevel(_set_logging_level)
         
 
 # Loggers configurations
-def configure_zigpy_loggers(mode):
+def configure_zigpy_loggers(self, mode="warning"):
+    """ Configure Logging level for zigpy """
+    #domoticz_log_api( f"configure_zigpy_loggers -{mode}")
+    if mode == self.debugZigpy:
+        return
+    self.debugZigpy = mode
+
     logger_names = [
         "Classes.ZigpyTransport.AppGeneric",
         "aiosqlite",
@@ -549,10 +555,16 @@ def configure_zigpy_loggers(mode):
         "zigpy.quirks",
         "zigpy.zcl", "zigpy.zdo"
     ]
-    configure_loggers(logger_names, mode)
+    configure_loggers(self, logger_names, mode)
 
 
-def configure_zigpy_znp_loggers(mode):
+def configure_zigpy_znp_loggers(self, mode="warning"):
+    """ Configure Logging level for zigpy-znp """
+    #domoticz_log_api( f"configure_zigpy_znp_loggers -{mode}")
+    if mode == self.debugZNP:
+        return
+    self.debugZNP = mode
+
     logger_names = [
         "AppZnp",
         "zigpy_znp", 
@@ -562,10 +574,16 @@ def configure_zigpy_znp_loggers(mode):
         "Classes.ZigpyTransport.AppZnp", 
         "Classes.ZigpyTransport.AppGeneric"
     ]
-    configure_loggers(logger_names, mode)
+    configure_loggers(self, logger_names, mode)
 
 
-def configure_zigpy_ezsp_loggers(mode):
+def configure_zigpy_ezsp_loggers(self, mode="warning"):
+    """ Configure Logging level for bellows """
+    #domoticz_log_api( f"configure_zigpy_ezsp_loggers -{mode}")
+    if mode == self.debugEZSP:
+        return
+    self.debugEZSP = mode
+
     logger_names = [
         "AppBellows",
         "bellows", 
@@ -576,31 +594,42 @@ def configure_zigpy_ezsp_loggers(mode):
         "ZigpyTransport.AppBellows", 
         "Classes.ZigpyTransport.AppGeneric"
     ]
-    configure_loggers(logger_names, mode)
+    configure_loggers(self, logger_names, mode)
 
 
-def configure_zigpy_zigate_loggers(mode):
+def configure_zigpy_zigate_loggers(self, mode="warning"):
+    """ Configure Logging level for zigpy-zigate """
+    #domoticz_log_api( f"configure_zigpy_zigate_loggers -{mode}")
     logger_names = [
         "zigpy_zigate",
         "Classes.ZigpyTransport.AppZigate"
     ]
-    configure_loggers(logger_names, mode)
+    configure_loggers(self, logger_names, mode)
 
 
-def configure_zigpy_deconz_loggers(mode):
+def configure_zigpy_deconz_loggers(self, mode="warning"):
+    """ Configure Logging level for zigpy-deconz """
+    #domoticz_log_api( "configure_zigpy_deconz_loggers")
+    if mode == self.debugdeconz:
+        return
+    self.debugdeconz = mode
+
     logger_names = [
         "zigpy_deconz",
         "ZigpyTransport.AppDeconz",
         "Classes.ZigpyTransport.AppGeneric"
     ]
-    configure_loggers(logger_names, mode)
+    configure_loggers(self, logger_names, mode)
 
 # Main configuration function
 
-def _configure_debug_mode(self, debug_flag, config_name, config_function):
-    if not debug_flag and self.pluginconf.pluginConf[config_name]:
-        debug_flag = True
-        config_function("debug")
-    elif debug_flag and not self.pluginconf.pluginConf[config_name]:
-        debug_flag = False
-        config_function("warning")
+def _configure_debug_mode(self, config_name, config_function):
+    """ if debug_flag set to True, or ConfigName parameter set to True, enable python module logging"""
+    
+    #domoticz_log_api( f"_configure_debug_mode - {config_name}")
+   
+    if self.pluginconf.pluginConf[config_name]:
+        return config_function(self, "debug")
+
+    default_mode = "info" if self.pluginconf.pluginConf["ZigpyDefaultLoggingInfo"] else "warning"
+    config_function(self,default_mode)
