@@ -83,7 +83,7 @@ class LoggingManagement:
         _configure_debug_mode(self, "ZigpyZigate", configure_zigpy_zigate_loggers)
         _configure_debug_mode(self, "ZigpydeCONZ", configure_zigpy_deconz_loggers)
         
-        default_mode = logging.INFO if self.pluginconf.pluginConf["ZigpyDebugModeInfo"] else logging.WARNING
+        default_mode = logging.INFO if self.pluginconf.pluginConf["ZigpyDefaultLoggingInfo"] else logging.WARNING
         for param in self.pluginconf.pluginConf:
             if 'Python/' in param:
                 logger_name = param.split('/')[1]
