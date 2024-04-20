@@ -53,6 +53,8 @@ class LoggingManagement:
         self.debugdeconz = None
         
         self.reload_debug_settings = True
+
+        self.not_optimized = self.pluginconf.pluginConf.get("loggingNotOptimized", False)
         
         start_logging_thread(self)
 
@@ -266,15 +268,16 @@ class LoggingManagement:
             else:
                 context = { "StackTrace": get_stack_trace() }
                 
-        # Do not enqueue if there is nothing to log.
+        # Do not enqueue if there is nothing to log. (except if self.not_optimized set to True)
         if isinstance( module, str):
-            if _is_to_be_logged(self, logType, module):
+            if _is_to_be_logged(self, logType, module) or self.not_optimized:
                 enqueue_logging( self, thread_id, module, logType, message, nwkid, context )
 
         elif isinstance( module, list):
             for module_instance in module:
-                if _is_to_be_logged(self, logType, module_instance):
+                if _is_to_be_logged(self, logType, module_instance) or self.not_optimized:
                     enqueue_logging( self, thread_id, module_instance, logType, message, nwkid, context )
+
 
     
 def _is_to_be_logged(self, logType, module):
@@ -304,7 +307,7 @@ def enqueue_logging( self, thread_id, module, logType, message, nwkid, context )
         self.logging_queue.put(logging_tuple)
     else:
         domoticz_log_api("%s" % message)
-    
+
 
 def _loggingStatus(self, thread_name, message):
     if self.pluginconf.pluginConf["logThreadName"]:
@@ -485,38 +488,47 @@ def logging_thread(self):
                 break
 
         elif len(logging_tuple) == 8:
-            ( _, thread_name, thread_id, module, logType, message, nwkid, context, ) = logging_tuple
+            process_logging_event( self, logging_tuple)
 
-            if self.reload_debug_settings:
-                self.zigpy_login()
-
-            try:
-                context = eval(context)
-
-            except Exception as e:
-                domoticz_error_api("Something went wrong and catch: context: %s" % str(context))
-                domoticz_error_api("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
-                domoticz_error_api("      Error %s" % (str(e)))
-                return
-
-            if logType == "Error":
-                loggingError(self, thread_name, module, message, nwkid, context)
-
-            elif logType == "Debug":
-                # thread filter
-                threadFilter = [ x for x in self.threadLogConfig if self.pluginconf.pluginConf["Thread" + self.threadLogConfig[x]] == 1 ]
-                if threadFilter and thread_name not in threadFilter:
-                    continue
-
-                thread_name=thread_name + " " + thread_id
-                _logginfilter(self, thread_name, message, nwkid)
-    
-            else:
-                thread_name=thread_name + " " + thread_id
-                loggingDirector(self, thread_name, logType, message)
         else:
             domoticz_error_api("logging_thread unexpected tuple %s" % (str(logging_tuple)))
     domoticz_log_api("logging_thread - ended")
+
+
+def process_logging_event( self, logging_tuple):
+    _, thread_name, thread_id, module, logType, message, nwkid, context = logging_tuple
+
+    if self.reload_debug_settings:
+        self.zigpy_login()
+
+    try:
+        context = eval(context)
+
+    except Exception as err:
+        _catch_error_event(self, context,logging_tuple, err )
+        return
+
+    thread_name = f"{thread_name} {thread_id}"
+    
+    if logType == "Error":
+        loggingError(self, thread_name, module, message, nwkid, context)
+
+    elif logType == "Debug" and _should_log_debug(self, thread_name) and _is_to_be_logged(self, logType, module):
+        _logginfilter(self, thread_name, message, nwkid)
+
+    else:
+        thread_name=thread_name + " " + thread_id
+        loggingDirector(self, thread_name, logType, message)
+
+def _should_log_debug(self, thread_name):
+    thread_filter = [x for x in self.threadLogConfig if self.pluginconf.pluginConf[f"Thread{self.threadLogConfig[x]}"] == 1]
+    return not thread_filter or thread_name in thread_filter
+
+
+def _catch_error_event(self, context,logging_tuple, err ):
+    domoticz_error_api("Something went wrong and catch: context: %s" % str(context))
+    domoticz_error_api("      logging_thread unexpected tuple %s" % (str(logging_tuple)))
+    domoticz_error_api("      Error %s" % (str(err)))
 
 
 def configure_loggers(self, logger_names, mode):
@@ -621,7 +633,6 @@ def configure_zigpy_deconz_loggers(self, mode="warning"):
     ]
     configure_loggers(self, logger_names, mode)
 
-# Main configuration function
 
 def _configure_debug_mode(self, config_name, config_function):
     """ if debug_flag set to True, or ConfigName parameter set to True, enable python module logging"""
