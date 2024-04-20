@@ -389,30 +389,23 @@ async def worker_loop(self):
             break
 
         data = json.loads(command_to_send)
+        await process_incoming_command(self, data)
 
-        if self.pluginconf.pluginConf.get("ZigpyReactTime", False):
-            t_start = int(1000 * time.time())
 
-        try:
-            await dispatch_command(self, data)
+async def process_incoming_command(self, data):
+    try:
+        await dispatch_command(self, data)
 
-        except (DeliveryError, APIException, ControllerException, InvalidFrame, 
-                CommandNotRecognized, ValueError, InvalidResponse, 
-                InvalidCommandResponse, asyncio.TimeoutError, RuntimeError) as e:
-            log_exception(self, type(e).__name__, e, data.get("cmd", ""), data.get("datas", ""))
-            if isinstance(e, (APIException, ControllerException)):
-                await asyncio.sleep(1.0)
+    except (DeliveryError, APIException, ControllerException, InvalidFrame, 
+            CommandNotRecognized, ValueError, InvalidResponse, 
+            InvalidCommandResponse, asyncio.TimeoutError, RuntimeError) as e:
+        log_exception(self, type(e).__name__, e, data.get("cmd", ""), data.get("datas", ""))
+        if isinstance(e, (APIException, ControllerException)):
+            await asyncio.sleep(1.0)
 
-        except Exception as e:
-            self.log.logging("TransportZigpy", "Error", f"Error while receiving a Plugin command: >{e}<")
-            handle_thread_error(self, e, data)
-
-        if self.pluginconf.pluginConf.get("ZigpyReactTime", False):
-            t_end = int(1000 * time.time())
-            t_elapse = t_end - t_start
-            self.statistics.add_timing_zigpy(t_elapse)
-            if t_elapse > 1000:
-                self.log.logging("TransportZigpy", "Log", f"(zigpyThread) spent more than 1s ({t_elapse} ms) frame: {data}")
+    except Exception as e:
+        self.log.logging("TransportZigpy", "Error", f"Error while receiving a Plugin command: >{e}<")
+        handle_thread_error(self, e, data)
 
 
 async def get_next_command(self):
@@ -691,7 +684,24 @@ def check_transport_readiness(self):
 
     return False
 
+def measure_execution_time(func):
+    async def wrapper(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False):
+        t_start = None
+        if self.pluginconf.pluginConf.get("ZigpyReactTime", False):
+            t_start = int(1000 * time.time())
 
+        try:
+            await func(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False)
+
+        finally:
+            if t_start:
+                t_end = int(1000 * time.time())
+                t_elapse = t_end - t_start
+                self.statistics.add_timing_zigpy(t_elapse)
+                self.log.logging("TransportZigpy", "Log", f"| (transport_request) | {t_elapse} | {Function} | {destination.nwk} | {destination.ieee} | {destination.model} | {destination.manufacturer_id} | {destination.is_initialized} | {destination.rssi} | {destination.lqi} |")
+    return wrapper
+
+@measure_execution_time
 async def transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False):
     """Send a zigbee message based on different arguments
 
