@@ -254,6 +254,8 @@ class TransportStatistics:
         _duration = _duration % 60
         _sec = _duration % 60
         domoticz_status_api("Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
+        domoticz_status_api( f"ZigpyThread Max: {self._max_reading_zigpy_timing} ms with an average of: {self._average_reading_zigpy_timing} ms")
+
 
     def writeReport(self):
 
