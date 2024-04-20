@@ -14,7 +14,7 @@ from Modules.domoticzAbstractLayer import (domoticz_error_api,
 
 
 class TransportStatistics:
-    def __init__(self, pluginconf):
+    def __init__(self, pluginconf, log):
         self._pdmLoads = 0  # count the number of PDM Loads ( should be 1 max)
         self._crcErrors = 0  # count of crc errors
         self._frameErrors = 0  # count of frames error
@@ -46,6 +46,7 @@ class TransportStatistics:
         self._start = int(time())
         self.TrendStats = []
         self.pluginconf = pluginconf
+        self.log = log
 
     # Statistics methods
     def starttime(self):
@@ -63,14 +64,7 @@ class TransportStatistics:
         self._average_reading_zigpy_timing = int((self._cumul_reading_zigpy_timing / self._cnt_reading_zigpy_timing))
         if timing > self._max_reading_zigpy_timing:
             self._max_reading_zigpy_timing = timing
-            domoticz_log_api(
-                "Zigate Thread Serial Read Max: %s ms with an of average: %s ms"
-                % (self._max_reading_zigpy_timing, self._average_reading_zigpy_timing)
-            )
-        domoticz_log_api(
-            "Zigate Thread Serial Read Max: %s ms with an of average: %s ms"
-            % (self._max_reading_zigpy_timing, self._average_reading_zigpy_timing)
-        )
+            self.log.logging("TransportZigpy", "Log", f"ZigpyThread Max: {self._max_reading_zigpy_timing} ms with an average of: {self._average_reading_zigpy_timing} ms")
 
         
     def add_timing_thread(self, timing):
@@ -80,7 +74,7 @@ class TransportStatistics:
         if timing > self._max_reading_thread_timing:
             self._max_reading_thread_timing = timing
             domoticz_log_api(
-                "Zigate Thread Serial Read Max: %s ms with an of average: %s ms"
+                "Coordinator Thread Serial Read Max: %s ms with an of average: %s ms"
                 % (self._max_reading_thread_timing, self._average_reading_thread_timing)
             )
 
@@ -92,7 +86,7 @@ class TransportStatistics:
         if timing > self._maxTiming8000:
             self._maxTiming8000 = timing
             domoticz_log_api(
-                "Zigate command round trip 0x8000 Max: %s ms with an of average: %s ms"
+                "Coordinator command round trip 0x8000 Max: %s ms with an of average: %s ms"
                 % (self._maxTiming8000, self._averageTiming8000)
             )
 
@@ -104,7 +98,7 @@ class TransportStatistics:
         if timing > self._maxTiming8011:
             self._maxTiming8011 = timing
             domoticz_log_api(
-                "Zigate command round trip 0x8011 Max: %s ms with an of average: %s ms"
+                "Coordinator command round trip 0x8011 Max: %s ms with an of average: %s ms"
                 % (self._maxTiming8011, self._averageTiming8011)
             )
 
@@ -116,7 +110,7 @@ class TransportStatistics:
         if timing > self._maxTiming8012:
             self._maxTiming8012 = timing
             domoticz_log_api(
-                "Zigate command round trip 0x8012 Max: %s ms with an of average: %s ms"
+                "Coordinator command round trip 0x8012 Max: %s ms with an of average: %s ms"
                 % (self._maxTiming8012, self._averageTiming8012)
             )
 
@@ -128,7 +122,7 @@ class TransportStatistics:
         if timing > self._maxRxProcesses:
             self._maxRxProcesses = timing
             domoticz_log_api(
-                "Zigate receive message processing time Max: %s ms with an of average: %s ms"
+                "Coordinator receive message processing time Max: %s ms with an of average: %s ms"
                 % (self._maxRxProcesses, self._averageRxProcess)
             )
 
@@ -200,10 +194,10 @@ class TransportStatistics:
             return
         domoticz_status_api("Statistics on message")
         domoticz_status_api("   PDM load(s)      : %s" % self._pdmLoads)
-        domoticz_status_api("ZiGate reacting time")
+        domoticz_status_api("Coordinator reacting time")
         domoticz_status_api("   Max              : %s sec" % (self._maxTiming8000))
         domoticz_status_api("   Average          : %s sec" % (self._averageTiming8000))
-        domoticz_status_api("ZiGate processing time on Rx")
+        domoticz_status_api("Coordinator processing time on Rx")
         domoticz_status_api("   Max              : %s sec" % (self._maxRxProcesses))
         domoticz_status_api("   Average          : %s sec" % (self._averageRxProcess))
         domoticz_status_api("Sent:")
@@ -260,6 +254,8 @@ class TransportStatistics:
         _duration = _duration % 60
         _sec = _duration % 60
         domoticz_status_api("Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
+        domoticz_status_api( f"ZigpyThread Max: {self._max_reading_zigpy_timing} ms with an average of: {self._average_reading_zigpy_timing} ms")
+
 
     def writeReport(self):
 
