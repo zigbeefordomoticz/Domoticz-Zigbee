@@ -119,13 +119,11 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     self.log.logging( "TransportZigpy", "Debug", f"start_zigpy_task -extendedPANID {self.pluginconf.pluginConf['extendedPANID']} {extended_pan_id}", )
 
-    #task = asyncio.create_task(
-    #    radio_start(self, self.pluginconf, self.use_of_zigpy_persistent_db, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id),
-    #    name=f"radio_start-{self._radiomodule}-{self._serialPort}"
-    #)
     await radio_start(self, self.pluginconf, self.use_of_zigpy_persistent_db, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id),
 
     # Run forever
+    self.writer_queue = queue.Queue()  # We MUST use queue and not asyncio.Queue, because it is not compatible with the Domoticz framework
+
     await worker_loop(self)
 
     # We exit the worker_loop, shutdown time
@@ -224,10 +222,6 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort):
         zigpy.config.CONF_OTA: {},
         "handle_unknown_devices": True,
     }
-
-    if not self.pluginconf.pluginConf["EventLoopThread"]:
-        self.log.logging("TransportZigpy", "Status", "Disable Bellows specific EventLoop thread")
-        config[bellows_conf.CONF_USE_THREAD] = False
 
     if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
         self.log.logging("TransportZigpy", "Status", "Set The maximum number of end device children that Coordinater will support to 0")
@@ -340,7 +334,6 @@ async def _radio_startup(self, pluginconf, use_of_zigpy_persistent_db, new_netwo
     post_coordinator_startup(self, radiomodule)
     
 
-
 def post_coordinator_startup(self, radiomodule):
     # Send Network information to plugin, in order to poplulate various objetcs
     self.forwarder_queue.put(build_plugin_8009_frame_content(self, radiomodule))
@@ -374,9 +367,7 @@ def display_network_infos(self):
 async def worker_loop(self):
     self.log.logging("TransportZigpy", "Debug", "worker_loop - ZigyTransport: worker_loop start.")
 
-    self.writer_queue = queue.Queue()  # We MUST use queue and not asyncio.Queue, because it is not compatible with the Domoticz framework
-
-    while self.zigpy_running and self.writer_queue is not None:
+    while self.zigpy_running:
         command_to_send = await get_next_command(self)
 
         if command_to_send is None:
@@ -388,11 +379,11 @@ async def worker_loop(self):
             self.zigpy_running = False
             break
 
-        data = json.loads(command_to_send)
-        await process_incoming_command(self, data)
+        await process_incoming_command(self, command_to_send),
 
 
-async def process_incoming_command(self, data):
+async def process_incoming_command(self, command_to_send):
+    data = json.loads(command_to_send)
     try:
         await dispatch_command(self, data)
 
