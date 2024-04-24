@@ -50,7 +50,6 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
     async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
-        LOGGER.info("deCONZ Configuration: %s", self.config)
 
 
     async def startup(self, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
