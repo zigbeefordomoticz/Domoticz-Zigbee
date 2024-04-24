@@ -114,14 +114,14 @@ def ts0601_actuator( self, NwkId, command, value=None):
     if str_dp is None:
         self.log.logging("Tuya0601", "Error", "ts0601_actuator - unknow command %s in config file" % command)
         return False
-    
+
     if "action_Exp" in dps_mapping[ str_dp ]:
         # Correct Value to proper format
         value = evaluate_expression_with_data(self, dps_mapping[ str_dp ]["action_Exp"], value)
         self.log.logging("Tuya0601", "Debug", "      corrected value: %s" % ( value ))
-        
+
     dp = int(str_dp, 16)
-    
+
     self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s %s" %(
         command, dp, value))
 
@@ -130,12 +130,19 @@ def ts0601_actuator( self, NwkId, command, value=None):
         ts0601_tuya_action(self, NwkId, "01", command, dp, dt, value)
         return
 
+    func_source = None
     if command in TS0601_COMMANDS:
-        # TS0601_COMMANDS[ command ] is callable
         func = TS0601_COMMANDS[ command ]
-
+        func_source = "TS0601_COMMANDS"
     else:
         func = DP_ACTION_FUNCTION[ command ]
+        func_source = "DP_ACTION_FUNCTION"
+
+    if not callable( func ):
+        # Huston we have a problem
+        self.log.logging("Tuya0601", "Error", "ts0601_actuator - don't get a callable function for nwkid: %s %s %s (%s) source: %s command: %s, value: %s , dp: %s, str_dp: %s %s" %(
+            NwkId, model_name, func, type(func), func_source, command, value, dp, str_dp, dps_mapping), NwkId)
+        return
 
     if value is not None:
         func(self, NwkId, "01", dp, value )
