@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: deufo & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module : logging.py
 
@@ -54,8 +61,6 @@ class LoggingManagement:
         
         self.reload_debug_settings = True
 
-        self.not_optimized = self.pluginconf.pluginConf.get("loggingNotOptimized", False)
-        
         start_logging_thread(self)
 
         # Thread log filter configuration
@@ -268,18 +273,16 @@ class LoggingManagement:
             else:
                 context = { "StackTrace": get_stack_trace() }
                 
-        # Do not enqueue if there is nothing to log. (except if self.not_optimized set to True)
         if isinstance( module, str):
-            if _is_to_be_logged(self, logType, module) or self.not_optimized:
+            if _is_to_be_logged(self, logType, module):
                 enqueue_logging( self, thread_id, module, logType, message, nwkid, context )
 
         elif isinstance( module, list):
             for module_instance in module:
-                if _is_to_be_logged(self, logType, module_instance) or self.not_optimized:
+                if _is_to_be_logged(self, logType, module_instance):
                     enqueue_logging( self, thread_id, module_instance, logType, message, nwkid, context )
 
 
-    
 def _is_to_be_logged(self, logType, module):
     if logType in ( "Log", "Status", "Error"):
         return True
