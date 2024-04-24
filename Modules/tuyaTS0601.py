@@ -110,6 +110,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
         self.log.logging("Tuya0601", "Error", "ts0601_actuator - unknow command %s in core plugin" % command)
         return False
     
+    # Check if we have the command via a TS0601_DP
     str_dp = ts0601_actuator_dp( command, dps_mapping)
     if str_dp is None:
         self.log.logging("Tuya0601", "Error", "ts0601_actuator - unknow command %s in config file" % command)
@@ -125,7 +126,7 @@ def ts0601_actuator( self, NwkId, command, value=None):
     self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s %s" %(
         command, dp, value))
 
-    if command in TS0601_COMMANDS and isinstance(TS0601_COMMANDS[ command ], list):
+    if command in TS0601_COMMANDS and isinstance(TS0601_COMMANDS[ command ], (list, tuple)):
         dt = TS0601_COMMANDS[ command ][1]
         ts0601_tuya_action(self, NwkId, "01", command, dp, dt, value)
         return
@@ -140,15 +141,23 @@ def ts0601_actuator( self, NwkId, command, value=None):
 
     if not callable( func ):
         # Huston we have a problem
-        self.log.logging("Tuya0601", "Error", "ts0601_actuator - don't get a callable function for nwkid: %s %s %s (%s) source: %s command: %s, value: %s , dp: %s, str_dp: %s %s" %(
-            NwkId, model_name, func, type(func), func_source, command, value, dp, str_dp, dps_mapping), NwkId)
+        _context = {
+            "Nwkid": NwkId,
+            "Model":model_name,
+            "command": command,
+            "value": value,
+            "dp": dp,
+            "str_dp": str_dp,
+            "dps_mapping": dps_mapping
+        }
+        self.log.logging("Tuya0601", "Error", "ts0601_actuator - don't get a callable function for nwkid: %s" %( NwkId ), nwkid=NwkId, context=_context)
+
         return
 
     if value is not None:
         func(self, NwkId, "01", dp, value )
     else:
         func(self, NwkId, "01", dp )
-
 
 # Helpers  
 
