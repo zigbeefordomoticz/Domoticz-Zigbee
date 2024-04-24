@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Author: pipiche38
 #
+
 """
 Class PluginConf
 
@@ -318,7 +319,7 @@ SETTINGS = {
             "ZLinky": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ZclClusters": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ZiGateReactTime": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
-            "ZigpyReactTime": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "ZigpyReactTime": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Zigpy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ZigpyEZSP": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ZigpyTopology": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
@@ -382,8 +383,6 @@ SETTINGS = {
             "enableZigpyPersistentInFile": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "enableZigpyPersistentInMemory": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "EventLoopInstrumentation": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
-            "EventLoopThread": {"type": "bool","default": 1,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
-            "loggingNotOptimized": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
         },
     },
     "Reserved": {
