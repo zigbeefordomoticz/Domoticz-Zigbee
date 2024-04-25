@@ -18,9 +18,9 @@ from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.domoticzAbstractLayer import (
     FreeUnit, domo_create_api, domo_delete_widget, domo_read_Name,
     domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
-    domo_update_api, domo_update_name, domo_update_SwitchType_SubType_Type,
-    find_first_unit_widget_from_deviceID)
-from Modules.tools import Hex_Format, is_hex
+    domo_read_Typename, domo_update_api, domo_update_name,
+    domo_update_SwitchType_SubType_Type, find_first_unit_widget_from_deviceID)
+from Modules.tools import Hex_Format, is_domoticz_latest_typename, is_hex
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
 from Zigbee.zclCommands import (zcl_group_level_move_to_level,
                                 zcl_group_move_to_level_stop,
@@ -44,6 +44,21 @@ WIDGET_STYLE = {
     "ColorControlRGB": (241, 2, 7),
     "ColorControlRGBWW": (241, 4, 7),
     "ColorControlFull": (241, 7, 7),
+}
+
+WIDGET_STYLE_TO_DOMOTICZ_TYPEMAP = {
+    "Plug": "On/Off ",
+    "Switch": "On/Off ",
+    "LvlControl": "Dimmer",
+    "BlindPercentInverted": "BlindsPercentage",
+    "WindowCovering": "VenetianBlindsEU",
+    "Venetian": "VenetianBlindsEU",
+    "VenetianInverted": "VenetianBlindsEU",
+    "ColorControlWW": "CW_WW",
+    "ColorControlRGB": "RGB",
+    "ColorControlRGBWW": "RGB_CW_WW",
+    "ColorControlFull": "RGB_CW_WW_Z",
+
 }
 
 
@@ -122,12 +137,26 @@ def update_domoticz_group_device_widget(self, GroupId):
         return
 
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
+
+    if is_domoticz_latest_typename(self):
+        current_typename = domo_read_Typename(self, self.Devices, GroupId, unit)
+        new_typename = get_typename(Type_, Subtype_, SwitchType_)
+
+        self.logging("Debug", f"      Looking to update Unit: {unit} from {current_typename} to {new_typename}")
+        if current_typename != new_typename:
+            domo_update_SwitchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_, Typename_=new_typename)
+
+        return
+
+    # Old fashion we rely only on Type_, Subtype_, SwitchType_
     current_switchType, current_Subtype, current_Type = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
-    self.logging( "Debug", "      Looking to update Unit: %s from %s %s %s to %s %s %s"% (
-        unit, current_Type, current_Subtype, current_switchType, Type_, Subtype_, SwitchType_, ),)
+    self.logging("Debug", f"      Looking to update Unit: {unit} from {current_Type} {current_Subtype} {current_switchType} to {Type_} {Subtype_} {SwitchType_}")
 
     domo_update_SwitchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_)
 
+
+def get_typename(Type_, Subtype_, SwitchType_):
+    return WIDGET_STYLE_TO_DOMOTICZ_TYPEMAP.get(WIDGET_STYLE.get((Type_, Subtype_, SwitchType_)))
 
 def best_group_widget(self, GroupId):
 

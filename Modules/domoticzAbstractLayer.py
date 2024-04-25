@@ -480,17 +480,15 @@ def domo_update_name(self, Devices, DeviceID_, Unit_, Name_):
     Devices[Unit_].Update(**update_params)
 
 
-def domo_update_SwitchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0, Subtype_=0, Switchtype_=0):
+def domo_update_SwitchType_SubType_Type(self, Devices, DeviceID_, Unit_, Type_=0, Subtype_=0, Switchtype_=0, Typename_=None):
  
     self.log.logging("AbstractDz", "Debug", "domo_update_SwitchType_SubType_Type DeviceID: %s,Unit: %s,Type: %s,Subtype: %s,Switchtype: %s" %(
         DeviceID_, Unit_, Type_, Subtype_, Switchtype_))
 
     if DOMOTICZ_EXTENDED_API:
-        # Due to bug https://github.com/domoticz/domoticz/issues/6027 (on extended Framework )
-        # Devices[DeviceID_].Units[Unit_].Type = Type_
-        # Devices[DeviceID_].Units[Unit_].Subtype = Subtype_
-        # Devices[DeviceID_].Units[Unit_].Switchtype = Switchtype_
-        # Devices[DeviceID_].Units[Unit_].Update(Log=True)
+        # With Domoticz Extended the change of Widget type, can be done only via Typename
+        if Typename_:
+            Devices[DeviceID_].Units[Unit_].Update(TypeName=Typename_)
         return
     
     update_params = {
@@ -610,6 +608,15 @@ def domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit):
         _unit = Devices[Unit]
 
     return _unit.SwitchType, _unit.SubType, _unit.Type
+
+def domo_read_Typename(self, Devices, DeviceID, Unit):
+    self.log.logging("AbstractDz", "Debug", f"domo_read_Typename: DeviceID: {DeviceID} Unit {Unit}")
+    if DOMOTICZ_EXTENDED_API:
+        _unit = Devices[DeviceID].Units[Unit]
+    else:
+        _unit = Devices[Unit]
+
+    return _unit.TypeName
 
 
 def _is_meter_widget(self, Devices, DeviceID_, Unit_):

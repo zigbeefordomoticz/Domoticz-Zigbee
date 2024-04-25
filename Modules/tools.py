@@ -1624,7 +1624,19 @@ def is_domoticz_2023(self):
     
 def is_domoticz_above_2023(self):
     return self.DomoticzMajor > 2023
-    
+
+
+def is_domoticz_bellow_2024(self):
+    return self.DomoticzMajor < 2024
+
+
+def is_domoticz_2024(self):
+    return self.DomoticzMajor == 2024
+
+
+def is_domoticz_above_2024(self):
+    return self.DomoticzMajor > 2024
+
 def is_domoticz_new_API(self):
 
     'is_domoticz_new_API() False True 1 15356'
@@ -1640,9 +1652,24 @@ def is_domoticz_new_API(self):
     # Domoticz 2024 !
     return True
 
+def is_domoticz_latest_typename(self):
+    """Checks if the Domoticz binary includes the latest typename."""
+
+    # If Domoticz version is below 2024, it's not the latest typename.
+    if is_domoticz_bellow_2024(self):
+        return False
+
+    # If DomoticzMinor is greater than 4 or DomoticzBuild is 15956 or higher, it's the latest typename.
+    if self.DomoticzMinor > 4 or self.DomoticzBuild >= 15956:
+        return True
+
+    # Otherwise, it's not the latest typename.
+    return False
+
 
 def is_domoticz_new_blind(self):
     return is_domoticz_above_2022_2(self)
+
 
 def is_domoticz_update_SuppressTriggers( self ):
     
@@ -1659,28 +1686,41 @@ def is_domoticz_update_SuppressTriggers( self ):
 
 
 def is_domoticz_touch(self):
-    if self.VersionNewFashion:
+    """Checks if the Domoticz version supports touch."""
+
+    # If VersionNewFashion flag is set or DomoticzMajor is 2022 or higher, it supports touch.
+    if self.VersionNewFashion or self.DomoticzMajor >= 2022:
         return True
-    if self.DomoticzMajor >= 2022:
-        return True
+
+    # If DomoticzMajor is 4 and DomoticzMinor is 10547 or higher, it supports touch.
     return self.DomoticzMajor == 4 and self.DomoticzMinor >= 10547
 
 
+def get_device_config_param(self, NwkId, config_parameter):
+    """Retrieve config_parameter from the Param section in Config or Device"""
 
-def get_device_config_param( self, NwkId, config_parameter):
-    """ Retreive config_parameter from the Param section in Config or Device"""
-    
-    self.log.logging("Input", "Debug", "get_device_config_param: %s Config: %s" %( NwkId,config_parameter ))
-    
-    if NwkId not in self.ListOfDevices:
-        return None
-    if "Param" not in self.ListOfDevices[NwkId]:
-        return None
-    if config_parameter not in self.ListOfDevices[NwkId]["Param"]:
-        return None
-        
-        
-    self.log.logging("Input", "Debug", "get_device_config_param: %s Config: %s return %s" %( 
-        NwkId,config_parameter, self.ListOfDevices[NwkId]["Param"][ config_parameter ]))
+    # Log debug information
+    self.log.logging("Input", "Debug", f"get_device_config_param: {NwkId} Config: {config_parameter}")
 
-    return self.ListOfDevices[NwkId]["Param"][ config_parameter ]
+    # Get the device dictionary for the given NwkId, defaulting to None if not found
+    device = self.ListOfDevices.get(NwkId)
+
+    # If device dictionary does not exist, return None
+    if not device:
+        return None
+
+    # Get the "Param" section dictionary from the device, defaulting to None if not found
+    param_section = device.get("Param")
+
+    # If "Param" section dictionary does not exist, return None
+    if not param_section:
+        return None
+
+    # Get the value of config_parameter from the "Param" section, defaulting to None if not found
+    param_value = param_section.get(config_parameter)
+
+    # Log debug information
+    self.log.logging("Input", "Debug", f"get_device_config_param: {NwkId} Config: {config_parameter} return {param_value}")
+
+    # Return the value of config_parameter
+    return param_value
