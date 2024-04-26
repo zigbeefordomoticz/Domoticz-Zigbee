@@ -242,7 +242,7 @@ def extract_legacy_report(self, reportLQI):
         self.logging("Debug", "extract_report - found item: %s - %s" %(node1, node1_name))
 
         # Let browse the neighbours
-        for node2 in reportLQI[node1]["Neighbours"]:
+        for node2 in list(reportLQI[node1]["Neighbours"]):
             # Check it exists
             if (node1 == node2) or (node2 != "0000" and node2 not in self.ListOfDevices):
                 # We remove nodes which are unknown
@@ -250,12 +250,6 @@ def extract_legacy_report(self, reportLQI):
 
             # Get nickname
             node2_name = get_node_name( self, node2)
-
-            self.logging("Debug2", "                     ---> %15s (%s) %s %s %s" % (
-                node2_name, node2, 
-                reportLQI[node1]["Neighbours"][x]["_relationshp"],
-                reportLQI[node1]["Neighbours"][x]["_devicetype"],
-                int(reportLQI[node1]["Neighbours"][node2]["_lnkqty"], 16) ))
 
             if "Neighbours" not in reportLQI[node1]:
                 self.logging("Error", "Missing attribute :%s for (%s,%s)" % ("Neighbours", node1, node2))
@@ -272,7 +266,6 @@ def extract_legacy_report(self, reportLQI):
             if ( node1, node2) in _check_duplicate or ( node2, node1) in _check_duplicate:
                 self.logging( "Debug", "Skip (%s,%s) as there is already %s" % ( node1, x, str(_check_duplicate)))
                 continue
-
 
             _check_duplicate.append(( node1, node2))
 
