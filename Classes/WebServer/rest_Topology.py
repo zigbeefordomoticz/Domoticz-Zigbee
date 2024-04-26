@@ -214,100 +214,9 @@ def extract_list_of_legacy_report(self, _response, _filename):
     return _topo, _timestamps_lst
 
     
-#def extract_legacy_report(self, reportLQI):
-#    _check_duplicate = []  # List of tuble ( item, x) to prevent adding twice the same relation
-#
-#    _topo = []  # Use to store the list to be send to the Browser
-#
-#    self.logging("Debug", "RAW report" )
-#    for item in reportLQI:
-#        for x in reportLQI[item]["Neighbours"]:
-#            self.logging("Debug", "%s - %s - %s - %s - %s - %s" %(
-#                get_node_name( self, item),
-#                reportLQI[item]["Neighbours"][x]["_relationshp"],
-#                get_node_name( self, x),
-#                reportLQI[item]["Neighbours"][x]["_devicetype"],
-#                reportLQI[item]["Neighbours"][x]["_lnkqty"],
-#                reportLQI[item]["Neighbours"][x]["_relationshp"]
-#            ))
-#
-#    for node1 in reportLQI:
-#        if node1 != "0000" and node1 not in self.ListOfDevices:
-#            # We remove nodes which are unknown
-#            continue
-#
-#        # Get the Nickname
-#        node1_name = get_node_name( self, item)
-#
-#        self.logging("Debug", "extract_report - found item: %s - %s" %(node1, node1_name))
-#
-#        # Let browse the neighbours
-#        for node2 in list(reportLQI[node1]["Neighbours"]):
-#            # Check it exists
-#            if (node1 == node2) or (node2 != "0000" and node2 not in self.ListOfDevices):
-#                # We remove nodes which are unknown
-#                continue
-#
-#            # Get nickname
-#            node2_name = get_node_name( self, node2)
-#
-#            if "Neighbours" not in reportLQI[node1]:
-#                self.logging("Error", "Missing attribute :%s for (%s,%s)" % ("Neighbours", node1, node2))
-#                continue
-#
-#            for attribute in ( "_relationshp", "_lnkqty", "_devicetype", ):
-#                if attribute not in reportLQI[node1]["Neighbours"][node2]:
-#                    self.logging("Error", "Missing attribute :%s for (%s,%s)" % (attribute, node1, node2))
-#                    continue
-#
-#            if reportLQI[node1]["Neighbours"][node2]["_relationshp"] in ("Former Child", "None"):
-#                continue
-#
-#            if ( node1, node2) in _check_duplicate or ( node2, node1) in _check_duplicate:
-#                self.logging( "Debug", "Skip (%s,%s) as there is already %s" % ( node1, x, str(_check_duplicate)))
-#                continue
-#
-#            _check_duplicate.append(( node1, node2))
-#
-#            # Build the relation for the graph
-#            _relation = {
-#                "Father": node1_name,
-#                "Child": node2_name,
-#                "_lnkqty": int(
-#                    reportLQI[item]["Neighbours"][x]["_lnkqty"], 16
-#                ),
-#                "DeviceType": reportLQI[node1]["Neighbours"][x]["_devicetype"],
-#
-#            }
-#            self.logging( "Debug", "Relationship - %15.15s (%s) - %15.15s (%s) %3s %s" % (
-#                _relation["Father"], node1, _relation["Child"], node2, _relation["_lnkqty"], _relation["DeviceType"]),)
-#            _topo.append(_relation)
-#
-#    self.logging("Debug", "WebUI report" )
-#
-#    for x in _topo:
-#        self.logging( "Debug", "Relationship - %15.15s - %15.15s %3s %s" % (
-#            x["Father"], x["Child"], x["_lnkqty"], x["DeviceType"]),)
-#
-#    del _check_duplicate
-#
-#    return _topo
-
 def extract_legacy_report(self, reportLQI):
     _check_duplicate = []  # List of tuple (item, x) to prevent adding twice the same relation
     _topo = []  # Use to store the list to be sent to the Browser
-
-    self.logging("Debug", "RAW report")
-    for item, neighbours_info in reportLQI.items():
-        for x, neighbour_info in neighbours_info.get("Neighbours", {}).items():
-            self.logging("Debug", "%s - %s - %s - %s - %s - %s" % (
-                get_node_name(self, item),
-                neighbour_info.get("_relationshp", "Unknown"),
-                get_node_name(self, x),
-                neighbour_info.get("_devicetype", "Unknown"),
-                neighbour_info.get("_lnkqty", "Unknown"),
-                neighbour_info.get("_relationshp", "Unknown")
-            ))
 
     for node1, neighbours_info in reportLQI.items():
         if node1 != "0000" and node1 not in self.ListOfDevices:
@@ -340,7 +249,7 @@ def extract_legacy_report(self, reportLQI):
                 continue
 
             if (node1, node2) in _check_duplicate or (node2, node1) in _check_duplicate:
-                self.logging("Debug", "Skip (%s,%s) as there is already %s" % (node1, x, str(_check_duplicate)))
+                self.logging("Debug", "Skip (%s,%s) as there is already %s" % (node1, node2, str(_check_duplicate)))
                 continue
 
             _check_duplicate.append((node1, node2))
@@ -357,13 +266,8 @@ def extract_legacy_report(self, reportLQI):
                 _relation["Father"], node1, _relation["Child"], node2, _relation["_lnkqty"], _relation["DeviceType"]))
             _topo.append(_relation)
 
-    self.logging("Debug", "WebUI report")
-
-    for x in _topo:
-        self.logging("Debug", "Relationship - %15.15s - %15.15s %3s %s" % (
-            x["Father"], x["Child"], x["_lnkqty"], x["DeviceType"]))
-
     return _topo
+
 
 def get_device_type( self, node):
     if node not in self.ListOfDevices:
@@ -381,6 +285,7 @@ def get_node_name( self, node):
     if "ZDeviceName" in self.ListOfDevices[node] and self.ListOfDevices[node]["ZDeviceName"] not in ( "",{}):
             return self.ListOfDevices[node]["ZDeviceName"]
     return node
+
 
 def check_sibbling(self, reportLQI):
     # for node1 in sorted(reportLQI):
@@ -579,7 +484,6 @@ def get_lqi_from_neighbours(self, father, child, time_stamp=None):
                 continue
             return item2[ node ]["_lnkqty"] 
     return 1
-
 
 # Zigpy Topology helpers
 def zigpy_topology_filename(self):
