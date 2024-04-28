@@ -41,7 +41,6 @@ def Decode8048(self, Devices, MsgData, MsgLQI):
     elif self.ListOfDevices[sAddr]['Status'] == 'Leave':
         self.ListOfDevices[sAddr]['Status'] = 'Leave'
         self.ListOfDevices[sAddr]['Heartbeat'] = 0
-        self.log.logging('Input', 'Error', "Receiving a leave from %s/%s while device is '%s' status." % (sAddr, MsgExtAddress, self.ListOfDevices[sAddr]['Status']))
  
     zdevname = ''
 
