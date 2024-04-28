@@ -136,7 +136,8 @@ class OTAManagement(object):
         IEEE2NWK,
         log,
         PluginHealth,
-        readZclClusters
+        readZclClusters,
+        internet_available
         ):
         
         # Pointers to external objects
@@ -153,6 +154,7 @@ class OTAManagement(object):
         self.log = log
         self.PluginHealth = PluginHealth
         self.readZclClusters = readZclClusters
+        self.internet_available = internet_available
 
         # Properties for firmware/image management
         self.ListOfImages = {}  # List of available firmware loaded at plugin startup
@@ -1380,6 +1382,9 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
 
 def loading_zigbee_ota_index( self ):
     
+    if not self.internet_available:
+        return
+
     self.zigbee_ota_index = []
     if self.pluginconf.pluginConf["internetAccess"]:
         self.zigbee_ota_index = _load_json_from_url( self, self.pluginconf.pluginConf["ZigbeeOTA_Repository"] )
