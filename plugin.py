@@ -124,20 +124,24 @@ from Classes.OTA import OTAManagement
 from Classes.PluginConf import PluginConf
 from Classes.TransportStats import TransportStatistics
 from Classes.WebServer.WebServer import WebServer
+from Classes.ZigpyTopology import ZigpyTopology
 from Modules.basicOutputs import (ZigatePermitToJoin, leaveRequest,
                                   setExtendedPANID, setTimeServer,
                                   start_Zigate, zigateBlueLed)
 from Modules.casaia import restart_plugin_reset_ModuleIRCode
-from Modules.checkingUpdate import (checkFirmwareUpdate, checkPluginUpdate,
-                                    checkPluginVersion)
+from Modules.checkingUpdate import (check_plugin_version_against_dns,
+                                    is_internet_available,
+                                    is_plugin_update_available,
+                                    is_zigate_firmware_available)
 from Modules.command import domoticz_command
 from Modules.database import (LoadDeviceList, WriteDeviceList,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
-from Modules.domoticzAbstractLayer import (
-    domo_read_Name, find_legacy_DeviceID_from_unit,
-    how_many_legacy_slot_available, is_domoticz_extended,
-    load_list_of_domoticz_widget, retreive_widgetid_from_deviceId_unit)
+from Modules.domoticzAbstractLayer import (domo_read_Name,
+                                           find_legacy_DeviceID_from_unit,
+                                           how_many_legacy_slot_available,
+                                           is_domoticz_extended,
+                                           load_list_of_domoticz_widget)
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.paramDevice import initialize_device_settings
@@ -153,8 +157,8 @@ from Modules.readZclClusters import load_zcl_cluster
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.schneider_wiser import wiser_thermostat_monitoring_heating_demand
 from Modules.tools import (build_list_of_device_model,
-                           chk_and_update_IEEE_NWKID, how_many_devices,
-                           lookupForIEEE, night_shift_jobs, removeDeviceInList)
+                           chk_and_update_IEEE_NWKID, lookupForIEEE,
+                           night_shift_jobs, removeDeviceInList)
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import (zigate_erase_eeprom,
                                     zigate_get_firmware_version,
@@ -165,7 +169,6 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
-from Classes.ZigpyTopology import ZigpyTopology
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -184,6 +187,7 @@ class BasePlugin:
 
     def __init__(self):
 
+        self.internet_available = None
         self.ListOfDevices = (
             {}
         )  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
@@ -391,10 +395,9 @@ class BasePlugin:
                 self.onStop()
                 return
 
-        #if self.pluginconf.pluginConf["Garbage"]:
-        #    # Enable the cycle detector
-        #    Domoticz.Log("Setup Garbage set_debug to %s" %gc.DEBUG_LEAK)
-        #    gc.set_debug(gc.DEBUG_LEAK)
+        if self.internet_available is None:
+            is_internet_available()
+        self.internet_available = bool(self.pluginconf.pluginConf["internetAccess"])
 
         # Create Domoticz Sub menu
         if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
@@ -887,7 +890,8 @@ class BasePlugin:
             return
 
         # Checking Version
-        _check_plugin_version( self )
+        if self.internet_available:
+            _check_plugin_version( self )
 
         if self.transport == "None":
             return
@@ -1385,7 +1389,8 @@ def start_OTAManagement(self, homefolder):
         self.IEEE2NWK,
         self.log,
         self.PluginHealth,
-        self.readZclClusters
+        self.readZclClusters,
+        self.internet_available
     )
     if self.OTA:
         self.webserver.update_OTA(self.OTA)
@@ -1719,15 +1724,15 @@ def _check_plugin_version( self ):
             self.pluginParameters["available"],
             self.pluginParameters["available-firmMajor"],
             self.pluginParameters["available-firmMinor"],
-        ) = checkPluginVersion(self, self.zigbee_communication, self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
+        ) = check_plugin_version_against_dns(self, self.zigbee_communication, self.pluginParameters["PluginBranch"], self.FirmwareMajorVersion)
         self.pluginParameters["FirmwareUpdate"] = False
         self.pluginParameters["PluginUpdate"] = False
 
-        if checkPluginUpdate(self, self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
+        if is_plugin_update_available(self, self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
             self.log.logging("Plugin", "Status", "*** A recent plugin version (%s) is waiting for you on gitHub. You are on (%s) ***" %(
                 self.pluginParameters["available"], self.pluginParameters["PluginVersion"] ))
             self.pluginParameters["PluginUpdate"] = True
-        if checkFirmwareUpdate(
+        if is_zigate_firmware_available(
             self,
             self.FirmwareMajorVersion,
             self.FirmwareVersion,
