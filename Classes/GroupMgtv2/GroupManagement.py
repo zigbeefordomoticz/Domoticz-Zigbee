@@ -87,6 +87,7 @@ class GroupsManagement(object):
         VersionNewFashion,
         DomoticzMajor,
         DomoticzMinor,
+        DomoticzBuild,
         PluginConf,
         ZigateComm,
         adminWidgets,
@@ -121,6 +122,7 @@ class GroupsManagement(object):
         self.VersionNewFashion = VersionNewFashion
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
+        self.DomoticzBuild = DomoticzBuild
         self.readZclClusters = readZclClusters
         self.pluginParameters = pluginParameters
         self.ListOfDomoticzWidget = ListOfDomoticzWidget

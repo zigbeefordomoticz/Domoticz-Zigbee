@@ -1344,6 +1344,7 @@ def start_GrpManagement(self, homefolder):
         self.VersionNewFashion,
         self.DomoticzMajor,
         self.DomoticzMinor,
+        self.DomoticzBuild,
         self.pluginconf,
         self.ControllerLink,
         self.adminWidgets,
