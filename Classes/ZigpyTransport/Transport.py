@@ -90,7 +90,7 @@ class ZigpyTransport(object):
         pass
 
     def thread_transport_shutdown(self):
-        self.log.logging("Transport", "Status", "Shuting down co-routine")
+        self.log.logging("Transport", "Debug", "Shuting down co-routine")
         stop_zigpy_thread(self)
         stop_forwarder_thread(self)
 

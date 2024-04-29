@@ -16,7 +16,7 @@ from Modules.zigbeeVersionTable import ZNP_MODEL
 
 # Bellows
 def bellows_extract_versioning_for_plugin(self, brd_manuf, brd_name, version):
-    self.log.logging("TransportZigpy", "Log", "bellows_extract_versioning_for_plugin Manuf: %s Name: %s Version: %s" % (brd_manuf, brd_name, version))
+    self.log.logging("TransportZigpy", "Debug", "bellows_extract_versioning_for_plugin Manuf: %s Name: %s Version: %s" % (brd_manuf, brd_name, version))
     
     firmware_branch = "98"  # Not found in the Table.
     

@@ -85,7 +85,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
             await self.shutdown()
             raise
 
-        self.log.logging("TransportZigpy", "Log", "ZNP Configuration %s" %self.config)
+        self.log.logging("TransportZigpy", "Status", "++ ZNP Configuration %s" %self.config)
         # Populate and get the list of active devices.
         # This will allow the plugin if needed to update the IEEE -> NwkId
         await self.load_network_info( load_devices=True )
@@ -100,9 +100,9 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         FirmwareBranch, FirmwareVersion, build = znp_extract_versioning_for_plugin( self, znp_model, znp_manuf, version)
         self.callBackFunction(build_plugin_8010_frame_content(FirmwareBranch, "000000", FirmwareVersion, "" ))
 
-        self.log.logging("TransportZigpy", "Status", "ZNP Radio manufacturer: %s" %znp_manuf)
-        self.log.logging("TransportZigpy", "Status", "ZNP Radio board model: %s" %znp_model)
-        self.log.logging("TransportZigpy", "Status", "ZNP Radio version: %s" %version)
+        self.log.logging("TransportZigpy", "Status", "++ ZNP Radio manufacturer: %s" %znp_manuf)
+        self.log.logging("TransportZigpy", "Status", "++ ZNP Radio board model: %s" %znp_model)
+        self.log.logging("TransportZigpy", "Status", "++ ZNP Radio version: %s" %version)
        
 
     async def shutdown(self) -> None:
@@ -116,10 +116,10 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
 
     async def register_endpoints(self):
-        self.log.logging("TransportZigpy", "Status", "ZNP Radio register default Ep")
+        self.log.logging("TransportZigpy", "Status", "++ ZNP Radio register default Ep")
         await super().register_endpoints()
 
-        self.log.logging("TransportZigpy", "Status", "ZNP Radio register any additional/specific Ep")
+        self.log.logging("TransportZigpy", "Status", "++ ZNP Radio register any additional/specific Ep")
         await Classes.ZigpyTransport.AppGeneric.register_specific_endpoints(self)
 
         

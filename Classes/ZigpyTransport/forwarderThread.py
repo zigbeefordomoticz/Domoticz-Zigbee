@@ -21,7 +21,7 @@ def stop_forwarder_thread(self):
 
 
 def forwarder_thread(self):
-    self.log.logging("TransportFrwder", "Status", "ZigpyTransport: thread_processing_and_sending Thread start.")
+    self.log.logging("TransportFrwder", "Debug", "ZigpyTransport: thread_processing_and_sending Thread start.")
 
     self.forwarder_queue = queue.Queue()
     
@@ -48,7 +48,7 @@ def forwarder_thread(self):
 
             handle_thread_error(self, e, message)
 
-    self.log.logging("TransportFrwder", "Status", "ZigpyTransport: thread_processing_and_sending Thread stop.")
+    self.log.logging("TransportFrwder", "Debug", "ZigpyTransport: thread_processing_and_sending Thread stop.")
 
 
 @time_spent_forwarder()

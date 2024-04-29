@@ -159,7 +159,7 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
             from Classes.ZigpyTransport.AppBellows import App_bellows as App
 
             config = ezsp_configuration_setup(self, radio_specific_conf, serialPort)
-            self.log.logging("TransportZigpy", "Status", "Started radio %s port: %s" %( radiomodule, serialPort))
+            self.log.logging("TransportZigpy", "Status", "++ Started radio %s port: %s" %( radiomodule, serialPort))
 
         elif radiomodule =="znp":
             import zigpy_znp.config as radio_specific_conf
@@ -167,7 +167,7 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
             from Classes.ZigpyTransport.AppZnp import App_znp as App
 
             config = znp_configuration_setup(self, radio_specific_conf, serialPort)
-            self.log.logging("TransportZigpy", "Status", "Started radio znp port: %s" %(serialPort))
+            self.log.logging("TransportZigpy", "Status", "++ Started radio znp port: %s" %(serialPort))
 
         elif radiomodule =="deCONZ":
             import zigpy_deconz.config as radio_specific_conf
@@ -175,7 +175,7 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
             from Classes.ZigpyTransport.AppDeconz import App_deconz as App
 
             config = deconz_configuration_setup(self, radio_specific_conf, serialPort)
-            self.log.logging("TransportZigpy", "Status", "Started radio deconz port: %s" %(serialPort))
+            self.log.logging("TransportZigpy", "Status", "++ Started radio deconz port: %s" %(serialPort))
 
         else:
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
@@ -199,7 +199,7 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
             return
 
     if self.pluginParameters["Mode3"] == "True":
-        self.log.logging( "TransportZigpy", "Status", "Coordinator initialisation requested Channel %s(0x%02x) ExtendedPanId: 0x%016x" % (
+        self.log.logging( "TransportZigpy", "Status", "++ Coordinator initialisation requested Channel %s(0x%02x) ExtendedPanId: 0x%016x" % (
             set_channel, set_channel, set_extendedPanId), )
         new_network = True
 
@@ -207,7 +207,7 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
         new_network = False
 
     if self.use_of_zigpy_persistent_db and self.app:
-        self.log.logging( "TransportZigpy", "Status", "Use of Zigpy Persistent Db")
+        self.log.logging( "TransportZigpy", "Status", "++ Use of Zigpy Persistent Db")
         await self.app._load_db()
 
     await _radio_startup(self, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule)
@@ -224,11 +224,11 @@ def ezsp_configuration_setup(self, bellows_conf, serialPort):
     }
 
     if "BellowsNoMoreEndDeviceChildren" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["BellowsNoMoreEndDeviceChildren"]:
-        self.log.logging("TransportZigpy", "Status", "Set The maximum number of end device children that Coordinater will support to 0")
+        self.log.logging("TransportZigpy", "Status", "++ Set The maximum number of end device children that Coordinater will support to 0")
         config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_MAX_END_DEVICE_CHILDREN"] = 0
 
     if self.pluginconf.pluginConf["TXpower_set"]:
-        self.log.logging("TransportZigpy", "Status", "Enables boost power mode and the alternate transmitter output.")
+        self.log.logging("TransportZigpy", "Status", "++ Enables boost power mode and the alternate transmitter output.")
         config[bellows_conf.CONF_EZSP_CONFIG]["CONFIG_TX_POWER_MODE"] = 0x3
 
     return config
@@ -325,7 +325,7 @@ async def _radio_startup(self, pluginconf, use_of_zigpy_persistent_db, new_netwo
         
     if new_network:
         # Assume that the new network has been created
-        self.log.logging( "TransportZigpy", "Status", "Assuming new network formed")
+        self.log.logging( "TransportZigpy", "Status", "++ Assuming new network formed")
         self.ErasePDMDone = True  
 
     display_network_infos(self)
@@ -354,14 +354,14 @@ def post_coordinator_startup(self, radiomodule):
 
     
 def display_network_infos(self):
-    self.log.logging( "TransportZigpy", "Status", "Network settings")
-    self.log.logging( "TransportZigpy", "Status", "  Device IEEE: %s" %self.app.state.node_info.ieee)
-    self.log.logging( "TransportZigpy", "Status", "  Device NWK: 0x%04X" %self.app.state.node_info.nwk)
-    self.log.logging( "TransportZigpy", "Status", "  Network Update Id: 0x%04X" %self.app.state.network_info.nwk_update_id)
-    self.log.logging( "TransportZigpy", "Status", "  PAN ID: 0x%04X" %self.app.state.network_info.pan_id)
-    self.log.logging( "TransportZigpy", "Status", "  Extended PAN ID: %s" %self.app.state.network_info.extended_pan_id)
-    self.log.logging( "TransportZigpy", "Status", "  Channel: %s" %self.app.state.network_info.channel)
-    self.log.logging( "TransportZigpy", "Debug", "  Network key: " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
+    self.log.logging( "TransportZigpy", "Status", "++ Network settings")
+    self.log.logging( "TransportZigpy", "Status", "++   Device IEEE: %s" %self.app.state.node_info.ieee)
+    self.log.logging( "TransportZigpy", "Status", "++   Device NWK: 0x%04X" %self.app.state.node_info.nwk)
+    self.log.logging( "TransportZigpy", "Status", "++   Network Update Id: 0x%04X" %self.app.state.network_info.nwk_update_id)
+    self.log.logging( "TransportZigpy", "Status", "++   PAN ID: 0x%04X" %self.app.state.network_info.pan_id)
+    self.log.logging( "TransportZigpy", "Status", "++   Extended PAN ID: %s" %self.app.state.network_info.extended_pan_id)
+    self.log.logging( "TransportZigpy", "Status", "++   Channel: %s" %self.app.state.network_info.channel)
+    self.log.logging( "TransportZigpy", "Debug", "++   Network key: " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
 
 
 async def worker_loop(self):
@@ -479,7 +479,7 @@ async def _permit_to_joint(self, data):
     permit_to_join_timer["Timer"] = time.time()
     permit_to_join_timer["Duration"] = duration
 
-    log.logging("TransportZigpy", "Status", f"PERMIT-TO-JOIN: duration: {duration} for Radio: {self._radiomodule} for node: {target_router}")
+    log.logging("TransportZigpy", "Status", f"++ opening zigbee network for {duration} secondes on specific router {target_router}")
 
     if radiomodule == "deCONZ":
         return await app.permit_ncp(time_s=duration)

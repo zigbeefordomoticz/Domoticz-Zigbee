@@ -61,16 +61,16 @@ def ZigatePermitToJoin(self, permit):
         # Enable Permit to join
         if self.permitTojoin["Duration"] != 255:
             if permit != 255:
-                self.log.logging("BasicOutput", "Status", "Request Accepting new Hardware for %s seconds " % permit)
+                self.log.logging("BasicOutput", "Status", "Z4D opened the Zigbee network for %s seconds " % permit)
             else:
-                self.log.logging("BasicOutput", "Status", "Request Accepting new Hardware for ever ")
+                self.log.logging("BasicOutput", "Status", "Z4D opened the Zigbee network for ever ")
 
             self.permitTojoin["Starttime"] = int(time())
             self.permitTojoin["Duration"] = 0 if permit <= 5 else permit
     else:
         self.permitTojoin["Starttime"] = int(time())
         self.permitTojoin["Duration"] = 0
-        self.log.logging("BasicOutput", "Status", "Request Disabling Accepting new Hardware")
+        self.log.logging("BasicOutput", "Status", "Z4D closed the Zigbee network")
 
     PermitToJoin(self, "%02x" % permit)
 

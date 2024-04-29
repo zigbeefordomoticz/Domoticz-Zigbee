@@ -35,6 +35,7 @@ def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_
 
     plugin_version = None
     plugin_version = _get_dns_txt_record(self, PLUGIN_TXT_RECORD)
+    self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {plugin_version}")
 
     if plugin_version is None:
         # Something weird happened
@@ -42,6 +43,7 @@ def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_
         return (0, 0, 0)
 
     plugin_version_dict = _parse_dns_txt_record( plugin_version)
+    self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {plugin_version} {plugin_version_dict}")
 
     # If native communication (zigate) let's find the zigate firmware
     firmware_version = None
@@ -68,8 +70,8 @@ def _get_dns_txt_record(self, record, timeout=1):
         return None
 
     try:
-        answers = dns.resolver.resolve(record, "TXT", tcp=True, lifetime=timeout)
-        return [str(answer).strip('"') for answer in answers]
+        result = dns.resolver.resolve(record, "TXT", tcp=True, lifetime=1).response.answer[0]
+        return str(result[0]).strip('"')
 
     except dns.resolver.Timeout:
         error_message = f"DNS resolution timed out for {record} after {timeout} second"

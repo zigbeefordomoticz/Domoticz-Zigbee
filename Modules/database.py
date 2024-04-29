@@ -168,17 +168,9 @@ def LoadDeviceList(self):
         self.ListOfDevices = {}
         return True
 
-    self.log.logging("Database", "Status", "%s Entries loaded from %s" % (len(self.ListOfDevices), _DeviceListFileName))
+    self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), _DeviceListFileName))
     if ListOfDevices_from_Domoticz:
-        self.log.logging(
-            "Database",
-            "Log",
-            "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas "
-            % (
-                len(ListOfDevices_from_Domoticz),
-                len(self.ListOfDevices),
-            ),
-        )
+        self.log.logging( "Database", "Log", "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas " % ( len(ListOfDevices_from_Domoticz), len(self.ListOfDevices), ), )
 
     self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % _DeviceListFileName)
     Modules.tools.helper_versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
@@ -430,10 +422,7 @@ def importDeviceConf(self):
         if iterDevType == "":
             del self.DeviceConf[iterDevType]
 
-    # for iterDevType in list(self.DeviceConf):
-    #    Domoticz.Log("%s - %s" %(iterDevType, self.DeviceConf[iterDevType]))
-
-    self.log.logging("Database", "Status", "DeviceConf loaded - %s confs loaded" %len(self.DeviceConf))
+    self.log.logging("Database", "Status", "Z4D loaded %s configuration from legacy database." %len(self.DeviceConf))
 
 
 def import_local_device_conf(self):
@@ -487,10 +476,9 @@ def import_local_device_conf(self):
             except Exception:
                 self.log.logging("Database", "Error","--> Unexpected error when loading a configuration file")
 
-
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
     self.log.logging("Database", "Debug", "Local-Device ModelManufMapping loaded - %s" %self.ModelManufMapping.keys())
-    self.log.logging("Database", "Status", "Local-Device conf loaded - %s confs loaded" %len(self.DeviceConf))
+    self.log.logging("Database", "Status", "Z4D loads %s configuration from the local certified Db." %len(self.DeviceConf))
 
 
 def checkDevices2LOD(self, Devices):
@@ -573,7 +561,7 @@ def CheckDeviceList(self, key, val):
     # List of Attribnutes that will be Loaded from the deviceList-xx.txt database
 
     if self.pluginconf.pluginConf["resetPluginDS"]:
-        self.log.logging("Database", "Status", "Reset Build Attributes for %s" % DeviceListVal["IEEE"])
+        self.log.logging("Database", "Status", "Z4D resets Build Attributes for %s" % DeviceListVal["IEEE"])
         IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
 
     elif key == "0000":
@@ -605,7 +593,7 @@ def CheckDeviceList(self, key, val):
             OldModel = self.ListOfDevices[key][attribute]
             self.ListOfDevices[key][attribute] = self.ListOfDevices[key][attribute].replace("/", "")
             if OldModel != self.ListOfDevices[key][attribute]:
-                self.log.logging("Database", "Status", "Model adjustement during import from %s to %s" % (
+                self.log.logging("Database", "Status", "Z4D adjusted Model from %s to %s" % (
                     OldModel, self.ListOfDevices[key][attribute]))
 
     self.ListOfDevices[key]["Health"] = ""
@@ -920,7 +908,7 @@ def profalux_fix_remote_device_model(self):
         if self.ListOfDevices[x]["MacCapa"] != "80":
             continue
         if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
-            self.log.logging( "Profalux", "Status", "++++++ Model Name for %s forced to : %s" % (
+            self.log.logging( "Profalux", "Status", "Z4D forces Model Name from %s to %s" % (
                 x, self.ListOfDevices[x]["Model"],), x)
             self.ListOfDevices[x]["Model"] = "Telecommande-Profalux"
 
@@ -959,7 +947,7 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
     suggested_model = check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=None, device_id=None )
     
     if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
-        self.log.logging("Tuya", "Status", "Adjusting Model name from %s to %s" %( modelName, suggested_model))
+        self.log.logging("Tuya", "Status", "Z4D adjusts Model name from %s to %s" %( modelName, suggested_model))
         self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model
         
 def cleanup_ota(self, nwkid):

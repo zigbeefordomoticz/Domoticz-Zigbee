@@ -963,11 +963,15 @@ def ota_scan_folder(self):  # OK 13/10
                 "intImageVersion": headers["image_version"],
                 "intSize": headers["size"],
             }
-    # Logging if Debug
-    logging(self, "Status", "ota_scan_folder Following Firmware have been loaded ")
-    for brand, value in self.ListOfImages["Brands"].items():
-        for ota_image_file in value:
-            logging(self, "Status", " --> Brand: %s Image File: %s" % (brand, ota_image_file))
+    # Check if there are any firmware images loaded
+    if self.ListOfImages:
+        logging(self, "Status", "Z4D loads the firmware images")
+
+        # Iterate over the loaded firmware images and log their details
+        for brand, value in self.ListOfImages["Brands"].items():
+            for ota_image_file in value:
+                logging(self, "Status", " --> Brand: %s Image File: %s" % (brand, ota_image_file))
+
 
 def check_image_valid_version(self, brand, image_type, ota_image_file, headers):  # OK 13/10
     # Purpose is to check if the already imported image has a higher version or not.

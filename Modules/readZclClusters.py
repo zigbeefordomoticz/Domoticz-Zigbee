@@ -277,7 +277,7 @@ def load_zcl_cluster(self):
     if not isdir(zcl_cluster_path):
         return
 
-    self.log.logging("ZclClusters", "Status", "Loading ZCL Cluster definitions")
+    self.log.logging("ZclClusters", "Status", "Z4D loads ZCL Cluster definitions")
 
     zcl_cluster_definition = [f for f in listdir(zcl_cluster_path) if isfile(join(zcl_cluster_path, f))]
     for cluster_definition in sorted(zcl_cluster_definition):
@@ -303,7 +303,7 @@ def load_zcl_cluster(self):
             self.readZclClusters[ cluster_definition[ "ClusterId"] ]["Debug"] = cluster_definition[ "Debug" ]
 
             
-        self.log.logging("ZclClusters", "Status", " - ZCL Cluster %s - (V%s) %s loaded" %( 
+        self.log.logging("ZclClusters", "Debug", " - ZCL Cluster %s - (V%s) %s loaded" %( 
             cluster_definition[ "ClusterId"], cluster_definition[ "Version" ], cluster_definition["Description"],))
 
 

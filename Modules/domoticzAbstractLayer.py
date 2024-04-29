@@ -135,7 +135,6 @@ def load_list_of_domoticz_widget(self, Devices):
     Args:
         Devices (dictionary): Devices dictionary provided by the Domoticz framework
     """
-    self.log.logging("AbstractDz", "Log", "load_list_of_domoticz_widget")
 
     # clean 
     self.ListOfDomoticzWidget.clear()

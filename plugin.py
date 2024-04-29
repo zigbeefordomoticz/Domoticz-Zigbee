@@ -304,12 +304,12 @@ class BasePlugin:
         initialize_device_settings(self)
 
     def onStart(self):
-        Domoticz.Status( "Zigbee for Domoticz plugin starting")
+        Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin.")
         
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
-        Domoticz.Status( "Z4D plugin requires python3 3.8 or above and you are running %s.%s" %(
+        Domoticz.Status( "Z4D requires python3.8 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
         assert sys.version_info >= (3, 8)  # nosec
@@ -385,19 +385,19 @@ class BasePlugin:
             return
 
         # Import PluginConf.txt
-        Domoticz.Log("load PluginConf")
+        Domoticz.Log("Z4D loading PluginConf")
         self.pluginconf = PluginConf(
             self.zigbee_communication, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
 
-        if self.pluginconf.pluginConf["internetAccess"]:
-            if check_requirements( Parameters[ "HomeFolder"] ):
-                self.onStop()
-                return
-
         if self.internet_available is None:
             is_internet_available()
         self.internet_available = bool(self.pluginconf.pluginConf["internetAccess"])
+
+        if self.internet_available and check_requirements( Parameters[ "HomeFolder"] ):
+            # Check_requirements() return True if requirements not meet.
+            self.onStop()
+            return
 
         # Create Domoticz Sub menu
         if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
@@ -408,7 +408,6 @@ class BasePlugin:
         self.PluginHealth["Txt"] = "Startup"
 
         if self.log is None:
-            Domoticz.Log("Starting LoggingManagement thread")
             self.log = LoggingManagement(
                 self.pluginconf,
                 self.PluginHealth,
@@ -422,8 +421,9 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging( "Plugin", "Status", "Zigbee for Domoticz (z4d) plugin %s-%s started" % (
+        self.log.logging( "Plugin", "Status", "Z4D starting with %s-%s" % (
             self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
+
         if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
             self.log.logging( "Plugin", "Error", "** Please do consider upgrading to a more recent python3 version %s.%s is not supported anymore **" %(
                 _current_python_version_major , _current_python_version_minor))
@@ -464,7 +464,7 @@ class BasePlugin:
             and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.multiinstances_z4d_plugin_instance())
             ):
             # https://github.com/python/cpython/issues/91375
-            self.log.logging("Plugin", "Status", "Multi instances plugin detected. Enable zigpy workaround")
+            self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Enable workaround")
             sys.modules["_asyncio"] = None
 
         if "LogLevel" not in self.pluginParameters:
@@ -484,16 +484,15 @@ class BasePlugin:
             self.DomoticzMinor,
             )
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
-        # Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
 
         self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID)
-        self.adminWidgets.updateStatusWidget(Devices, "Startup")
+        self.adminWidgets.updateStatusWidget(Devices, "Starting up")
 
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
-        self.log.logging("Plugin", "Log", "Plugin Database: %s" % self.DeviceListName)
+        self.log.logging("Plugin", "Log", "Z4D Database found: %s" % self.DeviceListName)
         
         z4d_certified_devices_pathname = os.path.dirname( z4d_certified_devices.__file__ ) + "/"
-        self.log.logging("Plugin", "Log", "Pathname to z4d_certified_devices %s" %z4d_certified_devices_pathname)
+        self.log.logging("Plugin", "Log", "Z4D Certified devices database %s" %z4d_certified_devices_pathname)
 
         # Import Zcl Cluster definitions
         load_zcl_cluster(self)
@@ -512,7 +511,7 @@ class BasePlugin:
         load_list_of_domoticz_widget(self, Devices)
         
         # Import DeviceList.txt Filename is : DeviceListName
-        self.log.logging("Plugin", "Status", "load ListOfDevice")
+        self.log.logging("Plugin", "Status", "Z4D loading database")
         if LoadDeviceList(self) == "Failed":
 
             self.log.logging("Plugin", "Error", "Something wennt wrong during the import of Load of Devices ...")
@@ -550,7 +549,7 @@ class BasePlugin:
         self.statistics = TransportStatistics(self.pluginconf, self.log)
 
         # Connect to Coordinator only when all initialisation are properly done.
-        self.log.logging("Plugin", "Status", "Transport mode: %s" % self.transport)
+        self.log.logging("Plugin", "Status", "Z4D configured to use transport mode: %s" % self.transport)
 
         if len(self.ListOfDevices) > 10:
             # Don't do Energy Scan if too many objects, as Energy scan don't make the difference between real traffic and noise
@@ -581,9 +580,9 @@ class BasePlugin:
             framework_status = "legacy Framework"
             free_slots = how_many_legacy_slot_available(Devices)
             usage_percentage = round(((255 - free_slots) / 255) * 100, 1)
-            self.log.logging("Plugin", "Status", f"Domoticz Widgets usage is at {usage_percentage}% ({free_slots} units free)")
+            self.log.logging("Plugin", "Status", f"Z4D Widgets usage is at {usage_percentage}% ({free_slots} units free)")
 
-        self.log.logging("Plugin", "Status", f"Plugin started with {framework_status}")
+        self.log.logging("Plugin", "Status", f"Z4D started with {framework_status}")
 
         self.busy = False
 
@@ -709,7 +708,7 @@ class BasePlugin:
             self.adminWidgets.updateStatusWidget(Devices, "Starting the plugin up")
 
         elif self.connectionState == 0:
-            self.log.logging("Plugin", "Status", "Reconnected after failure")
+            self.log.logging("Plugin", "Status", "Z4D reconnected after failure")
             self.PluginHealth["Flag"] = 2
             self.PluginHealth["Txt"] = "Reconnecting after failure"
 
@@ -768,12 +767,6 @@ class BasePlugin:
         else:
             self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s(%s), %s(%s)) NOT FOUND" %( sieee, type(sieee), snwkid, type(snwkid) ))
             return None
-
-        # model = manuf = None
-        #if nwkid in self.ListOfDevices and "Model" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Model"] not in ( "", {} ):
-        #    model = self.ListOfDevices[ nwkid ]["Model"]
-        #if nwkid in self.ListOfDevices and "Manufacturer" in self.ListOfDevices[ nwkid ] and self.ListOfDevices[ nwkid ]["Manufacturer"] not in ( "", {} ):
-        #    manuf = self.ListOfDevices[ nwkid ]["Manufacturer"]
 
         self.log.logging("TransportZigpy", "Debug", "zigpy_get_device( %s, %s returns %04x %016x" %( sieee, snwkid, int(nwkid,16), int(ieee,16) ))
         return int(nwkid,16) ,int(ieee,16)
@@ -1069,7 +1062,7 @@ def _start_zigpy_ZNP(self):
     check_python_modules_version( self )
     self.zigbee_communication = "zigpy"
     self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status", "Start Zigpy Transport on ZNP")
+    self.log.logging("Plugin", "Status", "Z4D starting ZNP")
     
     self.ControllerLink= ZigpyTransport(
         self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"]
@@ -1090,7 +1083,7 @@ def _start_zigpy_deConz(self):
     #self.pythonModuleVersion["zigpy_deconz"] = (zigpy_deconz.__version__)
     check_python_modules_version( self )
     self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Start Zigpy Transport on deCONZ")            
+    self.log.logging("Plugin", "Status","Z4D starting deConz")            
     self.ControllerLink= ZigpyTransport(
         self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"]
         )
@@ -1111,7 +1104,7 @@ def _start_zigpy_EZSP(self):
     check_python_modules_version( self )
     self.zigbee_communication = "zigpy"
     self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Start Zigpy Transport on EZSP")
+    self.log.logging("Plugin", "Status","Z4D starting EZSP")
 
     if Parameters["Mode2"] == "Socket":
         SerialPort = "socket://" + Parameters["IP"] + ':' + Parameters["Port"]
@@ -1136,7 +1129,7 @@ def zigateInit_Phase1(self):
     # Check if we have to Erase PDM.
     if self.zigbee_communication == "native" and Parameters["Mode3"] == "True" and not self.ErasePDMDone and not self.ErasePDMinProgress:  # Erase PDM
         zigate_erase_eeprom(self)
-        self.log.logging("Plugin", "Status", "Erase coordinator PDM")
+        self.log.logging("Plugin", "Status", "Z4D has erase the Zigate PDM")
         #sendZigateCmd(self, "0012", "")
         self.PDMready = False
         self.startZigateNeeded = 1
@@ -1144,7 +1137,7 @@ def zigateInit_Phase1(self):
         update_DB_device_status_to_reinit( self )
         return
     elif self.zigbee_communication == "zigpy" and Parameters["Mode3"] == "True" and not self.ErasePDMDone and not self.ErasePDMinProgress: 
-        self.log.logging("Plugin", "Status", "Form a new network requested")
+        self.log.logging("Plugin", "Status", "Z4D requests to form a new network")
         self.ErasePDMinProgress = True
         update_DB_device_status_to_reinit( self )
         return
@@ -1232,19 +1225,15 @@ def zigateInit_Phase3(self):
 
     # Set Certification Code
     if self.pluginconf.pluginConf["CertificationCode"] in CERTIFICATION:
-        self.log.logging(
-            "Plugin",
-            "Status",
-            "coordinator set to Certification : %s/%s -> %s" % (
-                self.pluginconf.pluginConf["CertificationCode"], 
-                self.pluginconf.pluginConf["Certification"], 
-                CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],))
+        self.log.logging( "Plugin", "Status", "Z4D coordinator set to Certification : %s/%s -> %s" % (
+            self.pluginconf.pluginConf["CertificationCode"], self.pluginconf.pluginConf["Certification"],  CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],))
         #sendZigateCmd(self, "0019", "%02x" % self.pluginconf.pluginConf["CertificationCode"])
         zigate_set_certificate(self, "%02x" % self.pluginconf.pluginConf["CertificationCode"] )
 
 
         # Create Configure Reporting object
         if self.configureReporting is None:
+            self.log.logging("Plugin", "Status", "Z4D starts Configure Reporting handling")
             self.configureReporting = ConfigureReporting(
                 self.zigbee_communication,
                 self.pluginconf,
@@ -1264,7 +1253,7 @@ def zigateInit_Phase3(self):
 
     # Enable Group Management
     if self.groupmgt is None and self.pluginconf.pluginConf["enablegroupmanagement"]:
-        self.log.logging("Plugin", "Status", "Start Group Management")
+        self.log.logging("Plugin", "Status", "Z4D starts Group Management")
         start_GrpManagement(self, Parameters["HomeFolder"])
 
     # Create Network Energy object and trigger one scan
@@ -1293,12 +1282,9 @@ def zigateInit_Phase3(self):
     if self.networkmap:
         self.webserver.update_networkmap(self.networkmap)
 
-    # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
-    if self.transport == "None" and self.groupmgt is None and self.pluginconf.pluginConf["enablegroupmanagement"]:
-        start_GrpManagement(self, Parameters["HomeFolder"])
-
     # Enable Over The Air Upgrade if applicable
     if self.OTA is None and self.pluginconf.pluginConf["allowOTA"]:
+        self.log.logging("Plugin", "Status", "Z4D starts Over-The-Air Management")
         start_OTAManagement(self, Parameters["HomeFolder"])
 
     networksize_update(self)
@@ -1307,23 +1293,21 @@ def zigateInit_Phase3(self):
     # Request to resend the IRCode with the next command of Casaia/Owon ACxxxx
     restart_plugin_reset_ModuleIRCode(self, nwkid=None)
 
-    if self.FirmwareMajorVersion == "03": 
-        self.log.logging(
-            "Plugin", "Status", "Plugin with Zigate, firmware %s correctly initialized" % self.FirmwareVersion
-        )
-    elif self.FirmwareMajorVersion == "04":
-        self.log.logging(
-            "Plugin", "Status", "Plugin with Zigate (OptiPDM), firmware %s correctly initialized" % self.FirmwareVersion
-        )
-    elif self.FirmwareMajorVersion == "05":
-        self.log.logging(
-            "Plugin", "Status", "Plugin with Zigate+, firmware %s correctly initialized" % self.FirmwareVersion
-        )
+    firmware_messages = {
+        "03": "Z4D with Zigate, firmware %s correctly initialized",
+        "04": "Z4D with Zigate (OptiPDM), firmware %s correctly initialized",
+        "05": "Z4D with Zigate+, firmware %s correctly initialized"
+    }
 
+    # Check if firmware major version exists in the dictionary
+    if self.FirmwareMajorVersion in firmware_messages:
+        message = firmware_messages[self.FirmwareMajorVersion] % self.FirmwareVersion
+        self.log.logging("Plugin", "Status", message)
     elif int(self.FirmwareBranch) >= 20:
-        self.log.logging(
-            "Plugin", "Status", "Plugin with Zigpy, Coordinator %s firmware %s correctly initialized" % (
-                self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"]))
+        message = "Z4D with Zigpy, Coordinator %s firmware %s correctly initialized" % (
+            self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
+    self.log.logging("Plugin", "Status", message)
+
 
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
@@ -1395,7 +1379,7 @@ def start_OTAManagement(self, homefolder):
 
 def start_web_server(self, webserver_port, webserver_homefolder):
  
-    self.log.logging("Plugin", "Status", "Start Web Server connection")
+    self.log.logging("Plugin", "Status", "Z4D starts WebUI")
     self.webserver = WebServer(
         self.zigbee_communication,
         self.ControllerData,
@@ -1497,7 +1481,7 @@ def pingZigate(self):
     if self.Ping["Status"] == "Receive":
         if self.connectionState == 0:
             # self.adminWidgets.updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
-            self.log.logging("Plugin", "Status", "pingZigate - SUCCESS - Reconnected after failure")
+            self.log.logging("Plugin", "Status", "Z4D - reconnected after failure")
         self.log.logging(
             "Plugin",
             "Debug",
@@ -1726,7 +1710,7 @@ def _check_plugin_version( self ):
         self.pluginParameters["PluginUpdate"] = False
 
         if is_plugin_update_available(self, self.pluginParameters["PluginVersion"], self.pluginParameters["available"]):
-            self.log.logging("Plugin", "Status", "*** A recent plugin version (%s) is waiting for you on gitHub. You are on (%s) ***" %(
+            self.log.logging("Plugin", "Status", "Z4D found a recent plugin version (%s) on gitHub. You are on (%s) ***" %(
                 self.pluginParameters["available"], self.pluginParameters["PluginVersion"] ))
             self.pluginParameters["PluginUpdate"] = True
         if is_zigate_firmware_available(
@@ -1736,7 +1720,7 @@ def _check_plugin_version( self ):
             self.pluginParameters["available-firmMajor"],
             self.pluginParameters["available-firmMinor"],
         ):
-            self.log.logging("Plugin", "Status", "There is a newer Zigate Firmware version available")
+            self.log.logging("Plugin", "Status", "Z4D found a newer Zigate Firmware version")
             self.pluginParameters["FirmwareUpdate"] = True
 
 def _coordinator_ready( self ):
@@ -1784,7 +1768,7 @@ def _post_readiness_startup_completed( self ):
                 # In case case, we have to set the extendedPANID
                 # ErasePDM has been requested, we are in the next Loop.
                 if self.ErasePDMDone and self.pluginconf.pluginConf["extendedPANID"] is not None:
-                    self.log.logging( "Plugin", "Status", "ZigateConf - Setting extPANID : 0x%016x" % (self.pluginconf.pluginConf["extendedPANID"]), )
+                    self.log.logging( "Plugin", "Status", "Z4D - Setting extPANID : 0x%016x" % (self.pluginconf.pluginConf["extendedPANID"]), )
                     setExtendedPANID(self, self.pluginconf.pluginConf["extendedPANID"])
 
                 start_Zigate(self)

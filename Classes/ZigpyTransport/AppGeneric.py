@@ -46,7 +46,7 @@ async def _load_db(self) -> None:
     if not database_file:
         return
 
-    LOGGER.info("PersistingListener on %s" %database_file)
+    LOGGER.info("++ PersistingListener on %s" %database_file)
     self._dblistener = await zigpy.appdb.PersistingListener.new(database_file, self)
     await self._dblistener.load()
     self._add_db_listeners()
@@ -94,7 +94,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
             if _retreived_backup is None:
                 await super(type(self),self).form_network()
             else:
-                self.log.logging( "Zigpy", "Status","Force Form: Restoring the most recent network backup")
+                self.log.logging( "Zigpy", "Status","++ Force Form: Restoring the most recent network backup")
                 await self.backups.restore_backup(  _retreived_backup ) 
 
     # Load Network Information
@@ -107,16 +107,16 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         if not auto_form:
             raise
 
-        self.log.logging( "Zigpy", "Status","Forming a new network")
+        self.log.logging( "Zigpy", "Status","++ Forming a new network")
         await super(type(self),self).form_network()
 
         if _retreived_backup is None:
             # Form a new network if we have no backup
-            self.log.logging( "Zigpy", "Status","Forming a new network with no backup")
+            self.log.logging( "Zigpy", "Status","++ Forming a new network with no backup")
             await self.form_network()
         else:
             # Otherwise, restore the most recent backup
-            self.log.logging( "Zigpy", "Status","Restoring the most recent network backup")
+            self.log.logging( "Zigpy", "Status","++ Restoring the most recent network backup")
             await self.backups.restore_backup( _retreived_backup )
 
         await self.load_network_info(load_devices=True)
@@ -446,7 +446,7 @@ async def register_specific_endpoints(self):
     # Iterate through endpoint configurations
     for plugin, (endpoint, input_clusters, output_clusters) in endpoint_configs.items():
         if plugin in self.pluginconf.pluginConf and self.pluginconf.pluginConf[plugin]:
-            self.log.logging("TransportZigpy", "Status", f"Adding {plugin} Endpoint 0x{endpoint:x}")
+            self.log.logging("TransportZigpy", "Status", f"++ Adding {plugin} Endpoint 0x{endpoint:x}")
             await self.add_endpoint(
                 zdo_types.SimpleDescriptor(
                     endpoint=endpoint,
