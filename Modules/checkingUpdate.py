@@ -66,13 +66,18 @@ def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_
     return (0, 0, 0)
 
 
-def _get_dns_txt_record(self, record):
+def _get_dns_txt_record(self, record, timeout=1):
     try:
-        result = dns.resolver.resolve(record, "TXT", tcp=True, lifetime=1).response.answer[0]
-        return str(result[0]).strip('"')
+        answers = dns.resolver.resolve(record, "TXT", tcp=True, lifetime=timeout)
+        txt_records = [str(answer).strip('"') for answer in answers]
+        return txt_records
 
-    except Exception as e:
-        self.log.logging("Plugin", "Error", f"An error occurred while resolving DNS TXT record: {e}")
+    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN) as e:
+        self.log.logging("Plugin", "Error", f"DNS TXT record not found for {record}: {e}")
+        return None
+
+    except dns.resolver.Timeout:
+        self.log.logging("Plugin", "Error", f"DNS resolution timed out for {record}")
         return None
 
 
