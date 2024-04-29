@@ -32,53 +32,61 @@ ZIGATE_DNS_RECORDS = {
 
 def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_model):
     self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {zigbee_communication} {branch} {zigate_model}")
-    
-    try:
-        plugin_version = None
-        firmware_version = None
 
-        plugin_version = _get_dns_txt_record(self, PLUGIN_TXT_RECORD)
-        plugin_version_dict = _parse_dns_txt_record( plugin_version)
-        
-        # If native communication (zigate) let's find the zigate firmware
-        if zigbee_communication == "native":
-            zigate_plugin_record = ZIGATE_DNS_RECORDS.get(zigate_model)
-            firmware_version = _get_dns_txt_record(self, zigate_plugin_record)
-            firmware_version_dict = _parse_dns_txt_record(firmware_version)
-            self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {firmware_version} {firmware_version_dict}")
-            
-        self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {plugin_version} {plugin_version_dict}")
-        
-        if zigbee_communication == "native" and branch in plugin_version_dict and "firmMajor" in firmware_version_dict and "firmMinor" in firmware_version_dict:
-            return (plugin_version_dict[branch], firmware_version_dict["firmMajor"], firmware_version_dict["firmMinor"])
-    
-        if zigbee_communication == "zigpy" and branch in plugin_version_dict:
-            return (plugin_version_dict[branch], 0, 0)
-    
-        self.log.logging("Plugin", "Error", f"You are running {branch}-{plugin_version}, a NOT SUPPORTED version. "
-                         "Please refer to https://github.com/zigbeefordomoticz/Domoticz-Zigbee to get the latest information")
+    plugin_version = None
+    plugin_version = _get_dns_txt_record(self, PLUGIN_TXT_RECORD)
 
-    except Exception as e:
-        self.log.logging("Plugin", "Error", f"An error occurred while checking plugin version: {e}")
-        if not is_internet_available():
-            self.internet_available = False
+    if plugin_version is None:
+        # Something weird happened
+        self.log.logging("Plugin", "Error", "Unable to get access to plugin expected version. Is Internet access available ?")
+        return (0, 0, 0)
 
+    plugin_version_dict = _parse_dns_txt_record( plugin_version)
+
+    # If native communication (zigate) let's find the zigate firmware
+    firmware_version = None
+    if zigbee_communication == "native":
+        zigate_plugin_record = ZIGATE_DNS_RECORDS.get(zigate_model)
+        firmware_version = _get_dns_txt_record(self, zigate_plugin_record)
+        firmware_version_dict = _parse_dns_txt_record(firmware_version)
+        self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {firmware_version} {firmware_version_dict}")
+
+    self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {plugin_version} {plugin_version_dict}")
+
+    if zigbee_communication == "native" and branch in plugin_version_dict and "firmMajor" in firmware_version_dict and "firmMinor" in firmware_version_dict:
+        return (plugin_version_dict[branch], firmware_version_dict["firmMajor"], firmware_version_dict["firmMinor"])
+
+    if zigbee_communication == "zigpy" and branch in plugin_version_dict:
+        return (plugin_version_dict[branch], 0, 0)
+
+    self.log.logging("Plugin", "Error", f"You are running {branch}-{plugin_version}, a NOT SUPPORTED version. ")
     return (0, 0, 0)
 
 
 def _get_dns_txt_record(self, record, timeout=1):
+    if not self.internet_available:
+        return None
+
     try:
         answers = dns.resolver.resolve(record, "TXT", tcp=True, lifetime=timeout)
-        txt_records = [str(answer).strip('"') for answer in answers]
-        return txt_records
-
-    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN) as e:
-        self.log.logging("Plugin", "Error", f"DNS TXT record not found for {record}: {e}")
-        return None
+        return [str(answer).strip('"') for answer in answers]
 
     except dns.resolver.Timeout:
-        self.log.logging("Plugin", "Error", f"DNS resolution timed out for {record}")
-        return None
+        error_message = f"DNS resolution timed out for {record} after {timeout} second"
+        self.internet_available = False
+
+    except dns.resolver.NoAnswer:
+        error_message = f"DNS TXT record not found for {record}"
+
+    except dns.resolver.NoNameservers:
+        error_message = f"No nameservers found for {record}"
+        self.internet_available = False
+
+    except Exception as e:
+        error_message = f"An unexpected error occurred while resolving DNS TXT record for {record}: {e}"
+
+    self.log.logging("Plugin", "Error", error_message)
+    return None
 
 
 def _parse_dns_txt_record(txt_record):

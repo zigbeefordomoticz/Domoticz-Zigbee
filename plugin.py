@@ -573,9 +573,7 @@ class BasePlugin:
             if Parameters["Mode4"].isdigit() or ':' in Parameters["Mode4"]:
                 start_web_server(self, Parameters["Mode4"], Parameters["HomeFolder"])
             else:
-                self.log.logging(
-                    "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"]
-                )
+                self.log.logging( "Plugin", "Error", "WebServer disabled du to Parameter Mode4 set to %s" % Parameters["Mode4"] )
 
         if is_domoticz_extended():
             framework_status = "Extended Framework"
@@ -585,7 +583,7 @@ class BasePlugin:
             usage_percentage = round(((255 - free_slots) / 255) * 100, 1)
             self.log.logging("Plugin", "Status", f"Domoticz Widgets usage is at {usage_percentage}% ({free_slots} units free)")
 
-        self.log.logging("Plugin", "Status", f"Plugin started with !! {framework_status} !!")
+        self.log.logging("Plugin", "Status", f"Plugin started with {framework_status}")
 
         self.busy = False
 
@@ -690,16 +688,10 @@ class BasePlugin:
 
     def onConnect(self, Connection, Status, Description):
 
-        self.log.logging("Plugin", "Debug", "onConnect called with status: %s" % Status)
-        self.log.logging(
-            "Plugin", "Debug", "onConnect %s called with status: %s and Desc: %s" % (Connection, Status, Description)
-        )
+        self.log.logging( "Plugin", "Debug", "onConnect %s called with status: %s and Desc: %s" % (Connection, Status, Description) )
 
         decodedConnection = decodeConnection(str(Connection))
-        if "Protocol" in decodedConnection and decodedConnection["Protocol"] in (
-            "HTTP",
-            "HTTPS",
-        ):  # We assumed that is the Web Server
+        if "Protocol" in decodedConnection and decodedConnection["Protocol"] in ( "HTTP", "HTTPS", ):  # We assumed that is the Web Server
             if self.webserver:
                 self.webserver.onConnect(Connection, Status, Description)
             return
@@ -707,13 +699,7 @@ class BasePlugin:
         self.busy = True
 
         if Status != 0:
-            self.log.logging("Plugin", "Error", "Failed to connect (" + str(Status) + ")")
-            self.log.logging("Plugin", "Debug", "Failed to connect (" + str(Status) + ") with error: " + Description)
-            self.connectionState = 0
-            self.ControllerLink.re_conn()
-            self.PluginHealth["Flag"] = 3
-            self.PluginHealth["Txt"] = "No Communication"
-            self.adminWidgets.updateStatusWidget(Devices, "No Communication")
+            _onConnect_status_error(self, Status, Description)
             return
 
         self.log.logging("Plugin", "Debug", "Connected successfully")
@@ -721,6 +707,7 @@ class BasePlugin:
             self.PluginHealth["Flag"] = 2
             self.PluginHealth["Txt"] = "Starting Up"
             self.adminWidgets.updateStatusWidget(Devices, "Starting the plugin up")
+
         elif self.connectionState == 0:
             self.log.logging("Plugin", "Status", "Reconnected after failure")
             self.PluginHealth["Flag"] = 2
@@ -948,6 +935,15 @@ class BasePlugin:
 
         self.busy = _check_if_busy(self)
         return True
+
+def _onConnect_status_error(self, Status, Description):
+    self.log.logging("Plugin", "Error", "Failed to connect (" + str(Status) + ")")
+    self.log.logging("Plugin", "Debug", "Failed to connect (" + str(Status) + ") with error: " + Description)
+    self.connectionState = 0
+    self.ControllerLink.re_conn()
+    self.PluginHealth["Flag"] = 3
+    self.PluginHealth["Txt"] = "No Communication"
+    self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
 
 def retreive_zigpy_topology_data(self):
