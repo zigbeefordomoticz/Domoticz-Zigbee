@@ -1294,9 +1294,9 @@ def zigateInit_Phase3(self):
     restart_plugin_reset_ModuleIRCode(self, nwkid=None)
 
     firmware_messages = {
-        "03": "Z4D with Zigate, firmware %s correctly initialized",
-        "04": "Z4D with Zigate (OptiPDM), firmware %s correctly initialized",
-        "05": "Z4D with Zigate+, firmware %s correctly initialized"
+        "03": "Z4D with Zigate coordinator, firmware %s communication confirmed.",
+        "04": "Z4D with Zigate coordinator, OptiPDM firmware %s communication confirmed.",
+        "05": "Z4D with Zigate+ coordinator, firmware %s communication confirmed."
     }
 
     # Check if firmware major version exists in the dictionary
@@ -1304,10 +1304,9 @@ def zigateInit_Phase3(self):
         message = firmware_messages[self.FirmwareMajorVersion] % self.FirmwareVersion
         self.log.logging("Plugin", "Status", message)
     elif int(self.FirmwareBranch) >= 20:
-        message = "Z4D with Zigpy, Coordinator %s firmware %s correctly initialized" % (
+        message = "Z4D with Zigpy, coordinator %s, firmware %s communication confirmed." % (
             self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
     self.log.logging("Plugin", "Status", message)
-
 
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
