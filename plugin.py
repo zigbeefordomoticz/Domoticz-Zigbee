@@ -391,13 +391,13 @@ class BasePlugin:
         )
 
         if self.internet_available is None:
-            is_internet_available()
-        self.internet_available = bool(self.pluginconf.pluginConf["internetAccess"])
+            self.internet_available = is_internet_available()
 
-        if self.internet_available and check_requirements( Parameters[ "HomeFolder"] ):
-            # Check_requirements() return True if requirements not meet.
-            self.onStop()
-            return
+        if self.internet_available:
+            if check_requirements( Parameters[ "HomeFolder"] ):
+                # Check_requirements() return True if requirements not meet.
+                self.onStop()
+                return
 
         # Create Domoticz Sub menu
         if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
@@ -644,6 +644,7 @@ class BasePlugin:
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
+
     def onDeviceRemoved(self, Unit):
         # def onDeviceRemoved(self, DeviceID, Unit):
         if not self.ControllerIEEE:
@@ -811,6 +812,7 @@ class BasePlugin:
         else:
             self.log.logging( "Command", "Error", "onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" % (domo_read_Name( self, Devices, DeviceID, Unit, ), Unit, DeviceID), )
 
+
     def onDisconnect(self, Connection):
 
         self.log.logging("Plugin", "Debug", "onDisconnect: %s" % Connection)
@@ -829,6 +831,7 @@ class BasePlugin:
         self.PluginHealth["Txt"] = "Shutdown"
         self.adminWidgets.updateStatusWidget(Devices, "Plugin stop")
         self.log.logging("Plugin", "Status", "onDisconnect called")
+
 
     def onHeartbeat(self):
 
@@ -878,8 +881,6 @@ class BasePlugin:
 
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
         prevLenDevices = len(Devices)
-
-        do_python_garbage_collection( self )
 
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices(self, Devices)
@@ -1226,7 +1227,7 @@ def zigateInit_Phase3(self):
     # Set Certification Code
     if self.pluginconf.pluginConf["CertificationCode"] in CERTIFICATION:
         self.log.logging( "Plugin", "Status", "Z4D coordinator set to Certification : %s/%s -> %s" % (
-            self.pluginconf.pluginConf["CertificationCode"], self.pluginconf.pluginConf["Certification"],  CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],))
+            self.pluginconf.pluginConf["CertificationCode"], self.pluginconf.pluginConf["Certification"], CERTIFICATION[self.pluginconf.pluginConf["CertificationCode"]],))
         #sendZigateCmd(self, "0019", "%02x" % self.pluginconf.pluginConf["CertificationCode"])
         zigate_set_certificate(self, "%02x" % self.pluginconf.pluginConf["CertificationCode"] )
 
@@ -1256,19 +1257,16 @@ def zigateInit_Phase3(self):
         self.log.logging("Plugin", "Status", "Z4D starts Group Management")
         start_GrpManagement(self, Parameters["HomeFolder"])
 
-    # Create Network Energy object and trigger one scan
+    # Create Network Energy object
     if self.networkenergy is None:
         self.networkenergy = NetworkEnergy(
             self.zigbee_communication, self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
         )
-        # if len(self.ListOfDevices) > 1:
-        #   self.log.logging( 'Plugin', 'Status', "Trigger a Energy Level Scan")
-        #   self.networkenergy.start_scan()
 
     if self.networkenergy:
         self.webserver.update_networkenergy(self.networkenergy)
 
-        # Create Network Map object and trigger one scan
+        # Create Network Map object
     if self.networkmap is None:
         self.networkmap = NetworkMap(
             self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
@@ -1638,13 +1636,6 @@ def uninstall_Z4D_to_domoticz_custom_ui():
         Domoticz.Error('Error during installing plugin custom page')
         Domoticz.Error(repr(e))
 
-def do_python_garbage_collection( self ):
-    # Garbage collector ( experimental for now)
-    pass
-    #if self.internalHB % (3600 // HEARTBEAT) == 0:
-    #    self.log.logging("Garbage", "Debug", "Garbage Collection status: %s" % str(gc.get_count()) )
-    #    self.log.logging("Garbage", "Debug", "Garbage collection statistics: %s" % str( gc.get_stats()) )
-    #    # self.log.logging("Garbage", "Debug", "Garbage Collection triggered: %s" % str(gc.collect()) )
 
 def _check_if_busy(self):
     busy_ = self.ControllerLink.loadTransmit() >= MAX_FOR_ZIGATE_BUZY
@@ -1667,6 +1658,7 @@ def _check_if_busy(self):
         self.PluginHealth["Txt"] = "Ready"
         self.adminWidgets.updateStatusWidget(Devices, "Ready")
 
+
 def _check_permit_to_joint_status(self):
     if (
         self.permitTojoin["Duration"] != 255
@@ -1683,6 +1675,7 @@ def _check_permit_to_joint_status(self):
         pingZigate(self)
         self.Ping["Nb Ticks"] += 1
 
+
 def _trigger_coordinator_backup( self ):
     if (
         self.zigbee_communication
@@ -1694,6 +1687,7 @@ def _trigger_coordinator_backup( self ):
         and self.ControllerLink
     ):
         self.ControllerLink.sendData( "COORDINATOR-BACKUP", {})
+
 
 def _check_plugin_version( self ):
     self.pluginParameters["TimeStamp"] = int(time.time())
@@ -1721,6 +1715,7 @@ def _check_plugin_version( self ):
         ):
             self.log.logging("Plugin", "Status", "Z4D found a newer Zigate Firmware version")
             self.pluginParameters["FirmwareUpdate"] = True
+
 
 def _coordinator_ready( self ):
     self.log.logging( "Plugin", "Debug", "_coordinator_ready transport: %s PDMready: %s" %(self.transport, self.PDMready)) 
@@ -1751,6 +1746,7 @@ def _coordinator_ready( self ):
         return False
     
     return False
+    
     
 def _post_readiness_startup_completed( self ):
     if self.transport != "None" and (self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
