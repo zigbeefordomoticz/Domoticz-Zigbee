@@ -221,29 +221,29 @@ def rest_scan_devices_for_group(self, verb, data, parameter):
 def rest_zGroup(self, verb, data, parameters):
 
     _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Data"] = {}
 
     self.logging("Log", f"rest_zGroup {verb} {data} {parameters}")
+    if self.groupmgt is None:
+        domoticz_error_api("Looks like Group Management is not enabled")
+        return _response
 
     if verb == "GET":
-        return _response if self.groupmgt is None else _zgroup_get(self, parameters)
+        return _zgroup_get(self, parameters)
 
     if verb == "PUT":
-        _zgroup_put( self, data, parameters)
+        return _zgroup_put( self, data, parameters)
 
 
 def _zgroup_put( self, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
-    _response["Data"] = None
-    if not self.groupmgt:
+    _response["Data"] = {}
+    if self.groupmgt is None:
         domoticz_error_api("Looks like Group Management is not enabled")
-        _response["Data"] = {}
         return _response
 
-    ListOfGroups = self.groupmgt.ListOfGroups
-    grp_lst = []
     if len(parameters) == 0:
         data = data.decode("utf8")
-        _response["Data"] = {}
         self.groupmgt.process_web_request(json.loads(data))
 
     return _response
@@ -253,12 +253,11 @@ def _zgroup_get(self, parameters):
     self.logging("Debug", f"zgroup_get - {parameters}")
     _response = prepResponseMessage(self, setupHeadersResponse())
 
-    ListOfGroups = self.groupmgt.ListOfGroups
-    if ListOfGroups is None:
+    if self.groupmgt.ListOfGroups is None:
         return _response
     
     zgroup_lst = []
-    for itergrp, group_info in ListOfGroups.items():
+    for itergrp, group_info in self.groupmgt.ListOfGroups.items():
         self.logging("Debug", f"_zgroup_get - {itergrp} {group_info}")
         if len(parameters) == 1 and itergrp != parameters[0]:
             continue
@@ -275,6 +274,7 @@ def _zgroup_get(self, parameters):
             elif len(itemDevice) == 3:
                 dev, ep, ieee = itemDevice
             zgroup["Devices"].append( {"_NwkId": dev, "Ep": ep, "IEEE": ieee} )
+
         zgroup["Cluster"] = group_info.get("Cluster", "")
         zgroup["WidgetStyle"] = group_info.get("WidgetStyle", "")
         zgroup["Switchtype"] = group_info.get("Switchtype", "")
