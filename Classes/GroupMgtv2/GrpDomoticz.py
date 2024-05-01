@@ -18,7 +18,7 @@ from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.domoticzAbstractLayer import (
     FreeUnit, domo_create_api, domo_delete_widget, domo_read_Name,
     domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
-    domo_read_Typename, domo_update_api, domo_update_name,
+    domo_update_api, domo_update_name,
     domo_update_SwitchType_SubType_Type, find_first_unit_widget_from_deviceID)
 from Modules.tools import Hex_Format, is_domoticz_latest_typename, is_hex
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
@@ -47,8 +47,8 @@ WIDGET_STYLE = {
 }
 
 WIDGET_STYLE_TO_DOMOTICZ_TYPEMAP = {
-    "Plug": "On/Off ",
-    "Switch": "On/Off ",
+    "Plug": "On/Off",
+    "Switch": "On/Off",
     "LvlControl": "Dimmer",
     "BlindPercentInverted": "BlindsPercentage",
     "WindowCovering": "VenetianBlindsEU",
@@ -76,6 +76,7 @@ def create_domoticz_group_device(self, GroupName, GroupId):
         return
 
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
+    self.ListOfGroups[GroupId]['TypeName'] = get_typename(self, Type_, Subtype_, SwitchType_)
 
     unit = FreeUnit(self, self.Devices, GroupId, 1)
     idx = domo_create_api(self, self.Devices, GroupId, unit, GroupName, Type_=Type_, Subtype_=Subtype_, Switchtype_=SwitchType_, widgetOptions=None, Image=None)
@@ -139,11 +140,16 @@ def update_domoticz_group_device_widget(self, GroupId):
     Type_, Subtype_, SwitchType_ = best_group_widget(self, GroupId)
 
     if is_domoticz_latest_typename(self):
-        current_typename = domo_read_Typename(self, self.Devices, GroupId, unit)
-        new_typename = get_typename(Type_, Subtype_, SwitchType_)
+        current_typename = get_group_latest_typename(self, GroupId)
+        if current_typename is None:
+            current_switchType, current_Subtype, current_Type = domo_read_SwitchType_SubType_Type(self, self.Devices, GroupId, unit)
+            current_typename = get_typename(self, current_switchType, current_Subtype, current_Type)
+
+        new_typename = get_typename(self, Type_, Subtype_, SwitchType_)
 
         self.logging("Debug", f"      Looking to update Unit: {unit} from {current_typename} to {new_typename}")
         if current_typename != new_typename:
+            self.ListOfGroups[GroupId]['TypeName'] = new_typename
             domo_update_SwitchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_, Typename_=new_typename)
 
         return
@@ -155,8 +161,13 @@ def update_domoticz_group_device_widget(self, GroupId):
     domo_update_SwitchType_SubType_Type(self, self.Devices, GroupId, unit, Type_, Subtype_, SwitchType_)
 
 
-def get_typename(Type_, Subtype_, SwitchType_):
-    return WIDGET_STYLE_TO_DOMOTICZ_TYPEMAP.get(WIDGET_STYLE.get((Type_, Subtype_, SwitchType_)))
+def get_typename(self, Type_, Subtype_, SwitchType_):
+    for widget, style in WIDGET_STYLE.items():
+        if style == (Type_, Subtype_, SwitchType_):
+            widget_stype = widget
+            return WIDGET_STYLE_TO_DOMOTICZ_TYPEMAP.get(widget_stype)
+    return None
+
 
 def best_group_widget(self, GroupId):
 
@@ -774,3 +785,7 @@ def resetDevicesHearttBeat(self, GrpId):
             # Reset Health status of corresponding device if any in Not Reachable
             if "Health" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Health"] == "Not Reachable":
                 self.ListOfDevices[NwkId]["Health"] = ""
+
+def get_group_latest_typename(self, GroupId):
+    
+    return self.ListOfGroups[GroupId].get("TypeName")

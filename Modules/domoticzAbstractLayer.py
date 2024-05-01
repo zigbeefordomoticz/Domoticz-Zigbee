@@ -608,15 +608,6 @@ def domo_read_SwitchType_SubType_Type(self, Devices, DeviceID, Unit):
 
     return _unit.SwitchType, _unit.SubType, _unit.Type
 
-def domo_read_Typename(self, Devices, DeviceID, Unit):
-    self.log.logging("AbstractDz", "Debug", f"domo_read_Typename: DeviceID: {DeviceID} Unit {Unit}")
-    if DOMOTICZ_EXTENDED_API:
-        _unit = Devices[DeviceID].Units[Unit]
-    else:
-        _unit = Devices[Unit]
-
-    return _unit.TypeName
-
 
 def _is_meter_widget(self, Devices, DeviceID_, Unit_):
     if DOMOTICZ_EXTENDED_API:
@@ -795,7 +786,6 @@ def is_dimmable_blind(self, Devices, DeviceId, Unit):
     if check_widget(_switchType, _subType, _type) == "Blind":
         return find_partially_opened_nValue(_switchType, _subType, _type)
     return None
-
 
 
 def find_partially_opened_nValue(switch_type, sub_type, widget_type):

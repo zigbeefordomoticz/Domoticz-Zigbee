@@ -223,7 +223,7 @@ def rest_zGroup(self, verb, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
     _response["Data"] = {}
 
-    self.logging("Log", f"rest_zGroup {verb} {data} {parameters}")
+    self.logging("Debug", f"rest_zGroup {verb} {data} {parameters}")
     if self.groupmgt is None:
         domoticz_error_api("Looks like Group Management is not enabled")
         return _response
@@ -239,7 +239,7 @@ def _zgroup_put( self, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
     _response["Data"] = {}
     if self.groupmgt is None:
-        domoticz_error_api("Looks like Group Management is not enabled")
+        self.logging("Error", "Looks like Group Management is not enabled")
         return _response
 
     if len(parameters) == 0:
