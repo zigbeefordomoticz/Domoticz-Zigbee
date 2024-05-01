@@ -25,7 +25,7 @@ MODULES_VERSION = {
     "zigpy": "0.64.0",
     "zigpy_znp": "0.12.1",
     "zigpy_deconz": "0.23.1",
-    "bellows": "0.38.1",
+    "bellows": "0.38.3",
     }
 
 def networksize_update(self):
