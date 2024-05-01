@@ -1429,7 +1429,9 @@ def convert_ikea_format_to_list(zigbee_ikea_index):
     ]
 
 
-def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ): 
+def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ):
+    if self.zigbee_ota_index is None:
+        return  None
     logging(self, "Debug", "check_ota_availability_from_index: Index Size: %s Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
         len(self.zigbee_ota_index), manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
 
