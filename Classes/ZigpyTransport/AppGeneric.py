@@ -139,6 +139,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
     # Start Network
     await self.start_network()
+
     self._persist_coordinator_model_strings_in_db()
 
     # Network interference scan
