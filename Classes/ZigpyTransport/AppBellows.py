@@ -130,7 +130,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
 
     async def register_endpoints(self, endpoint=1):
-        self.log.logging("TransportZigpy", "Status", "++ deConz Radio register default Ep")
+        self.log.logging("TransportZigpy", "Status", "++ EZSP Radio register default Ep")
         await super().register_endpoints()
 
 
