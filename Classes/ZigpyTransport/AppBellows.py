@@ -92,9 +92,11 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         # Trigger Version payload to plugin
         try:
             brd_manuf, brd_name, version = await self._ezsp.get_board_info()
-            self.log.logging("TransportZigpy", "Status", "++ EZSP Radio manufacturer: %s" %brd_manuf)
-            self.log.logging("TransportZigpy", "Status", "++ EZSP Radio board name: %s" %brd_name)
-            self.log.logging("TransportZigpy", "Status", "++ EmberZNet version: %s" %version)
+            self.log.logging("TransportZigpy", "Status", "++ EZSP Board Information" )
+            self.log.logging("TransportZigpy", "Status", f"++   Radio manufacturer : {brd_manuf}" )
+            self.log.logging("TransportZigpy", "Status", f"++   Radio board name   : {brd_name}" )
+            self.log.logging("TransportZigpy", "Status", f"++   EmberZNet version  : {version}" )
+            self.log.logging("TransportZigpy", "Status", f"++   Protocol Version   : {self._ezsp.ezsp_version}")
             
         except EzspError as exc:
             LOGGER.error("EZSP Radio does not support getMfgToken command: %s" %str(exc))
@@ -118,6 +120,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             status = await coordinator.add_to_group( 0x4005, name="Default Tint Group 4005", )
             status = await coordinator.add_to_group( 0x4006, name="Default Tint Group 4006", )
 
+
+        
             
     async def shutdown(self) -> None:
         """Shutdown controller."""

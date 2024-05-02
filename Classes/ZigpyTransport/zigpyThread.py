@@ -355,12 +355,12 @@ def post_coordinator_startup(self, radiomodule):
     
 def display_network_infos(self):
     self.log.logging( "TransportZigpy", "Status", "++ Network settings")
-    self.log.logging( "TransportZigpy", "Status", "++   Device IEEE: %s" %self.app.state.node_info.ieee)
-    self.log.logging( "TransportZigpy", "Status", "++   Device NWK: 0x%04X" %self.app.state.node_info.nwk)
-    self.log.logging( "TransportZigpy", "Status", "++   Network Update Id: 0x%04X" %self.app.state.network_info.nwk_update_id)
-    self.log.logging( "TransportZigpy", "Status", "++   PAN ID: 0x%04X" %self.app.state.network_info.pan_id)
-    self.log.logging( "TransportZigpy", "Status", "++   Extended PAN ID: %s" %self.app.state.network_info.extended_pan_id)
-    self.log.logging( "TransportZigpy", "Status", "++   Channel: %s" %self.app.state.network_info.channel)
+    self.log.logging( "TransportZigpy", "Status", "++   Device IEEE        : %s" %self.app.state.node_info.ieee)
+    self.log.logging( "TransportZigpy", "Status", "++   Device NWK         : 0x%04X" %self.app.state.node_info.nwk)
+    self.log.logging( "TransportZigpy", "Status", "++   Network Update Id  : 0x%04X" %self.app.state.network_info.nwk_update_id)
+    self.log.logging( "TransportZigpy", "Status", "++   PAN ID             : 0x%04X" %self.app.state.network_info.pan_id)
+    self.log.logging( "TransportZigpy", "Status", "++   Extended PAN ID    : %s" %self.app.state.network_info.extended_pan_id)
+    self.log.logging( "TransportZigpy", "Status", "++   Channel            : %s" %self.app.state.network_info.channel)
     self.log.logging( "TransportZigpy", "Debug", "++   Network key: " + ":".join( f"{c:02x}" for c in self.app.state.network_information.network_key.key ))
 
 
