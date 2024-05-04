@@ -60,7 +60,8 @@ WAITING_TIME_BETWEEN_ATTEMPTS = 0.250
 def stop_zigpy_thread(self):
     """ will send a STOP message to the writer_queue in order to stop the thread """
     self.log.logging("TransportZigpy", "Debug", "stop_zigpy_thread - Stopping zigpy thread")
-    self.writer_queue.put_nowait("STOP")
+    if self.writer_queue:
+        self.writer_queue.put_nowait("STOP")
     self.zigpy_running = False
 
     # Make sure top the manualy started task
