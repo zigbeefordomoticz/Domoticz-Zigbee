@@ -97,9 +97,11 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         # Trigger Version payload to plugin
         deconz_model = self.get_device(nwk=t.NWK(0x0000)).model
         deconz_manuf = self.get_device(nwk=t.NWK(0x0000)).manufacturer
-        self.log.logging("TransportZigpy", "Status", "++ deConz Radio manufacturer: %s" %deconz_manuf)
-        self.log.logging("TransportZigpy", "Status", "++ deConz Radio board model: %s" %deconz_model)
-        self.log.logging("TransportZigpy", "Status", "++ deConz Radio version: 0x %x" %version )
+        
+        self.log.logging("TransportZigpy", "Status", "++ deConz Board Information" )
+        self.log.logging("TransportZigpy", "Status", f"++   Radio manufacturer : {deconz_manuf}" )
+        self.log.logging("TransportZigpy", "Status", f"++   Radio board model  : {deconz_model}" )
+        self.log.logging("TransportZigpy", "Status", f"++   Radio version      : {version}" )
 
         branch, version = deconz_extract_versioning_for_plugin( self, deconz_model, deconz_manuf, version)
 
