@@ -210,78 +210,43 @@ def best_group_widget(self, GroupId):
             WidgetType = self.ListOfDevices[NwkId]["Ep"][devEp]["ClusterType"][DomoDeviceUnit]
             self.logging("Debug", "------------ GroupWidget: %s WidgetType: %s" % (GroupWidgetType, WidgetType))
 
-            if WidgetType == "LvlControl" and "Blind" in self.ListOfDevices[NwkId]["Type"]:
+            if self.ListOfDevices[NwkId]["Ep"][devEp]["Type"] in ( "Blind", "BlindInverted") and WidgetType == "LvlControl":
+                # Blinds control via cluster 0x0008
                 GroupWidgetStyle = "BlindPercentInverted"
-
+                GroupWidgetType = "LvlControl"
+                break
+                
             if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
                 # Those widgets are commanded via cluster Level Control
-                GroupWidgetType = "LvlControl"
                 GroupWidgetStyle = "VenetianInverted"
-                continue
-
-            if GroupWidgetType is None and WidgetType in WIDGET_STYLE:
-                GroupWidgetType = WidgetType
-                continue
+                GroupWidgetType = "LvlControl"
+                
+                break
 
             if WidgetType == GroupWidgetType:
                 continue
 
-            if WidgetType == "Switch" and GroupWidgetType == "Plug":
-                GroupWidgetType = "Switch"
-                continue
-
-            if WidgetType == "LvlControl" and GroupWidgetType in ("Plug", "Switch"):
-                GroupWidgetType = WidgetType
-                continue
-
-            if WidgetType == "ColorControlWW" and GroupWidgetType in ("Plug", "Switch", "LvlControl"):
-                GroupWidgetType = WidgetType
-                continue
-
-            if WidgetType == "ColorControlRGB" and GroupWidgetType in ("Plug", "Switch", "LvlControl"):
-                GroupWidgetType = WidgetType
-                continue
-
-            if (WidgetType == "ColorControlRGB" and GroupWidgetType in ("ColorControlWW")) or (
-                WidgetType == "ColorControlWW" and GroupWidgetType in ("ColorControlRGB")
-            ):
-                GroupWidgetType = "ColorControlRGBWW"
-                continue
-
-            if WidgetType in ("ColorControl", "ColorControlFull"):
-                GroupWidgetType = WidgetType
-                continue
-
-            if WidgetType in ("Venetian", "WindowCovering", "BlindPercentInverted"):
-                GroupWidgetType = WidgetType
-
+            GroupWidgetType = my_best_widget_offer(self, WidgetType, GroupWidgetType)
+            
     if GroupWidgetType is None:
         GroupWidgetType = "ColorControlFull"
 
-    self.ListOfGroups[GroupId]["WidgetStyle"] = GroupWidgetType
-    # This will be used when receiving left/right click , to know if it is RGB or WW
+    self.ListOfGroups[GroupId]["GroupWidgetType"] = GroupWidgetType
 
-    if "Tradfri Remote" in self.ListOfGroups[GroupId]:
-        self.ListOfGroups[GroupId]["Tradfri Remote"]["Color Mode"] = GroupWidgetType
+    # Update Tradfri Remote color mode
+    self.ListOfGroups[GroupId].get("Tradfri Remote", {}).setdefault("Color Mode", GroupWidgetType)
 
-    # Update Cluster, based on WidgetStyle
-    if self.ListOfGroups[GroupId]["WidgetStyle"] in ("Switch", "Plug"):
+    # Update Cluster based on WidgetStyle
+    if GroupWidgetType in ("Switch", "Plug"):
         self.ListOfGroups[GroupId]["Cluster"] = "0006"
 
-    elif self.ListOfGroups[GroupId]["WidgetStyle"] in ("LvlControl"):
+    elif GroupWidgetType == "LvlControl":
         self.ListOfGroups[GroupId]["Cluster"] = "0008"
 
-    elif self.ListOfGroups[GroupId]["WidgetStyle"] in (
-        "ColorControlWW",
-        "ColorControlRGB",
-        "ColorControlRGB",
-        "ColorControlRGBWW",
-        "ColorControl",
-        "ColorControlFull",
-    ):
+    elif GroupWidgetType in ("ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"):
         self.ListOfGroups[GroupId]["Cluster"] = "0300"
 
-    elif self.ListOfGroups[GroupId]["WidgetStyle"] in ("Venetian", "WindowCovering", "VenetianInverted"):
+    elif GroupWidgetType in ("Venetian", "WindowCovering", "VenetianInverted"):
         self.ListOfGroups[GroupId]["Cluster"] = "0102"
 
     else:
@@ -293,7 +258,34 @@ def best_group_widget(self, GroupId):
     if GroupWidgetStyle is None:
         GroupWidgetStyle = GroupWidgetType
         
+    self.ListOfGroups[GroupId]["GroupWidgetStyle"] = GroupWidgetType
+        
     return WIDGET_STYLE.get(GroupWidgetStyle, WIDGET_STYLE["ColorControlFull"])
+
+    
+WIDGET_STYLE_RULES = {
+    "Switch": {"Plug", "LvlControl", "ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
+    "Plug": {"Plug", "LvlControl", "ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
+    "LvlControl": {"ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
+    "ColorControlWW": {"ColorControlRGBWW"},
+    "ColorControlRGB": {"ColorControlRGBWW"},
+    "ColorControlRGBWW": set(),
+    "ColorControl": set(),
+    "ColorControlFull": set()  
+}
+
+def my_best_widget_offer(self, current_widget, current_group_widget):
+    """ Find the best suitable widget. looks at the overlap features. If you have a Switch and ColorRGB, you can only do switch actions"""
+    if current_group_widget in (None, current_widget):
+        return current_widget
+    
+    if current_widget not in WIDGET_STYLE_RULES:
+        return current_group_widget
+
+    if current_group_widget in WIDGET_STYLE_RULES and current_widget in WIDGET_STYLE_RULES[current_group_widget]:
+        return current_group_widget
+
+    return current_widget
 
 
 def update_domoticz_group_device(self, GroupId):
@@ -475,19 +467,14 @@ def update_domoticz_group_device(self, GroupId):
 def update_domoticz_group_name(self, GrpId, NewGrpName):
     update_domoticz_group_device_widget_name(self, NewGrpName, GrpId)
 
-    return
-
 
 def ValuesForVenetian(level):
-    nValue = 2
-    if level > 0 and level < 100:
-        nValue = 2
-    elif level == 0:
-        nValue = 0
+    if level == 0:
+        return 0, "0"
     elif level == 100:
-        nValue = 1
-    sValue = "%s" % level
-    return (nValue, sValue)
+        return 1, "100"
+    else:
+        return 2, str(level)
 
 
 def remove_domoticz_group_device(self, GroupId):
@@ -609,10 +596,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
     # Not sure that Groups are always on EP 01 !!!!!
     EPout = "01"
 
-    if (
-        "Cluster" in self.ListOfGroups[GrpId]
-        and self.ListOfGroups[GrpId]["Cluster"] == "0102"
-    ):  # Venetian store
+    if self.ListOfGroups.get(GrpId, {}).get("Cluster") == "0102":
         if Command in ( "Off", "Close", ):
             nValue = 0
             sValue = "Off"
@@ -666,39 +650,36 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         update_domoticz_group_device(self, GrpId)
         zcl_group_onoff_on(self, GrpId, ZIGATE_EP, EPout)
 
-    elif Command in ( "Stop",) and self.ListOfGroups[GrpId]["Cluster"] == "0102":
+    elif Command in ( "Stop",) and self.ListOfGroups.get(GrpId, {}).get("Cluster") == "0102":
         # Windowscovering Stop
         zcl_group_window_covering_stop(self, GrpId, "01", EPout)
-        
-    elif Command in ( "Stop",) and self.ListOfGroups[GrpId]["Cluster"] == "0008":
+
+    elif Command in ( "Stop",) and self.ListOfGroups.get(GrpId, {}).get("Cluster") == "0008":
         # SetLevel Off
         zcl_group_move_to_level_stop(self, GrpId, EPout)
 
     elif Command == "Set Level":
-        # Level: % value of move
-        # Converted to value , raw value from 0 to 255
-        # sValue is just a string of Level
-        
-        if Level > 100:
-            Level = 100
-        elif Level < 0:
-            Level = 0
+        Level = max(0, min(Level, 100))
         OnOff = "01"
-        
-        # value = int(Level*255//100)
+
         value = "%02X" % int(Level * 255 // 100)
         update_device_list_attribute(self, GrpId, "0008", value)
-        
-        transitionMoveLevel = "%04x" % self.pluginconf.pluginConf["GrpmoveToLevel"]
-        GroupLevelWithOnOff = False
-        if (  "GroupLevelWithOnOff" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["GroupLevelWithOnOff"] ):
-            GroupLevelWithOnOff = True
 
+        transitionMoveLevel = "%04x" % self.pluginconf.pluginConf["GrpmoveToLevel"]
+        GroupLevelWithOnOff = bool(
+            (
+                "GroupLevelWithOnOff" in self.pluginconf.pluginConf
+                and self.pluginconf.pluginConf["GroupLevelWithOnOff"]
+            )
+        )
         if GroupLevelWithOnOff:
             zcl_group_move_to_level_with_onoff(self, GrpId, EPout, OnOff, value, transition=transitionMoveLevel, ackIsDisabled=True)
         else:
             zcl_group_level_move_to_level( self, GrpId, ZIGATE_EP, EPout, "01", value, transition=transitionMoveLevel)
 
+        if self.ListOfGroups[GrpId].get("WidgetStyle") in {"Switch", "Plug", "LvlControl", "ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"} and Level == 100:
+            zcl_group_onoff_on(self, GrpId, ZIGATE_EP, EPout)
+            
         update_domoticz_group_device(self, GrpId)
         # Update Device
         nValue = 2
