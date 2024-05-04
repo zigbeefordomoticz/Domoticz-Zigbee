@@ -60,7 +60,7 @@ def setup_list_rest_commands( self ):
         ( {"Name": "req-topologie", "Verbs": {"GET"}, "function": self.rest_req_topologie} ),
         ( {"Name": "rescan-groups", "Verbs": {"GET"}, "function": self.rest_rescan_group} ),
         ( {"Name": "restart-needed", "Verbs": {"GET"}, "function": self.rest_restart_needed} ),
-        ( {"Name": "ScanDevscan-device-for-grpiceForGrp", "Verbs": {"PUT"}, "function": self.rest_scan_devices_for_group } ),
+        ( {"Name": "scan-device-for-grp", "Verbs": {"PUT"}, "function": self.rest_scan_devices_for_group } ),
         ( {"Name": "setting-debug", "Verbs": {"GET", "PUT"}, "function": self.rest_Settings_with_debug} ),
         ( {"Name": "setting", "Verbs": {"GET", "PUT"}, "function": self.rest_Settings_wo_debug} ),
         ( {"Name": "sw-reset-zigate", "Verbs": {"GET"}, "function": self.rest_reset_zigate} ),
