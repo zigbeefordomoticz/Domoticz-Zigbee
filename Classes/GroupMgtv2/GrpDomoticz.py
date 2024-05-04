@@ -210,24 +210,29 @@ def best_group_widget(self, GroupId):
             WidgetType = self.ListOfDevices[NwkId]["Ep"][devEp]["ClusterType"][DomoDeviceUnit]
             self.logging("Debug", "------------ GroupWidget: %s WidgetType: %s" % (GroupWidgetType, WidgetType))
 
-            if self.ListOfDevices[NwkId]["Ep"][devEp]["Type"] in ( "Blind", "BlindInverted") and WidgetType == "LvlControl":
+            if "BlindInverted" in self.ListOfDevices[NwkId]["Type"] and WidgetType == "LvlControl":
                 # Blinds control via cluster 0x0008
                 GroupWidgetStyle = "BlindPercentInverted"
                 GroupWidgetType = "LvlControl"
                 break
-                
+
+            elif "Blind" in self.ListOfDevices[NwkId]["Type"] and  WidgetType == "LvlControl":
+                # Blinds control via cluster 0x0008
+                GroupWidgetStyle = "BlindPercent"
+                GroupWidgetType = "LvlControl"
+                break
+
             if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
                 # Those widgets are commanded via cluster Level Control
                 GroupWidgetStyle = "VenetianInverted"
                 GroupWidgetType = "LvlControl"
-                
                 break
 
             if WidgetType == GroupWidgetType:
                 continue
 
             GroupWidgetType = my_best_widget_offer(self, WidgetType, GroupWidgetType)
-            
+
     if GroupWidgetType is None:
         GroupWidgetType = "ColorControlFull"
 
