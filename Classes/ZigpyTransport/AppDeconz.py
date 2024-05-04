@@ -119,45 +119,8 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
 
 
     async def register_endpoints(self):
-        """
-        Registers all necessary endpoints.
-        The exact order in which this method is called depends on the radio module.
-        """
-
-        LOGGER.info("Adding Endpoint 0x%x" %0x01)
-        await self.add_endpoint(
-            zdo_types.SimpleDescriptor(
-                endpoint=1,
-                profile=zigpy.profiles.zha.PROFILE_ID,
-                device_type=zigpy.profiles.zha.DeviceType.IAS_CONTROL,
-                device_version=0b0000,
-                input_clusters=[
-                    zigpy.zcl.clusters.general.Basic.cluster_id,
-                    zigpy.zcl.clusters.general.OnOff.cluster_id,
-                    zigpy.zcl.clusters.general.Time.cluster_id,
-                    zigpy.zcl.clusters.general.Ota.cluster_id,
-                    zigpy.zcl.clusters.security.IasAce.cluster_id,
-                ],
-                output_clusters=[
-                    zigpy.zcl.clusters.general.PowerConfiguration.cluster_id,
-                    zigpy.zcl.clusters.general.PollControl.cluster_id,
-                    zigpy.zcl.clusters.security.IasZone.cluster_id,
-                    zigpy.zcl.clusters.security.IasWd.cluster_id,
-                ],
-            )
-        )
-
-        LOGGER.info("Adding Endpoint 0x%x" %0x02)
-        await self.add_endpoint(
-            zdo_types.SimpleDescriptor(
-                endpoint=2,
-                profile=zigpy.profiles.zll.PROFILE_ID,
-                device_type=zigpy.profiles.zll.DeviceType.CONTROLLER,
-                device_version=0b0000,
-                input_clusters=[zigpy.zcl.clusters.general.Basic.cluster_id],
-                output_clusters=[],
-            )
-        )
+        self.log.logging("TransportZigpy", "Status", "++ deConz Radio register default Ep")
+        await super().register_endpoints()
 
         LOGGER.info("Adding any additional and specific Endpoints ")
         await Classes.ZigpyTransport.AppGeneric.register_specific_endpoints(self)

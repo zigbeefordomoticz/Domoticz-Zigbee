@@ -134,31 +134,8 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
 
     async def register_endpoints(self, endpoint=1):
-        # Only needed if the device require simple node descriptor from the coordinator
-        self.log.logging("TransportZigpy", "Status", "++ Bellows Radio register default Ep")
-        await self.add_endpoint(
-            zdo_types.SimpleDescriptor(
-                endpoint=1,
-                profile=zigpy.profiles.zha.PROFILE_ID,
-                device_type=zigpy.profiles.zha.DeviceType.IAS_CONTROL,
-                device_version=0b0000,
-                input_clusters=[
-                    zigpy.zcl.clusters.general.Basic.cluster_id,
-                    zigpy.zcl.clusters.general.OnOff.cluster_id,
-                    zigpy.zcl.clusters.general.Groups.cluster_id,
-                    zigpy.zcl.clusters.general.Scenes.cluster_id,
-                    zigpy.zcl.clusters.general.Time.cluster_id,
-                    zigpy.zcl.clusters.general.Ota.cluster_id,
-                    zigpy.zcl.clusters.security.IasAce.cluster_id,
-                ],
-                output_clusters=[
-                    zigpy.zcl.clusters.general.PowerConfiguration.cluster_id,
-                    zigpy.zcl.clusters.general.PollControl.cluster_id,
-                    zigpy.zcl.clusters.security.IasZone.cluster_id,
-                    zigpy.zcl.clusters.security.IasWd.cluster_id,
-                ],
-            )
-        )
+        self.log.logging("TransportZigpy", "Status", "++ EZSP Radio register default Ep")
+        await super().register_endpoints()
 
 
     def get_device(self, ieee=None, nwk=None):
