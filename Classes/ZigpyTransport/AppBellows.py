@@ -53,12 +53,13 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
 
 
-    async def startup(self, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
+    async def startup(self, statistics, HardwareID, pluginconf, use_of_zigpy_persistent_db, callBackHandleMessage, callBackUpdDevice=None, callBackGetDevice=None, callBackBackup=None, callBackRestartPlugin=None, captureRxFrame=None, auto_form=False, force_form=False, log=None, permit_to_join_timer=None):
         """Starts a network, optionally forming one with random settings if necessary."""
  
         # If set to != 0 (default) extended PanId will be use when forming the network.
         # If set to !=0 (default) channel will be use when formin the network
         self.log = log
+        self.statistics = statistics
         self.pluginconf = pluginconf
         self.permit_to_join_timer = permit_to_join_timer
         self.callBackFunction = callBackHandleMessage
@@ -120,9 +121,7 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             status = await coordinator.add_to_group( 0x4005, name="Default Tint Group 4005", )
             status = await coordinator.add_to_group( 0x4006, name="Default Tint Group 4006", )
 
-
-        
-            
+         
     async def shutdown(self) -> None:
         """Shutdown controller."""
         await Classes.ZigpyTransport.AppGeneric.shutdown(self)
@@ -164,20 +163,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
 
     def packet_received(self, packet: zigpy_t.ZigbeePacket) -> None:
         return Classes.ZigpyTransport.AppGeneric.packet_received(self,packet)
-
-
-    def handle_message(
-        self,
-        sender: zigpy.device.Device,
-        profile: int,
-        cluster: int,
-        src_ep: int,
-        dst_ep: int,
-        message: bytes,
-        * ,
-        dst_addressing=None,
-    )->None:
-        return Classes.ZigpyTransport.AppGeneric.handle_message(self,sender,profile,cluster,src_ep,dst_ep,message, dst_addressing=dst_addressing)
 
 
     async def set_zigpy_tx_power(self, power):

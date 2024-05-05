@@ -14,7 +14,7 @@ from Modules.domoticzAbstractLayer import (domoticz_error_api,
 
 
 class TransportStatistics:
-    def __init__(self, pluginconf, log):
+    def __init__(self, pluginconf, log, zigbee_communication):
         self._pdmLoads = 0  # count the number of PDM Loads ( should be 1 max)
         self._crcErrors = 0  # count of crc errors
         self._frameErrors = 0  # count of frames error
@@ -47,6 +47,7 @@ class TransportStatistics:
         self.TrendStats = []
         self.pluginconf = pluginconf
         self.log = log
+        self.zigbee_communication = zigbee_communication
 
     # Statistics methods
     def starttime(self):
@@ -192,55 +193,47 @@ class TransportStatistics:
             return
         if self.sent() == 0 or self.received() == 0:
             return
-        domoticz_status_api("Statistics on message")
-        domoticz_status_api("   PDM load(s)      : %s" % self._pdmLoads)
-        domoticz_status_api("Coordinator reacting time")
-        domoticz_status_api("   Max              : %s sec" % (self._maxTiming8000))
-        domoticz_status_api("   Average          : %s sec" % (self._averageTiming8000))
-        domoticz_status_api("Coordinator processing time on Rx")
-        domoticz_status_api("   Max              : %s sec" % (self._maxRxProcesses))
-        domoticz_status_api("   Average          : %s sec" % (self._averageRxProcess))
-        domoticz_status_api("Sent:")
-        domoticz_status_api("   TX commands      : %s" % (self.sent()))
-        domoticz_status_api("   Max Load (Queue) : %s " % (self._MaxLoad))
-        domoticz_status_api("   Max aPDU (Queue) : %s " % (self._MaxaPdu))
-        domoticz_status_api("   Max nPDU (Queue) : %s " % (self._MaxnPdu))
-        domoticz_status_api(
-            "   TX failed        : %s (%s" % (self.ackKOReceived(), round((self.ackKOReceived() / self.sent()) * 10, 2))
-            + "%)"
-        )
-        domoticz_status_api(
-            "   TX timeout       : %s (%s" % (self.TOstatus(), round((self.TOstatus() / self.sent()) * 100, 2)) + "%)"
-        )
-        domoticz_status_api(
-            "   TX data timeout  : %s (%s" % (self.TOdata(), round((self.TOdata() / self.sent()) * 100, 2)) + "%)"
-        )
-        domoticz_status_api(
-            "   TX reTransmit    : %s (%s" % (self.reTx(), round((self.reTx() / self.sent()) * 100, 2)) + "%)"
-        )
-        domoticz_status_api(
-            "   TX APS Failure   : %s (%s" % (self.APSFailure(), round((self.APSFailure() / self.sent()) * 100, 2))
-            + "%)"
-        )
-        domoticz_status_api(
-            "   TX APS Ack       : %s (%s" % (self.APSAck(), round((self.APSAck() / self.sent()) * 100, 2)) + "%)"
-        )
-        domoticz_status_api(
-            "   TX APS Nck       : %s (%s" % (self.APSNck(), round((self.APSNck() / self.sent()) * 100, 2)) + "%)"
-        )
-        domoticz_status_api("Received:")
-        domoticz_status_api("   RX frame         : %s" % (self.received()))
-        domoticz_status_api(
-            "   RX crc errors    : %s (%s" % (self.crcErrors(), round((self.crcErrors() / self.received()) * 100, 2))
-            + "%)"
-        )
-        domoticz_status_api(
-            "   RX lentgh errors : %s (%s"
-            % (self.frameErrors(), round((self.frameErrors() / self.received()) * 100, 2))
-            + "%)"
-        )
-        domoticz_status_api("   RX clusters      : %s" % (self.clusterOK()))
-        domoticz_status_api("   RX clusters KO   : %s" % (self.clusterKO()))
+        domoticz_status_api("Plugin statistics")
+        domoticz_status_api("  Messages Sent:")
+        domoticz_status_api("     Max Load (Queue) : %s " % (self._MaxLoad))
+        domoticz_status_api("     TX commands      : %s" % (self.sent()))
+        domoticz_status_api("     TX failed        : %s (%s" % (self.ackKOReceived(), round((self.ackKOReceived() / self.sent()) * 10, 2))+ "%)")
+
+        if self.zigbee_communication == "native":
+            domoticz_status_api("     TX timeout       : %s (%s" % (self.TOstatus(), round((self.TOstatus() / self.sent()) * 100, 2)) + "%)")
+
+        domoticz_status_api("     TX data timeout  : %s (%s" % (self.TOdata(), round((self.TOdata() / self.sent()) * 100, 2)) + "%)")
+        domoticz_status_api("     TX reTransmit    : %s (%s" % (self.reTx(), round((self.reTx() / self.sent()) * 100, 2)) + "%)")
+
+        if self.zigbee_communication == "native":
+            domoticz_status_api("     TX APS Failure   : %s (%s" % (self.APSFailure(), round((self.APSFailure() / self.sent()) * 100, 2))+ "%)")
+
+        domoticz_status_api("     TX APS Ack       : %s (%s" % (self.APSAck(), round((self.APSAck() / self.sent()) * 100, 2)) + "%)")
+        domoticz_status_api("     TX APS Nck       : %s (%s" % (self.APSNck(), round((self.APSNck() / self.sent()) * 100, 2)) + "%)")
+
+        domoticz_status_api("  Messages Received:")
+        domoticz_status_api("     RX frame         : %s" % (self.received()))
+        domoticz_status_api("     RX clusters      : %s" % (self.clusterOK()))
+        domoticz_status_api("     RX clusters KO   : %s" % (self.clusterKO()))
+
+        if self.zigbee_communication == "native":
+            domoticz_status_api("  Coordinator reacting time on Tx (if ReactTime enabled)")
+            domoticz_status_api("     Max              : %s sec" % (self._maxTiming8000))
+            domoticz_status_api("     Average          : %s sec" % (self._averageTiming8000))
+
+        else:
+            domoticz_status_api("  Plugin reacting time on Tx (if ReactTime enabled)")
+            domoticz_status_api("     Max              : %s ms" % (self._max_reading_zigpy_timing))
+            domoticz_status_api("     Average          : %s ms" % (self._average_reading_zigpy_timing))
+
+        domoticz_status_api("  Plugin processing time on Rx (if ReactTime enabled)")
+        if self.zigbee_communication == "native":
+            domoticz_status_api("     Max              : %s sec" % (self._maxRxProcesses))
+            domoticz_status_api("     Average          : %s sec" % (self._averageRxProcess))
+        else:
+            domoticz_status_api("     Max              : %s ms" % (self._maxRxProcesses))
+            domoticz_status_api("     Average          : %s ms" % (self._averageRxProcess))
+
         t0 = self.starttime()
         t1 = int(time())
         _days = 0
@@ -253,8 +246,7 @@ class TransportStatistics:
         _min = _duration // 60
         _duration = _duration % 60
         _sec = _duration % 60
-        domoticz_status_api("Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
-        domoticz_status_api( f"ZigpyThread Max: {self._max_reading_zigpy_timing} ms with an average of: {self._average_reading_zigpy_timing} ms")
+        domoticz_status_api("  Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
 
 
     def writeReport(self):

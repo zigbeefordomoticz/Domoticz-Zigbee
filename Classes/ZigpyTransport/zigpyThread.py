@@ -120,7 +120,7 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     self.log.logging( "TransportZigpy", "Debug", f"start_zigpy_task -extendedPANID {self.pluginconf.pluginConf['extendedPANID']} {extended_pan_id}", )
 
-    await radio_start(self, self.pluginconf, self.use_of_zigpy_persistent_db, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id),
+    await radio_start(self, self.statistics, self.pluginconf, self.use_of_zigpy_persistent_db, self._radiomodule, self._serialPort, set_channel=channel, set_extendedPanId=extended_pan_id),
 
     # Run forever
     self.writer_queue = queue.Queue()  # We MUST use queue and not asyncio.Queue, because it is not compatible with the Domoticz framework
@@ -150,7 +150,7 @@ async def _shutdown_remaining_task(self):
     await asyncio.sleep(1)
     
 
-async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
+async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, radiomodule, serialPort, auto_form=False, set_channel=0, set_extendedPanId=0):
 
     self.log.logging("TransportZigpy", "Debug", "In radio_start %s" %radiomodule)
 
@@ -211,7 +211,7 @@ async def radio_start(self, pluginconf, use_of_zigpy_persistent_db, radiomodule,
         self.log.logging( "TransportZigpy", "Status", "++ Use of Zigpy Persistent Db")
         await self.app._load_db()
 
-    await _radio_startup(self, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule)
+    await _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule)
     self.log.logging( "TransportZigpy", "Debug", "Exiting co-rounting radio_start")
 
 
@@ -303,10 +303,11 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
         config[zigpy.config.CONF_STARTUP_ENERGY_SCAN] = False
 
 
-async def _radio_startup(self, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule):
+async def _radio_startup(self, statistics, pluginconf, use_of_zigpy_persistent_db, new_network, radiomodule):
     
     try:
         await self.app.startup(
+            self.statistics,
             self.hardwareid,
             pluginconf,
             use_of_zigpy_persistent_db,
@@ -554,21 +555,25 @@ async def _unicast_command(self, destination, Profile, Cluster, sEp, dEp, sequen
         self.log.logging("TransportZigpy", "Log", f"process_raw_command: TimeoutError {destination} {Profile} {Cluster} {payload}")
         error_msg = str(e)
         result = 0xB6
+        self.statistics._TOdata += 1
 
     except (asyncio.CancelledError, asyncio.exceptions.CancelledError) as e:
         self.log.logging("TransportZigpy", "Log", f"process_raw_command: CancelledError {destination} {Profile} {Cluster} {payload}")
         error_msg = str(e)
         result = 0xB6
+        self.statistics._ackKO += 1
 
     except AttributeError as e:
         self.log.logging("TransportZigpy", "Log", f"process_raw_command: AttributeError {Profile} {type(Profile)} {Cluster} {type(Cluster)}")
         error_msg = str(e)
         result = 0xB6
+        self.statistics._ackKO += 1
 
     except DeliveryError as e:
         self.log.logging("TransportZigpy", "Debug", f"process_raw_command - DeliveryError : {e}")
         error_msg = str(e)
         result = int(e.status) if hasattr(e, 'status') else 0xB6
+        self.statistics._ackKO += 1
 
     else:
         self.statistics._sent += 1
@@ -676,6 +681,7 @@ def check_transport_readiness(self):
 
     return False
 
+
 def measure_execution_time(func):
     async def wrapper(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False):
         t_start = None
@@ -683,15 +689,16 @@ def measure_execution_time(func):
             t_start = int(1000 * time.time())
 
         try:
-            await func(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False)
+            await func(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable, use_ieee, delay, extended_timeout)
 
         finally:
             if t_start:
                 t_end = int(1000 * time.time())
                 t_elapse = t_end - t_start
-                self.statistics.add_timing_zigpy(t_elapse)
+                self.statistics.add_timing_zigpy(t_elapse)  
                 self.log.logging("TransportZigpy", "Log", f"| (transport_request) | {t_elapse} | {Function} | {destination.nwk} | {destination.ieee} | {destination.model} | {destination.manufacturer_id} | {destination.is_initialized} | {destination.rssi} | {destination.lqi} |")
     return wrapper
+
 
 @measure_execution_time
 async def transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False):
@@ -734,8 +741,7 @@ async def transport_request(self, Function, destination, Profile, Cluster, sEp, 
         await _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid, sEp, dEp, sequence, payload, use_ieee, _ieee,ack_is_disable, extended_timeout )
 
 
-async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid, sEp, dEp, sequence, payload, use_ieee, _ieee,ack_is_disable, extended_timeout ):
-
+async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid, sEp, dEp, sequence, payload, use_ieee, _ieee, ack_is_disable, extended_timeout):
     max_retry = MAX_ATTEMPS_REQUEST if self.pluginconf.pluginConf["PluginRetrys"] else 1
 
     for attempt in range(1, (max_retry + 1)):
@@ -743,25 +749,37 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
             self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {_ieee} {Profile} {Cluster} - Expect_Reply: {ack_is_disable} extended_timeout: {extended_timeout} Attempts: {attempt}/{max_retry}")
             result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout)
 
-        except (asyncio.exceptions.CancelledError, asyncio.CancelledError, asyncio.exceptions.TimeoutError, asyncio.TimeoutError, AttributeError, asyncio.exceptions.CancelledError, asyncio.exceptions.TimeoutError, DeliveryError) as e:
-            self.log.logging("TransportZigpy", "Log", f"{Function} {_ieee}/0x{_nwkid} 0x{Profile} 0x{Cluster}:16 Ack: {ack_is_disable} RETRY: {attempt}/{max_retry} - {e}")
+        except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError, AttributeError, DeliveryError) as e:
+            error_log_message = f"{Function} {_ieee}/0x{_nwkid} 0x{Profile} 0x{Cluster}:16 Ack: {ack_is_disable} RETRY: {attempt}/{max_retry} ({e})"
+            self.log.logging("TransportZigpy", "Log", error_log_message)
 
-            if attempt < max_retry:
-                # Slow down the throughput when too many commands. Try not to overload the coordinators
-                multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
-                await asyncio.sleep(multi * WAITING_TIME_BETWEEN_ATTEMPTS)
+            if await _retry_or_not(self, attempt, max_retry, Function, sequence, ack_is_disable, _ieee, _nwkid, destination, e):
+                self.statistics._reTx += 1
+                if isinstance(e, asyncio.exceptions.TimeoutError):
+                    self.statistics._TOdata += 1
                 continue
-
-            # Stop here as we have exceed the max retrys
-            result = int(e.status) if hasattr(e, 'status') else 0xB6
-            handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
-            break
+            else:
+                self.statistics._ackKO += 1
+                break
 
         else:
             # Success
             handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
             self.log.logging("TransportZigpy", "Debug", f"transport_request: result: {result}")
             break
+
+async def _retry_or_not(self, attempt, max_retry, Function, sequence,ack_is_disable, _ieee, _nwkid, destination , e):
+    if attempt < max_retry:
+        # Slow down the throughput when too many commands. Try not to overload the coordinators
+        multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
+        await asyncio.sleep(multi * WAITING_TIME_BETWEEN_ATTEMPTS)
+        return True
+
+    # Stop here as we have exceed the max retrys
+    result = int(e.status) if hasattr(e, 'status') else 0xB6
+
+    handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
+    return False
 
 
 def handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):

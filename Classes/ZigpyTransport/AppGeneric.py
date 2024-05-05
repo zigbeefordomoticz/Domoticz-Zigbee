@@ -338,7 +338,26 @@ def handle_relays(self, nwk, relays) -> None:
     """Called when a list of relaying devices is received."""
     super(type(self),self).handle_relays(nwk, relays)
 
-        
+
+def measure_execution_time(func):
+    def wrapper(self, packet):
+        t_start = None
+        if self.pluginconf.pluginConf.get("ZigpyReactTime", False):
+            t_start = int(1000 * time.time())
+
+        try:
+            func(self, packet)
+
+        finally:
+            if t_start:
+                t_end = int(1000 * time.time())
+                t_elapse = t_end - t_start
+                self.statistics.add_rxTiming(t_elapse)  
+                self.log.logging("TransportZigpy", "Log", f"| (packet_received) | {t_elapse} | {packet.src.address.serialize()[::-1].hex()} | {packet.profile_id} | {packet.lqi} | {packet.rssi} |")
+    return wrapper
+
+    
+@measure_execution_time
 def packet_received(
     self, 
     packet: zigpy_t.ZigbeePacket
@@ -414,6 +433,7 @@ def get_zigpy_version(self):
     # This is a fake version number. This is just to inform the plugin that we are using ZNP over Zigpy
     LOGGER.debug("get_zigpy_version ake version number. !!")
     return self.version
+
 
 def get_device_with_address( self, address: zigpy_t.AddrModeAddress ) -> zigpy.device.Device:
         """Gets a `Device` object using the provided address mode address."""

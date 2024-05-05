@@ -546,7 +546,7 @@ class BasePlugin:
         self.log.logging("Plugin", "Debug", "IEEE2NWK after checkListOfDevice2Devices     : " + str(self.IEEE2NWK))
 
         # Create Statistics object
-        self.statistics = TransportStatistics(self.pluginconf, self.log)
+        self.statistics = TransportStatistics(self.pluginconf, self.log, self.zigbee_communication)
 
         # Connect to Coordinator only when all initialisation are properly done.
         self.log.logging("Plugin", "Status", "Z4D configured to use transport mode: %s" % self.transport)
