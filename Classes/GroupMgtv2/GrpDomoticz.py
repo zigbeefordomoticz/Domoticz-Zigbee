@@ -36,9 +36,9 @@ WIDGET_STYLE = {
     "Plug": (244, 73, 0),
     "Switch": (244, 73, 0),
     "LvlControl": (244, 73, 7),
-    "BlindPercentInverted": (244, 73, 3),
-    "BlindPercent": (244, 73, 3),
-    "WindowCovering": (244, 73, 3),
+    "BlindPercentInverted": (244, 73, 13),
+    "BlindPercent": (244, 73, 13),
+    "WindowCovering": (244, 73, 13),
     "Venetian": (244, 73, 15),
     "VenetianInverted": (244, 73, 15),
     "ColorControlWW": (241, 8, 7),
@@ -188,15 +188,15 @@ def best_group_widget(self, GroupId):
     group_widget_type_candidate = None
     GroupWidgetStyle = None
 
-    self.logging("Log", "best_group_widget Device - %s" % str(self.ListOfGroups[GroupId]["Devices"]))
+    self.logging("Debug", "best_group_widget Device - %s" % str(self.ListOfGroups[GroupId]["Devices"]))
     for NwkId, devEp, iterIEEE in self.ListOfGroups[GroupId]["Devices"]:
         # We will scan each Device in the Group and try to indentify which Widget is associated to it
         # Based on the list of Widget will try to identified the Most Features
-        self.logging("Log", "best_group_widget Device - %s  %s  %s" % (NwkId, devEp, iterIEEE))
+        self.logging("Debug", "best_group_widget Device - %s  %s  %s" % (NwkId, devEp, iterIEEE))
         if NwkId == "0000":
             continue
 
-        self.logging("Log", "bestGroupWidget - Group: %s processing %s" % (GroupId, NwkId))
+        self.logging("Debug", "bestGroupWidget - Group: %s processing %s" % (GroupId, NwkId))
         if NwkId not in self.ListOfDevices:
             # We have some inconsistency !
             continue
@@ -207,7 +207,7 @@ def best_group_widget(self, GroupId):
             continue
 
         GroupWidgetStyle, group_widget_type_candidate = screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate)
-        self.logging( "Log", f"best_group_widget {NwkId} {devEp} {iterIEEE} --> {GroupWidgetStyle} {group_widget_type_candidate}")
+        self.logging( "Debug", f"best_group_widget {NwkId} {devEp} {iterIEEE} --> {GroupWidgetStyle} {group_widget_type_candidate}")
 
         # If GroupWidgetStyle is set then we stop here
         if GroupWidgetStyle in ( "BlindPercentInverted", "BlindPercent", "VenetianInverted"):
@@ -224,7 +224,7 @@ def best_group_widget(self, GroupId):
     # Update Cluster based on WidgetStyle
     self.ListOfGroups[GroupId]["Cluster"] = CLUSTER_MAPPING.get(group_widget_type_candidate, "")
 
-    self.logging( "Log", "best_group_widget for GroupId: %s Found WidgetType: %s Widget: %s" % (
+    self.logging( "Debug", "best_group_widget for GroupId: %s Found WidgetType: %s Widget: %s" % (
         GroupId, group_widget_type_candidate, WIDGET_STYLE.get(group_widget_type_candidate, WIDGET_STYLE["ColorControlFull"])), )
 
     if GroupWidgetStyle is None:
@@ -238,26 +238,26 @@ def best_group_widget(self, GroupId):
 def screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate):
     
     for DomoDeviceUnit, device_widget_type in device_ep_info["ClusterType"].items():
-        self.logging("Log", f"------------screen_device_list {NwkId} DomoDeviceUnit: {DomoDeviceUnit} device_widget_type: {device_widget_type}" )
+        self.logging("Debug", f"------------screen_device_list {NwkId} DomoDeviceUnit: {DomoDeviceUnit} device_widget_type: {device_widget_type}" )
         if (device_widget_type is None):
             continue
 
-        self.logging("Log", f"------------screen_device_list {NwkId} group_widget_type_candidate: {group_widget_type_candidate} device_widget_type: {device_widget_type}" )
+        self.logging("Debug", f"------------screen_device_list {NwkId} group_widget_type_candidate: {group_widget_type_candidate} device_widget_type: {device_widget_type}" )
 
         if device_widget_type == "LvlControl":
             device_type = device_ep_info.get("Type") or device_info.get("Type")
             if device_type is not None:
                 device_type = device_type.split('/')
-            self.logging("Log", f"------------screen_device_list {NwkId} device_ep_type: {device_type}" )
+            self.logging("Debug", f"------------screen_device_list {NwkId} device_ep_type: {device_type}" )
 
             if "BlindInverted" in device_type:
                 # Blinds control via cluster 0x0008
-                self.logging("Log", "------------screen_device_list - Found BlindInverted!!")
+                self.logging("Debug", "------------screen_device_list - Found BlindInverted!!")
                 return "BlindPercentInverted", "LvlControl"
 
             elif "Blind" in device_type:
                 # Blinds control via cluster 0x0008
-                self.logging("Log", "------------screen_device_list - Found Blind!!")
+                self.logging("Debug", "------------screen_device_list - Found Blind!!")
                 return "BlindPercent", "LvlControl"
 
         if device_widget_type in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
@@ -268,7 +268,7 @@ def screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyl
             continue
 
         group_widget_type_candidate = my_best_widget_offer(self, device_widget_type, group_widget_type_candidate)
-        self.logging("Log", f"------------screen_device_list - Found from my_best_widget_offer {group_widget_type_candidate}")
+        self.logging("Debug", f"------------screen_device_list - Found from my_best_widget_offer {group_widget_type_candidate}")
         
     return GroupWidgetStyle, group_widget_type_candidate
 
