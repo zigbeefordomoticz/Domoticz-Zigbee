@@ -242,6 +242,8 @@ def screen_device_list(self, NwkId, device_ep_info, GroupWidgetStyle, group_widg
 
         if device_widget_type == "LvlControl":
             device_ep_type = device_ep_info.get("Type", "")
+            self.logging("Log", f"------------ {NwkId} device_ep_type: {device_ep_type}" )
+
             if "BlindInverted" in device_ep_type:
                 # Blinds control via cluster 0x0008
                 GroupWidgetStyle = "BlindPercentInverted"
