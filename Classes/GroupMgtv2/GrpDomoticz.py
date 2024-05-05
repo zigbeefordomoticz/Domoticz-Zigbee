@@ -250,21 +250,15 @@ def screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyl
 
             if "BlindInverted" in device_type:
                 # Blinds control via cluster 0x0008
-                GroupWidgetStyle = "BlindPercentInverted"
-                group_widget_type_candidate = "LvlControl"
-                break
+                return "BlindPercentInverted", "LvlControl"
 
             elif "Blind" in device_type:
                 # Blinds control via cluster 0x0008
-                GroupWidgetStyle = "BlindPercent"
-                group_widget_type_candidate = "LvlControl"
-                break
+                return "BlindPercent", "LvlControl"
 
         if device_widget_type in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
             # Those widgets are commanded via cluster Level Control
-            GroupWidgetStyle = "VenetianInverted"
-            group_widget_type_candidate = "LvlControl"
-            break
+            return "VenetianInverted", "LvlControl"
 
         group_widget_type_candidate = my_best_widget_offer(self, device_widget_type, group_widget_type_candidate)
         
