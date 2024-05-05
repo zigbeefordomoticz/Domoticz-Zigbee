@@ -207,6 +207,10 @@ def best_group_widget(self, GroupId):
 
         GroupWidgetStyle, group_widget_type_candidate = screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate)
 
+        # If GroupWidgetStyle is set then we stop here
+        if GroupWidgetStyle:
+            break
+    
     if group_widget_type_candidate is None:
         group_widget_type_candidate = "ColorControlFull"
         
@@ -233,16 +237,13 @@ def screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyl
     
     for DomoDeviceUnit, device_widget_type in device_ep_info["ClusterType"].items():
         self.logging("Log", f"------------ {NwkId} DomoDeviceUnit: {DomoDeviceUnit} device_widget_type: {device_widget_type}" )
-        if device_widget_type is None:
-            continue
-
-        if device_widget_type == group_widget_type_candidate:
+        if (device_widget_type is None) or (device_widget_type == group_widget_type_candidate):
             continue
 
         self.logging("Log", f"------------ {NwkId} GroupWidget: {group_widget_type_candidate} device_widget_type: {device_widget_type}" )
 
         if device_widget_type == "LvlControl":
-            device_type = device_ep_info.get("Type") or device_info.get("Type")
+            device_type = device_ep_info.get("Type").split('/') or device_info.get("Type").split('/')
                 
             self.logging("Log", f"------------ {NwkId} device_ep_type: {device_type}" )
 
