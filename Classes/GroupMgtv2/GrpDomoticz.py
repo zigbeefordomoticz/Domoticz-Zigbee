@@ -36,8 +36,9 @@ WIDGET_STYLE = {
     "Plug": (244, 73, 0),
     "Switch": (244, 73, 0),
     "LvlControl": (244, 73, 7),
-    "BlindPercentInverted": (244, 73, 16),
-    "WindowCovering": (244, 73, 16),
+    "BlindPercentInverted": (244, 73, 3),
+    "BlindPercent": (244, 73, 3),
+    "WindowCovering": (244, 73, 3),
     "Venetian": (244, 73, 15),
     "VenetianInverted": (244, 73, 15),
     "ColorControlWW": (241, 8, 7),
@@ -206,9 +207,10 @@ def best_group_widget(self, GroupId):
             continue
 
         GroupWidgetStyle, group_widget_type_candidate = screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate)
+        self.logging( "Log", f"best_group_widget {NwkId} {devEp} {iterIEEE} --> {GroupWidgetStyle} {group_widget_type_candidate}")
 
         # If GroupWidgetStyle is set then we stop here
-        if GroupWidgetStyle:
+        if GroupWidgetStyle in ( "BlindPercentInverted", "BlindPercent", "VenetianInverted"):
             break
     
     if group_widget_type_candidate is None:
@@ -228,7 +230,7 @@ def best_group_widget(self, GroupId):
     if GroupWidgetStyle is None:
         GroupWidgetStyle = group_widget_type_candidate
         
-    self.ListOfGroups[GroupId]["GroupWidgetStyle"] = group_widget_type_candidate
+    self.ListOfGroups[GroupId]["GroupWidgetStyle"] = GroupWidgetStyle
         
     return WIDGET_STYLE.get(GroupWidgetStyle, WIDGET_STYLE["ColorControlFull"])
 
