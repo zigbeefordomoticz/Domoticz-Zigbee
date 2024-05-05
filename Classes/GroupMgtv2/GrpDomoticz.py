@@ -243,8 +243,9 @@ def screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyl
         self.logging("Log", f"------------ {NwkId} GroupWidget: {group_widget_type_candidate} device_widget_type: {device_widget_type}" )
 
         if device_widget_type == "LvlControl":
-            device_type = device_ep_info.get("Type").split('/') or device_info.get("Type").split('/')
-                
+            device_type = device_ep_info.get("Type") or device_info.get("Type")
+            if device_type is not None:
+                device_type = device_type.split('/')
             self.logging("Log", f"------------ {NwkId} device_ep_type: {device_type}" )
 
             if "BlindInverted" in device_type:
