@@ -238,31 +238,37 @@ def best_group_widget(self, GroupId):
 def screen_device_list(self, NwkId, device_info, device_ep_info, GroupWidgetStyle, group_widget_type_candidate):
     
     for DomoDeviceUnit, device_widget_type in device_ep_info["ClusterType"].items():
-        self.logging("Log", f"------------ {NwkId} DomoDeviceUnit: {DomoDeviceUnit} device_widget_type: {device_widget_type}" )
-        if (device_widget_type is None) or (device_widget_type == group_widget_type_candidate):
+        self.logging("Log", f"------------screen_device_list {NwkId} DomoDeviceUnit: {DomoDeviceUnit} device_widget_type: {device_widget_type}" )
+        if (device_widget_type is None):
             continue
 
-        self.logging("Log", f"------------ {NwkId} GroupWidget: {group_widget_type_candidate} device_widget_type: {device_widget_type}" )
+        self.logging("Log", f"------------screen_device_list {NwkId} group_widget_type_candidate: {group_widget_type_candidate} device_widget_type: {device_widget_type}" )
 
         if device_widget_type == "LvlControl":
             device_type = device_ep_info.get("Type") or device_info.get("Type")
             if device_type is not None:
                 device_type = device_type.split('/')
-            self.logging("Log", f"------------ {NwkId} device_ep_type: {device_type}" )
+            self.logging("Log", f"------------screen_device_list {NwkId} device_ep_type: {device_type}" )
 
             if "BlindInverted" in device_type:
                 # Blinds control via cluster 0x0008
+                self.logging("Log", "------------screen_device_list - Found BlindInverted!!")
                 return "BlindPercentInverted", "LvlControl"
 
             elif "Blind" in device_type:
                 # Blinds control via cluster 0x0008
+                self.logging("Log", "------------screen_device_list - Found Blind!!")
                 return "BlindPercent", "LvlControl"
 
         if device_widget_type in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
             # Those widgets are commanded via cluster Level Control
             return "VenetianInverted", "LvlControl"
 
+        if (device_widget_type == group_widget_type_candidate):
+            continue
+
         group_widget_type_candidate = my_best_widget_offer(self, device_widget_type, group_widget_type_candidate)
+        self.logging("Log", f"------------screen_device_list - Found from my_best_widget_offer {group_widget_type_candidate}")
         
     return GroupWidgetStyle, group_widget_type_candidate
 
