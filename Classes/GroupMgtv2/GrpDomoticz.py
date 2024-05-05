@@ -61,6 +61,19 @@ WIDGET_STYLE_TO_DOMOTICZ_TYPEMAP = {
 
 }
 
+CLUSTER_MAPPING = {
+    "Switch": "0006",
+    "Plug": "0006",
+    "LvlControl": "0008",
+    "ColorControlWW": "0300",
+    "ColorControlRGB": "0300",
+    "ColorControlRGBWW": "0300",
+    "ColorControl": "0300",
+    "ColorControlFull": "0300",
+    "Venetian": "0102",
+    "WindowCovering": "0102",
+    "VenetianInverted": "0102",
+}
 
 def create_domoticz_group_device(self, GroupName, GroupId):
     """ Create Device for just created group in Domoticz. """
@@ -171,103 +184,90 @@ def get_typename(self, Type_, Subtype_, SwitchType_):
 
 def best_group_widget(self, GroupId):
 
-    # WIDGETS = {
-    #        'Plug':1,                 # ( 244, 73, 0)
-    #        'Switch':1,               # ( 244, 73, 0)
-    #        'LvlControl':2,           # ( 244, 73, 7)
-    #        'ColorControlWW':3,       # ( 241, 8, 7) - Cold white + warm white
-    #        'ColorControlRGB':3,      # ( 241, 2, 7) - RGB
-    #        'ColorControlRGBWW':4,    # ( 241, 4, 7) - RGB + cold white + warm white, either RGB or white can be lit
-    #        'ColorControl':5,         # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
-    #        'ColorControlFull':5,     # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
-    #        'Venetian': 10,           # ( 244, 73, 15) # Shade, Venetian
-    #        'VenetianInverted': 11,   # ( 244, 73, 15)
-    #        'WindowCovering': 12,     # ( 244, 73, 16)  # Venetian Blind EU
-    #        'BlindPercentInverted': 12,     # ( 244, 73, 16)  # Venetian Blind EU
-    #        }
-
-    GroupWidgetType = None
+    group_widget_type_candidate = None
     GroupWidgetStyle = None
 
-    self.logging("Debug", "best_group_widget Device - %s" % str(self.ListOfGroups[GroupId]["Devices"]))
+    self.logging("Log", "best_group_widget Device - %s" % str(self.ListOfGroups[GroupId]["Devices"]))
     for NwkId, devEp, iterIEEE in self.ListOfGroups[GroupId]["Devices"]:
         # We will scan each Device in the Group and try to indentify which Widget is associated to it
         # Based on the list of Widget will try to identified the Most Features
-        self.logging("Debug", "best_group_widget Device - %s  %s  %s" % (NwkId, devEp, iterIEEE))
+        self.logging("Log", "best_group_widget Device - %s  %s  %s" % (NwkId, devEp, iterIEEE))
         if NwkId == "0000":
             continue
 
-        self.logging("Debug", "bestGroupWidget - Group: %s processing %s" % (GroupId, NwkId))
+        self.logging("Log", "bestGroupWidget - Group: %s processing %s" % (GroupId, NwkId))
         if NwkId not in self.ListOfDevices:
             # We have some inconsistency !
             continue
 
-        if "ClusterType" not in self.ListOfDevices[NwkId]["Ep"][devEp]:
-            # No widget associated
+        device_ep_info = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(devEp, {})
+        if "ClusterType" not in device_ep_info:
             continue
 
-        for DomoDeviceUnit in self.ListOfDevices[NwkId]["Ep"][devEp]["ClusterType"]:
-            WidgetType = self.ListOfDevices[NwkId]["Ep"][devEp]["ClusterType"][DomoDeviceUnit]
-            self.logging("Debug", "------------ GroupWidget: %s WidgetType: %s" % (GroupWidgetType, WidgetType))
+        GroupWidgetStyle, group_widget_type_candidate = screen_device_list(self, NwkId, device_ep_info, GroupWidgetStyle, group_widget_type_candidate)
 
-            if "BlindInverted" in self.ListOfDevices[NwkId]["Type"] and WidgetType == "LvlControl":
-                # Blinds control via cluster 0x0008
-                GroupWidgetStyle = "BlindPercentInverted"
-                GroupWidgetType = "LvlControl"
-                break
-
-            elif "Blind" in self.ListOfDevices[NwkId]["Type"] and  WidgetType == "LvlControl":
-                # Blinds control via cluster 0x0008
-                GroupWidgetStyle = "BlindPercent"
-                GroupWidgetType = "LvlControl"
-                break
-
-            if WidgetType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
-                # Those widgets are commanded via cluster Level Control
-                GroupWidgetStyle = "VenetianInverted"
-                GroupWidgetType = "LvlControl"
-                break
-
-            if WidgetType == GroupWidgetType:
-                continue
-
-            GroupWidgetType = my_best_widget_offer(self, WidgetType, GroupWidgetType)
-
-    if GroupWidgetType is None:
-        GroupWidgetType = "ColorControlFull"
-
-    self.ListOfGroups[GroupId]["GroupWidgetType"] = GroupWidgetType
+    if group_widget_type_candidate is None:
+        group_widget_type_candidate = "ColorControlFull"
+        
+    self.ListOfGroups[GroupId]["GroupWidgetType"] = group_widget_type_candidate
 
     # Update Tradfri Remote color mode
-    self.ListOfGroups[GroupId].get("Tradfri Remote", {}).setdefault("Color Mode", GroupWidgetType)
+    self.ListOfGroups[GroupId].get("Tradfri Remote", {}).setdefault("Color Mode", group_widget_type_candidate)
 
     # Update Cluster based on WidgetStyle
-    if GroupWidgetType in ("Switch", "Plug"):
-        self.ListOfGroups[GroupId]["Cluster"] = "0006"
+    self.ListOfGroups[GroupId]["Cluster"] = CLUSTER_MAPPING.get(group_widget_type_candidate, "")
 
-    elif GroupWidgetType == "LvlControl":
-        self.ListOfGroups[GroupId]["Cluster"] = "0008"
-
-    elif GroupWidgetType in ("ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"):
-        self.ListOfGroups[GroupId]["Cluster"] = "0300"
-
-    elif GroupWidgetType in ("Venetian", "WindowCovering", "VenetianInverted"):
-        self.ListOfGroups[GroupId]["Cluster"] = "0102"
-
-    else:
-        self.ListOfGroups[GroupId]["Cluster"] = ""
-
-    self.logging( "Debug", "best_group_widget for GroupId: %s Found WidgetType: %s Widget: %s" % (
-        GroupId, GroupWidgetType, WIDGET_STYLE.get(GroupWidgetType, WIDGET_STYLE["ColorControlFull"])), )
+    self.logging( "Log", "best_group_widget for GroupId: %s Found WidgetType: %s Widget: %s" % (
+        GroupId, group_widget_type_candidate, WIDGET_STYLE.get(group_widget_type_candidate, WIDGET_STYLE["ColorControlFull"])), )
 
     if GroupWidgetStyle is None:
-        GroupWidgetStyle = GroupWidgetType
+        GroupWidgetStyle = group_widget_type_candidate
         
-    self.ListOfGroups[GroupId]["GroupWidgetStyle"] = GroupWidgetType
+    self.ListOfGroups[GroupId]["GroupWidgetStyle"] = group_widget_type_candidate
         
     return WIDGET_STYLE.get(GroupWidgetStyle, WIDGET_STYLE["ColorControlFull"])
 
+
+def screen_device_list(self, NwkId, device_ep_info, GroupWidgetStyle, group_widget_type_candidate):
     
+    for DomoDeviceUnit, device_widget_type in device_ep_info["ClusterType"].items():
+        self.logging("Log", f"------------ {NwkId} DomoDeviceUnit: {DomoDeviceUnit} device_widget_type: {device_widget_type}" )
+        if device_widget_type is None:
+            continue
+
+        if device_widget_type == group_widget_type_candidate:
+            continue
+
+        self.logging("Log", f"------------ {NwkId} GroupWidget: {group_widget_type_candidate} device_widget_type: {device_widget_type}" )
+
+        if device_widget_type == "LvlControl":
+            device_ep_type = device_ep_info.get("Type", "")
+            if "BlindInverted" in device_ep_type:
+                # Blinds control via cluster 0x0008
+                GroupWidgetStyle = "BlindPercentInverted"
+                group_widget_type_candidate = "LvlControl"
+                break
+
+            elif "Blind" in device_ep_type:
+                # Blinds control via cluster 0x0008
+                GroupWidgetStyle = "BlindPercent"
+                group_widget_type_candidate = "LvlControl"
+                break
+
+        if device_widget_type in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
+            # Those widgets are commanded via cluster Level Control
+            GroupWidgetStyle = "VenetianInverted"
+            group_widget_type_candidate = "LvlControl"
+            break
+
+        group_widget_type_candidate = my_best_widget_offer(self, device_widget_type, group_widget_type_candidate)
+        
+    return GroupWidgetStyle, group_widget_type_candidate
+
+
+
+
+  
 WIDGET_STYLE_RULES = {
     "Switch": {"Plug", "LvlControl", "ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
     "Plug": {"Plug", "LvlControl", "ColorControlWW", "ColorControlRGB", "ColorControlRGBWW", "ColorControl", "ColorControlFull"},
