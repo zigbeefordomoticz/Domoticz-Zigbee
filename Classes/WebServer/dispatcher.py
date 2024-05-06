@@ -44,6 +44,7 @@ def setup_list_rest_commands( self ):
         ( {"Name": "ota-firmware-list", "Verbs": {"GET"}, "function": self.rest_ota_firmware_list} ),
         ( {"Name": "ota-firmware-update", "Verbs": {"PUT"}, "function": self.rest_ota_firmware_update } ),
         ( {"Name": "permit-to-join", "Verbs": {"GET", "PUT"}, "function": self.rest_PermitToJoin} ),
+        ( {"Name": "plugin-ping", "Verbs": {"GET"}, "function": self.rest_plugin_ping} ),
         ( {"Name": "plugin-health", "Verbs": {"GET"}, "function": self.rest_plugin_health} ),
         ( {"Name": "plugin-log", "Verbs": {"GET"}, "function": self.rest_logPlugin} ),
         ( {"Name": "plugin-upgrade", "Verbs": {"GET"}, "function": self.rest_plugin_upgrade} ),

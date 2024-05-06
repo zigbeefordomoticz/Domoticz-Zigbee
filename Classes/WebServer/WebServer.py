@@ -227,11 +227,19 @@ class WebServer(object):
         self.groupmgt = groupmanagement if groupmanagement else None
 
     def update_OTA(self, OTA):
-        self.OTA = OTA if OTA else None
+        self.OTA = OTA or None
 
     def setZigateIEEE(self, ZigateIEEE):
-
         self.ControllerIEEE = ZigateIEEE
+
+
+    def rest_plugin_ping(self, verb, data, parameters):
+        _response = prepResponseMessage(self, setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == "GET":
+            _response["Data"] = json.dumps({"pong":"ok"}, sort_keys=True)
+        return _response
+
 
     def rest_plugin_health(self, verb, data, parameters):
 
