@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 import argparse
 import requests
 import time
@@ -48,5 +60,5 @@ if __name__ == "__main__":
 
     while True:
         if not check_zigbee_plugin_alive(ip, port, silent):
-            sys.exit(1)  # Exit with error code 1 if the plugin is not alive
+            sys.exit(-1)  # Exit with error code 1 if the plugin is not alive
         time.sleep(check_period)  # Sleep before next check
