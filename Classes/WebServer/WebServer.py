@@ -237,7 +237,7 @@ class WebServer(object):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
-            _response["Data"] = json.dumps({"pong":"ok"}, sort_keys=True)
+            _response["Data"] = json.dumps({"status":"Ok"}, sort_keys=True)
         return _response
 
 
