@@ -874,7 +874,7 @@ class WebServer(object):
                         continue
 
                     device = {"_NwkId": x}
-                    for item in ( "CheckParam", "Param", "ZDeviceName", "IEEE", "Model", "MacCapa", "Status", "ConsistencyCheck", "Health", "LQI", "Battery", "CertifiedDevice" ):
+                    for item in ( "CheckParam", "Param", "ZDeviceName", "IEEE", "Model", "MacCapa", "Status", "ConsistencyCheck", "Health", "LQI", "RSSI", "Battery", "CertifiedDevice" ):
                         if item not in self.ListOfDevices[x]:
                             if item == "Param":
                                 device[item] = str({})
@@ -1040,6 +1040,7 @@ class WebServer(object):
                         "Status",
                         "Battery",
                         "LQI",
+                        "RSSI",
                         "Model",
                         "IEEE",
                         "ProfileID",
