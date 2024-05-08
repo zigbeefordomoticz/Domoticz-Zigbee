@@ -124,7 +124,7 @@ def is_zigate_firmware_available(self, currentMajorVersion, currentFirmwareVersi
     if not (availfirmMinor and currentFirmwareVersion):
         return False
     if int(availfirmMinor, 16) > int(currentFirmwareVersion, 16):
-        self.log.logging("Plugin", "Status", "Zigate Firmware update available")
+        self.log.logging("Plugin", "Debug", "Zigate Firmware update available")
         return True
     return False
 
