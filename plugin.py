@@ -1206,6 +1206,8 @@ def zigateInit_Phase3(self):
         self.log.logging("Plugin", "Debug", "let's update Mode3 is needed")
         self.domoticzdb_Hardware.disableErasePDM( self.WebUsername, self.WebPassword)
 
+    if self.InitPhase3:
+        return
 
     self.InitPhase3 = True
 
@@ -1292,19 +1294,20 @@ def zigateInit_Phase3(self):
     restart_plugin_reset_ModuleIRCode(self, nwkid=None)
 
     firmware_messages = {
-        "03": "Z4D with Zigate coordinator, firmware %s communication confirmed.",
-        "04": "Z4D with Zigate coordinator, OptiPDM firmware %s communication confirmed.",
-        "05": "Z4D with Zigate+ coordinator, firmware %s communication confirmed."
+        "03": "Z4D with Zigate coordinator, firmware %s communication confirmed",
+        "04": "Z4D with Zigate coordinator, OptiPDM firmware %s communication confirmed",
+        "05": "Z4D with Zigate+ coordinator, firmware %s communication confirmed"
     }
 
     # Check if firmware major version exists in the dictionary
     if self.FirmwareMajorVersion in firmware_messages:
         message = firmware_messages[self.FirmwareMajorVersion] % self.FirmwareVersion
         self.log.logging("Plugin", "Status", message)
+
     elif int(self.FirmwareBranch) >= 20:
         message = "Z4D with Zigpy, coordinator %s, firmware %s communication confirmed." % (
             self.pluginParameters["CoordinatorModel"], self.pluginParameters["CoordinatorFirmwareVersion"])
-    self.log.logging("Plugin", "Status", message)
+        self.log.logging("Plugin", "Status", message)
 
     # If firmware above 3.0d, Get Network State
     if (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0 and self.transport != "None":
