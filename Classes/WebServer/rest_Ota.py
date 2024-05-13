@@ -6,10 +6,12 @@
 import json
 from time import time
 
-import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.bindings import webBind, webUnBind
+from Modules.domoticzAbstractLayer import (domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 from Modules.zigateConsts import ZCL_CLUSTERS_ACT
 
 MATRIX_MANUFACTURER_NAME = {
@@ -340,7 +342,7 @@ def rest_ota_devices_for_manufcode(self, verb, data, parameters):
         if not compatible and self.ListOfDevices[x]["Manufacturer"] != manuf_code:
             continue
 
-        Domoticz.Log("Found device: %s" % x)
+        domoticz_log_api("Found device: %s" % x)
 
         device_list.append(get_device_informations(self, x))
     _response["Data"] = json.dumps(device_list, sort_keys=True)

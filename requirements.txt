@@ -1,10 +1,10 @@
-zigpy==0.59.0
-zigpy_znp==0.11.6
-zigpy_deconz==0.21.1
-bellows==0.36.8
-zigpy-cli==1.0.4
-dnspython==2.3.0
-pyserial>=3.5
+-c constraints.txt
+zigpy
+zigpy-cli
+dnspython
 z4d-certified-devices
-charset-normalizer==2.0.11
 distro
+pyserial-asyncio-fast
+zigpy_znp
+zigpy_deconz
+bellows

@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 #
 """
     Module: domoCreat.py
@@ -9,13 +16,12 @@
 """
 
 
-import Domoticz
-from Modules.domoTools import (GetType, UpdateDevice_v2,
-                               subtypeRGB_FromProfile_Device_IDs,
-                               subtypeRGB_FromProfile_Device_IDs_onEp2)
+from Modules.domoticzAbstractLayer import (FreeUnit, domo_create_api)
+from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
+                               subtypeRGB_FromProfile_Device_IDs_onEp2,
+                               update_domoticz_widget)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import is_domoticz_new_blind
-from Modules.domoticzAbstractLayer import domo_create_api, FreeUnit
 
 
 def cleanup_widget_Type(widget_type_list):
@@ -146,7 +152,7 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     
     if myDev_ID == -1:
         self.ListOfDevices[nwkid]["Status"] = "failDB"
-        Domoticz.Error("Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev_ID)
+        self.log.logging("WidgetCreation", "Error", "Domoticz widget creation failed. Check that Domoticz can Accept New Hardware [%s]" % myDev_ID)
         return None
 
     self.ListOfDevices[nwkid]["Status"] = "inDB"
@@ -247,7 +253,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
     # Sanity check before starting the processing
     if NWKID == "" or NWKID not in self.ListOfDevices:
-        Domoticz.Error("CreateDomoDevice - Cannot create a Device without an IEEE or not in ListOfDevice .")
+        self.log.logging("WidgetCreation", "Error", "CreateDomoDevice - Cannot create a Device without an IEEE or not in ListOfDevice .")
         return
 
     DeviceID_IEEE = self.ListOfDevices[NWKID]["IEEE"]
@@ -354,6 +360,8 @@ def update_widget_type_if_possible( self, Nwkid, widget_type):
 
 def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
 
+    # Xiaomi Magic Cube, this one required 2 continuous widget.
+
     # Do not use the generic createDomoticzWidget , because this one required 2 continuous widget.
     # usage later on is based on that assumption
     #
@@ -361,30 +369,29 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - Xiaomi Magic Cube {NWKID} {DeviceID_IEEE} {Ep} {t}")
     
     self.ListOfDevices[NWKID]["Status"] = "inDB"
+
     # Create the XCube Widget
     Options = createSwitchSelector(self, 10, DeviceType=t, OffHidden=True, SelectorStyle=1)
     unit = FreeUnit(self, Devices, DeviceID_IEEE, nbunit_=2)  # Look for 2 consecutive slots
-    myDev = Domoticz.Device( DeviceID=str(DeviceID_IEEE), Name=deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options, )
-    myDev.Create()
-    ID = myDev.ID
-    if myDev.ID == -1:
+    
+    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, t, DeviceID_IEEE, Ep), Type_=244, Subtype_=62, Switchtype_=18, widgetOptions=Options)
+    
+    if idx == -1:
         self.ListOfDevices[NWKID]["Status"] = "failDB"
-        self.log.logging( "WidgetCreation", "Error", "Domoticz widget creation failed. %s" % (str(myDev)))
+        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} {t} {unit}")
     else:
-        self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {ID} for '{t}'")
-        self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(ID)] = t
+        self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for '{t}'")
+        self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(idx)] = t
 
     # Create the Status (Text) Widget to report Rotation angle
     unit += 1
-    myDev = Domoticz.Device( DeviceID=str(DeviceID_IEEE), Name=deviceName(self, NWKID, "Text", DeviceID_IEEE, Ep), Unit=unit, Type=243, Subtype=19, Switchtype=0, )
-    myDev.Create()
-    ID = myDev.ID
-    if myDev.ID == -1:
-        self.log.logging( "WidgetCreation", "Error", "Domoticz widget creation failed. %s" % (str(myDev)))
+    idx = domo_create_api(self, Devices, DeviceID_IEEE, unit, deviceName(self, NWKID, "Text", DeviceID_IEEE, Ep), Type_=243, Subtype_=19, Switchtype_=0,)
+    
+    if idx == -1:
+        self.log.logging("WidgetCreation", "Error", f"Domoticz widget creation failed. {DeviceID_IEEE} {Ep} Text {unit}")
     else:
-        self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {ID} for 'Text'")
-        self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(ID)] = "Text"
-
+        self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for 'Text'")
+        self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(idx)] = "Text"
 
 def number_switch_selectors( widget_type ):
     if widget_type not in SWITCH_SELECTORS:
@@ -474,7 +481,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
             if unit:
-                set_default_value( self, Devices, unit, widget_record)
+                set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
 
             return True
 
@@ -485,7 +492,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
             if unit:
-                set_default_value( self, Devices, unit, widget_record)
+                set_default_value( self, Devices,DeviceID_IEEE, unit, widget_record)
 
             return True
         
@@ -496,7 +503,7 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
                 widget_name, widget_record[ "widgetType" ], NwkId), NwkId)
             unit = createDomoticzWidget(self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name, widget_record[ "widgetType" ])
             if unit:
-                set_default_value( self, Devices, unit, widget_record)
+                set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
 
             return True
  
@@ -519,15 +526,15 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
         ForceClusterType=ForceClusterType
     )
     if unit:
-        set_default_value( self, Devices, unit, widget_record)
+        set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
     return True
 
-def set_default_value( self, Devices, unit, widget_record):
+def set_default_value( self, Devices, device_id_ieee, device_unit, widget_record):
     # Check if we need to initialize the Widget immediatly
-    if unit and "sValue" in widget_record and "nValue" in widget_record:
+    if device_unit and "sValue" in widget_record and "nValue" in widget_record:
         sValue = widget_record["sValue"] 
         nValue = widget_record["nValue"] 
-        UpdateDevice_v2(self, Devices, unit, nValue, sValue, 0, 0, ForceUpdate_=True)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, 0, 0, ForceUpdate_=True)
    
 SIMPLE_WIDGET = {
     "AirPurifierAlarm": {
@@ -787,6 +794,13 @@ SIMPLE_WIDGET = {
         "widgetType": "Custom",
         "Options": "1;ppm"
     },
+    
+    "phMeter": { "widgetType": "Custom", "Options": "1;ph" },
+    "ec": { "widgetType": "Custom", "Options": "1;µS/cm" },
+    "orp": { "widgetType": "Custom", "Options": "1;mV" },
+    "freeChlorine": { "widgetType": "Custom", "Options": "1;mg/L" },
+    "salinity": { "widgetType": "Custom", "Options": "1;ppm" },
+
     "Strength": {
         "Type": 243,
         "Subtype": 31

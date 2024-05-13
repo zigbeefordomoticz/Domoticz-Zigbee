@@ -3,6 +3,7 @@
     "Description": "Metering (Smart Energy)",
     "Version": 1,
     "Enabled": true,
+    "Debug": "Electric",
     "Attributes": {
         "0000": {
             "Enabled": true,

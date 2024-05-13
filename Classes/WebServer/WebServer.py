@@ -10,7 +10,6 @@ import os
 import os.path
 import time
 
-import Domoticz
 from Classes.PluginConf import SETTINGS
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
@@ -18,8 +17,15 @@ from Modules.actuators import actuators
 from Modules.basicOutputs import (PermitToJoin, ZigatePermitToJoin,
                                   initiate_change_channel, setExtendedPANID,
                                   zigateBlueLed)
+from Modules.domoticzAbstractLayer import (domo_read_BatteryLevel,
+                                           domo_read_nValue_sValue,
+                                           domo_read_SignalLevel,
+                                           domo_read_TimedOut,
+                                           domoticz_error_api,
+                                           domoticz_log_api,
+                                           domoticz_status_api)
 from Modules.sendZigateCommand import sendZigateCmd
-from Modules.tools import is_hex
+from Modules.tools import is_hex, get_device_nickname
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import zigate_set_mode
 from Modules.zigateConsts import (CERTIFICATION_CODE, ZCL_CLUSTERS_LIST,
@@ -56,7 +62,7 @@ class WebServer(object):
 
     from Classes.WebServer.com import (onConnect, onDisconnect, onStop,
                                        startWebServer)
-    from Classes.WebServer.dispatcher import do_rest
+    from Classes.WebServer.dispatcher import do_rest, setup_list_rest_commands
     from Classes.WebServer.onMessage import onMessage
     from Classes.WebServer.rest_Bindings import (rest_binding,
                                                  rest_binding_table_disp,
@@ -71,6 +77,8 @@ class WebServer(object):
     from Classes.WebServer.rest_CfgReporting import (
         rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config)
     from Classes.WebServer.rest_change_ModelName import rest_change_model_name
+    from Classes.WebServer.rest_Device_Settings_Help import \
+        rest_device_settings_help
     from Classes.WebServer.rest_Energy import (rest_req_nwk_full,
                                                rest_req_nwk_inter)
     from Classes.WebServer.rest_Groups import (rest_rescan_group,
@@ -113,6 +121,7 @@ class WebServer(object):
         HomeDirectory,
         hardwareID,
         Devices,
+        ListOfDomoticzWidget,
         ListOfDevices,
         IEEE2NWK,
         DeviceConf,
@@ -126,7 +135,8 @@ class WebServer(object):
         ModelManufMapping,
         DomoticzMajor,
         DomoticzMinor,
-        readZclClusters
+        readZclClusters,
+        device_settings
     ):
         self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
@@ -166,6 +176,7 @@ class WebServer(object):
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
         self.Devices = Devices
+        self.ListOfDomoticzWidget = ListOfDomoticzWidget
         self.readZclClusters = readZclClusters
         self.ControllerIEEE = None
 
@@ -183,9 +194,11 @@ class WebServer(object):
             self.httpPort = httpPort
 
         mimetypes.init()
-
+        self.device_settings = device_settings
         self.FirmwareVersion = None
+        
         # Start the WebServer
+        self.setup_list_rest_commands( )
         self.startWebServer()
         self.certified_devices_update()
 
@@ -214,11 +227,19 @@ class WebServer(object):
         self.groupmgt = groupmanagement if groupmanagement else None
 
     def update_OTA(self, OTA):
-        self.OTA = OTA if OTA else None
+        self.OTA = OTA or None
 
     def setZigateIEEE(self, ZigateIEEE):
-
         self.ControllerIEEE = ZigateIEEE
+
+
+    def rest_plugin_ping(self, verb, data, parameters):
+        _response = prepResponseMessage(self, setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == "GET":
+            _response["Data"] = json.dumps({"status":"Ok"}, sort_keys=True)
+        return _response
+
 
     def rest_plugin_health(self, verb, data, parameters):
 
@@ -236,6 +257,9 @@ class WebServer(object):
 
             if self.groupmgt:
                 health["GroupStatus"] = self.groupmgt.GroupStatus
+                
+            if self.networkmap and self.networkmap.NetworkMapPhase():
+                health["Topology"] = "In Progress"
 
             _response["Data"] = json.dumps(health, sort_keys=True)
 
@@ -247,7 +271,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
             self.logging("Status", "Erase ZiGate PDM")
-            Domoticz.Error("Erase ZiGate PDM non implémenté pour l'instant")
+            domoticz_error_api("Erase ZiGate PDM non implémenté pour l'instant")
             if self.pluginconf.pluginConf["eraseZigatePDM"]:
                 if self.pluginParameters["Mode2"] != "None" and self.zigbee_communication == "native":
                     sendZigateCmd(self, "0012", "")
@@ -402,7 +426,7 @@ class WebServer(object):
                     action = {"Name": "Report %s removed" % timestamp}
                     _response["Data"] = json.dumps(action, sort_keys=True)
                 else:
-                    Domoticz.Error("Removing Nwk-Energy %s not found" % timestamp)
+                    domoticz_error_api("Removing Nwk-Energy %s not found" % timestamp)
                     _response["Data"] = json.dumps([], sort_keys=True)
 
         elif verb == "GET":
@@ -582,7 +606,6 @@ class WebServer(object):
                     }
 
                     if SETTINGS[_theme]["param"][param]["type"] == "hex":
-                        Domoticz.Debug("--> %s: %s - %s" % (param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
                         if isinstance(self.pluginconf.pluginConf[param], int):
                             setting["current_value"] = "%x" % self.pluginconf.pluginConf[param]
                         else:
@@ -613,7 +636,7 @@ class WebServer(object):
             for setting in setting_lst:
                 found = False
                 self.logging("Debug", "setting: %s = %s" % (setting, setting_lst[setting]["current"]))
-
+                self.log.reload_debug_settings = True
                 # Do we have to update ?
                 for _theme in SETTINGS:
                     for param in SETTINGS[_theme]["param"]:
@@ -640,7 +663,7 @@ class WebServer(object):
                                 self.pluginconf.pluginConf["Certification"] = setting_lst[setting]["current"]
                                 self.pluginconf.pluginConf["CertificationCode"] = CERTIFICATION_CODE[setting_lst[setting]["current"]]
                             else:
-                                Domoticz.Error("Unknown Certification code %s (allow are CE and FCC)" % (setting_lst[setting]["current"]))
+                                domoticz_error_api("Unknown Certification code %s (allow are CE and FCC)" % (setting_lst[setting]["current"]))
                                 continue
 
                         elif param == "blueLedOnOff":
@@ -675,16 +698,16 @@ class WebServer(object):
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]["current"]:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
                                 set_TxPower(self, self.pluginconf.pluginConf[param])
-                            
+
                         else:
                             if SETTINGS[_theme]["param"][param]["type"] == "hex":
-                                # Domoticz.Log("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
+                                # domoticz_log_api("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
                                 self.pluginconf.pluginConf[param] = int(str(setting_lst[setting]["current"]), 16)
                             else:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
 
                 if not found:
-                    Domoticz.Error("Unexpected parameter: %s" % setting)
+                    domoticz_error_api("Unexpected parameter: %s" % setting)
                     _response["Data"] = {"unexpected parameters %s" % setting}
 
             if upd:
@@ -738,63 +761,67 @@ class WebServer(object):
                     ZigatePermitToJoin(self, int(data["PermitToJoin"]))
         return _response
 
+
     def rest_Device(self, verb, data, parameters):
-        def getDeviceInfos(self, UnitId):
+
+        def getDeviceInfos(self, widget_idx):
+            device_id = self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+            unit = self.ListOfDomoticzWidget[widget_idx]["Unit"]
+            nValue, sValue = domo_read_nValue_sValue(self, self.Devices, device_id, unit)
+            SignalLevel = domo_read_SignalLevel(self, self.Devices, device_id, unit)
+            BatteryLevel = domo_read_BatteryLevel(self, self.Devices, device_id, unit)
+            TimedOut = domo_read_TimedOut(self, self.Devices, device_id)
+
             return {
-                "_DeviceID": self.Devices[UnitId].DeviceID,
-                "Name": self.Devices[UnitId].Name,
-                "ID": self.Devices[UnitId].ID,
-                "sValue": self.Devices[UnitId].sValue,
-                "nValue": self.Devices[UnitId].nValue,
-                "SignaleLevel": self.Devices[UnitId].SignalLevel,
-                "BatteryLevel": self.Devices[UnitId].BatteryLevel,
-                "TimedOut": self.Devices[UnitId].TimedOut,
-                # _dictDevices['Type'] = self.Devices[UnitId].Type
-                # _dictDevices['SwitchType'] = self.Devices[UnitId].SwitchType
+                "_DeviceID": device_id,
+                "Name": device_id,
+                "ID": widget_idx,
+                "sValue": sValue,
+                "nValue": nValue,
+                "SignalLevel": SignalLevel,
+                "BatteryLevel": BatteryLevel,
+                "TimedOut": TimedOut,
             }
 
-        _dictDevices = {}
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        if verb == "GET":
-            if self.Devices is None or len(self.Devices) == 0:
-                return _response
+        if verb != "GET":
+            return _response
+        
+        if not self.ListOfDomoticzWidget or len(self.ListOfDomoticzWidget) == 0:
+            return _response
 
-            if len(parameters) == 0:
-                # Return the Full List of ZiGate Domoticz Widget
-                device_lst = []
-                for x in self.Devices:
-                    if len(self.Devices[x].DeviceID) != 16:
-                        continue
+        if len(parameters) == 0:
+            # Return the Full List of ZiGate Domoticz Widget
+            device_lst = [
+                getDeviceInfos(self, widget_idx)
+                for widget_idx in self.ListOfDomoticzWidget
+                if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
+            ]
+            _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
-                    device_info = getDeviceInfos(self, x)
-                    device_lst.append(device_info)
-                _response["Data"] = json.dumps(device_lst, sort_keys=True)
+        elif len(parameters) == 1:
+            for widget_idx in self.ListOfDomoticzWidget:
+                if (
+                    len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
+                    and parameters[0] == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+                ):
+                    _response["Data"] = json.dumps(getDeviceInfos(self, widget_idx), sort_keys=True)
+                    break
 
-            elif len(parameters) == 1:
-                for x in self.Devices:
-                    if len(self.Devices[x].DeviceID) != 16:
-                        continue
+        else:
+            device_lst = [
+                getDeviceInfos(self, widget_idx)
+                for parm in parameters
+                for widget_idx in self.ListOfDomoticzWidget
+                if len(self.ListOfDomoticzWidget[widget_idx]["DeviceID"]) == 16
+                and parm == self.ListOfDomoticzWidget[widget_idx]["DeviceID"]
+            ]
+            _response["Data"] = json.dumps(device_lst, sort_keys=True)
 
-                    if parameters[0] == self.Devices[x].DeviceID:
-                        _dictDevices = device_info = getDeviceInfos(self, x)
-                        _response["Data"] = json.dumps(_dictDevices, sort_keys=True)
-                        break
-
-            else:
-                device_lst = []
-                for parm in parameters:
-                    device_info = {}
-                    for x in self.Devices:
-                        if len(self.Devices[x].DeviceID) != 16:
-                            continue
-
-                        if parm == self.Devices[x].DeviceID:
-                            device_info = getDeviceInfos(self, x)
-                            device_lst.append(device_info)
-                _response["Data"] = json.dumps(device_lst, sort_keys=True)
         return _response
+
 
     def rest_zDevice_name(self, verb, data, parameters):
 
@@ -807,16 +834,16 @@ class WebServer(object):
                 deviceId = parameters[0]
                 if len(deviceId) == 4:  # Short Network Addr
                     if deviceId not in self.ListOfDevices:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     nwkid = deviceId
                     ieee = self.ListOfDevices[deviceId]["IEEE"]
                 else:
                     if deviceId not in self.IEEE2NWK:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     ieee = deviceId
@@ -837,7 +864,7 @@ class WebServer(object):
 
         elif verb == "GET":
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
- 
+            
             if self.fake_mode():
                 _response["Data"] = json.dumps(dummy_zdevice_name(), sort_keys=True)
             else:
@@ -847,79 +874,74 @@ class WebServer(object):
                         continue
 
                     device = {"_NwkId": x}
-                    for item in (
-                        "Param",
-                        "ZDeviceName",
-                        "IEEE",
-                        "Model",
-                        "MacCapa",
-                        "Status",
-                        "ConsistencyCheck",
-                        "Health",
-                        "LQI",
-                        "Battery",
-                        "CertifiedDevice"
-                    ):
-                        if item == "CertifiedDevice" and "CertifiedDevice" in self.ListOfDevices[x]:
+                    for item in ( "CheckParam", "Param", "ZDeviceName", "IEEE", "Model", "MacCapa", "Status", "ConsistencyCheck", "Health", "LQI", "RSSI", "Battery", "CertifiedDevice" ):
+                        if item not in self.ListOfDevices[x]:
+                            if item == "Param":
+                                device[item] = str({})
+                            if item == "CheckParam":
+                                device[item] = False
+                            else:
+                                device[item] = ""
+                            continue
+
+                        if item == "CertifiedDevice":
                             device[item] = self.ListOfDevices[x][item]
 
+                        elif item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, "") and "IASBattery" in self.ListOfDevices[x]:
+                            device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
 
-                        elif item in self.ListOfDevices[x]:
-                            if item == "Battery" and self.ListOfDevices[x]["Battery"] in ( {}, ) and "IASBattery" in self.ListOfDevices[x]:
-                                device[item] = str(self.ListOfDevices[x][ "IASBattery" ])
-                            elif item == "MacCapa":
-                                device["MacCapa"] = []
-                                mac_capability = int(self.ListOfDevices[x][item], 16)
-                                AltPAN = mac_capability & 0x00000001
-                                DeviceType = (mac_capability >> 1) & 1
-                                PowerSource = (mac_capability >> 2) & 1
-                                ReceiveonIdle = (mac_capability >> 3) & 1
-                                if DeviceType == 1:
-                                    device["MacCapa"].append("FFD")
-                                else:
-                                    device["MacCapa"].append("RFD")
-                                if ReceiveonIdle == 1:
-                                    device["MacCapa"].append("RxonIdle")
-                                if PowerSource == 1:
-                                    device["MacCapa"].append("MainPower")
-                                else:
-                                    device["MacCapa"].append("Battery")
-                                self.logging(
-                                    "Debug",
-                                    "decoded MacCapa from: %s to %s" % (self.ListOfDevices[x][item], str(device["MacCapa"])),
-                                )
-                            elif item == "Param":
-                                device[item] = str(self.ListOfDevices[x][item])
+                        elif item == "CheckParam":
+                            device["CheckParam"] = True if self.ListOfDevices[x]["CheckParam"] else False
+
+                        elif item == "MacCapa":
+                            device["MacCapa"] = []
+                            mac_capability = int(self.ListOfDevices[x][item], 16)
+                            AltPAN = mac_capability & 0x00000001
+                            DeviceType = (mac_capability >> 1) & 1
+                            PowerSource = (mac_capability >> 2) & 1
+                            ReceiveonIdle = (mac_capability >> 3) & 1
+                            if DeviceType == 1:
+                                device["MacCapa"].append("FFD")
                             else:
-                                if self.ListOfDevices[x][item] == {}:
-                                    device[item] = ""
-                                else:
-                                    device[item] = self.ListOfDevices[x][item]
+                                device["MacCapa"].append("RFD")
+                            if ReceiveonIdle == 1:
+                                device["MacCapa"].append("RxonIdle")
+                            if PowerSource == 1:
+                                device["MacCapa"].append("MainPower")
+                            else:
+                                device["MacCapa"].append("Battery")
+                            self.logging( "Debug", "decoded MacCapa from: %s to %s" % (
+                                self.ListOfDevices[x][item], str(device["MacCapa"])), )
+
                         elif item == "Param":
-                            # Seems unknown, so let's create it
-                            device[item] = str({})
+                            device[item] = str(self.ListOfDevices[x][item])
+
                         else:
-                            device[item] = ""
+                            if self.ListOfDevices[x][item] == {}:
+                                device[item] = ""
+                            else:
+                                device[item] = self.ListOfDevices[x][item]
+                                    
 
                     device["WidgetList"] = []
                     for ep in self.ListOfDevices[x]["Ep"]:
                         if "ClusterType" in self.ListOfDevices[x]["Ep"][ep]:
                             clusterType = self.ListOfDevices[x]["Ep"][ep]["ClusterType"]
-                            for widgetID in clusterType:
-                                for widget in self.Devices:
-                                    if self.Devices[widget].ID == int(widgetID):
-                                        self.logging("Debug", "Widget Name: %s %s" % (widgetID, self.Devices[widget].Name))
-                                        if self.Devices[widget].Name not in device["WidgetList"]:
-                                            device["WidgetList"].append(self.Devices[widget].Name)
+                            for widget_idx in clusterType:
+                                if int(widget_idx) in self.ListOfDomoticzWidget:
+                                    widget_name = self.ListOfDomoticzWidget[ int(widget_idx) ]["Name"]
+                                    
+                                    if widget_name not in device["WidgetList"]:
+                                        device["WidgetList"].append(widget_name)
 
                         elif "ClusterType" in self.ListOfDevices[x]:
                             clusterType = self.ListOfDevices[x]["ClusterType"]
-                            for widgetID in clusterType:
-                                for widget in self.Devices:
-                                    if self.Devices[widget].ID == int(widgetID):
-                                        self.logging("Debug", "Widget Name: %s %s" % (widgetID, self.Devices[widget].Name))
-                                        if self.Devices[widget].Name not in device["WidgetList"]:
-                                            device["WidgetList"].append(self.Devices[widget].Name)
+                            for widget_idx in clusterType:
+                                if int(widget_idx) in self.ListOfDomoticzWidget:
+                                    widget_name = self.ListOfDomoticzWidget[ int(widget_idx) ]["Name"]
+                                    
+                                    if widget_name not in device["WidgetList"]:
+                                        device["WidgetList"].append(widget_name)
 
                     if device not in device_lst:
                         device_lst.append(device)
@@ -947,8 +969,9 @@ class WebServer(object):
                         if "Param" in self.ListOfDevices[dev] and self.ListOfDevices[dev]["Param"] == x["Param"]:
                             continue
                         
+                        self.logging( "Debug", "--> Initial Param: %s (%s)" %( x["Param"], type(x["Param"])))
                         _new_param = decode_device_param(self, dev, x["Param"])
-                        self.logging( "Debug", "--> Param: %s (%s)" %( _new_param, type(_new_param)))
+                        self.logging( "Debug", "--> Converted Param: %s (%s)" %( _new_param, type(_new_param)))
                         
                         if "Disabled" in _new_param:
                             if _new_param["Disabled"]:
@@ -962,7 +985,7 @@ class WebServer(object):
                             self.ListOfDevices[dev]["Param"], self.ListOfDevices[dev]["IEEE"], dev), )
                         self.ListOfDevices[dev]["CheckParam"] = True
                 else:
-                    Domoticz.Error("wrong data received: %s" % data)
+                    domoticz_error_api("wrong data received: %s" % data)
 
         return _response
 
@@ -976,16 +999,16 @@ class WebServer(object):
                 deviceId = parameters[0]
                 if len(deviceId) == 4:  # Short Network Addr
                     if deviceId not in self.ListOfDevices:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown LOD" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     nwkid = deviceId
                     ieee = self.ListOfDevice[deviceId]["IEEE"]
                 else:
                     if deviceId not in self.IEEE2NWK:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" % deviceId)
+                        domoticz_error_api("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" % (deviceId))
+                        domoticz_error_api("Device %s to be removed unknown" % deviceId)
                         _response["Data"] = json.dumps([], sort_keys=True)
                         return _response
                     ieee = deviceId
@@ -1017,6 +1040,7 @@ class WebServer(object):
                         "Status",
                         "Battery",
                         "LQI",
+                        "RSSI",
                         "Model",
                         "IEEE",
                         "ProfileID",
@@ -1029,6 +1053,8 @@ class WebServer(object):
                         "App Version",
                         "Stack Version",
                         "HW Version",
+                        "Param",
+                        "CheckParam"
                     ):
                         if attribut == "Battery" and attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item]["Battery"] in ( {}, ) and "IASBattery" in self.ListOfDevices[item]:
@@ -1036,6 +1062,12 @@ class WebServer(object):
                             elif isinstance( self.ListOfDevices[item]["Battery"], int):
                                 device[attribut] = self.ListOfDevices[item]["Battery"]
                                 device["BatteryInside"] = True
+                                
+                        elif item == "CheckParam":
+                            device[attribut] = True if "CheckParam" in self.ListOfDevices[item] and self.ListOfDevices[item]["CheckParam"] else False
+        
+                        elif item == "Param":
+                            device[attribut] = str(self.ListOfDevices[item][attribut])
 
                         elif attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
@@ -1075,14 +1107,11 @@ class WebServer(object):
                     # ClusterType
                     _widget_lst = []
                     if "ClusterType" in self.ListOfDevices[item]:
-                        for widgetId in self.ListOfDevices[item]["ClusterType"]:
-                            widget = {"_WidgetID": widgetId, "WidgetName": ""}
-                            for x in self.Devices:
-                                if self.Devices[x].ID == int(widgetId):
-                                    widget["WidgetName"] = self.Devices[x].Name
-                                    break
-
-                            widget["WidgetType"] = self.ListOfDevices[item]["ClusterType"][widgetId]
+                        for widget_idx in self.ListOfDevices[item]["ClusterType"]:
+                            widget = {"_WidgetID": widget_idx, "WidgetName": ""}
+                            if int(widget_idx) in self.ListOfDomoticzWidget:
+                                widget["WidgetName"] = self.ListOfDomoticzWidget[int(widget_idx)]["Name"]
+                            widget["WidgetType"] = self.ListOfDevices[item]["ClusterType"][widget_idx]
                             _widget_lst.append(widget)
 
                     # Ep informations
@@ -1095,14 +1124,11 @@ class WebServer(object):
                                     continue
 
                                 if cluster == "ClusterType":
-                                    for widgetId in self.ListOfDevices[item]["Ep"][epId]["ClusterType"]:
-                                        widget = {"_WidgetID": widgetId, "WidgetName": ""}
-                                        for x in self.Devices:
-                                            if self.Devices[x].ID == int(widgetId):
-                                                widget["WidgetName"] = self.Devices[x].Name
-                                                break
-
-                                        widget["WidgetType"] = self.ListOfDevices[item]["Ep"][epId]["ClusterType"][widgetId]
+                                    for widget_idx in self.ListOfDevices[item]["Ep"][epId]["ClusterType"]:
+                                        widget = {"_WidgetID": widget_idx, "WidgetName": ""}
+                                        if int(widget_idx) in self.ListOfDomoticzWidget:
+                                            widget["WidgetName"] = self.ListOfDomoticzWidget[int(widget_idx)]["Name"]
+                                        widget["WidgetType"] = self.ListOfDevices[item]["Ep"][epId]["ClusterType"][widget_idx]
                                         _widget_lst.append(widget)
                                     continue
 
@@ -1166,7 +1192,7 @@ class WebServer(object):
         return _response
 
     def rest_change_channel(self, verb, data, parameters):
-        Domoticz.Log("rest_change_channel - %s %s" % (verb, data))
+        domoticz_log_api("rest_change_channel - %s %s" % (verb, data))
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
@@ -1178,9 +1204,9 @@ class WebServer(object):
         if len(parameters) == 0:
             data = data.decode("utf8")
             data = json.loads(data)
-            Domoticz.Log("---> Data: %s" % str(data))
+            domoticz_log_api("---> Data: %s" % str(data))
             if "Channel" not in data:
-                Domoticz.Error("Unexpected request: %s" % data)
+                domoticz_error_api("Unexpected request: %s" % data)
                 _response["Data"] = {"Error": "Unknow verb"}
                 return _response
             channel = data["Channel"]
@@ -1194,7 +1220,7 @@ class WebServer(object):
 
     def rest_raw_command(self, verb, data, parameters):
 
-        Domoticz.Log("raw_command - %s %s" % (verb, data))
+        domoticz_log_api("raw_command - %s %s" % (verb, data))
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
@@ -1203,14 +1229,14 @@ class WebServer(object):
             if len(parameters) == 0:
                 data = data.decode("utf8")
                 data = json.loads(data)
-                Domoticz.Log("---> Data: %s" % str(data))
+                domoticz_log_api("---> Data: %s" % str(data))
                 if "Command" not in data and "payload" not in data:
-                    Domoticz.Error("Unexpected request: %s" % data)
+                    domoticz_error_api("Unexpected request: %s" % data)
                     _response["Data"] = json.dumps("Executing %s on %s" % (data["Command"], data["payload"]))
                     return _response
 
                 if not is_hex(data["Command"]) or (is_hex(data["Command"]) and int(data["Command"], 16) not in ZIGATE_COMMANDS):
-                    Domoticz.Error("raw_command - Unknown MessageType received %s" % data["Command"])
+                    domoticz_error_api("raw_command - Unknown MessageType received %s" % data["Command"])
                     _response["Data"] = json.dumps("Unknown MessageType received %s" % data["Command"])
                     return _response
 
@@ -1310,7 +1336,7 @@ class WebServer(object):
             if len(parameters) == 0:
                 data = data.decode("utf8")
                 data = validateJSON( self, data)
-                Domoticz.Log("---> Data: %s" % str(data))
+                domoticz_log_api("---> Data: %s" % str(data))
                 self.logging(
                     "Log",
                     "rest_dev_command - Command: %s on object: %s with extra %s %s" % (data["Command"], data["NwkId"], data["Value"], data["Color"]),
@@ -1388,14 +1414,14 @@ class WebServer(object):
             return _response
 
         if len(parameters) == 0:
-            Domoticz.Error("rest_dev_capabilities - expecting a device id! %s" % (parameters))
+            domoticz_error_api("rest_dev_capabilities - expecting a device id! %s" % (parameters))
             return _response
 
         if len(parameters) != 1:
             return
 
         if parameters[0] not in self.ListOfDevices and parameters[0] not in self.IEEE2NWK:
-            Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" % (parameters[0]))
+            domoticz_error_api("rest_dev_capabilities - Device %s doesn't exist" % (parameters[0]))
             return _response
 
         # Check Capabilities
@@ -1468,7 +1494,7 @@ class WebServer(object):
 
     def rest_zigate_mode(self, verb, data, parameters):
 
-        Domoticz.Log("rest_zigate_mode mode: %s" % parameters)
+        domoticz_log_api("rest_zigate_mode mode: %s" % parameters)
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
@@ -1518,8 +1544,6 @@ class WebServer(object):
             _response["Data"] = json.dumps(_battEnv, sort_keys=True)
         return _response
 
-
-        
     def logging(self, logType, message):
         self.log.logging("WebServer", logType, message)
 
@@ -1528,46 +1552,61 @@ def dummy_zdevice_name():
     return [{"Battery": "", "ConsistencyCheck": "ok", "Health": "Disabled", "IEEE": "90fd9ffffe86c7a1", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "TRADFRI bulb E27 WS clear 950lm", "Param": "{'Disabled': true, 'PowerOnAfterOffOn': 255, 'fadingOff': 0, 'moveToHueSatu': 0, 'moveToColourTemp': 0, 'moveToColourRGB': 0, 'moveToLevel': 0}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI bulb E27 WS clear 950lm_ColorControlWW-90fd9ffffe86c7a1-01"], "ZDeviceName": "Led Ikea", "_NwkId": "ada7"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "60a423fffe529d60", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "LXEK-1", "Param": "{'PowerOnAfterOffOn': 255, 'fadingOff': 0, 'moveToHueSatu': 0, 'moveToColourTemp': 0, 'moveToColourRGB': 0, 'moveToLevel': 0}", "Status": "inDB", "WidgetList": ["Zigbee - LXEK-1_ColorControlRGBWW-60a423fffe529d60-01"], "ZDeviceName": "Led LKex", "_NwkId": "7173"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "680ae2fffe7aca89", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "TRADFRI Signal Repeater", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI Signal Repeater_Voltage-680ae2fffe7aca89-01"], "ZDeviceName": "Repeater", "_NwkId": "a5ee"}, {"Battery": 16.0, "ConsistencyCheck": "ok", "Health": "Not seen last 24hours", "IEEE": "90fd9ffffeea89e8", "LQI": 25, "MacCapa": ["RFD", "Battery"], "Model": "TRADFRI remote control", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI remote control_Ikea_Round_5b-90fd9ffffeea89e8-01"], "ZDeviceName": "Remote Tradfri", "_NwkId": "cee1"}, {"Battery": 100, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000d6f0011087079", "LQI": 116, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "WarningDevice", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - WarningDevice_AlarmWD-000d6f0011087079-01"], "ZDeviceName": "IAS Sirene", "_NwkId": "2e33"}, {"Battery": 53, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "54ef441000298533", "LQI": 76, "MacCapa": ["RFD", "Battery"], "Model": "lumi.magnet.acn001", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - lumi.magnet.acn001_Door-54ef441000298533-01"], "ZDeviceName": "Lumi Door", "_NwkId": "bb45"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "00047400008aff8b", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "Shutter switch with neutral", "Param": "{'netatmoInvertShutter': 0, 'netatmoLedShutter': 0}", "Status": "inDB", "WidgetList": ["Zigbee - Shutter switch with neutral_Venetian-00047400008aff8b-01"], "ZDeviceName": "Inter Shutter Legrand", "_NwkId": "06ab"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000474000082a54f", "LQI": 18, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "Dimmer switch wo neutral", "Param": "{'netatmoEnableDimmer': 1, 'PowerOnAfterOffOn': 255, 'BallastMaxLevel': 254, 'BallastMinLevel': 1}", "Status": "inDB", "WidgetList": ["Zigbee - Dimmer switch wo neutral_LvlControl-000474000082a54f-01"], "ZDeviceName": "Inter Dimmer Legrand", "_NwkId": "9c25"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "00047400001f09a4", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "Micromodule switch", "Param": "{'PowerOnAfterOffOn': 255}", "Status": "inDB", "WidgetList": ["Zigbee - Micromodule switch_Switch-00047400001f09a4-01"], "ZDeviceName": "Micromodule Legrand", "_NwkId": "8706"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "", "IEEE": "00158d0003021601", "LQI": 0, "MacCapa": ["RFD", "Battery"], "Model": "lumi.sensor_motion.aq2", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - lumi.sensor_motion.aq2_Motion-00158d0003021601-01", "Zigbee - lumi.sensor_motion.aq2_Lux-00158d0003021601-01"], "ZDeviceName": "Lumi Motion", "_NwkId": "6f81"}, {"Battery": 100, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "0015bc001a01aa27", "LQI": 83, "MacCapa": ["RFD", "Battery"], "Model": "MOSZB-140", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - MOSZB-140_Motion-0015bc001a01aa27-23", "Zigbee - MOSZB-140_Tamper-0015bc001a01aa27-23", "Zigbee - MOSZB-140_Voltage-0015bc001a01aa27-23", "Zigbee - MOSZB-140_Temp-0015bc001a01aa27-26", "Zigbee - MOSZB-140_Lux-0015bc001a01aa27-27"], "ZDeviceName": "Motion frient", "_NwkId": "b9bc"}, {"Battery": 63, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "00158d000323dabe", "LQI": 61, "MacCapa": ["RFD", "Battery"], "Model": "lumi.sensor_switch", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - lumi.sensor_switch_SwitchAQ2-00158d000323dabe-01"], "ZDeviceName": "Lumi Switch (rond)", "_NwkId": "a029"}, {"Battery": 100.0, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000d6ffffea1e6da", "LQI": 94, "MacCapa": ["RFD", "Battery"], "Model": "TRADFRI onoff switch", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI onoff switch_SwitchIKEA-000d6ffffea1e6da-01"], "ZDeviceName": "OnOff Ikea", "_NwkId": "c6ca"}, {"Battery": 100.0, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000b57fffe2c0dde", "LQI": 87, "MacCapa": ["RFD", "Battery"], "Model": "TRADFRI wireless dimmer", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI wireless dimmer_GenericLvlControl-000b57fffe2c0dde-01"], "ZDeviceName": "Dim Ikea", "_NwkId": "6c43"}, {"Battery": 100, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "588e81fffe35f595", "LQI": 80, "MacCapa": ["RFD", "Battery"], "Model": "Wiser2-Thermostat", "Param": "{'WiserLockThermostat': 0, 'WiserRoomNumber': 1}", "Status": "inDB", "WidgetList": ["Zigbee - Wiser2-Thermostat_Temp+Hum-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_Humi-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_Temp-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_ThermoSetpoint-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_Valve-588e81fffe35f595-01"], "ZDeviceName": "Wiser Thermostat", "_NwkId": "5a00"}]
 
 
-def validateJSON( self, jsonData, nwkid=None):
- 
+def validateJSON(self, jsonData, nwkid=None):
+    if not jsonData:
+        return {}
+
     try:
-        return json.loads(jsonData)
+        return json.loads(replace_single_quotes_with_double(jsonData) )
 
-    except (TypeError, ValueError) as err:
-        if nwkid is None:
-            self.logging( "Error", "Error on REST API /zdevice-name. Wrong JSON syntax for %s \n >%s< " % (
-                jsonData, err), )
-            return {}
-        
-        _device_name = ""
-        if nwkid in self.ListOfDevices and "ZDeviceName" in self.ListOfDevices[nwkid]:
-            _device_name = self.ListOfDevices[nwkid]["ZDeviceName"]
-        self.logging( "Error", "When updating Device Management, Device: %s/%s got a wrong syntax for >%s< - %s.\n Make sure to use JSON syntax" % (
-            _device_name, nwkid, jsonData, err), )
-
-    return {}
-
+    except json.JSONDecodeError as err:
+        error_message = "validateJSON - Wrong JSON syntax: {}".format(err)
+        if nwkid is not None:
+            device_name = get_device_nickname(self, NwkId=nwkid)
+            error_message = "validateJSON - Device: {}/{} - {}".format(device_name, nwkid, error_message)
+        self.logging("Error", error_message)
+        return {}
+    
 def decode_device_param(self, nwkid, param):
+    if not param:
+        return {}
+
     try:
-        return eval(param)
+        return json.loads(replace_single_quotes_with_double(remove_last_comma(param)))
 
-    except Exception as e:
-        _device_name = ""
-        if nwkid in self.ListOfDevices and "ZDeviceName" in self.ListOfDevices[nwkid]:
-            _device_name = self.ListOfDevices[nwkid]["ZDeviceName"]
+    except json.JSONDecodeError as err:
+        _device_name = get_device_nickname(self, NwkId=nwkid)
+        self.logging("Error", "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for >%s< (%s) - %s.\n Make sure to use JSON syntax" % (
+            _device_name, nwkid, param, type(param), err))
+        return {}
 
-        self.logging( "Error", "When updating Device Management, Device: %s/%s got a wrong Parameter syntax for >%s< - %s.\n Make sure to use JSON syntax" % (
-            _device_name, nwkid, param, e), )
-    return {}
+
+def replace_single_quotes_with_double(json_string):
+    """
+    Replace single quotes with double quotes in a JSON string.
+    
+    Parameters:
+        json_string (str): JSON string with single quotes.
+    
+    Returns:
+        str: JSON string with single quotes replaced by double quotes.
+    """
+    return json_string.replace("'", "\"")
+
+
+def remove_last_comma(json_string):
+    """ remove last comma if any"""
+    if json_string.endswith(', }'):
+        return json_string[:-3] + "}"
+    elif json_string.endswith(',}'):
+        return json_string[:-2] + "}"
+    return json_string
 
 
 def get_plugin_parameters(self, filter=False):
-    plugin_parameters = dict(self.pluginParameters)
+    plugin_parameters = self.pluginParameters.copy()
     if filter:
-        if "Mode5" in plugin_parameters:
-            del plugin_parameters[ "Mode5" ]
-        if "Username" in plugin_parameters:
-            del plugin_parameters[ "Username" ]
-        if "Password" in plugin_parameters:
-            del plugin_parameters[ "Password" ]
+        keys_to_remove = ["Mode5", "Username", "Password"]
+        for key in keys_to_remove:
+            plugin_parameters.pop(key, None)
     return plugin_parameters

@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 
 import os
-import urllib.parse 
+import urllib.parse
 
-import Domoticz
+from Modules.domoticzAbstractLayer import domoticz_log_api, domoticz_status_api
 
 LINUX_CURL_COMMAND = "/usr/bin/curl"
 WINDOWS_CURL_COMMAND = r"c:\Windows\System32\curl.exe"
@@ -17,7 +24,7 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_a
 
     curl_command = WINDOWS_CURL_COMMAND if os.name == 'nt' else LINUX_CURL_COMMAND
     if not os.path.isfile(curl_command):
-        Domoticz.Log("Unable to restart the plugin, %s not available" % curl_command)
+        domoticz_log_api("Unable to restart the plugin, %s not available" % curl_command)
         return
 
     erasePDM = "True" if erasePDM else "False"
@@ -48,10 +55,10 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_a
     if "LogLevel" in self.pluginParameters:
         url_infos["loglevel"] = self.pluginParameters["LogLevel"]
 
-    Domoticz.Log("URL INFOS %s" %url_infos)
+    domoticz_log_api("URL INFOS %s" %url_infos)
     url += urllib.parse.urlencode(url_infos, quote_via=urllib.parse.quote )
 
-    Domoticz.Status("Plugin Restart command : %s" % url)
+    domoticz_status_api("Plugin Restart command : %s" % url)
 
     _cmd = curl_command + " '%s' &" % url
     os.system(_cmd)  # nosec

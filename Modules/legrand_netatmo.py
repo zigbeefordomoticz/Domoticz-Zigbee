@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: z_output.py
 
@@ -860,3 +867,12 @@ def is_zigate_below_31d(self):
 
 def is_zigate_bellow_or_equal_31c(self): 
     return self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) <= 0x31C
+
+
+LEGRAND_DEVICE_PARAMETERS = {
+    "netatmoLedIfOn": { "callable": legrand_enable_Led_IfOn_by_nwkid,"description": "Enable Led if On, valid for model  'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch'. (0 or 1)"},
+    "netatmoLedInDark": { "callable": legrand_enable_Led_InDark_by_nwkid, "description": "Enable Led if On, valid for model  'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch'. (0 or 1)"},
+    "netatmoLedShutter": { "callable": legrand_enable_Led_Shutter_by_nwkid, "description": "Enable Led if On, valid for model  'Connected outlet', 'Shutter switch with neutral'. (0 or 1)"},
+    "netatmoEnableDimmer": { "callable": legrand_Dimmer_by_nwkid, "description": "Enable dimming for 'Dimmer switch wo neutral'. (0 or 1)"},
+
+}

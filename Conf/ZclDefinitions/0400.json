@@ -3,6 +3,7 @@
     "Description": "Illuminance Level Sensing",
     "Version": "1",
     "Enabled": true,
+    "Debug": "Illuminance",
     "Attributes": {
         "0000": { 
             "Enabled": true,

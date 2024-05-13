@@ -15,14 +15,17 @@ import re
 import sys
 from pathlib import Path
 
-import Domoticz
+#import DomoticzEx as Domoticz
+import Domoticz as Domoticz
+
 from Modules.tools import how_many_devices
+from Modules.domoticzAbstractLayer import domoticz_error_api
 
 MODULES_VERSION = {
-    "zigpy": "0.59.0",
-    "zigpy_znp": "0.11.6",
-    "zigpy_deconz": "0.21.1",
-    "bellows": "0.36.8",
+    "zigpy": "0.64.0",
+    "zigpy_znp": "0.12.1",
+    "zigpy_deconz": "0.23.1",
+    "bellows": "0.38.4",
     }
 
 def networksize_update(self):
@@ -76,7 +79,7 @@ def get_domoticz_version( self, domoticz_version  ):
         return _old_fashon_domoticz(self, lst_version, domoticz_version)
     
     if len(lst_version) != 3:
-        Domoticz.Error( "Domoticz version %s unknown not supported, please upgrade to a more recent"% (
+        domoticz_error_api( "Domoticz version %s unknown not supported, please upgrade to a more recent"% (
             domoticz_version) )
         return _domoticz_not_compatible(self)
 
@@ -97,7 +100,7 @@ def _old_fashon_domoticz(self, lst_version, domoticz_version):
         return True
     
     # Old fashon Versioning
-    Domoticz.Error( "Domoticz version %s %s %s not supported, please upgrade to a more recent" % (
+    domoticz_error_api( "Domoticz version %s %s %s not supported, please upgrade to a more recent" % (
         domoticz_version, major, minor) )
     return _domoticz_not_compatible(self)
 
@@ -114,19 +117,22 @@ def _domoticz_not_compatible(self):
     return False
 
 
-def check_python_modules_version( self ):
-    flag = True
+def check_python_modules_version(self):
+    if self.pluginconf.pluginConf["internetAccess"]:
+        return True
 
-    for x in MODULES_VERSION:
-        if importlib.metadata.version( x ) != MODULES_VERSION[ x]:
-            self.log.logging("Plugin", "Error", "The python module %s version %s loaded is not compatible as we are expecting this level %s" %(
-                x, importlib.metadata.version( x ), MODULES_VERSION[ x] ))
-            flag = False
-            
-    return flag
+    for module, expected_version in MODULES_VERSION.items():
+        current_version = importlib.metadata.version(module)
+        if current_version != expected_version:
+            self.log.logging("Plugin", "Error", "The Python module %s version %s loaded is not compatible. Expected version: %s" % (
+                module, current_version, expected_version))
+            return False
+
+    return True
 
 
 def check_requirements(home_folder):
+
     requirements_file = Path(home_folder) / "requirements.txt"
     Domoticz.Status("Checking Python modules %s" % requirements_file)
 
@@ -135,8 +141,11 @@ def check_requirements(home_folder):
 
     for req_str in requirements_list:
         req_str = req_str.strip()
-        package = re.split(r'[<>!=]+', req_str)[0].strip()
+        if req_str == '-c constraints.txt':
+            continue
 
+        package = re.split(r'[<>!=]+', req_str)[0].strip()
+        version = None
         try:
             installed_version = importlib.metadata.version(package)
 
@@ -170,24 +179,6 @@ def check_requirements(home_folder):
 
     return False
 
-
-#def list_all_modules_loaded(self):
-#    # Get a list of installed packages and their versions
-#    installed_packages = {pkg.key: pkg.version for pkg in pkg_resources.working_set}
-#
-#    # Get a list of modules imported by the main script
-#    main_modules = set(sys.modules.keys())
-#
-#    # Combine the lists
-#    all_modules = set(installed_packages.keys()) | main_modules
-#
-#    # Print the list of modules and their versions
-#    self.log.logging("Plugin", "Log", "=============================")
-#    for module_name in sorted(all_modules):
-#        version = installed_packages.get(module_name, "Not installed")
-#        self.log.logging("Plugin", "Log", f"{module_name}: {version}")
-#    self.log.logging("Plugin", "Log", "=============================")
-#
 
 def list_all_modules_loaded(self):
     # Get a list of modules imported by the main script

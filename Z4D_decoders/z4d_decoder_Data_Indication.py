@@ -5,6 +5,7 @@ from Modules.tools import (retreive_cmd_payload_from_8002, timeStamped, updLQI,
                            updSQN)
 from Modules.zb_tables_management import mgmt_rtg_rsp
 from Modules.zigateConsts import ADDRESS_MODE, ZIGBEE_COMMAND_IDENTIFIER
+from Z4D_decoders.z4d_decoder_helpers import set_health_after_message_received
 from Z4D_decoders.z4d_decoder_Remotes import Decode80A7
 
 
@@ -87,9 +88,10 @@ def Decode8002(self, Devices, MsgData, MsgLQI):
         self.log.logging('Input', 'Debug', 'Decode8002 - Unknown NwkId: %s Ep: %s Cluster: %s Payload: %s' % (srcnwkid, MsgSourcePoint, MsgClusterID, MsgPayload))
         return
     
-    timeStamped(self, srcnwkid, 32770)
+    timeStamped(self, srcnwkid, 0x8002)
     lastSeenUpdate(self, Devices, NwkId=srcnwkid)
     updLQI(self, srcnwkid, MsgLQI)
+    set_health_after_message_received(self, srcnwkid)
     if MsgClusterID in ('8032', '8033'):
         mgmt_rtg_rsp(self, srcnwkid, MsgSourcePoint, MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
         return

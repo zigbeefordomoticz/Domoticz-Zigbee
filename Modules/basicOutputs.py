@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: basicOutputs
 
@@ -61,16 +68,16 @@ def ZigatePermitToJoin(self, permit):
         # Enable Permit to join
         if self.permitTojoin["Duration"] != 255:
             if permit != 255:
-                self.log.logging("BasicOutput", "Status", "Request Accepting new Hardware for %s seconds " % permit)
+                self.log.logging("BasicOutput", "Status", "Z4D opened the Zigbee network for %s seconds " % permit)
             else:
-                self.log.logging("BasicOutput", "Status", "Request Accepting new Hardware for ever ")
+                self.log.logging("BasicOutput", "Status", "Z4D opened the Zigbee network for ever ")
 
             self.permitTojoin["Starttime"] = int(time())
             self.permitTojoin["Duration"] = 0 if permit <= 5 else permit
     else:
         self.permitTojoin["Starttime"] = int(time())
         self.permitTojoin["Duration"] = 0
-        self.log.logging("BasicOutput", "Status", "Request Disabling Accepting new Hardware")
+        self.log.logging("BasicOutput", "Status", "Z4D closed the Zigbee network")
 
     PermitToJoin(self, "%02x" % permit)
 
@@ -513,22 +520,6 @@ def removeZigateDevice(self, IEEE):
     #return send_zigatecmd_raw(self, "0026", ParentAddr + ChildAddr)
 
 
-def ballast_Configuration_max_level(self, nwkid, value):
-    ListOfEp = getListOfEpForCluster(self, nwkid, "0301")
-    if ListOfEp:
-        for EPout in ListOfEp:
-            write_attribute(
-                self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0011", "20", "%02x" % value, ackIsDisabled=False
-            )
-            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0011", ackIsDisabled=False)
-
-
-def ballast_Configuration_min_level(self, nwkid, value):
-    ListOfEp = getListOfEpForCluster(self, nwkid, "0301")
-    if ListOfEp:
-        for EPout in ListOfEp:
-            write_attribute( self, nwkid, ZIGATE_EP, EPout, "0301", "0000", "00", "0010", "20", "%02x" % value, ackIsDisabled=False)
-            read_attribute(self, nwkid, ZIGATE_EP, EPout, "0301", "00", "00", "0000", 1, "0010", ackIsDisabled=False)
 
 def read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=False):
     return zcl_read_attribute(self, nwkid, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled)

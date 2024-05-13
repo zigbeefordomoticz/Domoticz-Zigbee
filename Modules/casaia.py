@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author:  pipiche38
-#   French translation: @martial83
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import json
 import os
@@ -428,16 +433,12 @@ def casaia_ac201_fan_control(self, NwkId, Level):
 
     if Level == 10:
         casaia_system_mode(self, NwkId, "FanAuto")
-        # UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
     elif Level == 20:
         casaia_system_mode(self, NwkId, "FanLow")
-        # UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
     elif Level == 30:
         casaia_system_mode(self, NwkId, "FanMedium")
-        # UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
     elif Level == 40:
         casaia_system_mode(self, NwkId, "FanHigh")
-        # UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
 
 # 0xFFAC Client to Server
@@ -825,7 +826,7 @@ def get_ffac_endpoint(self, NwkId):
 
 
 def store_casaia_attribute(self, NwkId, Attribute, Value, device_id=None):
-    self.log.logging("CasaIA", "Log", "store_casaia_attribute %s %s %s %s" % (NwkId, Attribute, Value, device_id))
+    self.log.logging("CasaIA", "Debug", "store_casaia_attribute %s %s %s %s" % (NwkId, Attribute, Value, device_id))
     if "CASA.IA" not in self.ListOfDevices[NwkId]:
         self.ListOfDevices[NwkId]["CASA.IA"] = {}
     if device_id:

@@ -1,7 +1,15 @@
-#!/usr/bin/env python3 # coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 
 # """
 #     References:
@@ -136,7 +144,8 @@ class OTAManagement(object):
         IEEE2NWK,
         log,
         PluginHealth,
-        readZclClusters
+        readZclClusters,
+        internet_available
         ):
         
         # Pointers to external objects
@@ -153,6 +162,7 @@ class OTAManagement(object):
         self.log = log
         self.PluginHealth = PluginHealth
         self.readZclClusters = readZclClusters
+        self.internet_available = internet_available
 
         # Properties for firmware/image management
         self.ListOfImages = {}  # List of available firmware loaded at plugin startup
@@ -961,11 +971,15 @@ def ota_scan_folder(self):  # OK 13/10
                 "intImageVersion": headers["image_version"],
                 "intSize": headers["size"],
             }
-    # Logging if Debug
-    logging(self, "Status", "ota_scan_folder Following Firmware have been loaded ")
-    for brand, value in self.ListOfImages["Brands"].items():
-        for ota_image_file in value:
-            logging(self, "Status", " --> Brand: %s Image File: %s" % (brand, ota_image_file))
+    # Check if there are any firmware images loaded
+    if self.ListOfImages:
+        logging(self, "Status", "Z4D loads the firmware images")
+
+        # Iterate over the loaded firmware images and log their details
+        for brand, value in self.ListOfImages["Brands"].items():
+            for ota_image_file in value:
+                logging(self, "Status", " --> Brand: %s Image File: %s" % (brand, ota_image_file))
+
 
 def check_image_valid_version(self, brand, image_type, ota_image_file, headers):  # OK 13/10
     # Purpose is to check if the already imported image has a higher version or not.
@@ -1380,6 +1394,9 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
 
 def loading_zigbee_ota_index( self ):
     
+    if not self.internet_available:
+        return
+
     self.zigbee_ota_index = []
     if self.pluginconf.pluginConf["internetAccess"]:
         self.zigbee_ota_index = _load_json_from_url( self, self.pluginconf.pluginConf["ZigbeeOTA_Repository"] )
@@ -1412,7 +1429,9 @@ def convert_ikea_format_to_list(zigbee_ikea_index):
     ]
 
 
-def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ): 
+def check_ota_availability_from_index( self, manufcode, imagetype, fileversion ):
+    if self.zigbee_ota_index is None:
+        return None
     logging(self, "Debug", "check_ota_availability_from_index: Index Size: %s Searching ImageType: 0x%04x (%s) Version: 0x%08x (%s) ManufCode: 0x%04x (%s)" %(
         len(self.zigbee_ota_index), manufcode, manufcode, imagetype, imagetype, fileversion, fileversion))
 

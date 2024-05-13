@@ -24,6 +24,7 @@ from Modules.basicOutputs import getListofAttribute, identifyEffect
 from Modules.bindings import bindDevice, reWebBind_Clusters, unbindDevice
 from Modules.casaia import casaia_pairing
 from Modules.domoCreate import CreateDomoDevice
+from Modules.domoticzAbstractLayer import is_device_ieee_in_domoticz_db
 from Modules.domoTools import CLUSTER_TO_TYPE
 from Modules.livolo import livolo_bind
 from Modules.lumi import enable_click_mode_aqara, enableOppleSwitch
@@ -337,12 +338,11 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
     self.log.logging("Pairing", "Debug", "[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" % (RIA, NWKID))
     IsCreated = False
     # Let's check if the IEEE is not known in Domoticz
-    for x in Devices:
-        if self.ListOfDevices[NWKID].get("IEEE") and Devices[ x ].DeviceID == str(self.ListOfDevices[NWKID]["IEEE"]):
-            IsCreated = True
-            self.log.logging("Pairing", "Error", "processNotinDBDevices - Devices already exist. " + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]))
-            self.log.logging("Pairing", "Error", "processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
-            break
+    
+    if is_device_ieee_in_domoticz_db(self, Devices, self.ListOfDevices[NWKID].get("IEEE")):
+        IsCreated = True
+        self.log.logging("Pairing", "Error", "There are alreday Widget(s) associated for this objet %s in Domoticz" % str(self.ListOfDevices[NWKID]) )
+        return
 
     if not IsCreated:
         full_provision_device(self, Devices, NWKID, RIA, status)

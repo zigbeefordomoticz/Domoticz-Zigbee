@@ -158,7 +158,7 @@ def common_onoff_startup_onoff_mode(self, nwkid, mode):
 
 
 ONOFF_DEVICE_PARAMETERS = {
-    "PowerOnAfterOffOn": common_onoff_startup_onoff_mode,
-    "OnOffOnTimeDelay": common_onoff_off_wait_time,
-    "OnOffOffWaitTime": common_onoff_off_wait_time
+    "PowerOnAfterOffOn": { "callable": common_onoff_startup_onoff_mode, "description": "If managed by the device, the device will go to a desired state after an electric Off/On. 0 stands for stay Off, 1 stands for switch On, 255 stands for previous state" },
+    "OnOffOnTimeDelay": { "callable": common_onoff_off_wait_time, "description": ""},
+    "OnOffOffWaitTime": { "callable": common_onoff_off_wait_time, "description": ""}
 }

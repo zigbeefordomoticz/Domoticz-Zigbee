@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import time
 
@@ -194,43 +205,33 @@ def linky_mode( self, nwkid , protocol=False):
 
     return None
 
-def get_linky_mode_from_ep(self, nwkid ):
-    if "Ep" not in self.ListOfDevices[ nwkid ]:
-        return None
-    if "01" not in self.ListOfDevices[ nwkid ]["Ep"]:
-        return None
-    if "ff66" not in self.ListOfDevices[ nwkid ]["Ep"]["01"]:
-        return None
-    if "0300" not in self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]:
-        return None
-    if self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"] not in ZLINKY_MODE:
-        return None
-    return self.ListOfDevices[ nwkid ]["Ep"]["01"]["ff66"]["0300"]
-    
-def linky_device_conf(self, nwkid):
 
-    if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
-        mode = get_linky_mode_from_ep(self, nwkid )
-        # Let check if we have in the Cluster infos
-        if mode is None:
+def get_linky_mode_from_ep(self, nwkid):
+    ep = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get("01", {}).get("ff66", {}).get("0300")
+    return ep if ep in ZLINKY_MODE else None
+
+
+def linky_device_conf(self, nwkid):
+    device = self.ListOfDevices.get(nwkid, {})
+    zlinky_info = device.get('ZLinky', {})
+    protocol_linky = zlinky_info.get('PROTOCOL Linky')
+
+    if not protocol_linky:
+        mode = get_linky_mode_from_ep(self, nwkid)
+        if mode:
+            self.log.logging("Cluster", "Status", f"linky_device_conf {nwkid} found 0xff66/0x0300: {mode}")
+            zlinky_info['PROTOCOL Linky'] = mode
+            return ZLINKY_MODE[mode]["Conf"]
+        else:
             return "ZLinky_TIC"
 
-        self.log.logging( "Cluster", "Status", "linky_device_conf %s found 0xff66/0x0300: %s" %( nwkid, mode ))
-
-        # Fix ZLinky data structure
-        self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] = mode
-        return ZLINKY_MODE[ mode ]["Conf"]
-
-    if 'PROTOCOL Linky' not in self.ListOfDevices[ nwkid ]['ZLinky']:
-        return "ZLinky_TIC"
-
-    if self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] not in ZLINKY_MODE:
+    if protocol_linky not in ZLINKY_MODE:
         return "ZLinky_TIC"
     
-    self.log.logging( "Cluster", "Debug", "linky_device_conf %s found Protocol Linky: %s" %( nwkid, self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ))
+    self.log.logging("Cluster", "Debug", f"linky_device_conf {nwkid} found Protocol Linky: {protocol_linky}")
+    return ZLINKY_MODE[protocol_linky]["Conf"]
 
-    return ZLINKY_MODE[ self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ]["Conf"]
-    
+ 
 def linky_upgrade_authorized( current_model, new_model ):
 
     return (
@@ -321,17 +322,10 @@ COULEUR = {
     2: "Blanc",
     3: "Rouge"
 }
-def decode_STEG( stge ):
-    # '003A4001'
-    # '0b1110100100000000000001'
 
-    try:
-        stge = int( stge, 16)
-    except Exception as e:
-        return {}
 
-    # Decodage Registre Statuts
-
+def decode_STEG(stge):
+    """ decoding of STGE Linky frame"""
     # Contact Sec : bit 0
     # Organe de coupure: bits 1 à 3
     # Etat du cache-bornes distributeur: bit 4
@@ -350,100 +344,69 @@ def decode_STEG( stge ):
     # Couleur du lendemain: bit 26 et 27
     # Préavis points mobiles: bit 28 à 29
     # Pointe mobile: bit 30 et 31
-    contact_sec = ( stge & 0b00000000000000000000000000000001)
-    organe_coupure = ( stge & 0b00000000000000000000000000001110) >> 1
-    etat_cache_bornes = ( stge & 0b00000000000000000000000000010000) >> 4
-    sur_tension = ( stge & 0b00000000000000000000000001000000) >> 6
-    depassement_puissance = ( stge & 0b00000000000000000000000010000000) >> 7
-    mode_fonctionnement =(stge & 0b00000000000000000000000100000000) >> 8
-    sens_energie = ( stge & 0b00000000000000000000001000000000) >> 9
-    tarif_fourniture = ( stge & 0b00000000000000000011110000000000) >> 10
-    tarif_distributeur =( stge & 0b00000000000000001100000000000000) >> 14
-    Mode_horloge = ( stge & 0b00000000000000010000000000000000) >> 16
-    sortie_tic = ( stge & 0b00000000000000100000000000000000) >> 17
-    sortie_euridis = ( stge & 0b00000000000110000000000000000000) >> 19
-    status_cpl = ( stge & 0b00000000011000000000000000000000) >> 21
-    synchro_cpl = ( stge & 0b00000000100000000000000000000000) >> 23
-    couleur_jour = ( stge & 0b00000011000000000000000000000000) >> 24
-    couleur_demain = ( stge & 0b00001100000000000000000000000000) >> 26
-    preavis_point_mobile = ( stge & 0b00110000000000000000000000000000) >> 28
-    pointe_mobile = ( stge & 0b11000000000000000000000000000000) >> 30
 
-    if contact_sec in CONTACT_SEC:
-        contact_sec = CONTACT_SEC[ contact_sec ]
+    try:
+        stge = int(stge, 16)
+    except ValueError:
+        return {}
 
-    if etat_cache_bornes in ETAT_CACHE_BORNES:
-        etat_cache_bornes = ETAT_CACHE_BORNES[ etat_cache_bornes ]  
-
-    if mode_fonctionnement in FONCTION_PROD_CONSO:
-        mode_fonctionnement = FONCTION_PROD_CONSO[ mode_fonctionnement ]
-
-    if sens_energie in SENS_ENERGIE:
-        sens_energie = SENS_ENERGIE[ sens_energie ]
-
-    if Mode_horloge in HORLOGE:
-        Mode_horloge = HORLOGE[ Mode_horloge]
-
-    if sortie_tic in SORTIE_TIC:
-        sortie_tic = SORTIE_TIC[ sortie_tic ]
-
-    if sortie_euridis in SORTIE_EURIDIS:
-        sortie_euridis = SORTIE_EURIDIS[ sortie_euridis ]
-
-    if status_cpl in STATUT_CPL:
-        status_cpl = STATUT_CPL[ status_cpl ]
-
-    if synchro_cpl in SYNCHRO_CPL:
-        synchro_cpl = SYNCHRO_CPL[ synchro_cpl ]
-
-    if couleur_jour in COULEUR:
-        couleur_jour = COULEUR[ couleur_jour]
-        
-    if couleur_demain in COULEUR:
-        couleur_demain = COULEUR[ couleur_demain]
-    return {
-        'Contact sec ': contact_sec,
-        'Organe de coupure ': organe_coupure,
-        'État du cache-bornes distributeur': etat_cache_bornes,
-        'Surtension sur une des phases ': sur_tension,
-        'Dépassement de la puissance de référence': depassement_puissance,
-        'Fonctionnement producteur/consommateur': mode_fonctionnement,
-        'Sens énergie active ': sens_energie,
-        'Tarif en cours sur le contrat fourniture': tarif_fourniture,
-        'Tarif en cours sur le contrat distributeur': tarif_distributeur,
-        'Mode dégradée horloge': Mode_horloge,
-        'État de la sortie télé-information ': sortie_tic,
-        'État de la sortie communication': sortie_euridis,
-        'Statut du CPL ': status_cpl,
-        'Synchronisation CPL ': synchro_cpl,
-        'Couleur du jour': couleur_jour,
-        'Couleur du lendemain': couleur_demain,
-        'Préavis pointes mobiles ': preavis_point_mobile,
-        'Pointe mobile ': pointe_mobile,
+    STEG_ATTRIBUTES = {
+        'contact_sec': stge & 0x00000001,
+        'organe_coupure': (stge & 0x0000000E) >> 1,
+        'etat_cache_bornes': (stge & 0x00000010) >> 4,
+        'sur_tension': (stge & 0x00000040) >> 6,
+        'depassement_puissance': (stge & 0x00000080) >> 7,
+        'mode_fonctionnement': (stge & 0x00000100) >> 8,
+        'sens_energie': (stge & 0x00000200) >> 9,
+        'tarif_fourniture': (stge & 0x0001F000) >> 12,
+        'tarif_distributeur': (stge & 0x00060000) >> 14,
+        'Mode_horloge': (stge & 0x00100000) >> 16,
+        'sortie_tic': (stge & 0x00200000) >> 17,
+        'sortie_euridis': (stge & 0x00C00000) >> 19,
+        'status_cpl': (stge & 0x03000000) >> 21,
+        'synchro_cpl': (stge & 0x08000000) >> 23,
+        'couleur_jour': (stge & 0x30000000) >> 24,
+        'couleur_demain': (stge & 0xC0000000) >> 26,
+        'preavis_point_mobile': (stge & 0x30000000) >> 28,
+        'pointe_mobile': (stge & 0xC0000000) >> 30,
     }
 
+    # Decode mapped values
+    STEG_ATTRIBUTES_MAPPING = {
+        'contact_sec': CONTACT_SEC,
+        'etat_cache_bornes': ETAT_CACHE_BORNES,
+        'mode_fonctionnement': FONCTION_PROD_CONSO,
+        'sens_energie': SENS_ENERGIE,
+        'Mode_horloge': HORLOGE,
+        'sortie_tic': SORTIE_TIC,
+        'sortie_euridis': SORTIE_EURIDIS,
+        'status_cpl': STATUT_CPL,
+        'synchro_cpl': SYNCHRO_CPL,
+        'couleur_jour': COULEUR,
+        'couleur_demain': COULEUR,
+    }
 
-def zlinky_sum_all_indexes( self, nwkid ):
+    # Decode mapped values for applicable attributes
+    for attr, mapping in STEG_ATTRIBUTES_MAPPING.items():
+        if attr in STEG_ATTRIBUTES and STEG_ATTRIBUTES[attr] in mapping:
+            STEG_ATTRIBUTES[attr] = mapping[STEG_ATTRIBUTES[attr]]
 
-    if "ZLinky" not in self.ListOfDevices[nwkid]:
-        return 0
-    if "INDEX_MID" not in self.ListOfDevices[nwkid]["ZLinky"]:
-        return 0
-    if "CompteurTotalisateur" not in self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]:
-        return 0
+    return STEG_ATTRIBUTES
 
-    return self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]["CompteurTotalisateur"]
+
+def zlinky_sum_all_indexes(self, nwkid):
+    zlinky_info = self.ListOfDevices.get(nwkid, {}).get("ZLinky", {})
+    index_mid_info = zlinky_info.get("INDEX_MID", {})
+
+    return index_mid_info.get("CompteurTotalisateur", 0)
+
 
 def zlinky_totalisateur(self, nwkid, attribute, value):
+    zlinky_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("ZLinky", {})
+    index_mid_info = zlinky_info.setdefault("INDEX_MID", {"CompteurTotalisateur": 0})
 
-    if "ZLinky" not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid]["ZLinky"] = {}
-    if "INDEX_MID" not in self.ListOfDevices[nwkid]["ZLinky"]:
-        self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"] = {"CompteurTotalisateur": 0}
-    previous_index = 0
-    if attribute in self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]:
-        previous_index = self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"][ attribute ]["Compteur"]
-
+    previous_index = index_mid_info.get(attribute, {}).get("Compteur", 0)
     increment = value - previous_index
-    self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"]["CompteurTotalisateur"] += increment
-    self.ListOfDevices[nwkid]["ZLinky"]["INDEX_MID"][ attribute ] = { "TimeStamp": time.time() , "Compteur": value}
+
+    index_mid_info["CompteurTotalisateur"] += increment
+    index_mid_info[attribute] = {"TimeStamp": time.time(), "Compteur": value}

@@ -281,3 +281,8 @@ def _retreive_current_position( self, MsgSrcAddr, MsgSrcEp, MsgClusterId):
             prev_Value = "0;80;0".split(";")
             break
     return prev_Value
+
+
+PHILIPS_DEVICE_PARAMETERS = {
+    "HueLedIndication": { "callable": philips_led_indication, "description": "Hue Led indicatio (0 or 1)"},
+}

@@ -1,8 +1,14 @@
-# !/usr/bin/env python3
-# coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import json
 import queue
@@ -11,7 +17,6 @@ import time
 from queue import PriorityQueue, Queue
 from threading import Semaphore
 
-import Domoticz
 from Classes.ZigateTransport.forwarderThread import start_forwarder_thread
 from Classes.ZigateTransport.readDecoder import decode_and_split_message
 from Classes.ZigateTransport.readerThread import (open_zigate_and_start_reader,
@@ -22,20 +27,22 @@ from Classes.ZigateTransport.tools import (
     initialize_command_protocol_parameters, stop_waiting_on_queues,
     waiting_for_end_thread)
 from Classes.ZigateTransport.writerThread import start_writer_thread
+from Modules.domoticzAbstractLayer import domoticz_connection
 from Modules.zigateConsts import MAX_SIMULTANEOUS_ZIGATE_COMMANDS
 
 
 class ZigateTransport(object):
+
     def __init__(
         self,
-        hardwareid,
+        HardwareID,
         DomoticzBuild,
         DomoticzMajor,
         DomoticzMinor,
         transport,
         statistics,
         pluginconf,
-        F_out,
+        processFrame,
         log,
         serialPort=None,
         wifiAddress=None,
@@ -44,7 +51,7 @@ class ZigateTransport(object):
         self.zigbee_communication = "native"
         
         # Call back function to send back to plugin
-        self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
+        self.F_out = processFrame  # Function to call to bring the decoded Frame at plugin
 
         # Logging
         self.log = log
@@ -59,7 +66,7 @@ class ZigateTransport(object):
         self.pluginconf = pluginconf
 
         # Communication/Transport link attributes
-        self.hardwareid = hardwareid
+        self.hardwareid = HardwareID
         self._connection = None  # connection handle
         self._ReqRcv = bytearray()  # on going receive buffer
         self._last_raw_message = bytearray()
@@ -131,7 +138,7 @@ class ZigateTransport(object):
             self._wifiPort = wifiPort
 
         else:
-            Domoticz.Error("Unknown Transport Mode: >%s<" % transport)
+            self.logging_transport("Error", "Unknown Transport Mode: >%s<" % transport)
             self._transp = "None"
 
     # for Statistics usage
@@ -352,9 +359,7 @@ def open_connection(self):
         if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
             result = open_zigate_and_start_reader(self, "serial")
         else:
-            self._connection = Domoticz.Connection(
-                Name="ZiGate", Transport="Serial", Protocol="None", Address=self._serialPort, Baud=115200
-            )
+            self._connection = domoticz_connection( name="ZiGate", transport="Serial", protocol="None", address=self._serialPort, port=None, baud=115200)
             result = self._connection
         if result:
             start_writer_thread(self)
@@ -365,8 +370,8 @@ def open_connection(self):
         if self.pluginconf.pluginConf["byPassDzConnection"] and not self.force_dz_communication:
             result = open_zigate_and_start_reader(self, "tcpip")
         else:
-            self._connection = Domoticz.Connection(
-                Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=self._wifiAddress, Port=self._wifiPort
+            self._connection = domoticz_connection( 
+                name="Zigate", transport="TCP/IP", Protocol="None ", address=self._wifiAddress, port=self._wifiPort
             )
             result = self._connection
         if result:

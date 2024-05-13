@@ -21,7 +21,7 @@ from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
 
 
 class ZigpyTransport(object):
-    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_backup_available, log, statistics, hardwareid, radiomodule, serialPort):
+    def __init__(self, ControllerData, pluginParameters, pluginconf, F_out, zigpy_upd_device, zigpy_get_device, zigpy_backup_available, restart_plugin, log, statistics, hardwareid, radiomodule, serialPort):
         self.zigbee_communication = "zigpy"
         self.pluginParameters = pluginParameters
         self.pluginconf = pluginconf
@@ -29,6 +29,7 @@ class ZigpyTransport(object):
         self.ZigpyUpdDevice = zigpy_upd_device
         self.ZigpyGetDevice = zigpy_get_device
         self.ZigpyBackupAvailable = zigpy_backup_available
+        self.restart_plugin = restart_plugin
         self.log = log
         self.statistics = statistics
         self.hardwareid = hardwareid
@@ -72,6 +73,11 @@ class ZigpyTransport(object):
         self.structured_log_command_file_handler = None
         instrument_log_command_open( self)
 
+        self.manual_topology_scan_task = None   # Store topology task when manual started
+        self.manual_interference_scan_task = None   # Store topology task when manual started
+
+        self.use_of_zigpy_persistent_db = self.pluginconf.pluginConf["enableZigpyPersistentInFile"] or self.pluginconf.pluginConf["enableZigpyPersistentInMemory"]
+
    
     def open_cie_connection(self):
         start_zigpy_thread(self)
@@ -84,7 +90,7 @@ class ZigpyTransport(object):
         pass
 
     def thread_transport_shutdown(self):
-        self.log.logging("Transport", "Status", "Shuting down co-routine")
+        self.log.logging("Transport", "Debug", "Shuting down co-routine")
         stop_zigpy_thread(self)
         stop_forwarder_thread(self)
 

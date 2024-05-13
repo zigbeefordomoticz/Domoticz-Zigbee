@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 from Modules.basicOutputs import (raw_APS_request, read_attribute,
                                   write_attribute)
@@ -423,3 +429,11 @@ def danfoss_on_off(self, NwkId, on):
     write_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata, ackIsDisabled=False)
     read_attribute(self, NwkId, ZIGATE_EP, EPout, cluster_id, "00", manuf_spec, manuf_id, 1, Hattribute, ackIsDisabled=False)
 
+
+DANFOSS_DEVICE_PARAMETERS = {
+    "eTRVExerciseDay":{ "callable": danfoss_exercise_day_of_week, "description": "0-6: (Sun-Sat) The day to do weekly exercising of radiator valve"},
+    "eTRVExerciseTime":{ "callable": danfoss_exercise_trigger_time, "description": "Minutes after midnight to do weekly exercising of radiator valve"},
+    "DanfossCovered": { "callable": danfoss_covered, "description": "‘F’ or ‘T’: ‘T’ indicates that radiator is covered."},
+    "DanfossTRVOrientation": { "callable": danfoss_orientation, "description": "‘H’ or ‘V’: Orientation of thermostat, Horizontal or Vertical"},
+    "DanfossViewDirection": { "callable": danfoss_viewdirection, "description": "1 or 2: The viewing direction of thermostat LCD"},
+}

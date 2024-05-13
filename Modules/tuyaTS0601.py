@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: tuyaTS0601.py
 
@@ -110,38 +117,54 @@ def ts0601_actuator( self, NwkId, command, value=None):
         self.log.logging("Tuya0601", "Error", "ts0601_actuator - unknow command %s in core plugin" % command)
         return False
     
+    # Check if we have the command via a TS0601_DP
     str_dp = ts0601_actuator_dp( command, dps_mapping)
     if str_dp is None:
         self.log.logging("Tuya0601", "Error", "ts0601_actuator - unknow command %s in config file" % command)
         return False
-    
+
     if "action_Exp" in dps_mapping[ str_dp ]:
         # Correct Value to proper format
         value = evaluate_expression_with_data(self, dps_mapping[ str_dp ]["action_Exp"], value)
         self.log.logging("Tuya0601", "Debug", "      corrected value: %s" % ( value ))
-        
+
     dp = int(str_dp, 16)
-    
+
     self.log.logging("Tuya0601", "Debug", "ts0601_actuator - requesting %s %s %s" %(
         command, dp, value))
 
-    if command in TS0601_COMMANDS and isinstance(TS0601_COMMANDS[ command ], list):
+    if command in TS0601_COMMANDS and isinstance(TS0601_COMMANDS[ command ], (list, tuple)):
         dt = TS0601_COMMANDS[ command ][1]
         ts0601_tuya_action(self, NwkId, "01", command, dp, dt, value)
         return
 
+    func_source = None
     if command in TS0601_COMMANDS:
-        # TS0601_COMMANDS[ command ] is callable
         func = TS0601_COMMANDS[ command ]
-
+        func_source = "TS0601_COMMANDS"
     else:
         func = DP_ACTION_FUNCTION[ command ]
+        func_source = "DP_ACTION_FUNCTION"
+
+    if not callable( func ):
+        # Huston we have a problem
+        _context = {
+            "Nwkid": NwkId,
+            "Model":model_name,
+            "command": command,
+            "value": value,
+            "dp": dp,
+            "str_dp": str_dp,
+            "dps_mapping": dps_mapping
+        }
+        self.log.logging("Tuya0601", "Error", "ts0601_actuator - don't get a callable function for nwkid: %s" %( NwkId ), nwkid=NwkId, context=_context)
+
+        return
 
     if value is not None:
         func(self, NwkId, "01", dp, value )
     else:
         func(self, NwkId, "01", dp )
-
 
 # Helpers  
 
@@ -380,7 +403,7 @@ def ts0601_instant_power(self, Devices, nwkid, ep, value):
 def ts0601_voltage(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_voltage - Voltage %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0001", value)
-    store_tuya_attribute(self, nwkid, "Voltage", value)
+    store_tuya_attribute(self, nwkid, "Voltage_%s" %ep, value)
 
 def ts0601_trv7_system_mode(self, Devices, nwkid, ep, value):
     # Auto 0, Manual 1, Off 2
@@ -471,15 +494,48 @@ def ts0601_windowdetection(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0500", value)
     store_tuya_attribute(self, nwkid, "OpenWindow", value)
 
+
 def ts0601_smoke_detection(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_smoke_detection - Nwkid: %s/%s Smoke State: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "SmokeState", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0500", value)
 
+
 def ts0601_smoke_concentration(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_smoke_concentration - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "SmokePPM", value)
     MajDomoDevice(self, Devices, nwkid, ep, "042a", value)
+
+
+def ts0601_phMeter(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_phMeter - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "phMeter", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "phMeter", value)
+
+
+def ts0601_ec(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_ec - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Electric Conductivity", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "ec", value)
+
+
+def ts0601_orp(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_orp - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Oxidation Reduction Potential", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "orp", value)
+
+
+def ts0601_freeChlorine(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_freeChlorine - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Free chlorine", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "freeChlorine", value)
+
+
+def ts0601_salinity(self, Devices, nwkid, ep, value):    
+    self.log.logging("Tuya0601", "Debug", "ts0601_salinity - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Salt", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "salinity", value)
+
 
 def ts0601_water_consumption(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_water_consumption - Nwkid: %s/%s WaterConsumtpion: %s" % (nwkid, ep, value))
@@ -492,11 +548,13 @@ def ts0601_water_consumption(self, Devices, nwkid, ep, value):
     # The volume (or counter) of the day (in the top right corner).
     MajDomoDevice(self, Devices, nwkid, ep, "WaterCounter", value)
 
+
 def ts0601_sensor_irrigation_mode(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_sensor_irrigation_mode - Nwkid: %s/%s Mode: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Mode", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0008", value)
-   
+
+
 DP_SENSOR_FUNCTION = {
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
@@ -536,7 +594,13 @@ DP_SENSOR_FUNCTION = {
     "smoke_ppm": ts0601_smoke_concentration,
     "water_consumption": ts0601_water_consumption,
     "power_factor": ts0601_power_factor,
-    "presence_state": ts0601_tuya_presence_state
+    "presence_state": ts0601_tuya_presence_state,
+    "phMeter": ts0601_phMeter,
+    "ec": ts0601_ec,
+    "orp": ts0601_orp,
+    "freeChlorine": ts0601_freeChlorine,
+    "salinity": ts0601_salinity
+
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):

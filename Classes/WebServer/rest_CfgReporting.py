@@ -6,11 +6,11 @@
 import json
 import time
 
-import Domoticz
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Modules.pluginDbAttributes import STORE_READ_CONFIGURE_REPORTING, STORE_CONFIGURE_REPORTING, STORE_CUSTOM_CONFIGURE_REPORTING
-
+from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
+                                        STORE_CUSTOM_CONFIGURE_REPORTING,
+                                        STORE_READ_CONFIGURE_REPORTING)
 from Modules.zigateConsts import SIZE_DATA_TYPE, analog_value
 
 

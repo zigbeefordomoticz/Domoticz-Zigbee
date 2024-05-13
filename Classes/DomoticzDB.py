@@ -18,7 +18,6 @@ import socket
 import time
 import urllib.request
 import ssl
-import Domoticz
 
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Classes.LoggingManagement import LoggingManagement
@@ -330,7 +329,9 @@ class DomoticzDB_DeviceStatus:
         result = self.get_device_status( ID)
         if result is None:
             return 0
-        
+
+        if 'result' not in result:
+            return 0
         AdjValue = 0
         for x in result['result']:
             AdjValue = x[attribute]    

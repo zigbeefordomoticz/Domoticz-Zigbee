@@ -46,13 +46,13 @@ def Decode8046(self, Devices, MsgData, MsgLQI):
     updSQN(self, MsgDataShAddr, MsgDataSQN)
     updLQI(self, MsgDataShAddr, MsgLQI)
     
-    self.log.logging('Input', 'Log', 'Decode8046 - Match Descriptor response: SQN: %s Status: %s Nwkid: %s Lenght: %s List: %s' % (MsgDataSQN, MsgDataStatus, MsgDataShAddr, MsgDataLenList, MsgDataMatchList))
+    self.log.logging('Input', 'Debug', 'Decode8046 - Match Descriptor response: SQN: %s Status: %s Nwkid: %s Lenght: %s List: %s' % (MsgDataSQN, MsgDataStatus, MsgDataShAddr, MsgDataLenList, MsgDataMatchList))
     if MsgDataStatus == '00' and MsgDataLenList != '00' and self.iaszonemgt:
         idx = 0
         while idx < int(MsgDataLenList, 16):
             ep = MsgDataMatchList[idx:idx + 2]
             idx += 2
-            self.log.logging('Input', 'Log', 'Decode8046 - Match Descriptor response Nwkid: %sfound Ep: %s Matching 0500' % (MsgDataShAddr, ep))
+            self.log.logging('Input', 'Debug', 'Decode8046 - Match Descriptor response Nwkid: %sfound Ep: %s Matching 0500' % (MsgDataShAddr, ep))
             self.iaszonemgt.IAS_write_CIE_after_match_descriptor(MsgDataShAddr, ep)
 
     
@@ -62,7 +62,7 @@ def Decode8400(self, Devices, MsgData, MsgLQI):
     manufacturercode = MsgData[6:10]
     nwkid = MsgData[10:14]
     ep = MsgData[14:16]
-    self.log.logging('Input', 'Log', 'Decode8400 - IAS Zone Enroll Request NwkId: %s/%s Sqn: %s ZoneType: %s Manuf: %s' % (nwkid, ep, sqn, zonetype, manufacturercode))
+    self.log.logging('Input', 'Debug', 'Decode8400 - IAS Zone Enroll Request NwkId: %s/%s Sqn: %s ZoneType: %s Manuf: %s' % (nwkid, ep, sqn, zonetype, manufacturercode))
     if self.iaszonemgt:
         self.iaszonemgt.IAS_zone_enroll_request(nwkid, ep, zonetype, sqn)
     

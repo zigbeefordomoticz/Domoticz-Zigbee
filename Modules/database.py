@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: z_database.py
 
@@ -18,7 +25,7 @@ from pathlib import Path
 from typing import Dict
 
 import Modules.tools
-from Modules.domoticzAPI import setConfigItem, getConfigItem
+from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
 from Modules.manufacturer_code import check_and_update_manufcode
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_CUSTOM_CONFIGURE_REPORTING,
@@ -113,6 +120,7 @@ BUILD_ATTRIBUTES = (
     "ReadAttributes",
     "WriteAttributes",
     "LQI",
+    "RSSI",
     "SQN",
     "Stamp",
     "Health",
@@ -160,17 +168,9 @@ def LoadDeviceList(self):
         self.ListOfDevices = {}
         return True
 
-    self.log.logging("Database", "Status", "%s Entries loaded from %s" % (len(self.ListOfDevices), _DeviceListFileName))
+    self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), _DeviceListFileName))
     if ListOfDevices_from_Domoticz:
-        self.log.logging(
-            "Database",
-            "Log",
-            "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas "
-            % (
-                len(ListOfDevices_from_Domoticz),
-                len(self.ListOfDevices),
-            ),
-        )
+        self.log.logging( "Database", "Log", "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas " % ( len(ListOfDevices_from_Domoticz), len(self.ListOfDevices), ), )
 
     self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % _DeviceListFileName)
     Modules.tools.helper_versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
@@ -179,7 +179,11 @@ def LoadDeviceList(self):
     self.DeviceListSize = os.path.getsize(_DeviceListFileName)
 
     cleanup_table_entries( self)
-    
+
+    if self.pluginconf.pluginConf["ZigpyTopologyReport"]:
+        # Cleanup the old Topology data
+        remove_legacy_topology_datas(self)
+        
     for addr in self.ListOfDevices:
         # Fixing mistake done in the code.
         fixing_consumption_lumi(self, addr)
@@ -418,10 +422,7 @@ def importDeviceConf(self):
         if iterDevType == "":
             del self.DeviceConf[iterDevType]
 
-    # for iterDevType in list(self.DeviceConf):
-    #    Domoticz.Log("%s - %s" %(iterDevType, self.DeviceConf[iterDevType]))
-
-    self.log.logging("Database", "Status", "DeviceConf loaded - %s confs loaded" %len(self.DeviceConf))
+    self.log.logging("Database", "Status", "Z4D loaded %s configuration from legacy database." %len(self.DeviceConf))
 
 
 def import_local_device_conf(self):
@@ -475,10 +476,9 @@ def import_local_device_conf(self):
             except Exception:
                 self.log.logging("Database", "Error","--> Unexpected error when loading a configuration file")
 
-
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
     self.log.logging("Database", "Debug", "Local-Device ModelManufMapping loaded - %s" %self.ModelManufMapping.keys())
-    self.log.logging("Database", "Status", "Local-Device conf loaded - %s confs loaded" %len(self.DeviceConf))
+    self.log.logging("Database", "Status", "Z4D loads %s configuration from the local certified Db." %len(self.DeviceConf))
 
 
 def checkDevices2LOD(self, Devices):
@@ -488,60 +488,27 @@ def checkDevices2LOD(self, Devices):
         if self.ListOfDevices[nwkid]["Status"] == "inDB":
             self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
 
-
 def checkListOfDevice2Devices(self, Devices):
+    for widget_idx, widget_info in self.ListOfDomoticzWidget.items():
+        self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {type(widget_idx)} - {widget_info} {type(widget_info)}")
+        
+        device_id = widget_info["DeviceID"]
+        widget_name = widget_info["Name"]
 
-    # As of V3 we will be loading only the IEEE information as that is the only one existing in Domoticz area.
-    # It is also expected that the ListOfDevices is already loaded.
+        self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {device_id} {widget_name}")
 
-    # At that stage the ListOfDevices has beene initialized.
-    for x in Devices:  # initialise listeofdevices avec les devices en bases domoticz
-        ID = Devices[x].DeviceID
-        if len(str(ID)) == 4:
-            # This is a Group Id (short address)
+        if len(device_id) == 4 or device_id.startswith(("Zigate-01-", "Zigate-02-", "Zigate-03-")):
             continue
-        elif ID.find("Zigate-01-") != -1 or ID.find("Zigate-02-") != -1 or ID.find("Zigate-03-") != -1:
-            continue  # This is a Widget ID
 
-        # Let's check if this is End Node
-        if str(ID) not in self.IEEE2NWK:
-            if self.pluginconf.pluginConf["allowForceCreationDomoDevice"] == 1:
-                self.log.logging(
-                    "Database",
-                    "Log",
-                    "checkListOfDevice2Devices - "
-                    + str(Devices[x].Name)
-                    + " - "
-                    + str(ID)
-                    + " not found in Plugin Database",
-                )
-            else:
-                self.log.logging(
-                    "Database",
-                    "Error",
-                    "checkListOfDevice2Devices - "
-                    + str(Devices[x].Name)
-                    + " - "
-                    + str(ID)
-                    + " not found in Plugin Database"
-                )
-                self.log.logging(
-                    "Database",
-                    "Debug",
-                    "checkListOfDevice2Devices - " + str(ID) + " not found in " + str(self.IEEE2NWK),
-                )
+        if device_id not in self.IEEE2NWK:
+            self.log.logging("Database", "Log", f"checkListOfDevice2Devices - {widget_name} not found in the plugin!")
             continue
-        NWKID = self.IEEE2NWK[ID]
-        if str(NWKID) in self.ListOfDevices:
-            self.log.logging(
-                "Database",
-                "Debug",
-                "checkListOfDevice2Devices - we found a matching entry for ID %2s as DeviceID = %s NWK_ID = %s"
-                % (x, ID, NWKID),
-                NWKID,
-            )
+
+        nwkid = self.IEEE2NWK[device_id]
+        if nwkid in self.ListOfDevices:
+            self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - found a matching entry for ID {widget_idx} as DeviceID {device_id} NWK_ID {nwkid}", nwkid)
         else:
-            self.log.logging("Database", "Error", "loadListOfDevices -  : " + Devices[x].Name + " with IEEE = " + str(ID) + " not found in Zigate plugin Database!")
+            self.log.logging("Database", "Error", f"loadListOfDevices - {widget_name} with IEEE = {device_id} not found in the Zigate plugin Database!")
 
 
 def saveZigateNetworkData(self, nkwdata):
@@ -594,7 +561,7 @@ def CheckDeviceList(self, key, val):
     # List of Attribnutes that will be Loaded from the deviceList-xx.txt database
 
     if self.pluginconf.pluginConf["resetPluginDS"]:
-        self.log.logging("Database", "Status", "Reset Build Attributes for %s" % DeviceListVal["IEEE"])
+        self.log.logging("Database", "Status", "Z4D resets Build Attributes for %s" % DeviceListVal["IEEE"])
         IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
 
     elif key == "0000":
@@ -626,7 +593,7 @@ def CheckDeviceList(self, key, val):
             OldModel = self.ListOfDevices[key][attribute]
             self.ListOfDevices[key][attribute] = self.ListOfDevices[key][attribute].replace("/", "")
             if OldModel != self.ListOfDevices[key][attribute]:
-                self.log.logging("Database", "Status", "Model adjustement during import from %s to %s" % (
+                self.log.logging("Database", "Status", "Z4D adjusted Model from %s to %s" % (
                     OldModel, self.ListOfDevices[key][attribute]))
 
     self.ListOfDevices[key]["Health"] = ""
@@ -873,6 +840,12 @@ def load_new_param_definition(self):
                 self.ListOfDevices[key]["Param"][param] = self.pluginconf.pluginConf["EnableReleaseButton"]
 
 
+def remove_legacy_topology_datas(self):
+    for device_info in self.ListOfDevices.values():
+        for table_name in ("RoutingTable", "AssociatedDevices", "Neighbours"):
+            device_info.pop(table_name, None)
+
+
 def cleanup_table_entries( self):
 
     for tablename in ("RoutingTable", "AssociatedDevices", "Neighbours" ):
@@ -935,7 +908,7 @@ def profalux_fix_remote_device_model(self):
         if self.ListOfDevices[x]["MacCapa"] != "80":
             continue
         if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] != "Telecommande-Profalux":
-            self.log.logging( "Profalux", "Status", "++++++ Model Name for %s forced to : %s" % (
+            self.log.logging( "Profalux", "Status", "Z4D forces Model Name from %s to %s" % (
                 x, self.ListOfDevices[x]["Model"],), x)
             self.ListOfDevices[x]["Model"] = "Telecommande-Profalux"
 
@@ -974,7 +947,7 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
     suggested_model = check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=None, device_id=None )
     
     if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
-        self.log.logging("Tuya", "Status", "Adjusting Model name from %s to %s" %( modelName, suggested_model))
+        self.log.logging("Tuya", "Status", "Z4D adjusts Model name from %s to %s" %( modelName, suggested_model))
         self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model
         
 def cleanup_ota(self, nwkid):
