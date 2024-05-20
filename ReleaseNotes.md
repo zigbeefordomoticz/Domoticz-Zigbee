@@ -18,7 +18,7 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-## May 2024 - stable7.1.012 ( 2024.04)
+## -
 
 - [Technical] - Refactor Topology
 - [Technical] - Upgrade to latest zigpy radio libs
@@ -34,17 +34,11 @@ Release Numbering
 - [Technical] - Several refactoring, code simplification
 - [Technical] - Automatically restart plugin in case of connection lost with coordination (zigpy)
 - [Technical] - Add Tuya sensors for Pool sensors ( PhMeter, EC, OPR, Salinity)
-- [Technical] - Instrument WebUI and Zigpy layers
-- [Technical] - Keep track of RSSI if zigpy coordinator does provide the info
-- [Technical] - Improve statistics report at plugin stop
 
 - [WebUI] - New API to get the list of device settings parameters (/device-settings-help)
-- [WebUI] - New API to allow a easy/simple ping to check the WebUI ( /plugin-ping)
 - [WebUI] - Provides color status of device parameters sync.
 - [WebUI] - AngularJS 17 upgrade
 - [WebUI] - Cookie to manage the number of devices to be displayed in Device Management
-
-Several small bugs and issues
 
 ## March 2024 - stable7.1.011 ( 2024.03.1)
 
