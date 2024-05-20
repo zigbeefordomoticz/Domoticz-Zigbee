@@ -87,10 +87,68 @@ CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 PING_DEVICE_VIA_GROUPID = 3567 // HEARTBEAT    # Secondes ( 59minutes et 45 secondes )
 FIRST_PING_VIA_GROUP = 127 // HEARTBEAT
 
-DEVICE_TIMEOUT = 21200   # A bit less than 6 hours
 
+#def attributeDiscovery(self, NwkId):
+#
+#    rescheduleAction = False
+#    # If Attributes not yet discovered, let's do it
+#
+#    if "ConfigSource" not in self.ListOfDevices[NwkId]:
+#        return False
+#
+#    if self.ListOfDevices[NwkId]["ConfigSource"] == "DeviceConf":
+#        return False
+#
+#    if "Attributes List" in self.ListOfDevices[NwkId] and len(self.ListOfDevices[NwkId]["Attributes List"]) > 0:
+#        return False
+#
+#    if "Attributes List" not in self.ListOfDevices[NwkId]:
+#        self.ListOfDevices[NwkId]["Attributes List"] = {'Ep': {}}
+#    if "Request" not in self.ListOfDevices[NwkId]["Attributes List"]:
+#        self.ListOfDevices[NwkId]["Attributes List"]["Request"] = {}
+#
+#    for iterEp in list(self.ListOfDevices[NwkId]["Ep"]):
+#        if iterEp == "ClusterType":
+#            continue
+#        if iterEp not in self.ListOfDevices[NwkId]["Attributes List"]["Request"]:
+#            self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp] = {}
+#
+#        for iterCluster in list(self.ListOfDevices[NwkId]["Ep"][iterEp]):
+#            if iterCluster in ("Type", "ClusterType", "ColorMode"):
+#                continue
+#            if iterCluster not in self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp]:
+#                self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp][iterCluster] = 0
+#
+#            if self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp][iterCluster] != 0:
+#                continue
+#
+#            if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
+#                if int(iterCluster, 16) < 0x0FFF:
+#                    getListofAttribute(self, NwkId, iterEp, iterCluster)
+#                    # getListofAttributeExtendedInfos(self, NwkId, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None)
+#                elif (
+#                    "Manufacturer" in self.ListOfDevices[NwkId]
+#                    and len(self.ListOfDevices[NwkId]["Manufacturer"]) == 4
+#                    and is_hex(self.ListOfDevices[NwkId]["Manufacturer"])
+#                ):
+#                    getListofAttribute(
+#                        self,
+#                        NwkId,
+#                        iterEp,
+#                        iterCluster,
+#                        manuf_specific="01",
+#                        manuf_code=self.ListOfDevices[NwkId]["Manufacturer"],
+#                    )
+#                    # getListofAttributeExtendedInfos(self, NwkId, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None)
+#
+#                self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp][iterCluster] = time.time()
+#
+#            else:
+#                rescheduleAction = True
+#
+#    return rescheduleAction
 
-def attributeDiscovery(self, NwkId, current_time):
+def attributeDiscovery(self, NwkId):
     # If Attributes not yet discovered, let's do it
     if not self.ListOfDevices[NwkId].get("ConfigSource") or \
        self.ListOfDevices[NwkId]["ConfigSource"] == "DeviceConf" or \
@@ -116,7 +174,7 @@ def attributeDiscovery(self, NwkId, current_time):
                     getListofAttribute(self, NwkId, iterEp, iterCluster)
                 elif len(self.ListOfDevices[NwkId].get("Manufacturer", "")) == 4 and is_hex(self.ListOfDevices[NwkId].get("Manufacturer", "")):
                     getListofAttribute(self, NwkId, iterEp, iterCluster, manuf_specific="01", manuf_code=self.ListOfDevices[NwkId]["Manufacturer"])
-                self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp][iterCluster] = current_time
+                self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp][iterCluster] = time.time()
             else:
                 return True
 
@@ -206,12 +264,12 @@ def tuya_trv5_polling(self, NwkId):
     tuya_switch_online(self, NwkId, 0x01)
 
 
-def check_delay_readattributes( self, NwkId, current_time ):
+def check_delay_readattributes( self, NwkId ):
     
     if 'DelayReadAttributes' not in self.ListOfDevices[ NwkId ]:
         return
     
-    if current_time < self.ListOfDevices[ NwkId ]['DelayReadAttributes']['TargetTime']:
+    if time.time() < self.ListOfDevices[ NwkId ]['DelayReadAttributes']['TargetTime']:
         return
     
     for cluster in list(self.ListOfDevices[ NwkId ]['DelayReadAttributes']['Clusters']):
@@ -363,50 +421,53 @@ def pollingDeviceStatus(self, NwkId):
     return False
 
 
-def checkHealth(self, Devices, NwkId, current_time):
-    device = self.ListOfDevices[NwkId]
-    if device is None:
-        return
+def checkHealth(self, NwkId):
 
-    # Initialize Health if not present
-    device.setdefault("Health", "")
-
-    if device["Health"] == "Disabled":
+    # Checking current state of the this Nwk
+    if "Health" not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]["Health"] = ""
+        
+    if self.ListOfDevices[NwkId]["Health"] == "Disabled":
         return False
+                 
+    if "Stamp" not in self.ListOfDevices[NwkId]:
+        self.ListOfDevices[NwkId]["Stamp"] = {'LastPing': 0, 'LastSeen': 0}
+        self.ListOfDevices[NwkId]["Health"] = "unknown"
 
-    # Initialize Stamp and LastSeen if not present
-    stamp = device.setdefault("Stamp", {'LastPing': 0, 'LastSeen': 0})
-    stamp.setdefault("LastSeen", 0)
+    if "LastSeen" not in self.ListOfDevices[NwkId]["Stamp"]:
+        self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] = 0
+        self.ListOfDevices[NwkId]["Health"] = "unknown"
 
-    # Update Health if the device has not been seen recently
-    
-    device_timeout = device.get("Param", {}).get("Device_TimeOut", DEVICE_TIMEOUT)
-
-    if current_time > (stamp["LastSeen"] + device_timeout) and device["Health"] == "Live":
-        if "ZDeviceName" in device:
-            self.log.logging( "Heartbeat", "Status", f"Device Health - {device['ZDeviceName']} NwkId: {NwkId}, Ieee: {device['IEEE']}, Model: {device['Model']} not seen since {current_time - stamp['LastSeen']} seconds" )
+    if (
+        int(time.time()) > (self.ListOfDevices[NwkId]["Stamp"]["LastSeen"] + 21200)
+        and self.ListOfDevices[NwkId]["Health"] == "Live"
+    ):
+        if "ZDeviceName" in self.ListOfDevices[NwkId]:
+            self.log.logging("Heartbeat", "Debug", "Device Health - %s NwkId: %s,Ieee: %s , Model: %s seems to be out of the network" % (
+                self.ListOfDevices[NwkId]["ZDeviceName"], NwkId, self.ListOfDevices[NwkId]["IEEE"], self.ListOfDevices[NwkId]["Model"],))
         else:
-            self.log.logging( "Heartbeat", "Status", f"Device Health - NwkId: {NwkId}, Ieee: {device['IEEE']}, Model: {device['Model']} not seen since {current_time - stamp['LastSeen']} seconds" )
-        device["Health"] = "Not seen last 24 hours"
-        timedOutDevice(self, Devices, NwkId=NwkId)
+            self.log.logging("Heartbeat", "Debug", "Device Health - NwkId: %s,Ieee: %s , Model: %s seems to be out of the network" % (
+                NwkId, self.ListOfDevices[NwkId]["IEEE"], self.ListOfDevices[NwkId]["Model"]) )
+        self.ListOfDevices[NwkId]["Health"] = "Not seen last 24hours"
 
-    # If device is flagged as Not Reachable, don't do anything
-    return device["Health"] != "Not Reachable"
+    # If device flag as Not Reachable, don't do anything
+    return ( "Health" not in self.ListOfDevices[NwkId] or self.ListOfDevices[NwkId]["Health"] != "Not Reachable")
 
 
-def pingRetryDueToBadHealth(self, NwkId, current_time):
+def pingRetryDueToBadHealth(self, NwkId):
 
+    now = int(time.time())
     # device is on Non Reachable state
     self.log.logging("Heartbeat", "Debug", "--------> ping Retry Check %s" % NwkId, NwkId)
     if "pingDeviceRetry" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["pingDeviceRetry"] = {"Retry": 0, "TimeStamp": current_time}
+        self.ListOfDevices[NwkId]["pingDeviceRetry"] = {"Retry": 0, "TimeStamp": now}
     if self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] == 0:
         return
 
     if "Retry" in self.ListOfDevices[NwkId]["pingDeviceRetry"] and "TimeStamp" not in self.ListOfDevices[NwkId]["pingDeviceRetry"]:
         # This could be due to a previous version without TimeStamp
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] = 0
-        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = current_time
+        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
 
     lastTimeStamp = self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"]
     retry = self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"]
@@ -414,54 +475,54 @@ def pingRetryDueToBadHealth(self, NwkId, current_time):
     self.log.logging(
         "Heartbeat",
         "Debug",
-        "--------> ping Retry Check %s Retry: %s Gap: %s" % (NwkId, retry, current_time - lastTimeStamp),
+        "--------> ping Retry Check %s Retry: %s Gap: %s" % (NwkId, retry, now - lastTimeStamp),
         NwkId,
     )
     # Retry #1
     if (
         retry == 0
         and self.ControllerLink.loadTransmit() == 0
-        and current_time > (lastTimeStamp + 30)
+        and now > (lastTimeStamp + 30)
     ):  # 30s
         self.log.logging("Heartbeat", "Debug", "--------> ping Retry 1 Check %s" % NwkId, NwkId)
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
-        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = current_time
+        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
         lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
         zdp_NWK_address_request(self, "0000", lookup_ieee)
-        submitPing(self, NwkId, current_time)
+        submitPing(self, NwkId)
         return
 
     # Retry #2
     if (
         retry == 1
         and self.ControllerLink.loadTransmit() == 0
-        and current_time > (lastTimeStamp + 120)
+        and now > (lastTimeStamp + 120)
     ):  # 30 + 120s
         # Let's retry
         self.log.logging("Heartbeat", "Debug", "--------> ping Retry 2 Check %s" % NwkId, NwkId)
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
-        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = current_time
+        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
         lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
         zdp_NWK_address_request(self, "fffd", lookup_ieee)
-        submitPing(self, NwkId, current_time)
+        submitPing(self, NwkId)
         return
 
     # Retry #3
     if (
         retry == 2
         and self.ControllerLink.loadTransmit() == 0
-        and current_time > (lastTimeStamp + 300)
+        and now > (lastTimeStamp + 300)
     ):  # 30 + 120 + 300
         # Let's retry
         self.log.logging("Heartbeat", "Debug", "--------> ping Retry 3 (last) Check %s" % NwkId, NwkId)
         self.ListOfDevices[NwkId]["pingDeviceRetry"]["Retry"] += 1
-        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = current_time
+        self.ListOfDevices[NwkId]["pingDeviceRetry"]["TimeStamp"] = now
         lookup_ieee = self.ListOfDevices[ NwkId ]['IEEE']
         zdp_NWK_address_request(self, "FFFD", lookup_ieee)
-        submitPing(self, NwkId, current_time)
+        submitPing(self, NwkId)
 
 
-def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag, current_time):
+def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag):
 
     if self.pluginconf.pluginConf["pingViaGroup"]:
         self.log.logging( "Heartbeat", "Debug", "No direct pinDevices as Group ping is enabled" , NwkId, )
@@ -482,8 +543,16 @@ def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag, current_tim
         and "TuyaPing" in self.ListOfDevices[NwkId]["Param"]
         and int(self.ListOfDevices[NwkId]["Param"]["TuyaPing"]) == 1
     ):
-        self.log.logging( "Heartbeat", "Debug", "------> pingDevice disabled for %s as TuyaPing enabled %s" % (
-            NwkId, self.ListOfDevices[NwkId]["Param"]["TuyaPing"], ), NwkId, )
+        self.log.logging(
+            "Heartbeat",
+            "Debug",
+            "------> pingDevice disabled for %s as TuyaPing enabled %s"
+            % (
+                NwkId,
+                self.ListOfDevices[NwkId]["Param"]["TuyaPing"],
+            ),
+            NwkId,
+        )
         return
 
     if (
@@ -491,51 +560,61 @@ def pingDevices(self, NwkId, health, checkHealthFlag, mainPowerFlag, current_tim
         and "pingBlackListed" in self.ListOfDevices[NwkId]["Param"]
         and int(self.ListOfDevices[NwkId]["Param"]["pingBlackListed"]) == 1
     ):
-        self.log.logging( "Heartbeat", "Debug", "------> pingDevice disabled for %s as pingBlackListed enabled %s" % (
-            NwkId, self.ListOfDevices[NwkId]["Param"]["pingBlackListed"], ), NwkId, )
+        self.log.logging(
+            "Heartbeat",
+            "Debug",
+            "------> pingDevice disabled for %s as pingBlackListed enabled %s"
+            % (
+                NwkId,
+                self.ListOfDevices[NwkId]["Param"]["pingBlackListed"],
+            ),
+            NwkId,
+        )
         return
+
+    now = int(time.time())
 
     if (
         "time" in self.ListOfDevices[NwkId]["Stamp"]
-        and current_time < self.ListOfDevices[NwkId]["Stamp"]["time"] + self.pluginconf.pluginConf["pingDevicesFeq"]
+        and now < self.ListOfDevices[NwkId]["Stamp"]["time"] + self.pluginconf.pluginConf["pingDevicesFeq"]
     ):
         # If we have received a message since less than 1 hours, then no ping to be done !
         self.log.logging("Heartbeat", "Debug", "------> %s no need to ping as we received a message recently " % (NwkId,), NwkId)
         return
 
     if not health:
-        pingRetryDueToBadHealth(self, NwkId, current_time)
+        pingRetryDueToBadHealth(self, NwkId)
         return
 
     if "LastPing" not in self.ListOfDevices[NwkId]["Stamp"]:
         self.ListOfDevices[NwkId]["Stamp"]["LastPing"] = 0
     lastPing = self.ListOfDevices[NwkId]["Stamp"]["LastPing"]
     lastSeen = self.ListOfDevices[NwkId]["Stamp"]["LastSeen"]
-    if checkHealthFlag and current_time > (lastPing + 60) and self.ControllerLink.loadTransmit() == 0:
-        submitPing(self, NwkId, current_time)
+    if checkHealthFlag and now > (lastPing + 60) and self.ControllerLink.loadTransmit() == 0:
+        submitPing(self, NwkId)
         return
 
     self.log.logging( "Heartbeat", "Debug", "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" % (
-        NwkId, current_time, lastPing, lastSeen, self.pluginconf.pluginConf["pingDevicesFeq"]), NwkId, )
+        NwkId, now, lastPing, lastSeen, self.pluginconf.pluginConf["pingDevicesFeq"]), NwkId, )
     if (
-        (current_time > (lastPing + self.pluginconf.pluginConf["pingDevicesFeq"]))
-        and (current_time > (lastSeen + self.pluginconf.pluginConf["pingDevicesFeq"]))
+        (now > (lastPing + self.pluginconf.pluginConf["pingDevicesFeq"]))
+        and (now > (lastSeen + self.pluginconf.pluginConf["pingDevicesFeq"]))
         and self.ControllerLink.loadTransmit() == 0
     ):
 
         self.log.logging( "Heartbeat", "Debug", "------> pinDevice %s time: %s LastPing: %s LastSeen: %s Freq: %s" % (
-            NwkId, current_time, lastPing, lastSeen, self.pluginconf.pluginConf["pingDevicesFeq"]), NwkId, )
+            NwkId, now, lastPing, lastSeen, self.pluginconf.pluginConf["pingDevicesFeq"]), NwkId, )
 
-        submitPing(self, NwkId, current_time)
+        submitPing(self, NwkId)
 
 
-def submitPing(self, NwkId, current_time):
+def submitPing(self, NwkId):
     # Pinging devices to check they are still Alive
     self.log.logging("Heartbeat", "Debug", "------------> call readAttributeRequest %s" % NwkId, NwkId)
-    self.ListOfDevices[NwkId]["Stamp"]["LastPing"] = current_time
+    self.ListOfDevices[NwkId]["Stamp"]["LastPing"] = int(time.time())
     ping_device_with_read_attribute(self, NwkId)
 
-def hr_process_device(self, Devices, NwkId, current_time):
+def hr_process_device(self, Devices, NwkId):
     # Begin
     # Normalize Hearbeat value if needed
 
@@ -548,11 +627,11 @@ def hr_process_device(self, Devices, NwkId, current_time):
     # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
     _mainPowered = mainPoweredDevice(self, NwkId)
     _checkHealth = self.ListOfDevices[NwkId]["Health"] == ""
-    health = checkHealth(self, Devices, NwkId, current_time)
+    health = checkHealth(self, NwkId)
 
     # Pinging devices to check they are still Alive
     if self.pluginconf.pluginConf["pingDevices"]:
-        pingDevices(self, NwkId, health, _checkHealth, _mainPowered, current_time)
+        pingDevices(self, NwkId, health, _checkHealth, _mainPowered)
 
     # Check if we are in the process of provisioning a new device. If so, just stop
     if self.CommiSSionning:
@@ -577,13 +656,13 @@ def hr_process_device(self, Devices, NwkId, current_time):
         self.ListOfDevices[NwkId]["CheckParam"] = False
 
     if ( device_hearbeat % CHECKING_DELAY_READATTRIBUTE) == 0:
-        check_delay_readattributes( self, NwkId, current_time )
+        check_delay_readattributes( self, NwkId )
 
     if ( 
         "DelayBindingAtPairing" in self.ListOfDevices[ NwkId ] 
         and isinstance(self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"],int )
         and self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"] > 0
-        and current_time > self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"]
+        and time.time() > self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"]
     ):   
         # Will check only after a Command has been sent, in order to limit.
         self.log.logging("Heartbeat", "Log", "check_delay_binding inHB = %s" %device_hearbeat ) 
@@ -595,10 +674,10 @@ def hr_process_device(self, Devices, NwkId, current_time):
     if not _mainPowered and not enabledEndDevicePolling:
         return
     
-    process_main_powered_or_force_devices( self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model, current_time)
+    process_main_powered_or_force_devices( self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model)
 
     
-def process_main_powered_or_force_devices(self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model, current_time):
+def process_main_powered_or_force_devices(self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model):
     self.log.logging("Heartbeat", "Debug",f"Calling process_main_powered_or_force_devices with arguments: NwkId={NwkId}, device_hearbeat={device_hearbeat}, _mainPowered={_mainPowered}, enabledEndDevicePolling={enabledEndDevicePolling}, model={model}", NwkId)
 
     rescheduleAction = False
@@ -621,12 +700,12 @@ def process_main_powered_or_force_devices(self, NwkId, device_hearbeat, _mainPow
         and (device_hearbeat % READATTRIBUTE_FEQ) == 0
     )
 
-    if should_delay_read_attribute(self, NwkId, current_time):
+    if should_delay_read_attribute(self, NwkId):
         return
 
     if _doReadAttribute:
         self.log.logging("Heartbeat", "Debug", f"process_main_powered_or_force_devices - {NwkId} device_hearbeat: {device_hearbeat} _mainPowered: {_mainPowered} doReadAttr: {_doReadAttribute}", NwkId)
-        rescheduleAction = rescheduleAction or process_read_attributes(self, NwkId, model, current_time)
+        rescheduleAction = rescheduleAction or process_read_attributes(self, NwkId, model)
 
     if should_reenforce_schneider(self, NwkId):
         rescheduleAction = rescheduleAction or schneiderRenforceent(self, NwkId)
@@ -635,7 +714,7 @@ def process_main_powered_or_force_devices(self, NwkId, device_hearbeat, _mainPow
         rescheduleAction = rescheduleAction or check_configuration_reporting(self, NwkId, _mainPowered, device_hearbeat)
 
     if should_discover_attributes(self, NwkId, _mainPowered, enabledEndDevicePolling, device_hearbeat):
-        rescheduleAction = rescheduleAction or attributeDiscovery(self, NwkId, current_time)
+        rescheduleAction = rescheduleAction or attributeDiscovery(self, NwkId)
 
     if should_refresh_binding_table(self, NwkId, _mainPowered, enabledEndDevicePolling, device_hearbeat):
         mgtm_binding(self, NwkId, "BindingTable")
@@ -652,11 +731,11 @@ def process_main_powered_or_force_devices(self, NwkId, device_hearbeat, _mainPow
         clear_last_polling_data(self, NwkId)
 
 
-def should_delay_read_attribute(self, NwkId, current_time):
+def should_delay_read_attribute(self, NwkId):
     if (
         self.ControllerLink.loadTransmit() > 5
         and "PairingTime" in self.ListOfDevices[NwkId]
-        and current_time <= (self.ListOfDevices[NwkId]["PairingTime"] + (self.ControllerLink.loadTransmit() // 5) + 15)
+        and time.time() <= (self.ListOfDevices[NwkId]["PairingTime"] + (self.ControllerLink.loadTransmit() // 5) + 15)
     ):
         self.log.logging("Heartbeat", "Debug", f"hr_process_device - {NwkId} delay the next ReadAttribute close to the pairing {self.ListOfDevices[NwkId]['PairingTime']}", NwkId)
         return True
@@ -698,8 +777,57 @@ def clear_last_polling_data(self, NwkId):
         self.ListOfDevices[NwkId].pop(key, None)
 
 
-def process_read_attributes(self, NwkId, model, current_time):
+#def process_read_attributes(self, NwkId, model):
+#    self.log.logging( "Heartbeat", "Debug", f"process_read_attributes  -  for {NwkId} {model}")
+#    process_next_ep_later = False
+#    now = int(time.time())  # Will be used to trigger ReadAttributes
+#    
+#    device_infos = self.ListOfDevices[NwkId]
+#    for ep in device_infos["Ep"]:
+#        if ep == "ClusterType":
+#            continue
+#        
+#        if model == "lumi.ctrl_neutral1" and ep != "02" :  # All Eps other than '02' are blacklisted
+#            continue
+#        
+#        if model == "lumi.ctrl_neutral2" and ep not in ("02", "03"):
+#            continue
+#
+#        for Cluster in READ_ATTRIBUTES_REQUEST:
+#            # We process ALL available clusters for a particular EndPoint
+#
+#            if ( Cluster not in READ_ATTRIBUTES_REQUEST or Cluster not in device_infos["Ep"][ep] ):
+#                continue
+#
+#            if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
+#                self.log.logging( "Heartbeat", "Debug", "process_read_attributes  -  %s skip ReadAttribute for now ... system too busy (%s/%s)" % (
+#                    NwkId, self.busy, self.ControllerLink.loadTransmit()), NwkId, )
+#                process_next_ep_later = True
+#
+#            if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
+#                timing = self.pluginconf.pluginConf[READ_ATTRIBUTES_REQUEST[Cluster][1]]
+#            else:
+#                self.log.logging( "Heartbeat", "Error", "proprocess_read_attributescessKnownDevices - missing timing attribute for Cluster: %s - %s" % (
+#                    Cluster, READ_ATTRIBUTES_REQUEST[Cluster][1]), NwkId )
+#                continue
+#
+#            # Let's check the timing
+#            if not is_time_to_perform_work(self, "ReadAttributes", NwkId, ep, Cluster, now, timing):
+#                continue
+#
+#            self.log.logging( "Heartbeat", "Debug", "process_read_attributes -  %s/%s and time to request ReadAttribute for %s" % (
+#                NwkId, ep, Cluster), NwkId, )
+#
+#            func = READ_ATTRIBUTES_REQUEST[Cluster][0]
+#            func(self, NwkId)
+#            
+#            if process_next_ep_later:
+#                return True
+#    return False
+
+def process_read_attributes(self, NwkId, model):
     self.log.logging("Heartbeat", "Debug", f"process_read_attributes - for {NwkId} {model}")
+    now = int(time.time())
     device_infos = self.ListOfDevices.get(NwkId, {})
 
     for ep, clusters in device_infos.get("Ep", {}).items():
@@ -723,7 +851,7 @@ def process_read_attributes(self, NwkId, model, current_time):
                 self.log.logging("Heartbeat", "Error", f"process_read_attributes - missing timing attribute for Cluster: {Cluster} - {READ_ATTRIBUTES_REQUEST[Cluster][1]}", NwkId)
                 continue
 
-            if not is_time_to_perform_work(self, "ReadAttributes", NwkId, ep, Cluster, current_time, timing):
+            if not is_time_to_perform_work(self, "ReadAttributes", NwkId, ep, Cluster, now, timing):
                 continue
 
             self.log.logging("Heartbeat", "Debug", f"process_read_attributes - {NwkId}/{ep} and time to request ReadAttribute for {Cluster}", NwkId)
@@ -798,8 +926,6 @@ def processListOfDevices(self, Devices):
 
     # self.ControllerLink.checkTOwaitFor()
     entriesToBeRemoved = []
-    
-    current_time = int(time.time())
 
     for NwkId in list(self.ListOfDevices.keys()):
         if NwkId in ("ffff", "0000"):
@@ -841,10 +967,10 @@ def processListOfDevices(self, Devices):
 
         # Known Devices
         if status == "inDB":
-            hr_process_device(self, Devices, NwkId, current_time)
+            hr_process_device(self, Devices, NwkId)
             
             # Check and reset if needed Motion, Vibrator and Switch Selector
-            check_and_reset_device_if_needed(self, Devices, NwkId, current_time)
+            check_and_reset_device_if_needed(self, Devices, NwkId)
 
         elif status == "Leave":
             timedOutDevice(self, Devices, NwkId=NwkId)
@@ -919,10 +1045,11 @@ def processListOfDevices(self, Devices):
     return
 
 
-def check_and_reset_device_if_needed(self, Devices, NwkId, current_time):
+def check_and_reset_device_if_needed(self, Devices, NwkId):
 
     self.log.logging( "Heartbeat", "Debug", "Check for reseting %s" %NwkId)
 
+    now = time.time()
     device_ieee = self.ListOfDevices[NwkId]["IEEE"]
     ClusterTypeList = RetreiveWidgetTypeList(self, Devices, device_ieee, NwkId)
     for WidgetEp, Widget_Idx, WidgetType in ClusterTypeList:
@@ -930,7 +1057,7 @@ def check_and_reset_device_if_needed(self, Devices, NwkId, current_time):
         if WidgetType in ( "Motion", "Vibration", SWITCH_SELECTORS):
             device_unit = find_widget_unit_from_WidgetID(self, Devices, Widget_Idx )
             self.log.logging( "Heartbeat", "Debug", "Candidate for reseting %s %s %s %s %s" %(device_ieee, device_unit, NwkId, WidgetType, Widget_Idx))
-            reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, NwkId, WidgetType, Widget_Idx, current_time)
+            reset_device_ieee_unit_if_needed( self, Devices, device_ieee, device_unit, NwkId, WidgetType, Widget_Idx, now)
 
 
 def add_device_group_for_ping(self, NwkId):
