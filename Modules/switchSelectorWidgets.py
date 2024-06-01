@@ -606,7 +606,9 @@ SWITCH_SELECTORS = {
     },
     "Switch": {
         "00": (0, "Off"),
+        0: (0, "Off"),
         "01": (1, "On"),
+        1: (1, "On"),
         "ForceUpdate": False
     },
     "SwitchAQ2": {
