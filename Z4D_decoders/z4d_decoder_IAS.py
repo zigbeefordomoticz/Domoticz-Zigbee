@@ -161,20 +161,20 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
 
 def _heiman_door_bell_ef_3(self, Devices, MsgSrcAddr, MsgEp, MsgZoneStatus):
 
-    zone_status_mapping = {
+    tamper_status_mapping = {
         "4": ('0009', '00'),  # Mounted
         "0": ('0009', '01'),  # Unmounted
     }
 
     ring_status_mapping = {
         "8": ('0006', '01'),  # Ring
-        "0": ('0006', '01'),  # Not ring
+        "0": ('0006', '00'),  # Not ring
     }
     self.log.logging('Input', 'Debug', '_heiman_door_bell_ef_3 %s/%s %s' % (MsgSrcAddr, MsgEp, MsgZoneStatus))
 
     # Check and update zone status
-    if MsgZoneStatus[3] in zone_status_mapping:
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *zone_status_mapping[MsgZoneStatus[3]])
+    if MsgZoneStatus[3] in tamper_status_mapping:
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *tamper_status_mapping[MsgZoneStatus[3]])
 
     # Check and update ring status
     if MsgZoneStatus[0] in ring_status_mapping:
