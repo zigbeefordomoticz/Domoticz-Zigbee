@@ -244,12 +244,10 @@ def profalux_MoveToLiftAndTilt(self, nwkid, level=None, tilt=None):
 
         ep = device.get("Ep", {}).get("01", {}).get("fc21", {})
         tilt_value = ep.get("0001")
-        if tilt_value is not None:
-            if isinstance(tilt_value, str):
-                tilt_value = int(tilt_value, 16)
-            tilt = tilt_value
+        if tilt_value is not None and isinstance(tilt_value, str):
+            tilt_value = int(tilt_value, 16)
 
-        return tilt
+        return tilt_value
 
 
     def setLevel(self, nwkid, level):
