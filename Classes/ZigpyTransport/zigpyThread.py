@@ -507,7 +507,7 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None):
     self.log.logging("TransportZigpy", "Debug", f"process_raw_command: extended_timeout {extended_timeout}")
 
     delay = data.get("Delay", None)
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: process_raw_command ready to request Function: {Function} NwkId: {NwkId}/{dEp} Cluster: {Cluster} Seq: {sequence} Payload: {payload.hex()} AddrMode: {addressmode} EnableAck: {not AckIsDisable}, Sqn: {Sqn}, Delay: {delay}, Extended_TO: {extended_timeout}")
+    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: process_raw_command ready to request Function: {Function} NwkId: {NwkId}/{dEp} Cluster: {Cluster} Seq: {sequence} Payload: {payload.hex()} AddrMode: {addressmode} AckIsDisable: {AckIsDisable} EnableAck: {not AckIsDisable}, Sqn: {Sqn}, Delay: {delay}, Extended_TO: {extended_timeout}")
 
     destination, transport_needs = _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload)
 
@@ -683,7 +683,7 @@ def check_transport_readiness(self):
 
 
 def measure_execution_time(func):
-    async def wrapper(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False):
+    async def wrapper(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable, use_ieee, delay, extended_timeout):
         t_start = None
         if self.pluginconf.pluginConf.get("ZigpyReactTime", False):
             t_start = int(1000 * time.time())
@@ -696,7 +696,7 @@ def measure_execution_time(func):
                 t_end = int(1000 * time.time())
                 t_elapse = t_end - t_start
                 self.statistics.add_timing_zigpy(t_elapse)  
-                self.log.logging("TransportZigpy", "Log", f"| (transport_request) | {t_elapse} | {Function} | {destination.nwk} | {destination.ieee} | {destination.model} | {destination.manufacturer_id} | {destination.is_initialized} | {destination.rssi} | {destination.lqi} |")
+                self.log.logging("TransportZigpy", "Log", f"| (transport_request) | {t_elapse} | {Function} | {sequence} | {ack_is_disable} | {destination.nwk} | {destination.ieee} | {destination.model} | {destination.manufacturer_id} | {destination.is_initialized} | {destination.rssi} | {destination.lqi} |")
     return wrapper
 
 
@@ -746,11 +746,11 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
 
     for attempt in range(1, (max_retry + 1)):
         try:
-            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {_ieee} {Profile} {Cluster} - Expect_Reply: {ack_is_disable} extended_timeout: {extended_timeout} Attempts: {attempt}/{max_retry}")
+            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {_ieee} {Profile} {Cluster} - AckIsDisable: {ack_is_disable} ExpectReply: {not ack_is_disable} extended_timeout: {extended_timeout} Attempts: {attempt}/{max_retry}")
             result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout)
 
         except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError, AttributeError, DeliveryError) as e:
-            error_log_message = f"{Function} {_ieee}/0x{_nwkid} 0x{Profile} 0x{Cluster}:16 Ack: {ack_is_disable} RETRY: {attempt}/{max_retry} ({e})"
+            error_log_message = f"{Function} {_ieee}/0x{_nwkid} 0x{Profile} 0x{Cluster}:16 AckIsDisable: {ack_is_disable} RETRY: {attempt}/{max_retry} ({e})"
             self.log.logging("TransportZigpy", "Log", error_log_message)
 
             if await _retry_or_not(self, attempt, max_retry, Function, sequence, ack_is_disable, _ieee, _nwkid, destination, e):
@@ -783,8 +783,7 @@ async def _retry_or_not(self, attempt, max_retry, Function, sequence,ack_is_disa
 
 
 def handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):
-    self.log.logging("TransportZigpy", "Debug", f"handle_transport_result - {Function} - {_nwkid} - Ack: {ack_is_disable} Result: {result}")
-    #if not ack_is_disable:
+    self.log.logging("TransportZigpy", "Debug", f"handle_transport_result - {Function} - {_nwkid} - AckIsDisable: {ack_is_disable} Result: {result}")
     push_APS_ACK_NACKto_plugin(self, _nwkid, result, lqi)
 
     if result == 0x00 and _ieee in self._currently_not_reachable:
