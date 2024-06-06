@@ -115,8 +115,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
 
     if heiman_door_bell_button:
         self.log.logging('Input', 'Debug',f"Decode8401 HeimanDoorBellButton: {MsgSrcAddr} {MsgZoneStatus}", MsgSrcAddr)
-        if tamper:
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0006', '01')
+        _heiman_door_bell_ef_3(self,Devices, MsgSrcAddr, MsgEp, MsgZoneStatus)
         return
 
     motion_via_IAS_alarm = get_device_config_param(self, MsgSrcAddr, 'MotionViaIASAlarm1')
@@ -157,8 +156,30 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     if 'IAS' in self.ListOfDevices[MsgSrcAddr] and 'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS']:
         if not isinstance(self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'], dict):
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
-
         _update_ias_zone_status(self, MsgSrcAddr, MsgEp, MsgZoneStatus)
+
+
+def _heiman_door_bell_ef_3(self, Devices, MsgSrcAddr, MsgEp, MsgZoneStatus):
+
+    zone_status_mapping = {
+        "4": ('0009', '00'),  # Mounted
+        "0": ('0009', '01'),  # Unmounted
+    }
+
+    ring_status_mapping = {
+        "8": ('0006', '01'),  # Ring
+        "0": ('0006', '01'),  # Not ring
+    }
+    self.log.logging('Input', 'Debug', '_heiman_door_bell_ef_3 %s/%s %s' % (MsgSrcAddr, MsgEp, MsgZoneStatus))
+
+    # Check and update zone status
+    if MsgZoneStatus[3] in zone_status_mapping:
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *zone_status_mapping[MsgZoneStatus[3]])
+
+    # Check and update ring status
+    if MsgZoneStatus[0] in ring_status_mapping:
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *ring_status_mapping[MsgZoneStatus[0]])
+
 
 
 def _extract_zone_status_info(self, msg_data):
