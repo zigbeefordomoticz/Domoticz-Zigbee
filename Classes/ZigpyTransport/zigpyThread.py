@@ -747,7 +747,7 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
     for attempt in range(1, (max_retry + 1)):
         try:
             self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {_ieee} {Profile} {Cluster} - AckIsDisable: {ack_is_disable} ExpectReply: {not ack_is_disable} extended_timeout: {extended_timeout} Attempts: {attempt}/{max_retry}")
-            result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=not ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout)
+            result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=False, use_ieee=use_ieee, extended_timeout=extended_timeout)
 
         except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError, AttributeError, DeliveryError) as e:
             error_log_message = f"_send_and_retry - {Function} {_ieee}/0x{_nwkid} 0x{Profile} 0x{Cluster}:16 AckIsDisable: {ack_is_disable} RETRY: {attempt}/{max_retry} ({e})"
