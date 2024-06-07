@@ -741,16 +741,32 @@ async def transport_request(self, Function, destination, Profile, Cluster, sEp, 
         await _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid, sEp, dEp, sequence, payload, use_ieee, _ieee,ack_is_disable, extended_timeout )
 
 
-async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid, sEp, dEp, sequence, payload, use_ieee, _ieee, ack_is_disable, extended_timeout):
-    max_retry = MAX_ATTEMPS_REQUEST if self.pluginconf.pluginConf["PluginRetrys"] else 1
+def convert_ack_to_expect_reply(ack_is_disable: bool) -> bool:
+    # zigpy logic relies on expect_reply, and plugin relies on ack_is_disable flag
+    # zigpy disable Ack when a response is expected by the device, enable Ack when no response from device is expected.
 
+    # for zigate it is more complex as the plugin embedd some logic
+    # for end device, when sending a command it is done with Ack, to force the buffering
+    # for router if sending a command which expect a response we disable Ack
+    # but for ping a device, we force to have a Ack
+    # if pairing in progress for that device we force Ack
+    # In conclusion if ack_is_disable we don't want t.TransmitOptions.ACK
+
+    expect_reply = ack_is_disable
+    return expect_reply
+
+async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid, sEp, dEp, sequence, payload, use_ieee, _ieee, ack_is_disable, extended_timeout):
+
+    max_retry = MAX_ATTEMPS_REQUEST if self.pluginconf.pluginConf["PluginRetrys"] else 1
+    expect_reply = convert_ack_to_expect_reply(ack_is_disable)
+  
     for attempt in range(1, (max_retry + 1)):
         try:
-            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {_ieee} {Profile} {Cluster} - AckIsDisable: {ack_is_disable} ExpectReply: {not ack_is_disable} extended_timeout: {extended_timeout} Attempts: {attempt}/{max_retry}")
-            result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=False, use_ieee=use_ieee, extended_timeout=extended_timeout)
+            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {_ieee} {Profile} {Cluster} - AckIsDisable: {ack_is_disable} ExpectReply: {expect_reply} extended_timeout: {extended_timeout} Attempts: {attempt}/{max_retry}")
+            result, msg = await self.app.request(destination, Profile, Cluster, sEp, dEp, sequence, payload, expect_reply=expect_reply, use_ieee=use_ieee, extended_timeout=extended_timeout)
 
         except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError, AttributeError, DeliveryError) as e:
-            error_log_message = f"_send_and_retry - {Function} {_ieee}/0x{_nwkid} 0x{Profile} 0x{Cluster}:16 AckIsDisable: {ack_is_disable} RETRY: {attempt}/{max_retry} ({e})"
+            error_log_message = f"_send_and_retry - {Function} {_ieee}/0x{_nwkid} 0x{Profile} 0x{Cluster}:16 AckIsDisable: {ack_is_disable} ExpectReply: {expect_reply} RETRY: {attempt}/{max_retry} ({e})"
             self.log.logging("TransportZigpy", "Log", error_log_message)
 
             if await _retry_or_not(self, attempt, max_retry, Function, sequence, ack_is_disable, _ieee, _nwkid, destination, e):
