@@ -751,7 +751,7 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
             result, _ = await zigpy_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout)
 
         except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError, AttributeError, DeliveryError) as e:
-            error_log_message = f"_send_and_retry - {Function} {_ieee}/0x{_nwkid} 0x{Profile} 0x{Cluster}:16 AckIsDisable: {ack_is_disable} RETRY: {attempt}/{max_retry} ({e})"
+            error_log_message = f"Warning while submitting - {Function} {_ieee}/0x{_nwkid} 0x{Profile} 0x{Cluster}:16 AckIsDisable: {ack_is_disable} Retry: {attempt}/{max_retry} with exception ({e})"
             self.log.logging("TransportZigpy", "Log", error_log_message)
 
             if await _retry_or_not(self, attempt, max_retry, Function, sequence, ack_is_disable, _ieee, _nwkid, destination, e):
