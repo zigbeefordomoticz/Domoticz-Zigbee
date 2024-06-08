@@ -787,42 +787,38 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
         f"src_ep={src_ep}, dst_ep={dst_ep}, sequence={sequence}, data={data}, "
         f"ack_is_disable={ack_is_disable}, use_ieee={use_ieee}, extended_timeout={extended_timeout}"
     )
-    try:
-        if use_ieee:
-            src = t.AddrModeAddress( addr_mode=t.AddrMode.IEEE, address=self.app.state.node_info.ieee )
-            dst = t.AddrModeAddress(addr_mode=t.AddrMode.IEEE, address=device.ieee)
-        else:
-            src = t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.app.state.node_info.nwk )
-            dst = t.AddrModeAddress(addr_mode=t.AddrMode.NWK, address=device.nwk)
+    if use_ieee:
+        src = t.AddrModeAddress( addr_mode=t.AddrMode.IEEE, address=self.app.state.node_info.ieee )
+        dst = t.AddrModeAddress(addr_mode=t.AddrMode.IEEE, address=device.ieee)
+    else:
+        src = t.AddrModeAddress( addr_mode=t.AddrMode.NWK, address=self.app.state.node_info.nwk )
+        dst = t.AddrModeAddress(addr_mode=t.AddrMode.NWK, address=device.nwk)
 
-        if self.app.config[zigpy.config.CONF_SOURCE_ROUTING]:
-            source_route = self.app.build_source_route_to(dest=device)
-        else:
-            source_route = None
+    if self.app.config[zigpy.config.CONF_SOURCE_ROUTING]:
+        source_route = self.app.build_source_route_to(dest=device)
+    else:
+        source_route = None
 
-        tx_options = t.TransmitOptions.NONE
+    tx_options = t.TransmitOptions.NONE
 
-        if not ack_is_disable:
-            tx_options |= t.TransmitOptions.ACK
+    if not ack_is_disable:
+        tx_options |= t.TransmitOptions.ACK
 
-        await self.app.send_packet(
-            t.ZigbeePacket(
-                src=src,
-                src_ep=src_ep,
-                dst=dst,
-                dst_ep=dst_ep,
-                tsn=sequence,
-                profile_id=profile,
-                cluster_id=cluster,
-                data=t.SerializableBytes(data),
-                extended_timeout=extended_timeout,
-                source_route=source_route,
-                tx_options=tx_options,
-            )
+    await self.app.send_packet(
+        t.ZigbeePacket(
+            src=src,
+            src_ep=src_ep,
+            dst=dst,
+            dst_ep=dst_ep,
+            tsn=sequence,
+            profile_id=profile,
+            cluster_id=cluster,
+            data=t.SerializableBytes(data),
+            extended_timeout=extended_timeout,
+            source_route=source_route,
+            tx_options=tx_options,
         )
-    except Exception as e:
-        self.log.logging( "TransportZigpy", "Error", f"Error when send_packet() - {e}")
-        
+    )
 
     return (zigpy.zcl.foundation.Status.SUCCESS, "")
 
