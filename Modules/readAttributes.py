@@ -313,19 +313,7 @@ def ping_device_with_read_attribute(self, key):
     for EPout in ListOfEp:
         check_datastruct(self, "ReadAttributes", key, EPout, PING_CLUSTER)
         
-        i_sqn = read_attribute(
-            self,
-            key,
-            ZIGATE_EP,
-            EPout,
-            PING_CLUSTER,
-            "00",
-            "00",
-            "0000",
-            "%02x" % (0x01),
-            PING_CLUSTER_ATTRIBUTE,
-            ackIsDisabled=False,
-        )
+        i_sqn = read_attribute( self, key, ZIGATE_EP, EPout, PING_CLUSTER, "00", "00", "0000", "%02x" % (0x01), PING_CLUSTER_ATTRIBUTE, ackIsDisabled=False, )
 
         set_isqn_datastruct(self, "ReadAttributes", key, EPout, PING_CLUSTER, PING_CLUSTER_ATTRIBUTE, i_sqn)
         # Let's ping only 1 EndPoint
