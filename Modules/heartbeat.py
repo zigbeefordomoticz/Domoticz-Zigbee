@@ -1096,4 +1096,3 @@ def add_device_group_for_ping(self, NwkId):
     
     if target_ep:
         self.groupmgt.addGroupMemberShip(NwkId, target_ep, target_groupid)
-    
