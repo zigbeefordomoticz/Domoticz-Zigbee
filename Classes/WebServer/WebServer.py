@@ -186,6 +186,9 @@ class WebServer(object):
         
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
+        
+        self.server_thread = None
+        self.running = None
 
         # httpPort could have 2 formats. port number only or IP:port
         if ':' in httpPort:

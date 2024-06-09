@@ -5,33 +5,94 @@
 #
 
 from Modules.domoticzAbstractLayer import domoticz_connection
+import threading
+import socket
 
 
 def startWebServer(self):
 
-    # self.httpPort = '9440'
-    # self.httpIp = None or IP Adress to be bind
-    # self.httpPort = httpPort
+    self.logging("Status", "start_logging_thread")
+    if self.server_thread:
+        self.logging("Error", "start_logging_thread - Looks like logging_thread already started !!!")
+        return
 
-    if self.httpIp is None:
-        self.httpServerConn = domoticz_connection( name="Zigate Server Connection", transport="TCP/IP", protocol="HTTP", port=self.httpPort)
-    else:
-        self.httpServerConn = domoticz_connection( name="Zigate Server Connection", transport="TCP/IP", protocol="HTTP", address=str(self.httpIp), port=self.httpPort )
-
-    self.httpServerConn.Listen()
-    if self.httpIp is None:
-        self.logging("Status", "Web backend for Web User Interface started on port: %s" % self.httpPort)
-    else:
-        self.logging("Status", "Web backend for Web User Interface started on port: %s:%s" % (self.httpIp, self.httpPort))
-
-    self.logging("Debug", "%s" %( self.httpServerConn))
-
-    # self.httpsPort = '9443'
-    # self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
-    # self.httpsServerConn.Listen()
-    # self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpsPort)len(fileContent))+" bytes will be returned")
+    # Create and start the server thread
+    self.server_thread = threading.Thread( name="ZigbeeWebUI_%s" % self.hardwareID, target=run_server, args=(self,) )
+    self.server_thread.daemon = True  # This makes the thread exit when the main program exits
+    self.server_thread.start()
 
 
+def handle_client(self, client_socket):
+    # Handle client connection
+    with client_socket:
+        self.logging("Log", "Client connected")
+        while self.running:
+            data = client_socket.recv(1024).decode('utf-8')
+            if not data:
+                break
+            
+            Data = decode_http_data(self, data)
+            self.onMessage(client_socket, Data)
+
+
+def run_server(self, host='0.0.0.0', port=9440):
+
+    self.logging( "Log","webui_thread - listening")
+    # Set up the server
+    self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    if self.httpPort:
+        port = int(self.httpPort)
+    if self.httpIp:
+        host = self.httpIp
+    
+    self.logging( "Log", f"webui_thread - listening on {host}:{port}")
+    self.server.bind((host, port))
+    self.server.listen(5)
+    self.server.settimeout(1)
+    self.logging("Log", f"Server started on {host}:{port}")
+
+    self.running = True
+
+    try:
+        while self.running:
+            try:
+                client_socket, addr = self.server.accept()
+                self.logging("Log", f"Accepted connection from {addr}")
+                client_handler = threading.Thread(target=handle_client, args=(self, client_socket,))
+                client_handler.daemon = True
+                client_handler.start()
+            except socket.timeout:
+                    continue
+    finally:
+        self.server.close()
+        self.logging("Log", "Server shut down")
+
+    self.logging( "Log", "webui_thread - ended")
+
+
+def decode_http_data(self, raw_data):
+    # Split request into lines
+    request_lines = raw_data.split('\r\n')
+    
+    # Request line is the first line
+    request_line = request_lines[0]
+    method, path, version = request_line.split()
+    # Headers are the following lines until an empty line
+    headers = {}
+    for line in request_lines[1:]:
+        if line == '':
+            break
+        key, value = line.split(': ', 1)
+        headers[key] = value
+    
+    return {
+        "Verb": method,
+        "URL": path,
+        "Headers": headers
+    }
+
+            
 def onConnect(self, Connection, Status, Description):
 
     self.logging("Debug", "Connection: %s, description: %s" % (Connection, Description))
@@ -86,6 +147,9 @@ def onStop(self):
 
     # Make sure that all remaining open connections are closed
     self.logging("Debug", "onStop()")
+    
+    self.running = False
+    self.server_thread.join()
 
     # Search for Protocol
     for connection in self.httpServerConns:
