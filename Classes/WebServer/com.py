@@ -21,23 +21,53 @@ def startWebServer(self):
     self.server_thread.daemon = True  # This makes the thread exit when the main program exits
     self.server_thread.start()
 
-
-def handle_client(self, client_socket):
+def close_all_clients(self):
+    self.logging("Log", "Closing all client connections...")
+    for client_addr, client_socket in self.clients.items():
+        self.logging("Log", f"  - Closing {client_addr}")
+        client_socket.close()
+    self.clients.clear()
+    
+def handle_client(self, client_socket, client_addr):
     # Handle client connection
-    with client_socket:
-        self.logging("Log", "Client connected")
+    self.logging("Log", f"handle_client from {client_addr} {client_socket}")
+    self.clients[ str(client_addr) ] = client_socket
+    
+    client_socket.settimeout(1)
+    try:
         while self.running:
-            data = client_socket.recv(1024).decode('utf-8')
-            if not data:
+            try:
+                data = client_socket.recv(1024).decode('utf-8')
+                if not data:
+                    self.logging("Log", f"no data from {client_addr}")
+                    break
+                
+                Data = decode_http_data(self, data)
+                self.onMessage(client_socket, Data)
+
+            except socket.timeout:
+                self.logging("Log", f"Socket timedout {client_addr}")
+                continue
+
+            except socket.error as e:
+                self.logging("Log", f"Socket error with {client_addr}: {e}")
                 break
-            
-            Data = decode_http_data(self, data)
-            self.onMessage(client_socket, Data)
+
+            except Exception as e:
+                self.logging("Log", f"Unexpected error with {client_addr}: {e}")
+                break
+
+    finally:
+        self.logging("Log", f"Closing connection to {client_addr}.")
+        if str(client_addr) in self.clients:
+            del self.clients[ str(client_addr) ]
+        client_socket.close()
 
 
 def run_server(self, host='0.0.0.0', port=9440):
 
     self.logging( "Log","webui_thread - listening")
+
     # Set up the server
     self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -50,21 +80,29 @@ def run_server(self, host='0.0.0.0', port=9440):
     self.server.bind((host, port))
     self.server.listen(5)
     self.server.settimeout(1)
+
     self.logging("Log", f"Server started on {host}:{port}")
 
-    self.running = True
-
     try:
+        self.running = True
         while self.running:
             try:
-                client_socket, addr = self.server.accept()
-                self.logging("Log", f"Accepted connection from {addr}")
-                client_handler = threading.Thread(target=handle_client, args=(self, client_socket,))
-                client_handler.daemon = True
-                client_handler.start()
+                client_socket, client_addr = self.server.accept()
+
+                self.logging("Log", f"Accepted connection from {client_addr} {client_socket}")
+                client_thread = threading.Thread(target=handle_client, args=(self, client_socket, client_addr))
+                client_thread.daemon = True
+                client_thread.start()
+                self.client_threads.append(client_thread)
+                
             except socket.timeout:
                     continue
+    
+            except Exception as e:
+                self.logging("Log", f"Error: {e}")
+                break
     finally:
+        close_all_clients(self)
         self.server.close()
         self.logging("Log", "Server shut down")
 
@@ -149,6 +187,10 @@ def onStop(self):
     self.logging("Debug", "onStop()")
     
     self.running = False
+
+    for client_thread in self.client_threads:
+        client_thread.join()
+    
     self.server_thread.join()
 
     # Search for Protocol

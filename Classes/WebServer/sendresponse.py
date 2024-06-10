@@ -54,28 +54,30 @@ def send_http_message( self, client_socket, http_message):
     client_socket.sendall( http_message )
 
 
-def prepare_http_response( self, response_dict ):
-    
-    if "Data" in response_dict and response_dict["Data"]:
-        response_data = response_dict["Data"]
+def convert_response_to_utf8( response ):
+    response_body = ""
 
-        if isinstance( response_data, dict ):
-            response_body = json.dumps(response_dict)
+    if "Data" in response and response["Data"]:
+        response_data = response["Data"]
 
-        elif isinstance( response_data, bytes ):
+        if isinstance(response_data, dict):
+            response_body = json.dumps(response)
+
+        elif isinstance(response_data, bytes):
             try:
                 response_body = response_data.decode('utf-8')
-
             except UnicodeDecodeError:
                 response_body = response_data.decode('latin-1')
 
         else:
-            response_body = response_data
+            response_body = str(response_data)
 
-    else:
-        response_body = "".decode('utf-8')
+    return response_body.encode('utf-8')
 
-    response_body = response_body.encode('utf-8')
+
+def prepare_http_response( self, response_dict ):
+    
+    response_body = convert_response_to_utf8( response_dict )
 
     if 'Status' in response_dict:
         status = response_dict[ "Status"].split(' ')
