@@ -49,9 +49,22 @@ HTTP_HEADERS = {
     "Content-Encoding",
 }
 
-def send_http_message( self, client_socket, http_message):
-    
-    client_socket.sendall( http_message )
+def send_chunk(self, socket, data):
+    if not data:
+        return
+
+    for i in range(0, len(data), MAX_KB_TO_SEND):
+        chunck_data = data[ i : i + MAX_KB_TO_SEND]
+        chunk_size = f"{len(chunck_data):X}\r\n".encode('utf-8')
+        socket.sendall(chunk_size + chunck_data + b"\r\n")
+
+    socket.sendall(b"0\r\n\r\n")
+
+def send_http_message( self, socket, http_message, chunked=False):
+    if chunked:
+        send_chunk(self, socket, http_message)
+    else:
+        socket.sendall( http_message )
 
 
 def convert_response_to_utf8( response ):
@@ -75,7 +88,7 @@ def convert_response_to_utf8( response ):
     return response_body.encode('utf-8')
 
 
-def prepare_http_response( self, response_dict ):
+def prepare_http_response( self, response_dict, gziped, deflated , chunked):
     
     response_body = convert_response_to_utf8( response_dict )
 
@@ -92,8 +105,20 @@ def prepare_http_response( self, response_dict ):
                 http_response += f"{x}: {headers[x]}\r\n".encode('utf-8')
 
     http_response += f"Content-Length: {len(response_body)}\r\n".encode('utf-8')
+
+    if chunked:
+        http_response += "Transfer-Encoding: chunked\r\n".encode('utf-8')
+
+    if gziped:
+        http_response += "Content-Encoding: gzip\r\n".encode('utf-8')
+        response_body = gzip.compress(response_body)
+    elif deflated:
+        http_response += "Content-Encoding: deflate\r\n".encode('utf-8')
+        response_body = zlib.compress(response_body)
+        
     http_response += "\r\n".encode('utf-8')
 
+    self.logging("Log", f"{http_response}")
     http_response += response_body
 
     return http_response
@@ -101,15 +126,14 @@ def prepare_http_response( self, response_dict ):
 
 def sendResponse(self, client_socket, Response, AcceptEncoding=None):
 
-    #self.logging( "Log", f"sendResponse - Response: {Response}")
-
-                
+    # No data   
     if "Data" not in Response:
         send_http_message( self, client_socket, prepare_http_response( self, Response ))
         if not self.pluginconf.pluginConf["enableKeepalive"]:
             client_socket.close()
         return
 
+    # Empty Data
     if Response["Data"] is None:
         send_http_message( self, client_socket, prepare_http_response( self, Response ))
         if not self.pluginconf.pluginConf["enableKeepalive"]:
@@ -117,59 +141,15 @@ def sendResponse(self, client_socket, Response, AcceptEncoding=None):
         return
 
     # Compression
-    allowgzip = self.pluginconf.pluginConf["enableGzip"]
-    allowdeflate = self.pluginconf.pluginConf["enableDeflate"]
-
-    if (allowgzip or allowdeflate) and "Data" in Response and AcceptEncoding and len(Response["Data"]) > MAX_KB_TO_SEND:
-        orig_size = len(Response["Data"])
-        if allowdeflate and AcceptEncoding.find("deflate") != -1:
-            #self.logging("Debug", "Compressing - deflate")
-            zlib_compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
-            deflated = zlib_compress.compress(Response["Data"])
-            deflated += zlib_compress.flush()
-            Response["Headers"]["Content-Encoding"] = "deflate"
-            Response["Data"] = deflated
+    allowgzip = self.pluginconf.pluginConf["enableGzip"] and AcceptEncoding.find("gzip")
+    allowdeflate = self.pluginconf.pluginConf["enableDeflate"] and AcceptEncoding.find("deflate")
+    allowchunked = self.pluginconf.pluginConf["enableChunk"] and len(Response["Data"]) > MAX_KB_TO_SEND
     
-        elif allowgzip and AcceptEncoding.find("gzip") != -1:
-            #self.logging("Debug", "Compressing - gzip")
-            Response["Data"] = gzip.compress(Response["Data"])
-            Response["Headers"]["Content-Encoding"] = "gzip"
-
-    # Chunking, Follow the Domoticz Python Plugin Framework
-    if self.pluginconf.pluginConf["enableChunk"] and len(Response["Data"]) > MAX_KB_TO_SEND:
-        idx = 0
-        HTTPchunk = {
-            "Status": Response["Status"],
-            "Chunk": True,
-            "Headers": dict(Response["Headers"]),
-            "Data": Response["Data"][0:MAX_KB_TO_SEND]
-        }
-
-        # Firs Chunk
-        send_http_message( self, client_socket, prepare_http_response( self, HTTPchunk ))
-
-        idx = MAX_KB_TO_SEND
-        while idx != -1:
-            tosend = {}
-            tosend["Chunk"] = True
-            if idx + MAX_KB_TO_SEND < len(Response["Data"]):
-                # we have to sumbit one chunk and then continue
-                tosend["Data"] = Response["Data"][idx : idx + MAX_KB_TO_SEND]
-                idx += MAX_KB_TO_SEND
-            else:
-                # Last Chunk with Data
-                tosend["Data"] = Response["Data"][idx:]
-                idx = -1
-
-            send_http_message( self, client_socket, prepare_http_response( self, tosend ))
-
-        # Closing Chunk
-        tosend = {}
-        tosend["Chunk"] = True
-        send_http_message( self, client_socket, prepare_http_response( self, tosend ))
-        if not self.pluginconf.pluginConf["enableKeepalive"]:
-            client_socket.close()
-    else:
-        send_http_message( self, client_socket, prepare_http_response( self, Response ))
-        if not self.pluginconf.pluginConf["enableKeepalive"]:
-            client_socket.close()
+    allowdeflate = False
+    allowgzip = False
+    allowchunked = False
+    
+    send_http_message( self, client_socket, prepare_http_response( self, Response, allowgzip, allowdeflate, allowchunked ))
+    
+    if not self.pluginconf.pluginConf["enableKeepalive"]:
+        client_socket.close()

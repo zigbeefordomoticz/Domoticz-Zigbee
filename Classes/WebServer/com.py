@@ -4,9 +4,11 @@
 # Author: zaraki673 & pipiche38
 #
 
-from Modules.domoticzAbstractLayer import domoticz_connection
-import threading
 import socket
+import threading
+import traceback
+
+from Modules.domoticzAbstractLayer import domoticz_connection
 
 
 def startWebServer(self):
@@ -21,13 +23,15 @@ def startWebServer(self):
     self.server_thread.daemon = True  # This makes the thread exit when the main program exits
     self.server_thread.start()
 
+
 def close_all_clients(self):
     self.logging("Log", "Closing all client connections...")
     for client_addr, client_socket in self.clients.items():
         self.logging("Log", f"  - Closing {client_addr}")
         client_socket.close()
     self.clients.clear()
-    
+
+  
 def handle_client(self, client_socket, client_addr):
     # Handle client connection
     self.logging("Log", f"handle_client from {client_addr} {client_socket}")
@@ -55,6 +59,7 @@ def handle_client(self, client_socket, client_addr):
 
             except Exception as e:
                 self.logging("Log", f"Unexpected error with {client_addr}: {e}")
+                self.logging("Log", f"{traceback.format_exc() }")
                 break
 
     finally:
