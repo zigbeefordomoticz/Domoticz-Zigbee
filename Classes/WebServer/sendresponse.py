@@ -49,7 +49,7 @@ HTTP_HEADERS = {
     "Content-Encoding",
 }
 
-def send_chunk(self, socket, data):
+def send_by_chunk(self, socket, data):
     if not data:
         return
 
@@ -57,17 +57,21 @@ def send_chunk(self, socket, data):
         chunck_data = data[ i : i + MAX_KB_TO_SEND]
         chunk_size = f"{len(chunck_data):X}\r\n".encode('utf-8')
         socket.sendall(chunk_size + chunck_data + b"\r\n")
+        self.logging("Debug", "Sending Chunk: %s out of %s" % (i, len((data)/MAX_KB_TO_SEND)))
 
+    # Closing Chunk
     socket.sendall(b"0\r\n\r\n")
 
 def send_http_message( self, socket, http_message, chunked=False):
     if chunked:
-        send_chunk(self, socket, http_message)
+        send_by_chunk(self, socket, http_message)
     else:
         socket.sendall( http_message )
 
 
 def convert_response_to_utf8( response ):
+    """ convert data payload into an http response body encode in utf8 """
+    
     response_body = ""
 
     if "Data" in response and response["Data"]:
@@ -87,9 +91,10 @@ def convert_response_to_utf8( response ):
 
     return response_body.encode('utf-8')
 
-
+   
 def prepare_http_response( self, response_dict, gziped, deflated , chunked):
-    
+
+    # Prepare body (data converted)
     response_body = convert_response_to_utf8( response_dict )
 
     if 'Status' in response_dict:
@@ -106,15 +111,24 @@ def prepare_http_response( self, response_dict, gziped, deflated , chunked):
 
     http_response += f"Content-Length: {len(response_body)}\r\n".encode('utf-8')
 
-    if chunked:
-        http_response += "Transfer-Encoding: chunked\r\n".encode('utf-8')
-
+    orig_size = len(response_body)
     if gziped:
+        self.logging("Debug", "Compressing - gzip")
         http_response += "Content-Encoding: gzip\r\n".encode('utf-8')
         response_body = gzip.compress(response_body)
+        self.logging( "Debug", "Compression from %s to %s (%s %%)" % (orig_size, len(Response["Data"]), int(100 - (len(Response["Data"]) / orig_size) * 100)), )
+
     elif deflated:
+        
+        self.logging("Debug", "Compressing - deflate")
         http_response += "Content-Encoding: deflate\r\n".encode('utf-8')
-        response_body = zlib.compress(response_body)
+        zlib_compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
+        response_body = zlib_compress.compress(response_body)
+        response_body += zlib_compress.flush()
+        self.logging( "Debug", "Compression from %s to %s (%s %%)" % (orig_size, len(response_body), int(100 - (len(response_body) / orig_size) * 100)), )
+
+    if chunked:
+        http_response += "Transfer-Encoding: chunked\r\n".encode('utf-8')
         
     http_response += "\r\n".encode('utf-8')
 
@@ -141,15 +155,15 @@ def sendResponse(self, client_socket, Response, AcceptEncoding=None):
         return
 
     # Compression
-    allowgzip = self.pluginconf.pluginConf["enableGzip"] and AcceptEncoding.find("gzip")
-    allowdeflate = self.pluginconf.pluginConf["enableDeflate"] and AcceptEncoding.find("deflate")
-    allowchunked = self.pluginconf.pluginConf["enableChunk"] and len(Response["Data"]) > MAX_KB_TO_SEND
+    request_gzip = self.pluginconf.pluginConf["enableGzip"] and AcceptEncoding.find("gzip")
+    request_deflate = self.pluginconf.pluginConf["enableDeflate"] and AcceptEncoding.find("deflate")
+    request_chunked = self.pluginconf.pluginConf["enableChunk"] and len(Response["Data"]) > MAX_KB_TO_SEND
     
-    allowdeflate = False
-    allowgzip = False
-    allowchunked = False
+    request_deflate = False
+    request_gzip = False
+    request_chunked = False
     
-    send_http_message( self, client_socket, prepare_http_response( self, Response, allowgzip, allowdeflate, allowchunked ))
+    send_http_message( self, client_socket, prepare_http_response( self, Response, request_gzip, request_deflate, request_chunked ),allowchunked)
     
     if not self.pluginconf.pluginConf["enableKeepalive"]:
         client_socket.close()
