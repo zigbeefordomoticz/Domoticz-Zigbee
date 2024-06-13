@@ -49,29 +49,37 @@ HTTP_HEADERS = {
     "Content-Encoding",
 }
 
-def send_by_chunk(self, socket, data):
+def send_by_chunk(self, socket, http_response, response_body):
+    """ send and chunk the response_body already bytes encoded """
+
     if not data:
         return
 
-    for i in range(0, len(data), MAX_KB_TO_SEND):
-        chunck_data = data[ i : i + MAX_KB_TO_SEND]
-        chunk_size = f"{len(chunck_data):X}\r\n".encode('utf-8')
-        socket.sendall(chunk_size + chunck_data + b"\r\n")
+    # send the HTTP headers
+    socket.sendall( http_response.encode('utf-8'))
+
+    for i in range(0, len(response_body), MAX_KB_TO_SEND):
+        chunck_data = response_body[ i : i + MAX_KB_TO_SEND]
+
+        socket.sendall(f"{len(chunck_data):X}\r\n".encode("utf-8"))
+        socket.sendall(chunk)
+        socket.sendall(b"\r\n")
+
         self.logging("Debug", "Sending Chunk: %s out of %s" % (i, len((data)/MAX_KB_TO_SEND)))
 
     # Closing Chunk
     socket.sendall(b"0\r\n\r\n")
 
-def send_http_message( self, socket, http_message, chunked=False):
+def send_http_message( self, socket, http_response, response_body, chunked=False):
     if chunked:
-        send_by_chunk(self, socket, http_message)
+        send_by_chunk(self, socket, http_response, response_body)
     else:
-        socket.sendall( http_message )
+        socket.sendall( http_message.encode('utf-8') + response_body )
 
 
-def convert_response_to_utf8( response ):
-    """ convert data payload into an http response body encode in utf8 """
-    
+def decode_response_body( response ):
+    """convert data payload into an http response body bytes encoded """
+
     response_body = ""
 
     if "Data" in response and response["Data"]:
@@ -89,53 +97,54 @@ def convert_response_to_utf8( response ):
         else:
             response_body = str(response_data)
 
-    return response_body.encode('utf-8')
+    return response_body.encode('utf-8') )
 
    
 def prepare_http_response( self, response_dict, gziped, deflated , chunked):
 
-    # Prepare body (data converted)
-    response_body = convert_response_to_utf8( response_dict )
+    # Prepare body (data converted to byte)
+    response_body = decode_response_body( response_dict )
 
     if 'Status' in response_dict:
         status = response_dict[ "Status"].split(' ')
         status_code = 500 if len(status) < 1 else int(status[0])
         if status_code in http_status_codes: 
-            http_response = http_status_codes[ status_code ].encode('utf-8')
+            http_response = http_status_codes[ status_code ]
 
     if 'Headers' in response_dict:
         headers = response_dict['Headers']
         for x in HTTP_HEADERS:
             if x in headers and headers[x]:
-                http_response += f"{x}: {headers[x]}\r\n".encode('utf-8')
+                http_response += f"{x}: {headers[x]}\r\n"
 
-    http_response += f"Content-Length: {len(response_body)}\r\n".encode('utf-8')
-
+    # Determine if Compression, Deflate or Chunk to be used.
     orig_size = len(response_body)
+
+    # prefer gzip for better compatibility, consistent behavior, and improved compression. If the two are accepted by the client
     if gziped:
         self.logging("Debug", "Compressing - gzip")
-        http_response += "Content-Encoding: gzip\r\n".encode('utf-8')
+        http_response += "Content-Encoding: gzip\r\n"
         response_body = gzip.compress(response_body)
         self.logging( "Debug", "Compression from %s to %s (%s %%)" % (orig_size, len(Response["Data"]), int(100 - (len(Response["Data"]) / orig_size) * 100)), )
 
     elif deflated:
-        
         self.logging("Debug", "Compressing - deflate")
-        http_response += "Content-Encoding: deflate\r\n".encode('utf-8')
+        http_response += "Content-Encoding: deflate\r\n"
         zlib_compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
         response_body = zlib_compress.compress(response_body)
         response_body += zlib_compress.flush()
         self.logging( "Debug", "Compression from %s to %s (%s %%)" % (orig_size, len(response_body), int(100 - (len(response_body) / orig_size) * 100)), )
 
+    # Content-Length set to the body sent. If compressed this has to be the 
+    http_response += f"Content-Length: {len(response_body)}\r\n"
+
     if chunked:
-        http_response += "Transfer-Encoding: chunked\r\n".encode('utf-8')
-        
-    http_response += "\r\n".encode('utf-8')
+        http_response += "Transfer-Encoding: chunked\r\n"
 
+    http_response += "\r\n"
     self.logging("Log", f"{http_response}")
-    http_response += response_body
 
-    return http_response
+    return http_response, response_body
 
 
 def sendResponse(self, client_socket, Response, AcceptEncoding=None):
