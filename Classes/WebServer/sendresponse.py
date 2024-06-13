@@ -101,7 +101,7 @@ def decode_response_body( response ):
     return response_body.encode('utf-8')
 
    
-def prepare_http_response( self, response_dict, gziped, deflated , chunked):
+def prepare_http_response( self, response_dict, gziped=False, deflated=False , chunked=False):
 
     # Prepare body (data converted to byte)
     response_body = decode_response_body( response_dict )
@@ -123,18 +123,18 @@ def prepare_http_response( self, response_dict, gziped, deflated , chunked):
 
     # prefer gzip for better compatibility, consistent behavior, and improved compression. If the two are accepted by the client
     if gziped:
-        self.logging("Log", "Compressing - gzip")
+        self.logging("Debug", "Compressing - gzip")
         http_response += "Content-Encoding: gzip\r\n"
         response_body = gzip.compress(response_body)
         self.logging( "Debug", "Compression from %s to %s (%s %%)" % (orig_size, len(response_body), int(100 - (len(response_body) / orig_size) * 100)), )
 
     elif deflated:
-        self.logging("Log", "Compressing - deflate")
+        self.logging("Debug", "Compressing - deflate")
         http_response += "Content-Encoding: deflate\r\n"
         zlib_compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
         response_body = zlib_compress.compress(response_body)
         response_body += zlib_compress.flush()
-        self.logging( "Log", "Compression from %s to %s (%s %%)" % (orig_size, len(response_body), int(100 - (len(response_body) / orig_size) * 100)), )
+        self.logging( "Debug", "Compression from %s to %s (%s %%)" % (orig_size, len(response_body), int(100 - (len(response_body) / orig_size) * 100)), )
 
     # Content-Length set to the body sent. If compressed this has to be the 
     http_response += f"Content-Length: {len(response_body)}\r\n"
@@ -143,7 +143,7 @@ def prepare_http_response( self, response_dict, gziped, deflated , chunked):
         http_response += "Transfer-Encoding: chunked\r\n"
 
     http_response += "\r\n"
-    self.logging("Log", f"{http_response}")
+    self.logging("Debug", f"{http_response}")
 
     return http_response, response_body
 
@@ -167,11 +167,11 @@ def sendResponse(self, client_socket, Response, AcceptEncoding=None):
         return
 
     # Compression
-    request_gzip = self.pluginconf.pluginConf["enableGzip"] and AcceptEncoding and AcceptEncoding.find("gzip")
-    request_deflate = self.pluginconf.pluginConf["enableDeflate"] and AcceptEncoding and AcceptEncoding.find("deflate")
+    request_gzip = self.pluginconf.pluginConf["enableGzip"] and AcceptEncoding and (AcceptEncoding.find("gzip") != -1)
+    request_deflate = self.pluginconf.pluginConf["enableDeflate"] and AcceptEncoding and (AcceptEncoding.find("deflate") != -1)
     request_chunked = self.pluginconf.pluginConf["enableChunk"] and len(Response["Data"]) > MAX_KB_TO_SEND
     
-    self.logging("Log", f"request_gzip {request_gzip} - request_deflate {request_deflate} request_chunked {request_chunked}")
+    self.logging("Debug", f"request_gzip {request_gzip} - request_deflate {request_deflate} request_chunked {request_chunked}")
     http_response, response_body = prepare_http_response( self, Response, request_gzip, request_deflate, request_chunked )
     send_http_message( self, client_socket, http_response, response_body ,request_chunked)
     

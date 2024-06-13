@@ -10,6 +10,7 @@ import traceback
 
 from Modules.domoticzAbstractLayer import domoticz_connection
 
+MAX_BYTES = 1024
 
 def startWebServer(self):
 
@@ -31,30 +32,76 @@ def close_all_clients(self):
         client_socket.close()
     self.clients.clear()
 
-  
+
+def parse_http_request(data):
+    lines = data.split("\r\n")
+    request_line = lines[0].strip()
+    method, path, _ = request_line.split(" ", 2)
+
+    headers = {}
+    body = ""
+
+    # Parse headers
+    for line in lines[1:]:
+        if line.strip():
+            key, value = line.split(":", 1)
+            headers[key.strip()] = value.strip()
+        else:
+            break
+
+    # Parse body if present
+    if "Content-Length" in headers:
+        content_length = int(headers["Content-Length"])
+        body = lines[-1] if content_length > 0 else ""
+
+    return method, path, headers, body.encode('utf-8')
+
+
+def receive_data(self, client_socket):
+    chunks = []
+    try:
+        while True:
+            chunk = client_socket.recv(MAX_BYTES)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            if len(chunk) < MAX_BYTES:
+                break
+
+    except socket.error as e:
+        # This most likely will happen when connection is closed.
+        self.logging("Debug", f"receive_data - Socket error with: {e}")
+        return b""
+
+    return b"".join(chunks)
+
+
 def handle_client(self, client_socket, client_addr):
     # Handle client connection
-    self.logging("Log", f"handle_client from {client_addr} {client_socket}")
+    self.logging("Debug", f"handle_client from {client_addr} {client_socket}")
     self.clients[ str(client_addr) ] = client_socket
-    
+
     client_socket.settimeout(1)
     try:
         while self.running:
             try:
-                data = client_socket.recv(1024).decode('utf-8')
+                data = receive_data(self, client_socket).decode('utf-8')
+
                 if not data:
-                    self.logging("Log", f"no data from {client_addr}")
+                    self.logging("Debug", f"no data from {client_addr}")
                     break
-                
-                Data = decode_http_data(self, data)
+
+                method, path, headers, body = parse_http_request(data)
+
+                Data = decode_http_data(self, method, path, headers, body)
                 self.onMessage(client_socket, Data)
 
             except socket.timeout:
-                self.logging("Log", f"Socket timedout {client_addr}")
+                self.logging("Debug", f"Socket timedout {client_addr}")
                 continue
 
             except socket.error as e:
-                self.logging("Log", f"Socket error with {client_addr}: {e}")
+                self.logging("Debug", f"Socket error with {client_addr}: {e}")
                 break
 
             except Exception as e:
@@ -63,7 +110,7 @@ def handle_client(self, client_socket, client_addr):
                 break
 
     finally:
-        self.logging("Log", f"Closing connection to {client_addr}.")
+        self.logging("Debug", f"Closing connection to {client_addr}.")
         if str(client_addr) in self.clients:
             del self.clients[ str(client_addr) ]
         client_socket.close()
@@ -71,7 +118,7 @@ def handle_client(self, client_socket, client_addr):
 
 def run_server(self, host='0.0.0.0', port=9440):
 
-    self.logging( "Log","webui_thread - listening")
+    self.logging( "Debug","webui_thread - listening")
 
     # Set up the server
     self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -81,12 +128,12 @@ def run_server(self, host='0.0.0.0', port=9440):
     if self.httpIp:
         host = self.httpIp
     
-    self.logging( "Log", f"webui_thread - listening on {host}:{port}")
+    self.logging( "Debug", f"webui_thread - listening on {host}:{port}")
     self.server.bind((host, port))
     self.server.listen(5)
     self.server.settimeout(1)
 
-    self.logging("Log", f"Server started on {host}:{port}")
+    self.logging("Status", f"WebUI Server started on {host}:{port}")
 
     try:
         self.running = True
@@ -94,7 +141,7 @@ def run_server(self, host='0.0.0.0', port=9440):
             try:
                 client_socket, client_addr = self.server.accept()
 
-                self.logging("Log", f"Accepted connection from {client_addr} {client_socket}")
+                self.logging("Debug", f"Accepted connection from {client_addr} {client_socket}")
                 client_thread = threading.Thread(target=handle_client, args=(self, client_socket, client_addr))
                 client_thread.daemon = True
                 client_thread.start()
@@ -104,35 +151,22 @@ def run_server(self, host='0.0.0.0', port=9440):
                     continue
     
             except Exception as e:
-                self.logging("Log", f"Error: {e}")
+                self.logging("Debug", f"Error: {e}")
                 break
     finally:
         close_all_clients(self)
         self.server.close()
-        self.logging("Log", "Server shut down")
+        self.logging("Debug", "Server shut down")
 
-    self.logging( "Log", "webui_thread - ended")
+    self.logging( "Debug", "webui_thread - ended")
 
 
-def decode_http_data(self, raw_data):
-    # Split request into lines
-    request_lines = raw_data.split('\r\n')
-    
-    # Request line is the first line
-    request_line = request_lines[0]
-    method, path, version = request_line.split()
-    # Headers are the following lines until an empty line
-    headers = {}
-    for line in request_lines[1:]:
-        if line == '':
-            break
-        key, value = line.split(': ', 1)
-        headers[key] = value
-    
+def decode_http_data(self, method, path, headers, body):
     return {
         "Verb": method,
         "URL": path,
-        "Headers": headers
+        "Headers": headers,
+        "Data": body
     }
 
             
