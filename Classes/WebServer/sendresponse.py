@@ -52,7 +52,7 @@ HTTP_HEADERS = {
 def send_by_chunk(self, socket, http_response, response_body):
     """ send and chunk the response_body already bytes encoded """
 
-    if not data:
+    if not response_body:
         return
 
     # send the HTTP headers
@@ -62,19 +62,20 @@ def send_by_chunk(self, socket, http_response, response_body):
         chunck_data = response_body[ i : i + MAX_KB_TO_SEND]
 
         socket.sendall(f"{len(chunck_data):X}\r\n".encode("utf-8"))
-        socket.sendall(chunk)
+        socket.sendall(chunck_data)
         socket.sendall(b"\r\n")
 
-        self.logging("Debug", "Sending Chunk: %s out of %s" % (i, len((data)/MAX_KB_TO_SEND)))
+        self.logging("Debug", "Sending Chunk: %s out of %s" % (i, len(response_body) / MAX_KB_TO_SEND))
 
     # Closing Chunk
     socket.sendall(b"0\r\n\r\n")
+
 
 def send_http_message( self, socket, http_response, response_body, chunked=False):
     if chunked:
         send_by_chunk(self, socket, http_response, response_body)
     else:
-        socket.sendall( http_message.encode('utf-8') + response_body )
+        socket.sendall( http_response.encode('utf-8') + response_body )
 
 
 def decode_response_body( response ):
@@ -97,7 +98,7 @@ def decode_response_body( response ):
         else:
             response_body = str(response_data)
 
-    return response_body.encode('utf-8') )
+    return response_body.encode('utf-8')
 
    
 def prepare_http_response( self, response_dict, gziped, deflated , chunked):
@@ -122,18 +123,18 @@ def prepare_http_response( self, response_dict, gziped, deflated , chunked):
 
     # prefer gzip for better compatibility, consistent behavior, and improved compression. If the two are accepted by the client
     if gziped:
-        self.logging("Debug", "Compressing - gzip")
+        self.logging("Log", "Compressing - gzip")
         http_response += "Content-Encoding: gzip\r\n"
         response_body = gzip.compress(response_body)
-        self.logging( "Debug", "Compression from %s to %s (%s %%)" % (orig_size, len(Response["Data"]), int(100 - (len(Response["Data"]) / orig_size) * 100)), )
+        self.logging( "Debug", "Compression from %s to %s (%s %%)" % (orig_size, len(response_body), int(100 - (len(response_body) / orig_size) * 100)), )
 
     elif deflated:
-        self.logging("Debug", "Compressing - deflate")
+        self.logging("Log", "Compressing - deflate")
         http_response += "Content-Encoding: deflate\r\n"
         zlib_compress = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
         response_body = zlib_compress.compress(response_body)
         response_body += zlib_compress.flush()
-        self.logging( "Debug", "Compression from %s to %s (%s %%)" % (orig_size, len(response_body), int(100 - (len(response_body) / orig_size) * 100)), )
+        self.logging( "Log", "Compression from %s to %s (%s %%)" % (orig_size, len(response_body), int(100 - (len(response_body) / orig_size) * 100)), )
 
     # Content-Length set to the body sent. If compressed this has to be the 
     http_response += f"Content-Length: {len(response_body)}\r\n"
@@ -151,28 +152,28 @@ def sendResponse(self, client_socket, Response, AcceptEncoding=None):
 
     # No data   
     if "Data" not in Response:
-        send_http_message( self, client_socket, prepare_http_response( self, Response ))
+        http_response, response_body = prepare_http_response( self, Response )
+        send_http_message( self, client_socket, http_response, response_body)
         if not self.pluginconf.pluginConf["enableKeepalive"]:
             client_socket.close()
         return
 
     # Empty Data
     if Response["Data"] is None:
-        send_http_message( self, client_socket, prepare_http_response( self, Response ))
+        http_response, response_body = prepare_http_response( self, Response )
+        send_http_message( self, client_socket, http_response, response_body)
         if not self.pluginconf.pluginConf["enableKeepalive"]:
             client_socket.close()
         return
 
     # Compression
-    request_gzip = self.pluginconf.pluginConf["enableGzip"] and AcceptEncoding.find("gzip")
-    request_deflate = self.pluginconf.pluginConf["enableDeflate"] and AcceptEncoding.find("deflate")
+    request_gzip = self.pluginconf.pluginConf["enableGzip"] and AcceptEncoding and AcceptEncoding.find("gzip")
+    request_deflate = self.pluginconf.pluginConf["enableDeflate"] and AcceptEncoding and AcceptEncoding.find("deflate")
     request_chunked = self.pluginconf.pluginConf["enableChunk"] and len(Response["Data"]) > MAX_KB_TO_SEND
     
-    request_deflate = False
-    request_gzip = False
-    request_chunked = False
-    
-    send_http_message( self, client_socket, prepare_http_response( self, Response, request_gzip, request_deflate, request_chunked ),allowchunked)
+    self.logging("Log", f"request_gzip {request_gzip} - request_deflate {request_deflate} request_chunked {request_chunked}")
+    http_response, response_body = prepare_http_response( self, Response, request_gzip, request_deflate, request_chunked )
+    send_http_message( self, client_socket, http_response, response_body ,request_chunked)
     
     if not self.pluginconf.pluginConf["enableKeepalive"]:
         client_socket.close()
