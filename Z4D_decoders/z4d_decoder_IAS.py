@@ -162,13 +162,12 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
 def _heiman_door_bell_ef_3(self, Devices, MsgSrcAddr, MsgEp, MsgZoneStatus):
 
     tamper_status_mapping = {
-        "4": ('0009', '00'),  # Mounted
-        "0": ('0009', '01'),  # Unmounted
+        "0": ('0009', '00'),  # Mounted
+        "4": ('0009', '01'),  # Unmounted
     }
 
     ring_status_mapping = {
         "8": ('0006', '01'),  # Ring
-        "0": ('0006', '00'),  # Not ring
     }
     self.log.logging('Input', 'Debug', '_heiman_door_bell_ef_3 %s/%s %s' % (MsgSrcAddr, MsgEp, MsgZoneStatus))
 
