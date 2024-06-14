@@ -5,6 +5,7 @@
 #
 
 import socket
+import ssl
 import threading
 import traceback
 
@@ -116,17 +117,24 @@ def handle_client(self, client_socket, client_addr):
         client_socket.close()
 
 
-def run_server(self, host='0.0.0.0', port=9440):
+def run_server(self, host='127.0.0.1', port=9440):
+    """ start the web server, by creating and binding socket on specific IP/Port"""
 
     self.logging( "Debug","webui_thread - listening")
 
     # Set up the server
-    self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     if self.httpPort:
         port = int(self.httpPort)
     if self.httpIp:
         host = self.httpIp
+
+    # TODO: SSL is put on hold for now
+    # context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    # context.load_cert_chain(certfile="server.crt", keyfile="server.key")
+
+    self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # TODO: SSL is put on hold for now
+    # self.server = context.wrap_socket(self.server, server_side=True)
     
     self.logging( "Debug", f"webui_thread - listening on {host}:{port}")
     self.server.bind((host, port))
