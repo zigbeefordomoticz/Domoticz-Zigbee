@@ -78,33 +78,31 @@ def send_http_message( self, socket, http_response, response_body, chunked=False
         socket.sendall( http_response.encode('utf-8') + response_body )
 
 
-def decode_response_body( response ):
-    """convert data payload into an http response body bytes encoded """
+def encode_body_to_bytes(response):
+    """Convert data payload into an HTTP response body encoded bytes."""
+    if "Data" not in response:
+        return b''
+ 
+    response_data = response["Data"]
 
-    response_body = ""
+    if isinstance(response_data, dict):
+        return json.dumps(response_data).encode('utf-8')
 
-    if "Data" in response and response["Data"]:
-        response_data = response["Data"]
+    elif isinstance(response_data, bytes):
+        # If response_data is already bytes, return it as is
+        return response_data
 
-        if isinstance(response_data, dict):
-            response_body = json.dumps(response)
+    elif response_data is not None:
+        return str(response_data).encode('utf-8')
 
-        elif isinstance(response_data, bytes):
-            try:
-                response_body = response_data.decode('utf-8')
-            except UnicodeDecodeError:
-                response_body = response_data.decode('latin-1')
+    # Default to an empty response if no valid Data is present
+    return b''
 
-        else:
-            response_body = str(response_data)
-
-    return response_body.encode('utf-8')
-
-   
+ 
 def prepare_http_response( self, response_dict, gziped=False, deflated=False , chunked=False):
 
     # Prepare body (data converted to byte)
-    response_body = decode_response_body( response_dict )
+    response_body = encode_body_to_bytes( response_dict )
 
     if 'Status' in response_dict:
         status = response_dict[ "Status"].split(' ')
