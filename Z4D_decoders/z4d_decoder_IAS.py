@@ -160,7 +160,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
 
 
 def _heiman_door_bell_ef_3(self, Devices, MsgSrcAddr, MsgEp, MsgZoneStatus):
-
+    # https://github.com/zigbeefordomoticz/z4d-certified-devices/issues/55
     tamper_status_mapping = {
         "0": ('0009', '00'),  # Mounted
         "4": ('0009', '01'),  # Unmounted
@@ -173,12 +173,22 @@ def _heiman_door_bell_ef_3(self, Devices, MsgSrcAddr, MsgEp, MsgZoneStatus):
 
     # Check and update zone status
     if MsgZoneStatus[3] in tamper_status_mapping:
+        # Tamper (Mount , umount)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *tamper_status_mapping[MsgZoneStatus[3]])
 
-    # Check and update ring status
+    # Check and update ring status. Allow 3s between 2 rings
     if MsgZoneStatus[0] in ring_status_mapping:
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *ring_status_mapping[MsgZoneStatus[0]])
+        # Ring
+        device = self.ListOfDevices.setdefault(MsgSrcAddr, {})
+        ep = device.setdefault('Ep', {})
+        ep_details = ep.setdefault(MsgEp, {})
+        heiman_door_bell = ep_details.setdefault('HeimanDoorBell', {})
+        ring_time_stamp = heiman_door_bell.get('RingTimeStamp')
+        current_time = time.time()
 
+        if ring_time_stamp is None or current_time > (ring_time_stamp + 3):
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *ring_status_mapping[MsgZoneStatus[0]])
+            heiman_door_bell['RingTimeStamp'] = current_time
 
 
 def _extract_zone_status_info(self, msg_data):
