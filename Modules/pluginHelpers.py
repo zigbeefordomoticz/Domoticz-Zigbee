@@ -21,12 +21,6 @@ import Domoticz as Domoticz
 from Modules.tools import how_many_devices
 from Modules.domoticzAbstractLayer import domoticz_error_api
 
-MODULES_VERSION = {
-    "zigpy": "0.64.0",
-    "zigpy_znp": "0.12.1",
-    "zigpy_deconz": "0.23.1",
-    "bellows": "0.39.0",
-    }
 
 def networksize_update(self):
     self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
