@@ -881,6 +881,11 @@ async def _retry_or_not(self, attempt, max_retry, Function, sequence,ack_is_disa
 
 def handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):
     self.log.logging("TransportZigpy", "Debug", f"handle_transport_result - {Function} - {_nwkid} - AckIsDisable: {ack_is_disable} Result: {result}")
+    if ack_is_disable:
+      # As Ack is disable, we cannot conclude that the target device is in trouble.
+      # this could be the coordinator itself, or the next hop.
+      return
+  
     push_APS_ACK_NACKto_plugin(self, _nwkid, result, lqi)
 
     if result == 0x00 and _ieee in self._currently_not_reachable:
