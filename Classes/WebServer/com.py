@@ -117,7 +117,7 @@ def handle_client(self, client_socket, client_addr):
         client_socket.close()
 
 
-def run_server(self, host='127.0.0.1', port=9440):
+def run_server(self, host='0.0.0.0', port=9440):
     """ start the web server, by creating and binding socket on specific IP/Port"""
 
     self.logging( "Debug","webui_thread - listening")
