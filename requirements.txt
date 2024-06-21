@@ -8,3 +8,4 @@ pyserial-asyncio-fast
 zigpy_znp
 zigpy_deconz
 bellows
+requests

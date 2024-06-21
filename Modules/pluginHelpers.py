@@ -149,6 +149,7 @@ def check_requirements(home_folder):
         try:
             installed_version = importlib.metadata.version(package)
 
+            version = None
             if '==' in req_str:
                 version = re.split('==', req_str)[1].strip()
                 if installed_version != version:
@@ -177,6 +178,7 @@ def check_requirements(home_folder):
             Domoticz.Error(f"An unexpected error occurred: {e}")
             return True
 
+        Domoticz.Status(f"   - {req_str} version required {version} installed {installed_version}")
     return False
 
 
