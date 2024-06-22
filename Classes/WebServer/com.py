@@ -124,7 +124,7 @@ def check_cert_and_key(self, cert_dir, cert_filename="server.crt", key_filename=
 
     # Check if cert directory exists
     if not os.path.exists(cert_dir):
-        self.logging( "Error",f"Directory '{cert_dir}' does not exist.")
+        self.logging( "Log",f"Warning directory '{cert_dir}' does not exist. WebUI SSL connection will not be available")
         return None
 
     # Check if cert and key files exist
@@ -169,7 +169,6 @@ def run_server(self, host='0.0.0.0', port=9440):
     context = check_cert_and_key(self, self.homedirectory + "certs", "server.crt", "server.key")
 
     if context:
-        self.logging( "Status", "webui_thread - SSL is activated")
         self.server = context.wrap_socket( self.server, server_side=True, )
     
     self.logging( "Debug", f"webui_thread - listening on {host}:{port}")
@@ -177,7 +176,10 @@ def run_server(self, host='0.0.0.0', port=9440):
     self.server.listen(5)
     self.server.settimeout(1)
 
-    self.logging("Status", f"WebUI Server started on {host}:{port}")
+    if context:
+        self.logging("Status", f"WebUI Server started on SSL https://{host}:{port}")
+    else:
+        self.logging("Status", f"WebUI Server started on {host}:{port}")
 
     try:
         self.running = True
