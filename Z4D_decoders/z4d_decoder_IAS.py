@@ -115,8 +115,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
 
     if heiman_door_bell_button:
         self.log.logging('Input', 'Debug',f"Decode8401 HeimanDoorBellButton: {MsgSrcAddr} {MsgZoneStatus}", MsgSrcAddr)
-        if tamper:
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0006', '01')
+        _heiman_door_bell_ef_3(self,Devices, MsgSrcAddr, MsgEp, MsgZoneStatus)
         return
 
     motion_via_IAS_alarm = get_device_config_param(self, MsgSrcAddr, 'MotionViaIASAlarm1')
@@ -157,8 +156,39 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     if 'IAS' in self.ListOfDevices[MsgSrcAddr] and 'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS']:
         if not isinstance(self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'], dict):
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
-
         _update_ias_zone_status(self, MsgSrcAddr, MsgEp, MsgZoneStatus)
+
+
+def _heiman_door_bell_ef_3(self, Devices, MsgSrcAddr, MsgEp, MsgZoneStatus):
+    # https://github.com/zigbeefordomoticz/z4d-certified-devices/issues/55
+    tamper_status_mapping = {
+        "0": ('0009', '00'),  # Mounted
+        "4": ('0009', '01'),  # Unmounted
+    }
+
+    ring_status_mapping = {
+        "8": ('0006', '01'),  # Ring
+    }
+    self.log.logging('Input', 'Debug', '_heiman_door_bell_ef_3 %s/%s %s' % (MsgSrcAddr, MsgEp, MsgZoneStatus))
+
+    # Check and update zone status
+    if MsgZoneStatus[3] in tamper_status_mapping:
+        # Tamper (Mount , umount)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *tamper_status_mapping[MsgZoneStatus[3]])
+
+    # Check and update ring status. Allow 3s between 2 rings
+    if MsgZoneStatus[0] in ring_status_mapping:
+        # Ring
+        device = self.ListOfDevices.setdefault(MsgSrcAddr, {})
+        ep = device.setdefault('Ep', {})
+        ep_details = ep.setdefault(MsgEp, {})
+        heiman_door_bell = ep_details.setdefault('HeimanDoorBell', {})
+        ring_time_stamp = heiman_door_bell.get('RingTimeStamp')
+        current_time = time.time()
+
+        if ring_time_stamp is None or current_time > (ring_time_stamp + 3):
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *ring_status_mapping[MsgZoneStatus[0]])
+            heiman_door_bell['RingTimeStamp'] = current_time
 
 
 def _extract_zone_status_info(self, msg_data):
