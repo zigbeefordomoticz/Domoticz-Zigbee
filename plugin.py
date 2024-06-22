@@ -619,11 +619,11 @@ class BasePlugin:
             self.webserver.onStop()
 
         # Save plugin database
-        if self.pluginconf:
+        if self.PDMready and self.pluginconf:
             WriteDeviceList(self, 0)
 
         # Print and save statistics if configured
-        if self.pluginconf and self.statistics:
+        if self.PDMready and self.pluginconf and self.statistics:
             self.statistics.printSummary()
             self.statistics.writeReport()
 
@@ -835,7 +835,7 @@ class BasePlugin:
 
     def onHeartbeat(self):
 
-        if not self.VersionNewFashion or self.pluginconf is None:
+        if not self.VersionNewFashion or self.pluginconf is None or self.log is None:
             # Not yet ready
             return
         
@@ -971,7 +971,7 @@ def retreive_zigpy_topology_data(self):
 def start_zigbee_transport(self ):
     
     if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
-        check_python_modules_version( self )
+        check_python_modules_version( self  )
         _start_native_usb_zigate(self)
 
     elif self.transport in ("PI", "V2-PI"):
@@ -1022,7 +1022,7 @@ def _start_native_wifi_zigate(self):
 
 def _start_native_zigate(self, serialPort=None, wifiAddress=None, wifiPort=None):
     from Classes.ZigateTransport.Transport import ZigateTransport
-    check_python_modules_version(self)
+    check_python_modules_version(self )
     self.pluginconf.pluginConf["ControllerInRawMode"] = False
     self.zigbee_communication = "native"
     self.pluginParameters["Zigpy"] = False
