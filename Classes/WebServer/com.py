@@ -4,6 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 
+import os
 import socket
 import ssl
 import threading
@@ -117,6 +118,41 @@ def handle_client(self, client_socket, client_addr):
         client_socket.close()
 
 
+def check_cert_and_key(self, cert_dir, cert_filename="server.crt", key_filename="server.key"):
+    cert_path = os.path.join(cert_dir, cert_filename)
+    key_path = os.path.join(cert_dir, key_filename)
+
+    # Check if cert directory exists
+    if not os.path.exists(cert_dir):
+        self.logging( "Error",f"Directory '{cert_dir}' does not exist.")
+        return None
+
+    # Check if cert and key files exist
+    if not os.path.exists(cert_path):
+        self.logging( "Error",f"Certificate file '{cert_path}' does not exist.")
+        return None
+
+    if not os.path.exists(key_path):
+        self.logging( "Error",f"Key file '{key_path}' does not exist.")
+        return None
+
+    try:
+        # Attempt to load cert and key to verify correctness
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(certfile=cert_path, keyfile=key_path)
+
+    except ssl.SSLError as e:
+        self.logging( "Error",f"SSL error: {e}")
+        return None
+
+    except Exception as e:
+        self.logging( "Error",f"Error: {e}")
+        return None
+
+    self.logging( "Debug", "Certificate and key files exist and are correct.")
+    return context
+
+
 def run_server(self, host='0.0.0.0', port=9440):
     """ start the web server, by creating and binding socket on specific IP/Port"""
 
@@ -128,13 +164,13 @@ def run_server(self, host='0.0.0.0', port=9440):
     if self.httpIp:
         host = self.httpIp
 
-    # TODO: SSL is put on hold for now
-    # context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    # context.load_cert_chain(certfile="server.crt", keyfile="server.key")
-
     self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # TODO: SSL is put on hold for now
-    # self.server = context.wrap_socket(self.server, server_side=True)
+    # Check certificate and key
+    context = check_cert_and_key(self, self.homedirectory + "certs", "server.crt", "server.key")
+
+    if context:
+        self.logging( "Status", "webui_thread - SSL is activated")
+        self.server = context.wrap_socket( self.server, server_side=True, )
     
     self.logging( "Debug", f"webui_thread - listening on {host}:{port}")
     self.server.bind((host, port))
@@ -154,12 +190,16 @@ def run_server(self, host='0.0.0.0', port=9440):
                 client_thread.daemon = True
                 client_thread.start()
                 self.client_threads.append(client_thread)
-                
+
             except socket.timeout:
-                    continue
-    
+                continue
+
+            except ssl.SSLError as e:
+                self.logging("Error", f"SSL Error {e}, make sure to use https !!!")
+                continue
+
             except Exception as e:
-                self.logging("Debug", f"Error: {e}")
+                self.logging("Error", f"Error: {e}")
                 break
     finally:
         close_all_clients(self)
