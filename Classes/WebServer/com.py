@@ -16,7 +16,7 @@ MAX_BYTES = 1024
 
 def startWebServer(self):
 
-    self.logging("Status", "start_logging_thread")
+    self.logging("Status", "WebUI thread started")
     if self.server_thread:
         self.logging("Error", "start_logging_thread - Looks like logging_thread already started !!!")
         return
@@ -36,6 +36,25 @@ def close_all_clients(self):
 
 
 def parse_http_request(data):
+    """
+    Parse an HTTP request string into its components.
+
+    This function splits the HTTP request data into the request line, headers, and body. It assumes that
+    the data follows the standard HTTP request format.
+
+    Args:
+        data (str): The HTTP request data as a string.
+
+    Returns:
+        tuple: A tuple containing:
+            - method (str): The HTTP method (e.g., 'GET', 'POST').
+            - path (str): The requested path (e.g., '/index.html').
+            - headers (dict): A dictionary of headers where keys are header names and values are header values.
+            - body (bytes): The body of the request as a bytes object.
+
+    Raises:
+        ValueError: If the request line is malformed or the headers cannot be parsed correctly.
+    """
     lines = data.split("\r\n")
     request_line = lines[0].strip()
     method, path, _ = request_line.split(" ", 2)
@@ -60,6 +79,32 @@ def parse_http_request(data):
 
 
 def receive_data(self, client_socket):
+    """
+    Receive data from the client socket.
+
+    This method reads data from the given client socket in chunks until the connection is closed
+    or no more data is available. It handles socket errors gracefully and ensures all received
+    data is returned as a single bytes object.
+
+    Args:
+        client_socket (socket.socket): The socket object representing the client connection.
+
+    Returns:
+        bytes: The complete data received from the client. If a socket error occurs, an empty bytes object is returned.
+
+    Steps:
+        1. Initialize an empty list to hold the chunks of data.
+        2. Enter a loop to receive data from the client socket.
+        3. Read a chunk of data up to MAX_BYTES in size.
+        4. If no data is received (connection closed), break the loop.
+        5. Append the received chunk to the list of chunks.
+        6. If the received chunk is smaller than MAX_BYTES, break the loop (indicates end of data).
+        7. Handle any socket errors by logging the error and returning an empty bytes object.
+        8. Join all chunks into a single bytes object and return it.
+
+    Exceptions:
+        socket.error: Logs the error and returns an empty bytes object.
+    """
     chunks = []
     try:
         while True:
@@ -79,7 +124,33 @@ def receive_data(self, client_socket):
 
 
 def handle_client(self, client_socket, client_addr):
-    # Handle client connection
+    """
+    Handle an individual client connection.
+
+    This method manages the interaction with a client, including receiving data,
+    parsing HTTP requests, decoding the data, and invoking the appropriate message
+    handler. It handles timeouts, socket errors, and unexpected exceptions gracefully,
+    ensuring the client connection is closed properly.
+
+    Args:
+        client_socket (socket.socket): The socket object representing the client connection.
+        client_addr (tuple): The address of the client.
+
+    Steps:
+        1. Log the connection and add the client socket to the clients dictionary.
+        2. Set a timeout on the client socket.
+        3. Enter a loop to handle incoming data while the server is running.
+        4. Receive data from the client, decode it, and parse the HTTP request.
+        5. Decode the HTTP data and call the onMessage handler.
+        6. Handle socket timeouts, errors, and unexpected exceptions.
+        7. Remove the client from the clients dictionary and close the socket on exit.
+
+    Exceptions:
+        socket.timeout: Logs and continues on socket timeout.
+        socket.error: Logs and breaks the loop on socket error.
+        Exception: Logs and breaks the loop on any other unexpected error.
+    """
+
     self.logging("Debug", f"handle_client from {client_addr} {client_socket}")
     self.clients[ str(client_addr) ] = client_socket
 
@@ -119,6 +190,34 @@ def handle_client(self, client_socket, client_addr):
 
 
 def check_cert_and_key(self, cert_dir, cert_filename="server.crt", key_filename="server.key"):
+    """
+    Check for the existence and validity of the SSL certificate and key files.
+
+    This method verifies that the specified certificate and key files exist and are
+    correctly formatted for use in an SSL context. If the certificate or key files
+    are missing or invalid, SSL will not be enabled.
+
+    Args:
+        cert_dir (str): The directory where the certificate and key files are located.
+        cert_filename (str): The filename of the certificate file. Defaults to "server.crt".
+        key_filename (str): The filename of the key file. Defaults to "server.key".
+
+    Returns:
+        ssl.SSLContext or None: An SSL context if the certificate and key files are valid,
+                                None otherwise.
+
+    Steps:
+        1. Construct full paths to the certificate and key files.
+        2. Check if the certificate directory exists.
+        3. Check if the certificate and key files exist.
+        4. Attempt to load the certificate and key files into an SSL context to verify correctness.
+        5. Log appropriate messages at each step for missing or invalid files.
+        6. Return the SSL context if successful, or None if there are errors.
+
+    Exceptions:
+        ssl.SSLError: Logs SSL-specific errors encountered during certificate and key loading.
+        Exception: Logs any other general errors encountered during the process.
+    """
     cert_path = os.path.join(cert_dir, cert_filename)
     key_path = os.path.join(cert_dir, key_filename)
 
@@ -154,32 +253,95 @@ def check_cert_and_key(self, cert_dir, cert_filename="server.crt", key_filename=
 
 
 def run_server(self, host='0.0.0.0', port=9440):
-    """ start the web server, by creating and binding socket on specific IP/Port"""
+    """
+    Start the web server by creating and binding a socket on the specified IP and port.
 
-    self.logging( "Debug","webui_thread - listening")
+    This method initializes the web server, optionally setting up SSL if the required 
+    certificate and key files are found. The server listens for incoming connections 
+    and handles them in separate threads.
 
-    # Set up the server
-    if self.httpPort:
-        port = int(self.httpPort)
-    if self.httpIp:
-        host = self.httpIp
+    Args:
+        host (str): The IP address to bind the server to. Defaults to '0.0.0.0'.
+        port (int): The port number to bind the server to. Defaults to 9440.
 
-    self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # Check certificate and key
-    context = check_cert_and_key(self, self.homedirectory + "certs", "server.crt", "server.key")
+    Steps:
+        1. Logs the server start message.
+        2. Uses configured IP and port if available.
+        3. Creates a socket for the server.
+        4. Checks for SSL certificates and sets up SSL context if available.
+        5. Sets socket options and binds it to the specified host and port.
+        6. Sets the socket to listen for incoming connections.
+        7. Logs the status message indicating whether SSL is enabled.
+        8. Starts the server loop to accept and handle client connections.
 
-    if context:
-        self.server = context.wrap_socket( self.server, server_side=True, )
-    
-    self.logging( "Debug", f"webui_thread - listening on {host}:{port}")
-    self.server.bind((host, port))
-    self.server.listen(5)
-    self.server.settimeout(1)
+    Exceptions:
+        Exception: Logs any errors encountered during the server setup and startup process.
+    """
 
-    if context:
-        self.logging("Status", f"WebUI Server started on SSL https://{host}:{port}")
-    else:
-        self.logging("Status", f"WebUI Server started on {host}:{port}")
+    self.logging( "Log","WebUI - server started on {host} {port}")
+
+    try:
+        # Set up the server
+        if self.httpPort:
+            port = int(self.httpPort)
+        if self.httpIp:
+            host = self.httpIp
+
+        self.logging( "Log", "++ WebUI - create socket")
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Check certificate and key
+        context = check_cert_and_key(self, self.homedirectory + "certs", "server.crt", "server.key")
+
+        if context:
+            self.server = context.wrap_socket( self.server, server_side=True, )
+
+        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.logging( "Log", f"++ WebUI - bin socket on {host}:{port}")
+        self.server.bind((host, port))
+        self.server.listen(5)
+        self.server.settimeout(1)
+
+        if context:
+            self.logging("Status", f"WebUI Server started on SSL https://{host}:{port}")
+        else:
+            self.logging("Status", f"WebUI Server started on {host}:{port}")
+
+        server_loop(self, )
+
+        self.logging( "Debug", "webui_thread - ended")
+
+    except Exception as error:
+        self.logging( "Debug", f"webui_thread - error in run_server {host} {port}")
+        self.logging( "Debug", f"               {error}")
+        self.logging( "Debug", f"               {str(traceback.format_exc())}")
+
+
+def server_loop(self, ):
+    """
+    Main server loop for handling incoming client connections.
+
+    This method runs the main server loop that accepts incoming client connections, 
+    starts a new thread to handle each client, and manages exceptions and errors 
+    that occur during the process. The server continues to run as long as the `self.running` 
+    attribute is set to True.
+
+    The method performs the following tasks:
+    1. Sets the `self.running` attribute to True to start the server loop.
+    2. Accepts incoming client connections using `self.server.accept()`.
+    3. Logs the accepted connection and starts a new thread for each client using the `handle_client` method.
+    4. Appends each client thread to `self.client_threads` for tracking.
+    5. Handles `socket.timeout` exceptions by continuing the loop.
+    6. Handles `ssl.SSLError` exceptions by logging an error message and continuing the loop.
+    7. Handles generic exceptions by logging an error message and breaking the loop.
+    8. On termination, calls `close_all_clients` to close all client connections and shuts down the server socket.
+
+    Exceptions:
+        socket.timeout: Logs a debug message and continues the loop.
+        ssl.SSLError: Logs an SSL error message and continues the loop.
+        Exception: Logs a generic error message and breaks the loop.
+
+    """
 
     try:
         self.running = True
@@ -208,8 +370,6 @@ def run_server(self, host='0.0.0.0', port=9440):
         self.server.close()
         self.logging("Debug", "Server shut down")
 
-    self.logging( "Debug", "webui_thread - ended")
-
 
 def decode_http_data(self, method, path, headers, body):
     return {
@@ -222,58 +382,17 @@ def decode_http_data(self, method, path, headers, body):
             
 def onConnect(self, Connection, Status, Description):
 
-    self.logging("Debug", "Connection: %s, description: %s" % (Connection, Description))
-    if Status != 0:
-        self.logging("Error", f"onConnect - Failed to connect ({str(Status)} to: {Connection.Address} : {Connection.Port} with error: {Description}")
-        return
-
-    if Connection is None:
-        self.logging("Error", "onConnect - Uninitialized Connection !!! %s %s %s" % (Connection, Status, Description))
-        return
-
-    # Search for Protocol
-    for item in str(Connection).split(","):
-        if item.find("Protocol") != -1:
-            label, protocol = item.split(":")
-            protocol = protocol.strip().strip("'")
-            self.logging("Debug", "%s:>%s" % (label, protocol))
-
-    if protocol == "HTTP":
-        # http connection
-        if Connection.Name not in self.httpServerConns:
-            self.logging("Debug", "New Connection: %s" % (Connection.Name))
-            self.httpServerConns[Connection.Name] = Connection
-    elif protocol == "HTTPS":
-        # https connection
-        if Connection.Name not in self.httpsServerConns:
-            self.logging("Debug", "New Connection: %s" % (Connection.Name))
-            self.httpServerConns[Connection.Name] = Connection
-    else:
-        self.logging("Error","onConnect - unexpected protocol for connection: %s" % (Connection))
-
-    self.logging("Debug", "Number of http  Connections : %s" % len(self.httpServerConns))
-    self.logging("Debug", "Number of https Connections : %s" % len(self.httpsServerConns))
+    self.logging("Error", "Connection: %s, description: %s onConnect for WebUI deprecated" % (Connection, Description))
 
 
 def onDisconnect(self, Connection):
 
-    self.logging("Debug", "onDisconnect %s" % (Connection))
-
-    if Connection.Name in self.httpServerConns:
-        self.logging("Debug", "onDisconnect - removing from list : %s" % Connection.Name)
-        del self.httpServerConns[Connection.Name]
-    elif Connection.Name in self.httpsServerConns:
-        self.logging("Debug", "onDisconnect - removing from list : %s" % Connection.Name)
-        del self.httpsServerConns[Connection.Name]
-    else:
-        # Most likely it is about closing the Server
-        self.logging("Log", "onDisconnect - Closing %s" % Connection)
+    self.logging("Error", "onDisconnect %s on WebUI deprecated" % (Connection))
 
 
 def onStop(self):
 
     # Make sure that all remaining open connections are closed
-    self.logging("Debug", "onStop()")
     
     self.running = False
 
@@ -281,12 +400,5 @@ def onStop(self):
         client_thread.join()
     
     self.server_thread.join()
-
-    # Search for Protocol
-    for connection in self.httpServerConns:
-        self.logging("Log", "Closing %s" % connection)
-        self.httpServerConns[connection.Name].close()
-
-    for connection in self.httpsServerConns:
-        self.logging("Log", "Closing %s" % connection)
-        self.httpServerConns[connection.Name].close()
+    self.logging("Status", "WebUI shutdown completed")
+    
