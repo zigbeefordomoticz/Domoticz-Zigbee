@@ -300,7 +300,7 @@ def run_server(self, host='0.0.0.0', port=9440):
         self.logging( "Log", f"++ WebUI - bin socket on {host}:{port}")
         self.server.bind((host, port))
         self.server.listen(5)
-        self.server.settimeout(3)
+        self.server.settimeout(5)
 
         if context:
             self.logging("Status", f"WebUI Server started on SSL https://{host}:{port}")
@@ -355,7 +355,7 @@ def server_loop(self, ):
                 client_thread.start()
                 self.client_threads.append(client_thread)
 
-            except (socket.timeout, TimeoutError, ConnectionError):
+            except (socket.timeout, TimeoutError):
                 self.logging("Debug", "server_loop timeout")
                 continue
 
@@ -363,8 +363,9 @@ def server_loop(self, ):
                 self.logging("Error", f"server_loop - SSL Error {e}, make sure to use https !!!")
                 continue
 
-            except (OSError) as e:
-                self.logging("Error", f"server_loop - Socket error {e}")
+            except (ConnectionError, OSError) as e:
+                self.logging("Debug", f"server_loop - Socket error {e}")
+                continue
 
             except Exception as e:
                 self.logging("Error", f"server_loop - Unexpected error: {e}")
