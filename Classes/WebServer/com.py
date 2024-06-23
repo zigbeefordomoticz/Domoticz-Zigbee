@@ -300,7 +300,7 @@ def run_server(self, host='0.0.0.0', port=9440):
         self.logging( "Log", f"++ WebUI - bin socket on {host}:{port}")
         self.server.bind((host, port))
         self.server.listen(5)
-        self.server.settimeout(5)
+        self.server.settimeout(10)
 
         if context:
             self.logging("Status", f"WebUI Server started on SSL https://{host}:{port}")
