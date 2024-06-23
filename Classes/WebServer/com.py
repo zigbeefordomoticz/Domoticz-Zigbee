@@ -355,15 +355,19 @@ def server_loop(self, ):
                 client_thread.start()
                 self.client_threads.append(client_thread)
 
-            except socket.timeout:
+            except (socket.timeout, TimeoutError):
+                self.logging("Debug", "server_loop timeout")
                 continue
 
             except ssl.SSLError as e:
-                self.logging("Error", f"SSL Error {e}, make sure to use https !!!")
+                self.logging("Error", f"server_loop - SSL Error {e}, make sure to use https !!!")
                 continue
 
+            except (ConnectionError, OSError) as e:
+                self.logging("Error", f"server_loop -Socket error {e}")
+
             except Exception as e:
-                self.logging("Error", f"Error: {e}")
+                self.logging("Error", f"server_loop - Unexpected error: {e}")
                 break
     finally:
         close_all_clients(self)
