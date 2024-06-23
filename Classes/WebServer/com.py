@@ -312,9 +312,9 @@ def run_server(self, host='0.0.0.0', port=9440):
         self.logging( "Debug", "webui_thread - ended")
 
     except Exception as error:
-        self.logging( "Debug", f"webui_thread - error in run_server {host} {port}")
-        self.logging( "Debug", f"               {error}")
-        self.logging( "Debug", f"               {str(traceback.format_exc())}")
+        self.logging( "Error", f"webui_thread - error in run_server {host} {port}")
+        self.logging( "Error", f"               {error}")
+        self.logging( "Error", f"               {str(traceback.format_exc())}")
 
 
 def server_loop(self, ):
