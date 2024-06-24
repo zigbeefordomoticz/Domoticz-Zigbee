@@ -189,7 +189,7 @@ def handle_client(self, client_socket, client_addr):
         client_socket.close()
 
 
-def check_cert_and_key(self, cert_dir, cert_filename="server.crt", key_filename="server.key"):
+def check_cert_and_key(self, cert_path, key_path):
     """
     Check for the existence and validity of the SSL certificate and key files.
 
@@ -218,14 +218,6 @@ def check_cert_and_key(self, cert_dir, cert_filename="server.crt", key_filename=
         ssl.SSLError: Logs SSL-specific errors encountered during certificate and key loading.
         Exception: Logs any other general errors encountered during the process.
     """
-    cert_path = os.path.join(cert_dir, cert_filename)
-    key_path = os.path.join(cert_dir, key_filename)
-
-    # Check if cert directory exists
-    if not os.path.exists(cert_dir):
-        self.logging( "Log",f"Warning directory '{cert_dir}' does not exist. WebUI SSL connection will not be available")
-        return None
-
     # Check if cert and key files exist
     if not os.path.exists(cert_path):
         self.logging( "Error",f"Certificate file '{cert_path}' does not exist.")
@@ -291,7 +283,12 @@ def run_server(self, host='0.0.0.0', port=9440):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # Check certificate and key
-        context = check_cert_and_key(self, self.homedirectory + "certs", "server.crt", "server.key")
+        server_certificate = self.pluginconf.pluginConf.get("SSLCertificate") or os.path.join(self.homedirectory, "server.crt") 
+        server_private_key = self.pluginconf.pluginConf.get("SSLPrivateKey") or os.path.join(self.homedirectory, "server.key")
+        self.logging( "Log", f"++ WebUI - SSL Certificate {server_certificate}")
+        self.logging( "Log", f"++ WebUI - SSL Private key {server_private_key}")
+        
+        context = check_cert_and_key(self, server_certificate, server_private_key)
 
         if context:
             self.server = context.wrap_socket( self.server, server_side=True, )
