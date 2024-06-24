@@ -210,6 +210,8 @@ SETTINGS = {
             "pluginReports": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginWWW": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginLogs": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            "SSLCertificate": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            "SSLPrivateKey": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
         },
     },
     # Verbose
@@ -716,5 +718,9 @@ def setup_folder_parameters(self, homedir):
                 self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Reports")
             elif param == "pluginWWW":
                 self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "www")
+            elif param == "SSLCertificate":
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "certs" / "server.crt")
+            elif param == "SSLPrivateKey":
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "certs" / "server.key")
             else:
                 self.pluginConf[param] = SETTINGS[theme]["param"][param]["default"]
