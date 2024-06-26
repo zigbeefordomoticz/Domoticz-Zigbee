@@ -220,11 +220,11 @@ def check_cert_and_key(self, cert_path, key_path):
     """
     # Check if cert and key files exist
     if not os.path.exists(cert_path):
-        self.logging( "Error",f"Certificate file '{cert_path}' does not exist.")
+        self.logging( "Log",f"Certificate file '{cert_path}' does not exist.")
         return None
 
     if not os.path.exists(key_path):
-        self.logging( "Error",f"Key file '{key_path}' does not exist.")
+        self.logging( "Log",f"Key file '{key_path}' does not exist.")
         return None
 
     try:
