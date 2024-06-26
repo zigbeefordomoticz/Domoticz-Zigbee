@@ -655,7 +655,7 @@ def _path_check(self):
                 # this is a url
                 continue
             _path_name = Path( self.pluginConf[param] )
-            if not os.path.exists(_path_name):
+            if param not in ( "SSLCertificate", "SSLPrivateKey") and not os.path.exists(_path_name):
                 Domoticz.Error("Cannot access path: %s" % _path_name)
             if self.pluginConf[param] != str( _path_name ):
                 if self.pluginConf["PosixPathUpdate"]:
