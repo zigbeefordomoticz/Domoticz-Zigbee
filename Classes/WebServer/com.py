@@ -14,6 +14,7 @@ from Modules.domoticzAbstractLayer import domoticz_connection
 
 MAX_BYTES = 1024
 
+
 def startWebServer(self):
 
     self.logging("Status", "WebUI thread started")
@@ -244,6 +245,18 @@ def check_cert_and_key(self, cert_path, key_path):
     return context
 
 
+def is_port_in_use(port, host='0.0.0.0'):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind((host, port))
+        except OSError as e:
+            if e.errno == 98:  # Address already in use
+                return True
+            else:
+                raise
+        return False
+
+
 def run_server(self, host='0.0.0.0', port=9440):
     """
     Start the web server by creating and binding a socket on the specified IP and port.
@@ -270,8 +283,12 @@ def run_server(self, host='0.0.0.0', port=9440):
         Exception: Logs any errors encountered during the server setup and startup process.
     """
 
-    self.logging( "Log","WebUI - server started on {host} {port}")
+    self.logging( "Log","WebUI - server starting on {host} {port}")
 
+    if is_port_in_use(port, host):
+        self.logging( "Error", f"WebUI cannot start, Port {port} is already in use!!!")
+        return
+    
     try:
         # Set up the server
         if self.httpPort:
