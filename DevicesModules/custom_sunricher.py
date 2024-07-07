@@ -10,8 +10,7 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-from Modules.basicOutputs import write_attribute, read_attribute
-from Modules.tools import get_device_config_param
+from Modules.basicOutputs import read_attribute, write_attribute
 from Modules.zigateConsts import ZIGATE_EP
 
 SUNRICHER_MAUFACTURER_NAME = "SUNRICHER"
@@ -64,14 +63,27 @@ def sunricher_pir_sensor_trigger_time_interval(self, nwkid, trigger_time_interva
 
 def sunricher_temperature_compensation(self, nwkid, compensation):
     self.log.logging("Sunricher", "Debug", "sunricher_temperature_compensation - Nwkid: %s compensation: %s" % (nwkid, compensation))
+    if compensation < 0:
+        compensation = _two_complement( compensation )
+        self.log.logging( "Sunricher", "Debug", "sunricher_temperature_compensation - 2 complement form of compensation offset on %s off %s" % (nwkid, compensation), )
+
     write_attribute(self, nwkid, ZIGATE_EP, TEMPERATURE_ENDPOINT, TEMPERATURE_CLUSTERID, SUNRICHER_MANUFACTURER_ID, "01", SUNRICHER_TEMPERATURE_COMPENSATION, "28", "%02x" %compensation, ackIsDisabled=False)
     read_attribute( self, nwkid, ZIGATE_EP, TEMPERATURE_ENDPOINT, TEMPERATURE_CLUSTERID, "00", "01", SUNRICHER_MANUFACTURER_ID, 0x01, SUNRICHER_TEMPERATURE_COMPENSATION, ackIsDisabled=False )
 
 
 def sunricher_humidity_compensation(self, nwkid, compensation):
     self.log.logging("Sunricher", "Debug", "sunricher_humidity_compensation - Nwkid: %s compensation: %s" % (nwkid, compensation))
+    if compensation < 0:
+        compensation = _two_complement( compensation )
+        self.log.logging( "Sunricher", "Debug", "sunricher_temperature_compensation - 2 complement form of compensation offset on %s off %s" % (nwkid, compensation), )
+
     write_attribute(self, nwkid, ZIGATE_EP, HUMIDITY_ENDPOINT, HUMIDITY_CLUSTERID, SUNRICHER_MANUFACTURER_ID, "01", SUNRICHER_HUMIDITY_COMPENSATION, "28", "%02x" %compensation, ackIsDisabled=False)
     read_attribute( self, nwkid, ZIGATE_EP, HUMIDITY_ENDPOINT, HUMIDITY_CLUSTERID, "00", "01", SUNRICHER_MANUFACTURER_ID, 0x01, SUNRICHER_HUMIDITY_COMPENSATION, ackIsDisabled=False )
+
+
+def _two_complement( negative_value ):
+    # in two’s complement form
+    return int(hex(-negative_value - pow(2, 32))[9:], 16)
 
 
 SUNRICHER_DEVICE_PARAMETERS = {
