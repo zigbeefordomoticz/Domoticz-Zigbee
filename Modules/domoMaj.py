@@ -1639,6 +1639,7 @@ def normalized_lvl_value( switchType, value ):
             normalized_value = 0
         if normalized_value == 99 and analog_value == 254:
             normalized_value = 100
+        return normalized_value
 
     return max(normalized_value, 1)  # Ensure normalized value is at least 1
 
