@@ -1633,12 +1633,11 @@ def normalized_lvl_value( switchType, value ):
     # Normalize analog value to percentage (0-100)
     normalized_value = round((analog_value / 255) * 100)
 
-    # Looks like in the case of the Profalux shutter, we never get 0 or 100
+    
     if switchType in (13, 14, 15, 16):
-        if normalized_value == 1 and analog_value == 1:
-            normalized_value = 0
-        if normalized_value == 99 and analog_value == 254:
-            normalized_value = 100
+        # in case of Profalux, they return 1 (for closed) and 254 for (open) as analog_value. 
+        # due to the fact of the round() the 1 analog will be translated into 0% and 254 into 100% 
+        # return the value like that as Domoticz blinds expect 0% to 100% (not as the Dimmer and Color which expect 1-99%)
         return normalized_value
 
     return max(normalized_value, 1)  # Ensure normalized value is at least 1
