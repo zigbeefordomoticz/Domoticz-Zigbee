@@ -245,7 +245,7 @@ def check_cert_and_key(self, cert_path, key_path):
     return context
 
 
-def is_port_in_use(port, host='0.0.0.0'):
+def is_port_in_use(port, host='0.0.0.0'):  # nosec
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.bind((host, port))
@@ -257,7 +257,7 @@ def is_port_in_use(port, host='0.0.0.0'):
         return False
 
 
-def run_server(self, host='0.0.0.0', port=9440):
+def run_server(self, host='0.0.0.0', port=9440):   # nosec
     """
     Start the web server by creating and binding a socket on the specified IP and port.
 
