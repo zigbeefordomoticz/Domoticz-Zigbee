@@ -1249,8 +1249,8 @@ def _domo_convert_level_control( self, Devices, DeviceId, Unit, value, NwkId, sw
         self.log.logging("Widget", "Debug", "_domo_convert_level_control input value: -> %s" % value, NwkId)
         
         normalized_value = normalized_lvl_value( switchType, value )
-        self.log.logging( "Widget", "Debug", "_domo_convert_level_control normalized Value: -> %s previous nValue/sValue %s:%s" % (
-            normalized_value, prev_nValue, prev_sValue), NwkId, )
+        self.log.logging( "Widget", "Debug", "_domo_convert_level_control normalized switchType: %s Value: -> %s previous nValue/sValue %s:%s" % (
+            switchType, normalized_value, prev_nValue, prev_sValue), NwkId, )
         
         dimm_blind_nvalue = is_dimmable_blind(self, Devices, DeviceId, Unit)
         self.log.logging( "Widget", "Debug", "_domo_convert_level_control dimm_blind_value %s" % (dimm_blind_nvalue), NwkId, )
@@ -1633,13 +1633,11 @@ def normalized_lvl_value( switchType, value ):
     # Normalize analog value to percentage (0-100)
     normalized_value = round((analog_value / 255) * 100)
 
-    
-    if switchType in (13, 14, 15, 16):
-        # in case of Profalux, they return 1 (for closed) and 254 for (open) as analog_value. 
-        # due to the fact of the round() the 1 analog will be translated into 0% and 254 into 100% 
-        # return the value like that as Domoticz blinds expect 0% to 100% (not as the Dimmer and Color which expect 1-99%)
+    if switchType in (3, 13, 14, 15, 16, 21):
+        # In case of Blind/Venetian widgets return the value for 0 to 100%
         return normalized_value
 
+    # In other case ( Dim, Light never return 0)
     return max(normalized_value, 1)  # Ensure normalized value is at least 1
 
 
