@@ -128,7 +128,7 @@ def check_python_modules_version(self):
 
 def check_requirements(home_folder):
 
-    requirements_file = Path(home_folder) / "requirements.txt"
+    requirements_file = Path(home_folder) / "constraints.txt"
     Domoticz.Status("Checking Python modules %s" % requirements_file)
 
     with open(requirements_file, 'r') as file:
@@ -136,43 +136,49 @@ def check_requirements(home_folder):
 
     for req_str in requirements_list:
         req_str = req_str.strip()
-        if req_str == '-c constraints.txt':
-            continue
 
         package = re.split(r'[<>!=]+', req_str)[0].strip()
         version = None
         try:
             installed_version = importlib.metadata.version(package)
 
+            version = None
             if '==' in req_str:
                 version = re.split('==', req_str)[1].strip()
                 if installed_version != version:
-                    raise importlib.metadata.PackageNotFoundError
+                    python_module_with_wrong_version( req_str, version, installed_version)
+                    return True
             elif '>=' in req_str:
                 version = re.split('>=', req_str)[1].strip()
                 if installed_version < version:
-                    raise importlib.metadata.PackageNotFoundError
+                    python_module_with_wrong_version( req_str, version, installed_version)
+                    return True
             elif '<=' in req_str:
                 version = re.split('<=', req_str)[1].strip()
                 if installed_version > version:
-                    raise importlib.metadata.PackageNotFoundError
+                    python_module_with_wrong_version( req_str, version, installed_version)
+                    return True
 
-        except importlib.metadata.PackageNotFoundError:
-            Domoticz.Error(f"Looks like {req_str} Python module is not installed or does not meet the required version. Requires {version}, Installed {installed_version}. "
-                           f"Make sure to install the required Python3 module with the correct version.")
-            Domoticz.Error("Use the command:")
-            Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
+        except importlib.metadata.PackageNotFoundError as e:
+            Domoticz.Error(f"An unexpected error occurred while checking {req_str} - {e}")
             return True
 
-        except importlib.metadata.MetadataError:
-            Domoticz.Error(f"An unexpected error occurred while checking {req_str}")
+        except importlib.metadata.MetadataError as e:
+            Domoticz.Error(f"An unexpected error occurred while checking {req_str} - {e}")
             return True
 
         except Exception as e:
             Domoticz.Error(f"An unexpected error occurred: {e}")
             return True
 
+        Domoticz.Status(f"   - {req_str} version required {version} installed {installed_version}")
     return False
+
+def python_module_with_wrong_version( req_str, version, installed_version):
+    Domoticz.Error(f"Looks like {req_str} Python module is not installed or does not meet the required version. Requires {version}, Installed {installed_version}." 
+                   f"Make sure to install the required Python3 module with the correct version.")
+    Domoticz.Error("Use the command:")
+    Domoticz.Error("sudo python3 -m pip install -r requirements.txt --upgrade")
 
 
 def list_all_modules_loaded(self):
