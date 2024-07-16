@@ -27,7 +27,7 @@ from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
-                           get_and_inc_ZCL_SQN, get_device_config_param,
+                           get_and_inc_ZCL_SQN, get_and_inc_TUYA_POLLING_SQN, get_device_config_param,
                            get_deviceconf_parameter_value,
                            is_ack_tobe_disabled, updSQN)
 from Modules.tuyaConst import (TUYA_MANUF_CODE, TUYA_SMART_DOOR_LOCK_MODEL,
@@ -142,7 +142,7 @@ def tuya_polling(self, nwkid):
     """Some Tuya devices, requirea specific polling"""
     device_model = self.ListOfDevices.get(nwkid, {}).get("Model")
     if device_model is None:
-        return
+        return False
 
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
 
@@ -150,15 +150,23 @@ def tuya_polling(self, nwkid):
         device_last_poll = self.ListOfDevices.get(nwkid, {}).get("Tuya", {}).get("LastTuyaDataRequest", 0)
         if device_last_poll > (time.time() + tuya_data_request_polling):
             self.log.logging("Tuya", "Log", f"tuya_data_request_polling - Nwkid: {nwkid}/01 time for polling {tuya_data_request_polling}")
-            tuya_data_request(self, nwkid, "01")
+            tuya_data_request_poll(self, nwkid, "01")
+            self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})["LastTuyaDataRequest"] = time.time()
 
     return False
+
+
+def tuya_data_request_poll(self, nwkid, epout):
+    payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "00"
+    payload += "00" + get_and_inc_TUYA_POLLING_SQN(self, nwkid) + "6902" + "0004" + "00000001"
+    raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+    self.log.logging("Tuya", "Log", "tuya_data_request - Nwkid: %s tuya polling Cmd: 00" % nwkid) 
+
 
 def tuya_data_request(self, nwkid, epout):
     payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
     raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
     self.log.logging("Tuya", "Debug", "tuya_data_request - Nwkid: %s reset device Cmd: 03" % nwkid)
-    self.ListOfDevices.setdefault(nwkid, {}).setdefault("Model", time.time())
     
 
 def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
