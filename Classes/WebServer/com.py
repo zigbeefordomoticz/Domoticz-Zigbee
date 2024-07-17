@@ -285,10 +285,10 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
 
     self.logging( "Log","WebUI - server starting on {host} {port}")
 
-    if is_port_in_use(port, host):
-        self.logging( "Error", f"WebUI cannot start, Port {port} is already in use!!!")
-        return
-    
+    # if is_port_in_use(port, host):
+    #     self.logging( "Error", f"WebUI cannot start, Port {port} is already in use!!!")
+    #     return
+
     try:
         # Set up the server
         if self.httpPort:
