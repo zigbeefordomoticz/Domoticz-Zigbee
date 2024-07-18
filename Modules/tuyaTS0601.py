@@ -531,10 +531,16 @@ def ts0601_freeChlorine(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "freeChlorine", value)
 
 
-def ts0601_salinity(self, Devices, nwkid, ep, value):    
+def ts0601_salinity(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_salinity - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Salt", value)
     MajDomoDevice(self, Devices, nwkid, ep, "salinity", value)
+
+
+def ts0601_tds(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_tds - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Total Dissolved Solids", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "tds", value)
 
 
 def ts0601_water_consumption(self, Devices, nwkid, ep, value):
@@ -599,8 +605,8 @@ DP_SENSOR_FUNCTION = {
     "ec": ts0601_ec,
     "orp": ts0601_orp,
     "freeChlorine": ts0601_freeChlorine,
-    "salinity": ts0601_salinity
-
+    "salinity": ts0601_salinity,
+    "tds": ts0601_tds,
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
