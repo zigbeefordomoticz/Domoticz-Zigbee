@@ -800,6 +800,7 @@ SIMPLE_WIDGET = {
     "orp": { "widgetType": "Custom", "Options": "1;mV" },
     "freeChlorine": { "widgetType": "Custom", "Options": "1;mg/L" },
     "salinity": { "widgetType": "Custom", "Options": "1;ppm" },
+    "tds": { "widgetType": "Custom", "Options": "1;ppm" },
 
     "Strength": {
         "Type": 243,
