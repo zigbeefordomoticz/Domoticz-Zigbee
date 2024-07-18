@@ -649,6 +649,8 @@ def hr_process_device(self, Devices, NwkId):
 
     model = self.ListOfDevices[NwkId].get("Model", "") 
     enabledEndDevicePolling = bool(self.DeviceConf.get(model, {}).get("PollingEnabled", False))
+    
+    self.log.logging("Heartbeat", "Log", f"Device {NwkId} Model {model} -> enabledEndDevicePolling {enabledEndDevicePolling}")
 
     check_param = self.ListOfDevices.get(NwkId, {}).get("CheckParam", False)
     if check_param and self.HeartbeatCount > QUIET_AFTER_START and self.ControllerLink.loadTransmit() < 5:
@@ -687,12 +689,11 @@ def process_main_powered_or_force_devices(self, NwkId, device_hearbeat, _mainPow
         rescheduleAction = rescheduleAction or pollingDeviceStatus(self, NwkId)
         return
 
-    rescheduleAction = (
-        rescheduleAction
-        or DeviceCustomPolling(self, NwkId, device_hearbeat)
-        or pollingManufSpecificDevices(self, NwkId, device_hearbeat)
-        or tuya_polling(self, NwkId)
-    )
+    rescheduleAction = ( rescheduleAction or tuya_polling(self, NwkId) )
+
+    rescheduleAction = ( rescheduleAction or DeviceCustomPolling(self, NwkId, device_hearbeat) )
+
+    rescheduleAction = ( rescheduleAction or pollingManufSpecificDevices(self, NwkId, device_hearbeat) )
 
     _doReadAttribute = (
         (self.pluginconf.pluginConf["enableReadAttributes"] or self.pluginconf.pluginConf["resetReadAttributes"])

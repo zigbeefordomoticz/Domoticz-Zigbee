@@ -146,14 +146,19 @@ def tuya_polling(self, nwkid):
 
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
 
-    if tuya_data_request_polling:
-        device_last_poll = self.ListOfDevices.get(nwkid, {}).get("Tuya", {}).get("LastTuyaDataRequest", 0)
-        if device_last_poll > (time.time() + tuya_data_request_polling):
-            self.log.logging("Tuya", "Log", f"tuya_data_request_polling - Nwkid: {nwkid}/01 time for polling {tuya_data_request_polling}")
-            tuya_data_request_poll(self, nwkid, "01")
-            self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})["LastTuyaDataRequest"] = time.time()
+    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
+    if not tuya_data_request_polling:
+        return False
 
-    return False
+    device_last_poll = self.ListOfDevices.get(nwkid, {}).get("Tuya", {}).get("LastTuyaDataRequest", 0)
+    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll {tuya_data_request_polling}")
+    if device_last_poll < (time.time() + tuya_data_request_polling):
+        return False
+
+    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 time for polling {tuya_data_request_polling}")
+    tuya_data_request_poll(self, nwkid, "01")
+    self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})["LastTuyaDataRequest"] = time.time()
+    return True
 
 
 def tuya_data_request_poll(self, nwkid, epout):
