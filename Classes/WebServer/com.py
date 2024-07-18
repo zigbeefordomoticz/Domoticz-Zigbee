@@ -245,6 +245,42 @@ def check_cert_and_key(self, cert_path, key_path):
     return context
 
 
+def set_keepalive(sock, keepalive_time=60, keepalive_interval=10, keepalive_probes=5):
+    """
+    Enable TCP keep-alive on a socket and configure keep-alive parameters.
+
+    This function enables the TCP keep-alive mechanism on the specified socket
+    and sets the parameters for keep-alive probes. Keep-alive helps to detect
+    broken connections by sending periodic probes when the connection is idle.
+
+    Parameters:
+    sock (socket.socket): The socket on which to enable keep-alive.
+    keepalive_time (int, optional): The time (in seconds) the connection needs to remain
+                                     idle before TCP starts sending keep-alive probes.
+                                     Default is 60 seconds.
+    keepalive_interval (int, optional): The time (in seconds) between individual keep-alive probes.
+                                        Default is 10 seconds.
+    keepalive_probes (int, optional): The maximum number of keep-alive probes TCP should send before
+                                      dropping the connection. Default is 5 probes.
+
+    Notes:
+    - The availability of keep-alive parameters (TCP_KEEPIDLE, TCP_KEEPINTVL, TCP_KEEPCNT)
+      may vary based on the operating system.
+    - This function does not guarantee keep-alive will be effective on all platforms;
+      it sets parameters only if the platform supports them.
+    """
+
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+
+    # The following options are platform-dependent.
+    if hasattr(socket, 'TCP_KEEPIDLE'):
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, keepalive_time)
+    if hasattr(socket, 'TCP_KEEPINTVL'):
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, keepalive_interval)
+    if hasattr(socket, 'TCP_KEEPCNT'):
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, keepalive_probes)
+
+
 def is_port_in_use(port, host='0.0.0.0'):  # nosec
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
@@ -304,13 +340,15 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
         server_private_key = self.pluginconf.pluginConf.get("SSLPrivateKey") or os.path.join(self.homedirectory, "server.key")
         self.logging( "Log", f"++ WebUI - SSL Certificate {server_certificate}")
         self.logging( "Log", f"++ WebUI - SSL Private key {server_private_key}")
-        
+
         context = check_cert_and_key(self, server_certificate, server_private_key)
 
         if context:
             self.server = context.wrap_socket( self.server, server_side=True, )
 
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        set_keepalive(self.server)
+
         self.logging( "Log", f"++ WebUI - bin socket on {host}:{port}")
         self.server.bind((host, port))
         self.server.listen(5)
@@ -362,6 +400,8 @@ def server_loop(self, ):
         while self.running:
             try:
                 client_socket, client_addr = self.server.accept()
+
+                set_keepalive(client_socket)
 
                 self.logging("Debug", f"Accepted connection from {client_addr} {client_socket}")
                 client_thread = threading.Thread(target=handle_client, args=(self, client_socket, client_addr))
