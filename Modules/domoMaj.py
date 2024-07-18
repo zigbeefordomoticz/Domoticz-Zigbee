@@ -756,6 +756,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             svalue = "%s" % (nvalue,)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
 
+        if ClusterType == "tds" and WidgetType == "tds":
+            nvalue = int(value)
+            svalue = "%s" % (nvalue,)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
             nValue = 0
