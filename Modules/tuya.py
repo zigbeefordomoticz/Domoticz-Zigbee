@@ -154,11 +154,11 @@ def tuya_polling(self, nwkid):
         return False
 
     device_last_poll = self.ListOfDevices.get(nwkid, {}).get("Tuya", {}).get("LastTuyaDataRequest", 0)
-    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll {tuya_data_request_polling}")
-    if device_last_poll < (time.time() + tuya_data_request_polling):
+    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll {device_last_poll}")
+    if device_last_poll > (time.time() + tuya_data_request_polling):
         return False
 
-    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 time for polling {tuya_data_request_polling}")
+    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 time for polling")
     if tuya_data_request_polling:
         tuya_data_request_poll(self, nwkid, "01")
 
