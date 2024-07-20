@@ -27,14 +27,15 @@ from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
-                           get_and_inc_ZCL_SQN, get_and_inc_TUYA_POLLING_SQN, get_device_config_param,
+                           get_and_inc_ZCL_SQN,
+                           get_device_config_param,
                            get_deviceconf_parameter_value,
                            is_ack_tobe_disabled, updSQN)
 from Modules.tuyaConst import (TUYA_MANUF_CODE, TUYA_SMART_DOOR_LOCK_MODEL,
                                TUYA_eTRV_MODEL)
 from Modules.tuyaSiren import tuya_siren2_response, tuya_siren_response
-from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
-                               tuya_cmd)
+from Modules.tuyaTools import (get_next_tuya_transactionId, get_tuya_attribute,
+                               store_tuya_attribute, tuya_cmd)
 from Modules.tuyaTRV import tuya_eTRV_response
 from Modules.tuyaTS011F import tuya_read_cluster_e001
 from Modules.tuyaTS0601 import ts0601_response
@@ -53,6 +54,7 @@ from Modules.zigateConsts import ZIGATE_EP
 #   0x03: string
 #   0x04: enum8 ( 0x00-0xff)
 #   0x05: bitmap ( 1,2, 4 bytes) as bits
+
 
 def is_tuya_switch_relay(self, nwkid):
     model = self.ListOfDevices[nwkid].get("Model", "")
@@ -162,10 +164,18 @@ def tuya_polling(self, nwkid):
 
 
 def tuya_data_request_poll(self, nwkid, epout):
-    payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "00"
-    payload += "00" + get_and_inc_TUYA_POLLING_SQN(self, nwkid) + "6902" + "0004" + "00000001"
-    raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
-    self.log.logging("Tuya", "Log", "tuya_data_request - Nwkid: %s tuya polling Cmd: 00" % nwkid) 
+    self.log.logging("Tuya", "Log", "tuya_data_request_poll - Nwkid: %s tuya polling Cmd: 00" % nwkid) 
+    # Cmd 0x00 - 01/46/6902/0004/00000001/
+    # Cmd 0x00 - 00/d7/6902/0004/00000001/
+    epout = "01"
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "6902"
+    data = "00000001"
+
+    self.log.logging("Tuya", "Log", f"tuya_data_request - Nwkid: %s epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}") 
+    tuya_cmd(self, nwkid, epout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None)
 
 
 def tuya_data_request(self, nwkid, epout):
@@ -396,7 +406,6 @@ def send_timesynchronisation(self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, ser
     payload = f"11{sqn}24{serial_number}{utctime}{localtime}"
     raw_APS_request(self, NwkId, srcEp, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
     self.log.logging("Tuya", "Debug", f"send_timesynchronisation - {NwkId}/{srcEp}")
-
 
 
 def utc_to_local(dt):
@@ -874,18 +883,19 @@ def tuya_window_cover_calibration(self, nwkid, duration):
     write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
 
 
-
 def tuya_window_cover_motor_reversal(self, nwkid, mode):
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off / Default
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
     if int(mode) in {0, 1}:
         write_attribute( self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False )
 
+
 def tuya_curtain_mode(self, nwkid, mode):
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 0 (0x00) | Kick Back
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 1 (0x01) | Seesaw
     if int(mode) in {0, 1}:
         write_attribute( self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" % int(mode), ackIsDisabled=False )
+
 
 def tuya_backlight_command(self, nwkid, mode):
     if int(mode) in {0, 1, 2}:
@@ -1105,6 +1115,7 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
             NwkId,
         )
 
+
 def tuya_pir_keep_time_lookup( self, nwkid, keeptime):
     keeptime = min( keeptime // 30, 2)
     
@@ -1112,9 +1123,8 @@ def tuya_pir_keep_time_lookup( self, nwkid, keeptime):
     EPout = "01"
     
     write_attribute(self, nwkid, ZIGATE_EP, EPout, "0500", "0000", "00", "f001", "20", "%02x" %keeptime, ackIsDisabled=False)
-    
 
-    
+
 def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     if dp == 0x01:
@@ -1137,7 +1147,7 @@ def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterI
         
     else:
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
-        
+
 
 def tuya_garage_door_action( self, NwkId, onoff):
     # 000f/0101/0001/00
@@ -1151,7 +1161,8 @@ def tuya_garage_door_action( self, NwkId, onoff):
     data = "%02x" %int(onoff)
     self.log.logging("Tuya", "Debug", "tuya_garage_door_action - action %s data: %s" % (action,data), NwkId)
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
-    
+
+
 def tuya_garage_run_time(self, NwkId, duration):
     # 0006/0402/0004/0000001e  30 secondes
     # 0007/0402/0004/0000003c  60 secondes
@@ -1189,6 +1200,7 @@ TUYA_SWITCH_MODE = {
     2: 0x02
 }
 
+
 def tuya_external_switch_mode( self, NwkId, mode):
  
     self.log.logging("tuyaSettings", "Debug", "tuya_external_switch_mode - mode %s" % mode, NwkId)
@@ -1202,18 +1214,21 @@ def tuya_external_switch_mode( self, NwkId, mode):
     else:
         write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_TS0004_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)
 
+
 def tuya_TS0004_back_light(self, nwkid, mode):
     
     if int(mode) in {0, 1}:
         write_attribute(self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "5000", "30", "%02x" %int(mode), ackIsDisabled=False)
     else:
         return
-    
+
+
 def tuya_TS0004_indicate_light(self, nwkid, mode):
     if int(mode) in {0, 1, 2}:
         write_attribute(self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" %int(mode), ackIsDisabled=False)
     else:
         return
+
 
 def SmartRelayStatus_by_ep( self, nwkid, ep, mode):
     
@@ -1230,18 +1245,22 @@ def SmartRelayStatus_by_ep( self, nwkid, ep, mode):
 
     write_attribute(self, nwkid, ZIGATE_EP, ep, "e001", "0000", "00", "d010", "30", "%02x" %int(mode), ackIsDisabled=False)
 
-    
+
 def SmartRelayStatus01(self, nwkid, mode):
     SmartRelayStatus_by_ep( self, nwkid, "01", mode)
-    
+
+
 def SmartRelayStatus02(self, nwkid, mode):
     SmartRelayStatus_by_ep( self, nwkid, "02", mode)
+
 
 def SmartRelayStatus03(self, nwkid, mode): 
     SmartRelayStatus_by_ep( self, nwkid, "03", mode)
 
+
 def SmartRelayStatus04(self, nwkid, mode):
     SmartRelayStatus_by_ep( self, nwkid, "04", mode)
+
 
 def _check_tuya_attribute(self, nwkid, ep, cluster, attribute ):
     if ep not in self.ListOfDevices[nwkid]["Ep"]:
@@ -1254,6 +1273,7 @@ def _check_tuya_attribute(self, nwkid, ep, cluster, attribute ):
         self.log.logging("Heartbeat", "Log", "No Attribute: %s" %attribute, nwkid)
         return False
     return True
+
 
 def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
@@ -1291,12 +1311,14 @@ def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
         self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
 
+
 def tuya_command_f0( self, NwkId ):
     self.log.logging("Tuya", "Log", "Tuya 0xf0 command to  %s" %NwkId) 
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     payload = "11" + sqn + "f0"
     raw_APS_request(self, NwkId, "01", "0000", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=False)   
-    
+
+
 def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     self.log.logging("Tuya", "Log", "tuya_temphumi_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
@@ -1377,6 +1399,7 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     else:
         self.log.logging("Tuya", "Log", "tuya_motion_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+
 
 def tuya_motion_zg204l_sensitivity(self, nwkid, sensitivity):
     # {'low': 0, 'medium': 1, 'high': 2}
@@ -1495,8 +1518,6 @@ def tuya_radar_motion_radar_fading_time(self, nwkid, mode):
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 
- 
-   
 def tuya_smart_door_lock(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
     store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
@@ -1534,17 +1555,21 @@ def ts110e_light_type( self, NwkId, mode):
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
 
+
 def ts110e_switch01_type( self, NwkId, mode):
     ts110e_switch_type( self, NwkId, "01", mode)
 
+
 def ts110e_switch02_type( self, NwkId, mode):
     ts110e_switch_type( self, NwkId, "02", mode)
+
 
 def ts110e_switch_type( self, NwkId, EPout, mode):
     # momentary: 0, toggle: 1, state: 2
     self.log.logging("tuyaSettings", "Debug", "ts110e_switch_type - mode %s" % mode, NwkId)
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
+
 
 def tuya_lighting_color_control( self, NwkId, ColorCapabilities=25):
     # The ColorCapabilities attribute specifies the color capabilities of the device supporting the color control clus-
@@ -1569,6 +1594,7 @@ def tuya_color_control_rgbMode( self, NwkId, mode):
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     payload = "11" + sqn + "f0" + mode
     raw_APS_request(self, NwkId, "01", "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
+
 
 def tuya_Move_To_Hue_Saturation( self, NwkId, EPout, hue, saturation, transition, level):
     # Command 0x06
