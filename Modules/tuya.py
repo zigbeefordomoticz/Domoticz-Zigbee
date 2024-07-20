@@ -167,7 +167,7 @@ def tuya_data_request_poll(self, nwkid, epout):
     self.log.logging("Tuya", "Log", "tuya_data_request_poll - Nwkid: %s tuya polling Cmd: 00" % nwkid) 
     # Cmd 0x00 - 01/46/6902/0004/00000001/
     # Cmd 0x00 - 00/d7/6902/0004/00000001/
-    epout = "01"
+
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     cluster_frame = "11"
     cmd = "00"  # Command
