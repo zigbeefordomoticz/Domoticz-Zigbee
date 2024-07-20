@@ -662,7 +662,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         tuya_eTRV_registration(self, NWKID, tuya_data_request=True)
         
     if tuya_registration_parameter:
-        tuya_registration(self, NWKID, tuya_data_request=tuya_data_request, parkside=False, tuya_registration_value=tuya_registration_parameter)
+        tuya_registration(self, NWKID, ty_data_request=tuya_data_request, parkside=False, tuya_registration_value=tuya_registration_parameter)
 
     if device_model in ("TS0121", "TS0002_relay_switch", "TS0002_relay_switch"):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
@@ -694,11 +694,11 @@ def handle_device_specific_needs(self, Devices, NWKID):
         "TS0601-temphumi",
     ):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
-        tuya_registration(self, NWKID, tuya_data_request=True)
+        tuya_registration(self, NWKID, ty_data_request=True)
 
     if device_model in ("TS0601-Parkside-Watering-Timer", "TS0601-_TZE200_nklqjk62", ):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
-        tuya_registration(self, NWKID, tuya_data_request=True, parkside=True)
+        tuya_registration(self, NWKID, ty_data_request=True, parkside=True)
 
     if device_model in ( "TS0216", "TY0A01", ):
         # Do just the registration
