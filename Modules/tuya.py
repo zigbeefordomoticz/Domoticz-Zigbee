@@ -147,6 +147,7 @@ def tuya_polling(self, nwkid):
         return False
 
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
+    tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
 
     self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
     if not tuya_data_request_polling:
@@ -158,7 +159,12 @@ def tuya_polling(self, nwkid):
         return False
 
     self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 time for polling {tuya_data_request_polling}")
-    tuya_data_request_poll(self, nwkid, "01")
+    if tuya_data_request_polling:
+        tuya_data_request_poll(self, nwkid, "01")
+
+    if tuya_data_query:
+        tuya_data_request(self, nwkid, "01")
+        
     self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})["LastTuyaDataRequest"] = time.time()
     return True
 
@@ -179,9 +185,14 @@ def tuya_data_request_poll(self, nwkid, epout):
 
 
 def tuya_data_request(self, nwkid, epout):
+    # TY_DATA_QUERY 	
+    # 0x03 	The gateway sends a query to the Zigbee device for all the current information. 
+    # The query does not contain a ZCL payload. We recommend that you set a reporting policy 
+    # on the Zigbee device to avoid reporting all data in one task.
+    
     payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
     raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
-    self.log.logging("Tuya", "Debug", "tuya_data_request - Nwkid: %s reset device Cmd: 03" % nwkid)
+    self.log.logging("Tuya", "Log", "tuya_data_request - Nwkid: %s reset device Cmd: 03" % nwkid)
     
 
 def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):

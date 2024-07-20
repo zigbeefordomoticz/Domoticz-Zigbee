@@ -55,8 +55,8 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
 from Modules.schneider_wiser import schneiderRenforceent
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
-                           get_device_nickname, getAttributeValue,
-                           getListOfEpForCluster, is_hex,
+                           get_device_nickname, get_deviceconf_parameter_value,
+                           getAttributeValue, getListOfEpForCluster, is_hex,
                            is_time_to_perform_work, mainPoweredDevice,
                            night_shift_jobs, removeNwkInList)
 from Modules.tuya import tuya_polling
@@ -648,8 +648,7 @@ def hr_process_device(self, Devices, NwkId):
         del self.ListOfDevices[NwkId]["pingDeviceRetry"]
 
     model = self.ListOfDevices[NwkId].get("Model", "") 
-    enabledEndDevicePolling = bool(self.DeviceConf.get(model, {}).get("PollingEnabled", False))
-    
+    enabledEndDevicePolling = get_deviceconf_parameter_value(self, model, "PollingEnabled", return_default=False)
     self.log.logging("Heartbeat", "Log", f"Device {NwkId} Model {model} -> enabledEndDevicePolling {enabledEndDevicePolling}")
 
     check_param = self.ListOfDevices.get(NwkId, {}).get("CheckParam", False)
@@ -673,10 +672,9 @@ def hr_process_device(self, Devices, NwkId):
     # Starting this point, it is ony relevant for Main Powered Devices.
     # Some battery based end device with ZigBee 30 use polling and can receive commands.
     # We should authporized them for Polling After Action, in order to get confirmation.
-    if not _mainPowered and not enabledEndDevicePolling:
-        return
     
-    process_main_powered_or_force_devices( self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model)
+    if _mainPowered or enabledEndDevicePolling:
+        process_main_powered_or_force_devices( self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model)
 
     
 def process_main_powered_or_force_devices(self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model):
