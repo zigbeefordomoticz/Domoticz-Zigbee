@@ -57,11 +57,19 @@ def onMessage(self, Connection, Data):
     if handle_rest_api(self, Connection, Data, parsed_query):
         return
 
-    if handle_download( parsed_query, parsed_url):
-        return
+    self.logging("Debug", f"Download: {is_download( parsed_query, parsed_url)}")
+    if is_download( parsed_query, parsed_url):
+        # we have to serve a file for download purposes, let's remove '/download' to get the filename to access
+        webFilename = parsed_url.path[len('/download'):]
 
-    webFilename = get_web_filename(self, url, parsed_query, parsed_url)
+    else:
+        # Most likely a file from the wwww/ to be served
+        webFilename = get_web_filename(self, url, parsed_query, parsed_url)
+
+    self.logging("Debug", f"Downloading: {webFilename}")
+
     if not os.path.isfile(webFilename):
+        self.logging("Debug", "Redirect to index.html")
         webFilename = redirect_to_index_html(self)
 
     response_headers = prepare_response_headers(self,cookie)
@@ -98,7 +106,7 @@ def handle_rest_api(self, Connection, Data, parsed_query):
     return True
 
 
-def handle_download( parsed_query, parsed_url):
+def is_download( parsed_query, parsed_url):
     return parsed_query[0] == 'download'
 
 
