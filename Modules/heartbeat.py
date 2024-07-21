@@ -649,7 +649,7 @@ def hr_process_device(self, Devices, NwkId):
 
     model = self.ListOfDevices[NwkId].get("Model", "") 
     enabledEndDevicePolling = get_deviceconf_parameter_value(self, model, "PollingEnabled", return_default=False)
-    self.log.logging("Heartbeat", "Log", f"Device {NwkId} Model {model} -> enabledEndDevicePolling {enabledEndDevicePolling}")
+    self.log.logging("Heartbeat", "Debug", f"Device {NwkId} Model {model} -> enabledEndDevicePolling {enabledEndDevicePolling}")
 
     check_param = self.ListOfDevices.get(NwkId, {}).get("CheckParam", False)
     if check_param and self.HeartbeatCount > QUIET_AFTER_START and self.ControllerLink.loadTransmit() < 5:
@@ -666,7 +666,7 @@ def hr_process_device(self, Devices, NwkId):
         and time.time() > self.ListOfDevices[ NwkId ]["DelayBindingAtPairing"]
     ):   
         # Will check only after a Command has been sent, in order to limit.
-        self.log.logging("Heartbeat", "Log", "check_delay_binding inHB = %s" %device_hearbeat ) 
+        self.log.logging("Heartbeat", "Debug", "check_delay_binding inHB = %s" %device_hearbeat ) 
         check_delay_binding( self, NwkId, model )
 
     # Starting this point, it is ony relevant for Main Powered Devices.
