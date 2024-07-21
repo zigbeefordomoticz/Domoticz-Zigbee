@@ -722,35 +722,35 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 5, "50", BatteryLevel, SignalLevel)
 
         if ClusterType == "PM25" and WidgetType == "PM25":
-            svalue = "%s" % value
+            svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "PM25" and WidgetType == "SmokePPM":
-            svalue = "%s" % value
+            svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
          
         if ClusterType == "phMeter" and WidgetType == "phMeter":
-            svalue = "%s" % value
+            svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "ec" and WidgetType == "ec":
-            svalue = "%s" % value
+            svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "orp" and WidgetType == "orp":
-            svalue = "%s" % value
+            svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "freeChlorine" and WidgetType == "freeChlorine":
-            svalue = "%s" % value
+            svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "salinity" and WidgetType == "salinity":
-            svalue = "%s" % value
+            svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "tds" and WidgetType == "tds":
-            svalue = "%s" % value
+            svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":

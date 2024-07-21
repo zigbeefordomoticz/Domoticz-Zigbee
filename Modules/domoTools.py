@@ -498,6 +498,7 @@ CLUSTER_TO_TYPE = {
     "orp": "orp",
     "freeChlorine": "freeChlorine",
     "salinity": "salinity",
+    "tds": "tds"
 }
 
 def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", ModelName=""):
