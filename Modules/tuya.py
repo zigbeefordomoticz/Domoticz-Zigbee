@@ -55,7 +55,7 @@ from Modules.zigateConsts import ZIGATE_EP
 #   0x04: enum8 ( 0x00-0xff)
 #   0x05: bitmap ( 1,2, 4 bytes) as bits
 
-ADDITIONAL_POLLS = 5
+ADDITIONAL_POLLS = 3
 
 def is_tuya_switch_relay(self, nwkid):
     model = self.ListOfDevices[nwkid].get("Model", "")
@@ -189,7 +189,7 @@ def should_poll(self, device_model, nwkid, polling_interval):
     current_time = int(time.time())
 
     # We do the check only every 5s
-    if current_time < (last_poll_time + 7):
+    if current_time < (last_poll_time + 6):
         self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 skip as last request was less that 5s agoo")
         return False
 
