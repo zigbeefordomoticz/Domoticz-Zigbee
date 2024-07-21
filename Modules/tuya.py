@@ -146,6 +146,7 @@ def tuya_polling(self, nwkid):
     if device_model is None:
         return False
 
+    # Retrieve the polling interval configuration for TUYA_DATA_REQUEST_POLLING
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
     tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
 
@@ -153,11 +154,18 @@ def tuya_polling(self, nwkid):
     if not tuya_data_request_polling:
         return False
 
-    device_last_poll = self.ListOfDevices.get(nwkid, {}).get("Tuya", {}).get("LastTuyaDataRequest", 0)
-    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll {device_last_poll}")
-    if device_last_poll > (time.time() + tuya_data_request_polling):
+    # Retrieve the last polling time for the device
+    last_polling_time = self.ListOfDevices.get(nwkid, {}).get("Tuya", {}).get("LastTuyaDataRequest", 0)
+
+    # Calculate the next polling time
+    next_polling_time = last_polling_time + tuya_data_request_polling
+
+    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll last_polling_time: {last_polling_time} versus next_polling_time: {next_polling_time}")
+
+    if time.time() < next_polling_time:
         return False
 
+    # If the current time is greater than or equal to the next polling time, it will proceed with polling
     self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 time for polling")
     if tuya_data_request_polling:
         tuya_data_request_poll(self, nwkid, "01")
