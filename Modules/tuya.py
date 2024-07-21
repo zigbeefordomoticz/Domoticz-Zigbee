@@ -188,7 +188,7 @@ def tuya_data_request_poll(self, nwkid, epout):
     action = "6902"
     data = "00000001"
 
-    self.log.logging("Tuya", "Log", f"tuya_data_request - Nwkid: %s epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}") 
+    self.log.logging("Tuya", "Log", f"tuya_data_request - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}") 
     tuya_cmd(self, nwkid, epout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None)
 
 
