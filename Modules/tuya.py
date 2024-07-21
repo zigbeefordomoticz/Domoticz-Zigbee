@@ -187,8 +187,10 @@ def should_poll(self, device_model, nwkid, polling_interval):
 
     # Get the current time
     current_time = int(time.time())
-    if ((current_time % 5) != 0):
-        self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 skip as not multiple 5s")
+
+    # We do the check only every 5s
+    if current_time < (last_poll_time + 5):
+        self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 skip as last request was less that 5s agoo")
         return False
 
     # Check if the current time is less than the next polling time
