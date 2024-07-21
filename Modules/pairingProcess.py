@@ -147,7 +147,7 @@ def do_we_have_key_clusters( self, NWKID ):
         return False
     for ep in list(self.ListOfDevices[NWKID]['Ep']):
         for cluster in list(self.ListOfDevices[NWKID]['Ep'][ ep ]):
-            self.log.logging("Pairing", "Log", " . Checking %s on ep %s" %( cluster, ep))
+            self.log.logging("Pairing", "Debug", " . Checking %s on ep %s" %( cluster, ep))
             if cluster in CLUSTER_TO_TYPE:
                 return True
     return False
@@ -408,7 +408,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
     modelName = self.ListOfDevices[NWKID]["Model"] if "Model" in self.ListOfDevices[NWKID] else ""
     if modelName in ("TS004F",):
-        self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
+        self.log.logging("Pairing", "Debug", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
 
@@ -530,7 +530,7 @@ def delay_binding_and_reporting(self, Nwkid):
     if _model in self.DeviceConf and "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
         self.ListOfDevices[ Nwkid ]["DelayBindingAtPairing"] = int(( time.time() + int(self.DeviceConf[_model]["DelayBindingAtPairing"])))
         
-        self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
+        self.log.logging("Pairing", "Debug", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
         return True
     return False
 
@@ -635,7 +635,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
     tuya_data_request = get_deviceconf_parameter_value(self, device_model, "TUYA_RESET_CMD", return_default=False) 
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=False)
     
-    self.log.logging("Pairing", "Log", f"handle_device_specific_needs for {NWKID} tuya_registration_parameter: {tuya_registration_parameter} tuya_data_request: {tuya_data_request} tuya_data_request_polling: {tuya_data_request_polling}")
+    self.log.logging("Pairing", "Debug", f"handle_device_specific_needs for {NWKID} tuya_registration_parameter: {tuya_registration_parameter} tuya_data_request: {tuya_data_request} tuya_data_request_polling: {tuya_data_request_polling}")
 
     # In case of Schneider Wiser, let's do the Registration Process
     MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
@@ -669,7 +669,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         tuya_TS0121_registration(self, NWKID)
 
     if device_model in ("TS004F", "TS004F-_TZ3000_xabckq1v"):
-        self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
+        self.log.logging("Pairing", "Debug", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
             ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
@@ -678,7 +678,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
         tuya_command_f0( self, NWKID )
 
     if tuya_data_request_polling:
-        self.log.logging("Pairing", "Log", "Tuya Tuya Polling requested")
+        self.log.logging("Pairing", "Debug", "Tuya Tuya Polling requested")
         tuya_polling(self, NWKID)
 
     if device_model in (

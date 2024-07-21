@@ -150,7 +150,7 @@ def tuya_polling(self, nwkid):
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
     tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
 
-    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
     if not tuya_data_request_polling:
         return False
 
@@ -160,13 +160,13 @@ def tuya_polling(self, nwkid):
     # Calculate the next polling time
     next_polling_time = last_polling_time + tuya_data_request_polling
 
-    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll last_polling_time: {last_polling_time} versus next_polling_time: {next_polling_time}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll last_polling_time: {last_polling_time} versus next_polling_time: {next_polling_time}")
 
     if time.time() < next_polling_time:
         return False
 
     # If the current time is greater than or equal to the next polling time, it will proceed with polling
-    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 time for polling")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 time for polling")
     if tuya_data_request_polling:
         tuya_data_request_poll(self, nwkid, "01")
 
@@ -1296,16 +1296,16 @@ def _check_tuya_attribute(self, nwkid, ep, cluster, attribute ):
 
 def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-    self.log.logging("Tuya", "Log", "tuya_smoke_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    self.log.logging("Tuya", "Debug", "tuya_smoke_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
     if dp == 0x01:
         # State
-        self.log.logging("Tuya", "Log", "tuya_smoke_response - Smoke state %s %s %s" % (NwkId, srcEp, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_smoke_response - Smoke state %s %s %s" % (NwkId, srcEp, data), NwkId)
         store_tuya_attribute(self, NwkId, "SmokeState", data)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0500", data)
 
     elif dp == 0x0e:
         #  0: Low battery, 2:Full battery , 1: medium ????
-        self.log.logging("Tuya", "Log", "tuya_smoke_response - Battery Level %s %s %s" % (NwkId, srcEp, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_smoke_response - Battery Level %s %s %s" % (NwkId, srcEp, data), NwkId)
         store_tuya_attribute(self, NwkId, "Battery", data)
         if int(data,16) == 0:
             self.ListOfDevices[NwkId]["Battery"] = 25
@@ -1319,7 +1319,7 @@ def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
 
     elif dp == 0x04:
         # Tamper
-        self.log.logging("Tuya", "Log", "tuya_smoke_response - Tamper %s %s %s" % (NwkId, srcEp, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_smoke_response - Tamper %s %s %s" % (NwkId, srcEp, data), NwkId)
         store_tuya_attribute(self, NwkId, "SmokeTamper", data)
         if int(data,16):
             MajDomoDevice(self, Devices, NwkId, srcEp, "0009", "01")
@@ -1327,7 +1327,7 @@ def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
             MajDomoDevice(self, Devices, NwkId, srcEp, "0009", "00")
 
     else:
-        self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
 
 
@@ -1340,7 +1340,7 @@ def tuya_command_f0( self, NwkId ):
 
 def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
-    self.log.logging("Tuya", "Log", "tuya_temphumi_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    self.log.logging("Tuya", "Debug", "tuya_temphumi_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
     if dp == 0x01:  # Temperature, 
         unsigned_value = int( data,16)
         signed_value = struct.unpack('>i', struct.pack('>I', unsigned_value))[0]
@@ -1374,11 +1374,11 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
 
 def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
-    self.log.logging("Tuya", "Log", "tuya_motion_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    self.log.logging("Tuya", "Debug", "tuya_motion_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
 
     if dp == 0x01:
         # Occupancy
-        self.log.logging("Tuya", "Log", "tuya_motion_response - Occupancy %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_motion_response - Occupancy %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         # Looks like the Occupancy indicator is inverse
         occupancy = "%02x" %abs(int(data,16) -1 )
         store_tuya_attribute(self, NwkId, "Occupancy", data)
@@ -1387,7 +1387,7 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
     elif dp == 0x04:
         # Battery
-        self.log.logging("Tuya", "Log", "tuya_motion_response - Battery %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_motion_response - Battery %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         
         store_tuya_attribute(self, NwkId, "Battery", data)
         checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", int(data, 16))
@@ -1397,19 +1397,19 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
   
     elif dp == 0x09:
         # Sensitivity - {'0': 'low', '1': 'medium', '2': 'high'}
-        self.log.logging("Tuya", "Log", "tuya_motion_response - Sensitivity %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_motion_response - Sensitivity %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         
         store_tuya_attribute(self, NwkId, "Sensitivity", data)
         
     elif dp == 0x0a:
         # Keep time - {'0': '10', '1': '30', '2': '60', '3': '120'}
-        self.log.logging("Tuya", "Log", "tuya_motion_response - Keep Time %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_motion_response - Keep Time %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         
         store_tuya_attribute(self, NwkId, "KeepTime", data)
         
     elif dp == 0x0c:
         # Illuminance
-        self.log.logging("Tuya", "Log", "tuya_motion_response - Illuminance %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_motion_response - Illuminance %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         
         store_tuya_attribute(self, NwkId, "Illuminance", data)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0400", (int(data, 16)) )

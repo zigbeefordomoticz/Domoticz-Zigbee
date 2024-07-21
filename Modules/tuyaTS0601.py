@@ -508,58 +508,58 @@ def ts0601_smoke_concentration(self, Devices, nwkid, ep, value):
 
 
 def ts0601_phMeter(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_phMeter - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_phMeter - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "phMeter", value)
     MajDomoDevice(self, Devices, nwkid, ep, "phMeter", value)
 
 
 def ts0601_ec(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_ec - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_ec - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Electric Conductivity", value)
     MajDomoDevice(self, Devices, nwkid, ep, "ec", value)
 
 
 def ts0601_orp(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_orp - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_orp - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Oxidation Reduction Potential", value)
     MajDomoDevice(self, Devices, nwkid, ep, "orp", value)
 
 
 def ts0601_freeChlorine(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_freeChlorine - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_freeChlorine - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Free chlorine", value)
     MajDomoDevice(self, Devices, nwkid, ep, "freeChlorine", value)
 
 
 def ts0601_salinity(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_salinity - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_salinity - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Salt", value)
     MajDomoDevice(self, Devices, nwkid, ep, "salinity", value)
 
 
 def ts0601_tds(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_stds - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
-    store_tuya_attribute(self, nwkid, "Salt", value)
+    self.log.logging("Tuya0601", "Debug", "ts0601_tds - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "TDS", value)
     MajDomoDevice(self, Devices, nwkid, ep, "Total Dissolved Solids", value)
 
 
 def ts0601_phCalibration1(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_phCalibration1 - Nwkid: %s/%s phCalibration1: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_phCalibration1 - Nwkid: %s/%s phCalibration1: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "ph Calibration1", value)
 
 
 def ts0601_phCalibration2(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_phCalibration2 - Nwkid: %s/%s phCalibration2: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_phCalibration2 - Nwkid: %s/%s phCalibration2: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "ph Calibration2", value)
 
 
 def ts0601_ecCalibration(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_ecCalibration - Nwkid: %s/%s ecCalibration: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_ecCalibration - Nwkid: %s/%s ecCalibration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "ec Calibration", value)
 
 
 def ts0601_orpCalibration(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Log", "ts0601_orpCalibration - Nwkid: %s/%s orpCalibration: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_orpCalibration - Nwkid: %s/%s orpCalibration: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "orp Calibration", value)
 
 
