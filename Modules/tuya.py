@@ -55,6 +55,7 @@ from Modules.zigateConsts import ZIGATE_EP
 #   0x04: enum8 ( 0x00-0xff)
 #   0x05: bitmap ( 1,2, 4 bytes) as bits
 
+ADDITIONAL_POLLS = 3
 
 def is_tuya_switch_relay(self, nwkid):
     model = self.ListOfDevices[nwkid].get("Model", "")
@@ -150,30 +151,62 @@ def tuya_polling(self, nwkid):
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
     tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
 
-    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
+    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
     if not tuya_data_request_polling:
         return False
 
-    # Retrieve the last polling time for the device
-    last_polling_time = self.ListOfDevices.get(nwkid, {}).get("Tuya", {}).get("LastTuyaDataRequest", 0)
+    if tuya_data_request_polling and should_poll(self, device_model, nwkid, tuya_data_request_polling):
+        # If the current time is greater than or equal to the next polling time, it will proceed with polling
+        self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 time for polling")
+        if tuya_data_request_polling:
+            tuya_data_request_poll(self, nwkid, "01")
+
+        if tuya_data_query:
+            tuya_data_request(self, nwkid, "01")
+        return True
+
+    return False
+
+
+def should_poll(self, device_model, nwkid, polling_interval):
+    # Log the polling interval value
+    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {polling_interval}")
+
+    # Retrieve the device information
+    tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
+
+    # Retrieve the last polling time and additional polls
+    last_poll_time = tuya_device_info.get("LastTuyaDataRequest", 0)
+    additional_polls = tuya_device_info.get("AdditionalPolls", 0)
 
     # Calculate the next polling time
-    next_polling_time = last_polling_time + tuya_data_request_polling
+    next_poll_time = last_poll_time + polling_interval
 
-    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll last_polling_time: {last_polling_time} versus next_polling_time: {next_polling_time}")
+    # Log the last polling time and the next polling time for comparison
+    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll last_poll_time: {last_poll_time} versus next_poll_time: {next_poll_time}")
 
-    if time.time() < next_polling_time:
+    # Get the current time
+    current_time = int(time.time())
+    if ((current_time % 5) != 0):
+        self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 skip as not multiple 5s")
         return False
 
-    # If the current time is greater than or equal to the next polling time, it will proceed with polling
-    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 time for polling")
-    if tuya_data_request_polling:
-        tuya_data_request_poll(self, nwkid, "01")
+    # Check if the current time is less than the next polling time
+    if current_time < next_poll_time:
+        if additional_polls <= 0:
+            return False
 
-    if tuya_data_query:
-        tuya_data_request(self, nwkid, "01")
-        
-    self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})["LastTuyaDataRequest"] = time.time()
+        self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 additional poll {additional_polls}")
+        # If within additional polls window, decrement the counter and allow polling
+        self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = additional_polls - 1
+        return True
+
+    # If the current time is greater than or equal to the next polling time, proceed with polling logic
+    # Update the last polling time and reset the additional polls counter
+
+    self.ListOfDevices[nwkid]["Tuya"]["LastTuyaDataRequest"] = current_time
+    self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = ADDITIONAL_POLLS
+
     return True
 
 
