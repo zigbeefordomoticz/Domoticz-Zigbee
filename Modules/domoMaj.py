@@ -730,26 +730,32 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
          
         if ClusterType == "phMeter" and WidgetType == "phMeter":
+            self.log.logging("Widget", "Log", "------>  pH: %s" % (value,), NwkId)
             svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "ec" and WidgetType == "ec":
+            self.log.logging("Widget", "Log", "------>  EC: %s" % (value,), NwkId)
             svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "orp" and WidgetType == "orp":
+            self.log.logging("Widget", "Log", "------>  ORP: %s" % (value,), NwkId)
             svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "freeChlorine" and WidgetType == "freeChlorine":
+            self.log.logging("Widget", "Log", "------>  FreeChlorine: %s" % (value,), NwkId)
             svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "salinity" and WidgetType == "salinity":
+            self.log.logging("Widget", "Log", "------>  Salinity: %s" % (value,), NwkId)
             svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "tds" and WidgetType == "tds":
+            self.log.logging("Widget", "Log", "------>  TDS: %s" % (value,), NwkId)
             svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
