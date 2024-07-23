@@ -155,29 +155,33 @@ def tuya_polling(self, nwkid):
     if not tuya_data_request_polling:
         return False
 
-    if tuya_data_request_polling and should_poll(self, device_model, nwkid, tuya_data_request_polling):
+    polled = False
+    # Retrieve the device information
+    tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
+    additional_polls = tuya_device_info.get("AdditionalPolls", 0)
+
+    if tuya_data_request_polling and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataRequest", tuya_data_request_polling, additional_polls):
         # If the current time is greater than or equal to the next polling time, it will proceed with polling
-        self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 time for polling")
-        if tuya_data_request_polling:
-            tuya_data_request_poll(self, nwkid, "01")
+        self.log.logging("Tuya", "Log", f"tuya_polling - tuya_data_request_poll 0x00 dp 69 dt 02 - Nwkid: {nwkid}/01 time for polling")
+        tuya_data_request_poll(self, nwkid, "01")
+        polled = True
 
-        if tuya_data_query:
-            tuya_data_request(self, nwkid, "01")
+    if tuya_data_query and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataQuery", tuya_data_query):
+        self.log.logging("Tuya", "Log", f"tuya_polling - tuya_data_request 0x03 Nwkid: {nwkid}/01 time for polling")
+        tuya_data_request(self, nwkid, "01")
+        polled = True
+
+    if polled:
         return True
-
     return False
 
 
-def should_poll(self, device_model, nwkid, polling_interval):
+def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling_interval, additional_polls=0):
     # Log the polling interval value
     self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {polling_interval}")
 
-    # Retrieve the device information
-    tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
-
     # Retrieve the last polling time and additional polls
-    last_poll_time = tuya_device_info.get("LastTuyaDataRequest", 0)
-    additional_polls = tuya_device_info.get("AdditionalPolls", 0)
+    last_poll_time = tuya_device_info.get(tuya_last_poll_attribute, 0)
 
     # Calculate the next polling time
     next_poll_time = last_poll_time + polling_interval
@@ -206,7 +210,7 @@ def should_poll(self, device_model, nwkid, polling_interval):
     # If the current time is greater than or equal to the next polling time, proceed with polling logic
     # Update the last polling time and reset the additional polls counter
 
-    self.ListOfDevices[nwkid]["Tuya"]["LastTuyaDataRequest"] = current_time
+    self.ListOfDevices[nwkid]["Tuya"][ tuya_last_poll_attribute ] = current_time
     self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = ADDITIONAL_POLLS
 
     return True
