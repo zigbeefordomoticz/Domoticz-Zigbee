@@ -152,6 +152,7 @@ def tuya_polling(self, nwkid):
     tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
 
     self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
+    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_query {tuya_data_query}")
     if not tuya_data_request_polling:
         return False
 
@@ -177,6 +178,8 @@ def tuya_polling(self, nwkid):
 
 
 def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling_interval, additional_polls=0):
+    """" Check if it is time for a poll. Because it is time, or because we have additional poll to be made."""
+
     # Log the polling interval value
     self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {polling_interval}")
 
@@ -193,7 +196,8 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
     current_time = int(time.time())
 
     # We do the check only every 5s
-    if current_time < (last_poll_time + 6):
+    if additional_polls and current_time < (last_poll_time + 6):
+        # We need at least 6 secondes between each poll - so all data are correctly sent and the device is ready to take a new request
         self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 skip as last request was less that 5s agoo")
         return False
 
@@ -239,7 +243,7 @@ def tuya_data_request(self, nwkid, epout):
     
     payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
     raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
-    self.log.logging("Tuya", "Log", "tuya_data_request - Nwkid: %s reset device Cmd: 03" % nwkid)
+    self.log.logging("Tuya", "Log", "tuya_data_request - Nwkid: %s TUYA_DATA_QUERY Cmd: 03" % nwkid)
     
 
 def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
