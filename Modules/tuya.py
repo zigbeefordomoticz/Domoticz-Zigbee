@@ -231,7 +231,7 @@ def tuya_data_request_poll(self, nwkid, epout):
     action = "6902"
     data = "00000001"
 
-    self.log.logging("Tuya", "Log", f"tuya_data_request - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}") 
+    self.log.logging("Tuya", "Log", f"tuya_data_request_poll - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}")
     tuya_cmd(self, nwkid, epout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None)
 
 
@@ -241,10 +241,14 @@ def tuya_data_request(self, nwkid, epout):
     # The query does not contain a ZCL payload. We recommend that you set a reporting policy 
     # on the Zigbee device to avoid reporting all data in one task.
     
-    payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
-    raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
-    self.log.logging("Tuya", "Log", "tuya_data_request - Nwkid: %s TUYA_DATA_QUERY Cmd: 03" % nwkid)
-    
+    cluster_frame = "11"
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    cmd = "03"  # TY_DATA_QUERY
+    payload = cluster_frame + sqn + cmd
+    self.log.logging("Tuya", "Log", f"tuya_data_request - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd}")
+    raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=False )
+    self.log.logging("Tuya", "Log", "tuya_data_request - Nwkid: %s TUYA_DATA_QUERY Cmd: 03 done!" % nwkid)
+
 
 def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
     """
