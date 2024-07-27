@@ -55,7 +55,7 @@ from Modules.zigateConsts import ZIGATE_EP
 #   0x04: enum8 ( 0x00-0xff)
 #   0x05: bitmap ( 1,2, 4 bytes) as bits
 
-ADDITIONAL_POLLS = 3
+ADDITIONAL_POLLS = 5  # Do 5 query per cycle (which are by default every 5 minutes)
 
 def is_tuya_switch_relay(self, nwkid):
     model = self.ListOfDevices[nwkid].get("Model", "")
@@ -151,24 +151,25 @@ def tuya_polling(self, nwkid):
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
     tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
 
-    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
-    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_query {tuya_data_query}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_query {tuya_data_query}")
     if not tuya_data_request_polling:
         return False
 
     polled = False
     # Retrieve the device information
     tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
-    additional_polls = tuya_device_info.get("AdditionalPolls", 0)
+    additional_polls = tuya_device_info.get("AdditionalPolls", ADDITIONAL_POLLS)
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 AdditionalPolls {additional_polls}")
 
-    if tuya_data_request_polling and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataRequest", tuya_data_request_polling, additional_polls):
+    if tuya_data_request_polling and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataRequest", polling_interval=tuya_data_request_polling, additional_polls=additional_polls):
         # If the current time is greater than or equal to the next polling time, it will proceed with polling
-        self.log.logging("Tuya", "Log", f"tuya_polling - tuya_data_request_poll 0x00 dp 69 dt 02 - Nwkid: {nwkid}/01 time for polling")
+        self.log.logging("Tuya", "Debug", f"tuya_polling - tuya_data_request_poll 0x00 dp 69 dt 02 - Nwkid: {nwkid}/01 time for polling")
         tuya_data_request_poll(self, nwkid, "01")
         polled = True
 
-    if tuya_data_query and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataQuery", tuya_data_query):
-        self.log.logging("Tuya", "Log", f"tuya_polling - tuya_data_request 0x03 Nwkid: {nwkid}/01 time for polling")
+    if tuya_data_query and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataQuery", polling_interval=tuya_data_query):
+        self.log.logging("Tuya", "Debug", f"tuya_polling - tuya_data_request 0x03 Nwkid: {nwkid}/01 time for polling")
         tuya_data_request(self, nwkid, "01")
         polled = True
 
@@ -181,7 +182,7 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
     """" Check if it is time for a poll. Because it is time, or because we have additional poll to be made."""
 
     # Log the polling interval value
-    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {polling_interval}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {polling_interval} additional_polls: {additional_polls}")
 
     # Retrieve the last polling time and additional polls
     last_poll_time = tuya_device_info.get(tuya_last_poll_attribute, 0)
@@ -189,16 +190,16 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
     # Calculate the next polling time
     next_poll_time = last_poll_time + polling_interval
 
-    # Log the last polling time and the next polling time for comparison
-    self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll last_poll_time: {last_poll_time} versus next_poll_time: {next_poll_time}")
-
     # Get the current time
     current_time = int(time.time())
 
+    # Log the last polling time and the next polling time for comparison
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll current time {current_time} last_poll_time: {last_poll_time} versus next_poll_time: {next_poll_time}")
+
     # We do the check only every 5s
-    if additional_polls and current_time < (last_poll_time + 6):
+    if additional_polls and current_time < (last_poll_time + 5):
         # We need at least 6 secondes between each poll - so all data are correctly sent and the device is ready to take a new request
-        self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 skip as last request was less that 5s agoo")
+        self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 skip as last request was less that 5s agoo")
         return False
 
     # Check if the current time is less than the next polling time
@@ -206,14 +207,14 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
         if additional_polls <= 0:
             return False
 
-        self.log.logging("Tuya", "Log", f"tuya_polling - Nwkid: {nwkid}/01 additional poll {additional_polls}")
+        self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 additional poll {additional_polls}")
         # If within additional polls window, decrement the counter and allow polling
         self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = additional_polls - 1
         return True
 
     # If the current time is greater than or equal to the next polling time, proceed with polling logic
     # Update the last polling time and reset the additional polls counter
-
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 We are entering in a new cycle")
     self.ListOfDevices[nwkid]["Tuya"][ tuya_last_poll_attribute ] = current_time
     self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = ADDITIONAL_POLLS
 
@@ -221,7 +222,7 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
 
 
 def tuya_data_request_poll(self, nwkid, epout):
-    self.log.logging("Tuya", "Log", "tuya_data_request_poll - Nwkid: %s tuya polling Cmd: 00" % nwkid) 
+    self.log.logging("Tuya", "Debug", "tuya_data_request_poll - Nwkid: %s tuya polling Cmd: 00" % nwkid) 
     # Cmd 0x00 - 01/46/6902/0004/00000001/
     # Cmd 0x00 - 00/d7/6902/0004/00000001/
 
@@ -231,7 +232,7 @@ def tuya_data_request_poll(self, nwkid, epout):
     action = "6902"
     data = "00000001"
 
-    self.log.logging("Tuya", "Log", f"tuya_data_request_poll - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}")
+    self.log.logging("Tuya", "Debug", f"tuya_data_request_poll - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}")
     tuya_cmd(self, nwkid, epout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None)
 
 
@@ -245,9 +246,9 @@ def tuya_data_request(self, nwkid, epout):
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     cmd = "03"  # TY_DATA_QUERY
     payload = cluster_frame + sqn + cmd
-    self.log.logging("Tuya", "Log", f"tuya_data_request - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd}")
+    self.log.logging("Tuya", "Debug", f"tuya_data_request - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd}")
     raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=False )
-    self.log.logging("Tuya", "Log", "tuya_data_request - Nwkid: %s TUYA_DATA_QUERY Cmd: 03 done!" % nwkid)
+    self.log.logging("Tuya", "Debug", "tuya_data_request - Nwkid: %s TUYA_DATA_QUERY Cmd: 03 done!" % nwkid)
 
 
 def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
@@ -255,7 +256,7 @@ def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
     This is fonction is call when receiving a message from a Manufacturer battery based device.
     The function is called after processing the readCluster part
     """
-    self.log.logging( "Tuya", "Log", "callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
+    self.log.logging( "Tuya", "Debug", "callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
 
 
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
