@@ -246,6 +246,7 @@ def tuya_data_request(self, nwkid, epout):
     sqn = get_and_inc_ZCL_SQN(self, nwkid)
     cmd = "03"  # TY_DATA_QUERY
     payload = cluster_frame + sqn + cmd
+
     self.log.logging("Tuya", "Log", f"tuya_data_request - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd}")
     raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=False )
     self.log.logging("Tuya", "Debug", "tuya_data_request - Nwkid: %s TUYA_DATA_QUERY Cmd: 03 done!" % nwkid)
