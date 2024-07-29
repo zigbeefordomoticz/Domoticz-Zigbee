@@ -795,11 +795,12 @@ SIMPLE_WIDGET = {
         "Options": "1;ppm"
     },
     
-    "phMeter": { "widgetType": "Custom", "Options": "1;ph" },
+    "phMeter": { "widgetType": "Custom", "Options": "1;pH" },
     "ec": { "widgetType": "Custom", "Options": "1;µS/cm" },
     "orp": { "widgetType": "Custom", "Options": "1;mV" },
     "freeChlorine": { "widgetType": "Custom", "Options": "1;mg/L" },
     "salinity": { "widgetType": "Custom", "Options": "1;ppm" },
+    "tds": { "widgetType": "Custom", "Options": "1;ppm" },
 
     "Strength": {
         "Type": 243,

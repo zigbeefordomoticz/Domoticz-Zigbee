@@ -433,24 +433,31 @@ def timeStamped(self, key, Type):
 # Used by zcl/zdpRawCommands
 def get_and_inc_ZDP_SQN(self, key):
     return get_and_increment_generic_SQN(self, key, "ZDPSQN")
-   
+
+
 def get_and_inc_ZCL_SQN(self, key):
     return get_and_increment_generic_SQN(self, key, "ZCLSQN")
-  
+
+
+def get_and_inc_TUYA_POLLING_SQN(self, key):
+    return get_and_increment_generic_SQN(self, key, "TUYA_POLLING_SQN")
+
+
 def get_and_increment_generic_SQN(self, nwkid, sqn_type):
     if nwkid not in self.ListOfDevices: 
         return "%02x" %0x00
+
     if sqn_type not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %0x00
         return self.ListOfDevices[nwkid][ sqn_type ]
-    
+
     if self.ListOfDevices[nwkid][ sqn_type ] in ( '', {}):
         self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %0x00
         return self.ListOfDevices[nwkid][ sqn_type ]
 
     self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %( ( int(self.ListOfDevices[nwkid][ sqn_type ],16) + 1) % 256)
     return self.ListOfDevices[nwkid][ sqn_type ]
-    
+
 
 def updSQN(self, key, newSQN):
     if key in self.ListOfDevices and newSQN:
