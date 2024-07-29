@@ -1453,7 +1453,7 @@ def importSchneiderZoning(self):
 
     SCHNEIDER_ZONING = "schneider_zoning.json"
 
-    self.SchneiderZoningFilename = self.pluginconf.pluginConf["pluginConfig"] + SCHNEIDER_ZONING
+    self.SchneiderZoningFilename = self.pluginconf.pluginConf["pluginConfig"] + os.sep + SCHNEIDER_ZONING
 
     if not os.path.isfile(self.SchneiderZoningFilename):
         self.log.logging("Schneider", "Debug", f"importSchneiderZoning - Nothing to import from {self.SchneiderZoningFilename}")
