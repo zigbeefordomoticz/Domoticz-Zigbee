@@ -151,12 +151,13 @@ def handle_client(self, client_socket, client_addr):
 
                 method, path, headers, body = parse_http_request(data)
 
-                # If PUT, read the rest of the body based on Content-Length
-                if method in ['PUT', 'POST']:
-                    content_length = int(headers.get('Content-Length', 0))
-                    if content_length > len(body):
-                        additional_data = receive_data(self, client_socket, content_length - len(body))
-                        body += additional_data.decode('utf-8')
+                self.logging("Debug", f"handle_client from method: {method} path: {path}  headers: {headers}")
+
+                content_length = int(headers.get('Content-Length', 0))
+                if content_length > len(body):
+                    self.logging("Debug", f"handle_client content_length: {content_length} > len(body): {len(body)}  get remaining data")
+                    additional_data = receive_data(self, client_socket, content_length - len(body)).decode('utf-8')
+                    body += additional_data
 
                 Data = decode_http_data(self, method, path, headers, body.encode('utf-8'))
                 self.onMessage(client_socket, Data)
