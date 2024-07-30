@@ -93,19 +93,22 @@ def receive_data(self, client_socket, length=None):
     chunks = []
     bytes_recd = 0
     try:
-        while True:
-            if length and bytes_recd >= length:
-                break
+        while not (length and bytes_recd >= length):
             chunk = client_socket.recv(min(MAX_BYTES, length - bytes_recd) if length else MAX_BYTES)
+            self.logging("Debug", f"receive_data ----- read {len(chunk)}")
             if not chunk:
                 break
             chunks.append(chunk)
             bytes_recd += len(chunk)
             if len(chunk) < MAX_BYTES:
                 break
+
     except socket.error as e:
         self.logging("Debug", f"receive_data - Socket error with: {e}")
         return b""
+
+    self.logging("Debug", f"receive_data ----- received {len(chunks)} chuncks")
+
     return b"".join(chunks)
 
 
@@ -143,6 +146,7 @@ def handle_client(self, client_socket, client_addr):
     try:
         while self.running:
             try:
+                # Let's receive the first chunck (to get the headers)
                 data = receive_data(self, client_socket).decode('utf-8')
 
                 if not data:
@@ -150,15 +154,16 @@ def handle_client(self, client_socket, client_addr):
                     break
 
                 method, path, headers, body = parse_http_request(data)
-
-                self.logging("Debug", f"handle_client from method: {method} path: {path}  headers: {headers}")
-
                 content_length = int(headers.get('Content-Length', 0))
+
+                self.logging("Debug", f"handle_client from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {headers}")
+
                 if content_length > len(body):
-                    self.logging("Debug", f"handle_client content_length: {content_length} > len(body): {len(body)}  get remaining data")
+                    self.logging("Debug", f"handle_client content_length: {content_length} > len(body): {len(body)} get remaining data")
                     additional_data = receive_data(self, client_socket, content_length - len(body)).decode('utf-8')
                     body += additional_data
 
+                self.logging("Debug", f"handle_client content_length: {content_length} len_body: {len(body)}")
                 Data = decode_http_data(self, method, path, headers, body.encode('utf-8'))
                 self.onMessage(client_socket, Data)
 
