@@ -112,7 +112,7 @@ SETTINGS = {
             "numEnergyReports": { "type": "int", "default": 4, "current": None, "restart": 0, "hidden": False, "Advanced": False, "ZigpyRadio": "", },
             "enableGzip": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
             "enableDeflate": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
-            "enableChunk": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
+            "enableChunk": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
             "enableKeepalive": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
             "enableCache": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": True, "Advanced": True, },
         },

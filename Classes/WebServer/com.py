@@ -95,9 +95,11 @@ def receive_data(self, client_socket, length=None):
     try:
         while not (length and bytes_recd >= length):
             chunk = client_socket.recv(min(MAX_BYTES, length - bytes_recd) if length else MAX_BYTES)
-            self.logging("Debug", f"receive_data ----- read {len(chunk)}")
+
             if not chunk:
+                self.logging("Debug", f"receive_data ----- No Data received!!!")
                 break
+            self.logging("Debug", f"receive_data ----- read {len(chunk)}")
             chunks.append(chunk)
             bytes_recd += len(chunk)
             if len(chunk) < MAX_BYTES:
@@ -158,10 +160,15 @@ def handle_client(self, client_socket, client_addr):
 
                 self.logging("Debug", f"handle_client from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {headers}")
 
-                if content_length > len(body):
-                    self.logging("Debug", f"handle_client content_length: {content_length} > len(body): {len(body)} get remaining data")
+                received_length = len(body)
+                
+                while received_length <= content_length:
+                    self.logging("Debug", f"handle_client received_length: {received_length} content_length: {content_length} {content_length - received_length}")
                     additional_data = receive_data(self, client_socket, content_length - len(body)).decode('utf-8')
+                    if not additional_data:
+                        break
                     body += additional_data
+                    received_length += len(additional_data)
 
                 self.logging("Debug", f"handle_client content_length: {content_length} len_body: {len(body)}")
                 Data = decode_http_data(self, method, path, headers, body.encode('utf-8'))
