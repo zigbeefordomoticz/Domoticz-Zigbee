@@ -11,8 +11,7 @@ import threading
 import traceback
 
 from Modules.domoticzAbstractLayer import domoticz_connection
-
-MAX_BYTES = 1024
+from Classes.WebServer.tools import MAX_KB_TO_SEND
 
 
 def startWebServer(self):
@@ -94,7 +93,7 @@ def receive_data(self, client_socket, length=None):
     bytes_recd = 0
     try:
         while not (length and bytes_recd >= length):
-            chunk = client_socket.recv(min(MAX_BYTES, length - bytes_recd) if length else MAX_BYTES)
+            chunk = client_socket.recv(min(MAX_KB_TO_SEND, length - bytes_recd) if length else MAX_KB_TO_SEND)
 
             if not chunk:
                 self.logging("Debug", f"receive_data ----- No Data received!!!")
@@ -102,7 +101,7 @@ def receive_data(self, client_socket, length=None):
             self.logging("Debug", f"receive_data ----- read {len(chunk)}")
             chunks.append(chunk)
             bytes_recd += len(chunk)
-            if len(chunk) < MAX_BYTES:
+            if len(chunk) < MAX_KB_TO_SEND:
                 break
 
     except socket.error as e:
