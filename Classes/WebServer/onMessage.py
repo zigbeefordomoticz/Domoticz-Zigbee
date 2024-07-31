@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Classes.WebServer.tools import MAX_KB_TO_SEND, DumpHTTPResponseToLog
+from Classes.WebServer.tools import MAX_BLOCK_SIZE, DumpHTTPResponseToLog
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
@@ -238,7 +238,7 @@ def get_range_and_send(self, Connection, webFilename, Data, _response):
     messageFile = open(webFilename, mode="rb")
     messageFile.seek(fileStartPosition)
 
-    fileContent = messageFile.read(MAX_KB_TO_SEND)
+    fileContent = messageFile.read(MAX_BLOCK_SIZE)
 
     self.logging(
         "Debug",
@@ -246,7 +246,7 @@ def get_range_and_send(self, Connection, webFilename, Data, _response):
     )
 
     _response["Status"] = "200 OK"
-    if len(fileContent) == MAX_KB_TO_SEND:
+    if len(fileContent) == MAX_BLOCK_SIZE:
         _response["Status"] = "206 Partial Content"
         _response["Headers"]["Content-Range"] = f"bytes {fileStartPosition}-{messageFile.tell()}/{messageFileSize}"
 

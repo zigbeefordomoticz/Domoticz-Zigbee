@@ -11,7 +11,7 @@ import threading
 import traceback
 
 from Modules.domoticzAbstractLayer import domoticz_connection
-from Classes.WebServer.tools import MAX_KB_TO_SEND
+from Classes.WebServer.tools import MAX_BLOCK_SIZE
 
 
 def startWebServer(self):
@@ -93,15 +93,15 @@ def receive_data(self, client_socket, length=None):
     bytes_recd = 0
     try:
         while not (length and bytes_recd >= length):
-            chunk = client_socket.recv(min(MAX_KB_TO_SEND, length - bytes_recd) if length else MAX_KB_TO_SEND)
+            chunk = client_socket.recv(min(MAX_BLOCK_SIZE, length - bytes_recd) if length else MAX_BLOCK_SIZE)
 
             if not chunk:
-                self.logging("Debug", f"receive_data ----- No Data received!!!")
+                self.logging("Debug", "receive_data ----- No Data received!!!")
                 break
             self.logging("Debug", f"receive_data ----- read {len(chunk)}")
             chunks.append(chunk)
             bytes_recd += len(chunk)
-            if len(chunk) < MAX_KB_TO_SEND:
+            if len(chunk) < MAX_BLOCK_SIZE:
                 break
 
     except socket.error as e:
@@ -165,6 +165,7 @@ def handle_client(self, client_socket, client_addr):
                     self.logging("Debug", f"handle_client received_length: {received_length} content_length: {content_length} {content_length - received_length}")
                     additional_data = receive_data(self, client_socket, content_length - len(body)).decode('utf-8')
                     if not additional_data:
+                        self.logging("Debug", f"no additional_data from {client_addr}")
                         break
                     body += additional_data
                     received_length += len(additional_data)

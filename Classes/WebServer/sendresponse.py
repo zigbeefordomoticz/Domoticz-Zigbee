@@ -8,7 +8,7 @@ import gzip
 import json
 import zlib
 
-from Classes.WebServer.tools import MAX_KB_TO_SEND, DumpHTTPResponseToLog
+from Classes.WebServer.tools import MAX_BLOCK_SIZE, DumpHTTPResponseToLog
 
 http_status_codes = {
     100: "HTTP/1.1 100 Continue\r\n",
@@ -58,14 +58,14 @@ def send_by_chunk(self, socket, http_response, response_body):
     # send the HTTP headers
     socket.sendall( http_response.encode('utf-8'))
 
-    for i in range(0, len(response_body), MAX_KB_TO_SEND):
-        chunck_data = response_body[ i : i + MAX_KB_TO_SEND]
+    for i in range(0, len(response_body), MAX_BLOCK_SIZE):
+        chunck_data = response_body[ i : i + MAX_BLOCK_SIZE]
 
         socket.sendall(f"{len(chunck_data):X}\r\n".encode("utf-8"))
         socket.sendall(chunck_data)
         socket.sendall(b"\r\n")
 
-        self.logging("Debug", "Sending Chunk: %s out of %s" % (i, len(response_body) / MAX_KB_TO_SEND))
+        self.logging("Debug", "Sending Chunk: %s out of %s" % (i, len(response_body) / MAX_BLOCK_SIZE))
 
     # Closing Chunk
     socket.sendall(b"0\r\n\r\n")
@@ -167,7 +167,7 @@ def sendResponse(self, client_socket, Response, AcceptEncoding=None):
     # Compression
     request_gzip = self.pluginconf.pluginConf["enableGzip"] and AcceptEncoding and (AcceptEncoding.find("gzip") != -1)
     request_deflate = self.pluginconf.pluginConf["enableDeflate"] and AcceptEncoding and (AcceptEncoding.find("deflate") != -1)
-    request_chunked = self.pluginconf.pluginConf["enableChunk"] and len(Response["Data"]) > MAX_KB_TO_SEND
+    request_chunked = self.pluginconf.pluginConf["enableChunk"] and len(Response["Data"]) > MAX_BLOCK_SIZE
     
     self.logging("Debug", f"request_gzip {request_gzip} - request_deflate {request_deflate} request_chunked {request_chunked}")
     http_response, response_body = prepare_http_response( self, Response, request_gzip, request_deflate, request_chunked )
