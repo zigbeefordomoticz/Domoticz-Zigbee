@@ -1452,15 +1452,9 @@ def how_many_devices(self):
 
 
 def get_deviceconf_parameter_value(self, model, attribute, return_default=None):
-    """ Retreive Configuration Attribute from Config file"""
+    """ Retrieve Configuration Attribute from Config file"""
     
-    if model in ( '', {}):
-        return return_default
-    if model not in self.DeviceConf:
-        return return_default
-    if attribute not in self.DeviceConf[ model ]:
-        return return_default
-    return self.DeviceConf[ model ][ attribute ]
+    return self.DeviceConf.get(model, {}).get(attribute, return_default)
 
 
 def night_shift_jobs( self ):
