@@ -125,17 +125,25 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'IASAlarmMerge = %s' % ias_alarm1_2_merged)
 
     if Model == "LDSENK08":
-        # Door sensor (alarm1)
-        self.log.logging('Input', 'Debug', 'IAS zone status change %s/%s %s alarm1: %s alarm2: %s tamper: %s' % (
+
+        zoneStatus = int(MsgZoneStatus, 16)
+        door_contact = zoneStatus & 1
+        vibration = zoneStatus & (1 << 1)
+        tamper_bit = zoneStatus & (1 << 2)
+
+        self.log.logging('Input', 'Log', 'IAS zone status change %s/%s %s alarm1: %s alarm2: %s tamper: %s' % (
             MsgSrcAddr, MsgEp, Model, alarm1, alarm2, tamper))
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, '%02d' % alarm1 )
+        self.log.logging('Input', 'Log', 'IAS zone status change %s/%s %s door_contact: %s vibration: %s tamper_bit: %s' % (
+            MsgSrcAddr, MsgEp, Model, door_contact, vibration, tamper_bit))
+
+        # Door sensor (alarm1)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, '%02d' % door_contact )
 
         # Vibration (alarm2)
         cluster_id = "0101"
         attribute_id = "0055"
-
-        state = "20" if alarm2 else "00"
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, cluster_id, attribute_id, state)
+        state = "20" if vibration else "00"
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, cluster_id, state, Attribute_=attribute_id, )
 
     elif ias_alarm1_2_merged:
         self.log.logging('Input', 'Debug', 'IASAlarmMerge alarm1 %s alarm2 %s' % (alarm1, alarm2))
