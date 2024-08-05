@@ -283,6 +283,7 @@ def ts0601_battery(self, Devices, nwkid, ep, value ):
     checkAndStoreAttributeValue(self, nwkid, "01", "0001", "0000", value)
     self.ListOfDevices[nwkid]["Battery"] = value
     Update_Battery_Device(self, Devices, nwkid, value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0001", "0021", value)
     store_tuya_attribute(self, nwkid, "BatteryStatus", value)
 
 

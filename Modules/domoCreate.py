@@ -731,6 +731,12 @@ SIMPLE_WIDGET = {
         "Type": 243,
         "Subtype": 19
     },
+    "BatteryPercentage": {
+        "Type": 243,
+        "Subtype": 6,
+        "Switchtype": 0
+    },
+
     "P1Meter": {
         "Type": 250,
         "Subtype": 1,
