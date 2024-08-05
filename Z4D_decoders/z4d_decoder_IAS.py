@@ -124,7 +124,20 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     ias_alarm1_2_merged = get_deviceconf_parameter_value(self, Model, 'IASAlarmMerge', return_default=None)
     self.log.logging('Input', 'Debug', 'IASAlarmMerge = %s' % ias_alarm1_2_merged)
 
-    if ias_alarm1_2_merged:
+    if Model == "LDSENK08":
+        # Door sensor (alarm1)
+        self.log.logging('Input', 'Debug', 'IAS zone status change %s/%s %s alarm1: %s alarm2: %s tamper: %s' % (
+            MsgSrcAddr, MsgEp, Model, alarm1, alarm2, tamper))
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, '%02d' % alarm1 )
+
+        # Vibration (alarm2)
+        cluster_id = "0101"
+        attribute_id = "0055"
+
+        state = "20" if alarm2 else "00"
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, cluster_id, attribute_id, state)
+
+    elif ias_alarm1_2_merged:
         self.log.logging('Input', 'Debug', 'IASAlarmMerge alarm1 %s alarm2 %s' % (alarm1, alarm2))
         combined_alarm = alarm2 << 1 | alarm1
         self.log.logging('Input', 'Debug', 'IASAlarmMerge combined value = %02d' % combined_alarm)
@@ -134,7 +147,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
         self.log.logging('Input', 'Debug', 'Motion detected sending to MajDomo %s/%s %s' % (MsgSrcAddr, MsgEp, alarm1 or alarm2))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0406', '%02d' % (alarm1 or alarm2))
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.sensor_magnet', 'lumi.sensor_magnet.aq2', 'lumi.sensor_magnet.acn001', 'lumi.magnet.acn001'):
+    elif Model in ('lumi.sensor_magnet', 'lumi.sensor_magnet.aq2', 'lumi.sensor_magnet.acn001', 'lumi.magnet.acn001'):
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0006', '%02d' % alarm1)
 
     elif Model not in ('RC-EF-3.0', 'RC-EM'):
