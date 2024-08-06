@@ -128,7 +128,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'IASAlarmMerge = %s' % ias_alarm1_2_merged)
 
     if Model == "LDSENK08":
-        ldsenk08_zone_status_change( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus)
+        _ldsenk08_zone_status_change( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus)
         _update_ias_zone_status(self, MsgSrcAddr, MsgEp, MsgZoneStatus)
         return
 
