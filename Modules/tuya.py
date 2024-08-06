@@ -40,6 +40,8 @@ from Modules.tuyaTRV import tuya_eTRV_response
 from Modules.tuyaTS011F import tuya_read_cluster_e001
 from Modules.tuyaTS0601 import ts0601_response
 from Modules.zigateConsts import ZIGATE_EP
+from Zigbee.zclDecoders import zcl_raw_default_response
+
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
@@ -175,6 +177,8 @@ def tuya_polling(self, nwkid):
 
     if polled:
         return True
+    elif get_tuya_attribute(self, nwkid, "backlight_level") != "00000000":
+        tuya_data_request_end_poll(self, nwkid, "01")
     return False
 
 
@@ -232,8 +236,25 @@ def tuya_data_request_poll(self, nwkid, epout):
     action = "6902"
     data = "00000001"
 
+    self.log.logging("Tuya", "Debug", f"tuya_data_request_poll - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}")
+    tuya_cmd(self, nwkid, epout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None)
+
+
+def tuya_data_request_end_poll(self, nwkid, epout):
+    self.log.logging("Tuya", "Debug", "tuya_data_request_poll - Nwkid: %s tuya polling Cmd: 00" % nwkid) 
+    # Cmd 0x00 - 01/46/6902/0004/00000001/
+    # Cmd 0x00 - 00/d7/6902/0004/00000001/
+
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "6902"
+    data = "00000000"
+
     self.log.logging("Tuya", "Log", f"tuya_data_request_poll - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}")
     tuya_cmd(self, nwkid, epout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None)
+
+
 
 
 def tuya_data_request(self, nwkid, epout):
@@ -271,7 +292,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     if ClusterID != "ef00" or "Model" not in self.ListOfDevices[NwkId]:
         return
 
-    _ModelName = self.ListOfDevices[NwkId]["Model"]
+    _ModelName = self.ListOfDevices[NwkId].get("Model", "")
 
     if len(MsgPayload) < 6:
         self.log.logging("Tuya", "Debug2", "tuyaReadRawAPS - MsgPayload %s too short" % (MsgPayload), NwkId)
@@ -284,7 +305,11 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     cmd = MsgPayload[4:6]  # uint8
     # Send a Default Response ( why might check the FCF eventually )
     if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
-        tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
+        #tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
+        tuya_default_response(self, NwkId, srcEp, ClusterID, cmd, sqn, fcf)
+    elif self.zigbee_communication == "zigpy" and cmd == "02" and get_deviceconf_parameter_value(self, _ModelName, "TY_DEFAULT_RESPONSE", return_default=False):
+        tuya_default_response(self, NwkId, srcEp, ClusterID, cmd, sqn, fcf)
+
 
     # https://developer.tuya.com/en/docs/iot/tuya-zigbee-module-uart-communication-protocol?id=K9ear5khsqoty
     self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - %s/%s fcf: %s sqn: %s cmd: %s Payload: %s" % (
@@ -377,6 +402,12 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     else:
         self.log.logging( "Tuya", "Log", "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" % (
             _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]), NwkId, )
+
+
+def tuya_default_response(self, SrcNwkId, SrcEndPoint, ClusterID, Command, Sqn, fcf):
+    self.log.logging( "Tuya", "Log", "tuya_default_response -  %s/%s %s %s %s %s" %(
+        SrcNwkId, SrcEndPoint, ClusterID, Command, Sqn, fcf ))
+    zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterID, Command, Sqn, command_status="00", manufcode=None, orig_fcf=fcf )
 
 
 def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
@@ -484,7 +515,7 @@ def utc_to_local(dt):
     return dt - timedelta(seconds=time.timezone)
 
 
-def tuya_send_default_response(self, Nwkid, srcEp, sqn, cmd, orig_fcf):
+def tuya_send_default_response(self, Nwkid, srcEp, sqn, cmd, orig_fcf, force_disabled_default=False):
     if Nwkid not in self.ListOfDevices:
         return
 
@@ -496,6 +527,9 @@ def tuya_send_default_response(self, Nwkid, srcEp, sqn, cmd, orig_fcf):
 
     if disabled_default == "01":
         return
+
+    if force_disabled_default:
+        disabled_default = "01"
 
     fcf = build_fcf("00", manuf_spec, direction, disabled_default)
 
