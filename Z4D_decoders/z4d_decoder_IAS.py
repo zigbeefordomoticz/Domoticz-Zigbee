@@ -171,8 +171,8 @@ def _ldsenk08_zone_status_change( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId
     tamper_bit = (zoneStatus & (1 << 2)) > 0
     batter_low = (zoneStatus & (1 << 3)) > 0
 
-    self.log.logging('Input', 'Log', 'IAS zone status change %s/%s %s door_contact: %s vibration: %s tamper_bit: %s' % (
-        MsgSrcAddr, MsgEp, Model, door_contact, vibration, tamper_bit))
+    self.log.logging('Input', 'Log', '_ldsenk08_zone_status_change %s/%s door_contact: %s vibration: %s tamper_bit: %s' % (
+        MsgSrcAddr, MsgEp, door_contact, vibration, tamper_bit))
 
     # Door sensor (alarm1)
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, '%02d' % door_contact )
