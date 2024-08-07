@@ -57,7 +57,6 @@ from Zigbee.zclDecoders import zcl_raw_default_response
 #   0x04: enum8 ( 0x00-0xff)
 #   0x05: bitmap ( 1,2, 4 bytes) as bits
 
-ADDITIONAL_POLLS = 5  # Do 5 query per cycle (which are by default every 5 minutes)
 
 def is_tuya_switch_relay(self, nwkid):
     model = self.ListOfDevices[nwkid].get("Model", "")
@@ -151,22 +150,33 @@ def tuya_polling(self, nwkid):
 
     # Retrieve the polling interval configuration for TUYA_DATA_REQUEST_POLLING
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
+    tuya_data_request_polling_additional = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_ADDITIONAL", return_default=5)
     tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
 
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_query {tuya_data_query}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling_additional {tuya_data_request_polling_additional}")
     if not tuya_data_request_polling:
         return False
+
+    current_battery_level = get_tuya_attribute(self, nwkid, "Battery")
+    # Usall default is 300s ( 5 minutes )
+    if current_battery_level and current_battery_level < 30:
+        tuya_data_request_polling *= 12
+
+    elif current_battery_level and current_battery_level < 50:
+        tuya_data_request_polling *= 6
 
     polled = False
     # Retrieve the device information
     tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
-    additional_polls = tuya_device_info.get("AdditionalPolls", ADDITIONAL_POLLS)
+    additional_polls = tuya_device_info.get("AdditionalPolls", tuya_data_request_polling_additional)
+
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 AdditionalPolls {additional_polls}")
 
-    if tuya_data_request_polling and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataRequest", polling_interval=tuya_data_request_polling, additional_polls=additional_polls):
+    if tuya_data_request_polling and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataRequest", polling_interval=tuya_data_request_polling, additional_polls=additional_polls, tuya_data_request_polling_additional=tuya_data_request_polling_additional):
         # If the current time is greater than or equal to the next polling time, it will proceed with polling
-        self.log.logging("Tuya", "Debug", f"tuya_polling - tuya_data_request_poll 0x00 dp 69 dt 02 - Nwkid: {nwkid}/01 time for polling")
+        self.log.logging("Tuya", "Log", f"tuya_polling - tuya_data_request_poll 0x00 dp 69 dt 02 - Nwkid: {nwkid}/01 time for polling with {additional_polls} addition")
         tuya_data_request_poll(self, nwkid, "01")
         polled = True
 
@@ -182,7 +192,7 @@ def tuya_polling(self, nwkid):
     return False
 
 
-def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling_interval, additional_polls=0):
+def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling_interval, additional_polls=0, tuya_data_request_polling_additional=0):
     """" Check if it is time for a poll. Because it is time, or because we have additional poll to be made."""
 
     # Log the polling interval value
@@ -220,7 +230,7 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
     # Update the last polling time and reset the additional polls counter
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 We are entering in a new cycle")
     self.ListOfDevices[nwkid]["Tuya"][ tuya_last_poll_attribute ] = current_time
-    self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = ADDITIONAL_POLLS
+    self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = tuya_data_request_polling_additional
 
     return True
 
@@ -251,10 +261,8 @@ def tuya_data_request_end_poll(self, nwkid, epout):
     action = "6902"
     data = "00000000"
 
-    self.log.logging("Tuya", "Log", f"tuya_data_request_poll - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}")
+    self.log.logging("Tuya", "Debug", f"tuya_data_request_poll - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}")
     tuya_cmd(self, nwkid, epout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None)
-
-
 
 
 def tuya_data_request(self, nwkid, epout):
@@ -405,7 +413,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
 
 
 def tuya_default_response(self, SrcNwkId, SrcEndPoint, ClusterID, Command, Sqn, fcf):
-    self.log.logging( "Tuya", "Log", "tuya_default_response -  %s/%s %s %s %s %s" %(
+    self.log.logging( "Tuya", "Debug", "tuya_default_response -  %s/%s %s %s %s %s" %(
         SrcNwkId, SrcEndPoint, ClusterID, Command, Sqn, fcf ))
     zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterID, Command, Sqn, command_status="00", manufcode=None, orig_fcf=fcf )
 
