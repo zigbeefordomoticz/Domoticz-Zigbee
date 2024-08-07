@@ -323,7 +323,7 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
         Exception: Logs any errors encountered during the server setup and startup process.
     """
 
-    self.logging( "Log","WebUI - server starting on {host} {port}")
+    self.logging( "Log", f"WebUI - server starting on {host} {port}")
 
     # if is_port_in_use(port, host):
     #     self.logging( "Error", f"WebUI cannot start, Port {port} is already in use!!!")
