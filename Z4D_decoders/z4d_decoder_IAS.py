@@ -182,16 +182,13 @@ def _ldsenk08_zone_status_change( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId
     attribute_id = "0055"
     state = "20" if vibration else "00"
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, cluster_id, state, Attribute_=attribute_id, )
-  
+
     if tamper_bit:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '01')
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '00')
 
-    if batter_low:
-        self.ListOfDevices[MsgSrcAddr]['IASBattery'] = 5
-    else:
-        self.ListOfDevices[MsgSrcAddr]['IASBattery'] = 100
+    self.ListOfDevices[MsgSrcAddr]['IASBattery'] = 5 if batter_low else 100
 
 
 def _heiman_door_bell_ef_3(self, Devices, MsgSrcAddr, MsgEp, MsgZoneStatus):
