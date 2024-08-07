@@ -151,12 +151,15 @@ def tuya_polling(self, nwkid):
     # Retrieve the polling interval configuration for TUYA_DATA_REQUEST_POLLING
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
     tuya_data_request_polling_additional = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_ADDITIONAL", return_default=5)
+    tuya_elapse_time_consecutive_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_CONSECUTIVE_ELAPSE", return_default=15)
     tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
 
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_query {tuya_data_query}")
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling_additional {tuya_data_request_polling_additional}")
-    if not tuya_data_request_polling:
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_elapse_time_consecutive_polling {tuya_elapse_time_consecutive_polling}")
+
+    if not tuya_data_request_polling and not tuya_data_query:
         return False
 
     current_battery_level = get_tuya_attribute(self, nwkid, "Battery")
@@ -174,9 +177,9 @@ def tuya_polling(self, nwkid):
 
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 AdditionalPolls {additional_polls}")
 
-    if tuya_data_request_polling and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataRequest", polling_interval=tuya_data_request_polling, additional_polls=additional_polls, tuya_data_request_polling_additional=tuya_data_request_polling_additional):
+    if tuya_data_request_polling and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataRequest", polling_interval=tuya_data_request_polling, additional_polls=additional_polls, tuya_data_request_polling_additional=tuya_data_request_polling_additional, tuya_elapse_time_consecutive_polling=tuya_elapse_time_consecutive_polling):
         # If the current time is greater than or equal to the next polling time, it will proceed with polling
-        self.log.logging("Tuya", "Log", f"tuya_polling - tuya_data_request_poll 0x00 dp 69 dt 02 - Nwkid: {nwkid}/01 time for polling with {additional_polls} addition")
+        self.log.logging("Tuya", "Log", f"tuya_polling - tuya_data_request_poll 0x00 dp 69 dt 02 - Nwkid: {nwkid}/01 time for polling with {additional_polls}")
         tuya_data_request_poll(self, nwkid, "01")
         polled = True
 
@@ -192,28 +195,32 @@ def tuya_polling(self, nwkid):
     return False
 
 
-def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling_interval, additional_polls=0, tuya_data_request_polling_additional=0):
+def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling_interval, additional_polls=0, tuya_data_request_polling_additional=0, tuya_elapse_time_consecutive_polling=15):
     """" Check if it is time for a poll. Because it is time, or because we have additional poll to be made."""
 
     # Log the polling interval value
-    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {polling_interval} additional_polls: {additional_polls}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {polling_interval} additional_polls: {additional_polls} tuya_data_request_polling_additional: {tuya_data_request_polling_additional} tuya_elapse_time_consecutive_polling: {tuya_elapse_time_consecutive_polling}")
 
     # Retrieve the last polling time and additional polls
     last_poll_time = tuya_device_info.get(tuya_last_poll_attribute, 0)
 
     # Calculate the next polling time
     next_poll_time = last_poll_time + polling_interval
-
+    consecutive_elapse_time = last_poll_time + tuya_elapse_time_consecutive_polling
+    
     # Get the current time
     current_time = int(time.time())
 
     # Log the last polling time and the next polling time for comparison
-    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll current time {current_time} last_poll_time: {last_poll_time} versus next_poll_time: {next_poll_time}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll current time {current_time}")
+    self.log.logging("Tuya", "Debug", f"             - Nwkid: {nwkid}/01 device_last_poll last_poll_time: {last_poll_time}")
+    self.log.logging("Tuya", "Debug", f"             - Nwkid: {nwkid}/01 tuya_data_request_polling next_poll_time: {next_poll_time}")
+    self.log.logging("Tuya", "Debug", f"             - Nwkid: {nwkid}/01 tuya_data_request_polling consecutive_elapse_time: {consecutive_elapse_time}")
 
-    # We do the check only every 5s
-    if additional_polls and current_time < (last_poll_time + 5):
+    # We do the check that we do not overload and respect the consecutive_elapse_time
+    if current_time < consecutive_elapse_time:
         # We need at least 6 secondes between each poll - so all data are correctly sent and the device is ready to take a new request
-        self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 skip as last request was less that 5s agoo")
+        self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 skip as last request was less that {tuya_elapse_time_consecutive_polling} s ago")
         return False
 
     # Check if the current time is less than the next polling time
@@ -223,6 +230,7 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
 
         self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 additional poll {additional_polls}")
         # If within additional polls window, decrement the counter and allow polling
+        self.ListOfDevices[nwkid]["Tuya"][ tuya_last_poll_attribute ] = current_time
         self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = additional_polls - 1
         return True
 
