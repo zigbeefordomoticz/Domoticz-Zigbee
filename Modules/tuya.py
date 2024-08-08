@@ -148,11 +148,17 @@ def tuya_polling(self, nwkid):
     if device_model is None:
         return False
 
-    # Retrieve the polling interval configuration for TUYA_DATA_REQUEST_POLLING
-    tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
-    tuya_data_request_polling_additional = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_ADDITIONAL", return_default=5)
-    tuya_elapse_time_consecutive_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_CONSECUTIVE_ELAPSE", return_default=15)
+    # This is based on command 0x03, which query ALL datapoint
     tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
+
+    # Retrieve the polling interval configuration for TUYA_DATA_REQUEST_POLLING which query only the data point which have changed
+    tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
+
+    # 3 consecutives polling by default
+    tuya_data_request_polling_additional = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_ADDITIONAL", return_default=3)
+
+    # Each consecutive polling must be separated by 15s by default
+    tuya_elapse_time_consecutive_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_CONSECUTIVE_ELAPSE", return_default=15)
 
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_query {tuya_data_query}")
@@ -170,28 +176,28 @@ def tuya_polling(self, nwkid):
     elif current_battery_level and current_battery_level < 50:
         tuya_data_request_polling *= 6
 
-    polled = False
     # Retrieve the device information
     tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
     additional_polls = tuya_device_info.get("AdditionalPolls", tuya_data_request_polling_additional)
 
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 AdditionalPolls {additional_polls}")
 
+    if tuya_data_query and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataQuery", polling_interval=tuya_data_query):
+        self.log.logging("Tuya", "Debug", f"tuya_polling - tuya_data_request 0x03 Nwkid: {nwkid}/01 time for polling")
+        tuya_data_request(self, nwkid, "01")
+        return True
+
     if tuya_data_request_polling and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataRequest", polling_interval=tuya_data_request_polling, additional_polls=additional_polls, tuya_data_request_polling_additional=tuya_data_request_polling_additional, tuya_elapse_time_consecutive_polling=tuya_elapse_time_consecutive_polling):
         # If the current time is greater than or equal to the next polling time, it will proceed with polling
         self.log.logging("Tuya", "Log", f"tuya_polling - tuya_data_request_poll 0x00 dp 69 dt 02 - Nwkid: {nwkid}/01 time for polling with {additional_polls}")
         tuya_data_request_poll(self, nwkid, "01")
-        polled = True
-
-    if tuya_data_query and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataQuery", polling_interval=tuya_data_query):
-        self.log.logging("Tuya", "Debug", f"tuya_polling - tuya_data_request 0x03 Nwkid: {nwkid}/01 time for polling")
-        tuya_data_request(self, nwkid, "01")
-        polled = True
-
-    if polled:
         return True
-    elif get_tuya_attribute(self, nwkid, "backlight_level") != "00000000":
+
+    if get_tuya_attribute(self, nwkid, "backlight_level") not in ( 0, "00000000"):
+        self.log.logging("Tuya", "Debug", "tuya_polling - backlight_level: %s" %get_tuya_attribute(self, nwkid, "backlight_level"))
         tuya_data_request_end_poll(self, nwkid, "01")
+
+    # No polling done
     return False
 
 
@@ -199,7 +205,7 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
     """" Check if it is time for a poll. Because it is time, or because we have additional poll to be made."""
 
     # Log the polling interval value
-    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {polling_interval} additional_polls: {additional_polls} tuya_data_request_polling_additional: {tuya_data_request_polling_additional} tuya_elapse_time_consecutive_polling: {tuya_elapse_time_consecutive_polling}")
+    self.log.logging("Tuya", "Debug", f"should_poll - Nwkid: {nwkid}/01 tuya_data_request_polling {polling_interval} additional_polls: {additional_polls} tuya_data_request_polling_additional: {tuya_data_request_polling_additional} tuya_elapse_time_consecutive_polling: {tuya_elapse_time_consecutive_polling}")
 
     # Retrieve the last polling time and additional polls
     last_poll_time = tuya_device_info.get(tuya_last_poll_attribute, 0)
@@ -212,7 +218,7 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
     current_time = int(time.time())
 
     # Log the last polling time and the next polling time for comparison
-    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 device_last_poll current time {current_time}")
+    self.log.logging("Tuya", "Debug", f"should_poll - Nwkid: {nwkid}/01 device_last_poll current time {current_time}")
     self.log.logging("Tuya", "Debug", f"             - Nwkid: {nwkid}/01 device_last_poll last_poll_time: {last_poll_time}")
     self.log.logging("Tuya", "Debug", f"             - Nwkid: {nwkid}/01 tuya_data_request_polling next_poll_time: {next_poll_time}")
     self.log.logging("Tuya", "Debug", f"             - Nwkid: {nwkid}/01 tuya_data_request_polling consecutive_elapse_time: {consecutive_elapse_time}")
@@ -220,7 +226,7 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
     # We do the check that we do not overload and respect the consecutive_elapse_time
     if current_time < consecutive_elapse_time:
         # We need at least 6 secondes between each poll - so all data are correctly sent and the device is ready to take a new request
-        self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 skip as last request was less that {tuya_elapse_time_consecutive_polling} s ago")
+        self.log.logging("Tuya", "Debug", f"should_poll - Nwkid: {nwkid}/01 skip as last request was less that {tuya_elapse_time_consecutive_polling} s ago")
         return False
 
     # Check if the current time is less than the next polling time
@@ -228,7 +234,7 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
         if additional_polls <= 0:
             return False
 
-        self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 additional poll {additional_polls}")
+        self.log.logging("Tuya", "Debug", f"should_poll - Nwkid: {nwkid}/01 additional poll {additional_polls}")
         # If within additional polls window, decrement the counter and allow polling
         self.ListOfDevices[nwkid]["Tuya"][ tuya_last_poll_attribute ] = current_time
         self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = additional_polls - 1
@@ -236,7 +242,7 @@ def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling
 
     # If the current time is greater than or equal to the next polling time, proceed with polling logic
     # Update the last polling time and reset the additional polls counter
-    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 We are entering in a new cycle")
+    self.log.logging("Tuya", "Debug", f"should_poll - Nwkid: {nwkid}/01 We are entering in a new cycle")
     self.ListOfDevices[nwkid]["Tuya"][ tuya_last_poll_attribute ] = current_time
     self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = tuya_data_request_polling_additional
 
@@ -867,16 +873,7 @@ def tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, ds
         store_tuya_attribute(self, NwkId, "PercentControl", data)
 
     elif dp in (0x03, 0x07):
-        # Curtain Percentage
-        # We need to translate percentage into Analog value between 0 - 255
-        level = ((int(data, 16)) * 255) // 100
-        slevel = "%02x" % level
-        self.log.logging(
-            "Tuya",
-            "Debug",
-            "tuya_curtain_response - Curtain Percentage Nwkid: %s/%s Level %s -> %s" % (NwkId, srcEp, data, level),
-            NwkId,
-        )
+        slevel = _tuya_percentage_2_analog( data )
         store_tuya_attribute(self, NwkId, "PercentState", data)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0008", slevel)
 
@@ -890,20 +887,21 @@ def tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, ds
         store_tuya_attribute(self, NwkId, "DirectionState", data)
 
     elif dp in (0x67, 0x69):
-        level = ((int(data, 16)) * 255) // 100
-        slevel = "%02x" % level
-        self.log.logging(
-            "Tuya",
-            "Debug",
-            "tuya_curtain_response - ?????? Nwkid: %s/%s data %s --> %s" % (NwkId, srcEp, data, level),
-            NwkId,
-        )
+        slevel = _tuya_percentage_2_analog( data )
         MajDomoDevice(self, Devices, NwkId, srcEp, "0008", slevel)
         store_tuya_attribute(self, NwkId, "dp_%s" % dp, data)
 
     else:
         attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
         store_tuya_attribute(self, NwkId, attribute_name, data)
+
+
+# TODO Rename this here and in `tuya_curtain_response`
+def _tuya_percentage_2_analog(data):
+    # Curtain Percentage
+    # We need to translate percentage into Analog value between 0 - 255
+    level = ((int(data, 16)) * 255) // 100
+    return "%02x" % level
 
 
 def tuya_curtain_openclose(self, NwkId, openclose):
