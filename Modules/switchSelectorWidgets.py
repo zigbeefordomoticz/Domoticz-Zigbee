@@ -594,6 +594,19 @@ SWITCH_SELECTORS = {
         "01": (1, "On"),
         "ForceUpdate": False
     },
+    "PollingControl": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "ForceUpdate": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Slow Polling|Fast Polling",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Mesures normale|Mesures rapides"
+            }
+        }
+    },
     "SOS": {
         "01": (1, "On"),
         "ForceUpdate": True
