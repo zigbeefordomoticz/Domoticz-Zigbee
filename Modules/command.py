@@ -140,7 +140,8 @@ ACTIONATORS = [
     "ThermoOnOff",
     "ShutterCalibration",
     "SwitchAlarm",
-    "TamperSwitch"
+    "TamperSwitch",
+    "PollingControl",
 ]
 
 
@@ -325,7 +326,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         request_read_device_status(self, Nwkid)
         return
 
-    if DeviceType == ("ThermoMode_2", ):
+    if DeviceType in ("ThermoMode_2", ):
         self.log.logging("Command", "Debug", f"handle_command_off : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
         
         if ts0601_extract_data_point_infos( self, model_name):
@@ -333,6 +334,12 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
             return
 
         tuya_trv_mode(self, Nwkid, 0)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        return
+
+    if DeviceType in ("PollingControl", ):
+        self.log.logging("Command", "Log", f"handle_command_off : PollingControl Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
+        tuya_polling_control(self, Nwkid, Level)
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
     
@@ -836,6 +843,12 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             return
 
         tuya_trv_mode(self, Nwkid, Level)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+        return
+
+    if DeviceType in ("PollingControl", ):
+        self.log.logging("Command", "Log", f"handle_command_setlevel : PollingControl Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
+        tuya_polling_control(self, Nwkid, Level)
         update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
         return
 
