@@ -134,12 +134,28 @@ def tuya_cmd_ts004F(self, NwkId, mode):
 
 
 def tuya_cmd_0x0000_0xf0(self, NwkId):
-
     # Seen at pairing of a WGH-JLCZ02 / TS011F and TS0201 and TS0601 (MOES BRT-100)
 
     payload = "11" + get_and_inc_ZCL_SQN(self, NwkId) + "fe"
     raw_APS_request( self, NwkId, '01', "0000", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, NwkId), )
     self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % NwkId)
+
+def tuya_polling_control(self, Nwkid, Level):
+    # "00": Off - Stop polling
+    # "10": Slow - Normal polling (default)
+    # "20": Fast - Fast polling (for calibration purposes)
+
+    tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
+
+    if Level == "00":
+        # No Polling
+        tuya_device_info["Polling"] = "Off"
+
+    elif Level == "10":
+        tuya_device_info["Polling"] = "Normal Polling"
+
+    elif Level == "20":
+        tuya_device_info["Polling"] = "Fast Polling"
 
 
 def tuya_polling(self, nwkid):
@@ -156,6 +172,24 @@ def tuya_polling(self, nwkid):
 
     # 3 consecutives polling by default
     tuya_data_request_polling_additional = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_ADDITIONAL", return_default=3)
+
+    # Retrieve the device information
+    tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
+    additional_polls = tuya_device_info.get("AdditionalPolls", tuya_data_request_polling_additional)
+
+    if "Polling" not in tuya_device_info:
+        tuya_device_info["Polling"] == "Normal Polling"
+
+    if tuya_device_info["Polling"] == "Off":
+        # No polling , just exit
+        return
+
+    elif tuya_device_info["Polling"] == "Fast Polling":
+        # Force polling to every 15s
+        tuya_data_request_polling = 15
+        tuya_data_query = 15
+        tuya_data_request_polling_additional = 0
+        consecutive_elapse_time = 15
 
     # Each consecutive polling must be separated by 15s by default
     tuya_elapse_time_consecutive_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_CONSECUTIVE_ELAPSE", return_default=15)
@@ -175,10 +209,6 @@ def tuya_polling(self, nwkid):
 
     elif current_battery_level and current_battery_level < 50:
         tuya_data_request_polling *= 6
-
-    # Retrieve the device information
-    tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
-    additional_polls = tuya_device_info.get("AdditionalPolls", tuya_data_request_polling_additional)
 
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 AdditionalPolls {additional_polls}")
 
