@@ -145,7 +145,7 @@ def tuya_polling_control(self, Nwkid, Level):
     # "10": Slow - Normal polling (default)
     # "20": Fast - Fast polling (for calibration purposes)
 
-    tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
+    tuya_device_info = self.ListOfDevices.setdefault(Nwkid, {}).setdefault("Tuya", {})
 
     if Level == "00":
         # No Polling
@@ -160,6 +160,7 @@ def tuya_polling_control(self, Nwkid, Level):
 
 def tuya_polling(self, nwkid):
     """Some Tuya devices, requirea specific polling"""
+
     device_model = self.ListOfDevices.get(nwkid, {}).get("Model")
     if device_model is None:
         return False
