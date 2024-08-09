@@ -140,22 +140,18 @@ def tuya_cmd_0x0000_0xf0(self, NwkId):
     raw_APS_request( self, NwkId, '01', "0000", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, NwkId), )
     self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % NwkId)
 
+
 def tuya_polling_control(self, Nwkid, Level):
-    # "00": Off - Stop polling
-    # "10": Slow - Normal polling (default)
-    # "20": Fast - Fast polling (for calibration purposes)
+    # Mapping Level to Polling modes
+    polling_modes = {0: "Off", 10: "Normal Polling", 20: "Fast Polling"}
 
+    self.log.logging("Tuya", "Log", f"tuya_polling_control - Nwkid: {Nwkid}/01 Level {Level}")
+
+    # Set default Tuya device info and polling mode
     tuya_device_info = self.ListOfDevices.setdefault(Nwkid, {}).setdefault("Tuya", {})
+    tuya_device_info["Polling"] = polling_modes.get(Level, tuya_device_info.get("Polling", "Normal Polling"))
 
-    if Level == "00":
-        # No Polling
-        tuya_device_info["Polling"] = "Off"
-
-    elif Level == "10":
-        tuya_device_info["Polling"] = "Normal Polling"
-
-    elif Level == "20":
-        tuya_device_info["Polling"] = "Fast Polling"
+    self.log.logging("Tuya", "Log", f"tuya_polling_control - Nwkid: {Nwkid}/01 Polling Mode {tuya_device_info['Polling']}")
 
 
 def tuya_polling(self, nwkid):
@@ -174,26 +170,25 @@ def tuya_polling(self, nwkid):
     # 3 consecutives polling by default
     tuya_data_request_polling_additional = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_ADDITIONAL", return_default=3)
 
+    # Each consecutive polling must be separated by 15s by default
+    tuya_elapse_time_consecutive_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_CONSECUTIVE_ELAPSE", return_default=15)
+
     # Retrieve the device information
     tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
     additional_polls = tuya_device_info.get("AdditionalPolls", tuya_data_request_polling_additional)
 
-    if "Polling" not in tuya_device_info:
-        tuya_device_info["Polling"] == "Normal Polling"
+    polling_status = tuya_device_info.setdefault("Polling", "Off")
 
-    if tuya_device_info["Polling"] == "Off":
+    if polling_status == "Off":
         # No polling , just exit
         return
 
-    elif tuya_device_info["Polling"] == "Fast Polling":
+    elif polling_status == "Fast Polling":
         # Force polling to every 15s
-        tuya_data_request_polling = 15
-        tuya_data_query = 15
+        tuya_data_request_polling = 10
+        tuya_data_query = 60  # A query ( 0x03 ) every minutes
         tuya_data_request_polling_additional = 0
-        consecutive_elapse_time = 15
-
-    # Each consecutive polling must be separated by 15s by default
-    tuya_elapse_time_consecutive_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_CONSECUTIVE_ELAPSE", return_default=15)
+        tuya_elapse_time_consecutive_polling = 5
 
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_query {tuya_data_query}")
