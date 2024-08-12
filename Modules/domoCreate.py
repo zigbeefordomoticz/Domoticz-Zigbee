@@ -471,8 +471,8 @@ def colorcontrol_if_undefinded( self, Nwkid ):
 
 
 def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
-    self.log.logging( "WidgetCreation", "Debug", "create_native_widget - NwkId: %s Ieee: %s Widget %s  Dz2023.1: %s" %(
-        NwkId, DeviceID_IEEE, widget_name, is_domoticz_new_blind(self)), NwkId)
+    self.log.logging( "WidgetCreation", "Debug", "create_native_widget - %s NwkId: %s Ieee: %s Widget %s  Dz2023.1: %s" %(
+        widget_name, NwkId, DeviceID_IEEE, widget_name, is_domoticz_new_blind(self)), NwkId)
 
     if widget_name in SIMPLE_WIDGET:
         widget_record = SIMPLE_WIDGET[ widget_name ]
