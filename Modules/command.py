@@ -142,6 +142,7 @@ ACTIONATORS = [
     "SwitchAlarm",
     "TamperSwitch",
     "PollingControl",
+    "PollingControlV2"
 ]
 
 
@@ -337,9 +338,9 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
 
-    if DeviceType in ("PollingControl", ):
-        self.log.logging("Command", "Log", f"handle_command_off : PollingControl Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
-        tuya_polling_control(self, Nwkid, Level)
+    if DeviceType in ("PollingControl", "PollingControlV2", ):
+        self.log.logging("Command", "Log", f"handle_command_off : PollingControl Set Level/Off for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
+        tuya_polling_control(self, Nwkid, DeviceType, Level)
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
     
@@ -846,9 +847,9 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
         return
 
-    if DeviceType in ("PollingControl", ):
+    if DeviceType in ("PollingControl", "PollingControlV2", ):
         self.log.logging("Command", "Log", f"handle_command_setlevel : PollingControl Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
-        tuya_polling_control(self, Nwkid, Level)
+        tuya_polling_control(self, Nwkid, DeviceType, Level)
         update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
         return
 
