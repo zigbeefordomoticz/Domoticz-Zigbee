@@ -141,29 +141,39 @@ def tuya_cmd_0x0000_0xf0(self, NwkId):
     self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % NwkId)
 
 
-def tuya_polling_control(self, Nwkid, Level):
+def tuya_polling_control(self, Nwkid, WidgetType, Level):
     # Mapping Level to Polling modes
-    polling_modes = {0: "Off", 10: "Normal Polling", 20: "Fast Polling"}
+    polling_modes = {
+        "PollingControl": {
+            0: "Off",
+            10: "Slow Polling",
+            20: "Fast Polling",
+        },
+        "PollingControlV2": {
+            0: "Off",
+            10: "2/day",
+            20: "20/day",
+            30: "96/day",
+            40: "Fast Polling",
+        }
+    }
 
     self.log.logging("Tuya", "Log", f"tuya_polling_control - Nwkid: {Nwkid}/01 Level {Level}")
 
     # Set default Tuya device info and polling mode
     tuya_device_info = self.ListOfDevices.setdefault(Nwkid, {}).setdefault("Tuya", {})
-    tuya_device_info["Polling"] = polling_modes.get(Level, tuya_device_info.get("Polling", "Normal Polling"))
+    if WidgetType not in polling_modes:
+        self.log.logging("Tuya", "Error", f"tuya_polling_control - Unexpected WidgetType {WidgetType} !!!")
+        return
+
+    tuya_device_info["Polling"] = polling_modes[ WidgetType ].get(Level, tuya_device_info.get("Polling", "Normal Polling"))
 
     self.log.logging("Tuya", "Log", f"tuya_polling_control - Nwkid: {Nwkid}/01 Polling Mode {tuya_device_info['Polling']}")
 
 
-def tuya_polling(self, nwkid):
-    """Some Tuya devices, requirea specific polling"""
-
-    device_model = self.ListOfDevices.get(nwkid, {}).get("Model")
-    if device_model is None:
-        return False
-
+def tuya_polling_values(self, nwkid, device_model, tuya_device_info):
     # This is based on command 0x03, which query ALL datapoint
     tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
-
     # Retrieve the polling interval configuration for TUYA_DATA_REQUEST_POLLING which query only the data point which have changed
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
 
@@ -173,15 +183,24 @@ def tuya_polling(self, nwkid):
     # Each consecutive polling must be separated by 15s by default
     tuya_elapse_time_consecutive_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_CONSECUTIVE_ELAPSE", return_default=15)
 
-    # Retrieve the device information
-    tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
     additional_polls = tuya_device_info.get("AdditionalPolls", tuya_data_request_polling_additional)
 
     polling_status = tuya_device_info.setdefault("Polling", "Off")
 
+    current_battery_level = get_tuya_attribute(self, nwkid, "Battery")
+    # Usall default is 300s ( 5 minutes )
+    if current_battery_level and current_battery_level < 30:
+        # TODO needs to update Widget
+        polling_status = "2/day"
+
+    elif current_battery_level and current_battery_level < 50:
+        # TODO needs to update Widget
+        polling_status = "20/day"
+
+    # Polling methods
     if polling_status == "Off":
         # No polling , just exit
-        return
+        return 0, 0, 0, 0, 0
 
     elif polling_status == "Fast Polling":
         # Force polling to every 15s
@@ -190,21 +209,49 @@ def tuya_polling(self, nwkid):
         tuya_data_request_polling_additional = 0
         tuya_elapse_time_consecutive_polling = 5
 
+    elif polling_status == "2/day":
+        #  2/jour  -> 43200 secondes ( 12 heures)
+        tuya_data_request_polling = 43200
+        tuya_data_query = 43200  # A query ( 0x03 ) every minutes
+        tuya_data_request_polling_additional = 0
+        tuya_elapse_time_consecutive_polling = 5
+
+    elif polling_status == "20/day":
+        # 20/jours ->  4320 secondes ( 1h 12 minutes)
+        tuya_data_request_polling = 4320
+        tuya_data_query = 4320  # A query ( 0x03 ) every minutes
+        tuya_data_request_polling_additional = 0
+        tuya_elapse_time_consecutive_polling = 5
+
+    elif polling_status == "96/day":
+        # 96/jour  ->   900 secondes ( 15 minutes)
+        tuya_data_request_polling = 900
+        tuya_data_query = 3600  # A query ( 0x03 ) every minutes
+        tuya_data_request_polling_additional = 0
+        tuya_elapse_time_consecutive_polling = 5
+
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_query {tuya_data_query}")
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling_additional {tuya_data_request_polling_additional}")
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_elapse_time_consecutive_polling {tuya_elapse_time_consecutive_polling}")
 
-    if not tuya_data_request_polling and not tuya_data_query:
+    return tuya_data_query, tuya_data_request_polling, tuya_data_request_polling_additional, tuya_elapse_time_consecutive_polling, additional_polls
+
+
+def tuya_polling(self, nwkid):
+    """Some Tuya devices, requirea specific polling"""
+
+    device_model = self.ListOfDevices.get(nwkid, {}).get("Model")
+    if device_model is None:
         return False
 
-    current_battery_level = get_tuya_attribute(self, nwkid, "Battery")
-    # Usall default is 300s ( 5 minutes )
-    if current_battery_level and current_battery_level < 30:
-        tuya_data_request_polling *= 12
+    # Retrieve the device information
+    tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
 
-    elif current_battery_level and current_battery_level < 50:
-        tuya_data_request_polling *= 6
+    tuya_data_query, tuya_data_request_polling, tuya_data_request_polling_additional, tuya_elapse_time_consecutive_polling,additional_polls = tuya_polling_values(self, nwkid, device_model, tuya_device_info)
+
+    if not tuya_data_request_polling and not tuya_data_query:
+        return False
 
     self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 AdditionalPolls {additional_polls}")
 
