@@ -954,7 +954,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging( "Widget", "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" % (
                 NwkId, ClusterType, WidgetType, value), NwkId, )
 
-            if WidgetType == "Tamper" and ClusterType =! "Alarm":
+            if WidgetType == "Tamper" and ClusterType != "Alarm":
                 self.log.logging( "Widget", "Debug", "------> Generic Widget - %s rejecting WidgetType: %s and ClusterType: %s" %(
                     NwkId, ClusterType, WidgetType), NwkId)
                 return
