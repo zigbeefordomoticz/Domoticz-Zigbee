@@ -11,8 +11,7 @@ import threading
 import traceback
 
 from Modules.domoticzAbstractLayer import domoticz_connection
-
-MAX_BYTES = 1024
+from Classes.WebServer.tools import MAX_BLOCK_SIZE
 
 
 def startWebServer(self):
@@ -56,70 +55,60 @@ def parse_http_request(data):
     Raises:
         ValueError: If the request line is malformed or the headers cannot be parsed correctly.
     """
+
     lines = data.split("\r\n")
     request_line = lines[0].strip()
-    method, path, _ = request_line.split(" ", 2)
+    method, path, http_proto = request_line.split(" ", 2)
 
     headers = {}
     body = ""
 
     # Parse headers
     for line in lines[1:]:
-        if line.strip():
-            key, value = line.split(":", 1)
-            headers[key.strip()] = value.strip()
-        else:
+        if not line.strip():
             break
+        key, value = line.split(":", 1)
+        headers[key.strip()] = value.strip()
 
     # Parse body if present
     if "Content-Length" in headers:
         content_length = int(headers["Content-Length"])
         body = lines[-1] if content_length > 0 else ""
 
-    return method, path, headers, body.encode('utf-8')
+    return method, path, headers, body
 
 
-def receive_data(self, client_socket):
+def receive_data(self, client_socket, length=None):
     """
     Receive data from the client socket.
 
-    This method reads data from the given client socket in chunks until the connection is closed
-    or no more data is available. It handles socket errors gracefully and ensures all received
-    data is returned as a single bytes object.
-
-    Args:
-        client_socket (socket.socket): The socket object representing the client connection.
+    Parameters:
+    - client_socket: The socket from which to receive data.
+    - length: The specific amount of data to receive (optional).
 
     Returns:
-        bytes: The complete data received from the client. If a socket error occurs, an empty bytes object is returned.
-
-    Steps:
-        1. Initialize an empty list to hold the chunks of data.
-        2. Enter a loop to receive data from the client socket.
-        3. Read a chunk of data up to MAX_BYTES in size.
-        4. If no data is received (connection closed), break the loop.
-        5. Append the received chunk to the list of chunks.
-        6. If the received chunk is smaller than MAX_BYTES, break the loop (indicates end of data).
-        7. Handle any socket errors by logging the error and returning an empty bytes object.
-        8. Join all chunks into a single bytes object and return it.
-
-    Exceptions:
-        socket.error: Logs the error and returns an empty bytes object.
+    - The received data as bytes.
     """
     chunks = []
+    bytes_recd = 0
     try:
-        while True:
-            chunk = client_socket.recv(MAX_BYTES)
+        while not (length and bytes_recd >= length):
+            chunk = client_socket.recv(min(MAX_BLOCK_SIZE, length - bytes_recd) if length else MAX_BLOCK_SIZE)
+
             if not chunk:
+                self.logging("Debug", "receive_data ----- No Data received!!!")
                 break
+            self.logging("Debug", f"receive_data ----- read {len(chunk)}")
             chunks.append(chunk)
-            if len(chunk) < MAX_BYTES:
+            bytes_recd += len(chunk)
+            if len(chunk) < MAX_BLOCK_SIZE:
                 break
 
     except socket.error as e:
-        # This most likely will happen when connection is closed.
         self.logging("Debug", f"receive_data - Socket error with: {e}")
         return b""
+
+    self.logging("Debug", f"receive_data ----- received {len(chunks)} chuncks")
 
     return b"".join(chunks)
 
@@ -151,14 +140,14 @@ def handle_client(self, client_socket, client_addr):
         socket.error: Logs and breaks the loop on socket error.
         Exception: Logs and breaks the loop on any other unexpected error.
     """
-
     self.logging("Debug", f"handle_client from {client_addr} {client_socket}")
-    self.clients[ str(client_addr) ] = client_socket
+    self.clients[str(client_addr)] = client_socket
 
     client_socket.settimeout(1)
     try:
         while self.running:
             try:
+                # Let's receive the first chunck (to get the headers)
                 data = receive_data(self, client_socket).decode('utf-8')
 
                 if not data:
@@ -166,12 +155,27 @@ def handle_client(self, client_socket, client_addr):
                     break
 
                 method, path, headers, body = parse_http_request(data)
+                content_length = int(headers.get('Content-Length', 0))
 
-                Data = decode_http_data(self, method, path, headers, body)
+                self.logging("Debug", f"handle_client from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {headers}")
+
+                received_length = len(body)
+                
+                while received_length <= content_length:
+                    self.logging("Debug", f"handle_client received_length: {received_length} content_length: {content_length} {content_length - received_length}")
+                    additional_data = receive_data(self, client_socket, content_length - len(body)).decode('utf-8')
+                    if not additional_data:
+                        self.logging("Debug", f"no additional_data from {client_addr}")
+                        break
+                    body += additional_data
+                    received_length += len(additional_data)
+
+                self.logging("Debug", f"handle_client content_length: {content_length} len_body: {len(body)}")
+                Data = decode_http_data(self, method, path, headers, body.encode('utf-8'))
                 self.onMessage(client_socket, Data)
 
             except socket.timeout:
-                self.logging("Debug", f"Socket timedout {client_addr}")
+                self.logging("Debug", f"Socket timeout {client_addr}")
                 continue
 
             except socket.error as e:
@@ -180,13 +184,13 @@ def handle_client(self, client_socket, client_addr):
 
             except Exception as e:
                 self.logging("Log", f"Unexpected error with {client_addr}: {e}")
-                self.logging("Log", f"{traceback.format_exc() }")
+                self.logging("Log", f"{traceback.format_exc()}")
                 break
 
     finally:
         self.logging("Debug", f"Closing connection to {client_addr}.")
         if str(client_addr) in self.clients:
-            del self.clients[ str(client_addr) ]
+            del self.clients[str(client_addr)]
         client_socket.close()
 
 
@@ -319,7 +323,7 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
         Exception: Logs any errors encountered during the server setup and startup process.
     """
 
-    self.logging( "Log","WebUI - server starting on {host} {port}")
+    self.logging( "Log", f"WebUI - server starting on {host} {port}")
 
     # if is_port_in_use(port, host):
     #     self.logging( "Error", f"WebUI cannot start, Port {port} is already in use!!!")

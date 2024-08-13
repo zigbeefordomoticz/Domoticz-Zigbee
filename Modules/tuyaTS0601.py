@@ -22,6 +22,7 @@ import struct
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
+                           get_device_config_param,
                            get_deviceconf_parameter_value, getAttributeValue)
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
@@ -59,6 +60,7 @@ def ts0601_response(self, Devices, model_name, NwkId, Ep, dp, datatype, data):
     for dps_mapping_item in dps_mapping[ str_dp ]:
         process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, dps_mapping_item, value)
     return True 
+
 
 def process_dp_item( self, Devices, model_name, NwkId, Ep, dp, datatype, data, dps_mapping_item, value):
     if "EvalExp" in dps_mapping_item:
@@ -166,8 +168,8 @@ def ts0601_actuator( self, NwkId, command, value=None):
     else:
         func(self, NwkId, "01", dp )
 
-# Helpers  
 
+# Helpers
 def process_sensor_data(self, sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep):
     if sensor_type in DP_SENSOR_FUNCTION:
         formatted_value = check_domo_format_req(self, dps_mapping_item, value)
@@ -176,15 +178,17 @@ def process_sensor_data(self, sensor_type, dps_mapping_item, value, Devices, Nwk
         return True
     return False
 
-      
+
 def read_uint16_be(data, offset):
     # Use the format '>H' to specify big-endian (>) and 'H' for 16-bit unsigned integer.
     return struct.unpack_from('>H', data, offset)[0]
+
 
 def read_uint8(data, offset):
     # Use indexing to get the byte at the specified offset
     # and convert it to an unsigned integer using ord().
     return ord(data[offset])
+
 
 def evaluate_expression_with_data(self, expression, value):
     try:
@@ -204,6 +208,7 @@ def evaluate_expression_with_data(self, expression, value):
         
     return value
 
+
 def check_domo_format_req( self, dp_informations, value):
     
     if "DomoDeviceFormat" not in dp_informations:
@@ -214,6 +219,7 @@ def check_domo_format_req( self, dp_informations, value):
         value = "%x" %value
     
     return value
+
 
 def ts0601_extract_data_point_infos( self, model_name):
     
@@ -228,7 +234,6 @@ def ts0601_actuator_dp( command, dps_mapping):
 
     
 # Sensors responses
-
 def ts0601_motion(self, Devices, nwkid, ep, value):
     # Occupancy
     self.log.logging("Tuya0601", "Debug", "ts0601_motion - Occupancy %s %s %s" % (nwkid, ep, value), nwkid)
@@ -236,11 +241,13 @@ def ts0601_motion(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0406", value )
     checkAndStoreAttributeValue(self, nwkid, "01", "0406", "0000", value)
 
+
 def ts0601_tuya_presence_state(self, Devices, nwkid, ep, value):
     # Presence State ( None, Present, Moving )
     self.log.logging("Tuya0601", "Debug", "ts0601_tuya_presence_state - state %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "presence_state", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0006", value )
+
 
 def ts0601_illuminance(self, Devices, nwkid, ep, value):
     # Illuminance
@@ -251,12 +258,13 @@ def ts0601_illuminance(self, Devices, nwkid, ep, value):
 
 
 def ts0601_temperature(self, Devices, nwkid, ep, value):
-
     store_tuya_attribute(self, nwkid, "Temp", value)
     checkAndStoreAttributeValue(self, nwkid, "01", "0402", "0000", value)
+    compensation = get_device_config_param( self, nwkid, "tempCompensation") or 0
+    value += compensation
     MajDomoDevice(self, Devices, nwkid, ep, "0402", value)
     
-    
+
 def ts0601_humidity(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_humidity - humidity %s %s %s " % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Humi", value)
@@ -271,12 +279,13 @@ def ts0601_distance(self, Devices, nwkid, ep, value):
 
 def ts0601_battery(self, Devices, nwkid, ep, value ):
     self.log.logging("Tuya0601", "Debug", "ts0601_battery - Battery %s %s %s" % (nwkid, ep, value), nwkid)
-        
     store_tuya_attribute(self, nwkid, "Battery", value)
     checkAndStoreAttributeValue(self, nwkid, "01", "0001", "0000", value)
     self.ListOfDevices[nwkid]["Battery"] = value
     Update_Battery_Device(self, Devices, nwkid, value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0001", value, Attribute_="0021",)
     store_tuya_attribute(self, nwkid, "BatteryStatus", value)
+
 
 def ts0601_battery_state(self, Devices, nwkid, ep, value ):
     self.log.logging("Tuya0601", "Debug", "ts0601_battery_state - Battery %s %s %s" % (nwkid, ep, value), nwkid)
@@ -288,7 +297,8 @@ def ts0601_tamper(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "Tamper", value)
     state = "01" if value != 0 else "00"
     MajDomoDevice(self, Devices, nwkid, ep, "0009", state)
-    
+
+
 def ts0601_charging_mode(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_charging_mode - Charging %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Tamper", value)
@@ -297,7 +307,8 @@ def ts0601_charging_mode(self, Devices, nwkid, ep, value):
         MajDomoDevice(self, Devices, nwkid, ep, "Notification", "Charging On")
     else:
         MajDomoDevice(self, Devices, nwkid, ep, "Notification", "Charging Off")
-        
+
+
 def ts0601_switch(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_switch - Switch%s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Switch", value)
@@ -348,11 +359,13 @@ def ts0601_current(self, Devices, nwkid, ep, value):
     checkAndStoreAttributeValue(self, nwkid, ep, "0b04", "0508", value)  # Store int
     store_tuya_attribute(self, nwkid, "Current_%s" %ep, value)
 
+
 def ts0601_power_factor(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_power_factor - Power Factor %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "PWFactor", value)
     store_tuya_attribute(self, nwkid, "PowerFactor_%s" %ep, value)
  
+
 def ts0601_summation_energy(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
     previous_summation = getAttributeValue(self, nwkid, ep, "0702", "0000")
@@ -363,11 +376,13 @@ def ts0601_summation_energy(self, Devices, nwkid, ep, value):
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", current_summation)  # Store int
     store_tuya_attribute(self, nwkid, "Energy_%s" %ep, value)
 
+
 def ts0601_summation_energy_raw(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_summation_energy - Current Summation %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0702", value, Attribute_="0000")
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0000", value)  # Store int
     store_tuya_attribute(self, nwkid, "ConsumedEnergy_%s" %ep, value)
+
 
 def ts0601_production_energy(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_production_energy - Production Energy %s %s %s" % (nwkid, ep, value), nwkid, )
@@ -375,35 +390,42 @@ def ts0601_production_energy(self, Devices, nwkid, ep, value):
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0001", value)  # Store int
     store_tuya_attribute(self, nwkid, "ProducedEnergy_%s" %ep, value)
 
+
 def ts0601_instant_power(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power %s %s %s" % (nwkid, ep, value), nwkid, )
     # Given Zigbee 24-bit integer and tuya store in two's complement form
 
     model_name = self.ListOfDevices[ nwkid ]["Model"] if "Model" in self.ListOfDevices[ nwkid ] else None
-    rely_on_eval_expression = get_deviceconf_parameter_value( self, model_name, "RELY_ON_EVAL_EXP", return_default=False )
-    twocomplement_tst = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_TST", return_default="0" ),16)
-    twocomplement_val = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_VAL", return_default="0" ),16)
-    self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement : %s %s" %(
-        twocomplement_tst, twocomplement_val))
-    self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Rely on Eval Exp : %s" %( rely_on_eval_expression))
+
     signed_int = value
+
+    rely_on_eval_expression = get_deviceconf_parameter_value( self, model_name, "RELY_ON_EVAL_EXP", return_default=False )
+    self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Rely on Eval Exp : %s" %( rely_on_eval_expression))
+
     if not rely_on_eval_expression:
         signed_int = int( value )
+
+        twocomplement_tst = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_TST", return_default="0" ),16)
+        twocomplement_val = int( get_deviceconf_parameter_value( self, model_name, "TWO_COMPLEMENT_VAL", return_default="0" ),16)
+
         if twocomplement_tst:
             signed_int = signed_int - twocomplement_val if signed_int & twocomplement_tst else signed_int
+
         elif (signed_int & 0x00800000) != 0:  # Check the sign bit
             signed_int -= 0x01000000  # If negative, adjust to two's complement
 
-        self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement : value: %s" %signed_int)
+        self.log.logging( "Tuya0601", "Debug", "ts0601_instant_power - Instant Power Two's Complement result signed_int: %s" %signed_int)
 
     checkAndStoreAttributeValue(self, nwkid, ep, "0702", "0400", signed_int)
     MajDomoDevice(self, Devices, nwkid, ep, "0702", signed_int)
     store_tuya_attribute(self, nwkid, "InstantPower_%s" %ep, signed_int)  # Store str
 
+
 def ts0601_voltage(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_voltage - Voltage %s %s %s" % (nwkid, ep, value), nwkid, )
     MajDomoDevice(self, Devices, nwkid, ep, "0001", value)
     store_tuya_attribute(self, nwkid, "Voltage_%s" %ep, value)
+
 
 def ts0601_trv7_system_mode(self, Devices, nwkid, ep, value):
     # Auto 0, Manual 1, Off 2
@@ -426,7 +448,8 @@ def ts0601_trv7_system_mode(self, Devices, nwkid, ep, value):
     widget_value = DEVICE_WIDGET_MAP[ value ]
     MajDomoDevice(self, Devices, nwkid, ep, "0201", widget_value, Attribute_="001c")
     checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", widget_value)
-    
+
+
 def ts0601_trv6_system_mode(self, Devices, nwkid, ep, value):
     # Auto 0, Manual 1, Off 2
     # Widget 0: Off, 1: Auto, 2: Manual
@@ -441,16 +464,19 @@ def ts0601_trv6_system_mode(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0201", value, Attribute_="001c")
     checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", value)
 
+
 def ts0601_sirene_switch(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_sirene_switch - After Nwkid: %s/%s Alarm: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Alarm", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0006", value)
-    
+
+
 def ts0601_tamper_switch(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_sirene_switch - After Nwkid: %s/%s Alarm: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Alarm", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0006", value)
-    
+
+
 def ts0601_sirene_level(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_sirene_level - Sound Level: %s" % value, nwkid)
     store_tuya_attribute(self, nwkid, "AlarmLevel", value)
@@ -459,7 +485,8 @@ def ts0601_sirene_level(self, Devices, nwkid, ep, value):
 def ts0601_sirene_duration(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_sirene_duration - After Nwkid: %s/%s Alarm: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "AlarmDuration", value)
-    
+
+
 def ts0601_sirene_melody(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_sirene_melody - After Nwkid: %s/%s Alarm: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "AlarmMelody", value)
@@ -508,33 +535,66 @@ def ts0601_smoke_concentration(self, Devices, nwkid, ep, value):
 
 
 def ts0601_phMeter(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Debug", "ts0601_phMeter - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
-    store_tuya_attribute(self, nwkid, "phMeter", value)
+    self.log.logging("Tuya0601", "Debug", "ts0601_phMeter - Nwkid: %s/%s ph meter: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "PH", value)
+    compensation = get_device_config_param( self, nwkid, "ph7Compensation") or 0
+    value += compensation
     MajDomoDevice(self, Devices, nwkid, ep, "phMeter", value)
 
 
 def ts0601_ec(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Debug", "ts0601_ec - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_ec - Nwkid: %s/%s EC: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Electric Conductivity", value)
+    compensation = get_device_config_param( self, nwkid, "ecCompensation") or 0
+    value += compensation
     MajDomoDevice(self, Devices, nwkid, ep, "ec", value)
 
 
 def ts0601_orp(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Debug", "ts0601_orp - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
-    store_tuya_attribute(self, nwkid, "Oxidation Reduction Potential", value)
+    self.log.logging("Tuya0601", "Debug", "ts0601_orp - Nwkid: %s/%s ORP: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Oxydation Reduction Potential", value)
+    compensation = get_device_config_param( self, nwkid, "orpCompensation") or 0
+    value += compensation
+
     MajDomoDevice(self, Devices, nwkid, ep, "orp", value)
 
 
 def ts0601_freeChlorine(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Debug", "ts0601_freeChlorine - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_freeChlorine - Nwkid: %s/%s Free Chlorine: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Free chlorine", value)
     MajDomoDevice(self, Devices, nwkid, ep, "freeChlorine", value)
 
 
-def ts0601_salinity(self, Devices, nwkid, ep, value):    
-    self.log.logging("Tuya0601", "Debug", "ts0601_salinity - Nwkid: %s/%s Smoke Concentration: %s" % (nwkid, ep, value))
-    store_tuya_attribute(self, nwkid, "Salt", value)
+def ts0601_salinity(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_salinity - Nwkid: %s/%s Salinity: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Salinity", value)
     MajDomoDevice(self, Devices, nwkid, ep, "salinity", value)
+
+
+def ts0601_tds(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_tds - Nwkid: %s/%s Total Dissolved Solids: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "Total Dissolved Solids", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "tds", value)
+
+
+def ts0601_phCalibration1(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_phCalibration1 - Nwkid: %s/%s phCalibration1: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "ph Calibration1", value)
+
+
+def ts0601_phCalibration2(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_phCalibration2 - Nwkid: %s/%s phCalibration2: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "ph Calibration2", value)
+
+
+def ts0601_ecCalibration(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_ecCalibration - Nwkid: %s/%s ecCalibration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "ec Calibration", value)
+
+
+def ts0601_orpCalibration(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_orpCalibration - Nwkid: %s/%s orpCalibration: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "orp Calibration", value)
 
 
 def ts0601_water_consumption(self, Devices, nwkid, ep, value):
@@ -599,8 +659,12 @@ DP_SENSOR_FUNCTION = {
     "ec": ts0601_ec,
     "orp": ts0601_orp,
     "freeChlorine": ts0601_freeChlorine,
-    "salinity": ts0601_salinity
-
+    "salinity": ts0601_salinity,
+    "tds": ts0601_tds,
+    "phCalibration1": ts0601_phCalibration1,
+    "phCalibration2": ts0601_phCalibration2,
+    "ecCalibration": ts0601_ecCalibration,
+    "orpCalibration": ts0601_orpCalibration
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):

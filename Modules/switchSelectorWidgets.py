@@ -594,6 +594,34 @@ SWITCH_SELECTORS = {
         "01": (1, "On"),
         "ForceUpdate": False
     },
+    "PollingControl": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "ForceUpdate": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Slow Polling|Fast Polling",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Mesures normale|Mesures rapides"
+            }
+        }
+    },
+    "PollingControlV2": {
+        "00": (0, "00"),   # Off
+        "01": (3, "10"),   # "2/day" -> 43200 secondes ( 12 heures)
+        "02": (4, "20"),   # "20/day" ->  4320 secondes ( 1h 12 minutes)
+        "03": (5, "30"),   # "96/day" ->   900 secondes ( 15 minutes)
+        "05": (2, "40"),   # Fast Polling, Force polling to every 15s
+        "ForceUpdate": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|2x/day|20x/day|96x/day|Fast Polling",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|2x/day|20x/day|96x/day|Mesures rapides"
+            }
+        }
+    },
     "SOS": {
         "01": (1, "On"),
         "ForceUpdate": True

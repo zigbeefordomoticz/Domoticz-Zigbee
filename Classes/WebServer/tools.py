@@ -8,7 +8,7 @@ from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
 
-MAX_KB_TO_SEND = 8 * 1024  # Chunk size
+MAX_BLOCK_SIZE = 8 * 1024  # Chunk size
 DEBUG_HTTP = False
 
 

@@ -137,6 +137,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             nValue = int(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, text, BatteryLevel, SignalLevel)
 
+        if WidgetType == "BatteryPercentage" and ClusterType == "Voltage" and Attribute_ == "0021":
+            sValue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
         if ClusterType == "Alarm" and WidgetType == "Alarm_ZL3" and Attribute_ == "0020":
             if value is None or len(value) == 0:
                 return
@@ -532,7 +536,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Valve" in ClusterType and (WidgetType == "Valve" and Attribute_ in ("026d", "4001", "0008")):
-            nValue = round(value, 1)
+            nValue = 0
             sValue = str(nValue)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
@@ -722,40 +726,42 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 5, "50", BatteryLevel, SignalLevel)
 
         if ClusterType == "PM25" and WidgetType == "PM25":
-            nvalue = round(value, 0)
-            svalue = "%s" % (nvalue,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+            svalue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "PM25" and WidgetType == "SmokePPM":
-            nvalue = int(value)
-            svalue = "%s" % (nvalue,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+            svalue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
          
         if ClusterType == "phMeter" and WidgetType == "phMeter":
-            nvalue = int(value)
-            svalue = "%s" % (nvalue,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+            self.log.logging("Widget", "Debug", "------>  pH: %s" % (value,), NwkId)
+            svalue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "ec" and WidgetType == "ec":
-            nvalue = int(value)
-            svalue = "%s" % (nvalue,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+            self.log.logging("Widget", "Debug", "------>  EC: %s" % (value,), NwkId)
+            svalue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "orp" and WidgetType == "orp":
-            nvalue = int(value)
-            svalue = "%s" % (nvalue,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+            self.log.logging("Widget", "Debug", "------>  ORP: %s" % (value,), NwkId)
+            svalue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "freeChlorine" and WidgetType == "freeChlorine":
-            nvalue = int(value)
-            svalue = "%s" % (nvalue,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+            self.log.logging("Widget", "Debug", "------>  FreeChlorine: %s" % (value,), NwkId)
+            svalue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "salinity" and WidgetType == "salinity":
-            nvalue = int(value)
-            svalue = "%s" % (nvalue,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+            self.log.logging("Widget", "Debug", "------>  Salinity: %s" % (value,), NwkId)
+            svalue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
+        if ClusterType == "tds" and WidgetType == "tds":
+            self.log.logging("Widget", "Debug", "------>  TDS: %s" % (value,), NwkId)
+            svalue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
             nValue = 0
@@ -948,7 +954,12 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging( "Widget", "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" % (
                 NwkId, ClusterType, WidgetType, value), NwkId, )
 
-            if ClusterType == "Switch" and WidgetType == "LvlControl":
+            if WidgetType == "Tamper" and ClusterType != "Alarm":
+                self.log.logging( "Widget", "Debug", "------> Generic Widget - %s rejecting WidgetType: %s and ClusterType: %s" %(
+                    NwkId, ClusterType, WidgetType), NwkId)
+                return
+
+            elif ClusterType == "Switch" and WidgetType == "LvlControl":
                 # Called with ClusterId: 0x0006 but we have to update a Dimmer, so we need to keep the level
                 nValue = int(value)
                 sValue = prev_sValue
