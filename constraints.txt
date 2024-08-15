@@ -1,8 +1,8 @@
 charset-normalizer==2.0.11
-zigpy==0.65.0
-zigpy_znp==0.12.3
-zigpy_deconz==0.23.2
-bellows==0.40.2
+zigpy==0.65.4
+zigpy_znp==0.12.4
+zigpy_deconz==0.23.3
+bellows==0.40.4
 dnspython==2.6.1
 pyserial>=3.5
 charset-normalizer==2.0.11
