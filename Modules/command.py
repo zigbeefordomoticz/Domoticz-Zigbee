@@ -411,6 +411,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
             return
 
     elif DeviceType in ( "Venetian", "Vanne", "Curtain"):
+
         if model_name in ( "PR412", "CPR412", "CPR412-E"):
             actuator_off(self, Nwkid, EPout, "Light")
 
@@ -420,6 +421,9 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
             
         elif DeviceType in ( "CurtainInverted", "Curtain"):
             # Refresh will be done via the Report Attribute
+            if ts0601_extract_data_point_infos( self, model_name):
+                ts0601_actuator(self, Nwkid, "CurtainState", 0)
+                update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
         else:
@@ -600,6 +604,10 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
             actuator_on(self, Nwkid, EPout, "WindowCovering")
 
         elif DeviceType in ( "CurtainInverted", "Curtain"):
+            if ts0601_extract_data_point_infos( self, model_name):
+                ts0601_actuator(self, Nwkid, "CurtainState", 1)
+                update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Open", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+
             return
        
         else:
@@ -954,6 +962,10 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             profalux_MoveToLiftAndTilt(self, Nwkid, tilt=Tilt)
 
     elif DeviceType in ( "WindowCovering", "Venetian", "Vanne", "Curtain", "VenetianInverted", "VanneInverted", "CurtainInverted"):
+        if ts0601_extract_data_point_infos( self, model_name):
+            ts0601_actuator(self, Nwkid, "CurtainLevel", int(Level))
+            update_domoticz_widget(self, Devices, DeviceID, Unit, 2, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+
         _set_level_windows_covering(self, DeviceType, Nwkid, EPout, Level)
 
     elif DeviceType == "AlarmWD":
