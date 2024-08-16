@@ -618,13 +618,14 @@ def ts0601_sensor_irrigation_mode(self, Devices, nwkid, ep, value):
 def ts0601_curtain_state(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_curtain_state - Nwkid: %s/%s State: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "CurtainState", value)
-    MajDomoDevice(self, Devices, nwkid, ep, "0006", value)
 
 
 def ts0601_curtain_level(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_curtain_level - Nwkid: %s/%s Level: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "CurtainLevel", value)
-    MajDomoDevice(self, Devices, nwkid, ep, "0008", value)
+    # We need to translate percentage into Analog value between 0 - 255
+    level = (value * 255) // 100
+    MajDomoDevice(self, Devices, nwkid, ep, "0008", level)
 
 
 def ts0601_curtain_calibration(self, Devices, nwkid, ep, value):
