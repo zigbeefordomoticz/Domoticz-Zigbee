@@ -615,7 +615,33 @@ def ts0601_sensor_irrigation_mode(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0008", value)
 
 
+def ts0601_curtain_state(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_state - Nwkid: %s/%s State: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "CurtainState", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0006", value)
+
+
+def ts0601_curtain_level(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_level - Nwkid: %s/%s Level: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "CurtainLevel", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0008", value)
+
+
+def ts0601_curtain_calibration(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_calibration - Nwkid: %s/%s Mode: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "CurtainCalibrationMode", value)
+
+
+def ts0601_curtain_motor_steering(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_motor_steering - Nwkid: %s/%s Steering: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "CurtainMotorSteering", value)
+
+
 DP_SENSOR_FUNCTION = {
+    "curtain_state": ts0601_curtain_state,
+    "curtain_level": ts0601_curtain_level,
+    "curtain_calibration": ts0601_curtain_calibration,
+    "curtain_motor_steering": ts0601_curtain_motor_steering,
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
     "temperature": ts0601_temperature,
@@ -939,7 +965,52 @@ def ts0601_solar_siren_alarm_duration( self, NwkId, Ep, dp, duration=None):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
+def ts0601_curtain_state( self, NwkId, Ep, dp, openclose=None):
+    if openclose is None:
+        return
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_state - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, openclose))
+    action = "%02x01" % dp  # I
+    data = "%02x" % (openclose)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_curtain_level( self, NwkId, Ep, dp, percent=None):
+    if percent is None:
+        return
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_level - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, percent))
+    action = "%02x02" % dp  # I
+    data = "%08x" % (percent)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_curtain_calibration( self, NwkId, Ep, dp, duration=None):
+    if duration is None:
+        return
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_calibration - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, duration))
+    action = "%02x02" % dp  # I
+    data = "%08x" % (duration)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_curtain_motor_steering( self, NwkId, Ep, dp, mode=None):
+    # mode 0x00: Forward
+    # mode 0x01: Backward
+    if mode is None:
+        return
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_motor_steering - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, mode))
+    action = "%02x02" % dp  # I
+    data = "%08x" % (mode)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
 TS0601_COMMANDS = {
+    "CurtainState": ts0601_curtain_state,
+    "CurtainLevel": ts0601_curtain_level,
+    "CurtainCalibration": ts0601_curtain_calibration,
+    "CurtainMotorSteering": ts0601_curtain_motor_steering,
     "TuyaPresenceSensitivity": ( None, "04"),
     "TuyaRadarSensitivity": (None, "04"),
     "TuyaRadarMaxRange": ( None, "02" ),
