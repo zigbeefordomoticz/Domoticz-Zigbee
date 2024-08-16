@@ -224,6 +224,10 @@ def handle_command_stop(self,Devices, DeviceID, Unit, Nwkid, EPout, DeviceType, 
             actuator_stop( self, Nwkid, EPout, "WindowCovering")
             
         if DeviceType in ( "CurtainInverted", "Curtain"):
+            if ts0601_extract_data_point_infos( self, model_name):
+                ts0601_actuator(self, Nwkid, "CurtainState", 1)
+                update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+
             # Refresh will be done via the Report Attribute
             return
 
@@ -605,7 +609,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
 
         elif DeviceType in ( "CurtainInverted", "Curtain"):
             if ts0601_extract_data_point_infos( self, model_name):
-                ts0601_actuator(self, Nwkid, "CurtainState", 1)
+                ts0601_actuator(self, Nwkid, "CurtainState", 2)
                 update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Open", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
             return
