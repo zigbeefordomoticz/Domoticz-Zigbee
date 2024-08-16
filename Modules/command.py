@@ -226,7 +226,7 @@ def handle_command_stop(self,Devices, DeviceID, Unit, Nwkid, EPout, DeviceType, 
         if DeviceType in ( "CurtainInverted", "Curtain"):
             if ts0601_extract_data_point_infos( self, model_name):
                 ts0601_actuator(self, Nwkid, "CurtainState", 1)
-                update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+                update_domoticz_widget(self, Devices, DeviceID, Unit, 17, "0", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
 
             # Refresh will be done via the Report Attribute
             return
@@ -410,7 +410,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         else:
             actuator_on(self, Nwkid, EPout, "WindowCovering")
             
-        if DeviceType in ( "CurtainInverted", "Curtain"):
+        if DeviceType in ( "CurtainInverted", ):
             # Refresh will be done via the Report Attribute
             return
 
@@ -419,15 +419,16 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         if model_name in ( "PR412", "CPR412", "CPR412-E"):
             actuator_off(self, Nwkid, EPout, "Light")
 
-        elif ( DeviceType in ("Vanne", "Curtain",) or model_name in ( "TS130F",) ):
+        elif  DeviceType in ( "Curtain", ) and ts0601_extract_data_point_infos( self, model_name):
+            ts0601_actuator(self, Nwkid, "CurtainState", 0)
+            update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
 
+        elif ( DeviceType in ("Vanne", "Curtain",) or model_name in ( "TS130F",) ):
             actuator_off(self, Nwkid, EPout, "WindowCovering")
             
         elif DeviceType in ( "CurtainInverted", "Curtain"):
             # Refresh will be done via the Report Attribute
-            if ts0601_extract_data_point_infos( self, model_name):
-                ts0601_actuator(self, Nwkid, "CurtainState", 0)
-                update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
         else:
@@ -596,7 +597,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         else:
             actuator_off(self, Nwkid, EPout, "WindowCovering")
             
-        if DeviceType in ( "CurtainInverted", "Curtain"):
+        if DeviceType in ( "CurtainInverted", ):
             # Refresh will be done via the Report Attribute
             return
 
@@ -604,19 +605,19 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         if model_name in ("PR412", "CPR412", "CPR412-E"):
             actuator_on(self, Nwkid, EPout, "Light")
                 
+        elif DeviceType in ( "Curtain", ) and ts0601_extract_data_point_infos( self, model_name):
+            ts0601_actuator(self, Nwkid, "CurtainState", 2)
+            update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Open", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+
         elif DeviceType in ( "Vanne", "Curtain",) or model_name in ( "TS130F",):
             actuator_on(self, Nwkid, EPout, "WindowCovering")
 
         elif DeviceType in ( "CurtainInverted", "Curtain"):
-            if ts0601_extract_data_point_infos( self, model_name):
-                ts0601_actuator(self, Nwkid, "CurtainState", 2)
-                update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Open", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-
             return
-       
+
         else:
             actuator_off(self, Nwkid, EPout, "WindowCovering")
-            
             # Refresh will be done via the Report Attribute
             return
 
@@ -886,13 +887,8 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         return
 
     if DeviceType in ("ThermoMode_5", "ThermoMode_6"):
-        self.log.logging(
-            "Command",
-            "Debug",
-            "handle_command_setlevel : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
-            % (Nwkid, EPout, Unit, DeviceType, Level),
-            Nwkid,
-        )
+        self.log.logging( "Command", "Debug", "handle_command_setlevel : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (
+            Nwkid, EPout, Unit, DeviceType, Level), Nwkid, )
         
         if model_name == "TS0601-_TZE200_chyvmhay":
             # 1: // manual 2: // away 0: // auto
@@ -946,29 +942,22 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             # Transform slider % into analog value
             lift = min(max((255 * Level) // 100, 1), 255)
 
-            self.log.logging(
-                "Command",
-                "Debug",
-                f"handle_command_setlevel : profalux_MoveToLiftAndTilt: {Nwkid} BSO-Volet Lift: Level: {Level} Lift: {lift}",
-                Nwkid,
-            )
+            self.log.logging( "Command", "Debug", f"handle_command_setlevel : profalux_MoveToLiftAndTilt: {Nwkid} BSO-Volet Lift: Level: {Level} Lift: {lift}", Nwkid, )
             profalux_MoveToLiftAndTilt(self, Nwkid, level=lift)
 
     elif DeviceType == "BSO-Orientation":
         if profalux:
             Tilt = Level - 10
-            self.log.logging(
-                "Command",
-                "Debug",
-                f"handle_command_setlevel : profalux_MoveToLiftAndTilt: {Nwkid} BSO-Orientation : Level: {Level} Tilt: {Tilt}",
-                Nwkid,
-            )
+            self.log.logging( "Command", "Debug", f"handle_command_setlevel : profalux_MoveToLiftAndTilt: {Nwkid} BSO-Orientation : Level: {Level} Tilt: {Tilt}", Nwkid, )
             profalux_MoveToLiftAndTilt(self, Nwkid, tilt=Tilt)
 
     elif DeviceType in ( "WindowCovering", "Venetian", "Vanne", "Curtain", "VenetianInverted", "VanneInverted", "CurtainInverted"):
         if ts0601_extract_data_point_infos( self, model_name):
-            ts0601_actuator(self, Nwkid, "CurtainLevel", int(Level))
+            self.log.logging( "Command", "Debug", f"handle_command_setlevel : Tuya TS0601: {Nwkid} Level: {Level}", Nwkid, )
+
+            ts0601_actuator(self, Nwkid, "CurtainLevel", Level)
             update_domoticz_widget(self, Devices, DeviceID, Unit, 2, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
 
         _set_level_windows_covering(self, DeviceType, Nwkid, EPout, Level)
 
