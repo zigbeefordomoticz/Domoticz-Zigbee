@@ -419,7 +419,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         if model_name in ( "PR412", "CPR412", "CPR412-E"):
             actuator_off(self, Nwkid, EPout, "Light")
 
-        elif  DeviceType in ( "Curtain", ) and ts0601_extract_data_point_infos( self, model_name):
+        elif DeviceType in ( "Curtain", ) and ts0601_extract_data_point_infos( self, model_name):
             ts0601_actuator(self, Nwkid, "CurtainState", 0)
             update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
