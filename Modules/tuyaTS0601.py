@@ -971,7 +971,7 @@ def ts0601_curtain_state( self, NwkId, Ep, dp, openclose=None):
         return
     self.log.logging("Tuya0601", "Debug", "ts0601_curtain_state - %s Switch Action: dp:%s value: %s" % (
         NwkId, dp, openclose))
-    action = "%02x01" % dp  # I
+    action = "%02x04" % dp  # I
     data = "%02x" % (openclose)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
