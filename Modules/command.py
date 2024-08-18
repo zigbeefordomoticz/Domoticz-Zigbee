@@ -420,7 +420,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
             actuator_off(self, Nwkid, EPout, "Light")
 
         elif DeviceType in ( "Curtain", ) and ts0601_extract_data_point_infos( self, model_name):
-            ts0601_actuator(self, Nwkid, "CurtainState", 0)
+            ts0601_actuator(self, Nwkid, "CurtainState", 2)
             update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
@@ -606,7 +606,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
             actuator_on(self, Nwkid, EPout, "Light")
                 
         elif DeviceType in ( "Curtain", ) and ts0601_extract_data_point_infos( self, model_name):
-            ts0601_actuator(self, Nwkid, "CurtainState", 2)
+            ts0601_actuator(self, Nwkid, "CurtainState", 0)
             update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Open", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
