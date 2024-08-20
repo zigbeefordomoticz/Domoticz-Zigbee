@@ -996,13 +996,13 @@ def ts0601_curtain_level( self, NwkId, Ep, dp, percent=None):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
-def ts0601_curtain_calibration( self, NwkId, Ep, dp, duration=None):
-    if duration is None:
+def ts0601_curtain_calibration( self, NwkId, Ep, dp, mode=None):
+    if mode is None:
         return
-    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_calibration - %s Switch Action: dp:%s value: %s" % (
-        NwkId, dp, duration))
-    action = "%02x02" % dp  # I
-    data = "%08x" % (duration)
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_calibration - %ss dp:%s value: %s" % (
+        NwkId, dp, mode))
+    action = "%02x01" % dp  # I
+    data = "%02x" % (mode)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 

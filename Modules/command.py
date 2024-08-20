@@ -55,7 +55,7 @@ from Modules.tuyaSiren import (tuya_siren2_trigger, tuya_siren_alarm,
 from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
                              tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
                              tuya_trv_mode, tuya_trv_onoff)
-from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
+from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos, ts0601_curtain_calibration
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE)
 
@@ -140,6 +140,7 @@ ACTIONATORS = [
     "ThermoOnOff",
     "ShutterCalibration",
     "SwitchAlarm",
+    "SwitchCalibration",
     "TamperSwitch",
     "PollingControl",
     "PollingControlV2"
@@ -273,6 +274,11 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
             actuator_off(self, Nwkid, EPout, "Light")
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
+
+    if DeviceType == "SwitchCalibration" and model_name == "TS0601-Moes-Curtain":
+        # Switch Off alibration
+        self.log.logging("Command", "Status", "mgtCommand : Switch Off Calibration on %s/%s" % (Nwkid,EPout))
+        ts0601_curtain_calibration( self, Nwkid, EPout, 0x03, mode=0)
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":
         tuya_siren2_trigger(self, Nwkid, '00')
@@ -512,6 +518,11 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         tuya_switch_command(self, Nwkid, "01", gang=int(EPout, 16))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
+
+    if DeviceType == "SwitchCalibration" and model_name == "TS0601-Moes-Curtain":
+        # Switch On calibration
+        self.log.logging("Command", "Status", "mgtCommand : Switch ON Calibration on %s/%s" % (Nwkid,EPout))
+        ts0601_curtain_calibration( self, Nwkid, EPout, 0x03, mode=1)
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":
         tuya_siren2_trigger(self, Nwkid, '01')
