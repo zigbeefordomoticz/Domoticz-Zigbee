@@ -318,7 +318,7 @@ def ts0601_switch(self, Devices, nwkid, ep, value):
 
 def ts0601_level_percentage(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_level_percentage - Percentage%s %s %s" % (nwkid, ep, value), nwkid, )
-    store_tuya_attribute(self, nwkid, "PercentState", value)
+    store_tuya_attribute(self, nwkid, "PercentLevel", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0008", "%02x" %value)
 
 
@@ -616,8 +616,18 @@ def ts0601_sensor_irrigation_mode(self, Devices, nwkid, ep, value):
 
 
 def ts0601_curtain_state(self, Devices, nwkid, ep, value):
+    # 0x02: Off
+    # 0x01: Stop
+    # 0x00: Open
     self.log.logging("Tuya0601", "Debug", "ts0601_curtain_state - Nwkid: %s/%s State: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "CurtainState", value)
+    STATE_TO_BLIND = {
+        0x00: "01",  # Open
+        0x02: "00",  # Closed/Off
+    }
+
+    if value in STATE_TO_BLIND:
+        MajDomoDevice(self, Devices, nwkid, ep, "0006", STATE_TO_BLIND[ value ])
 
 
 def ts0601_curtain_level(self, Devices, nwkid, ep, value):
