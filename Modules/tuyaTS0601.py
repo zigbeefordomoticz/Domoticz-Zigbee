@@ -1001,7 +1001,7 @@ def ts0601_curtain_calibration( self, NwkId, Ep, dp, mode=None):
         return
     self.log.logging("Tuya0601", "Debug", "ts0601_curtain_calibration - %ss dp:%s value: %s" % (
         NwkId, dp, mode))
-    action = "%02x01" % dp  # I
+    action = "%02x04" % dp  # I
     data = "%02x" % (mode)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
