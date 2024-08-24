@@ -278,6 +278,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
     if DeviceType == "SwitchCalibration" and model_name == "TS0601-Moes-Curtain":
         # Switch Off alibration
         self.log.logging("Command", "Status", "mgtCommand : Switch Off Calibration on %s/%s" % (Nwkid,EPout))
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         ts0601_curtain_calibration_cmd( self, Nwkid, EPout, 0x07, mode=0)
         return
 
@@ -522,6 +523,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
     if DeviceType == "SwitchCalibration" and model_name == "TS0601-Moes-Curtain":
         # Switch On calibration
         self.log.logging("Command", "Status", "mgtCommand : Switch ON Calibration on %s/%s" % (Nwkid,EPout))
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         ts0601_curtain_calibration_cmd( self, Nwkid, EPout, 0x07, mode=1)
         return
 
