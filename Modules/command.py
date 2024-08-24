@@ -278,7 +278,8 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
     if DeviceType == "SwitchCalibration" and model_name == "TS0601-Moes-Curtain":
         # Switch Off alibration
         self.log.logging("Command", "Status", "mgtCommand : Switch Off Calibration on %s/%s" % (Nwkid,EPout))
-        ts0601_curtain_calibration_cmd( self, Nwkid, EPout, 0x03, mode=0)
+        ts0601_curtain_calibration_cmd( self, Nwkid, EPout, 0x07, mode=0)
+        return
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":
         tuya_siren2_trigger(self, Nwkid, '00')
@@ -514,7 +515,6 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
 
     if model_name in ( "TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", ):
         self.log.logging("Command", "Debug", "mgtCommand : On for Tuya Switches Gang/EPout: %s" % EPout)
-
         tuya_switch_command(self, Nwkid, "01", gang=int(EPout, 16))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
@@ -522,7 +522,8 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
     if DeviceType == "SwitchCalibration" and model_name == "TS0601-Moes-Curtain":
         # Switch On calibration
         self.log.logging("Command", "Status", "mgtCommand : Switch ON Calibration on %s/%s" % (Nwkid,EPout))
-        ts0601_curtain_calibration_cmd( self, Nwkid, EPout, 0x03, mode=1)
+        ts0601_curtain_calibration_cmd( self, Nwkid, EPout, 0x07, mode=1)
+        return
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":
         tuya_siren2_trigger(self, Nwkid, '01')
@@ -965,7 +966,6 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     elif DeviceType in ( "WindowCovering", "Venetian", "Vanne", "Curtain", "VenetianInverted", "VanneInverted", "CurtainInverted"):
         if ts0601_extract_data_point_infos( self, model_name):
             self.log.logging( "Command", "Debug", f"handle_command_setlevel : Tuya TS0601: {Nwkid} Level: {Level}", Nwkid, )
-
             ts0601_actuator(self, Nwkid, "CurtainLevel", Level)
             update_domoticz_widget(self, Devices, DeviceID, Unit, 2, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
