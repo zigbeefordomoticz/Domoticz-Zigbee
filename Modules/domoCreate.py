@@ -828,6 +828,12 @@ SIMPLE_WIDGET = {
         "Subtype": 73,
         "Switchtype": 0
     },
+    "SwitchCalibration": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+
     "Tamper": {
         "Type": 243,
         "Subtype": 22,
