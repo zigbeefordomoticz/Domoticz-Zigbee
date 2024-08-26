@@ -959,7 +959,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     NwkId, ClusterType, WidgetType), NwkId)
                 return
 
-            elif ClusterType == "Switch" and WidgetType == "LvlControl":
+            elif ClusterType == "Switch" and is_dimmable_blind(self, Devices, device_id_ieee, device_unit):
                 # Called with ClusterId: 0x0006 but we have to update a Dimmer, so we need to keep the level
                 nValue = int(value)
                 sValue = prev_sValue
