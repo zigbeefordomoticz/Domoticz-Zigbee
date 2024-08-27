@@ -633,7 +633,11 @@ def ts0601_curtain_state(self, Devices, nwkid, ep, value):
 def ts0601_curtain_level(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_curtain_level - Nwkid: %s/%s Level: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "CurtainLevel", value)
-    MajDomoDevice(self, Devices, nwkid, ep, "0008", value)
+    
+    # It is a bit odd, but MajDomoDevice on "0008" expects an analog value between 0 to 255, so we need to convert the % into analog on a scale of 255
+    analog_value = (value * 255) // 100
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_level - Nwkid: %s/%s Level: %s analog: %s" % (nwkid, ep, value, analog_value))
+    MajDomoDevice(self, Devices, nwkid, ep, "0008", analog_value)
 
 
 def ts0601_curtain_calibration(self, Devices, nwkid, ep, value):
