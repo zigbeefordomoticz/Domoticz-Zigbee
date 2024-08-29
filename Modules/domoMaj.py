@@ -1179,7 +1179,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if "LvlControl" in ClusterType:  # LvlControl ( 0x0008)
-            self.log.logging("Widget", "Debug", "------>  LvlControl : %s" % sValue, NwkId)
+            self.log.logging("Widget", "Debug", "------>  LvlControl : %s" % value, NwkId)
             tuple_value = _domo_convert_level_control( self, Devices, device_id_ieee, device_unit, value, NwkId, switchType, WidgetType, prev_nValue, prev_sValue)
             if tuple_value :
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, tuple_value[0], tuple_value[1], BatteryLevel, SignalLevel, ForceUpdate_=tuple_value[2])
