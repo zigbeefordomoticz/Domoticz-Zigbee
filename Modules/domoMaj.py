@@ -1174,7 +1174,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
 
         if "WindowCovering" in ClusterType and WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind"):
-            self.log.logging(["Widget", "Electric"], "Debug", "------>  WindowCovering : %s" % sValue, NwkId)
+            self.log.logging(["Widget", "Electric"], "Debug", "------>  WindowCovering : %s" % value, NwkId)
             nValue, sValue = _domo_convert_windows_covering( self, value, Devices, device_id_ieee, device_unit, NwkId, WidgetType )
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
@@ -1185,7 +1185,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, tuple_value[0], tuple_value[1], BatteryLevel, SignalLevel, ForceUpdate_=tuple_value[2])
 
         if ClusterType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ) and ClusterType == WidgetType:
-            self.log.logging(["Widget", "Electric"], "Debug", "------>  ColorControl %s : %s" % (ClusterType, sValue), NwkId)
+            self.log.logging(["Widget", "Electric"], "Debug", "------>  ColorControl %s : %s" % (ClusterType, value), NwkId)
             
             # We just manage the update of the Dimmer (Control Level)
             nValue, sValue = _domo_convert_colorcontrol( self, value )
@@ -1231,7 +1231,7 @@ def _domo_convert_windows_covering( self, value, Devices, DeviceId, Unit, NwkId,
     elif value == 100:
         nValue = 1
     else:
-        nValue = dimm_blind_nvalue if dimm_blind_nvalue else 2
+        nValue = dimm_blind_nvalue or 2
             
     self.log.logging("Widget", "Debug", "------>  %s %s Value: %s:%s" % (WidgetType, NwkId, nValue, value), NwkId)
     return nValue, str(value)
