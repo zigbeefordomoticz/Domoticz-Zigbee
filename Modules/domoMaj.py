@@ -88,8 +88,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         # Attribute_ : If used This is the Attribute from readCluster. Will help to route to the right action
         # Color_     : If used This is the color value to be set
 
-        self.log.logging( "Widget", "Debug", "_domo_maj_one_cluster_type_entry WidgetEp: %s, Widget_Idx: %s, WidgetType: %s Value: %s Color: %s" % (
-            WidgetEp, Widget_Idx, WidgetType, value, Color_), NwkId, )
+        self.log.logging( "Widget", "Debug", f"_domo_maj_one_cluster_type_entry NwkId: {NwkId}, Ep: {Ep}, device_id_ieee: {device_id_ieee}, model_name: {model_name}, ClusterType: {ClusterType}, ClusterTypeList: {ClusterTypeList}, ClusterId: {ClusterId}, value: {value}, Attribute_: {Attribute_}, Color_: {Color_}, WidgetEp: {WidgetEp}, Widget_Idx: {Widget_Idx}, WidgetType: {WidgetType}", NwkId, )
         
         if WidgetEp == "00":
             # Old fashion / keep it for backward compatibility
@@ -107,9 +106,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         prev_nValue, prev_sValue = domo_read_nValue_sValue(self, Devices, device_id_ieee, device_unit)
         switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, Devices, device_id_ieee, device_unit)
 
-        self.log.logging( "Widget", "Debug", "------> ClusterType: %s WidgetEp: %s Widget_Idx: %s WidgetType: %s Attribute_: %s" % ( 
-            ClusterType, WidgetEp, Widget_Idx, WidgetType, Attribute_), NwkId, )
-
+        self.log.logging( "Widget", "Debug", f"------> device_unit: {device_unit}, prev_nValue: {prev_nValue}, prev_sValue: {prev_sValue} switchType: {switchType}, Subtype: {Subtype}", NwkId,)
+        
         SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, NwkId)
         self.log.logging("Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NwkId)
 
@@ -959,8 +957,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     NwkId, ClusterType, WidgetType), NwkId)
                 return
 
-            elif ClusterType == "Switch" and WidgetType == "LvlControl":
+            elif ClusterType == "Switch" and is_dimmable_blind(self, Devices, device_id_ieee, device_unit):
                 # Called with ClusterId: 0x0006 but we have to update a Dimmer, so we need to keep the level
+                self.log.logging( "Widget", "Debug", "------> Dimmable blind", NwkId, )
+
                 nValue = int(value)
                 sValue = prev_sValue
                 if switchType in (13, 16):
@@ -1125,8 +1125,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType in ("VenetianInverted", "Venetian", "WindowCovering", "VanneInverted", "Vanne", "Curtain", "CurtainInverted"):
-                _value = int(value, 16)
-                self.log.logging( "Widget", "Debug", "------>  %s/%s ClusterType: %s Updating %s Value: %s" % (NwkId, Ep, ClusterType, WidgetType, _value), NwkId, )
+                _value = int(value, 16) if isinstance(value, str) else value
+                self.log.logging( "Widget", "Debug", "------>  Generic Widget for %s/%s ClusterType: %s Updating %s Value: %s" % (NwkId, Ep, ClusterType, WidgetType, _value), NwkId, )
                 if WidgetType in ("VenetianInverted", "VanneInverted"):
                     _value = 100 - _value
                     self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NwkId, Ep, _value), NwkId)
@@ -1174,15 +1174,19 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
 
         if "WindowCovering" in ClusterType and WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind"):
+            self.log.logging(["Widget", "Electric"], "Debug", "------>  WindowCovering : %s" % sValue, NwkId)
             nValue, sValue = _domo_convert_windows_covering( self, value, Devices, device_id_ieee, device_unit, NwkId, WidgetType )
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if "LvlControl" in ClusterType:  # LvlControl ( 0x0008)
+            self.log.logging("Widget", "Debug", "------>  LvlControl : %s" % sValue, NwkId)
             tuple_value = _domo_convert_level_control( self, Devices, device_id_ieee, device_unit, value, NwkId, switchType, WidgetType, prev_nValue, prev_sValue)
             if tuple_value :
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, tuple_value[0], tuple_value[1], BatteryLevel, SignalLevel, ForceUpdate_=tuple_value[2])
 
         if ClusterType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ) and ClusterType == WidgetType:
+            self.log.logging(["Widget", "Electric"], "Debug", "------>  ColorControl %s : %s" % (ClusterType, sValue), NwkId)
+            
             # We just manage the update of the Dimmer (Control Level)
             nValue, sValue = _domo_convert_colorcontrol( self, value )
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
@@ -1254,7 +1258,7 @@ def _domo_convert_lux( value):
 
 
 def _domo_convert_level_control( self, Devices, DeviceId, Unit, value, NwkId, switchType, WidgetType, prev_nValue, prev_sValue):
-    if WidgetType == "LvlControl" or ( WidgetType in ( "BSO-Volet", "Blind", ) ):
+    if WidgetType == "LvlControl" or ( WidgetType in ( "BSO-Volet", "Blind", "Curtain") ):
         # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
         # We might get a Level, but the device is still Off and we shouldn't make it On .
         self.log.logging("Widget", "Debug", "_domo_convert_level_control input value: -> %s" % value, NwkId)
