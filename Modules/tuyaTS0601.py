@@ -1020,10 +1020,22 @@ def ts0601_curtain_motor_steering_cmd( self, NwkId, Ep, dp, mode=None):
     data = "%08x" % (mode)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
+
+def ts0601_curtain_quick_calibration_cmd( self, NwkId, Ep, dp, duration=None):
+    if duration is None:
+        return
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_quick_calibration_cmd - %s Quick Calibration: dp:%s value: %s" % (
+        NwkId, dp, duration))
+    action = "%02x04" % dp  # I
+    data = "%02x" % (duration)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
 TS0601_COMMANDS = {
     "CurtainState": ts0601_curtain_state_cmd,
     "CurtainLevel": ts0601_curtain_level_cmd,
     "CurtainCalibration": ts0601_curtain_calibration_cmd,
+    "CurtainQuickCalibration": ts0601_curtain_quick_calibration_cmd,
     "CurtainMotorSteering": ts0601_curtain_motor_steering_cmd,
     "TuyaPresenceSensitivity": ( None, "04"),
     "TuyaRadarSensitivity": (None, "04"),
