@@ -41,6 +41,9 @@ def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_
     self.log.logging( "Pairing", "Debug", "check_found_plugin_model - %s %s %s %s" % (
         model, manufacturer_name, manufacturer_code, device_id))
 
+    if device_id == {}:
+        device_id = None
+
     # Let's check if 
     for x in PLUGIN_MODELS_MATRIX:
         try:
