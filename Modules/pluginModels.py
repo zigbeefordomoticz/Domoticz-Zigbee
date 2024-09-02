@@ -38,11 +38,11 @@ def plugin_self_identifier( self, model, manufacturer):
 
 
 def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_code=None, device_id=None):
-    self.log.logging( "Pairing", "Debug", "check_found_plugin_model - %s %s %s %s" % (
-        model, manufacturer_name, manufacturer_code, device_id))
+    self.log.logging( "Pairing", "Debug", f"check_found_plugin_model - model={model}, manufacturer_name={manufacturer_name}, manufacturer_code={manufacturer_code}, device_id={device_id}")
 
-    if device_id == {}:
-        device_id = None
+    device_id = None if device_id == {} else device_id
+    manufacturer_name = None if manufacturer_name == {} else manufacturer_name
+    manufacturer_code = None if manufacturer_code == {} else manufacturer_code
 
     # Let's check if 
     for x in PLUGIN_MODELS_MATRIX:
