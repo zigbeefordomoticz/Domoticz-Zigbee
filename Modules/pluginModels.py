@@ -51,9 +51,9 @@ def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_
                 continue
 
             if (
-                ( "Manufacturer" in x and x["Manufacturer"] and manufacturer_name not in x["Manufacturer"] )
-                or ( "ManufId" in x and x["ManufId"] and manufacturer_code not in x["ManufId"])
-                or ( "DeviceID" in x and x["DeviceID"] and device_id not in x["DeviceID"] )
+                ( "Manufacturer" in x and x["Manufacturer"] and manufacturer_name and  manufacturer_name not in x["Manufacturer"] )
+                or ( "ManufId" in x and x["ManufId"] and manufacturer_code and manufacturer_code not in x["ManufId"])
+                or ( "DeviceID" in x and x["DeviceID"] and device_id and device_id not in x["DeviceID"] )
             ):
                 continue
 
