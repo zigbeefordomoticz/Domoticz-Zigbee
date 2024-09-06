@@ -728,7 +728,7 @@ def timeout_legacy_device_unit_api(self, Devices, DeviceId_, Unit_, timeout_valu
 
 
 def update_battery_api(self, Devices, DeviceId, battery_level):
-    self.log.logging("AbstractDz", "Debug", f"update_battery_api: {DeviceId} to {battery_level}")
+    self.log.logging( ["AbstractDz", "BatteryManagement"], "Debug", f"update_battery_api: {DeviceId} to {battery_level}")
           
     if DOMOTICZ_EXTENDED_API:
         if DeviceId in Devices:

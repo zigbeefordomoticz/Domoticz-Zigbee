@@ -21,7 +21,6 @@ import binascii
 # import time
 import struct
 from time import time
-from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import timedOutDevice
 from Modules.ikeaTradfri import ikea_air_purifier_cluster
