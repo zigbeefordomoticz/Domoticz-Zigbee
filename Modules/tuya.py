@@ -188,6 +188,9 @@ def tuya_polling_values(self, nwkid, device_model, tuya_device_info):
     polling_status = tuya_device_info.setdefault("Polling", "Off")
 
     current_battery_level = get_tuya_attribute(self, nwkid, "Battery")
+    if isinstance(current_battery_level, str) and current_battery_level.isdigit():
+        current_battery_level = int(current_battery_level)
+
     # Usall default is 300s ( 5 minutes )
     if current_battery_level and current_battery_level < 30:
         # TODO needs to update Widget
