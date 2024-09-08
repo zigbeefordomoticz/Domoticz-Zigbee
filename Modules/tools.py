@@ -53,6 +53,8 @@ def str_round(value, n):
     return "{:.{n}f}".format(value, n=int(n))
 
 def voltage2batteryP(voltage, volt_max, volt_min):
+    if isinstance( voltage, str):
+        voltage = int(voltage)
 
     if voltage > volt_max:
         ValueBattery = 100
@@ -1029,9 +1031,17 @@ def checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 
 
 def checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, Value):
-
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
+
+
+def store_battery_percentage_time_stamp( self, MsgSrcAddr):
+    self.ListOfDevices[MsgSrcAddr]["BatteryPercentage_TimeStamp"] = time.time()
+
+
+def store_battery_voltage_time_stamp( self, MsgSrcAddr):
+    self.ListOfDevices[MsgSrcAddr]["BatteryVoltage_TimeStamp"] = time.time()
+
 
 def checkValidValue(self, MsgSrcAddr, AttType, Data ):
     if int(AttType, 16) == 0xE2 and Data == "ffffffff":
