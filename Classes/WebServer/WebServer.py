@@ -1184,7 +1184,7 @@ class WebServer(object):
             elif len(parameters) == 1:
                 device_infos = {
                     "PluginInfos": get_plugin_parameters(self, filter=True),
-                    "Analytics": self.pluginconf.pluginConf["PluginAnalytics"]
+                    "Analytics": 0
                 }
                 if parameters[0] in self.ListOfDevices:
                     device_infos["Device"] = self.ListOfDevices[parameters[0]]
