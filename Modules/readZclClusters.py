@@ -20,7 +20,9 @@ from DevicesModules import FUNCTION_MODULE, FUNCTION_WITH_ACTIONS_MODULE
 from Modules.batterieManagement import UpdateBatteryAttribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.tools import (checkAndStoreAttributeValue,
-                           get_device_config_param, getAttributeValue)
+                           get_device_config_param, getAttributeValue,
+                           store_battery_percentage_time_stamp,
+                           store_battery_voltage_time_stamp)
 from Modules.zclClusterHelpers import (decoding_attribute_data,
                                        handle_model_name)
 
@@ -44,6 +46,8 @@ STORE_SPECIFIC_PLACE_LVL2 = "SpecifStoragelvl2"
 STORE_SPECIFIC_PLACE_LVL3 = "SpecifStoragelvl3"
 UPDATE_DOMO_DEVICE = "upd_domo_device"
 UPDATE_BATTERY = "update_battery"
+UPDATE_BATTERY_VOLTAGE = "update_battery_voltage"
+UPDATE_BATTERY_PERCENTAGE = "update_battery_percentage"
 
 ACTIONS_TO_FUNCTIONS = {
     CHECK_AND_STORE: checkAndStoreAttributeValue,
@@ -145,8 +149,12 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
         elif data_action == CHECK_AND_STORE:
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             
-        elif data_action == UPDATE_BATTERY:
+        elif data_action in ( UPDATE_BATTERY, UPDATE_BATTERY_VOLTAGE, UPDATE_BATTERY_PERCENTAGE):
             UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp)
+            if data_action == UPDATE_BATTERY_PERCENTAGE:
+                store_battery_percentage_time_stamp( self, MsgSrcAddr)
+            elif data_action == UPDATE_BATTERY_VOLTAGE:
+                store_battery_voltage_time_stamp( self, MsgSrcAddr)
 
         elif data_action == UPDATE_DOMO_DEVICE and majdomodevice_possiblevalues( self, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
             action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value )
