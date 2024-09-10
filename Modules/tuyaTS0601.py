@@ -722,6 +722,7 @@ DP_SENSOR_FUNCTION = {
     "rain_intensity": ts0601_rain_intensity,
 }
 
+
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
     self.log.logging("Tuya0601", "Debug", "ts0601_tuya_cmd - %s %s %s %s" % (NwkId, Ep, action, data))
     
@@ -1071,6 +1072,7 @@ TS0601_COMMANDS = {
     "TuyaAlarmMode": ts0601_solar_siren_alarm_mode,
     "TuyaAlarmDuration": ts0601_solar_siren_alarm_duration
 }
+
 
 DP_ACTION_FUNCTION = {
     "switch": ts0601_action_switch,
