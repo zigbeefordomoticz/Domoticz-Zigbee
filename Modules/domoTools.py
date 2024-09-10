@@ -496,6 +496,7 @@ CLUSTER_TO_TYPE = {
     "phMeter": "phMeter",
     "ec": "ec",
     "orp": "orp",
+    "RainIntensity": "RainIntensity",
     "freeChlorine": "freeChlorine",
     "salinity": "salinity",
     "tds": "tds"
