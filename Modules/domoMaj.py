@@ -761,6 +761,12 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
+        if ClusterType == "RainIntensity" and WidgetType == "RainIntensity":
+            self.log.logging("Widget", "Debug", "------>  RainIntensity: %s" % (value,), NwkId)
+            svalue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
             nValue = 0
             sValue = "%s %% used" %( value, )

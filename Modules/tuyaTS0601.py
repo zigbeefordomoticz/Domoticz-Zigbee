@@ -650,6 +650,20 @@ def ts0601_curtain_motor_steering(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "CurtainMotorSteering", value)
 
 
+def ts0601_cleaning_reminder(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_cleaning_reminder - Nwkid: %s/%s Level: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "CleaningReminder", value)
+    self.log.logging("Tuya0601", "Debug", "ts0601_cleaning_reminder - Nwkid: %s/%s Level: %s analog: %s" % (nwkid, ep, value, value))
+    MajDomoDevice(self, Devices, nwkid, ep, "0006", value)
+
+
+def ts0601_rain_intensity(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_rain_intensity - Nwkid: %s/%s Level: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "RainIntensity", value)
+    self.log.logging("Tuya0601", "Debug", "ts0601_rain_intensity - Nwkid: %s/%s Level: %s analog: %s" % (nwkid, ep, value, value))
+    MajDomoDevice(self, Devices, nwkid, ep, "RainIntensity", value)
+
+
 DP_SENSOR_FUNCTION = {
     "curtain_state": ts0601_curtain_state,
     "curtain_level": ts0601_curtain_level,
@@ -703,7 +717,9 @@ DP_SENSOR_FUNCTION = {
     "phCalibration1": ts0601_phCalibration1,
     "phCalibration2": ts0601_phCalibration2,
     "ecCalibration": ts0601_ecCalibration,
-    "orpCalibration": ts0601_orpCalibration
+    "orpCalibration": ts0601_orpCalibration,
+    "cleaning_reminder": ts0601_cleaning_reminder,
+    "rain_intensity": ts0601_rain_intensity,
 }
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
