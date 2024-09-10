@@ -833,7 +833,11 @@ SIMPLE_WIDGET = {
         "Subtype": 73,
         "Switchtype": 0
     },
-
+    "SwitchCleaning": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
     "Tamper": {
         "Type": 243,
         "Subtype": 22,
@@ -890,6 +894,7 @@ SIMPLE_WIDGET = {
         "Switchtype": 0,
         "Image": 11
     },
+    "RainIntensity": { "widgetType": "Custom", "Options": "1;mV" },
     "WaterCounter": {
         "Type": 243,
         "Subtype": 28,
