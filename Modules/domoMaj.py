@@ -1217,6 +1217,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             nValue, sValue = _domo_convert_lux( value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
 
+        if "Lux" in ClusterType and WidgetType == "Lux20MinAverage" and Attribute_ == "ff00":
+            nValue, sValue = _domo_convert_lux( value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
+
         # Check if this Device belongs to a Group. In that case update group
         CheckUpdateGroup(self, NwkId, Ep, ClusterId)
 

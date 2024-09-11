@@ -709,6 +709,11 @@ SIMPLE_WIDGET = {
         "Subtype": 1,
         "Switchtype": 0
     },
+    "Lux20MinAverage": {
+        "Type": 246,
+        "Subtype": 1,
+        "Switchtype": 0
+    },
     "LvlControl": {
         "Type": 244,
         "Subtype": 73,
