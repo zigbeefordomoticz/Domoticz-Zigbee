@@ -260,7 +260,7 @@ def ts0601_illuminance(self, Devices, nwkid, ep, value):
 def ts0601_illuminance_20min_averrage(self, Devices, nwkid, ep, value):
     # Illuminance
     self.log.logging("Tuya0601", "Debug", "ts0601_illuminance - Illuminance %s %s %s" % (nwkid, ep, value), nwkid)
-    store_tuya_attribute(self, nwkid, "Illuminance", value)
+    store_tuya_attribute(self, nwkid, "Illuminance_20min_Average", value)
     MajDomoDevice(self, Devices, nwkid, ep, "0400", value, Attribute_="ff00")
     checkAndStoreAttributeValue(self, nwkid, "01", "0400", "0000", value)
 
