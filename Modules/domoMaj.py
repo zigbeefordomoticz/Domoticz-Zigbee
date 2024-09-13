@@ -945,6 +945,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 or ("ThermoMode" in ClusterType and WidgetType == "ACMode_2")
                 or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00")
                 or ("ThermoMode" in ClusterType and WidgetType == "ThermoMode_7" and Attribute_ == "001c")
+                or ("ThermoMode" in ClusterType and WidgetType == "ThermoMode_8" and Attribute_ == "001c")
                 or (WidgetType == "KF204Switch" and ClusterType in ("Switch", "Door"))
                 or (WidgetType == "Valve" and Attribute_ == "0014")
                 or ("ThermoMode" in ClusterType and WidgetType == "ThermoOnOff")

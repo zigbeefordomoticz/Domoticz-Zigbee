@@ -177,6 +177,9 @@ def tuya_polling_values(self, nwkid, device_model, tuya_device_info):
     # Retrieve the polling interval configuration for TUYA_DATA_REQUEST_POLLING which query only the data point which have changed
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
 
+    if not tuya_data_query and not tuya_data_request_polling:
+        return 0, 0, 0, 0, 0
+
     # 3 consecutives polling by default
     tuya_data_request_polling_additional = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_ADDITIONAL", return_default=3)
 
