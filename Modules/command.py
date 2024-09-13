@@ -119,6 +119,7 @@ ACTIONATORS = [
     "ThermoMode_5",
     "ThermoMode_6",
     "ThermoMode_7",
+    "ThermoMode_8",
     "ThermoModeEHZBRTS",
     "AirPurifierMode",
     "FanSpeed",
@@ -693,7 +694,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     self.log.logging( "Command", "Debug", f"handle_command_setlevel : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid, )
 
     if DeviceType == "ThermoSetpoint":
-        _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
+        _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
         return
 
     if DeviceType == "TempSetCurrent":
@@ -900,6 +901,10 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         ts0601_actuator(self, Nwkid, "TRV6SystemMode", int(Level // 10))
         return
 
+    if DeviceType == "ThermoMode_8" and ts0601_extract_data_point_infos( self, model_name):
+        ts0601_actuator(self, Nwkid, "TRV8SystemMode", int(Level // 10))
+        return
+
     if DeviceType in ("ThermoMode_5", "ThermoMode_6"):
         self.log.logging( "Command", "Debug", "handle_command_setlevel : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (
             Nwkid, EPout, Unit, DeviceType, Level), Nwkid, )
@@ -1104,7 +1109,7 @@ def _set_level_set_current_temp(self, Devices, DeviceID, Unit, Nwkid, EPout, Lev
     return
 
 
-def _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel, DeviceType, forceUpdateDev):
+def _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel, DeviceType, forceUpdateDev):
     # Log the command
     self.log.logging( "Command", "Debug", f"_set_level_setpoint : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid, )
 
@@ -1121,7 +1126,8 @@ def _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, Batt
     update_domoticz_widget( self, Devices, DeviceID, Unit, 0, str(normalized_level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
 
     # Request a refresh of the attribute in the next Heartbeat
-    request_read_device_status(self, Nwkid)
+    if get_deviceconf_parameter_value(self, model_name, "READ_ATTRIBUTE_AFTER_COMMAND", return_default=True):
+        request_read_device_status(self, Nwkid)
 
     return
 

@@ -844,7 +844,7 @@ SWITCH_SELECTORS = {
         "LevelNames": "Off|Auto|Manual|Temp Hand|Holidays",
         "Language": {
             "fr-FR": {
-                "LevelNames": "Arrêt|Auto|Manuel"
+                "LevelNames": "Arrêt|Auto|Manuel|Temp Hand|Vacances"
             }
         }
     },
@@ -892,6 +892,24 @@ SWITCH_SELECTORS = {
             }
         }
     },
+    "ThermoMode_8": {
+        0: (0, "Off"),
+        1: (1, "10"),
+        2: (2, "20"),
+        3: (3, "30"),
+        4: (4, "40"),
+        5: (5, "50"),
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Manual|Auto|Eco|Confort|Holidays",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Manuel|Auto|Eco|Confort|Vacances"
+            }
+        }
+    },
+
     "ThermoOnOff": {
         0: (0, "Off"),
         1: (1, "On"),

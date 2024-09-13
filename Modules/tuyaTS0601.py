@@ -457,6 +457,36 @@ def ts0601_trv7_system_mode(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0201", widget_value, Attribute_="001c")
     checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", widget_value)
 
+WIDGET_BAB_1413Pro_E_RESPONSE = {
+    # "LevelNames": "Off|Manual|Auto|Eco|Confort|Holidays",
+    0x00: 2,
+    0x01: 5,
+    0x02: 1,
+    0x03: 4,
+    0x04: 3
+    }
+
+def ts0601_trv8_system_mode(self, Devices, nwkid, ep, value):
+    # Manual: 0x02
+    # Programming: 0x00
+    # Eco: 0x04
+    # Confort: 0x03
+    # Holiday: 0x01
+
+    if value > 4:
+        self.log.logging("Tuya0601", "Error", "ts0601_trv8_system_mode - After Nwkid: %s/%s Invalid SystemMode: %s" % (nwkid, ep, value))
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_trv8_system_mode - After Nwkid: %s/%s SystemMode: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "SystemModel", value)
+    if value not in WIDGET_BAB_1413Pro_E_RESPONSE:
+        self.log.logging("Tuya0601", "Error", "ts0601_trv8_system_mode - unexepected mode %s/%s mode: %s (%s)" %(
+            nwkid, ep, value, type(value))
+        )
+    widget_value = WIDGET_BAB_1413Pro_E_RESPONSE[ value ]
+    MajDomoDevice(self, Devices, nwkid, ep, "0201", widget_value, Attribute_="001c")
+    checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", widget_value)
+
 
 def ts0601_trv6_system_mode(self, Devices, nwkid, ep, value):
     # Auto 0, Manual 1, Off 2
@@ -707,6 +737,7 @@ DP_SENSOR_FUNCTION = {
     "windowsopened": ts0601_windowdetection,
     "TRV6SystemMode": ts0601_trv6_system_mode,
     "TRV7SystemMode": ts0601_trv7_system_mode,
+    "TRV8SystemMode": ts0601_trv8_system_mode,
     "TuyaAlarmDuration": ts0601_sirene_duration,
     "TuyaAlarmMelody": ts0601_sirene_melody,
     "TuyaAlarmLevel": ts0601_sirene_level,
@@ -781,6 +812,26 @@ def ts0601_action_setpoint(self, NwkId, Ep, dp, value):
 
     self.log.logging("Tuya0601", "Debug", "ts0601_action_setpoint - %s Setpoint: %s" % (NwkId, value))
     
+    action = "%02x02" % dp
+    data = "%08x" % value
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_max_setpoint_temp( self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_max_setpoint_temp - %s Max SetPoint: %s" % (NwkId, value))
+    action = "%02x02" % dp
+    data = "%08x" % value
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_min_setpoint_temp( self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_min_setpoint_temp - %s Min SetPoint: %s" % (NwkId, value))
     action = "%02x02" % dp
     data = "%08x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
@@ -885,6 +936,36 @@ def ts0601_action_trv6_system_mode(self, NwkId, Ep, dp, value=None):
         )
     device_value = WIDGET_DEVICE_MAP[ value ]
    
+    action = "%02x04" % dp  # Mode
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+WIDGET_BAB_1413Pro_E_COMMAND = {
+    # "LevelNames": "Off|Manual|Auto|Eco|Confort|Holidays",
+    1: 0x02,
+    2: 0x00,
+    3: 0x04,
+    4: 0x03,
+    5: 0x01
+    }
+
+def ts0601_action_trv8_system_mode(self, NwkId, Ep, dp, value=None):
+    # Manual: 0x02
+    # Programming: 0x00
+    # Eco: 0x04
+    # Confort: 0x03
+    # Holiday: 0x01
+
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_trv6bis_system_mode - %s System mode: %s" % (NwkId, value))
+    if value not in WIDGET_BAB_1413Pro_E_COMMAND:
+        self.log.logging("Tuya0601", "Error", "ts0601_action_trv6_system_mode - unexepected mode %s/%s mode: %s (%s)" %(
+            NwkId, Ep, value, type(value))
+        )
+    device_value = WIDGET_BAB_1413Pro_E_COMMAND[ value ]
+
     action = "%02x04" % dp  # Mode
     data = "%02x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
@@ -1079,7 +1160,9 @@ TS0601_COMMANDS = {
     "TuyaIrrigationMode": ts0601_irrigation_mode,
     "TuyaAlarmMelody": ts0601_solar_siren_alarm_melody,
     "TuyaAlarmMode": ts0601_solar_siren_alarm_mode,
-    "TuyaAlarmDuration": ts0601_solar_siren_alarm_duration
+    "TuyaAlarmDuration": ts0601_solar_siren_alarm_duration,
+    "MaxSetpointTemp": ts0601_max_setpoint_temp,
+    "MinSetpointTemp": ts0601_min_setpoint_temp,
 }
 
 
@@ -1088,6 +1171,7 @@ DP_ACTION_FUNCTION = {
     "setpoint": ts0601_action_setpoint,
     "calibration": ts0601_action_calibration,
     "TRV6SystemMode": ts0601_action_trv6_system_mode,
+    "TRV8SystemMode": ts0601_action_trv8_system_mode,
     "TRV7SystemMode": ts0601_action_trv7_system_mode,
     "TuyaAlarmSwitch": ts0601_action_siren_switch,
     "TuyaTamperSwitch": ts0601_tamper_siren_switch,
