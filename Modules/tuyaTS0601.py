@@ -257,6 +257,14 @@ def ts0601_illuminance(self, Devices, nwkid, ep, value):
     checkAndStoreAttributeValue(self, nwkid, "01", "0400", "0000", value)
 
 
+def ts0601_illuminance_20min_averrage(self, Devices, nwkid, ep, value):
+    # Illuminance
+    self.log.logging("Tuya0601", "Debug", "ts0601_illuminance - Illuminance %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Illuminance_20min_Average", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0400", value, Attribute_="ff00")
+    checkAndStoreAttributeValue(self, nwkid, "01", "0400", "0000", value)
+
+
 def ts0601_temperature(self, Devices, nwkid, ep, value):
     store_tuya_attribute(self, nwkid, "Temp", value)
     checkAndStoreAttributeValue(self, nwkid, "01", "0402", "0000", value)
@@ -671,6 +679,7 @@ DP_SENSOR_FUNCTION = {
     "curtain_motor_steering": ts0601_curtain_motor_steering,
     "motion": ts0601_motion,
     "illuminance": ts0601_illuminance,
+    "illuminance_20min_average": ts0601_illuminance_20min_averrage,
     "temperature": ts0601_temperature,
     "setpoint": ts0601_setpoint,
     "humidity": ts0601_humidity,
@@ -721,6 +730,7 @@ DP_SENSOR_FUNCTION = {
     "cleaning_reminder": ts0601_cleaning_reminder,
     "rain_intensity": ts0601_rain_intensity,
 }
+
 
 def ts0601_tuya_cmd(self, NwkId, Ep, action, data):
     self.log.logging("Tuya0601", "Debug", "ts0601_tuya_cmd - %s %s %s %s" % (NwkId, Ep, action, data))
@@ -1071,6 +1081,7 @@ TS0601_COMMANDS = {
     "TuyaAlarmMode": ts0601_solar_siren_alarm_mode,
     "TuyaAlarmDuration": ts0601_solar_siren_alarm_duration
 }
+
 
 DP_ACTION_FUNCTION = {
     "switch": ts0601_action_switch,

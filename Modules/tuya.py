@@ -1514,6 +1514,8 @@ def tuya_command_f0( self, NwkId ):
 def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     self.log.logging("Tuya", "Debug", "tuya_temphumi_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    manufacturer_name = self.ListOfDevices[NwkId].get('Manufacturer Name')
+
     if dp == 0x01:  # Temperature, 
         unsigned_value = int( data,16)
         signed_value = struct.unpack('>i', struct.pack('>I', unsigned_value))[0]
@@ -1521,29 +1523,46 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         store_tuya_attribute(self, NwkId, "Temp", signed_value)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0402", (signed_value / 10))
         checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", (signed_value/ 10))
-       
+
     elif dp == 0x02:   # Humi
         humi = int(data, 16)
-        if (
-            'Manufacturer Name' in self.ListOfDevices[ NwkId ]
-            and self.ListOfDevices[ NwkId ][ 'Manufacturer Name' ] not in ( '_TZE200_qoy0ekbd', '_TZE200_whkgqxse')
-        ):
+        if manufacturer_name and manufacturer_name not in {'_TZE200_qoy0ekbd', '_TZE200_whkgqxse', '_TZE204_upagmta9'}:
             humi /= 10
         store_tuya_attribute(self, NwkId, "Humi", humi)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0405", humi)
         checkAndStoreAttributeValue(self, NwkId, "01", "0405", "0000", humi)
-        
+
     elif dp == 0x04:   # Battery ????
         store_tuya_attribute(self, NwkId, "Battery", data)
         checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", int(data, 16))
         self.ListOfDevices[NwkId]["Battery"] = int(data, 16)
         Update_Battery_Device(self, Devices, NwkId, int(data, 16))
         store_tuya_attribute(self, NwkId, "BatteryStatus", data)
+
+    elif dp == 0x03:
+        #  0: Low battery, 2:Full battery , 1: medium ????
+        self.log.logging("Tuya", "Debug", "tuya_temphumi_response - Battery Level %s %s %s" % (NwkId, srcEp, data), NwkId)
+        store_tuya_attribute(self, NwkId, "Battery", data)
+        if int(data,16) == 0:
+            self.ListOfDevices[NwkId]["Battery"] = 25
+            Update_Battery_Device(self, Devices, NwkId, 25) 
+        elif int(data,16) == 1:
+            self.ListOfDevices[NwkId]["Battery"] = 50
+            Update_Battery_Device(self, Devices, NwkId, 50)
+        else:
+            self.ListOfDevices[NwkId]["Battery"] = 90
+            Update_Battery_Device(self, Devices, NwkId, 90)
+
+    elif dp == 0x09:
+        # Temp Unit
+        self.log.logging("Tuya", "Debug", "tuya_temphumi_response - Temp Unit %s %s %s" % (NwkId, srcEp, data), NwkId)
+        store_tuya_attribute(self, NwkId, "TempUnit", data)
+
         
     else:
         self.log.logging("Tuya", "Log", "tuya_temphumi_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
-        
+
 
 def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
