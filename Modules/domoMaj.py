@@ -534,9 +534,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
         if "Valve" in ClusterType and (WidgetType == "Valve" and Attribute_ in ("026d", "4001", "0008")):
-            nValue = 0
-            sValue = str(nValue)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+            self.log.logging("Widget", "Debug", "Valve (Pi Demand) %s WidgetType: %s Value: %s (%s) Attribute_: %s" % (
+                NwkId, WidgetType, value, type(value), Attribute_), NwkId)
+            sValue = str(value)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
         if "ThermoMode" in ClusterType:  # Thermostat Mode
             self.log.logging("Widget", "Debug", "ThermoMode %s WidgetType: %s Value: %s (%s) Attribute_: %s" % ( 
