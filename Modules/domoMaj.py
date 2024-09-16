@@ -965,23 +965,21 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     NwkId, ClusterType, WidgetType), NwkId)
                 return
 
-            elif ClusterType == "Switch" and is_dimmable_blind(self, Devices, device_id_ieee, device_unit):
-                # Called with ClusterId: 0x0006 but we have to update a Dimmer, so we need to keep the level
-                self.log.logging( "Widget", "Debug", "------> Dimmable blind", NwkId, )
-
+            elif WidgetType == "LvlControl" and ClusterType == "Switch":
+                self.log.logging("Widget", "Debug", f"------> ClusterId: 0x0006 but we have to update a Dimmer value: {value}", NwkId)
 
                 nValue = int(value, 16)
                 sValue = prev_sValue
-                if switchType in (13, 16):
-                    # Correct for Blinds where we have to display %
+
+                if is_dimmable_blind(self, Devices, device_id_ieee, device_unit):
+                    # Handle dimmable blinds with percentage display
                     if value == "00":
-                        nValue = 0
-                        sValue = "0"
+                        nValue, sValue = 0, "0"
                     elif value == "01" and prev_sValue == "100":
-                        nValue = 1
-                        sValue = "100"
+                        nValue, sValue = 1, "100"
                     else:
                         nValue = 2
+
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
             elif ClusterType == "Switch" and WidgetType == "Alarm":
