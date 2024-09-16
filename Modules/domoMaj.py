@@ -969,7 +969,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 # Called with ClusterId: 0x0006 but we have to update a Dimmer, so we need to keep the level
                 self.log.logging( "Widget", "Debug", "------> Dimmable blind", NwkId, )
 
-                nValue = int(value)
+
+                nValue = int(value, 16)
                 sValue = prev_sValue
                 if switchType in (13, 16):
                     # Correct for Blinds where we have to display %
