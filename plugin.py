@@ -485,7 +485,7 @@ class BasePlugin:
             )
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
 
-        self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID)
+        self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID, self.IEEE2NWK)
         self.adminWidgets.updateStatusWidget(Devices, "Starting up")
 
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"

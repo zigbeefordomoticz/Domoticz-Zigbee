@@ -379,10 +379,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)    
                 instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
                 summation = round(float(zlinky_sum_all_indexes( self, NwkId )), 2)
-                self.log.logging(["ZLinky","Electric"], "Debug", "------> Summation for Meter : %s" %summation)
+                self.log.logging(["ZLinky","Electric"], "Debug", "------> Summation for Meter : %s" %summation, NwkId)
                 
                 sValue = "%s;%s" % (instant, summation)
-                self.log.logging(["ZLinky","Electric"], "Debug", "------>  : " + sValue)
+                self.log.logging(["ZLinky","Electric"], "Debug", "------>  : " + sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
                 
             elif WidgetType == "Meter" and Attribute_ == "050f":
@@ -391,7 +391,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 _instant, summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
                 instant = round(float(value), 2)
                 sValue = "%s;%s" % (instant, summation)
-                self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}")
+                self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}", NwkId)
                 
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
@@ -415,7 +415,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                     # No summation retreive, so we make sure that EnergyMeterMode is
                     # correctly set to 1 (compute), if not adjust
                     
-                self.log.logging(["Widget","Electric"], "Debug", f"------> Update Meter/Meter : {device_id_ieee} {device_unit} {sValue}")
+                self.log.logging(["Widget","Electric"], "Debug", f"------> Update Meter/Meter : {device_id_ieee} {device_unit} {sValue}", NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
         if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
@@ -1594,7 +1594,7 @@ def check_set_meter_widget( self, Devices, NwkId, DeviceId, Unit, oldnValue, old
     Options = {'EnergyMeterMode': '0'}
     
     _device_options = domo_read_Options( self, Devices, DeviceId, Unit,)
-    self.log.logging( "Widget", "Debug", "check_set_meter_widget Options: %s" %_device_options)
+    self.log.logging( "Widget", "Debug", "check_set_meter_widget Options: %s" %_device_options, NwkId)
     
     # Do we have the Energy Mode calculation already set ?
     if "EnergyMeterMode" in _device_options:

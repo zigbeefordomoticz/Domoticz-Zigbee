@@ -396,12 +396,18 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         TimedOut (int, optional): Timeoud flag 0 to unset the Timeout. Defaults to None.
         Color (str, optional): Color . Defaults to "".
     """
+    nwkid = None
+    try:
+        nwkid = self.IEEE2NWK[DeviceID_]
+    except KeyError :
+        pass
+
     self.log.logging("AbstractDz", "Debug", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
-        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), DeviceID_)
+        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), nwkid)
 
     if nValue is None:
         self.log.logging("AbstractDz", "Error", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
-            DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), DeviceID_)
+            DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), nwkid)
         return
 
     if DOMOTICZ_EXTENDED_API:
@@ -428,7 +434,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
                 Devices[DeviceID_].Units[Unit_].Options = Options
                 
         except Exception as e:
-            self.log.logging("AbstractDz", "Debug", f"domo_update_api: Cannot Write Attribute Option with {Options}")
+            self.log.logging("AbstractDz", "Debug", f"domo_update_api: Cannot Write Attribute Option with {Options}", nwkid)
 
         Devices[DeviceID_].Units[Unit_].Update(Log=(not SuppressTriggers) )
         return
