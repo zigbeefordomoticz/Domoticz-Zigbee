@@ -659,7 +659,7 @@ def handle_device_specific_needs(self, Devices, NWKID):
 
     if device_model in (TUYA_eTRV_MODEL):
         self.log.logging("Pairing", "Debug", "Tuya eTRV registration needed")
-        tuya_eTRV_registration(self, NWKID)
+        tuya_eTRV_registration(self, NWKID, tuya_data_request=True)
         
     if tuya_registration_parameter:
         tuya_registration(self, NWKID, ty_data_request=tuya_data_request, parkside=False, tuya_registration_value=tuya_registration_parameter)
