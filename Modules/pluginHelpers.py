@@ -21,12 +21,6 @@ import Domoticz as Domoticz
 from Modules.tools import how_many_devices
 from Modules.domoticzAbstractLayer import domoticz_error_api
 
-MODULES_VERSION = {
-    "zigpy": "0.64.0",
-    "zigpy_znp": "0.12.1",
-    "zigpy_deconz": "0.23.1",
-    "bellows": "0.38.4",
-    }
 
 def networksize_update(self):
     self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
@@ -121,7 +115,8 @@ def check_python_modules_version(self):
     if self.pluginconf.pluginConf["internetAccess"]:
         return True
 
-    for module, expected_version in MODULES_VERSION.items():
+    zigpy_modules_version = parse_constraints(self.pluginParameters["HomeFolder"])
+    for module, expected_version in zigpy_modules_version.items():
         current_version = importlib.metadata.version(module)
         if current_version != expected_version:
             self.log.logging("Plugin", "Error", "The Python module %s version %s loaded is not compatible. Expected version: %s" % (
@@ -203,3 +198,37 @@ def list_all_modules_loaded(self):
         version = installed_packages.get(module_name, "Not installed")
         self.log.logging("Plugin", "Log", f"{module_name}: {version}")
     self.log.logging("Plugin", "Log", "=============================")
+
+
+def parse_constraints(home_folder):
+    modules_version = {
+        "zigpy": "",
+        "zigpy_znp": "",
+        "zigpy_deconz": "",
+        "bellows": ""
+    }
+
+    constraints_file = Path(home_folder) / "constraints.txt.txt"
+    with open(constraints_file, 'r') as file:
+        for line in file:
+            # Remove leading/trailing whitespace and newlines
+            line = line.strip()
+
+            # Split line into module name and version
+            if '==' in line:
+                module, version = line.split('==')
+            elif '>=' in line:
+                module, version = line.split('>=')
+            elif '<=' in line:
+                module, version = line.split('<=')
+            else:
+                continue
+
+            # Check if the module is one we are interested in
+            if module in modules_version:
+                modules_version[module] = version
+
+    # Remove any entries where version is still empty
+    modules_version = {k: v for k, v in modules_version.items() if v}
+
+    return modules_version

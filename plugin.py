@@ -309,10 +309,10 @@ class BasePlugin:
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
-        Domoticz.Status( "Z4D requires python3.8 or above and you are running %s.%s" %(
+        Domoticz.Status( "Z4D requires python3.9 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
-        assert sys.version_info >= (3, 8)  # nosec
+        assert sys.version_info >= (3, 9)  # nosec
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
