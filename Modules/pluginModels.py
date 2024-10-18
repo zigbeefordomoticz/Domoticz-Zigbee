@@ -36,29 +36,44 @@ def plugin_self_identifier( self, model, manufacturer):
         return self.ModelManufMapping[ ( model, manufacturer ) ]
     return None
 
+
 def check_found_plugin_model( self, model, manufacturer_name=None, manufacturer_code=None, device_id=None):
-    self.log.logging( "Pairing", "Debug", "check_found_plugin_model - %s %s %s %s" % (
-        model, manufacturer_name, manufacturer_code, device_id))
+    self.log.logging( "Pairing", "Debug", f"check_found_plugin_model - model={model}, manufacturer_name={manufacturer_name}, manufacturer_code={manufacturer_code}, device_id={device_id}")
+
+    device_id = None if device_id == {} else device_id
+    manufacturer_name = None if manufacturer_name == {} else manufacturer_name
+    manufacturer_code = None if manufacturer_code == {} else manufacturer_code
 
     # Let's check if 
     for x in PLUGIN_MODELS_MATRIX:
-        if "Model" in x and model not in x["Model"]:
-            continue
-        if (
-            ( "Manufacturer" in x and x["Manufacturer"] and manufacturer_name not in x["Manufacturer"] ) 
-            or ( "ManufId" in x and x["ManufId"] and manufacturer_code not in x["ManufId"]) 
-            or ( "DeviceID" in x and x["DeviceID"] and device_id not in x["DeviceID"] )
-        ):
-            continue
-        
-        self.log.logging( "Pairing", "Debug", "check_found_plugin_model - Found %s" % x)
-        
-        if "PluginModelName" in x:
-            self.log.logging( "Pairing", "Debug", "check_found_plugin_model - return %s" % (
-                x["PluginModelName"]))
+        try:
+            if "Model" in x and model not in x["Model"]:
+                continue
 
-            return x["PluginModelName"]
-        
+            if (
+                ( "Manufacturer" in x and x["Manufacturer"] and manufacturer_name and manufacturer_name not in x["Manufacturer"] )
+                or ( "ManufId" in x and x["ManufId"] and manufacturer_code and manufacturer_code not in x["ManufId"])
+                or ( "DeviceID" in x and x["DeviceID"] and device_id and device_id not in x["DeviceID"] )
+            ):
+                continue
+
+            self.log.logging( "Pairing", "Debug", "check_found_plugin_model - Found %s" % x)
+
+            if "PluginModelName" in x:
+                self.log.logging( "Pairing", "Debug", "check_found_plugin_model - return %s" % (x["PluginModelName"]))
+                return x["PluginModelName"]
+
+        except Exception as errno:
+            error_message = f"kindly report this error{errno} find in module check_found_plugin_model"
+            _context = {
+                "Model": model,
+                "Manufacturer Name": manufacturer_name,
+                "Manufacture Code": manufacturer_code,
+                "DeviceID": device_id,
+                "Current Model Conf": x
+            }
+            self.log.logging( "Pairing", "Error", error_message, context=_context)
+
     return model
 
 

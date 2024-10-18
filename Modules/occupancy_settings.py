@@ -11,6 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 from DevicesModules.custom_sonoff import is_sonoff_device
+from DevicesModules.custom_sunricher import is_sunricher_device
 from Modules.basicOutputs import write_attribute
 from Modules.develco import is_develco_device
 from Modules.philips import (is_philips_device,
@@ -206,6 +207,9 @@ def common_PIROccupiedToUnoccupiedDelay(self, nwkid, delay):
     elif is_develco_device(self, nwkid):
         ListOfEp = ["22", "28", "29"]
         
+    elif is_sunricher_device(self, nwkid):
+        ListOfEp = ["01",]
+
     else:
         ListOfEp = getListOfEpForCluster(self, nwkid, OCCUPANCY_CLUSTER_ID)
 

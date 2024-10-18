@@ -78,7 +78,7 @@
             "Mandatory": false,
             "DomoClusterType": "Voltage",
             "EvalExp": "round(int(value) / 10, 1)",
-            "ActionList": [ "check_store_raw_value", "upd_domo_device", "update_battery"]
+            "ActionList": [ "check_store_raw_value", "upd_domo_device", "update_battery", "update_battery_voltage"]
         },
         "0021": { 
             "Enabled": true,
@@ -89,7 +89,7 @@
             "Acc": "RP" ,
             "Default": "0",
             "Mandatory": false,
-            "ActionList": [ "check_store_value", "update_battery"]
+            "ActionList": [ "check_store_value", "upd_domo_device", "update_battery", "update_battery_percentage"]
         },
 
         "0030": { "Enabled": true, "Name": "BatteryManufacturer", "DataType": "41", "ActionList": [ "check_store_value"] },

@@ -115,9 +115,11 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
 
     if heiman_door_bell_button:
         self.log.logging('Input', 'Debug',f"Decode8401 HeimanDoorBellButton: {MsgSrcAddr} {MsgZoneStatus}", MsgSrcAddr)
-        if tamper:
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0006', '01')
+        _heiman_door_bell_ef_3(self,Devices, MsgSrcAddr, MsgEp, MsgZoneStatus)
         return
+
+    self.log.logging('Input', 'Debug', 'IAS zone status change %s/%s %s alarm1: %s alarm2: %s tamper: %s' % (
+        MsgSrcAddr, MsgEp, Model, alarm1, alarm2, tamper))
 
     motion_via_IAS_alarm = get_device_config_param(self, MsgSrcAddr, 'MotionViaIASAlarm1')
     self.log.logging('Input', 'Debug', 'MotionViaIASAlarm1 = %s' % motion_via_IAS_alarm)
@@ -125,7 +127,12 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     ias_alarm1_2_merged = get_deviceconf_parameter_value(self, Model, 'IASAlarmMerge', return_default=None)
     self.log.logging('Input', 'Debug', 'IASAlarmMerge = %s' % ias_alarm1_2_merged)
 
-    if ias_alarm1_2_merged:
+    if Model == "LDSENK08":
+        _ldsenk08_zone_status_change( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus)
+        _update_ias_zone_status(self, MsgSrcAddr, MsgEp, MsgZoneStatus)
+        return
+
+    elif ias_alarm1_2_merged:
         self.log.logging('Input', 'Debug', 'IASAlarmMerge alarm1 %s alarm2 %s' % (alarm1, alarm2))
         combined_alarm = alarm2 << 1 | alarm1
         self.log.logging('Input', 'Debug', 'IASAlarmMerge combined value = %02d' % combined_alarm)
@@ -135,7 +142,7 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
         self.log.logging('Input', 'Debug', 'Motion detected sending to MajDomo %s/%s %s' % (MsgSrcAddr, MsgEp, alarm1 or alarm2))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0406', '%02d' % (alarm1 or alarm2))
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.sensor_magnet', 'lumi.sensor_magnet.aq2', 'lumi.sensor_magnet.acn001', 'lumi.magnet.acn001'):
+    elif Model in ('lumi.sensor_magnet', 'lumi.sensor_magnet.aq2', 'lumi.sensor_magnet.acn001', 'lumi.magnet.acn001'):
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0006', '%02d' % alarm1)
 
     elif Model not in ('RC-EF-3.0', 'RC-EM'):
@@ -143,22 +150,77 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
 
     if tamper:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '01')
-
     else:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '00')
 
     if battery:
         self.log.logging('Input', 'Log', 'Decode8401 Low Battery or defective battery: Device: %s %s/%s' % (MsgSrcAddr, battdef, battery), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['IASBattery'] = 5
-
     else:
         self.ListOfDevices[MsgSrcAddr]['IASBattery'] = 100
 
     if 'IAS' in self.ListOfDevices[MsgSrcAddr] and 'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS']:
         if not isinstance(self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'], dict):
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
-
         _update_ias_zone_status(self, MsgSrcAddr, MsgEp, MsgZoneStatus)
+
+def _ldsenk08_zone_status_change( self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus):
+    zoneStatus = int(MsgZoneStatus, 16)
+    door_contact = zoneStatus & 1
+    vibration = (zoneStatus & (1 << 1)) > 0
+    tamper_bit = (zoneStatus & (1 << 2)) > 0
+    batter_low = (zoneStatus & (1 << 3)) > 0
+
+    self.log.logging('Input', 'Log', '_ldsenk08_zone_status_change %s/%s door_contact: %s vibration: %s tamper_bit: %s' % (
+        MsgSrcAddr, MsgEp, door_contact, vibration, tamper_bit))
+
+    # Door sensor (alarm1)
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, '%02d' % door_contact )
+
+    # Vibration (alarm2)
+    cluster_id = "0101"
+    attribute_id = "0055"
+    state = "20" if vibration else "00"
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, cluster_id, state, Attribute_=attribute_id, )
+
+    if tamper_bit:
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '01')
+    else:
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '00')
+
+    self.ListOfDevices[MsgSrcAddr]['IASBattery'] = 5 if batter_low else 100
+
+
+def _heiman_door_bell_ef_3(self, Devices, MsgSrcAddr, MsgEp, MsgZoneStatus):
+    # https://github.com/zigbeefordomoticz/z4d-certified-devices/issues/55
+    tamper_status_mapping = {
+        "0": ('0009', '00'),  # Mounted
+        "4": ('0009', '01'),  # Unmounted
+    }
+
+    ring_status_mapping = {
+        "8": ('0006', '01'),  # Ring
+    }
+    self.log.logging('Input', 'Debug', '_heiman_door_bell_ef_3 %s/%s %s' % (MsgSrcAddr, MsgEp, MsgZoneStatus))
+
+    # Check and update zone status
+    if MsgZoneStatus[3] in tamper_status_mapping:
+        # Tamper (Mount , umount)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *tamper_status_mapping[MsgZoneStatus[3]])
+
+    # Check and update ring status. Allow 3s between 2 rings
+    if MsgZoneStatus[0] in ring_status_mapping:
+        # Ring
+        device = self.ListOfDevices.setdefault(MsgSrcAddr, {})
+        ep = device.setdefault('Ep', {})
+        ep_details = ep.setdefault(MsgEp, {})
+        heiman_door_bell = ep_details.setdefault('HeimanDoorBell', {})
+        ring_time_stamp = heiman_door_bell.get('RingTimeStamp')
+        current_time = time.time()
+
+        if ring_time_stamp is None or current_time > (ring_time_stamp + 3):
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, *ring_status_mapping[MsgZoneStatus[0]])
+            heiman_door_bell['RingTimeStamp'] = current_time
 
 
 def _extract_zone_status_info(self, msg_data):

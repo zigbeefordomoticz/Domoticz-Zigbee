@@ -202,7 +202,7 @@ def sendZigateCmd(self, cmd, datas, ackIsDisabled=False):
     return send_zigatecmd_raw(self, cmd, datas, ackIsDisabled)
 
 
-def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False, delayAfterSent=False):
     self.log.logging(
         "outRawAPS",
         "Debug",
@@ -211,7 +211,7 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     )
 
     if self.zigbee_communication == "zigpy":
-        return zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn, groupaddrmode, highpriority, ackIsDisabled)
+        return zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn, groupaddrmode, highpriority, ackIsDisabled, delayAfterSent)
     
     return zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled)
 
@@ -269,7 +269,7 @@ def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, paylo
     )
     
     
-def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
+def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False, delayAfterSent=False):
 
     if zigpyzqn is None:
         zigpyzqn = "0"
@@ -286,6 +286,7 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
         'Sqn': int(zigpyzqn,16),
         'RxOnIdle': device_listening_on_iddle(self, targetaddr),
         'payload': payload,
+        'delayAfterSent': delayAfterSent,
         'timestamp': time.time()
     }
 

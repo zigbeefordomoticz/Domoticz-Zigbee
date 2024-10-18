@@ -17,10 +17,19 @@
 
 """
 
-from time import time
+import time
 
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import get_deviceconf_parameter_value, voltage2batteryP
+
+
+def get_float_value(device_data, keys):
+    value = device_data
+    for key in keys:
+        value = value.get(key, {})
+        if value == {}:
+            return None
+    return float(value)
 
 
 def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
@@ -33,59 +42,48 @@ def UpdateBatteryAttribute(self, Devices, MsgSrcAddr, MsgSrcEp):
 
     # Compute Battery %
     mainVolt = battVolt = battRemainingVolt = battRemainPer = None
-    if "0000" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]:
-        mainVolt = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0000"])
-    if "0010" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]:
-        battVolt = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0010"])
-    if "0020" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"] and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0020"] != {}:
-        battRemainingVolt = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0020"])
-    if "0021" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"] and self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0021"] != {}:
-        battRemainPer = float(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]["0021"])
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        f'readCluster 0001 - Device: {MsgSrcAddr} Model: {self.ListOfDevices[MsgSrcAddr]["Model"]} mainVolt:{mainVolt} , battVolt:{battVolt}, battRemainingVolt: {battRemainingVolt}, battRemainPer:{battRemainPer} ',
-        MsgSrcAddr,
-    )
+
+    device_power_cluster = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]["0001"]
+
+    mainVolt = get_float_value(device_power_cluster, ["0000"])
+    battVolt = get_float_value(device_power_cluster, ["0010"])
+    battRemainingVolt = get_float_value(device_power_cluster, ["0020"])
+    battRemainPer = get_float_value(device_power_cluster, ["0021"])
+
+    battery_percengtage_timestamp = self.ListOfDevices[MsgSrcAddr].get("BatteryPercentage_TimeStamp", 0)
+    battery_voltage_timestamp = self.ListOfDevices[MsgSrcAddr].get("BatteryVoltage_TimeStamp", 0)
 
     value = None
     # Based on % ( 0x0021 )
-    if battRemainPer:
+    if battRemainPer and battery_percengtage_timestamp >= battery_voltage_timestamp:
         value = battRemainPer
-        BatteryPercentageConverter = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "BatteryPercentageConverter")
+        BatteryPercentageConverter = get_deviceconf_parameter_value(self, model_name, "BatteryPercentageConverter")
         if BatteryPercentageConverter:
             value = round(value / BatteryPercentageConverter)
 
     # Based on Remaining Voltage
-    elif battRemainingVolt:
-        MaxBatteryVoltage = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "MaxBatteryVoltage", 30)
-        MinBatteryVoltage = get_deviceconf_parameter_value(self, self.ListOfDevices[MsgSrcAddr]["Model"], "MinBatteryVoltage", 25)
+    elif battRemainingVolt and battery_voltage_timestamp >= battery_percengtage_timestamp:
+        MaxBatteryVoltage = get_deviceconf_parameter_value(self, model_name, "MaxBatteryVoltage", 30)
+        MinBatteryVoltage = get_deviceconf_parameter_value(self, model_name, "MinBatteryVoltage", 25)
         value = voltage2batteryP(battRemainingVolt, MaxBatteryVoltage, MinBatteryVoltage)
+
+    self.log.logging( ["Cluster", "BatteryManagement"], "Debug", f'UpdateBatteryAttribute - Device: {MsgSrcAddr} Model: {model_name} mainVolt:{mainVolt} , battVolt:{battVolt}, battRemainingVolt: {battRemainingVolt}, battRemainPer:{battRemainPer} => value: {value} ', MsgSrcAddr, )
 
     if value is None:
         return
 
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        f'readCluster 0001 - Device: {MsgSrcAddr} Model: {self.ListOfDevices[MsgSrcAddr]["Model"]} Updating battery {self.ListOfDevices[MsgSrcAddr]["Battery"]} to {value}',
-        MsgSrcAddr,
-    )
-
-    self.ListOfDevices[MsgSrcAddr]["BatteryUpdateTime"] = int(time())
+    self.ListOfDevices[MsgSrcAddr]["BatteryUpdateTime"] = int(time.time())
     if value != self.ListOfDevices[MsgSrcAddr]["Battery"]:
         self.ListOfDevices[MsgSrcAddr]["Battery"] = value
         Update_Battery_Device(self, Devices, MsgSrcAddr, value)
-        self.log.logging("Cluster", "Debug", f'readCluster 0001 - Device: {MsgSrcAddr} Model: {self.ListOfDevices[MsgSrcAddr]["Model"]} Updating battery to {value}', MsgSrcAddr)
 
-    if "IASBattery" in self.ListOfDevices[MsgSrcAddr]:
-        # Remove it as we rely on the Power Cluster instead
-        del self.ListOfDevices[MsgSrcAddr]["IASBattery"]
+    self.ListOfDevices[MsgSrcAddr].pop("IASBattery", None)
 
 
 def hack_battery_to_main_power(self, Nwkid):
+    power_source = self.ListOfDevices[Nwkid].get("PowerSource")
+    mac_capa = self.ListOfDevices[Nwkid].get("MacCapa")
 
-    if self.ListOfDevices[Nwkid]["PowerSource"] == "Main" or self.ListOfDevices[Nwkid]["MacCapa"] in ( "84", "8e", ):
+    if power_source == "Main" or mac_capa in {"84", "8e"}:
         # This is a Main Powered device. Make sure we do not report battery
         self.ListOfDevices[Nwkid]["Battery"] = {}
-        return

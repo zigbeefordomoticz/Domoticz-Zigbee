@@ -4,6 +4,7 @@
 */*/.DS_store
 Conf/PluginConf-*
 OTAFirmware/*/*
+certs/*
 !OTAFirmware/*/README.me
 !OTAFirmware/*/.PRECIOUS
 Conf/ZigateGroupsConfig-*

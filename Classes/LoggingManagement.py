@@ -511,12 +511,12 @@ def process_logging_event( self, logging_tuple):
         _catch_error_event(self, context,logging_tuple, err )
         return
 
-    thread_name = f"{thread_name} {thread_id}"
-    
     if logType == "Error":
+        thread_name=thread_name + " " + thread_id
         loggingError(self, thread_name, module, message, nwkid, context)
 
     elif logType == "Debug" and _should_log_debug(self, thread_name) and _is_to_be_logged(self, logType, module):
+        thread_name=thread_name + " " + thread_id
         _logginfilter(self, thread_name, message, nwkid)
 
     else:

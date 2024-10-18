@@ -28,8 +28,7 @@ def prepResponseMessage(self, _response):
 
 def setupHeadersResponse(cookie=None):
 
-    _response = {}
-    _response["Headers"] = {}
+    _response = {"Headers": {}}
     _response["Headers"]["Server"] = "Domoticz"
     _response["Headers"]["User-Agent"] = "Plugin-Zigbee4Domoticz/v1"
 

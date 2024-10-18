@@ -594,6 +594,34 @@ SWITCH_SELECTORS = {
         "01": (1, "On"),
         "ForceUpdate": False
     },
+    "PollingControl": {
+        "00": (0, "00"),
+        "01": (1, "10"),
+        "02": (2, "20"),
+        "ForceUpdate": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Slow Polling|Fast Polling",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Mesures normale|Mesures rapides"
+            }
+        }
+    },
+    "PollingControlV2": {
+        "00": (0, "00"),   # Off
+        "01": (3, "10"),   # "2/day" -> 43200 secondes ( 12 heures)
+        "02": (4, "20"),   # "20/day" ->  4320 secondes ( 1h 12 minutes)
+        "03": (5, "30"),   # "96/day" ->   900 secondes ( 15 minutes)
+        "05": (2, "40"),   # Fast Polling, Force polling to every 15s
+        "ForceUpdate": False,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|2x/day|20x/day|96x/day|Fast Polling",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|2x/day|20x/day|96x/day|Mesures rapides"
+            }
+        }
+    },
     "SOS": {
         "01": (1, "On"),
         "ForceUpdate": True
@@ -606,7 +634,9 @@ SWITCH_SELECTORS = {
     },
     "Switch": {
         "00": (0, "Off"),
+        0: (0, "Off"),
         "01": (1, "On"),
+        1: (1, "On"),
         "ForceUpdate": False
     },
     "SwitchAQ2": {
@@ -814,7 +844,7 @@ SWITCH_SELECTORS = {
         "LevelNames": "Off|Auto|Manual|Temp Hand|Holidays",
         "Language": {
             "fr-FR": {
-                "LevelNames": "Arrêt|Auto|Manuel"
+                "LevelNames": "Arrêt|Auto|Manuel|Temp Hand|Vacances"
             }
         }
     },
@@ -862,6 +892,24 @@ SWITCH_SELECTORS = {
             }
         }
     },
+    "ThermoMode_8": {
+        0: (0, "Off"),
+        1: (1, "10"),
+        2: (2, "20"),
+        3: (3, "30"),
+        4: (4, "40"),
+        5: (5, "50"),
+        "ForceUpdate": True,
+        "OffHidden": True,
+        "SelectorStyle": 1,
+        "LevelNames": "Off|Manual|Auto|Eco|Confort|Holidays",
+        "Language": {
+            "fr-FR": {
+                "LevelNames": "Arrêt|Manuel|Auto|Eco|Confort|Vacances"
+            }
+        }
+    },
+
     "ThermoOnOff": {
         0: (0, "Off"),
         1: (1, "On"),

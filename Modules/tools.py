@@ -53,6 +53,8 @@ def str_round(value, n):
     return "{:.{n}f}".format(value, n=int(n))
 
 def voltage2batteryP(voltage, volt_max, volt_min):
+    if isinstance( voltage, str):
+        voltage = int(voltage)
 
     if voltage > volt_max:
         ValueBattery = 100
@@ -433,24 +435,31 @@ def timeStamped(self, key, Type):
 # Used by zcl/zdpRawCommands
 def get_and_inc_ZDP_SQN(self, key):
     return get_and_increment_generic_SQN(self, key, "ZDPSQN")
-   
+
+
 def get_and_inc_ZCL_SQN(self, key):
     return get_and_increment_generic_SQN(self, key, "ZCLSQN")
-  
+
+
+def get_and_inc_TUYA_POLLING_SQN(self, key):
+    return get_and_increment_generic_SQN(self, key, "TUYA_POLLING_SQN")
+
+
 def get_and_increment_generic_SQN(self, nwkid, sqn_type):
     if nwkid not in self.ListOfDevices: 
         return "%02x" %0x00
+
     if sqn_type not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %0x00
         return self.ListOfDevices[nwkid][ sqn_type ]
-    
+
     if self.ListOfDevices[nwkid][ sqn_type ] in ( '', {}):
         self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %0x00
         return self.ListOfDevices[nwkid][ sqn_type ]
 
     self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %( ( int(self.ListOfDevices[nwkid][ sqn_type ],16) + 1) % 256)
     return self.ListOfDevices[nwkid][ sqn_type ]
-    
+
 
 def updSQN(self, key, newSQN):
     if key in self.ListOfDevices and newSQN:
@@ -1022,9 +1031,17 @@ def checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 
 
 def checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, Value):
-
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
+
+
+def store_battery_percentage_time_stamp( self, MsgSrcAddr):
+    self.ListOfDevices[MsgSrcAddr]["BatteryPercentage_TimeStamp"] = time.time()
+
+
+def store_battery_voltage_time_stamp( self, MsgSrcAddr):
+    self.ListOfDevices[MsgSrcAddr]["BatteryVoltage_TimeStamp"] = time.time()
+
 
 def checkValidValue(self, MsgSrcAddr, AttType, Data ):
     if int(AttType, 16) == 0xE2 and Data == "ffffffff":
@@ -1445,15 +1462,9 @@ def how_many_devices(self):
 
 
 def get_deviceconf_parameter_value(self, model, attribute, return_default=None):
-    """ Retreive Configuration Attribute from Config file"""
+    """ Retrieve Configuration Attribute from Config file"""
     
-    if model in ( '', {}):
-        return return_default
-    if model not in self.DeviceConf:
-        return return_default
-    if attribute not in self.DeviceConf[ model ]:
-        return return_default
-    return self.DeviceConf[ model ][ attribute ]
+    return self.DeviceConf.get(model, {}).get(attribute, return_default)
 
 
 def night_shift_jobs( self ):

@@ -216,7 +216,6 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, Sqn, Glo
 
         elif Command == "04":  # Get Relay status Log
             self.log.logging( "inRawAPS", "Debug", "inRawAps - Cluster 0201 Command 04 (Get Relay status Log) Data %s" %Data)
-        return
 
     if "Manufacturer" not in self.ListOfDevices[srcnwkid]:
         return

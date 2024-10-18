@@ -35,12 +35,12 @@ def rest_new_hrdwr(self, verb, data, parameters):
     data = {}
     if len(parameters) != 1:
         domoticz_error_api("rest_new_hrdwr - unexpected parameter %s " % parameters)
-        _response["Data"] = {"unexpected parameter %s " % parameters}
+        _response["Data"] = { "BE_Error": "unexpected parameter %s " % parameters}
         return _response
 
     if parameters[0] not in ("enable", "cancel", "disable"):
         domoticz_error_api("rest_new_hrdwr - unexpected parameter %s " % parameters[0])
-        _response["Data"] = {"unexpected parameter %s " % parameters[0]}
+        _response["Data"] = { "BE_Error": "unexpected parameter %s " % parameters[0]}
         return _response
 
     if parameters[0] == "enable":
@@ -55,7 +55,7 @@ def rest_new_hrdwr(self, verb, data, parameters):
         if self.permitTojoin["Duration"] != 255 and self.pluginParameters["Mode2"] != "None":
             ZigatePermitToJoin(self, (4 * 60))
 
-        _response["Data"] = {"start pairing mode at %s " % int(time())}
+        _response["Data"] = { "BE_Start": "start pairing mode at %s " % int(time())}
         return _response
 
     if parameters[0] in ("cancel", "disable"):
@@ -71,7 +71,7 @@ def rest_new_hrdwr(self, verb, data, parameters):
         if not (self.permitTojoin["Duration"] == 255 or self.pluginParameters["Mode2"] == "None"):
             ZigatePermitToJoin(self, 0)
 
-        _response["Data"] = {"stop pairing mode at %s " % int(time())}
+        _response["Data"] = {"BE_Stop": "stop pairing mode at %s " % int(time())}
         return _response
 
 
@@ -248,7 +248,7 @@ def rest_full_reprovisionning(self, verb, data, parameters):
 
     if "IEEE" not in data and "NWKID" not in data:
         domoticz_error_api("rest_full_reprovisionning - unexpected parameter %s " % parameters)
-        _response["Data"] = {"unexpected parameter %s " % parameters}
+        _response["Data"] = { "BE_status": "unexpected parameter %s " % parameters}
         return _response
 
     if "IEEE" in data:
@@ -257,13 +257,13 @@ def rest_full_reprovisionning(self, verb, data, parameters):
             domoticz_error_api("rest_full_reprovisionning - Unknown device %s " % key)
             return _response
         nwkid = self.IEEE2NWK[key]
-        _response["Data"] = {"IEEE %s set to Provisioning Requested at %s" % (key, int(time()))}
+        _response["Data"] = { "BE_status": "IEEE %s set to Provisioning Requested at %s" % (key, int(time()))}
     else:
         nwkid = data["NWKID"]
         if nwkid not in self.ListOfDevices:
             domoticz_error_api("rest_full_reprovisionning - Unknown device %s " % nwkid)
             return _response
-        _response["Data"] = {"NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))}
+        _response["Data"] = {"BE_status": "NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))}
 
     if "Bind" in self.ListOfDevices[nwkid]:
             del self.ListOfDevices[nwkid]["Bind"]
