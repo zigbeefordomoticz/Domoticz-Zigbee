@@ -55,7 +55,7 @@ from Modules.tuyaSiren import (tuya_siren2_trigger, tuya_siren_alarm,
 from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
                              tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
                              tuya_trv_mode, tuya_trv_onoff)
-from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos, ts0601_curtain_calibration_cmd
+from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos, ts0601_curtain_quick_calibration_cmd, ts0601_curtain_calibration_cmd, ts0601_curtain_accurate_calibration_cmd
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE)
 
@@ -277,10 +277,10 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         return
 
     if DeviceType == "SwitchCalibration" and model_name == "TS0601-Moes-Curtain":
-        # Switch Off alibration
+        # Switch Off Calibration
         self.log.logging("Command", "Status", "mgtCommand : Switch Off Calibration on %s/%s" % (Nwkid,EPout))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-        ts0601_curtain_calibration_cmd( self, Nwkid, EPout, 0x07, mode=0)
+        ts0601_curtain_accurate_calibration_cmd( self, Nwkid, EPout, 0x07, mode=1)
         return
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":
@@ -525,7 +525,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         # Switch On calibration
         self.log.logging("Command", "Status", "mgtCommand : Switch ON Calibration on %s/%s" % (Nwkid,EPout))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-        ts0601_curtain_calibration_cmd( self, Nwkid, EPout, 0x07, mode=1)
+        ts0601_curtain_accurate_calibration_cmd( self, Nwkid, EPout, 0x07, mode=0)
         return
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":

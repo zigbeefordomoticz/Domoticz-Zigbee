@@ -1107,6 +1107,7 @@ def ts0601_curtain_level_cmd( self, NwkId, Ep, dp, percent=None):
 
 
 def ts0601_curtain_calibration_cmd( self, NwkId, Ep, dp, mode=None):
+
     if mode is None:
         return
     self.log.logging("Tuya0601", "Debug", "ts0601_curtain_calibration_cmd - %ss dp:%s value: %s" % (
@@ -1128,7 +1129,25 @@ def ts0601_curtain_motor_steering_cmd( self, NwkId, Ep, dp, mode=None):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
+def ts0601_curtain_accurate_calibration_cmd( self, NwkId, Ep, dp, mode=None):
+    # 0014/03/04/0001/00 - start the Prepare Calibration
+    #     User to fully open the curtains
+    #
+    #     Close button to make the curtain rull to full close
+    #
+    # 00150/3/04/0001/01 - close the calibration
+
+    if mode is None:
+        return
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_quick_calibration_cmd - %s Quick Calibration: dp:%s value: %s" % (
+        NwkId, dp, mode))
+    action = "%02x04" % dp  # I
+    data = "%02x" % (mode)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
 def ts0601_curtain_quick_calibration_cmd( self, NwkId, Ep, dp, duration=None):
+
     if duration is None:
         return
     self.log.logging("Tuya0601", "Debug", "ts0601_curtain_quick_calibration_cmd - %s Quick Calibration: dp:%s value: %s" % (
@@ -1138,11 +1157,26 @@ def ts0601_curtain_quick_calibration_cmd( self, NwkId, Ep, dp, duration=None):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
+def ts0601_curtain_indicator_status(self, NwkId, Ep, dp, mode=None):
+    # mode = 0x00 - On/off Status
+    # mode = 0x01 - Switch Position
+    # mode = 0x02 - Off
+    if mode is None:
+        return
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_indicator_status - %s Quick Calibration: dp:%s value: %s" % (
+        NwkId, dp, mode))
+    action = "%02x04" % dp  # I
+    data = "%02x" % (mode)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
 TS0601_COMMANDS = {
+    "IndicatorStatus": ts0601_curtain_indicator_status,
     "CurtainState": ts0601_curtain_state_cmd,
     "CurtainLevel": ts0601_curtain_level_cmd,
     "CurtainCalibration": ts0601_curtain_calibration_cmd,
     "CurtainQuickCalibration": ts0601_curtain_quick_calibration_cmd,
+    "CurtainAccurateCalibration": ts0601_curtain_accurate_calibration_cmd,
     "CurtainMotorSteering": ts0601_curtain_motor_steering_cmd,
     "TuyaPresenceSensitivity": ( None, "04"),
     "TuyaRadarSensitivity": (None, "04"),
