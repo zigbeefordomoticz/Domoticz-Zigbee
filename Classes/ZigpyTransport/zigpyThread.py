@@ -418,7 +418,7 @@ async def get_next_command(self):
 async def dispatch_command(self, data):
     cmd = data["cmd"]
     datas = data["datas"]
-    delayAfterSent = datas.get("delayAfterSent", False)
+    delayAfterSent = datas.get("delayAfterSent", False) if datas else False
 
     if cmd == "COORDINATOR-BACKUP":
         await self.app.coordinator_backup()
