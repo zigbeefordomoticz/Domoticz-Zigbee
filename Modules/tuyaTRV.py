@@ -32,7 +32,7 @@ from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
 from Modules.zigateConsts import ZIGATE_EP
 
 
-def tuya_eTRV_registration(self, nwkid, device_reset=False):
+def tuya_eTRV_registration(self, nwkid, tuya_data_request=False):
 
     self.log.logging("Tuya", "Debug", "tuya_eTRV_registration - Nwkid: %s" % nwkid)
     # (1) 3 x Write Attribute Cluster 0x0000 - Attribute 0xffde  - DT 0x20  - Value: 0x13
@@ -40,7 +40,7 @@ def tuya_eTRV_registration(self, nwkid, device_reset=False):
     write_attribute(self, nwkid, ZIGATE_EP, EPout, "0000", "0000", "00", "ffde", "20", "13", ackIsDisabled=False)
 
     # (3) Cmd 0x03 on Cluster 0xef00  (Cluster Specific)
-    if device_reset and get_model_name(self, nwkid) not in ("TS0601-thermostat", "TS0601-thermostat-Coil", "TS0601-eTRV5", ):
+    if tuya_data_request and get_model_name(self, nwkid) not in ("TS0601-thermostat", "TS0601-thermostat-Coil", "TS0601-eTRV5", ):
         payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
         raw_APS_request(
             self,
