@@ -111,6 +111,8 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     self.log.logging('Input', 'Debug', 'Decode8401 MsgZoneStatus: %s ' % MsgZoneStatus[2:4], MsgSrcAddr)
 
     heiman_door_bell_button = get_deviceconf_parameter_value(self, Model, "HeimanDoorBellButton", return_default=False)
+    tamper_disable = get_deviceconf_parameter_value(self, Model, "DisableTamper", return_default=False)
+
     self.log.logging('Input', 'Debug', 'HeimanDoorBellButton = %s' % heiman_door_bell_button)
 
     if heiman_door_bell_button:
@@ -148,10 +150,11 @@ def Decode8401(self, Devices, MsgData, MsgLQI):
     elif Model not in ('RC-EF-3.0', 'RC-EM'):
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, '%02d' % (alarm1 or alarm2))
 
-    if tamper:
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '01')
-    else:
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '00')
+    if not tamper_disable:
+        if tamper:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '01')
+        else:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, '0009', '00')
 
     if battery:
         self.log.logging('Input', 'Log', 'Decode8401 Low Battery or defective battery: Device: %s %s/%s' % (MsgSrcAddr, battdef, battery), MsgSrcAddr)
