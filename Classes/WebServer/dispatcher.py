@@ -136,7 +136,8 @@ def execute_rest_command(self, verb, data, version, command, parameters):
         response = REST_COMMANDS[command]["functionv2"](verb, data, parameters)
 
     return response
-    
+
+
 def prepare_help_response(self):
     response = prepResponseMessage(self, setupHeadersResponse())
     _data = {}
@@ -154,6 +155,7 @@ def prepare_error_message(self, command):
     response["Data"] = "Unknown REST command: %s" % command
     response["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
     return response
-   
+
+
 def do_nothing(self, verb, data, parameters):
     pass

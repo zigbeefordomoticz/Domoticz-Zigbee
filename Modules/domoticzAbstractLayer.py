@@ -396,12 +396,18 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
         TimedOut (int, optional): Timeoud flag 0 to unset the Timeout. Defaults to None.
         Color (str, optional): Color . Defaults to "".
     """
+    nwkid = None
+    try:
+        nwkid = self.IEEE2NWK[DeviceID_]
+    except KeyError :
+        pass
+
     self.log.logging("AbstractDz", "Debug", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
-        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), DeviceID_)
+        DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), nwkid)
 
     if nValue is None:
         self.log.logging("AbstractDz", "Error", "domo_update_api: DeviceID_ : %s Unit_: %s nValue: %s sValue: %s SignalLevel: %s BatteryLevel: %s TimedOut: %s Color: %s : %s" %(
-            DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), DeviceID_)
+            DeviceID_, Unit_, nValue, sValue, SignalLevel, BatteryLevel, TimedOut, Color, Options), nwkid)
         return
 
     if DOMOTICZ_EXTENDED_API:
@@ -428,7 +434,7 @@ def domo_update_api(self, Devices, DeviceID_, Unit_, nValue, sValue, SignalLevel
                 Devices[DeviceID_].Units[Unit_].Options = Options
                 
         except Exception as e:
-            self.log.logging("AbstractDz", "Debug", f"domo_update_api: Cannot Write Attribute Option with {Options}")
+            self.log.logging("AbstractDz", "Debug", f"domo_update_api: Cannot Write Attribute Option with {Options}", nwkid)
 
         Devices[DeviceID_].Units[Unit_].Update(Log=(not SuppressTriggers) )
         return
@@ -542,10 +548,12 @@ def domo_read_TimedOut( self, Devices, DeviceId_ ):
     if DOMOTICZ_EXTENDED_API and DeviceId_ in Devices:
         return Devices[ DeviceId_].TimedOut
     
-    # Legacy
+    # Legacy, return the TimedOut flag of 1st unit
     return next( ( 1 for x in Devices if Devices[x].DeviceID == DeviceId_ and Devices[x].TimedOut ), 0, )
         
-
+def domo_read_legacy_TimedOut( self, Devices, DeviceId_, UnitId_ ):
+    return Devices[ UnitId_ ].TimedOut
+    
 def domo_read_LastUpdate(self, Devices, DeviceId_, Unit_):
     self.log.logging("AbstractDz", "Debug", f"domo_read_LastUpdate: DeviceID: {DeviceId_} Unit {Unit_}")
 
@@ -699,31 +707,34 @@ def timeout_widget_api(self, Devices, DeviceId_, timeout_value):
         for unit in list(Devices):
             if Devices[ unit ].DeviceID == DeviceId_:
                 timeout_legacy_device_unit_api(self, Devices, DeviceId_, unit, timeout_value)
-    
-    
+
+
 def timeout_legacy_device_unit_api(self, Devices, DeviceId_, Unit_, timeout_value):
     """ TimedOut one Device widget """
-    
+
     self.log.logging("AbstractDz", "Debug", f"timeout_legacy_device_unit_api: {DeviceId_} {Unit_} {timeout_value}")
     if _is_meter_widget( self, Devices, DeviceId_, Unit_):
         return
-    
+
     _nValue, _sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, Unit_)
-    _TimedOut = domo_read_TimedOut( self, Devices, DeviceId_, )
-    
+    _TimedOut = domo_read_legacy_TimedOut( self, Devices, DeviceId_, Unit_ )
+    _Name = domo_read_Name( self, Devices, DeviceId_, Unit_, )
+
     self.log.logging("Widget", "Debug", "timeout_legacy_device_unit_api unit %s -> %s from %s:%s %s" % (
-        Devices[Unit_].Name, bool(timeout_value), _nValue, _sValue, Devices[Unit_].TimedOut))
-    
-    if _TimedOut != timeout_value:
-        # Update is required
-        if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
-            _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, Unit_, _nValue, _sValue,)
-        else:
-            domo_update_api(self, Devices, DeviceId_, Unit_, _nValue, _sValue, TimedOut=timeout_value)
+        _Name, bool(timeout_value), _nValue, _sValue, bool(_TimedOut)))
+
+    if _TimedOut == timeout_value:
+        return
+
+    # Update is required
+    if timeout_value == 1 and self.pluginconf.pluginConf["deviceOffWhenTimeOut"]:
+        _switch_off_widget_due_to_timedout(self, Devices, DeviceId_, Unit_, _nValue, _sValue,)
+    else:
+        domo_update_api(self, Devices, DeviceId_, Unit_, _nValue, _sValue, TimedOut=timeout_value)
 
 
 def update_battery_api(self, Devices, DeviceId, battery_level):
-    self.log.logging("AbstractDz", "Debug", f"update_battery_api: {DeviceId} to {battery_level}")
+    self.log.logging( ["AbstractDz", "BatteryManagement"], "Debug", f"update_battery_api: {DeviceId} to {battery_level}")
           
     if DOMOTICZ_EXTENDED_API:
         if DeviceId in Devices:

@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-from Classes.WebServer.tools import MAX_KB_TO_SEND, DumpHTTPResponseToLog
+from Classes.WebServer.tools import MAX_BLOCK_SIZE, DumpHTTPResponseToLog
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
@@ -57,11 +57,19 @@ def onMessage(self, Connection, Data):
     if handle_rest_api(self, Connection, Data, parsed_query):
         return
 
-    if handle_download( parsed_query, parsed_url):
-        return
+    self.logging("Debug", f"Download: {is_download( parsed_query, parsed_url)}")
+    if is_download( parsed_query, parsed_url):
+        # we have to serve a file for download purposes, let's remove '/download' to get the filename to access
+        webFilename = parsed_url.path[len('/download'):]
 
-    webFilename = get_web_filename(self, url, parsed_query, parsed_url)
+    else:
+        # Most likely a file from the wwww/ to be served
+        webFilename = get_web_filename(self, url, parsed_query, parsed_url)
+
+    self.logging("Debug", f"Downloading: {webFilename}")
+
     if not os.path.isfile(webFilename):
+        self.logging("Debug", "Redirect to index.html")
         webFilename = redirect_to_index_html(self)
 
     response_headers = prepare_response_headers(self,cookie)
@@ -98,7 +106,7 @@ def handle_rest_api(self, Connection, Data, parsed_query):
     return True
 
 
-def handle_download( parsed_query, parsed_url):
+def is_download( parsed_query, parsed_url):
     return parsed_query[0] == 'download'
 
 
@@ -230,7 +238,7 @@ def get_range_and_send(self, Connection, webFilename, Data, _response):
     messageFile = open(webFilename, mode="rb")
     messageFile.seek(fileStartPosition)
 
-    fileContent = messageFile.read(MAX_KB_TO_SEND)
+    fileContent = messageFile.read(MAX_BLOCK_SIZE)
 
     self.logging(
         "Debug",
@@ -238,7 +246,7 @@ def get_range_and_send(self, Connection, webFilename, Data, _response):
     )
 
     _response["Status"] = "200 OK"
-    if len(fileContent) == MAX_KB_TO_SEND:
+    if len(fileContent) == MAX_BLOCK_SIZE:
         _response["Status"] = "206 Partial Content"
         _response["Headers"]["Content-Range"] = f"bytes {fileStartPosition}-{messageFile.tell()}/{messageFileSize}"
 

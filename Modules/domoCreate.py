@@ -471,8 +471,8 @@ def colorcontrol_if_undefinded( self, Nwkid ):
 
 
 def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
-    self.log.logging( "WidgetCreation", "Debug", "create_native_widget - NwkId: %s Ieee: %s Widget %s  Dz2023.1: %s" %(
-        NwkId, DeviceID_IEEE, widget_name, is_domoticz_new_blind(self)), NwkId)
+    self.log.logging( "WidgetCreation", "Debug", "create_native_widget - %s NwkId: %s Ieee: %s Widget %s  Dz2023.1: %s" %(
+        widget_name, NwkId, DeviceID_IEEE, widget_name, is_domoticz_new_blind(self)), NwkId)
 
     if widget_name in SIMPLE_WIDGET:
         widget_record = SIMPLE_WIDGET[ widget_name ]
@@ -709,6 +709,11 @@ SIMPLE_WIDGET = {
         "Subtype": 1,
         "Switchtype": 0
     },
+    "Lux20MinAverage": {
+        "Type": 246,
+        "Subtype": 1,
+        "Switchtype": 0
+    },
     "LvlControl": {
         "Type": 244,
         "Subtype": 73,
@@ -731,6 +736,12 @@ SIMPLE_WIDGET = {
         "Type": 243,
         "Subtype": 19
     },
+    "BatteryPercentage": {
+        "Type": 243,
+        "Subtype": 6,
+        "Switchtype": 0
+    },
+
     "P1Meter": {
         "Type": 250,
         "Subtype": 1,
@@ -795,11 +806,12 @@ SIMPLE_WIDGET = {
         "Options": "1;ppm"
     },
     
-    "phMeter": { "widgetType": "Custom", "Options": "1;ph" },
+    "phMeter": { "widgetType": "Custom", "Options": "1;pH" },
     "ec": { "widgetType": "Custom", "Options": "1;µS/cm" },
     "orp": { "widgetType": "Custom", "Options": "1;mV" },
     "freeChlorine": { "widgetType": "Custom", "Options": "1;mg/L" },
     "salinity": { "widgetType": "Custom", "Options": "1;ppm" },
+    "tds": { "widgetType": "Custom", "Options": "1;ppm" },
 
     "Strength": {
         "Type": 243,
@@ -817,6 +829,16 @@ SIMPLE_WIDGET = {
         "Image": 13
     },
     "SwitchButton": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "SwitchCalibration": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "SwitchCleaning": {
         "Type": 244,
         "Subtype": 73,
         "Switchtype": 0
@@ -877,6 +899,7 @@ SIMPLE_WIDGET = {
         "Switchtype": 0,
         "Image": 11
     },
+    "RainIntensity": { "widgetType": "Custom", "Options": "1;mV" },
     "WaterCounter": {
         "Type": 243,
         "Subtype": 28,

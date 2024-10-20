@@ -306,6 +306,8 @@ def zdp_raw_binding_device(self, source, src_ep, cluster, addrmode, destination,
     if self.pluginconf.pluginConf["coordinatorCmd"]:
         self.log.logging( "zdpCommand", "Log", "zdp_raw_binding_device  - [%s] %s Queue Length: %s" % (
             sqn, source, self.ControllerLink.loadTransmit()),)
+
+    delayAfterSent=self.pluginconf.pluginConf.get("bindingDelay", False)
  
     raw_APS_request(
         self,
@@ -318,6 +320,7 @@ def zdp_raw_binding_device(self, source, src_ep, cluster, addrmode, destination,
         zigpyzqn=sqn,
         groupaddrmode=False,
         ackIsDisabled=False,
+        delayAfterSent=delayAfterSent
     )
     self.log.logging("zdpCommand", "Debug", "zdp_raw_binding_device returning ZDP SQN: %s" % sqn)
     return sqn
@@ -346,6 +349,8 @@ def zdp_raw_unbinding_device(self, source, src_ep, cluster, addrmode, destinatio
         self.log.logging( "zdpCommand", "Log", "zdp_raw_unbinding_device  - [%s] %s Queue Length: %s" % (
             sqn, source, self.ControllerLink.loadTransmit()), )
 
+    delayAfterSent=self.pluginconf.pluginConf.get("bindingDelay", False)
+
     raw_APS_request(
         self,
         nwkid,
@@ -357,6 +362,7 @@ def zdp_raw_unbinding_device(self, source, src_ep, cluster, addrmode, destinatio
         zigate_ep="00",
         groupaddrmode=False,
         ackIsDisabled=False,
+        delayAfterSent=delayAfterSent
     )
     self.log.logging("zdpCommand", "Debug", "zdp_raw_unbinding_device returning sqn: %s" % sqn)
     return sqn

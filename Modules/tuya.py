@@ -27,18 +27,21 @@ from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
-                           get_and_inc_ZCL_SQN, get_device_config_param,
+                           get_and_inc_ZCL_SQN,
+                           get_device_config_param,
                            get_deviceconf_parameter_value,
                            is_ack_tobe_disabled, updSQN)
 from Modules.tuyaConst import (TUYA_MANUF_CODE, TUYA_SMART_DOOR_LOCK_MODEL,
                                TUYA_eTRV_MODEL)
 from Modules.tuyaSiren import tuya_siren2_response, tuya_siren_response
-from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
-                               tuya_cmd)
+from Modules.tuyaTools import (get_next_tuya_transactionId, get_tuya_attribute,
+                               store_tuya_attribute, tuya_cmd)
 from Modules.tuyaTRV import tuya_eTRV_response
 from Modules.tuyaTS011F import tuya_read_cluster_e001
 from Modules.tuyaTS0601 import ts0601_response
 from Modules.zigateConsts import ZIGATE_EP
+from Zigbee.zclDecoders import zcl_raw_default_response
+
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
@@ -53,6 +56,7 @@ from Modules.zigateConsts import ZIGATE_EP
 #   0x03: string
 #   0x04: enum8 ( 0x00-0xff)
 #   0x05: bitmap ( 1,2, 4 bytes) as bits
+
 
 def is_tuya_switch_relay(self, nwkid):
     model = self.ListOfDevices[nwkid].get("Model", "")
@@ -130,7 +134,6 @@ def tuya_cmd_ts004F(self, NwkId, mode):
 
 
 def tuya_cmd_0x0000_0xf0(self, NwkId):
-
     # Seen at pairing of a WGH-JLCZ02 / TS011F and TS0201 and TS0601 (MOES BRT-100)
 
     payload = "11" + get_and_inc_ZCL_SQN(self, NwkId) + "fe"
@@ -138,35 +141,245 @@ def tuya_cmd_0x0000_0xf0(self, NwkId):
     self.log.logging("Tuya", "Debug", "tuya_cmd_0x0000_0xf0 - Nwkid: %s reset device Cmd: fe" % NwkId)
 
 
-def tuya_polling(self, nwkid):
-    """Some Tuya devices, requirea specific polling"""
-    device_model = self.ListOfDevices.get(nwkid, {}).get("Model")
-    if device_model is None:
+def tuya_polling_control(self, Nwkid, WidgetType, Level):
+    # Mapping Level to Polling modes
+    polling_modes = {
+        "PollingControl": {
+            0: "Off",
+            10: "Slow Polling",
+            20: "Fast Polling",
+        },
+        "PollingControlV2": {
+            0: "Off",
+            10: "2/day",
+            20: "20/day",
+            30: "96/day",
+            40: "Fast Polling",
+        }
+    }
+
+    self.log.logging("Tuya", "Log", f"tuya_polling_control - Nwkid: {Nwkid}/01 Level {Level}")
+
+    # Set default Tuya device info and polling mode
+    tuya_device_info = self.ListOfDevices.setdefault(Nwkid, {}).setdefault("Tuya", {})
+    if WidgetType not in polling_modes:
+        self.log.logging("Tuya", "Error", f"tuya_polling_control - Unexpected WidgetType {WidgetType} !!!")
         return
 
+    tuya_device_info["Polling"] = polling_modes[ WidgetType ].get(Level, tuya_device_info.get("Polling", "Normal Polling"))
+
+    self.log.logging("Tuya", "Log", f"tuya_polling_control - Nwkid: {Nwkid}/01 Polling Mode {tuya_device_info['Polling']}")
+
+
+def tuya_polling_values(self, nwkid, device_model, tuya_device_info):
+    # This is based on command 0x03, which query ALL datapoint
+    tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
+    # Retrieve the polling interval configuration for TUYA_DATA_REQUEST_POLLING which query only the data point which have changed
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
 
-    if tuya_data_request_polling:
-        device_last_poll = self.ListOfDevices.get(nwkid, {}).get("Tuya", {}).get("LastTuyaDataRequest", 0)
-        if device_last_poll > (time.time() + tuya_data_request_polling):
-            self.log.logging("Tuya", "Log", f"tuya_data_request_polling - Nwkid: {nwkid}/01 time for polling {tuya_data_request_polling}")
-            tuya_data_request(self, nwkid, "01")
+    if not tuya_data_query and not tuya_data_request_polling:
+        return 0, 0, 0, 0, 0
 
+    # 3 consecutives polling by default
+    tuya_data_request_polling_additional = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_ADDITIONAL", return_default=3)
+
+    # Each consecutive polling must be separated by 15s by default
+    tuya_elapse_time_consecutive_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING_CONSECUTIVE_ELAPSE", return_default=15)
+
+    additional_polls = tuya_device_info.get("AdditionalPolls", tuya_data_request_polling_additional)
+
+    polling_status = tuya_device_info.setdefault("Polling", "Off")
+
+    current_battery_level = get_tuya_attribute(self, nwkid, "Battery")
+    if isinstance(current_battery_level, str) and current_battery_level.isdigit():
+        current_battery_level = int(current_battery_level)
+
+    # Usall default is 300s ( 5 minutes )
+    if current_battery_level and current_battery_level < 30:
+        # TODO needs to update Widget
+        polling_status = "2/day"
+
+    elif current_battery_level and current_battery_level < 50:
+        # TODO needs to update Widget
+        polling_status = "20/day"
+
+    # Polling methods
+    if polling_status == "Off":
+        # No polling , just exit
+        return 0, 0, 0, 0, 0
+
+    elif polling_status == "Fast Polling":
+        # Force polling to every 15s
+        tuya_data_request_polling = 10
+        tuya_data_query = 60  # A query ( 0x03 ) every minutes
+        tuya_data_request_polling_additional = 0
+        tuya_elapse_time_consecutive_polling = 5
+
+    elif polling_status == "2/day":
+        #  2/jour  -> 43200 secondes ( 12 heures)
+        tuya_data_request_polling = 43200
+        tuya_data_query = 43200  # A query ( 0x03 ) every minutes
+        tuya_data_request_polling_additional = 0
+        tuya_elapse_time_consecutive_polling = 5
+
+    elif polling_status == "20/day":
+        # 20/jours ->  4320 secondes ( 1h 12 minutes)
+        tuya_data_request_polling = 4320
+        tuya_data_query = 4320  # A query ( 0x03 ) every minutes
+        tuya_data_request_polling_additional = 0
+        tuya_elapse_time_consecutive_polling = 5
+
+    elif polling_status == "96/day":
+        # 96/jour  ->   900 secondes ( 15 minutes)
+        tuya_data_request_polling = 900
+        tuya_data_query = 3600  # A query ( 0x03 ) every minutes
+        tuya_data_request_polling_additional = 0
+        tuya_elapse_time_consecutive_polling = 5
+
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling {tuya_data_request_polling}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_query {tuya_data_query}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_data_request_polling_additional {tuya_data_request_polling_additional}")
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 tuya_elapse_time_consecutive_polling {tuya_elapse_time_consecutive_polling}")
+
+    return tuya_data_query, tuya_data_request_polling, tuya_data_request_polling_additional, tuya_elapse_time_consecutive_polling, additional_polls
+
+
+def tuya_polling(self, nwkid):
+    """Some Tuya devices, requirea specific polling"""
+
+    device_model = self.ListOfDevices.get(nwkid, {}).get("Model")
+    if device_model is None:
+        return False
+
+    # Retrieve the device information
+    tuya_device_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("Tuya", {})
+
+    tuya_data_query, tuya_data_request_polling, tuya_data_request_polling_additional, tuya_elapse_time_consecutive_polling,additional_polls = tuya_polling_values(self, nwkid, device_model, tuya_device_info)
+
+    if not tuya_data_request_polling and not tuya_data_query:
+        return False
+
+    self.log.logging("Tuya", "Debug", f"tuya_polling - Nwkid: {nwkid}/01 AdditionalPolls {additional_polls}")
+
+    if tuya_data_query and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataQuery", polling_interval=tuya_data_query):
+        self.log.logging("Tuya", "Debug", f"tuya_polling - tuya_data_request 0x03 Nwkid: {nwkid}/01 time for polling")
+        tuya_data_request(self, nwkid, "01")
+        return True
+
+    if tuya_data_request_polling and should_poll(self, nwkid, tuya_device_info, "LastTuyaDataRequest", polling_interval=tuya_data_request_polling, additional_polls=additional_polls, tuya_data_request_polling_additional=tuya_data_request_polling_additional, tuya_elapse_time_consecutive_polling=tuya_elapse_time_consecutive_polling):
+        # If the current time is greater than or equal to the next polling time, it will proceed with polling
+        self.log.logging("Tuya", "Log", f"tuya_polling - tuya_data_request_poll 0x00 dp 69 dt 02 - Nwkid: {nwkid}/01 time for polling with {additional_polls}")
+        tuya_data_request_poll(self, nwkid, "01")
+        return True
+
+    if get_tuya_attribute(self, nwkid, "backlight_level") not in ( 0, "00000000"):
+        self.log.logging("Tuya", "Debug", "tuya_polling - backlight_level: %s" %get_tuya_attribute(self, nwkid, "backlight_level"))
+        tuya_data_request_end_poll(self, nwkid, "01")
+
+    # No polling done
     return False
 
-def tuya_data_request(self, nwkid, epout):
-    payload = "11" + get_and_inc_ZCL_SQN(self, nwkid) + "03"
-    raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
-    self.log.logging("Tuya", "Debug", "tuya_data_request - Nwkid: %s reset device Cmd: 03" % nwkid)
-    self.ListOfDevices.setdefault(nwkid, {}).setdefault("Model", time.time())
+
+def should_poll(self, nwkid, tuya_device_info, tuya_last_poll_attribute, polling_interval, additional_polls=0, tuya_data_request_polling_additional=0, tuya_elapse_time_consecutive_polling=15):
+    """" Check if it is time for a poll. Because it is time, or because we have additional poll to be made."""
+
+    # Log the polling interval value
+    self.log.logging("Tuya", "Debug", f"should_poll - Nwkid: {nwkid}/01 tuya_data_request_polling {polling_interval} additional_polls: {additional_polls} tuya_data_request_polling_additional: {tuya_data_request_polling_additional} tuya_elapse_time_consecutive_polling: {tuya_elapse_time_consecutive_polling}")
+
+    # Retrieve the last polling time and additional polls
+    last_poll_time = tuya_device_info.get(tuya_last_poll_attribute, 0)
+
+    # Calculate the next polling time
+    next_poll_time = last_poll_time + polling_interval
+    consecutive_elapse_time = last_poll_time + tuya_elapse_time_consecutive_polling
     
+    # Get the current time
+    current_time = int(time.time())
+
+    # Log the last polling time and the next polling time for comparison
+    self.log.logging("Tuya", "Debug", f"should_poll - Nwkid: {nwkid}/01 device_last_poll current time {current_time}")
+    self.log.logging("Tuya", "Debug", f"             - Nwkid: {nwkid}/01 device_last_poll last_poll_time: {last_poll_time}")
+    self.log.logging("Tuya", "Debug", f"             - Nwkid: {nwkid}/01 tuya_data_request_polling next_poll_time: {next_poll_time}")
+    self.log.logging("Tuya", "Debug", f"             - Nwkid: {nwkid}/01 tuya_data_request_polling consecutive_elapse_time: {consecutive_elapse_time}")
+
+    # We do the check that we do not overload and respect the consecutive_elapse_time
+    if current_time < consecutive_elapse_time:
+        # We need at least 6 secondes between each poll - so all data are correctly sent and the device is ready to take a new request
+        self.log.logging("Tuya", "Debug", f"should_poll - Nwkid: {nwkid}/01 skip as last request was less that {tuya_elapse_time_consecutive_polling} s ago")
+        return False
+
+    # Check if the current time is less than the next polling time
+    if current_time < next_poll_time:
+        if additional_polls <= 0:
+            return False
+
+        self.log.logging("Tuya", "Debug", f"should_poll - Nwkid: {nwkid}/01 additional poll {additional_polls}")
+        # If within additional polls window, decrement the counter and allow polling
+        self.ListOfDevices[nwkid]["Tuya"][ tuya_last_poll_attribute ] = current_time
+        self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = additional_polls - 1
+        return True
+
+    # If the current time is greater than or equal to the next polling time, proceed with polling logic
+    # Update the last polling time and reset the additional polls counter
+    self.log.logging("Tuya", "Debug", f"should_poll - Nwkid: {nwkid}/01 We are entering in a new cycle")
+    self.ListOfDevices[nwkid]["Tuya"][ tuya_last_poll_attribute ] = current_time
+    self.ListOfDevices[nwkid]["Tuya"]["AdditionalPolls"] = tuya_data_request_polling_additional
+
+    return True
+
+
+def tuya_data_request_poll(self, nwkid, epout):
+    self.log.logging("Tuya", "Debug", "tuya_data_request_poll - Nwkid: %s tuya polling Cmd: 00" % nwkid) 
+    # Cmd 0x00 - 01/46/6902/0004/00000001/
+    # Cmd 0x00 - 00/d7/6902/0004/00000001/
+
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "6902"
+    data = "00000001"
+
+    self.log.logging("Tuya", "Debug", f"tuya_data_request_poll - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}")
+    tuya_cmd(self, nwkid, epout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None)
+
+
+def tuya_data_request_end_poll(self, nwkid, epout):
+    self.log.logging("Tuya", "Debug", "tuya_data_request_poll - Nwkid: %s tuya polling Cmd: 00" % nwkid) 
+    # Cmd 0x00 - 01/46/6902/0004/00000001/
+    # Cmd 0x00 - 00/d7/6902/0004/00000001/
+
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    cluster_frame = "11"
+    cmd = "00"  # Command
+    action = "6902"
+    data = "00000000"
+
+    self.log.logging("Tuya", "Debug", f"tuya_data_request_poll - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd} action: {action} data: {data}")
+    tuya_cmd(self, nwkid, epout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None)
+
+
+def tuya_data_request(self, nwkid, epout):
+    # TY_DATA_QUERY 	
+    # 0x03 	The gateway sends a query to the Zigbee device for all the current information. 
+    # The query does not contain a ZCL payload. We recommend that you set a reporting policy 
+    # on the Zigbee device to avoid reporting all data in one task.
+    
+    cluster_frame = "11"
+    sqn = get_and_inc_ZCL_SQN(self, nwkid)
+    cmd = "03"  # TY_DATA_QUERY
+    payload = cluster_frame + sqn + cmd
+
+    self.log.logging("Tuya", "Log", f"tuya_data_request - Nwkid: {nwkid} epout: {epout} sqn: {sqn} cluster_frame: {cluster_frame} cmd: {cmd}")
+    raw_APS_request( self, nwkid, epout, "ef00", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=False )
+    self.log.logging("Tuya", "Debug", "tuya_data_request - Nwkid: %s TUYA_DATA_QUERY Cmd: 03 done!" % nwkid)
+
 
 def callbackDeviceAwake_Tuya(self, Devices, NwkId, EndPoint, cluster):
     """
     This is fonction is call when receiving a message from a Manufacturer battery based device.
     The function is called after processing the readCluster part
     """
-    self.log.logging( "Tuya", "Log", "callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
+    self.log.logging( "Tuya", "Debug", "callbackDeviceAwake_Tuya - Nwkid: %s, EndPoint: %s cluster: %s" % (NwkId, EndPoint, cluster))
 
 
 def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
@@ -180,7 +393,7 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     if ClusterID != "ef00" or "Model" not in self.ListOfDevices[NwkId]:
         return
 
-    _ModelName = self.ListOfDevices[NwkId]["Model"]
+    _ModelName = self.ListOfDevices[NwkId].get("Model", "")
 
     if len(MsgPayload) < 6:
         self.log.logging("Tuya", "Debug2", "tuyaReadRawAPS - MsgPayload %s too short" % (MsgPayload), NwkId)
@@ -193,7 +406,11 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     cmd = MsgPayload[4:6]  # uint8
     # Send a Default Response ( why might check the FCF eventually )
     if self.zigbee_communication == "native" and self.FirmwareVersion and int(self.FirmwareVersion, 16) < 0x031E:
-        tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
+        #tuya_send_default_response(self, NwkId, srcEp, sqn, cmd, fcf)
+        tuya_default_response(self, NwkId, srcEp, ClusterID, cmd, sqn, fcf)
+    elif self.zigbee_communication == "zigpy" and cmd == "02" and get_deviceconf_parameter_value(self, _ModelName, "TY_DEFAULT_RESPONSE", return_default=False):
+        tuya_default_response(self, NwkId, srcEp, ClusterID, cmd, sqn, fcf)
+
 
     # https://developer.tuya.com/en/docs/iot/tuya-zigbee-module-uart-communication-protocol?id=K9ear5khsqoty
     self.log.logging( "Tuya", "Debug", "tuyaReadRawAPS - %s/%s fcf: %s sqn: %s cmd: %s Payload: %s" % (
@@ -286,6 +503,12 @@ def tuyaReadRawAPS(self, Devices, NwkId, srcEp, ClusterID, dstNWKID, dstEP, MsgP
     else:
         self.log.logging( "Tuya", "Log", "tuyaReadRawAPS - Model: %s UNMANAGED Nwkid: %s/%s fcf: %s sqn: %s cmd: %s data: %s" % (
             _ModelName, NwkId, srcEp, fcf, sqn, cmd, MsgPayload[6:]), NwkId, )
+
+
+def tuya_default_response(self, SrcNwkId, SrcEndPoint, ClusterID, Command, Sqn, fcf):
+    self.log.logging( "Tuya", "Debug", "tuya_default_response -  %s/%s %s %s %s %s" %(
+        SrcNwkId, SrcEndPoint, ClusterID, Command, Sqn, fcf ))
+    zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterID, Command, Sqn, command_status="00", manufcode=None, orig_fcf=fcf )
 
 
 def tuya_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
@@ -385,7 +608,6 @@ def send_timesynchronisation(self, NwkId, srcEp, ClusterID, dstNWKID, dstEP, ser
     self.log.logging("Tuya", "Debug", f"send_timesynchronisation - {NwkId}/{srcEp}")
 
 
-
 def utc_to_local(dt):
     # https://stackoverflow.com/questions/4563272/convert-a-python-utc-datetime-to-a-local-datetime-using-only-python-standard-lib
     if time.localtime().tm_isdst:
@@ -394,7 +616,7 @@ def utc_to_local(dt):
     return dt - timedelta(seconds=time.timezone)
 
 
-def tuya_send_default_response(self, Nwkid, srcEp, sqn, cmd, orig_fcf):
+def tuya_send_default_response(self, Nwkid, srcEp, sqn, cmd, orig_fcf, force_disabled_default=False):
     if Nwkid not in self.ListOfDevices:
         return
 
@@ -406,6 +628,9 @@ def tuya_send_default_response(self, Nwkid, srcEp, sqn, cmd, orig_fcf):
 
     if disabled_default == "01":
         return
+
+    if force_disabled_default:
+        disabled_default = "01"
 
     fcf = build_fcf("00", manuf_spec, direction, disabled_default)
 
@@ -727,16 +952,7 @@ def tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, ds
         store_tuya_attribute(self, NwkId, "PercentControl", data)
 
     elif dp in (0x03, 0x07):
-        # Curtain Percentage
-        # We need to translate percentage into Analog value between 0 - 255
-        level = ((int(data, 16)) * 255) // 100
-        slevel = "%02x" % level
-        self.log.logging(
-            "Tuya",
-            "Debug",
-            "tuya_curtain_response - Curtain Percentage Nwkid: %s/%s Level %s -> %s" % (NwkId, srcEp, data, level),
-            NwkId,
-        )
+        slevel = _tuya_percentage_2_analog( data )
         store_tuya_attribute(self, NwkId, "PercentState", data)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0008", slevel)
 
@@ -750,20 +966,21 @@ def tuya_curtain_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, ds
         store_tuya_attribute(self, NwkId, "DirectionState", data)
 
     elif dp in (0x67, 0x69):
-        level = ((int(data, 16)) * 255) // 100
-        slevel = "%02x" % level
-        self.log.logging(
-            "Tuya",
-            "Debug",
-            "tuya_curtain_response - ?????? Nwkid: %s/%s data %s --> %s" % (NwkId, srcEp, data, level),
-            NwkId,
-        )
+        slevel = _tuya_percentage_2_analog( data )
         MajDomoDevice(self, Devices, NwkId, srcEp, "0008", slevel)
         store_tuya_attribute(self, NwkId, "dp_%s" % dp, data)
 
     else:
         attribute_name = "UnknowDp_0x%02x_Dt_0x%02x" % (dp, datatype)
         store_tuya_attribute(self, NwkId, attribute_name, data)
+
+
+# TODO Rename this here and in `tuya_curtain_response`
+def _tuya_percentage_2_analog(data):
+    # Curtain Percentage
+    # We need to translate percentage into Analog value between 0 - 255
+    level = ((int(data, 16)) * 255) // 100
+    return "%02x" % level
 
 
 def tuya_curtain_openclose(self, NwkId, openclose):
@@ -861,18 +1078,19 @@ def tuya_window_cover_calibration(self, nwkid, duration):
     write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
 
 
-
 def tuya_window_cover_motor_reversal(self, nwkid, mode):
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off / Default
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
     if int(mode) in {0, 1}:
         write_attribute( self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False )
 
+
 def tuya_curtain_mode(self, nwkid, mode):
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 0 (0x00) | Kick Back
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 1 (0x01) | Seesaw
     if int(mode) in {0, 1}:
         write_attribute( self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" % int(mode), ackIsDisabled=False )
+
 
 def tuya_backlight_command(self, nwkid, mode):
     if int(mode) in {0, 1, 2}:
@@ -1092,6 +1310,7 @@ def tuya_smart_motion_all_in_one(self, Devices, _ModelName, NwkId, srcEp, Cluste
             NwkId,
         )
 
+
 def tuya_pir_keep_time_lookup( self, nwkid, keeptime):
     keeptime = min( keeptime // 30, 2)
     
@@ -1099,9 +1318,8 @@ def tuya_pir_keep_time_lookup( self, nwkid, keeptime):
     EPout = "01"
     
     write_attribute(self, nwkid, ZIGATE_EP, EPout, "0500", "0000", "00", "f001", "20", "%02x" %keeptime, ackIsDisabled=False)
-    
 
-    
+
 def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
     if dp == 0x01:
@@ -1124,7 +1342,7 @@ def tuya_garage_door_response( self, Devices, _ModelName, NwkId, srcEp, ClusterI
         
     else:
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
-        
+
 
 def tuya_garage_door_action( self, NwkId, onoff):
     # 000f/0101/0001/00
@@ -1138,7 +1356,8 @@ def tuya_garage_door_action( self, NwkId, onoff):
     data = "%02x" %int(onoff)
     self.log.logging("Tuya", "Debug", "tuya_garage_door_action - action %s data: %s" % (action,data), NwkId)
     tuya_cmd(self, NwkId, EPout, cluster_frame, sqn, cmd, action, data)
-    
+
+
 def tuya_garage_run_time(self, NwkId, duration):
     # 0006/0402/0004/0000001e  30 secondes
     # 0007/0402/0004/0000003c  60 secondes
@@ -1176,6 +1395,7 @@ TUYA_SWITCH_MODE = {
     2: 0x02
 }
 
+
 def tuya_external_switch_mode( self, NwkId, mode):
  
     self.log.logging("tuyaSettings", "Debug", "tuya_external_switch_mode - mode %s" % mode, NwkId)
@@ -1189,18 +1409,21 @@ def tuya_external_switch_mode( self, NwkId, mode):
     else:
         write_attribute(self, NwkId, ZIGATE_EP, EPout, TUYA_CLUSTER_EOO1_ID, TUYA_TS0004_MANUF_CODE, "01", "d030", "30", mode, ackIsDisabled=False)
 
+
 def tuya_TS0004_back_light(self, nwkid, mode):
     
     if int(mode) in {0, 1}:
         write_attribute(self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "5000", "30", "%02x" %int(mode), ackIsDisabled=False)
     else:
         return
-    
+
+
 def tuya_TS0004_indicate_light(self, nwkid, mode):
     if int(mode) in {0, 1, 2}:
         write_attribute(self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" %int(mode), ackIsDisabled=False)
     else:
         return
+
 
 def SmartRelayStatus_by_ep( self, nwkid, ep, mode):
     
@@ -1217,18 +1440,22 @@ def SmartRelayStatus_by_ep( self, nwkid, ep, mode):
 
     write_attribute(self, nwkid, ZIGATE_EP, ep, "e001", "0000", "00", "d010", "30", "%02x" %int(mode), ackIsDisabled=False)
 
-    
+
 def SmartRelayStatus01(self, nwkid, mode):
     SmartRelayStatus_by_ep( self, nwkid, "01", mode)
-    
+
+
 def SmartRelayStatus02(self, nwkid, mode):
     SmartRelayStatus_by_ep( self, nwkid, "02", mode)
+
 
 def SmartRelayStatus03(self, nwkid, mode): 
     SmartRelayStatus_by_ep( self, nwkid, "03", mode)
 
+
 def SmartRelayStatus04(self, nwkid, mode):
     SmartRelayStatus_by_ep( self, nwkid, "04", mode)
+
 
 def _check_tuya_attribute(self, nwkid, ep, cluster, attribute ):
     if ep not in self.ListOfDevices[nwkid]["Ep"]:
@@ -1242,18 +1469,19 @@ def _check_tuya_attribute(self, nwkid, ep, cluster, attribute ):
         return False
     return True
 
+
 def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
-    self.log.logging("Tuya", "Log", "tuya_smoke_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    self.log.logging("Tuya", "Debug", "tuya_smoke_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
     if dp == 0x01:
         # State
-        self.log.logging("Tuya", "Log", "tuya_smoke_response - Smoke state %s %s %s" % (NwkId, srcEp, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_smoke_response - Smoke state %s %s %s" % (NwkId, srcEp, data), NwkId)
         store_tuya_attribute(self, NwkId, "SmokeState", data)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0500", data)
 
     elif dp == 0x0e:
         #  0: Low battery, 2:Full battery , 1: medium ????
-        self.log.logging("Tuya", "Log", "tuya_smoke_response - Battery Level %s %s %s" % (NwkId, srcEp, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_smoke_response - Battery Level %s %s %s" % (NwkId, srcEp, data), NwkId)
         store_tuya_attribute(self, NwkId, "Battery", data)
         if int(data,16) == 0:
             self.ListOfDevices[NwkId]["Battery"] = 25
@@ -1267,7 +1495,7 @@ def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
 
     elif dp == 0x04:
         # Tamper
-        self.log.logging("Tuya", "Log", "tuya_smoke_response - Tamper %s %s %s" % (NwkId, srcEp, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_smoke_response - Tamper %s %s %s" % (NwkId, srcEp, data), NwkId)
         store_tuya_attribute(self, NwkId, "SmokeTamper", data)
         if int(data,16):
             MajDomoDevice(self, Devices, NwkId, srcEp, "0009", "01")
@@ -1275,18 +1503,22 @@ def tuya_smoke_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstN
             MajDomoDevice(self, Devices, NwkId, srcEp, "0009", "00")
 
     else:
-        self.log.logging("Tuya", "Log", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_smoke_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+
 
 def tuya_command_f0( self, NwkId ):
     self.log.logging("Tuya", "Log", "Tuya 0xf0 command to  %s" %NwkId) 
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     payload = "11" + sqn + "f0"
     raw_APS_request(self, NwkId, "01", "0000", "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=False)   
-    
+
+
 def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
-    self.log.logging("Tuya", "Log", "tuya_temphumi_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    self.log.logging("Tuya", "Debug", "tuya_temphumi_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    manufacturer_name = self.ListOfDevices[NwkId].get('Manufacturer Name')
+
     if dp == 0x01:  # Temperature, 
         unsigned_value = int( data,16)
         signed_value = struct.unpack('>i', struct.pack('>I', unsigned_value))[0]
@@ -1294,37 +1526,54 @@ def tuya_temphumi_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, d
         store_tuya_attribute(self, NwkId, "Temp", signed_value)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0402", (signed_value / 10))
         checkAndStoreAttributeValue(self, NwkId, "01", "0402", "0000", (signed_value/ 10))
-       
+
     elif dp == 0x02:   # Humi
         humi = int(data, 16)
-        if (
-            'Manufacturer Name' in self.ListOfDevices[ NwkId ]
-            and self.ListOfDevices[ NwkId ][ 'Manufacturer Name' ] not in ( '_TZE200_qoy0ekbd', '_TZE200_whkgqxse')
-        ):
+        if manufacturer_name and manufacturer_name not in {'_TZE200_qoy0ekbd', '_TZE200_whkgqxse', '_TZE204_upagmta9'}:
             humi /= 10
         store_tuya_attribute(self, NwkId, "Humi", humi)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0405", humi)
         checkAndStoreAttributeValue(self, NwkId, "01", "0405", "0000", humi)
-        
+
     elif dp == 0x04:   # Battery ????
         store_tuya_attribute(self, NwkId, "Battery", data)
         checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", int(data, 16))
         self.ListOfDevices[NwkId]["Battery"] = int(data, 16)
         Update_Battery_Device(self, Devices, NwkId, int(data, 16))
         store_tuya_attribute(self, NwkId, "BatteryStatus", data)
+
+    elif dp == 0x03:
+        #  0: Low battery, 2:Full battery , 1: medium ????
+        self.log.logging("Tuya", "Debug", "tuya_temphumi_response - Battery Level %s %s %s" % (NwkId, srcEp, data), NwkId)
+        store_tuya_attribute(self, NwkId, "Battery", data)
+        if int(data,16) == 0:
+            self.ListOfDevices[NwkId]["Battery"] = 25
+            Update_Battery_Device(self, Devices, NwkId, 25) 
+        elif int(data,16) == 1:
+            self.ListOfDevices[NwkId]["Battery"] = 50
+            Update_Battery_Device(self, Devices, NwkId, 50)
+        else:
+            self.ListOfDevices[NwkId]["Battery"] = 90
+            Update_Battery_Device(self, Devices, NwkId, 90)
+
+    elif dp == 0x09:
+        # Temp Unit
+        self.log.logging("Tuya", "Debug", "tuya_temphumi_response - Temp Unit %s %s %s" % (NwkId, srcEp, data), NwkId)
+        store_tuya_attribute(self, NwkId, "TempUnit", data)
+
         
     else:
         self.log.logging("Tuya", "Log", "tuya_temphumi_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
-        
+
 
 def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
     
-    self.log.logging("Tuya", "Log", "tuya_motion_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+    self.log.logging("Tuya", "Debug", "tuya_motion_response - %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
 
     if dp == 0x01:
         # Occupancy
-        self.log.logging("Tuya", "Log", "tuya_motion_response - Occupancy %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_motion_response - Occupancy %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         # Looks like the Occupancy indicator is inverse
         occupancy = "%02x" %abs(int(data,16) -1 )
         store_tuya_attribute(self, NwkId, "Occupancy", data)
@@ -1333,7 +1582,7 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
 
     elif dp == 0x04:
         # Battery
-        self.log.logging("Tuya", "Log", "tuya_motion_response - Battery %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_motion_response - Battery %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         
         store_tuya_attribute(self, NwkId, "Battery", data)
         checkAndStoreAttributeValue(self, NwkId, "01", "0001", "0000", int(data, 16))
@@ -1343,19 +1592,19 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
   
     elif dp == 0x09:
         # Sensitivity - {'0': 'low', '1': 'medium', '2': 'high'}
-        self.log.logging("Tuya", "Log", "tuya_motion_response - Sensitivity %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_motion_response - Sensitivity %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         
         store_tuya_attribute(self, NwkId, "Sensitivity", data)
         
     elif dp == 0x0a:
         # Keep time - {'0': '10', '1': '30', '2': '60', '3': '120'}
-        self.log.logging("Tuya", "Log", "tuya_motion_response - Keep Time %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_motion_response - Keep Time %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         
         store_tuya_attribute(self, NwkId, "KeepTime", data)
         
     elif dp == 0x0c:
         # Illuminance
-        self.log.logging("Tuya", "Log", "tuya_motion_response - Illuminance %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
+        self.log.logging("Tuya", "Debug", "tuya_motion_response - Illuminance %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         
         store_tuya_attribute(self, NwkId, "Illuminance", data)
         MajDomoDevice(self, Devices, NwkId, srcEp, "0400", (int(data, 16)) )
@@ -1364,6 +1613,7 @@ def tuya_motion_response(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dst
     else:
         self.log.logging("Tuya", "Log", "tuya_motion_response - Unknow %s %s %s %s %s" % (NwkId, srcEp, dp, datatype, data), NwkId)
         store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
+
 
 def tuya_motion_zg204l_sensitivity(self, nwkid, sensitivity):
     # {'low': 0, 'medium': 1, 'high': 2}
@@ -1482,8 +1732,6 @@ def tuya_radar_motion_radar_fading_time(self, nwkid, mode):
     tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data)
 
 
- 
-   
 def tuya_smart_door_lock(self, Devices, _ModelName, NwkId, srcEp, ClusterID, dstNWKID, dstEP, dp, datatype, data):
 
     store_tuya_attribute(self, NwkId, "dp:%s-dt:%s" %(dp, datatype), data)
@@ -1521,17 +1769,21 @@ def ts110e_light_type( self, NwkId, mode):
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
 
+
 def ts110e_switch01_type( self, NwkId, mode):
     ts110e_switch_type( self, NwkId, "01", mode)
 
+
 def ts110e_switch02_type( self, NwkId, mode):
     ts110e_switch_type( self, NwkId, "02", mode)
+
 
 def ts110e_switch_type( self, NwkId, EPout, mode):
     # momentary: 0, toggle: 1, state: 2
     self.log.logging("tuyaSettings", "Debug", "ts110e_switch_type - mode %s" % mode, NwkId)
     mode = "%02x" %mode
     write_attribute(self, NwkId, ZIGATE_EP, EPout, "0008", "0000", "00", "fc02", "20", mode, ackIsDisabled=False)
+
 
 def tuya_lighting_color_control( self, NwkId, ColorCapabilities=25):
     # The ColorCapabilities attribute specifies the color capabilities of the device supporting the color control clus-
@@ -1556,6 +1808,7 @@ def tuya_color_control_rgbMode( self, NwkId, mode):
     sqn = get_and_inc_ZCL_SQN(self, NwkId)
     payload = "11" + sqn + "f0" + mode
     raw_APS_request(self, NwkId, "01", "0300", "0104", payload, zigpyzqn=sqn, zigate_ep=ZIGATE_EP, ackIsDisabled=False)
+
 
 def tuya_Move_To_Hue_Saturation( self, NwkId, EPout, hue, saturation, transition, level):
     # Command 0x06

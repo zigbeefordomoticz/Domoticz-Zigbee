@@ -100,6 +100,7 @@ SETTINGS = {
             "reenforcementWiser": { "type": "int", "default": 300, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "ReadAttributeChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "ZiGateConfigureReporting": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,"ZigpyRadio": ""},
+            "bindingDelay": {"type": "int","default": 0.75,"current": None,"restart": 0,"hidden": False,"Advanced": True},
         },
     },
     "WebInterface": {
@@ -198,7 +199,7 @@ SETTINGS = {
         "Order": 12,
         "param": {
             "PosixPathUpdate": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
-            "storeDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
+            "storeDomoticzDatabase": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "PluginLogMode": {"type": "list","list": { "system default": 0, "0600": 0o600, "0640": 0o640, "0644": 0o644},"default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "numDeviceListVersion": {"type": "int","default": 12,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "filename": { "type": "path", "default": "", "current": None, "restart": 1, "hidden": True, "Advanced": True, },
@@ -210,6 +211,8 @@ SETTINGS = {
             "pluginReports": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginWWW": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginLogs": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            "SSLCertificate": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            "SSLPrivateKey": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
         },
     },
     # Verbose
@@ -218,6 +221,7 @@ SETTINGS = {
         "param": { 
             "AbstractDz": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Barometer": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "BatteryManagement": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "BasicOutput": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Binding": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "CasaIA": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
@@ -285,6 +289,8 @@ SETTINGS = {
             "ReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Schneider": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Sonoff": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Sunricher": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            
             "Temperature": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Thermostats": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "ThreadCommunication": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
@@ -653,7 +659,7 @@ def _path_check(self):
                 # this is a url
                 continue
             _path_name = Path( self.pluginConf[param] )
-            if not os.path.exists(_path_name):
+            if param not in ( "SSLCertificate", "SSLPrivateKey") and not os.path.exists(_path_name):
                 Domoticz.Error("Cannot access path: %s" % _path_name)
             if self.pluginConf[param] != str( _path_name ):
                 if self.pluginConf["PosixPathUpdate"]:
@@ -716,5 +722,9 @@ def setup_folder_parameters(self, homedir):
                 self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Reports")
             elif param == "pluginWWW":
                 self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "www")
+            elif param == "SSLCertificate":
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "certs" / "server.crt")
+            elif param == "SSLPrivateKey":
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "certs" / "server.key")
             else:
                 self.pluginConf[param] = SETTINGS[theme]["param"][param]["default"]

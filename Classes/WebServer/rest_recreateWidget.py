@@ -4,6 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 from time import time
+import json
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
@@ -31,7 +32,8 @@ def rest_recreate_widgets(self, verb, data, parameters):
 
     if "IEEE" not in data and "NWKID" not in data:
         domoticz_error_api("rest_recreate_widgets - unexpected parameter %s " % parameters)
-        _response["Data"] = {"unexpected parameter %s " % parameters}
+        _response["Data"] = json.dumps({"Status": "Error", "Description": "unexpected parameter %s " % parameters})
+
         return _response
 
     if "IEEE" in data:
@@ -40,13 +42,13 @@ def rest_recreate_widgets(self, verb, data, parameters):
             domoticz_error_api("rest_recreate_widgets - Unknown device %s " % key)
             return _response
         nwkid = self.IEEE2NWK[key]
-        _response["Data"] = {"IEEE %s set to Provisioning Requested at %s" % (key, int(time()))}
+        _response["Data"] = json.dumps({"Status": "Ok", "Status": "IEEE %s set to Provisioning Requested at %s" % (key, int(time()))})
     else:
         nwkid = data["NWKID"]
         if nwkid not in self.ListOfDevices:
             domoticz_error_api("rest_recreate_widgets - Unknown device %s " % nwkid)
             return _response
-        _response["Data"] = {"NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))}
+        _response["Data"] = json.dumps({"Status": "Ok", "Status": "NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))})
 
     over_write_type_from_deviceconf( self, self.Devices, nwkid)
     self.ListOfDevices[nwkid]["Status"] = "CreateDB"

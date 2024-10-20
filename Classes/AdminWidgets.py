@@ -39,7 +39,7 @@ def _get_switch_selector_options(self, ):
         }
 
 class AdminWidgets:
-    def __init__(self, log, PluginConf, pluginParameters, ListOfDomoticzWidget, Devices, ListOfDevices, HardwareID):
+    def __init__(self, log, PluginConf, pluginParameters, ListOfDomoticzWidget, Devices, ListOfDevices, HardwareID, IEEE2NWK):
 
         self.pluginconf = PluginConf
         self.pluginParameters = pluginParameters
@@ -47,6 +47,7 @@ class AdminWidgets:
         self.Devices = Devices  # Point to the List of Domoticz Devices
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.HardwareID = HardwareID
+        self.IEEE2NWK = IEEE2NWK
         self.log = log 
         self.createStatusWidget(Devices)
         self.createNotificationWidget(Devices)
