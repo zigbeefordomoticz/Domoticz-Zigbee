@@ -324,7 +324,11 @@ def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
 
 
 def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
-    if self.HBcount < count:
+    # In case count = -1 we request to force a write also on the Domoticz Database (when onStop is called)
+    # When count = 0 we force a write
+
+    self.log.logging("Database", "Log", "WriteDeviceList %s %s" %(self.HBcount, count))
+    if count != -1 and self.HBcount < count:
         self.HBcount = self.HBcount + 1
         return
 
@@ -340,7 +344,8 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
     _write_DeviceList_txt(self)
 
     if (
-        Modules.tools.is_domoticz_db_available(self) 
+        count == -1
+        and Modules.tools.is_domoticz_db_available(self) 
         and ( self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]) 
     ):
         if _write_DeviceList_Domoticz(self) is None:
@@ -397,7 +402,7 @@ def _write_DeviceList_json(self):
 
 def _write_DeviceList_Domoticz(self):
     ListOfDevices_for_save = self.ListOfDevices.copy()
-    self.log.logging("Database", "Log", "WriteDeviceList - flush Plugin db to %s" % "Domoticz")
+    self.log.logging("Database", "Log", "WriteDeviceList - flush Plugin db to %s" % "Domoticz Sqlite Db")
     return setConfigItem( Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save} )
 
 
