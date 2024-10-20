@@ -1139,7 +1139,7 @@ def ts0601_curtain_accurate_calibration_cmd( self, NwkId, Ep, dp, mode=None):
 
     if mode is None:
         return
-    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_quick_calibration_cmd - %s Quick Calibration: dp:%s value: %s" % (
+    self.log.logging("Tuya0601", "Debug", "ts0601_curtain_quick_calibration_cmd - %s Accurate Calibration: dp:%s value: %s" % (
         NwkId, dp, mode))
     action = "%02x04" % dp  # I
     data = "%02x" % (mode)
