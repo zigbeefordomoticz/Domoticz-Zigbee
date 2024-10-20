@@ -87,8 +87,9 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
     # Retreive Last Backup
     _retreived_backup = _retreive_previous_backup(self)
+    self.log.logging( "Zigpy", "Log","++ retreived backup (%s) %s" %(type(_retreived_backup), _retreived_backup))
 
-    # If We need to Creat a new Zigbee network annd restore the last backup
+    # If We need to Create a new Zigbee network annd restore the last backup
     if force_form:
         with contextlib.suppress(Exception):
             if _retreived_backup is None:
