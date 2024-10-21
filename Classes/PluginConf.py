@@ -545,10 +545,8 @@ def _load_Settings(self):
         if "TimeStamp" in _domoticz_pluginConf:
             dz_timestamp = _domoticz_pluginConf["TimeStamp"]
             _domoticz_pluginConf = _domoticz_pluginConf["b64Settings"]
-            Domoticz.Log(
-                "Plugin data loaded where saved on %s"
-                % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)))
-            )
+            Domoticz.Log( "Plugin data loaded where saved on %s" % (
+                time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))) )
         if not isinstance(_domoticz_pluginConf, dict):
             _domoticz_pluginConf = {}
 
@@ -589,6 +587,7 @@ def _load_Settings(self):
     if self.zigbee_communication != "zigpy":
         # Force to 0 as this parameter is only relevant to Zigpy
         self.pluginConf["ZigpyTopologyReport"] = False
+
 
 def _load_oldfashon(self, homedir, hardwareid):
     # Import PluginConf.txt
@@ -701,7 +700,7 @@ def zigpy_setup(self):
                     "Advanced": True,
                 }
 
-                               
+
 def setup_folder_parameters(self, homedir):
 
     for theme in SETTINGS:

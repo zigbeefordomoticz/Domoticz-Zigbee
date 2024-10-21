@@ -24,6 +24,8 @@ import time
 from pathlib import Path
 from typing import Dict
 
+from zigpy.backups import NetworkBackup
+
 import Modules.tools
 from Modules.domoticzAbstractLayer import getConfigItem, setConfigItem
 from Modules.manufacturer_code import check_and_update_manufcode
@@ -148,19 +150,16 @@ def LoadDeviceList(self):
     ListOfDevices_from_Domoticz = None
 
     # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
-
-    if self.pluginconf.pluginConf["useDomoticzDatabase"] and Modules.tools.is_domoticz_db_available(self):
-        ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
-        self.log.logging(
-            "Database",
-            "Debug",
-            "Database from Dz is recent: %s Loading from Domoticz Db"
-            % is_domoticz_recent(self, saving_time, self.pluginconf.pluginConf["pluginData"] + self.DeviceListName)
-        )
-        res = "Success"
-
     _pluginConf = Path( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginConf / self.DeviceListName
+
+    if self.pluginconf.pluginConf["useDomoticzDatabase"]:
+        ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
+
+        self.log.logging( "Database", "Debug", "Database from Domoticz is recent: %s Loading from Domoticz Db" %
+            is_domoticz_recent(self, saving_time, _DeviceListFileName) )
+        res = "Success"
+
     if os.path.isfile(_DeviceListFileName):
         res = loadTxtDatabase(self, _DeviceListFileName)
     else:
@@ -170,7 +169,8 @@ def LoadDeviceList(self):
 
     self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), _DeviceListFileName))
     if ListOfDevices_from_Domoticz:
-        self.log.logging( "Database", "Log", "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas " % ( len(ListOfDevices_from_Domoticz), len(self.ListOfDevices), ), )
+        self.log.logging( "Database", "Log", "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas " % (
+            len(ListOfDevices_from_Domoticz), len(self.ListOfDevices), ), )
 
     self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % _DeviceListFileName)
     Modules.tools.helper_versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
@@ -238,7 +238,7 @@ def LoadDeviceList(self):
         self.pluginconf.write_Settings()
 
     load_new_param_definition(self)
-    
+
     return res
 
 
@@ -281,45 +281,36 @@ def loadTxtDatabase(self, dbName):
 
 def _read_DeviceList_Domoticz(self):
 
-    ListOfDevices_from_Domoticz = getConfigItem(Key="ListOfDevices", Attribute="Devices")
+    configuration_record = getConfigItem(Key="ListOfDevices", Attribute="Devices")
     time_stamp = 0
-    if "TimeStamp" in ListOfDevices_from_Domoticz:
-        time_stamp = ListOfDevices_from_Domoticz["TimeStamp"]
-        ListOfDevices_from_Domoticz = ListOfDevices_from_Domoticz["Devices"]
-        self.log.logging(
-            "Database",
-            "Log",
-            "Plugin data found on DZ with date %s"
-            % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))),
-        )
+    if "TimeStamp" in configuration_record:
+        time_stamp = configuration_record["TimeStamp"]
+        ListOfDevices_from_Domoticz = configuration_record["Devices"]
+        self.log.logging( "Database", "Debug", "Plugin data found in Domoticz with date %s" % (
+            time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))), )
 
-    self.log.logging(
-        "Database", "Debug", "Load from Dz: %s %s" % (len(ListOfDevices_from_Domoticz), ListOfDevices_from_Domoticz)
-    )
-    if not isinstance(ListOfDevices_from_Domoticz, dict):
-        ListOfDevices_from_Domoticz = {}
-    else:
-        for x in list(ListOfDevices_from_Domoticz):
-            self.log.logging("Database", "Debug", "--- Loading %s" % (x))
-            
-            for attribute in list(ListOfDevices_from_Domoticz[x]):
-                if attribute not in (MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
-                    self.log.logging("Database", "Debug", "xxx Removing attribute: %s for %s" % (attribute, x))
-                    del ListOfDevices_from_Domoticz[x][attribute]
+    self.log.logging( "Database", "Debug", "Load plugin database from Domoticz: %s %s" % (
+        len(ListOfDevices_from_Domoticz), ListOfDevices_from_Domoticz) )
+
+    for x in list(ListOfDevices_from_Domoticz):
+        self.log.logging("Database", "Debug", "--- Loading %s" % (x))
+
+        for attribute in list(ListOfDevices_from_Domoticz[x]):
+            if attribute not in (MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
+                self.log.logging("Database", "Debug", "xxx Removing attribute: %s for %s" % (attribute, x))
+                del ListOfDevices_from_Domoticz[x][attribute]
 
     return (ListOfDevices_from_Domoticz, time_stamp)
 
 
-def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
+def is_domoticz_recent(self, dz_timestamp, filename):
 
-    txt_timestamp = 0
-    if os.path.isfile(device_list_txt_filename):
-        txt_timestamp = os.path.getmtime(device_list_txt_filename)
+    txt_timestamp = os.path.getmtime(filename) if os.path.isfile(filename) else 0
 
-    self.log.logging("Database", "Log", "%s timestamp is %s" % (device_list_txt_filename, txt_timestamp))
     if dz_timestamp > txt_timestamp:
-        self.log.logging("Database", "Log", "Dz is more recent than Txt Dz: %s Txt: %s" % (dz_timestamp, txt_timestamp))
+        self.log.logging("Database", "Log", "%s - Domoticz Timestamp is more recent than Filename (%s versus %s)" % (filename, dz_timestamp, txt_timestamp))
         return True
+    self.log.logging("Database", "Log", "%s - Domoticz Timestamp is older than Filename (%s versus %s)" % (filename, dz_timestamp, txt_timestamp))
     return False
 
 
@@ -344,7 +335,6 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
 
     if (
         count == -1
-        and Modules.tools.is_domoticz_db_available(self) 
         and ( self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]) 
     ):
         if _write_DeviceList_Domoticz(self) is None:
@@ -401,8 +391,31 @@ def _write_DeviceList_json(self):
 
 def _write_DeviceList_Domoticz(self):
     ListOfDevices_for_save = self.ListOfDevices.copy()
-    self.log.logging("Database", "Log", "WriteDeviceList - flush Plugin db to %s" % "Domoticz Sqlite Db")
+    self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % "Domoticz Sqlite Db")
     return setConfigItem( Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save} )
+
+
+def write_coordinator_backup_domoticz(self, coordinator_backup):
+    self.log.logging("Database", "Log", "write_coordinator_backup_domoticz - saving coordinator data to Domoticz Sqlite Db type: %s" %type(coordinator_backup))
+    return setConfigItem( Key="CoordinatorBackup", Attribute="NetworkBackup", Value={"TimeStamp": time.time(), "NetworkBackup": coordinator_backup } )
+
+
+def read_coordinator_backup_domoticz(self):
+
+    coordinator_backup = getConfigItem(Key="CoordinatorBackup", Attribute="NetworkBackup")
+    self.log.logging( "Database", "Debug", "Coordinator backup entry from Domoticz %s" % str(coordinator_backup))
+
+    time_stamp = coordinator_backup["TimeStamp"] if "TimeStamp" in coordinator_backup else 0
+    coordinator_network_backup = coordinator_backup["NetworkBackup"] if "NetworkBackup" in coordinator_backup else None
+
+    self.log.logging( "Database", "Debug", "Coordinator data found on DZ with date %s" % (
+        time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))), )
+
+    if coordinator_network_backup:
+        self.log.logging( "Database", "Debug", "Load from Dz: %s %s %s" % (
+            len(coordinator_network_backup), str(coordinator_network_backup), type(coordinator_network_backup) ))
+
+    return (coordinator_network_backup, time_stamp)
 
 
 def importDeviceConf(self):
@@ -491,6 +504,7 @@ def checkDevices2LOD(self, Devices):
         self.ListOfDevices[nwkid]["ConsistencyCheck"] = ""
         if self.ListOfDevices[nwkid]["Status"] == "inDB":
             self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
+
 
 def checkListOfDevice2Devices(self, Devices):
     for widget_idx, widget_info in self.ListOfDomoticzWidget.items():
@@ -893,8 +907,8 @@ def cleanup_table_entries( self):
                         one_more_time = True
                         break
                     idx += 1
+
  
-                    
 def profalux_fix_remote_device_model(self):
     
     for x in self.ListOfDevices:
@@ -936,15 +950,15 @@ def hack_ts0601(self, nwkid):
         hack_ts0601_rename_model( self, nwkid, model_name, manuf_name)
         return
     hack_ts0601_error(self, nwkid, model_name, manufacturer=manuf_name)
-    
-        
+
+
 def hack_ts0601_error(self, nwkid, model, manufacturer=None):
     # Looks like we have a TS0601 and something wrong !!!
     self.log.logging("Tuya", "Error", "This device is not correctly configured, please contact us with the here after information")
     self.log.logging("Tuya", "Error", "    - Device        %s" %nwkid )
     self.log.logging("Tuya", "Error", "    - Model         %s" %model )
     self.log.logging("Tuya", "Error", "    - Manufacturer  %s" %manufacturer )
-            
+
 
 def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
 
@@ -953,7 +967,8 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
     if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
         self.log.logging("Tuya", "Status", "Z4D adjusts Model name from %s to %s" %( modelName, suggested_model))
         self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model
-        
+
+
 def cleanup_ota(self, nwkid):
     
     if "OTAUpgrade" not in self.ListOfDevices[ nwkid ]:
