@@ -208,6 +208,8 @@ SETTINGS = {
             "pluginData": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginConfig": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginOTAFirmware": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            "zigpyOTArepository": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
+            
             "pluginReports": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginWWW": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "pluginLogs": {"type": "path","default": "","current": None,"restart": 1,"hidden": False,"Advanced": True,},
@@ -718,6 +720,8 @@ def setup_folder_parameters(self, homedir):
                 self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Logs")
             elif param == "pluginOTAFirmware":
                 self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "OTAFirmware")
+            elif param == "zigpyOTArepository":
+                self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "zigpyOTArepository")
             elif param == "pluginReports":
                 self.pluginConf[param] = str( Path(self.pluginConf["pluginHome"]) / "Reports")
             elif param == "pluginWWW":

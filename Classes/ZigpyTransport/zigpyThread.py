@@ -273,9 +273,20 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
     # Enable or not Source Routing based on zigpySourceRouting setting
     config[zigpy.config.CONF_SOURCE_ROUTING] = bool( self.pluginconf.pluginConf["zigpySourceRouting"] )
     
-    # Disable Zigpy OTA
-    config[zigpy.config.CONF_OTA][zigpy.config.CONF_OTA_ENABLED] = False
-    
+    # Enable Zigpy OTA
+    config[zigpy.config.CONF_OTA] = {
+        zigpy.config.CONF_OTA_ENABLED: True,
+        zigpy.config.CONF_OTA_BROADCAST_ENABLED: False,
+        zigpy.config.CONF_OTA_EXTRA_PROVIDERS: [
+            {
+                zigpy.config.CONF_OTA_PROVIDER_TYPE: "advanced",
+                zigpy.config.CONF_OTA_PROVIDER_PATH: Path( self.pluginconf.pluginConf["zigpyOTArepository"]),
+                zigpy.config.CONF_OTA_PROVIDER_WARNING: zigpy.config.CONF_OTA_ALLOW_ADVANCED_DIR_STRING,
+            },
+        ],
+    }
+
+   
     # Disable zigpy conf topo scan by default
     config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = False
 
