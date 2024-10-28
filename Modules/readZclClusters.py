@@ -498,6 +498,7 @@ def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_in
             
     return None
 
+
 def _log_error_formula( self, e, _eval_formula, custom_variable):
     self.log.logging("ZclClusters", "Error", "   - Error: %s" % e)
     self.log.logging("ZclClusters", "Error", "   - formula: %s" % _eval_formula)
@@ -543,6 +544,7 @@ def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, de
     cluster_description = self.readZclClusters[ cluster ]["Description"] if self.readZclClusters and cluster in self.readZclClusters else "Unknown cluster"
     self.log.logging( "ZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s " %(
         nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, d, value, lqi ))        
+
 
 def debug_logging(self, nwkid, ep, cluster, attribute, dtype, attsize, raw_data, value):
     
