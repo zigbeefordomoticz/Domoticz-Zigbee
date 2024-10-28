@@ -19,6 +19,9 @@ import time
 #import DomoticzEx as Domoticz
 #DOMOTICZ_EXTENDED_API = True#
 import Domoticz as Domoticz
+from base64 import b64decode, b64encode
+import json
+import ast
 
 DIMMABLE_WIDGETS = {
     (7, 1, 241): { "Widget": "Dimmable_Light", "Name": "RGBW", "partially_opened_nValue": 15},
@@ -104,8 +107,6 @@ def getConfigItem(Key=None, Attribute="", Default=None):
 
 def prepare_dict_for_storage(dict_items, Attribute):
 
-    from base64 import b64encode
-
     if Attribute in dict_items:
         dict_items[Attribute] = b64encode(str(dict_items[Attribute]).encode("utf-8"))
     dict_items["Version"] = 1
@@ -115,13 +116,29 @@ def prepare_dict_for_storage(dict_items, Attribute):
 def repair_dict_after_load(b64_dict, Attribute):
     if b64_dict in ("", {}):
         return {}
+
     if "Version" not in b64_dict:
         domoticz_log_api("repair_dict_after_load - Not supported storage")
         return {}
-    if Attribute in b64_dict:
-        from base64 import b64decode
 
-        b64_dict[Attribute] = eval(b64decode(b64_dict[Attribute]))
+    if Attribute in b64_dict:
+        try:
+            decoded_data = b64decode(b64_dict[Attribute]).decode("utf-8")
+
+            # Try to parse as JSON first
+            try:
+                b64_dict[Attribute] = json.loads(decoded_data)
+
+            except json.JSONDecodeError:
+                # If JSON parsing fails, fall back to ast.literal_eval
+                b64_dict[Attribute] = ast.literal_eval(decoded_data)
+
+        except (json.JSONDecodeError, ValueError, SyntaxError) as e:
+            domoticz_error_api(f"Error during decoding: {e}")
+
+        except Exception as e:
+            domoticz_error_api(f"Unexpected error: {e}")
+
     return b64_dict
 
 
