@@ -418,6 +418,11 @@ def packet_received(
     plugin_frame = build_plugin_8002_frame_content(self, sender, profile, cluster, src_ep, dst_ep, message, packet.lqi, src_addrmode=addr_mode)
     self.log.logging("TransportZigpy", "Debug", "packet_received Sender: %s frame for plugin: %s" % (sender, plugin_frame))
     self.callBackFunction(plugin_frame)
+
+    if cluster == 0x0019:
+        # Do not forward message to zigpy
+        return
+
     super(type(self),self).packet_received(packet)
     
 
