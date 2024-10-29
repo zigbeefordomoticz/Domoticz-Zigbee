@@ -1,6 +1,21 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZCL, TYPE_APP_ZDP,
                                              sqn_get_internal_sqn_from_app_sqn,
                                              sqn_get_internal_sqn_from_aps_sqn)
+from Modules.basicOutputs import (getListofAttribute, handle_unknow_device,
+                                  send_default_response, setTimeServer)
+from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.errorCodes import DisplayStatusCode
 from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            checkAndStoreAttributeValue, decodeMacCapa,
@@ -12,10 +27,8 @@ from Modules.tools import (DeviceExist, ReArrangeMacCapaBasedOnModel,
                            set_request_phase_datastruct, set_status_datastruct,
                            timeStamped, updLQI, updSQN,
                            zigpy_plugin_sanity_check)
-from Modules.domoTools import lastSeenUpdate, timedOutDevice
-from Modules.basicOutputs import (getListofAttribute, handle_unknow_device,
-                                  send_default_response, setTimeServer)
 from Z4D_decoders.z4d_decoder_helpers import set_health_state
+
 
 def Decode8000_v2(self, Devices, MsgData, MsgLQI):
     if len(MsgData) < 8:

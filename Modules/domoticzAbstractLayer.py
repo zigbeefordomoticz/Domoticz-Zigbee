@@ -15,11 +15,13 @@
     Description: Set of functions which abstract Domoticz Legacy and Extended framework API
 """
 
-import json
 import ast
-from base64 import b64decode, b64encode
+import json
 import time
+from base64 import b64decode, b64encode
+
 import Domoticz as Domoticz
+
 #import DomoticzEx as Domoticz
 #DOMOTICZ_EXTENDED_API = True#
 

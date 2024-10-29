@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 
 import json
 import mimetypes
@@ -25,7 +32,7 @@ from Modules.domoticzAbstractLayer import (domo_read_BatteryLevel,
                                            domoticz_log_api,
                                            domoticz_status_api)
 from Modules.sendZigateCommand import sendZigateCmd
-from Modules.tools import is_hex, get_device_nickname
+from Modules.tools import get_device_nickname, is_hex
 from Modules.txPower import set_TxPower
 from Modules.zigateCommands import zigate_set_mode
 from Modules.zigateConsts import (CERTIFICATION_CODE, ZCL_CLUSTERS_LIST,

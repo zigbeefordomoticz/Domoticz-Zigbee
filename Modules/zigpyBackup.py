@@ -15,7 +15,9 @@ import os.path
 from pathlib import Path
 
 import Modules.tools
-from Modules.database import write_coordinator_backup_domoticz, read_coordinator_backup_domoticz, is_domoticz_recent
+from Modules.database import (is_domoticz_recent,
+                              read_coordinator_backup_domoticz,
+                              write_coordinator_backup_domoticz)
 
 
 def handle_zigpy_backup(self, backup):

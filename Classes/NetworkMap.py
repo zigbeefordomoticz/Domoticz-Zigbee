@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
 #
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 #    Module: NetworkMap.py
 #
 #    Description: Network Mapping based on LQI
@@ -26,12 +32,12 @@
 
 import json
 import os.path
-from pathlib import Path
 import time
 from datetime import datetime
+from pathlib import Path
 
-from Modules.zb_tables_management import (mgmt_rtg, start_new_table_scan,
-                                          update_merge_new_device_to_last_entry)
+from Modules.zb_tables_management import (
+    mgmt_rtg, start_new_table_scan, update_merge_new_device_to_last_entry)
 from Zigbee.zdpCommands import zdp_NWK_address_request, zdp_nwk_lqi_request
 
 
