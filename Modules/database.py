@@ -156,8 +156,7 @@ def LoadDeviceList(self):
     if self.pluginconf.pluginConf["useDomoticzDatabase"]:
         ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
 
-        self.log.logging( "Database", "Debug", "Database from Domoticz is recent: %s Loading from Domoticz Db" %
-            is_domoticz_recent(self, saving_time, _DeviceListFileName) )
+        self.log.logging( "Database", "Debug", "Database from Domoticz is recent: %s Loading from Domoticz Db" % is_domoticz_recent(self, saving_time, _DeviceListFileName) )
         res = "Success"
 
     if os.path.isfile(_DeviceListFileName):
