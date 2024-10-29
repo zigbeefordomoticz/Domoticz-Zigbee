@@ -83,7 +83,7 @@ def handle_zigpy_retreive_last_backup( self ):
         self.log.logging( "Database", "Debug", "Coordinator Backup from Dz is recent: %s " % (
             is_domoticz_recent(self, dz_latest_coordinator_backup_timestamp, _coordinator_backup) ))
 
-        self.log.logging("TransportZigpy", "Log", "Domoticz Coordinator Backup versus File Backup equal : %s" % (
+        self.log.logging("TransportZigpy", "Log", "==> Sanity check : Domoticz Coordinator Backup versus File Backup equal : %s" % (
             file_latest_coordinator_backup_record == dz_latest_coordinator_backup_record))
 
     return file_latest_coordinator_backup_record

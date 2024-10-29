@@ -50,7 +50,6 @@ CIE_ATTRIBUTES = {
     "AssociatedDevices"
     }
 
-
 MANDATORY_ATTRIBUTES = (
     "App Version",
     "Attributes List",
@@ -152,10 +151,9 @@ def LoadDeviceList(self):
     # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
     _pluginConf = Path( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginConf / self.DeviceListName
+    ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
 
     if self.pluginconf.pluginConf["useDomoticzDatabase"]:
-        ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
-
         self.log.logging( "Database", "Debug", "Database from Domoticz is recent: %s Loading from Domoticz Db" % is_domoticz_recent(self, saving_time, _DeviceListFileName) )
         res = "Success"
 
@@ -168,7 +166,7 @@ def LoadDeviceList(self):
 
     self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), _DeviceListFileName))
     if ListOfDevices_from_Domoticz:
-        self.log.logging( "Database", "Log", "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas " % (
+        self.log.logging( "Database", "Log", "==> Sanity check : Plugin Database loaded - %s entries from Domoticz, %s entries from DeviceList" % (
             len(ListOfDevices_from_Domoticz), len(self.ListOfDevices), ), )
 
     self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % _DeviceListFileName)
@@ -391,11 +389,15 @@ def _write_DeviceList_json(self):
 def _write_DeviceList_Domoticz(self):
     ListOfDevices_for_save = self.ListOfDevices.copy()
     self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % "Domoticz Sqlite Db")
+    self.log.logging("Database", "Status", "+ Saving plugin database into Domoticz")
+
     return setConfigItem( Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save} )
 
 
 def write_coordinator_backup_domoticz(self, coordinator_backup):
     self.log.logging("Database", "Log", "write_coordinator_backup_domoticz - saving coordinator data to Domoticz Sqlite Db type: %s" %type(coordinator_backup))
+    self.log.logging("Database", "Status", "+ Saving Coordinator database into Domoticz")
+
     return setConfigItem( Key="CoordinatorBackup", Attribute="NetworkBackup", Value={"TimeStamp": time.time(), "NetworkBackup": coordinator_backup } )
 
 

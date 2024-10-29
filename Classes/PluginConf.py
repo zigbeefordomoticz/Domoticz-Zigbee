@@ -537,9 +537,9 @@ class PluginConf:
         with open(pluginConfFile, "wt") as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
-
         if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
-            setConfigItem(Key="PluginConf", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
+            Domoticz.Status("+ Saving Plugin Configuration into Domoticz")
+            setConfigItem(Key="PluginConf", Attribute="b64Settings", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
 
 
 def _load_Settings(self):
@@ -548,7 +548,8 @@ def _load_Settings(self):
 
     dz_timestamp = 0
     if is_domoticz_db_available(self):
-        _domoticz_pluginConf = getConfigItem(Key="PluginConf")
+        _domoticz_pluginConf = getConfigItem(Key="PluginConf", Attribute="b64Settings")
+        
         if "TimeStamp" in _domoticz_pluginConf:
             dz_timestamp = _domoticz_pluginConf["TimeStamp"]
             _domoticz_pluginConf = _domoticz_pluginConf["b64Settings"]
@@ -579,16 +580,18 @@ def _load_Settings(self):
             self.pluginConf[param] = _pluginConf[param]
 
     # Check Load
-    if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"]:
-        Domoticz.Log("PluginConf Loaded from Dz: %s from Json: %s" % (len(_domoticz_pluginConf), len(_pluginConf)))
-        if _domoticz_pluginConf:
-            for x in _pluginConf:
-                if x not in _domoticz_pluginConf:
-                    Domoticz.Error("-- %s is missing in Dz" % x)
-                elif _pluginConf[x] != _domoticz_pluginConf[x]:
-                    Domoticz.Error(
-                        "++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x])
-                    )
+    if is_domoticz_db_available(self):
+        Domoticz.Log("==> Sanity check : PluginConf Loaded. %s entries from Domoticz, %s from Json" % (
+            len(_domoticz_pluginConf), len(_pluginConf)))
+    
+    if is_domoticz_db_available(self) and self.pluginConf["useDomoticzDatabase"] and _domoticz_pluginConf:
+        for x in _pluginConf:
+            if x not in _domoticz_pluginConf:
+                Domoticz.Error("-- %s is missing in Dz" % x)
+            elif _pluginConf[x] != _domoticz_pluginConf[x]:
+                Domoticz.Error(
+                    "++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x])
+                )
 
     # Overwrite Zigpy parameters if we are running native Zigate
     if self.zigbee_communication != "zigpy":
