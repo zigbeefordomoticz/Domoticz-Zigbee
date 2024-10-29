@@ -161,6 +161,10 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         # Config specifies the period in minutes, not seconds
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
+    if ( self.config[zigpy_conf.CONF_OTA][zigpy_conf.CONF_OTA_ENABLED] and self.config[zigpy_conf.CONF_OTA][zigpy_conf.CONF_OTA_BROADCAST_ENABLED] ):
+            self.log.logging("TransportZigpy", "Status", "Starting up OTA notification broadcast with initial delay of % sec" %zigpy_conf.CONF_OTA_BROADCAST_INITIAL_DELAY)
+            self.ota.start_periodic_broadcasts( initial_delay=self._config[zigpy_conf.CONF_OTA][zigpy_conf.CONF_OTA_BROADCAST_INITIAL_DELAY], interval=self._config[zigpy_conf.CONF_OTA][zigpy_conf.CONF_OTA_BROADCAST_INTERVAL], )
+
 
 async def shutdown(self) -> None:
     """Shutdown controller."""
