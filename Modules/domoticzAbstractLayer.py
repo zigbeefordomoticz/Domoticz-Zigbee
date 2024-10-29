@@ -23,7 +23,6 @@ import Domoticz as Domoticz
 #import DomoticzEx as Domoticz
 #DOMOTICZ_EXTENDED_API = True#
 
-
 DIMMABLE_WIDGETS = {
     (7, 1, 241): { "Widget": "Dimmable_Light", "Name": "RGBW", "partially_opened_nValue": 15},
     (7, 2, 241): { "Widget": "Dimmable_Light", "Name": "RGB", "partially_opened_nValue": 15},
@@ -117,8 +116,6 @@ def prepare_dict_for_storage(dict_items, Attribute):
     Returns:
         dict: The modified dictionary with the specified attribute Base64-encoded and a "Version" key added.
     """
-    from base64 import b64encode
-
     if Attribute in dict_items:
         try:
             # Serialize the attribute value to JSON first, then Base64 encode (Version 2)

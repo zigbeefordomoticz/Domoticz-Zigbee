@@ -208,32 +208,41 @@ class WebServer(object):
         self.startWebServer()
         self.certified_devices_update()
 
+
     def fake_mode(self):
         return (
             len(self.ControllerData) == 0 or self.ControllerLink is None
         ) and self.transport == "None"
 
+
     def update_firmware(self, firmwareversion):
         self.FirmwareVersion = firmwareversion
+
 
     def update_networkenergy(self, networkenergy):
         self.networkenergy = networkenergy
 
+
     def update_networkmap(self, networkmap):
         self.networkmap = networkmap
 
+
     def update_configureReporting(self,configureReporting ):
         self.configureReporting = configureReporting
+
         
     def add_element_to_devices_in_pairing_mode( self, nwkid):
         if nwkid not in self.DevicesInPairingMode:
             self.DevicesInPairingMode.append( nwkid )
+
         
     def update_groupManagement(self, groupmanagement):
         self.groupmgt = groupmanagement if groupmanagement else None
 
+
     def update_OTA(self, OTA):
         self.OTA = OTA or None
+
 
     def setZigateIEEE(self, ZigateIEEE):
         self.ControllerIEEE = ZigateIEEE
@@ -271,6 +280,7 @@ class WebServer(object):
 
         return _response
 
+
     def rest_zigate_erase_PDM(self, verb, data, parameters):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -292,6 +302,7 @@ class WebServer(object):
             #    start_Zigate( self )
         return _response
 
+
     def rest_reset_zigate(self, verb, data, parameters):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -305,6 +316,7 @@ class WebServer(object):
             action = {"Name": "Software reboot of ZiGate", "TimeStamp": int(time.time())}
         _response["Data"] = json.dumps(action, sort_keys=True)
         return _response
+
 
     def rest_zigate(self, verb, data, parameters):
 
@@ -359,6 +371,7 @@ class WebServer(object):
 
         return _response
 
+
     def rest_domoticz_env(self, verb, data, parameters):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -369,6 +382,7 @@ class WebServer(object):
             _response["Data"] = json.dumps(dzenv, sort_keys=True)
         return _response
 
+
     def rest_PluginEnv(self, verb, data, parameters):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -376,6 +390,7 @@ class WebServer(object):
         if verb == "GET":
             _response["Data"] = json.dumps(get_plugin_parameters(self))
         return _response
+
 
     def rest_nwk_stat(self, verb, data, parameters):
 
@@ -451,6 +466,7 @@ class WebServer(object):
 
         return _response
 
+
     def rest_plugin_restart(self, verb, data, parameters):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -464,6 +480,7 @@ class WebServer(object):
             _response["Data"] = json.dumps(info, sort_keys=True)
         return _response
 
+
     def rest_restart_needed(self, verb, data, parameters):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -471,6 +488,7 @@ class WebServer(object):
         if verb == "GET":
             _response["Data"] = json.dumps(self.restart_needed, sort_keys=True)
         return _response
+
 
     def rest_plugin_stat(self, verb, data, parameters):
 
@@ -563,11 +581,14 @@ class WebServer(object):
             _response["Data"] = json.dumps(Statistics, sort_keys=True)
         return _response
 
+
     def rest_Settings_wo_debug(self, verb, data, parameters):
         return self.rest_Settings(verb, data, parameters, sendDebug=False)
 
+
     def rest_Settings_with_debug(self, verb, data, parameters):
         return self.rest_Settings(verb, data, parameters, sendDebug=True)
+
 
     def rest_Settings(self, verb, data, parameters, sendDebug=False):
 
@@ -721,6 +742,7 @@ class WebServer(object):
                 self.pluginconf.write_Settings()
 
         return _response
+
 
     def rest_PermitToJoin(self, verb, data, parameters):
 
@@ -994,6 +1016,7 @@ class WebServer(object):
 
         return _response
 
+
     def rest_zDevice(self, verb, data, parameters):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -1164,6 +1187,7 @@ class WebServer(object):
                 _response["Data"] = json.dumps(zdev_lst, sort_keys=True)
         return _response
 
+
     def rest_zDevice_raw(self, verb, data, parameters):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -1196,6 +1220,7 @@ class WebServer(object):
 
         return _response
 
+
     def rest_change_channel(self, verb, data, parameters):
         domoticz_log_api("rest_change_channel - %s %s" % (verb, data))
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -1212,15 +1237,29 @@ class WebServer(object):
             domoticz_log_api("---> Data: %s" % str(data))
             if "Channel" not in data:
                 domoticz_error_api("Unexpected request: %s" % data)
-                _response["Data"] = {"Error": "Unknow verb"}
+                dict_response = {
+                    "Status": "Error",
+                    "ExtendedError": "Unknow verb: %s" %data
+                }
+
                 return _response
             channel = data["Channel"]
             if channel not in range(11, 27):
-                _response["Data"] = {"Error": "incorrect channel: %s" % channel}
+                dict_response = {
+                    "Status": "Error",
+                    "ExtendedError": "Unknow verb",
+                    "RequestedChannel": "incorrect channel: %s" % channel
+                }
+
                 return _response
             initiate_change_channel(self, int(channel))
 
-            _response["Data"] = {"Request channel: %s" % channel}
+            dict_response = {
+                "Status": "Ok",
+                "RequestedChannel": channel
+            }
+
+        _response["Data"] = json.dumps(dict_response, sort_keys=True)
         return _response
 
     def rest_raw_command(self, verb, data, parameters):
@@ -1286,7 +1325,12 @@ class WebServer(object):
         for attr in  ZIGPY_RAW_COMMAND_ATTRIBUTES:
             if attr not in data:
                 self.logging( "Error","Missing attribute: %s in zigbee-raw-command: %s" % ( attr, data))
-                _response["Data"] = json.dumps("Missing attribute: > %s < in zigbee-raw-command: %s" % ( attr, data) )
+                dict_response = {
+                    "Status": "Error",
+                    "ExtendedErrir": "Missing attribute: > %s < in zigbee-raw-command: %s" % ( attr, data)
+                }
+
+                _response["Data"] = json.dumps(dict_response )
                 return _response
                 
         group_flag = data['GroupAddressFlag']
@@ -1298,7 +1342,6 @@ class WebServer(object):
         payload = data['Payload']
         source_ep = data['SourceEp']
         sqn = data['Sqn']
-        
 
         self.logging(
             "Debug",
@@ -1330,7 +1373,8 @@ class WebServer(object):
         self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(target_address,16), sqn=int(sqn,16), ackIsDisabled=ack_Is_Disabled )
 
         return _response
-        
+
+    
     def rest_dev_command(self, verb, data, parameters):
 
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -1403,6 +1447,7 @@ class WebServer(object):
                     actuators(self, data["Command"], key, epout, data["Type"], value=Level, color=Color)
 
         return _response
+
 
     def rest_dev_capabilities(self, verb, data, parameters):
 
@@ -1497,6 +1542,7 @@ class WebServer(object):
         _response["Data"] = json.dumps(dev_capabilities)
         return _response
 
+
     def rest_zigate_mode(self, verb, data, parameters):
 
         domoticz_log_api("rest_zigate_mode mode: %s" % parameters)
@@ -1511,6 +1557,7 @@ class WebServer(object):
                     #send_zigate_mode(self, int(mode))
                     _response["Data"] = {"ZiGate mode: %s requested" % mode}
         return _response
+
 
     def rest_battery_state(self, verb, data, parameters):
         _response = prepResponseMessage(self, setupHeadersResponse())
@@ -1549,8 +1596,10 @@ class WebServer(object):
             _response["Data"] = json.dumps(_battEnv, sort_keys=True)
         return _response
 
+
     def logging(self, logType, message):
         self.log.logging("WebServer", logType, message)
+
 
 def dummy_zdevice_name():
     
@@ -1571,7 +1620,8 @@ def validateJSON(self, jsonData, nwkid=None):
             error_message = "validateJSON - Device: {}/{} - {}".format(device_name, nwkid, error_message)
         self.logging("Error", error_message)
         return {}
-    
+
+ 
 def decode_device_param(self, nwkid, param):
     if not param:
         return {}
