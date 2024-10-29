@@ -279,13 +279,23 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
         zigpy.config.CONF_OTA_BROADCAST_ENABLED: True,
         zigpy.config.CONF_OTA_BROADCAST_INITIAL_DELAY: 60,
         zigpy.config.CONF_OTA_BROADCAST_INTERVAL: 300,
-        zigpy.config.CONF_OTA_IKEA: True,
-        zigpy.config.CONF_OTA_INOVELLI: True,
-        zigpy.config.CONF_OTA_LEDVANCE: True,
         zigpy.config.CONF_OTA_SALUS: True,
-        zigpy.config.CONF_OTA_SONOFF: True,
-        zigpy.config.CONF_OTA_THIRDREALITY: True,
         zigpy.config.CONF_OTA_EXTRA_PROVIDERS: [
+            {
+                zigpy.config.CONF_OTA_PROVIDER_TYPE: "ikea",
+            },
+            {
+                zigpy.config.CONF_OTA_PROVIDER_TYPE: "inovelli",
+            },
+            {
+                zigpy.config.CONF_OTA_PROVIDER_TYPE: "ledvance",
+            },
+            {
+                zigpy.config.CONF_OTA_PROVIDER_TYPE: "sonoff",
+            },
+            {
+                zigpy.config.CONF_OTA_PROVIDER_TYPE: "thirdreality",
+            },
             {
                 zigpy.config.CONF_OTA_PROVIDER_TYPE: "advanced",
                 zigpy.config.CONF_OTA_PROVIDER_PATH: Path( self.pluginconf.pluginConf["zigpyOTArepository"]),
@@ -293,11 +303,9 @@ def optional_configuration_setup(self, config, conf, set_extendedPanId, set_chan
             },
             {
                 zigpy.config.CONF_OTA_PROVIDER_TYPE: "z2m",
-                zigpy.config.CONF_OTA_PROVIDER_URL: "https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/index.json",
             },
         ],
     }
-
    
     # Disable zigpy conf topo scan by default
     config[zigpy.config.CONF_TOPO_SCAN_ENABLED] = False
