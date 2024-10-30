@@ -157,7 +157,12 @@ def LoadDeviceList(self):
         self.log.logging( "Database", "Debug", "Database from Domoticz is recent: Loading from Domoticz Db")
         res = "Success"
 
-        self.ListOfDevices = ListOfDevices_from_Domoticz
+        # Initialize the dictionaries directly from ListOfDevices_from_Domoticz
+        self.ListOfDevices = dict(ListOfDevices_from_Domoticz.items())
+
+        # Create IEEE2NWK by extracting the IEEE values
+        self.IEEE2NWK = { device['IEEE']: nwkid for nwkid, device in self.ListOfDevices.items() if 'IEEE' in device }
+
         self.log.logging("Database", "Status", "Z4D %s entries loaded from Domoticz" % (len(self.ListOfDevices)))
 
     else:
@@ -188,7 +193,7 @@ def LoadDeviceList(self):
     if self.pluginconf.pluginConf["ZigpyTopologyReport"]:
         # Cleanup the old Topology data
         remove_legacy_topology_datas(self)
-        
+
     for nwkid in self.ListOfDevices:
         cleanup_and_check(self, nwkid)
 
