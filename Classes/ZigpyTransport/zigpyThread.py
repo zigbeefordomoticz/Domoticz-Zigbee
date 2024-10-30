@@ -89,20 +89,38 @@ def setup_zigpy_thread(self):
 
 
 def zigpy_thread(self):
-    self.zigpy_loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(self.zigpy_loop)
+    """Initialize and run the zigpy event loop for Zigbee communication."""
 
-    if self.pluginconf.pluginConf["EventLoopInstrumentation"]:
-        self.zigpy_loop.set_debug(enabled=True)
-
-    self.log.logging("TransportZigpy", "Log", "zigpyThread EventLoop : %s" %self.zigpy_loop)
     try:
+        # Set up event loop
+        self.zigpy_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.zigpy_loop)
+
+        # Enable instrumentation for debugging if specified in configuration
+        if self.pluginconf.pluginConf.get("EventLoopInstrumentation", False):
+            self.zigpy_loop.set_debug(True)
+
+        self.log.logging("TransportZigpy", "Log", f"zigpyThread EventLoop: {self.zigpy_loop}")
+
+        # Run zigpy task
         self.zigpy_loop.run_until_complete(start_zigpy_task(self, channel=0, extended_pan_id=0))
+
+    except asyncio.CancelledError:
+        self.log.logging("TransportZigpy", "Warning", "zigpy_thread was cancelled.")
+
+    except RuntimeError as e:
+        self.log.logging("TransportZigpy", "Error", f"zigpy_thread encountered a runtime error: {e}")
+
     except Exception as e:
-        self.log.logging("TransportZigpy", "Error", "zigpy_thread error when starting %s" %e)
+        self.log.logging("TransportZigpy", "Error", f"zigpy_thread encountered an unexpected error: {e}")
 
     finally:
-        self.zigpy_loop.close()
+        # Ensure loop is closed in any case
+        if not self.zigpy_loop.is_closed():
+            self.zigpy_loop.close()
+            self.log.logging("TransportZigpy", "Log", "Event loop closed successfully in zigpy_thread.")
+        else:
+            self.log.logging("TransportZigpy", "Log", "Event loop was already closed in zigpy_thread.")
 
 
 async def start_zigpy_task(self, channel, extended_pan_id):

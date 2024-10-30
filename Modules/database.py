@@ -292,7 +292,8 @@ def _read_DeviceList_Domoticz(self):
     configuration_record = getConfigItem(Key="ListOfDevices", Attribute="Devices", Default={})
 
     if not isinstance(configuration_record, dict):
-        self.log.logging("Database", "Error", f"_read_DeviceList_Domoticz - Unexpected configuration record type. Expected dict, got {type(configuration_record).__name__}")
+        if self.log:
+            self.log.logging("Database", "Error", f"_read_DeviceList_Domoticz - Unexpected configuration record type. Expected dict, got {type(configuration_record).__name__}")
         return {}, 0
 
     # Extract timestamp and device list, with type validation
@@ -301,16 +302,19 @@ def _read_DeviceList_Domoticz(self):
 
     if not isinstance(ListOfDevices_from_Domoticz, dict):
         # Handle unexpected data type for ListOfDevices_from_Domoticz
-        self.log.logging("Database", "Error", f"_read_DeviceList_Domoticz - Expected dict for devices, got {type(ListOfDevices_from_Domoticz).__name__}")
+        if self.log:
+            self.log.logging("Database", "Error", f"_read_DeviceList_Domoticz - Expected dict for devices, got {type(ListOfDevices_from_Domoticz).__name__}")
         return {}, 0
 
     # Log timestamp if available
     if isinstance(time_stamp, int) and time_stamp > 0:
         formatted_time = time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))
-        self.log.logging("Database", "Debug", f"Plugin data found in Domoticz with date {formatted_time}")
+        if self.log:
+            self.log.logging("Database", "Debug", f"Plugin data found in Domoticz with date {formatted_time}")
 
     # Log the number of devices and device data
-    self.log.logging("Database", "Debug", f"Load plugin database from Domoticz: {len(ListOfDevices_from_Domoticz)} devices")
+    if self.log:
+        self.log.logging("Database", "Debug", f"Load plugin database from Domoticz: {len(ListOfDevices_from_Domoticz)} devices")
 
     # Allowed attributes set for filtering device data
     allowed_attributes = set(MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES)
@@ -319,17 +323,20 @@ def _read_DeviceList_Domoticz(self):
     # Filter attributes for each device in ListOfDevices_from_Domoticz
     for device_id, device_data in ListOfDevices_from_Domoticz.items():
         if not isinstance(device_data, dict):
-            self.log.logging("Database", "Error", f"Unexpected data type for device {device_id}: expected dict, got {type(device_data).__name__}")
+            if self.log:
+                self.log.logging("Database", "Error", f"Unexpected data type for device {device_id}: expected dict, got {type(device_data).__name__}")
             continue
 
-        self.log.logging("Database", "Debug", f"--- Loading device {device_id}")
+        if self.log:
+            self.log.logging("Database", "Debug", f"--- Loading device {device_id}")
         # Retain only allowed attributes
         cleaned_device = {attr: val for attr, val in device_data.items() if attr in allowed_attributes}
 
         # Log removed attributes for debugging
         removed_attrs = set(device_data) - set(cleaned_device)
         for attr in removed_attrs:
-            self.log.logging("Database", "Debug", f"Removed unexpected attribute {attr} for device {device_id}")
+            if self.log:
+                self.log.logging("Database", "Debug", f"Removed unexpected attribute {attr} for device {device_id}")
 
         cleaned_devices[device_id] = cleaned_device
 
@@ -353,10 +360,12 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
         self.HBcount = self.HBcount + 1
         return
 
-    self.log.logging("Database", "Debug", "WriteDeviceList %s %s" %(self.HBcount, count))
+    if self.log:
+        self.log.logging("Database", "Debug", "WriteDeviceList %s %s" %(self.HBcount, count))
     if self.pluginconf.pluginConf["pluginData"] is None or self.DeviceListName is None:
-        self.log.logging("Database", "Error", "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
-            self.pluginconf.pluginConf["pluginData"], self.DeviceListName))
+        if self.log:
+            self.log.logging("Database", "Error", "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
+                self.pluginconf.pluginConf["pluginData"], self.DeviceListName))
         return
 
     if self.pluginconf.pluginConf["expJsonDatabase"]:
@@ -376,37 +385,33 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
 
 
 def _write_DeviceList_txt(self):
-    # Write in classic format ( .txt )
-    _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
-    _DeviceListFileName = _pluginData / self.DeviceListName
+    """Write the device list to a .txt file in classic format."""
+
+    # Define file paths and logging details
+    device_list_file = Path(self.pluginconf.pluginConf["pluginData"]) / self.DeviceListName
+    if self.log:
+        self.log.logging("Database", "Debug", f"Write {device_list_file} = {self.ListOfDevices}")
+
     try:
-        self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
-        with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
-            for key in self.ListOfDevices:
+        # Open file for writing and handle device list entries
+        with open(device_list_file, "wt", encoding='utf-8') as file:
+            for key, value in self.ListOfDevices.items():
                 try:
-                    file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
-                    
-                except UnicodeEncodeError:
-                    self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( 
-                        key, self.ListOfDevices[key]))
-                    continue
-
-                except ValueError:
-                    self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( 
-                        key, self.ListOfDevices[key]))
-                    continue
-                
+                    file.write(f"{key} : {str(value)}\n")
+                except (UnicodeEncodeError, ValueError) as e:
+                    if self.log:
+                        self.log.logging("Database", "Error", f"{type(e).__name__} while saving {key}: {value} to file")
                 except IOError:
-                    self.log.logging( "Database", "Error", "IOError while writing to plugin Database %s" % _DeviceListFileName)
-                    continue
+                    if self.log:
+                        self.log.logging("Database", "Error", f"IOError while writing {device_list_file}")
+                    break
 
-        self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
-        
-    except FileNotFoundError:
-        self.log.logging( "Database", "Error", "WriteDeviceList - File not found >%s<" %_DeviceListFileName)
-        
-    except IOError:
-        self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
+        if self.log:
+            self.log.logging("Database", "Debug", f"WriteDeviceList - flushed Plugin db to {device_list_file}")
+
+    except (FileNotFoundError, IOError) as e:
+        if self.log:
+            self.log.logging("Database", "Error", f"Error while writing plugin Database {device_list_file}: {type(e).__name__}")
 
 
 def _write_DeviceList_json(self):

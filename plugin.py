@@ -790,17 +790,20 @@ class BasePlugin:
     def restart_plugin(self):
         """ This is used as a call back function for zigpy connection_lost handling"""
         error_message = "Connection lost with coordinator, restarting plugin"
-        self.log.logging("Plugin", "Error", error_message)
+        if self.log:
+            self.log.logging("Plugin", "Error", error_message)
         self.adminWidgets.updateNotificationWidget(Devices, error_message)
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 
     #def onCommand(self, DeviceID, Unit, Command, Level, Color):
     def onCommand(self, Unit, Command, Level, Color):
-        if (  self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None or not self.log ):
-            self.log.logging( "Command", "Log", "onCommand - Not yet ready, plugin not fully started, we drop the command")
+        if ( self.ControllerLink is None or not self.VersionNewFashion or self.pluginconf is None or not self.log ):
+            if self.log:
+                self.log.logging( "Command", "Log", "onCommand - Not yet ready, plugin not fully started, we drop the command")
             return
 
-        self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
+        if self.log:
+            self.log.logging( "Command", "Debug", "onCommand - unit: %s, command: %s, level: %s, color: %s" % (Unit, Command, Level, Color) )
 
         if not is_domoticz_extended():
             DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
@@ -812,14 +815,16 @@ class BasePlugin:
 
         elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
             # Command belongs to a Zigate group
-            self.log.logging( "Command", "Log", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, DeviceID), )
+            if self.log:
+                self.log.logging( "Command", "Log", "Command: %s/%s/%s to Group: %s" % (Command, Level, Color, DeviceID), )
             self.groupmgt.processCommand(Unit, DeviceID, Command, Level, Color)
 
         elif DeviceID.find("Zigate-01-") != -1:
-            self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
+            if self.log:
+                self.log.logging("Command", "Debug", "onCommand - Command adminWidget: %s " % Command)
             self.adminWidgets.handleCommand(self, Command)
 
-        else:
+        elif self.log:
             self.log.logging( "Command", "Error", "onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" % (domo_read_Name( self, Devices, DeviceID, Unit, ), Unit, DeviceID), )
 
 
