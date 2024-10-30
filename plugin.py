@@ -170,6 +170,13 @@ from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
 
+try:
+    import tracemalloc
+except ImportError:
+    pass
+
+
+
 VERSION_FILENAME = ".hidden/VERSION"
 
 TEMPO_NETWORK = 2  # Start HB totrigget Network Status
@@ -302,10 +309,14 @@ class BasePlugin:
         
         self.device_settings = {}
         initialize_device_settings(self)
+        
+        self.tracemalloc_snapshot1 = None
+        self.tracemalloc_snapshot2 = None
+        
 
     def onStart(self):
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin.")
-        
+
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
@@ -390,14 +401,20 @@ class BasePlugin:
             self.zigbee_communication, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
 
+        if self.pluginconf.pluginConf.get("tracememoryAllocation", False):
+            try:
+                Domoticz.Log("!!! Z4D enabling Memory Allocation Tracing !!!")
+                tracemalloc.start()
+                self.tracemalloc_snapshot1 = tracemalloc.take_snapshot()
+            except Exception:
+                pass
+
         if self.internet_available is None:
             self.internet_available = is_internet_available()
 
-        if self.internet_available:
-            if check_requirements( Parameters[ "HomeFolder"] ):
-                # Check_requirements() return True if requirements not meet.
-                self.onStop()
-                return
+        if self.internet_available and check_requirements( Parameters[ "HomeFolder"] ):
+            self.onStop()
+            return
 
         # Create Domoticz Sub menu
         if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
@@ -522,7 +539,7 @@ class BasePlugin:
             )
             self.onStop()
             return
-
+    
         # Log ListOfDevices dictionary
         self.log.logging("Plugin", "Debug", "ListOfDevices:")
         for key, value in self.ListOfDevices.items():
@@ -597,8 +614,7 @@ class BasePlugin:
             None
         """
         Domoticz.Log("onStop()")
-        
-        
+
         if self.log:
             self.log.logging("Plugin", "Status", "Flushing to disk")
 
@@ -653,6 +669,14 @@ class BasePlugin:
 
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
+
+        if self.pluginconf.pluginConf.get("tracememoryAllocation", False) and self.tracemalloc_snapshot1:
+            self.tracemalloc_snapshot2 = tracemalloc.take_snapshot()
+            top_stats = self.tracemalloc_snapshot2.compare_to(self.tracemalloc_snapshot1, 'lineno')
+            Domoticz.Log("[ Top 15 differences (tracemalloc)]")
+            for stat in top_stats[:15]:
+                Domoticz.Log( "-- " + str(stat))
+
 
 
     def onDeviceRemoved(self, Unit):

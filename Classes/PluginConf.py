@@ -385,6 +385,7 @@ SETTINGS = {
         "param": {
             "reconnectonIEEEaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "reconnectonNWKaddr": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "tracememoryAllocation": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": True,"Advanced": True,},
             "disableZCLDefaultResponse": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "ControllerInHybridMode": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "ControllerInRawMode": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
