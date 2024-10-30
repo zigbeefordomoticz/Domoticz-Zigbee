@@ -188,7 +188,7 @@ def LoadDeviceList(self):
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize(txt_devicelist_filename)
 
-    cleanup_table_entries( self)
+    remove_stale_entries_from_tables( self)
 
     if self.pluginconf.pluginConf["ZigpyTopologyReport"]:
         # Cleanup the old Topology data
@@ -877,7 +877,7 @@ def remove_legacy_topology_datas(self):
             device_info.pop(table_name, None)
 
 
-def cleanup_table_entries( self):
+def remove_stale_entries_from_tables( self):
 
     for tablename in ("RoutingTable", "AssociatedDevices", "Neighbours" ):
         self.log.logging("NetworkMap", "Debug", "purge processing %s " %( tablename))
