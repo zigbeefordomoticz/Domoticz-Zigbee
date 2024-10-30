@@ -155,7 +155,7 @@ def LoadDeviceList(self):
     if self.pluginconf.pluginConf["storeDomoticzDatabase"]:
         ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
 
-    if self.pluginconf.pluginConf["storeDomoticzDatabase"] and self.pluginconf.pluginConf["useDomoticzDatabase"] and is_domoticz_recent(self, saving_time, txt_devicelist_filename):
+    if ( self.pluginconf.pluginConf["storeDomoticzDatabase"] or self.pluginconf.pluginConf["useDomoticzDatabase"]) and is_domoticz_recent(self, saving_time, txt_devicelist_filename):
         self.log.logging( "Database", "Debug", "Database from Domoticz is recent: Loading from Domoticz Db")
         res = "Success"
 
@@ -168,7 +168,6 @@ def LoadDeviceList(self):
         self.log.logging("Database", "Status", "Z4D %s entries loaded from Domoticz" % (len(self.ListOfDevices)))
 
     else:
-
         # Loading from TXT file
         if os.path.isfile(txt_devicelist_filename):
             res = loadTxtDatabase(self, txt_devicelist_filename)
@@ -185,9 +184,6 @@ def LoadDeviceList(self):
 
         self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % txt_devicelist_filename)
         Modules.tools.helper_versionFile(txt_devicelist_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
-
-    # Keep the Size of the DeviceList in order to check changes
-    self.DeviceListSize = os.path.getsize(txt_devicelist_filename)
 
     remove_stale_entries_from_tables( self)
 
