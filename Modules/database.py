@@ -233,7 +233,6 @@ def perform_cleanup_and_validation(self, nwkid):
         func, condition = action[:2]
         args = action[2:] if len(action) > 2 else []
         if condition:
-            self.log.logging("Database", "Log", f"{action} - {condition} -> {nwkid} {str(*args)}")
             func(self, nwkid, *args)
 
     # Log additional reset if needed
