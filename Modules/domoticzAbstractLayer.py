@@ -86,24 +86,39 @@ def setConfigItem(Key=None, Attribute="", Value=None):
 
 
 def getConfigItem(Key=None, Attribute="", Default=None):
-    
-    domoticz_log_api("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
-    
+    """Retrieve a configuration item from Domoticz SQLite database.
+
+    Args:
+        Key (str, optional): The main configuration key to retrieve.
+        Attribute (str): Specific attribute to retrieve from the configuration item.
+        Default (Any): Default value to return if the configuration key or attribute is missing.
+
+    Returns:
+        Any: The retrieved configuration value or the Default value.
+    """
+    domoticz_log_api(f"Loading {Key} - {Attribute} from Domoticz SQLite Db")
+
+    # Ensure Default is always a dictionary if None is provided
     if Default is None:
         Default = {}
-    Value = Default
+
     try:
         Config = Domoticz.Configuration()
-        Value = Config if Key is None else Config[Key]
-    except KeyError:
-        Value = Default
-    except Exception as inst:
-        domoticz_error_api(
-            "getConfigItem - Domoticz.Configuration read failed: '"
-            + str(inst)
-            + "'"
-        )
 
+        # If Key is None, use the entire configuration; otherwise, get the specific Key or return Default
+        Value = Config if Key is None else Config.get(Key, Default)
+
+    except KeyError:
+        # Log specifically if the Key is missing
+        domoticz_error_api(f"getConfigItem - Missing key '{Key}' in Domoticz configuration. Returning default.")
+        Value = Default
+
+    except Exception as inst:
+        # Log any unexpected errors that may occur
+        domoticz_error_api(f"getConfigItem - Failed to load configuration for '{Key}' with attribute '{Attribute}': {inst}")
+        Value = Default
+
+    # Process the retrieved configuration value with repair function
     return repair_dict_after_load(Value, Attribute)
 
 

@@ -286,33 +286,54 @@ def loadTxtDatabase(self, dbName):
 
 
 def _read_DeviceList_Domoticz(self):
-    """ Retreive Plugin Db from Domoticz Configuration record"""
+    """Retrieve Plugin Database from Domoticz Configuration record."""
 
-    configuration_record = getConfigItem(Key="ListOfDevices", Attribute="Devices")
+    # Attempt to retrieve the configuration record, with error handling
+    configuration_record = getConfigItem(Key="ListOfDevices", Attribute="Devices", Default={})
+
+    if not isinstance(configuration_record, dict):
+        self.log.logging("Database", "Error", f"_read_DeviceList_Domoticz - Unexpected configuration record type. Expected dict, got {type(configuration_record).__name__}")
+        return {}, 0
+
+    # Extract timestamp and device list, with type validation
     time_stamp = configuration_record.get("TimeStamp", 0)
-
     ListOfDevices_from_Domoticz = configuration_record.get("Devices", {})
 
+    if not isinstance(ListOfDevices_from_Domoticz, dict):
+        # Handle unexpected data type for ListOfDevices_from_Domoticz
+        self.log.logging("Database", "Error", f"_read_DeviceList_Domoticz - Expected dict for devices, got {type(ListOfDevices_from_Domoticz).__name__}")
+        return {}, 0
+
     # Log timestamp if available
-    if time_stamp:
+    if isinstance(time_stamp, int) and time_stamp > 0:
         formatted_time = time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))
         self.log.logging("Database", "Debug", f"Plugin data found in Domoticz with date {formatted_time}")
 
-    # Log number of devices and device data
-    self.log.logging("Database", "Debug", f"Load plugin database from Domoticz: {len(ListOfDevices_from_Domoticz)} {ListOfDevices_from_Domoticz}")
+    # Log the number of devices and device data
+    self.log.logging("Database", "Debug", f"Load plugin database from Domoticz: {len(ListOfDevices_from_Domoticz)} devices")
+
+    # Allowed attributes set for filtering device data
+    allowed_attributes = set(MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES)
+    cleaned_devices = {}
 
     # Filter attributes for each device in ListOfDevices_from_Domoticz
-    allowed_attributes = set(MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES)
     for device_id, device_data in ListOfDevices_from_Domoticz.items():
-        self.log.logging("Database", "Debug", f"--- Loading {device_id}")
+        if not isinstance(device_data, dict):
+            self.log.logging("Database", "Error", f"Unexpected data type for device {device_id}: expected dict, got {type(device_data).__name__}")
+            continue
 
-        # Remove any attributes that aren't in the allowed set
-        for attribute in list(device_data):
-            if attribute not in allowed_attributes:
-                self.log.logging("Database", "Debug", f"xxx Removing attribute: {attribute} for {device_id}")
-                del device_data[attribute]
+        self.log.logging("Database", "Debug", f"--- Loading device {device_id}")
+        # Retain only allowed attributes
+        cleaned_device = {attr: val for attr, val in device_data.items() if attr in allowed_attributes}
 
-    return ListOfDevices_from_Domoticz, time_stamp
+        # Log removed attributes for debugging
+        removed_attrs = set(device_data) - set(cleaned_device)
+        for attr in removed_attrs:
+            self.log.logging("Database", "Debug", f"Removed unexpected attribute {attr} for device {device_id}")
+
+        cleaned_devices[device_id] = cleaned_device
+
+    return cleaned_devices, time_stamp
 
 
 def is_domoticz_recent(self, dz_timestamp, filename):
