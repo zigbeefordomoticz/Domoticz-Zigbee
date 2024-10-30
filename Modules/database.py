@@ -18,6 +18,7 @@
 """
 
 
+import ast
 import json
 import os.path
 import time
@@ -151,14 +152,15 @@ def LoadDeviceList(self):
     txt_devicelist_filename = _pluginConf / self.DeviceListName
 
     # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
-    ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
+    if self.pluginconf.pluginConf["storeDomoticzDatabase"]:
+        ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
 
-    if self.pluginconf.pluginConf["useDomoticzDatabase"] and is_domoticz_recent(self, saving_time, txt_devicelist_filename):
+    if self.pluginconf.pluginConf["storeDomoticzDatabase"] and self.pluginconf.pluginConf["useDomoticzDatabase"] and is_domoticz_recent(self, saving_time, txt_devicelist_filename):
         self.log.logging( "Database", "Debug", "Database from Domoticz is recent: Loading from Domoticz Db")
         res = "Success"
 
         # Initialize the dictionaries directly from ListOfDevices_from_Domoticz
-        self.ListOfDevices = dict(ListOfDevices_from_Domoticz.items())
+        self.ListOfDevices = ListOfDevices_from_Domoticz
 
         # Create IEEE2NWK by extracting the IEEE values
         self.IEEE2NWK = { device['IEEE']: nwkid for nwkid, device in self.ListOfDevices.items() if 'IEEE' in device }
@@ -177,10 +179,9 @@ def LoadDeviceList(self):
 
         self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), txt_devicelist_filename))
 
-        if ListOfDevices_from_Domoticz:
+        if self.pluginconf.pluginConf["storeDomoticzDatabase"] and ListOfDevices_from_Domoticz:
             self.log.logging( "Database", "Log", "==> Sanity check : Plugin Database loaded - %s entries from Domoticz, %s entries from DeviceList" % (
                 len(ListOfDevices_from_Domoticz), len(self.ListOfDevices), ), )
-
 
         self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % txt_devicelist_filename)
         Modules.tools.helper_versionFile(txt_devicelist_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
@@ -585,6 +586,29 @@ def saveZigateNetworkData(self, nkwdata):
         self.log.logging("Database", "Error", "Error while writing Zigate Network Details%s" % json_filename)
 
 
+def _decode_devicelist_val( self, entry):
+    """
+    This function is called during DeviceList load.
+    """
+
+    # Try parsing val safely
+    encode_value = None
+    try:
+        # Try parsing with ast.literal_eval for safety
+        encode_value = ast.literal_eval(entry)
+        self.log.logging("Database", "Debug", f"Parsed DeviceListVal using ast.literal_eval: {encode_value}")
+    except (ValueError, SyntaxError):
+        # If val is JSON-like, try json.loads as a fallback
+        try:
+            encode_value = json.loads(entry)
+            self.log.logging("Database", "Debug", f"Parsed DeviceListVal using json.loads: {encode_value}")
+        except json.JSONDecodeError:
+            # Log if parsing failsentry
+            self.log.logging("Database", "Error", f"Failed to parse DeviceList value: {entry}")
+
+    return encode_value
+
+
 def CheckDeviceList(self, key, val):
     """
     This function is call during DeviceList load
@@ -593,7 +617,7 @@ def CheckDeviceList(self, key, val):
     self.log.logging("Database", "Debug", "CheckDeviceList - Address search : " + str(key), key)
     self.log.logging("Database", "Debug2", "CheckDeviceList - with value : " + str(val), key)
 
-    DeviceListVal = eval(val)
+    DeviceListVal = _decode_devicelist_val( self, val)
     # Do not load Devices in State == 'unknown' or 'left'
     if "Status" in DeviceListVal and DeviceListVal["Status"] in (
         "UNKNOW",
