@@ -147,33 +147,41 @@ def LoadDeviceList(self):
     # Load DeviceList.txt into ListOfDevices
     #
     ListOfDevices_from_Domoticz = None
+    _pluginConf = Path( self.pluginconf.pluginConf["pluginData"] )
+    txt_devicelist_filename = _pluginConf / self.DeviceListName
 
     # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
-    _pluginConf = Path( self.pluginconf.pluginConf["pluginData"] )
-    _DeviceListFileName = _pluginConf / self.DeviceListName
     ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
 
-    if self.pluginconf.pluginConf["useDomoticzDatabase"]:
-        self.log.logging( "Database", "Debug", "Database from Domoticz is recent: %s Loading from Domoticz Db" % is_domoticz_recent(self, saving_time, _DeviceListFileName) )
+    if self.pluginconf.pluginConf["useDomoticzDatabase"] and is_domoticz_recent(self, saving_time, txt_devicelist_filename):
+        self.log.logging( "Database", "Debug", "Database from Domoticz is recent: Loading from Domoticz Db")
         res = "Success"
 
-    if os.path.isfile(_DeviceListFileName):
-        res = loadTxtDatabase(self, _DeviceListFileName)
+        self.ListOfDevices = ListOfDevices_from_Domoticz
+        self.log.logging("Database", "Status", "Z4D %s entries loaded from Domoticz" % (len(self.ListOfDevices)))
+
     else:
-        # Do not exist
-        self.ListOfDevices = {}
-        return True
 
-    self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), _DeviceListFileName))
-    if ListOfDevices_from_Domoticz:
-        self.log.logging( "Database", "Log", "==> Sanity check : Plugin Database loaded - %s entries from Domoticz, %s entries from DeviceList" % (
-            len(ListOfDevices_from_Domoticz), len(self.ListOfDevices), ), )
+        # Loading from TXT file
+        if os.path.isfile(txt_devicelist_filename):
+            res = loadTxtDatabase(self, txt_devicelist_filename)
+        else:
+            # Do not exist
+            self.ListOfDevices = {}
+            return True
 
-    self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % _DeviceListFileName)
-    Modules.tools.helper_versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
+        self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), txt_devicelist_filename))
+
+        if ListOfDevices_from_Domoticz:
+            self.log.logging( "Database", "Log", "==> Sanity check : Plugin Database loaded - %s entries from Domoticz, %s entries from DeviceList" % (
+                len(ListOfDevices_from_Domoticz), len(self.ListOfDevices), ), )
+
+
+        self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % txt_devicelist_filename)
+        Modules.tools.helper_versionFile(txt_devicelist_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     # Keep the Size of the DeviceList in order to check changes
-    self.DeviceListSize = os.path.getsize(_DeviceListFileName)
+    self.DeviceListSize = os.path.getsize(txt_devicelist_filename)
 
     cleanup_table_entries( self)
 
@@ -181,50 +189,8 @@ def LoadDeviceList(self):
         # Cleanup the old Topology data
         remove_legacy_topology_datas(self)
         
-    for addr in self.ListOfDevices:
-        # Fixing mistake done in the code.
-        fixing_consumption_lumi(self, addr)
-        fixing_iSQN_None(self, addr)
-
-        # Cleaning OTA structure if needed
-        cleanup_ota(self, addr)
-        
-        # Fixing TS0601 which has been removed.
-        hack_ts0601(self, addr)
-        
-        # Check if 566 fixs are needed
-        if (
-            self.pluginconf.pluginConf["Bug566"] 
-            and "Model" in self.ListOfDevices[addr] 
-            and self.ListOfDevices[addr]["Model"] == "TRADFRI control outlet"
-        ):
-            fixing_Issue566(self, addr)
-
-        if self.pluginconf.pluginConf["resetReadAttributes"]:
-            self.log.logging("Database", "Log", "ReadAttributeReq - Reset ReadAttributes data %s" % addr)
-            Modules.tools.reset_datastruct(self, "ReadAttributes", addr)
-
-        if self.pluginconf.pluginConf["resetConfigureReporting"]:
-            self.log.logging("Database", "Log", "Reset ConfigureReporting data %s" % addr)
-            Modules.tools.reset_datastruct(self, STORE_CONFIGURE_REPORTING, addr)
-            Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
-            
-        if ( 
-            STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[ addr ] 
-            and "Request" in self.ListOfDevices[ addr ][STORE_READ_CONFIGURE_REPORTING]
-        ):
-            Modules.tools.reset_datastruct(self, STORE_READ_CONFIGURE_REPORTING, addr)
-
-        if (
-            "Param" in self.ListOfDevices[addr] 
-            and "Disabled" in self.ListOfDevices[addr]["Param"] 
-            and self.ListOfDevices[addr]["Param"][ "Disabled" ]
-        ):
-            self.ListOfDevices[addr]["Health"] = "Disabled"
-            
-        if "Model" in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]["Model"] == "ZLinky_TIC":
-            # We need to adjust the Model to the right mode
-            update_zlinky_device_model_if_needed(self, addr)
+    for nwkid in self.ListOfDevices:
+        cleanup_and_check(self, nwkid)
 
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
@@ -237,6 +203,38 @@ def LoadDeviceList(self):
     load_new_param_definition(self)
 
     return res
+
+
+def cleanup_and_check(self, nwkid):
+    """Perform cleanup and checks on the device data."""
+
+    # Define actions and conditions for cleanup
+    actions = [
+        (fixing_consumption_lumi, True),
+        (fixing_iSQN_None, True),
+        (cleanup_ota, True),
+        (hack_ts0601, True),
+        (fixing_Issue566, self.pluginconf.pluginConf.get("Bug566") and self.ListOfDevices.get(nwkid, {}).get("Model") == "TRADFRI control outlet"),
+        (Modules.tools.reset_datastruct, self.pluginconf.pluginConf.get("resetReadAttributes"), "ReadAttributes"),
+        (Modules.tools.reset_datastruct, self.pluginconf.pluginConf.get("resetConfigureReporting"), STORE_CONFIGURE_REPORTING),
+        (Modules.tools.reset_datastruct, self.pluginconf.pluginConf.get("resetConfigureReporting"), STORE_READ_CONFIGURE_REPORTING),
+        (Modules.tools.reset_datastruct, self.ListOfDevices.get(nwkid, {}).get(STORE_READ_CONFIGURE_REPORTING, {}).get("Request"), STORE_READ_CONFIGURE_REPORTING),
+        (lambda: self.ListOfDevices[nwkid].update({"Health": "Disabled"}), self.ListOfDevices.get(nwkid, {}).get("Param", {}).get("Disabled")),
+        (update_zlinky_device_model_if_needed, self.ListOfDevices.get(nwkid, {}).get("Model") == "ZLinky_TIC")
+    ]
+
+    # Execute each action if its condition is met
+    for action in actions:
+        func, condition = action[:2]
+        args = action[2:] if len(action) > 2 else []
+        if condition:
+            func(self, nwkid, *args)
+
+    # Log additional reset if needed
+    if self.pluginconf.pluginConf.get("resetReadAttributes"):
+        self.log.logging("Database", "Log", f"ReadAttributeReq - Reset ReadAttributes data {nwkid}")
+    if self.pluginconf.pluginConf.get("resetConfigureReporting"):
+        self.log.logging("Database", "Log", f"Reset ConfigureReporting data {nwkid}")
 
 
 def loadTxtDatabase(self, dbName):
@@ -277,38 +275,42 @@ def loadTxtDatabase(self, dbName):
 
 
 def _read_DeviceList_Domoticz(self):
+    """ Retreive Plugin Db from Domoticz Configuration record"""
 
     configuration_record = getConfigItem(Key="ListOfDevices", Attribute="Devices")
-    time_stamp = 0
-    if "TimeStamp" in configuration_record:
-        time_stamp = configuration_record["TimeStamp"]
-        ListOfDevices_from_Domoticz = configuration_record["Devices"]
-        self.log.logging( "Database", "Debug", "Plugin data found in Domoticz with date %s" % (
-            time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))), )
+    time_stamp = configuration_record.get("TimeStamp", 0)
 
-    self.log.logging( "Database", "Debug", "Load plugin database from Domoticz: %s %s" % (
-        len(ListOfDevices_from_Domoticz), ListOfDevices_from_Domoticz) )
+    ListOfDevices_from_Domoticz = configuration_record.get("Devices", {})
 
-    for x in list(ListOfDevices_from_Domoticz):
-        self.log.logging("Database", "Debug", "--- Loading %s" % (x))
+    # Log timestamp if available
+    if time_stamp:
+        formatted_time = time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))
+        self.log.logging("Database", "Debug", f"Plugin data found in Domoticz with date {formatted_time}")
 
-        for attribute in list(ListOfDevices_from_Domoticz[x]):
-            if attribute not in (MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
-                self.log.logging("Database", "Debug", "xxx Removing attribute: %s for %s" % (attribute, x))
-                del ListOfDevices_from_Domoticz[x][attribute]
+    # Log number of devices and device data
+    self.log.logging("Database", "Debug", f"Load plugin database from Domoticz: {len(ListOfDevices_from_Domoticz)} {ListOfDevices_from_Domoticz}")
 
-    return (ListOfDevices_from_Domoticz, time_stamp)
+    # Filter attributes for each device in ListOfDevices_from_Domoticz
+    allowed_attributes = set(MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES)
+    for device_id, device_data in ListOfDevices_from_Domoticz.items():
+        self.log.logging("Database", "Debug", f"--- Loading {device_id}")
+
+        # Remove any attributes that aren't in the allowed set
+        for attribute in list(device_data):
+            if attribute not in allowed_attributes:
+                self.log.logging("Database", "Debug", f"xxx Removing attribute: {attribute} for {device_id}")
+                del device_data[attribute]
+
+    return ListOfDevices_from_Domoticz, time_stamp
 
 
 def is_domoticz_recent(self, dz_timestamp, filename):
-
     txt_timestamp = os.path.getmtime(filename) if os.path.isfile(filename) else 0
 
-    if dz_timestamp > txt_timestamp:
-        self.log.logging("Database", "Log", "%s - Domoticz Timestamp is more recent than Filename (%s versus %s)" % (filename, dz_timestamp, txt_timestamp))
-        return True
-    self.log.logging("Database", "Log", "%s - Domoticz Timestamp is older than Filename (%s versus %s)" % (filename, dz_timestamp, txt_timestamp))
-    return False
+    comparison = "more recent" if dz_timestamp > txt_timestamp else "older"
+    self.log.logging("Database", "Log", f"{filename} - Domoticz Timestamp is {comparison} than Filename ({dz_timestamp} versus {txt_timestamp})")
+
+    return dz_timestamp > txt_timestamp
 
 
 def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
@@ -508,26 +510,31 @@ def checkDevices2LOD(self, Devices):
 
 
 def checkListOfDevice2Devices(self, Devices):
+    """ This function is checking if any entry in Domoticz has a correspondance in ListOfDevices (Plugin database)"""
+
     for widget_idx, widget_info in self.ListOfDomoticzWidget.items():
-        self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {type(widget_idx)} - {widget_info} {type(widget_info)}")
-        
+        # Extract device ID and name for convenience
         device_id = widget_info["DeviceID"]
         widget_name = widget_info["Name"]
 
-        self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {device_id} {widget_name}")
+        # Log details for debugging
+        self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - Widget ID: {widget_idx} ({type(widget_idx)}), Device Info: {widget_info} ({type(widget_info)})")
+        self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - Device ID: {device_id}, Name: {widget_name}")
 
+        # Skip invalid or specific device ID patterns
         if len(device_id) == 4 or device_id.startswith(("Zigate-01-", "Zigate-02-", "Zigate-03-")):
             continue
 
-        if device_id not in self.IEEE2NWK:
-            self.log.logging("Database", "Log", f"checkListOfDevice2Devices - {widget_name} not found in the plugin!")
-            continue
-
-        nwkid = self.IEEE2NWK[device_id]
-        if nwkid in self.ListOfDevices:
-            self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - found a matching entry for ID {widget_idx} as DeviceID {device_id} NWK_ID {nwkid}", nwkid)
+        # Check if the device ID exists in the IEEE to NWK mapping
+        nwkid = self.IEEE2NWK.get(device_id)
+        if nwkid:
+            # Confirm if nwkid exists in ListOfDevices
+            if nwkid in self.ListOfDevices:
+                self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - Found match for Widget ID: {widget_idx}, Device ID: {device_id}, NWK_ID: {nwkid}")
+            else:
+                self.log.logging("Database", "Error", f"loadListOfDevices - {widget_name} with IEEE = {device_id} not found in the Zigate plugin Database!")
         else:
-            self.log.logging("Database", "Error", f"loadListOfDevices - {widget_name} with IEEE = {device_id} not found in the Zigate plugin Database!")
+            self.log.logging("Database", "Log", f"checkListOfDevice2Devices - {widget_name} not found in the plugin!")
 
 
 def saveZigateNetworkData(self, nkwdata):
