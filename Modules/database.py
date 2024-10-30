@@ -224,7 +224,7 @@ def perform_cleanup_and_validation(self, nwkid):
         (Modules.tools.reset_datastruct, self.pluginconf.pluginConf.get("resetConfigureReporting"), STORE_CONFIGURE_REPORTING),
         (Modules.tools.reset_datastruct, self.pluginconf.pluginConf.get("resetConfigureReporting"), STORE_READ_CONFIGURE_REPORTING),
         (Modules.tools.reset_datastruct, self.ListOfDevices.get(nwkid, {}).get(STORE_READ_CONFIGURE_REPORTING, {}).get("Request"), STORE_READ_CONFIGURE_REPORTING),
-        (lambda: self.ListOfDevices[nwkid].update({"Health": "Disabled"}), self.ListOfDevices.get(nwkid, {}).get("Param", {}).get("Disabled")),
+        (update_device_health, self.ListOfDevices.get(nwkid, {}).get("Param", {}).get("Disabled")),
         (update_zlinky_device_model_if_needed, self.ListOfDevices.get(nwkid, {}).get("Model") == "ZLinky_TIC")
     ]
 
@@ -241,6 +241,12 @@ def perform_cleanup_and_validation(self, nwkid):
         self.log.logging("Database", "Log", f"ReadAttributeReq - Reset ReadAttributes data {nwkid}")
     if self.pluginconf.pluginConf.get("resetConfigureReporting"):
         self.log.logging("Database", "Log", f"Reset ConfigureReporting data {nwkid}")
+
+
+def update_device_health(self, nwkid):
+    """Update the health status of the device to 'Disabled'."""
+    if nwkid in self.ListOfDevices:
+        self.ListOfDevices[nwkid]["Health"] = "Disabled"
 
 
 def loadTxtDatabase(self, dbName):
