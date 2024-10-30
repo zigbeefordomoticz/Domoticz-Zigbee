@@ -195,7 +195,7 @@ def LoadDeviceList(self):
         remove_legacy_topology_datas(self)
 
     for nwkid in self.ListOfDevices:
-        cleanup_and_check(self, nwkid)
+        perform_cleanup_and_validation(self, nwkid)
 
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
@@ -210,7 +210,7 @@ def LoadDeviceList(self):
     return res
 
 
-def cleanup_and_check(self, nwkid):
+def perform_cleanup_and_validation(self, nwkid):
     """Perform cleanup and checks on the device data."""
 
     # Define actions and conditions for cleanup
@@ -233,6 +233,7 @@ def cleanup_and_check(self, nwkid):
         func, condition = action[:2]
         args = action[2:] if len(action) > 2 else []
         if condition:
+            self.log.logging("Database", "Log", f"{condition} -> {nwkid} {str(*args)}")
             func(self, nwkid, *args)
 
     # Log additional reset if needed
