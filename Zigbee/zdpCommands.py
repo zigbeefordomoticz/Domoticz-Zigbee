@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
-"""
-    Module: low level commands ZDP
-
-    Description: 
-
-"""
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 from Modules.sendZigateCommand import raw_APS_request, send_zigatecmd_raw
 from Zigbee.zdpRawCommands import (zdp_raw_active_endpoint_request,

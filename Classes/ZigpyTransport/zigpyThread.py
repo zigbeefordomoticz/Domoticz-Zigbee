@@ -157,6 +157,7 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     try:
         if radiomodule == "ezsp":
             import bellows.config as radio_specific_conf
+
             from Classes.ZigpyTransport.AppBellows import App_bellows as App
 
             config = ezsp_configuration_setup(self, radio_specific_conf, serialPort)

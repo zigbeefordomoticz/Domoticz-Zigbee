@@ -10,10 +10,10 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-from Modules.zigbeeController import receiveZigateEpList
-from Modules.tools import DeviceExist, updSQN, updLQI
-from Modules.pairingProcess import interview_state_8045
 from Modules.errorCodes import DisplayStatusCode
+from Modules.pairingProcess import interview_state_8045
+from Modules.tools import DeviceExist, updLQI, updSQN
+from Modules.zigbeeController import receiveZigateEpList
 
 
 def Decode8045(self, Devices, MsgData, MsgLQI):

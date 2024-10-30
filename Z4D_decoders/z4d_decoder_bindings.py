@@ -1,10 +1,21 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 import time
 
 from Classes.ZigateTransport.sqnMgmt import (TYPE_APP_ZDP,
                                              sqn_get_internal_sqn_from_app_sqn)
-from Modules.zigateConsts import ADDRESS_MODE
 from Modules.errorCodes import DisplayStatusCode
-
+from Modules.zigateConsts import ADDRESS_MODE
 
 
 def Decode8030(self, Devices, MsgData, MsgLQI):

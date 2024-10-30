@@ -12,9 +12,9 @@
 
 import json
 import os.path
+import time
 import traceback
 from pathlib import Path
-import time
 
 import zigpy.types as t
 
