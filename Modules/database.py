@@ -17,13 +17,11 @@
 
 """
 
-
 import ast
 import json
 import os.path
 import time
 from pathlib import Path
-from typing import Dict
 
 from zigpy.backups import NetworkBackup
 
@@ -582,25 +580,18 @@ def saveZigateNetworkData(self, nkwdata):
         self.log.logging("Database", "Error", "Error while writing Zigate Network Details%s" % json_filename)
 
 
-def _decode_devicelist_val( self, entry):
+def _decode_devicelist_val(self, entry):
     """
-    This function is called during DeviceList load.
+    Attempts to decode an entry during DeviceList load, handling single quotes for JSON-like strings.
     """
-
-    # Try parsing val safely
     encode_value = None
     try:
-        # Try parsing with ast.literal_eval for safety
         encode_value = ast.literal_eval(entry)
         self.log.logging("Database", "Debug", f"Parsed DeviceListVal using ast.literal_eval: {encode_value}")
-    except (ValueError, SyntaxError):
-        # If val is JSON-like, try json.loads as a fallback
-        try:
-            encode_value = json.loads(entry)
-            self.log.logging("Database", "Debug", f"Parsed DeviceListVal using json.loads: {encode_value}")
-        except json.JSONDecodeError:
-            # Log if parsing failsentry
-            self.log.logging("Database", "Error", f"Failed to parse DeviceList value: {entry}")
+
+    except Exception as e:
+        encode_value = None
+        self.log.logging("Database", "Error", f"Failed to parse DeviceList {entry}: {e}")
 
     return encode_value
 
@@ -610,10 +601,11 @@ def CheckDeviceList(self, key, val):
     This function is call during DeviceList load
     """
 
-    self.log.logging("Database", "Debug", "CheckDeviceList - Address search : " + str(key), key)
-    self.log.logging("Database", "Debug2", "CheckDeviceList - with value : " + str(val), key)
-
     DeviceListVal = _decode_devicelist_val( self, val)
+    if DeviceListVal is None:
+        self.log.logging("Database", "Error", f"CheckDeviceList - Unable to load this device entry {key} {val} in memort", key)
+        return
+
     # Do not load Devices in State == 'unknown' or 'left'
     if "Status" in DeviceListVal and DeviceListVal["Status"] in (
         "UNKNOW",
