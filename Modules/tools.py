@@ -171,65 +171,93 @@ def getEpForCluster(self, nwkid, ClusterId, strict=False):
 def DeviceExist(self, Devices, lookupNwkId, lookupIEEE=""):
     """
     DeviceExist
-        Check if the Device exists in the ListOfDevices.
-        lookupNwkId: Mandatory field
-        lookupIEEE: Optional
-    Returns:
-        True if object found, False if not found
-    Refactored on Oct. 30 2024
+        check if the Device is existing in the ListOfDevice.
+        lookupNwkId Mandatory field
+        lookupIEEE Optional
+    Return
+        True if object found
+        False if not found
     """
+    ieee_from_nwkid = None
 
-    # Validity check for lookupNwkId
-    if not lookupNwkId:
+    # Validity check
+    if lookupNwkId == "":
         return False
 
-    # Check if found in ListOfDevices
-    device = self.ListOfDevices.get(lookupNwkId)
-    if device and "Status" in device and device["Status"] != "UNKNOW":
-        ieee_from_nwkid = device.get("IEEE")
-        found = True
-    else:
-        found = False
+    found = False
+    # 1- Check if found in ListOfDevices
+    #   Verify that Status is not 'UNKNOW' otherwise condider not found
+    if lookupNwkId in self.ListOfDevices and "Status" in self.ListOfDevices[lookupNwkId]:
+        if "IEEE" in self.ListOfDevices[lookupNwkId]:
+            ieee_from_nwkid = self.ListOfDevices[lookupNwkId]["IEEE"]
 
-    # Check for lookupIEEE if provided
+        # Found, let's check the Status
+        if self.ListOfDevices[lookupNwkId]["Status"] != "UNKNOW":
+            found = True
+
+    # 2- We might have found it with the lookupNwkId
+    # If we didnt find it, we should check if this is not a new ShortId
     if lookupIEEE:
         if lookupIEEE not in self.IEEE2NWK:
             if not found:
                 return found
-            # Inconsistency found: Device exists but not in IEEE2NWK
-            self.log.logging("PluginTools", "Error", f"DeviceExist - INCONSISTENCY : {lookupNwkId} {lookupIEEE} found in ListOfDevices, but {lookupIEEE} not found in IEEE2NWK: {self.IEEE2NWK}")
+            # We are in situation where we found the device in ListOfDevices but not in IEEE2NWK.
+            # this is not expected
+            self.log.logging("PluginTools", "Error", "DeviceExist - Found %s some inconsistency Inputs: %s %s instead of %s" % (
+                found, lookupNwkId, lookupIEEE, ieee_from_nwkid))
             return found
 
-        # Retrieve existing NWK ID
-        existingNwkId = self.IEEE2NWK[lookupIEEE]
+        # We found IEEE, let's get the Short Address
+        exitsingNwkId = self.IEEE2NWK[lookupIEEE]
+        if exitsingNwkId == lookupNwkId:
+            # Everything fine, we have found it
+            # and this is the same ShortId as the one existing
+            return True
 
-        if existingNwkId == lookupNwkId:
-            return True  # Found with matching NWK ID
-
-        # Check for inconsistencies
-        if existingNwkId not in self.ListOfDevices:
-            del self.IEEE2NWK[lookupIEEE]  # Cleanup
-            self.log.logging("PluginTools", "Error", f"DeviceExist - Found inconsistency! Device {existingNwkId} not found while looking for {lookupIEEE} ({lookupNwkId})")
+        if exitsingNwkId not in self.ListOfDevices:
+            # Should not happen
+            # We have an entry in IEEE2NWK, but no corresponding
+            # in ListOfDevices !!
+            # Let's cleanup
+            del self.IEEE2NWK[lookupIEEE]
+            self.log.logging("PluginTools", "Error", "DeviceExist - Found inconsistency ! Not Device %s not found, while looking for %s (%s)" % (
+                exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
-        existing_device = self.ListOfDevices[existingNwkId]
-
-        if 'Status' not in existing_device:
-            del self.IEEE2NWK[lookupIEEE]  # Cleanup
-            del self.ListOfDevices[existingNwkId]  # Cleanup
-            self.log.logging("PluginTools", "Error", f"DeviceExist - Found inconsistency! No 'Status' for Device {existingNwkId} while looking for {lookupIEEE} ({lookupNwkId})")
+        if 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
+            # Should not happen
+            # That seems not correct
+            # We might have to do some cleanup here !
+            # Cleanup
+            # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
+            del self.IEEE2NWK[ lookupIEEE ]
+            # Delete the all Data Structure
+            del self.ListOfDevices[ exitsingNwkId ]
+            self.log.logging("PluginTools", "Error", "DeviceExist - Found inconsistency ! Not 'Status' attribute for Device %s, while looking for %s (%s)" % (
+                exitsingNwkId, lookupIEEE, lookupNwkId))
             return False
 
-        # Check if device is in the discovery process
-        if existing_device["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOWN", "UNKNOW"):
-            del self.IEEE2NWK[lookupIEEE]  # Cleanup
-            del self.ListOfDevices[existingNwkId]  # Cleanup
-            self.log.logging("PluginTools", "Status", f"DeviceExist - Device {lookupIEEE} changed its ShortId: from {existingNwkId} to {lookupNwkId} during provisioning. Restarting!")
+        if self.ListOfDevices[exitsingNwkId]["Status"] in ("004d", "0045", "0043", "8045", "8043", "UNKNOWN", "UNKNOW", ):
+            # We are in the discovery/provisioning process,
+            # and the device got a new Short Id
+            # we need to restart from the beginning and remove all existing datastructures.
+            # In case we receive asynchronously messages (which should be possible), they must be
+            # dropped in the corresponding Decodexxx function
+            # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
+            del self.IEEE2NWK[lookupIEEE]
+            # Delete the all Data Structure
+            del self.ListOfDevices[exitsingNwkId]
+            self.log.logging("PluginTools", "Status", "DeviceExist - Device %s changed its ShortId: from %s to %s during provisioning. Restarting !" % (
+                lookupIEEE, exitsingNwkId, lookupNwkId))
             return False
 
-        # Device has changed its NWK ID
-        reconnectNWkDevice(self, lookupNwkId, lookupIEEE, existingNwkId)
-        self.adminWidgets.updateNotificationWidget(Devices, f"Reconnect {lookupNwkId} {lookupIEEE} with {existingNwkId}")
+        # At that stage, we have found an entry for the IEEE, but doesn't match
+        # the coming Short Address lookupNwkId.
+        # Most likely , device has changed its NwkId
+        found = True
+        reconnectNWkDevice(self, lookupNwkId, lookupIEEE, exitsingNwkId)
+
+        self.adminWidgets.updateNotificationWidget( Devices, "Reconnect %s %s with %s" % (lookupNwkId, lookupIEEE, exitsingNwkId))
 
     return found
 

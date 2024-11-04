@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
@@ -41,7 +40,7 @@ import struct
 import time
 from datetime import datetime
 from os import listdir
-from os.path import exists, isfile, join, getsize
+from os.path import exists, isfile, join
 from pathlib import Path
 
 from Modules.sendZigateCommand import sendZigateCmd
@@ -1033,26 +1032,17 @@ def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
     return headers["image_type"], headers, ota_image
 
 
-def _open_image_file(self, filename):
-    """Open and read an OTA image file if it meets the minimum size requirement."""
+def _open_image_file(self, filename):  # OK 13/10
     try:
         with open(filename, "rb") as file:
-            # Check that file is large enough before reading
-            if getsize(filename) < 69:
-                logging(self, "Error", f"File {filename} is too small to be a valid OTA image.")
-                return None
-            return file.read()
-
-    except FileNotFoundError:
-        logging(self, "Error", f"File not found: {filename}")
-
-    except PermissionError:
-        logging(self, "Error", f"Permission denied when accessing: {filename}")
-
+            ota_image = file.read()
     except OSError as err:
-        logging(self, "Error", f"Error opening {filename}: {err}")
-
-    return None
+        logging(self, "Error", f"ota_extract_image_headers - error when opening {filename} - {err}")
+        return None
+    if len(ota_image) < 69:
+        logging(self, "Error", f"ota_extract_image_headers - invalid file size read {filename} - {len(ota_image)}")
+        return None
+    return ota_image
 
 
 def offset_start_firmware(self, ota_image):  # OK 13/10

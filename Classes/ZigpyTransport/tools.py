@@ -1,16 +1,30 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
+# coding: utf-8 -*-
 #
-# Implementation of Zigbee for Domoticz plugin.
+# Author: pipiche38
 #
-# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
-# (C) 2015-2024
-#
-# Initial authors: zaraki673 & pipiche38
-#
-# SPDX-License-Identifier:    GPL-3.0 license
 
 import traceback
+
+#def handle_thread_error(self, e, data=""):
+#    trace = []
+#    tb = e.__traceback__
+#    self.log.logging("TransportWrter", "Error", "Issue in request, dumping stack")
+#    self.log.logging("TransportWrter", "Error", "==>  %s" % data)
+#    self.log.logging("TransportWrter", "Error", "'%s' failed '%s'" % (tb.tb_frame.f_code.co_name, str(e)))
+#    while tb is not None:
+#        self.log.logging(
+#            "TransportWrter",
+#            "Error",
+#            "----> Line %s in '%s', function %s"
+#            % (
+#                tb.tb_lineno,
+#                tb.tb_frame.f_code.co_filename,
+#                tb.tb_frame.f_code.co_name,
+#            ),
+#        )
+#        tb = tb.tb_next
+
 
 def handle_thread_error(self, e, data=""):
 
