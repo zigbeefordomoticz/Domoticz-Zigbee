@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# coding: utf-8 -*-
 #
-# Implementation of Zigbee for Domoticz plugin.
+# Author: zaraki673 & pipiche38
 #
-# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
-# (C) 2015-2024
-#
-# Initial authors: zaraki673 & pipiche38
-#
-# SPDX-License-Identifier:    GPL-3.0 license
-
-import json
 from time import time
+import json
 
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
@@ -49,13 +42,13 @@ def rest_recreate_widgets(self, verb, data, parameters):
             domoticz_error_api("rest_recreate_widgets - Unknown device %s " % key)
             return _response
         nwkid = self.IEEE2NWK[key]
-        _response["Data"] = json.dumps({"Status": "Ok", "ExtraInfo": "IEEE %s set to Provisioning Requested at %s" % (key, int(time()))})
+        _response["Data"] = json.dumps({"Status": "Ok", "Status": "IEEE %s set to Provisioning Requested at %s" % (key, int(time()))})
     else:
         nwkid = data["NWKID"]
         if nwkid not in self.ListOfDevices:
             domoticz_error_api("rest_recreate_widgets - Unknown device %s " % nwkid)
             return _response
-        _response["Data"] = json.dumps({"Status": "Ok", "ExtraInfo": "NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))})
+        _response["Data"] = json.dumps({"Status": "Ok", "Status": "NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))})
 
     over_write_type_from_deviceconf( self, self.Devices, nwkid)
     self.ListOfDevices[nwkid]["Status"] = "CreateDB"

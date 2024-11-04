@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# coding: utf-8 -*-
 #
-# Implementation of Zigbee for Domoticz plugin.
+# Author: zaraki673 & pipiche38
 #
-# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
-# (C) 2015-2024
-#
-# Initial authors: zaraki673 & pipiche38
-#
-# SPDX-License-Identifier:    GPL-3.0 license
+"""
+    Module: z_DomoticzDico.py
+
+    Description: Retreive & Build Domoticz Dictionary
+
+"""
 
 
 import base64
 import binascii
 import json
 import socket
-import ssl
 import time
 import urllib.request
+import ssl
 
-from Classes.LoggingManagement import LoggingManagement
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
+from Classes.LoggingManagement import LoggingManagement
 from Modules.tools import is_domoticz_new_API
 
 CACHE_TIMEOUT = (15 * 60) + 15  # num seconds

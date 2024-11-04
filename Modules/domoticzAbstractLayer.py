@@ -106,27 +106,10 @@ def getConfigItem(Key=None, Attribute="", Default=None):
 
 
 def prepare_dict_for_storage(dict_items, Attribute):
-    """
-    Prepares the dictionary for storage by Base64-encoding the specified attribute.
-    Args:
-        dict_items (dict): The dictionary containing the attribute to be encoded.
-        Attribute (str): The key in the dictionary to be Base64-encoded.
-    Returns:
-        dict: The modified dictionary with the specified attribute Base64-encoded and a "Version" key added.
-    """
-    try:
-        # Serialize the attribute value to JSON first, then Base64 encode (Version 2)
-        json_str = json.dumps(dict_items[Attribute])
 
-        # Convert the attribute value to a string, then encode to Base64
-        dict_items[Attribute] = b64encode(json_str.encode("utf-8")).decode("utf-8")
-
-    except (TypeError, ValueError) as e:
-        # Log or raise an error if serialization fails
-        domoticz_error_api(f"Error during JSON serialization: {e} for data {dict_items[Attribute]}")
-        return {}
-
-    dict_items["Version"] = 2
+    if Attribute in dict_items:
+        dict_items[Attribute] = b64encode(str(dict_items[Attribute]).encode("utf-8"))
+    dict_items["Version"] = 1
     return dict_items
 
 
@@ -134,39 +117,10 @@ def repair_dict_after_load(b64_dict, Attribute):
     if b64_dict in ("", {}):
         return {}
 
-    b64_dict_version = b64_dict.get("Version", 0)
-    
-    if b64_dict_version == 1:
-        return repair_dict_after_load_V1(b64_dict, Attribute)
+    if "Version" not in b64_dict:
+        domoticz_log_api("repair_dict_after_load - Not supported storage")
+        return {}
 
-    elif b64_dict_version == 2:
-        return repair_dict_after_load_V2(b64_dict, Attribute)
-
-    return {}
-
-
-def repair_dict_after_load_V2(b64_dict, Attribute) :
-    
-    if Attribute in b64_dict:
-        try:
-            # Attempt JSON decoding
-            decoded_data = b64decode(b64_dict[Attribute]).decode('utf-8')
-            b64_dict[Attribute] = json.loads(decoded_data)
-            return b64_dict
-        except json.JSONDecodeError:
-            # If it's not JSON, use literal_eval as a fallback (for Python dict-like strings)
-            b64_dict[Attribute] = ast.literal_eval(decoded_data)
-            return b64_dict
-        except (json.JSONDecodeError, ValueError) as e:
-            domoticz_error_api(f"Error during JSON decoding: {e}")
-
-        except Exception as e:
-            domoticz_error_api(f"Unexpected error during Base64 decode: {e}")
-   
-    return {}
-
-
-def repair_dict_after_load_V1(b64_dict, Attribute):
     if Attribute in b64_dict:
         try:
             decoded_data = b64decode(b64_dict[Attribute]).decode("utf-8")

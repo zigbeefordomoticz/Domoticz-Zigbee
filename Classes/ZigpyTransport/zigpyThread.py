@@ -89,38 +89,20 @@ def setup_zigpy_thread(self):
 
 
 def zigpy_thread(self):
-    """Initialize and run the zigpy event loop for Zigbee communication."""
+    self.zigpy_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(self.zigpy_loop)
 
+    if self.pluginconf.pluginConf["EventLoopInstrumentation"]:
+        self.zigpy_loop.set_debug(enabled=True)
+
+    self.log.logging("TransportZigpy", "Log", "zigpyThread EventLoop : %s" %self.zigpy_loop)
     try:
-        # Set up event loop
-        self.zigpy_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.zigpy_loop)
-
-        # Enable instrumentation for debugging if specified in configuration
-        if self.pluginconf.pluginConf.get("EventLoopInstrumentation", False):
-            self.zigpy_loop.set_debug(True)
-
-        self.log.logging("TransportZigpy", "Log", f"zigpyThread EventLoop: {self.zigpy_loop}")
-
-        # Run zigpy task
         self.zigpy_loop.run_until_complete(start_zigpy_task(self, channel=0, extended_pan_id=0))
-
-    except asyncio.CancelledError:
-        self.log.logging("TransportZigpy", "Warning", "zigpy_thread was cancelled.")
-
-    except RuntimeError as e:
-        self.log.logging("TransportZigpy", "Error", f"zigpy_thread encountered a runtime error: {e}")
-
     except Exception as e:
-        self.log.logging("TransportZigpy", "Error", f"zigpy_thread encountered an unexpected error: {e}")
+        self.log.logging("TransportZigpy", "Error", "zigpy_thread error when starting %s" %e)
 
     finally:
-        # Ensure loop is closed in any case
-        if not self.zigpy_loop.is_closed():
-            self.zigpy_loop.close()
-            self.log.logging("TransportZigpy", "Log", "Event loop closed successfully in zigpy_thread.")
-        else:
-            self.log.logging("TransportZigpy", "Log", "Event loop was already closed in zigpy_thread.")
+        self.zigpy_loop.close()
 
 
 async def start_zigpy_task(self, channel, extended_pan_id):
@@ -175,7 +157,6 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
     try:
         if radiomodule == "ezsp":
             import bellows.config as radio_specific_conf
-
             from Classes.ZigpyTransport.AppBellows import App_bellows as App
 
             config = ezsp_configuration_setup(self, radio_specific_conf, serialPort)
