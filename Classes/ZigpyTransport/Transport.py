@@ -10,14 +10,12 @@ import zigpy.application
 import zigpy.types as t
 
 from Classes.ZigateTransport.sqnMgmt import sqn_init_stack
-from Classes.ZigpyTransport.forwarderThread import (forwarder_thread,
-                                                    start_forwarder_thread,
+from Classes.ZigpyTransport.forwarderThread import (start_forwarder_thread,
                                                     stop_forwarder_thread)
 from Classes.ZigpyTransport.instrumentation import (
     instrument_log_command_open, instrument_sendData, open_capture_rx_frames)
 from Classes.ZigpyTransport.zigpyThread import (start_zigpy_thread,
-                                                stop_zigpy_thread,
-                                                zigpy_thread)
+                                                stop_zigpy_thread)
 
 
 class ZigpyTransport(object):
