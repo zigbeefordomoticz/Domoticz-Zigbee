@@ -42,6 +42,7 @@ ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
 
 
 async def _load_db(self) -> None:
+    """Restore save state."""
     database_file = self.config[zigpy_conf.CONF_DATABASE]
     if not database_file:
         return
@@ -88,7 +89,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     # Retreive Last Backup
     _retreived_backup = _retreive_previous_backup(self)
 
-    # If We need to Creat a new Zigbee network annd restore the last backup
+    # If We need to Create a new Zigbee network annd restore the last backup
     if force_form:
         with contextlib.suppress(Exception):
             if _retreived_backup is None:
@@ -124,6 +125,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
     new_state = self.backups.from_network_state()
     if (
         self.config[zigpy_conf.CONF_NWK_VALIDATE_SETTINGS]
+        and _retreived_backup is not None
         and not new_state.is_compatible_with(self.backups)
     ):
         raise zigpy.exceptions.NetworkSettingsInconsistent(
@@ -139,22 +141,21 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
 
     # Start Network
     await self.start_network()
-
     self._persist_coordinator_model_strings_in_db()
 
     # Network interference scan
-    if self.config[zigpy_conf.CONF_STARTUP_ENERGY_SCAN]:
-        # Each scan period is 15.36ms. Scan for at least 200ms (2^4 + 1 periods) to
-        # pick up WiFi beacon frames.
-        results = await self.energy_scan( channels=zigpy_t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
+    # if self.config[zigpy_conf.CONF_STARTUP_ENERGY_SCAN]:
+    #     # Each scan period is 15.36ms. Scan for at least 200ms (2^4 + 1 periods) to
+    #     # pick up WiFi beacon frames.
+    #     results = await self.energy_scan( channels=zigpy_t.Channels.ALL_CHANNELS, duration_exp=4, count=1 )
 
-        if results[self.state.network_info.channel] > ENERGY_SCAN_WARN_THRESHOLD:
-            self.log.logging("TransportZigpy", "Error", "WARNING - Zigbee channel %s utilization is %0.2f%%!" %(
-                self.state.network_info.channel, 100 * results[self.state.network_info.channel] / 255, ))
-            self.log.logging("TransportZigpy", "Error", const.INTERFERENCE_MESSAGE)
-            self.log.logging("TransportZigpy", "Log", "Energy scan result:")
-            for _chnl in results:
-                self.log.logging("TransportZigpy", "Log", f"  [{_chnl}] : %0.2f%%" % (100 * results[_chnl] / 255) )
+    #     if results[self.state.network_info.channel] > ENERGY_SCAN_WARN_THRESHOLD:
+    #         self.log.logging("TransportZigpy", "Error", "WARNING - Zigbee channel %s utilization is %0.2f%%!" %(
+    #             self.state.network_info.channel, 100 * results[self.state.network_info.channel] / 255, ))
+    #         self.log.logging("TransportZigpy", "Error", const.INTERFERENCE_MESSAGE)
+    #         self.log.logging("TransportZigpy", "Log", "Energy scan result:")
+    #         for _chnl in results:
+    #             self.log.logging("TransportZigpy", "Log", f"  [{_chnl}] : %0.2f%%" % (100 * results[_chnl] / 255) )
 
     # Config Top Scan
     if self.config[zigpy_conf.CONF_TOPO_SCAN_ENABLED]:
@@ -162,7 +163,7 @@ async def initialize(self, *, auto_form: bool = False, force_form: bool = False)
         self.topology.start_periodic_scans( period=(60 * self.config[zigpy.config.CONF_TOPO_SCAN_PERIOD]) )
 
 
-async def shutdown(self) -> None:
+async def shutdown(self, *, db: bool = True) -> None:
     """Shutdown controller."""
     LOGGER.info("Zigpy shutdown")
     self.shutting_down = True
@@ -186,7 +187,7 @@ async def shutdown(self) -> None:
         self.topology.stop_periodic_scans()
 
     await _disconnect(self)
-    await _shutdown_db_listeners(self)
+    await _shutdown_db_listeners(self, db)
 
 
 async def _create_backup(self) -> None:
@@ -202,25 +203,31 @@ async def _disconnect(self) -> None:
     """ disconect from the radio"""
     try:
         await self.disconnect()
-    except Exception:
+
+    except Exception:  # noqa: BLE001
         LOGGER.warning("Failed to disconnect from radio", exc_info=True)
+
     finally:
         await asyncio.sleep(1)
 
 
-async def _shutdown_db_listeners(self) -> None:
+async def _shutdown_db_listeners(self, db) -> None:
     """ shutdown the database listener"""
-    if self._dblistener is not None:
+    if db and self._dblistener is not None:
         try:
             self._remove_db_listeners()
             await self._dblistener.shutdown()
-        except Exception:
+
+        except Exception:  # noqa: BLE001
             LOGGER.warning("Failed to disconnect from database", exc_info=True)
 
 
 def connection_lost(self, exc: Exception) -> None:
     """Handle connection lost event."""
-    LOGGER.warning("Connection to the radio was lost: %r", exc)
+    super(type(self),self).connection_lost( exc)
+
+    LOGGER.warning( "Connection to the radio was lost: %r", exc)
+    LOGGER.warning( f"--> : self.shutting_down: {self.shutting_down}, {self.restarting}")
 
     if self.shutting_down or self.restarting:
         return
