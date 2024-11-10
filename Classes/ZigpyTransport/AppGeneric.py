@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import serial
 import asyncio
 import binascii
 import contextlib
@@ -19,6 +20,7 @@ import os.path
 import time
 from pathlib import Path
 
+from zigpy.application import ControllerApplication
 import zigpy.application
 import zigpy.backups
 import zigpy.config as zigpy_conf
@@ -43,34 +45,7 @@ ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
 
 async def _load_db(self) -> None:
     """Restore save state."""
-    database_file = self.config[zigpy_conf.CONF_DATABASE]
-    if not database_file:
-        return
-
-    LOGGER.info("++ PersistingListener on %s" %database_file)
-    self._dblistener = await zigpy.appdb.PersistingListener.new(database_file, self)
-    await self._dblistener.load()
-    self._add_db_listeners()
-
-
-def _add_db_listeners(self):
-    if self._dblistener is None:
-        return
-
-    self.add_listener(self._dblistener)
-    self.groups.add_listener(self._dblistener)
-    self.backups.add_listener(self._dblistener)
-    self.topology.add_listener(self._dblistener)
-
-
-def _remove_db_listeners(self):
-    if self._dblistener is None:
-        return
-
-    self.topology.remove_listener(self._dblistener)
-    self.backups.remove_listener(self._dblistener)
-    self.groups.remove_listener(self._dblistener)
-    self.remove_listener(self._dblistener)
+    await super(type(self),self)._load_db()
 
 
 async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
@@ -170,24 +145,7 @@ async def shutdown(self, *, db: bool = True) -> None:
 
     await _create_backup(self)
 
-    # Cancel watchdog task if it exists
-    if self._watchdog_task is not None:
-        self._watchdog_task.cancel()
-
-    # Stop periodic broadcasts for OTA
-    if self.ota is not None:
-        self.ota.stop_periodic_broadcasts()
-
-    # Stop periodic backups
-    if self.backups is not None:
-        self.backups.stop_periodic_backups()
-
-    # Stop periodic scans for topology
-    if self.topology is not None:
-        self.topology.stop_periodic_scans()
-
-    await _disconnect(self)
-    await _shutdown_db_listeners(self, db)
+    await ControllerApplication.shutdown(self, db=db)
 
 
 async def _create_backup(self) -> None:
@@ -199,41 +157,18 @@ async def _create_backup(self) -> None:
         LOGGER.warning("Failed to create backup", exc_info=False)
 
 
-async def _disconnect(self) -> None:
-    """ disconect from the radio"""
-    try:
-        await self.disconnect()
-
-    except Exception:  # noqa: BLE001
-        LOGGER.warning("Failed to disconnect from radio", exc_info=True)
-
-    finally:
-        await asyncio.sleep(1)
-
-
-async def _shutdown_db_listeners(self, db) -> None:
-    """ shutdown the database listener"""
-    if db and self._dblistener is not None:
-        try:
-            self._remove_db_listeners()
-            await self._dblistener.shutdown()
-
-        except Exception:  # noqa: BLE001
-            LOGGER.warning("Failed to disconnect from database", exc_info=True)
-
-
 def connection_lost(self, exc: Exception) -> None:
     """Handle connection lost event."""
-    super(type(self),self).connection_lost( exc)
+    LOGGER.warning( "+ Connection to the radio was lost (trying to recover): %s %r" %(type(exc), exc) )
 
-    LOGGER.warning( "Connection to the radio was lost: %r", exc)
-    LOGGER.warning( f"--> : self.shutting_down: {self.shutting_down}, {self.restarting}")
+    super(type(self),self).connection_lost(exc)
 
-    if self.shutting_down or self.restarting:
-        return
+    if not self.shutting_down and not self.restarting and isinstance( exc, serial.serialutil.SerialException):
+        LOGGER.error( "++++++++++++++++++++++ Connection to coordinator failed on Serial, let's restart the plugin")
+        LOGGER.warning( f"--> : self.shutting_down: {self.shutting_down}, {self.restarting}")
 
-    self.restarting = True
-    self.callBackRestartPlugin()
+        self.restarting = True
+        self.callBackRestartPlugin()
 
 
 def _retreive_previous_backup(self):
