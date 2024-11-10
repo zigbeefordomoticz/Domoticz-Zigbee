@@ -172,7 +172,7 @@ def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_com
     payload += sqn + cmd + response_to_command + command_status
     self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}")
 
-    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=is_ack_tobe_disabled(self, nwkid))
+    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid))
     return sqn
     
     

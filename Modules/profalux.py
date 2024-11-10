@@ -220,48 +220,50 @@ def profalux_MoveWithOnOff(self, nwkid, OnOff):
 
 
 def profalux_MoveToLiftAndTilt(self, nwkid, level=None, tilt=None):
-    def getLevel(self, nwkid):
-        # Let's check if we can get the Level from Attribute
-        level = None
-        if (
-            "01" in self.ListOfDevices[nwkid]["Ep"]
-            and "0008" in self.ListOfDevices[nwkid]["Ep"]["01"]
-            and "0000" in self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]
-        ):
-            if isinstance(self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]["0000"], str ):
-                level = int(self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]["0000"], 16)
-            else:
-                level = self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]["0000"]
 
+    def getLevel(self, nwkid):
+        # Initialize level to None
+        level = None
+
+        # Retrieve nested dictionary values
+        ep = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get("01", {}).get("0008", {})
+
+        # Check and convert the level if available
+        level_value = ep.get("0000")
+        if level_value is not None:
+            level = int(level_value, 16) if isinstance(level_value, str) else level_value
         return level
 
     def getTilt(self, nwkid):
         tilt = 45
-        if "Param" in self.ListOfDevices[nwkid] and "profaluxOrientBSO" in self.ListOfDevices[nwkid]["Param"]:
-            tilt = self.ListOfDevices[nwkid]["Param"]["profaluxOrientBSO"]
 
-        # Let's check if we can get the Tilt from Attribute
-        if (
-            "01" in self.ListOfDevices[nwkid]["Ep"]
-            and "fc21" in self.ListOfDevices[nwkid]["Ep"]["01"]
-            and "0001" in self.ListOfDevices[nwkid]["Ep"]["01"]["fc21"]
-        ):
-            tilt = int(self.ListOfDevices[nwkid]["Ep"]["01"]["fc21"]["0001"], 16)
-        return tilt
+        device = self.ListOfDevices.get(nwkid, {})
+        param = device.get("Param", {})
+        if "profaluxOrientBSO" in param:
+            tilt = param["profaluxOrientBSO"]
+
+        ep = device.get("Ep", {}).get("01", {}).get("fc21", {})
+        tilt_value = ep.get("0001")
+        if tilt_value is not None and isinstance(tilt_value, str):
+            tilt_value = int(tilt_value, 16)
+
+        return tilt_value
+
 
     def setLevel(self, nwkid, level):
-        if "01" not in self.ListOfDevices[nwkid]["Ep"]:
-            self.ListOfDevices[nwkid]["Ep"]["01"] = {}
-        if "0008" not in self.ListOfDevices[nwkid]["Ep"]["01"]:
-            self.ListOfDevices[nwkid]["Ep"]["01"]["0008"] = {}
-        self.ListOfDevices[nwkid]["Ep"]["01"]["0008"]["0000"] = level
+        device = self.ListOfDevices[nwkid]
+        ep = device.setdefault("Ep", {})
+        ep_01 = ep.setdefault("01", {})
+        ep_01_0008 = ep_01.setdefault("0008", {})
+        ep_01_0008["0000"] = level
+
 
     def setTilt(self, nwkid, tilt):
-        if "01" not in self.ListOfDevices[nwkid]["Ep"]:
-            self.ListOfDevices[nwkid]["Ep"]["01"] = {}
-        if "fc21" not in self.ListOfDevices[nwkid]["Ep"]["01"]:
-            self.ListOfDevices[nwkid]["Ep"]["01"]["fc21"] = {}
-        self.ListOfDevices[nwkid]["Ep"]["01"]["fc21"]["0001"] = "%02x" % tilt
+        device = self.ListOfDevices[nwkid]
+        ep = device.setdefault("Ep", {})
+        ep_01 = ep.setdefault("01", {})
+        ep_fc21 = ep_01.setdefault("fc21", {})
+        ep_fc21["0001"] = f"{tilt:02x}"
 
     # Begin
     self.log.logging(

@@ -61,11 +61,11 @@ def tuya_read_attribute(self, nwkid, EPout, cluster_frame, sqn, cmd, action, dat
         zigate_ep=ZIGATE_EP,
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
     )
-    self.log.logging("Tuya", "Debug", "tuya_read_attribute - %s/%s cmd: %s payload: %s" % (nwkid, EPout, cmd, payload))
+    self.log.logging(["Tuya0601", "Tuya"], "Debug", "tuya_read_attribute - %s/%s cmd: %s payload: %s" % (nwkid, EPout, cmd, payload))
 
 
 def tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data, action2=None, data2=None):
-    self.log.logging("Tuya", "Debug", "tuya_cmd - %s/%s cmd: %s action: %s data: %s" % (nwkid, EPout, cmd, action, data))
+    self.log.logging(["Tuya0601", "Tuya"], "Debug", "tuya_cmd - %s/%s cmd: %s action: %s data: %s" % (nwkid, EPout, cmd, action, data))
     
     if nwkid not in self.ListOfDevices:
         return
@@ -85,31 +85,20 @@ def tuya_cmd(self, nwkid, EPout, cluster_frame, sqn, cmd, action, data, action2=
         zigate_ep=ZIGATE_EP,
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
     )
-    self.log.logging("Tuya", "Debug", "tuya_cmd - %s/%s cmd: %s payload: %s" % (nwkid, EPout, cmd, payload))
+    self.log.logging(["Tuya0601", "Tuya"], "Debug", "tuya_cmd - %s/%s cmd: %s payload: %s" % (nwkid, EPout, cmd, payload))
 
 
 def store_tuya_attribute(self, NwkId, Attribute, Value):
-    if "Tuya" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["Tuya"] = {}
-    self.ListOfDevices[NwkId]["Tuya"][Attribute] = Value
+    # Ensure "Tuya" key exists for the given NwkId and then store the attribute
+    tuya_device_info = self.ListOfDevices.setdefault(NwkId, {}).setdefault("Tuya", {})
+    tuya_device_info[Attribute] = Value
 
 
-def get_tuya_attribute(self, Nwkid, Attribute):
-    if "Tuya" not in self.ListOfDevices[Nwkid]:
-        return None
-    if Attribute not in self.ListOfDevices[Nwkid]["Tuya"]:
-        return None
-    return self.ListOfDevices[Nwkid]["Tuya"][Attribute]
+def get_tuya_attribute(self, NwkId, Attribute):
+    return self.ListOfDevices.get(NwkId, {}).get("Tuya", {}).get(Attribute)
 
 
 def get_next_tuya_transactionId(self, NwkId):
-    if "Tuya" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["Tuya"] = {}
-
-    if "TuyaTransactionId" not in self.ListOfDevices[NwkId]["Tuya"]:
-        self.ListOfDevices[NwkId]["Tuya"]["TuyaTransactionId"] = 0x00
-
-    self.ListOfDevices[NwkId]["Tuya"]["TuyaTransactionId"] += 1
-    if self.ListOfDevices[NwkId]["Tuya"]["TuyaTransactionId"] > 0xFF:
-        self.ListOfDevices[NwkId]["Tuya"]["TuyaTransactionId"] = 0x00
-    return self.ListOfDevices[NwkId]["Tuya"]["TuyaTransactionId"]
+    tuya_info = self.ListOfDevices.setdefault(NwkId, {}).setdefault("Tuya", {})
+    tuya_info["TuyaTransactionId"] = (tuya_info.get("TuyaTransactionId", 0x00) + 1) & 0xFF
+    return tuya_info["TuyaTransactionId"]

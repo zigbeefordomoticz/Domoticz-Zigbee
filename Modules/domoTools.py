@@ -313,10 +313,11 @@ def timedOutDevice(self, Devices, NwkId=None, MarkTimedOut=True):
     self.log.logging("WidgetLevel3", "Debug", f"timedOutDevice Object {NwkId} MarkTimedOut: {MarkTimedOut}")
 
     _IEEE = device_info["IEEE"]
-    
-    if MarkTimedOut and not domo_read_TimedOut(self, Devices, _IEEE):
+    timed_out = domo_read_TimedOut(self, Devices, _IEEE)
+
+    if MarkTimedOut and not timed_out:
         timeout_widget_api(self, Devices, _IEEE, 1)
-    else:
+    elif not MarkTimedOut and timed_out:
         timeout_widget_api(self, Devices, _IEEE, 0)
 
 
@@ -495,8 +496,10 @@ CLUSTER_TO_TYPE = {
     "phMeter": "phMeter",
     "ec": "ec",
     "orp": "orp",
+    "RainIntensity": "RainIntensity",
     "freeChlorine": "freeChlorine",
     "salinity": "salinity",
+    "tds": "tds"
 }
 
 def TypeFromCluster(self, cluster, create_=False, ProfileID_="", ZDeviceID_="", ModelName=""):

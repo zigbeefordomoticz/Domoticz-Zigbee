@@ -241,7 +241,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
                 tuya_sirene_registration(self, NwkId)
                 
             elif self.ListOfDevices[NwkId]["Model"] in (TUYA_eTRV_MODEL):
-                tuya_eTRV_registration(self, NwkId, False)
+                tuya_eTRV_registration(self, NwkId, tuya_data_request=False)
                 
             handle_device_specific_needs(self, Devices, NwkId)
             

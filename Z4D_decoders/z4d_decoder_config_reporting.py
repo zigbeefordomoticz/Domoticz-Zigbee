@@ -35,8 +35,10 @@ def Decode8120(self, Devices, MsgData, MsgLQI):
             Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus)
             
 def Decode8122(self, Devices, MsgData, MsgLQI):
-    self.configureReporting.read_report_configure_response(MsgData, MsgLQI)
+    if self.configureReporting:
+        self.configureReporting.read_report_configure_response(MsgData, MsgLQI)
     
 def Decode8120_attribute(self, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus):
     self.log.logging('Input', 'Debug', 'Decode8120 --> SQN: [%s], SrcAddr: %s, SrcEP: %s, ClusterID: %s, Attribute: %s Status: %s' % (MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus), MsgSrcAddr)
-    self.configureReporting.read_configure_reporting_response(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus)
+    if self.configureReporting:
+        self.configureReporting.read_configure_reporting_response(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttributeId, MsgStatus)

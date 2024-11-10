@@ -49,13 +49,13 @@ from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_dimmer_dimmer, tuya_dimmer_onoff,
                           tuya_energy_onoff, tuya_garage_door_action,
                           tuya_switch_command, tuya_watertimer_command,
-                          tuya_window_cover_calibration)
+                          tuya_window_cover_calibration, tuya_polling_control)
 from Modules.tuyaSiren import (tuya_siren2_trigger, tuya_siren_alarm,
                                tuya_siren_humi_alarm, tuya_siren_temp_alarm)
 from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
                              tuya_lidl_set_mode, tuya_trv_brt100_set_mode,
                              tuya_trv_mode, tuya_trv_onoff)
-from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
+from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos, ts0601_curtain_calibration_cmd
 from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
                                   THERMOSTAT_LEVEL_3_MODE)
 
@@ -119,6 +119,7 @@ ACTIONATORS = [
     "ThermoMode_5",
     "ThermoMode_6",
     "ThermoMode_7",
+    "ThermoMode_8",
     "ThermoModeEHZBRTS",
     "AirPurifierMode",
     "FanSpeed",
@@ -140,7 +141,10 @@ ACTIONATORS = [
     "ThermoOnOff",
     "ShutterCalibration",
     "SwitchAlarm",
-    "TamperSwitch"
+    "SwitchCalibration",
+    "TamperSwitch",
+    "PollingControl",
+    "PollingControlV2"
 ]
 
 
@@ -222,6 +226,10 @@ def handle_command_stop(self,Devices, DeviceID, Unit, Nwkid, EPout, DeviceType, 
             actuator_stop( self, Nwkid, EPout, "WindowCovering")
             
         if DeviceType in ( "CurtainInverted", "Curtain"):
+            if ts0601_extract_data_point_infos( self, model_name):
+                ts0601_actuator(self, Nwkid, "CurtainState", 1)
+                update_domoticz_widget(self, Devices, DeviceID, Unit, 17, "0", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+
             # Refresh will be done via the Report Attribute
             return
 
@@ -266,6 +274,13 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
             self.log.logging("Command", "Debug", "handle_command_off : Off for Tuya ParkSide Water Time - OnOff Mode")
             actuator_off(self, Nwkid, EPout, "Light")
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        return
+
+    if DeviceType == "SwitchCalibration" and model_name == "TS0601-Moes-Curtain":
+        # Switch Off alibration
+        self.log.logging("Command", "Status", "mgtCommand : Switch Off Calibration on %s/%s" % (Nwkid,EPout))
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        ts0601_curtain_calibration_cmd( self, Nwkid, EPout, 0x07, mode=0)
         return
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":
@@ -325,7 +340,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         request_read_device_status(self, Nwkid)
         return
 
-    if DeviceType == ("ThermoMode_2", ):
+    if DeviceType in ("ThermoMode_2", ):
         self.log.logging("Command", "Debug", f"handle_command_off : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
         
         if ts0601_extract_data_point_infos( self, model_name):
@@ -333,6 +348,12 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
             return
 
         tuya_trv_mode(self, Nwkid, 0)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        return
+
+    if DeviceType in ("PollingControl", "PollingControlV2", ):
+        self.log.logging("Command", "Log", f"handle_command_off : PollingControl Set Level/Off for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
+        tuya_polling_control(self, Nwkid, DeviceType, Level)
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
     
@@ -398,16 +419,21 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         else:
             actuator_on(self, Nwkid, EPout, "WindowCovering")
             
-        if DeviceType in ( "CurtainInverted", "Curtain"):
+        if DeviceType in ( "CurtainInverted", ):
             # Refresh will be done via the Report Attribute
             return
 
     elif DeviceType in ( "Venetian", "Vanne", "Curtain"):
+
         if model_name in ( "PR412", "CPR412", "CPR412-E"):
             actuator_off(self, Nwkid, EPout, "Light")
 
-        elif ( DeviceType in ("Vanne", "Curtain",) or model_name in ( "TS130F",) ):
+        elif DeviceType in ( "Curtain", ) and ts0601_extract_data_point_infos( self, model_name):
+            ts0601_actuator(self, Nwkid, "CurtainState", 2)
+            update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
 
+        elif ( DeviceType in ("Vanne", "Curtain",) or model_name in ( "TS130F",) ):
             actuator_off(self, Nwkid, EPout, "WindowCovering")
             
         elif DeviceType in ( "CurtainInverted", "Curtain"):
@@ -491,9 +517,15 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
 
     if model_name in ( "TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", ):
         self.log.logging("Command", "Debug", "mgtCommand : On for Tuya Switches Gang/EPout: %s" % EPout)
-
         tuya_switch_command(self, Nwkid, "01", gang=int(EPout, 16))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        return
+
+    if DeviceType == "SwitchCalibration" and model_name == "TS0601-Moes-Curtain":
+        # Switch On calibration
+        self.log.logging("Command", "Status", "mgtCommand : Switch ON Calibration on %s/%s" % (Nwkid,EPout))
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        ts0601_curtain_calibration_cmd( self, Nwkid, EPout, 0x07, mode=1)
         return
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":
@@ -580,7 +612,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         else:
             actuator_off(self, Nwkid, EPout, "WindowCovering")
             
-        if DeviceType in ( "CurtainInverted", "Curtain"):
+        if DeviceType in ( "CurtainInverted", ):
             # Refresh will be done via the Report Attribute
             return
 
@@ -588,15 +620,19 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         if model_name in ("PR412", "CPR412", "CPR412-E"):
             actuator_on(self, Nwkid, EPout, "Light")
                 
+        elif DeviceType in ( "Curtain", ) and ts0601_extract_data_point_infos( self, model_name):
+            ts0601_actuator(self, Nwkid, "CurtainState", 0)
+            update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Open", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+
         elif DeviceType in ( "Vanne", "Curtain",) or model_name in ( "TS130F",):
             actuator_on(self, Nwkid, EPout, "WindowCovering")
 
         elif DeviceType in ( "CurtainInverted", "Curtain"):
             return
-       
+
         else:
             actuator_off(self, Nwkid, EPout, "WindowCovering")
-            
             # Refresh will be done via the Report Attribute
             return
 
@@ -658,7 +694,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     self.log.logging( "Command", "Debug", f"handle_command_setlevel : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid, )
 
     if DeviceType == "ThermoSetpoint":
-        _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
+        _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
         return
 
     if DeviceType == "TempSetCurrent":
@@ -839,6 +875,12 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
         return
 
+    if DeviceType in ("PollingControl", "PollingControlV2", ):
+        self.log.logging("Command", "Log", f"handle_command_setlevel : PollingControl Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
+        tuya_polling_control(self, Nwkid, DeviceType, Level)
+        update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level // 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+        return
+
     if DeviceType == "ThermoMode_4":
         self.log.logging(
             "Command",
@@ -859,14 +901,13 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         ts0601_actuator(self, Nwkid, "TRV6SystemMode", int(Level // 10))
         return
 
+    if DeviceType == "ThermoMode_8" and ts0601_extract_data_point_infos( self, model_name):
+        ts0601_actuator(self, Nwkid, "TRV8SystemMode", int(Level // 10))
+        return
+
     if DeviceType in ("ThermoMode_5", "ThermoMode_6"):
-        self.log.logging(
-            "Command",
-            "Debug",
-            "handle_command_setlevel : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s"
-            % (Nwkid, EPout, Unit, DeviceType, Level),
-            Nwkid,
-        )
+        self.log.logging( "Command", "Debug", "handle_command_setlevel : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (
+            Nwkid, EPout, Unit, DeviceType, Level), Nwkid, )
         
         if model_name == "TS0601-_TZE200_chyvmhay":
             # 1: // manual 2: // away 0: // auto
@@ -920,26 +961,22 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             # Transform slider % into analog value
             lift = min(max((255 * Level) // 100, 1), 255)
 
-            self.log.logging(
-                "Command",
-                "Debug",
-                f"handle_command_setlevel : profalux_MoveToLiftAndTilt: {Nwkid} BSO-Volet Lift: Level: {Level} Lift: {lift}",
-                Nwkid,
-            )
+            self.log.logging( "Command", "Debug", f"handle_command_setlevel : profalux_MoveToLiftAndTilt: {Nwkid} BSO-Volet Lift: Level: {Level} Lift: {lift}", Nwkid, )
             profalux_MoveToLiftAndTilt(self, Nwkid, level=lift)
 
     elif DeviceType == "BSO-Orientation":
         if profalux:
             Tilt = Level - 10
-            self.log.logging(
-                "Command",
-                "Debug",
-                f"handle_command_setlevel : profalux_MoveToLiftAndTilt: {Nwkid} BSO-Orientation : Level: {Level} Tilt: {Tilt}",
-                Nwkid,
-            )
+            self.log.logging( "Command", "Debug", f"handle_command_setlevel : profalux_MoveToLiftAndTilt: {Nwkid} BSO-Orientation : Level: {Level} Tilt: {Tilt}", Nwkid, )
             profalux_MoveToLiftAndTilt(self, Nwkid, tilt=Tilt)
 
     elif DeviceType in ( "WindowCovering", "Venetian", "Vanne", "Curtain", "VenetianInverted", "VanneInverted", "CurtainInverted"):
+        if ts0601_extract_data_point_infos( self, model_name):
+            self.log.logging( "Command", "Debug", f"handle_command_setlevel : Tuya TS0601: {Nwkid} Level: {Level}", Nwkid, )
+            ts0601_actuator(self, Nwkid, "CurtainLevel", Level)
+            update_domoticz_widget(self, Devices, DeviceID, Unit, 2, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+            return
+
         _set_level_windows_covering(self, DeviceType, Nwkid, EPout, Level)
 
     elif DeviceType == "AlarmWD":
@@ -1072,7 +1109,7 @@ def _set_level_set_current_temp(self, Devices, DeviceID, Unit, Nwkid, EPout, Lev
     return
 
 
-def _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel, DeviceType, forceUpdateDev):
+def _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel, DeviceType, forceUpdateDev):
     # Log the command
     self.log.logging( "Command", "Debug", f"_set_level_setpoint : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid, )
 
@@ -1089,7 +1126,8 @@ def _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, Batt
     update_domoticz_widget( self, Devices, DeviceID, Unit, 0, str(normalized_level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
 
     # Request a refresh of the attribute in the next Heartbeat
-    request_read_device_status(self, Nwkid)
+    if get_deviceconf_parameter_value(self, model_name, "READ_ATTRIBUTE_AFTER_COMMAND", return_default=True):
+        request_read_device_status(self, Nwkid)
 
     return
 

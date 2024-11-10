@@ -46,7 +46,8 @@ from Modules.tools import (get_device_config_param,
                            get_deviceconf_parameter_value,
                            getListOfEpForCluster, is_fake_ep)
 from Modules.tuya import (tuya_cmd_ts004F, tuya_command_f0,
-                          tuya_lighting_color_control, tuya_registration)
+                          tuya_lighting_color_control, tuya_polling,
+                          tuya_registration)
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTools import tuya_TS0121_registration
@@ -146,7 +147,7 @@ def do_we_have_key_clusters( self, NWKID ):
         return False
     for ep in list(self.ListOfDevices[NWKID]['Ep']):
         for cluster in list(self.ListOfDevices[NWKID]['Ep'][ ep ]):
-            self.log.logging("Pairing", "Log", " . Checking %s on ep %s" %( cluster, ep))
+            self.log.logging("Pairing", "Debug", " . Checking %s on ep %s" %( cluster, ep))
             if cluster in CLUSTER_TO_TYPE:
                 return True
     return False
@@ -407,7 +408,7 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
     modelName = self.ListOfDevices[NWKID]["Model"] if "Model" in self.ListOfDevices[NWKID] else ""
     if modelName in ("TS004F",):
-        self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
+        self.log.logging("Pairing", "Debug", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
 
@@ -529,7 +530,7 @@ def delay_binding_and_reporting(self, Nwkid):
     if _model in self.DeviceConf and "DelayBindingAtPairing" in self.DeviceConf[_model] and self.DeviceConf[_model]["DelayBindingAtPairing"]:
         self.ListOfDevices[ Nwkid ]["DelayBindingAtPairing"] = int(( time.time() + int(self.DeviceConf[_model]["DelayBindingAtPairing"])))
         
-        self.log.logging("Pairing", "Log", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
+        self.log.logging("Pairing", "Debug", "binding_needed_clusters_with_zigate %s Skip Binding due to >DelayBindingAtPairing<" % (Nwkid))
         return True
     return False
 
@@ -623,56 +624,64 @@ def handle_device_specific_needs(self, Devices, NWKID):
 
     if "Model" not in self.ListOfDevices[NWKID]:
         return
+    device_model = self.ListOfDevices[NWKID]["Model"]
 
     # Do the Magic Read Attributes
-    if get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "TUYA_MAGIC_READ_ATTRIBUTES", return_default=False):
+    if get_deviceconf_parameter_value(self, device_model, "TUYA_MAGIC_READ_ATTRIBUTES", return_default=False):
         ReadAttributeRequest_0000_for_tuya( self, NWKID)
 
     # Tuya_regitration ?
-    tuya_registration_parameter = get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "TUYA_REGISTRATION", return_default=None)
-    ty_data_request = get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "TUYA_RESET_CMD", return_default=False) 
+    tuya_registration_parameter = get_deviceconf_parameter_value(self, device_model, "TUYA_REGISTRATION", return_default=None)
+    tuya_data_request = get_deviceconf_parameter_value(self, device_model, "TUYA_RESET_CMD", return_default=False) 
+    tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=False)
+    
+    self.log.logging("Pairing", "Debug", f"handle_device_specific_needs for {NWKID} tuya_registration_parameter: {tuya_registration_parameter} tuya_data_request: {tuya_data_request} tuya_data_request_polling: {tuya_data_request_polling}")
+
     # In case of Schneider Wiser, let's do the Registration Process
     MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
-    if self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
+    if device_model in ("Wiser2-Thermostat",):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
-    elif get_device_config_param( self, NWKID, "AqaraMultiClick"):
+    if get_device_config_param( self, NWKID, "AqaraMultiClick"):
         enable_click_mode_aqara( self, NWKID)
 
-    elif ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY and WISER_LEGACY_MODEL_NAME_PREFIX in self.ListOfDevices[NWKID]["Model"] ):
+    if ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY and WISER_LEGACY_MODEL_NAME_PREFIX in device_model ):
         self.log.logging("Pairing", "Debug", "Wiser Legacy registration needed for %s" %NWKID)
         schneider_wiser_registration(self, Devices, NWKID)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ( "AC201A", "AC211", "AC221", "CAC221" ):
+    if device_model in ( "AC201A", "AC211", "AC221", "CAC221" ):
         self.log.logging("Pairing", "Debug", "CasaIA registration needed")
         casaia_pairing(self, NWKID)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-sirene",):
+    if device_model in ("TS0601-sirene",):
         self.log.logging("Pairing", "Debug", "Tuya Sirene registration needed")
         tuya_sirene_registration(self, NWKID)
 
-    elif self.ListOfDevices[NWKID]["Model"] in (TUYA_eTRV_MODEL):
+    if device_model in (TUYA_eTRV_MODEL):
         self.log.logging("Pairing", "Debug", "Tuya eTRV registration needed")
-        tuya_eTRV_registration(self, NWKID, ty_data_request=True)
+        tuya_eTRV_registration(self, NWKID, tuya_data_request=True)
         
-    elif tuya_registration_parameter:
-        tuya_registration(self, NWKID, ty_data_request=ty_data_request, parkside=False, tuya_registration_value=tuya_registration_parameter)
-            
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS0121", "TS0002_relay_switch", "TS0002_relay_switch"):
+    if tuya_registration_parameter:
+        tuya_registration(self, NWKID, ty_data_request=tuya_data_request, parkside=False, tuya_registration_value=tuya_registration_parameter)
+
+    if device_model in ("TS0121", "TS0002_relay_switch", "TS0002_relay_switch"):
         self.log.logging("Pairing", "Debug", "Tuya TS0121 registration needed")
         tuya_TS0121_registration(self, NWKID)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS004F", "TS004F-_TZ3000_xabckq1v"):
-        self.log.logging("Pairing", "Log", "Tuya TS004F registration needed")
+    if device_model in ("TS004F", "TS004F-_TZ3000_xabckq1v"):
+        self.log.logging("Pairing", "Debug", "Tuya TS004F registration needed")
         if "Param" in self.ListOfDevices[NWKID] and "TS004FMode" in self.ListOfDevices[NWKID]["Param"]:
             tuya_cmd_ts004F(self, NWKID, self.ListOfDevices[NWKID]["Param"]["TS004FMode" ])
             ReadAttributeReq( self, NWKID, ZIGATE_EP, "01", "0006", [ 0x8004 ], ackIsDisabled=False, checkTime=False, )
 
-    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0222", "TS0002_relay_switch", "TS0003_relay_switch", 'TS0601-motion'):
+    if device_model in ( "TS0222", "TS0002_relay_switch", "TS0003_relay_switch", 'TS0601-motion'):
         tuya_command_f0( self, NWKID )
 
+    if tuya_data_request_polling:
+        self.log.logging("Pairing", "Debug", "Tuya Tuya Polling requested")
+        tuya_polling(self, NWKID)
 
-    elif self.ListOfDevices[NWKID]["Model"] in (
+    if device_model in (
         "TS0601-Energy",
         "TS0601-switch",
         "TS0601-2Gangs-switch",
@@ -687,18 +696,18 @@ def handle_device_specific_needs(self, Devices, NWKID):
         self.log.logging("Pairing", "Debug", "Tuya general registration needed")
         tuya_registration(self, NWKID, ty_data_request=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ("TS0601-Parkside-Watering-Timer", "TS0601-_TZE200_nklqjk62"):
+    if device_model in ("TS0601-Parkside-Watering-Timer", "TS0601-_TZE200_nklqjk62", ):
         self.log.logging("Pairing", "Debug", "Tuya Water Sensor Parkside registration needed")
         tuya_registration(self, NWKID, ty_data_request=True, parkside=True)
 
-    elif self.ListOfDevices[NWKID]["Model"] in ( "TS0216", "TY0A01", ):
+    if device_model in ( "TS0216", "TY0A01", ):
         # Do just the registration
         tuya_registration(self, NWKID )
 
-    elif self.ListOfDevices[NWKID]["Model"] == "SPZB0001":
+    if device_model == "SPZB0001":
         thermostat_Calibration(self, NWKID, 0x00)
 
-    elif self.ListOfDevices[NWKID]["Model"] == "lumi.remote.b28ac1":
+    if device_model == "lumi.remote.b28ac1":
         enable_click_mode_aqara( self, NWKID )
         enableOppleSwitch( self, NWKID )
     
@@ -707,12 +716,14 @@ def handle_device_specific_needs(self, Devices, NWKID):
 
     if get_deviceconf_parameter_value(self, self.ListOfDevices[NWKID]["Model"], "LightingColorControl", return_default=None):
         tuya_lighting_color_control(self, NWKID)
-    
+
+
 def scan_device_for_group_memebership(self, NWKID):
     for ep in self.ListOfDevices[NWKID]["Ep"]:
         if "0004" in self.ListOfDevices[NWKID]["Ep"][ep] and self.groupmgt:
             self.groupmgt.ScanDevicesForGroupMemberShip( [ NWKID, ] )
             break
+
 
 def request_list_of_attributes(self, NWKID):
     for iterEp in self.ListOfDevices[NWKID]["Ep"]:

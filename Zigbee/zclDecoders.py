@@ -44,9 +44,9 @@ def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, fram
             self.log.logging("zclDecoder", "Debug", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
             return None
 
-        # Let's answer
-        self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
-        zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf )
+        # Let's answer , Since 7.1.12 zigpy is handling the default response, so no need to do it
+        #self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
+        #zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf )
 
     self.log.logging("zclDecoder", "Debug", "zcl_decoders Zcl.ddr: %s GlobalCommand: %s Sqn: %s ManufCode: %s Command: %s Data: %s Payload: %s" %(
         default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data, Payload))

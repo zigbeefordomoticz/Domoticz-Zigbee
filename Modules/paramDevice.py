@@ -12,6 +12,7 @@
 
 
 from DevicesModules.custom_sonoff import SONOFF_DEVICE_PARAMETERS
+from DevicesModules.custom_sunricher import SUNRICHER_DEVICE_PARAMETERS
 from Modules.ballast_settings import BALLAST_DEVICE_PARAMETERS
 from Modules.danfoss import DANFOSS_DEVICE_PARAMETERS
 from Modules.ias_settings import IAS_DEVICE_PARAMETERS
@@ -46,6 +47,8 @@ def initialize_device_settings(self):
     self.device_settings.update(PHILIPS_DEVICE_PARAMETERS)
 
     self.device_settings.update(SONOFF_DEVICE_PARAMETERS)
+
+    self.device_settings.update(SUNRICHER_DEVICE_PARAMETERS)
 
     self.device_settings.update(TUYA_DEVICE_PARAMETERS)
     self.device_settings.update(TUYA_TS011F_DEVICE_PARAMETERS)

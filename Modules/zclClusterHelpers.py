@@ -277,10 +277,16 @@ def _upd_data_strut_based_on_model(self, MsgSrcAddr, modelName, initial_ep):
 
 
 def _build_model_name( self, nwkid, modelName):
-    
+
+    self.log.logging([ "ZclClusters", "Pairing"], "Debug", f"_build_model_name  {modelName}", nwkid)
+
     manufacturer_name = self.ListOfDevices[nwkid].get("Manufacturer Name", "")
     manuf_code = self.ListOfDevices[nwkid].get("Manufacturer", "")
     zdevice_id = self.ListOfDevices[nwkid].get("ZDeviceID", None)
+
+    self.log.logging([ "ZclClusters", "Pairing"], "Debug", f"_build_model_name  manufacturer_name: {manufacturer_name}", nwkid)
+    self.log.logging([ "ZclClusters", "Pairing"], "Debug", f"_build_model_name  manuf_code: {manuf_code}", nwkid)
+    self.log.logging([ "ZclClusters", "Pairing"], "Debug", f"_build_model_name  zdevice_id: {zdevice_id}", nwkid)
 
     if modelName in ( '66666', ):
         #  https://github.com/Koenkk/zigbee2mqtt/issues/4338

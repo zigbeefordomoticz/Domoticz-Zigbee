@@ -309,10 +309,10 @@ class BasePlugin:
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
 
-        Domoticz.Status( "Z4D requires python3.8 or above and you are running %s.%s" %(
+        Domoticz.Status( "Z4D requires python3.9 or above and you are running %s.%s" %(
             _current_python_version_major, _current_python_version_minor))
     
-        assert sys.version_info >= (3, 8)  # nosec
+        assert sys.version_info >= (3, 9)  # nosec
 
         if Parameters["Mode1"] == "V1" and Parameters["Mode2"] in ( "USB", "DIN", "PI", "Wifi", ):
             self.transport = Parameters["Mode2"]
@@ -485,7 +485,7 @@ class BasePlugin:
             )
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
 
-        self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID)
+        self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID, self.IEEE2NWK)
         self.adminWidgets.updateStatusWidget(Devices, "Starting up")
 
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
@@ -597,6 +597,11 @@ class BasePlugin:
             None
         """
         Domoticz.Log("onStop()")
+        
+        # Flush ListOfDevices
+        if self.log:
+            self.log.logging("Plugin", "Log", "Flushing plugin database onto disk")
+        WriteDeviceList(self, 0)  # write immediatly
 
         # Uninstall Z4D custom UI from Domoticz
         uninstall_Z4D_to_domoticz_custom_ui()
@@ -619,11 +624,11 @@ class BasePlugin:
             self.webserver.onStop()
 
         # Save plugin database
-        if self.pluginconf:
+        if self.PDMready and self.pluginconf:
             WriteDeviceList(self, 0)
 
         # Print and save statistics if configured
-        if self.pluginconf and self.statistics:
+        if self.PDMready and self.pluginconf and self.statistics:
             self.statistics.printSummary()
             self.statistics.writeReport()
 
@@ -835,7 +840,7 @@ class BasePlugin:
 
     def onHeartbeat(self):
 
-        if not self.VersionNewFashion or self.pluginconf is None:
+        if not self.VersionNewFashion or self.pluginconf is None or self.log is None:
             # Not yet ready
             return
         
@@ -971,7 +976,7 @@ def retreive_zigpy_topology_data(self):
 def start_zigbee_transport(self ):
     
     if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
-        check_python_modules_version( self )
+        check_python_modules_version( self  )
         _start_native_usb_zigate(self)
 
     elif self.transport in ("PI", "V2-PI"):
@@ -1022,7 +1027,7 @@ def _start_native_wifi_zigate(self):
 
 def _start_native_zigate(self, serialPort=None, wifiAddress=None, wifiPort=None):
     from Classes.ZigateTransport.Transport import ZigateTransport
-    check_python_modules_version(self)
+    check_python_modules_version(self )
     self.pluginconf.pluginConf["ControllerInRawMode"] = False
     self.zigbee_communication = "native"
     self.pluginParameters["Zigpy"] = False

@@ -36,11 +36,11 @@ def Decode8043(self, Devices, MsgData, MsgLQI):
     if MsgDataShAddr not in self.ListOfDevices:
         self.log.logging('Input', 'Error', 'Decode8043 - receive message for non existing device')
         return
-    if int(MsgDataProfile, 16) == 49246 and int(MsgDataDeviceId, 16) == 57694:
+    if int(MsgDataProfile, 16) == 49246 and int(MsgDataDeviceId, 16) == 57694:   # DeviceID: 0xE15E
         self.log.logging('Input', 'Log', 'Decode8043 - Received ProfileID: %s, ZDeviceID: %s - skip' % (MsgDataProfile, MsgDataDeviceId))
         if MsgDataEp in self.ListOfDevices[MsgDataShAddr]['Ep']:
             del self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp]
-        if 'NbEp' in self.ListOfDevices[MsgDataShAddr] and self.ListOfDevices[MsgDataShAddr]['NbEp'] > '1':
+        if 'NbEp' in self.ListOfDevices[MsgDataShAddr] and int(self.ListOfDevices[MsgDataShAddr]['NbEp']) > 1:
             self.ListOfDevices[MsgDataShAddr]['NbEp'] = int(self.ListOfDevices[MsgDataShAddr]['NbEp']) - 1
         return
     if not inDB_status:
