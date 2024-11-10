@@ -41,14 +41,6 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
 
 
-    def _add_db_listeners(self):
-        Classes.ZigpyTransport.AppGeneric._add_db_listeners(self)
-
-
-    def _remove_db_listeners(self):
-        Classes.ZigpyTransport.AppGeneric._remove_db_listeners(self)
-
-
     async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
 
@@ -122,9 +114,9 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
             status = await coordinator.add_to_group( 0x4006, name="Default Tint Group 4006", )
 
          
-    async def shutdown(self) -> None:
+    async def shutdown(self, *, db: bool = True) -> None:
         """Shutdown controller."""
-        await Classes.ZigpyTransport.AppGeneric.shutdown(self)
+        await Classes.ZigpyTransport.AppGeneric.shutdown(self, db=db)
 
 
     def connection_lost(self, exc: Exception) -> None:

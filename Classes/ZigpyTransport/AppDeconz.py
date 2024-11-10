@@ -40,14 +40,6 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         await Classes.ZigpyTransport.AppGeneric._load_db(self)
 
 
-    def _add_db_listeners(self):
-        Classes.ZigpyTransport.AppGeneric._add_db_listeners(self)
-
-
-    def _remove_db_listeners(self):
-        Classes.ZigpyTransport.AppGeneric._remove_db_listeners(self)
-
-
     async def initialize(self, *, auto_form: bool = False, force_form: bool = False):
         await Classes.ZigpyTransport.AppGeneric.initialize(self, auto_form=auto_form, force_form=force_form)
 
@@ -109,9 +101,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.callBackFunction(build_plugin_8010_frame_content( branch, "00", "0000", version))
 
 
-    async def shutdown(self) -> None:
+    async def shutdown(self, *, db: bool = True) -> None:
         """Shutdown controller."""
-        await Classes.ZigpyTransport.AppGeneric.shutdown(self)
+        await Classes.ZigpyTransport.AppGeneric.shutdown(self, db=db)
 
 
     def connection_lost(self, exc: Exception) -> None:
