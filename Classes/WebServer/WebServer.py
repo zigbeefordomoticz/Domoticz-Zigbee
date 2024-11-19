@@ -14,6 +14,7 @@ import json
 import mimetypes
 import os
 import os.path
+import platform
 import time
 
 from Classes.PluginConf import SETTINGS
@@ -1620,4 +1621,28 @@ def get_plugin_parameters(self, filter=False):
         keys_to_remove = ["Mode5", "Username", "Password"]
         for key in keys_to_remove:
             plugin_parameters.pop(key, None)
+            
+    plugin_parameters["DistributionInfos"] = get_os_info()
     return plugin_parameters
+
+
+def get_os_info():
+    os_name = platform.system()
+    if os_name == "Linux":
+        try:
+            with open("/etc/os-release") as f:
+                lines = f.readlines()
+                os_info = {line.split('=')[0]: line.split('=')[1].strip().strip('"') for line in lines if '=' in line}
+            return os_info.get("NAME", "Unknown"), os_info.get("VERSION", "Unknown")
+
+        except Exception as e:
+            return "Linux", "Unknown"
+
+    elif os_name == "Windows":
+        return "Windows", platform.version()
+
+    elif os_name == "Darwin":
+        return "macOS", platform.mac_ver()[0]
+
+    else:
+        return os_name, "Unknown"
