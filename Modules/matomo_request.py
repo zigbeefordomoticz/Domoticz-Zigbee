@@ -71,6 +71,7 @@ def sending_plugin_analytics_infos(self):
 def send_matomo_request(self, action_name, custom_variable, custom_dimension):
     
     client_id = get_clientid(self)
+    self.log.logging( "Matomo", "Log", f"send_matomo_request - Clien_id {client_id}")
     if client_id is None:
         self.log.logging( "Matomo", "Error", "Noting reported as MacAddress is None!")
         return
@@ -93,7 +94,7 @@ def send_matomo_request(self, action_name, custom_variable, custom_dimension):
 
     try:
         # Send the request to Matomo
-        self.log.logging( "Matomo", "Debug", f"send_matomo_request - Request {MATOMO_URL} {payload}")
+        self.log.logging( "Matomo", "Log", f"send_matomo_request - Request {MATOMO_URL} {payload}")
         response = requests.get(MATOMO_URL, params=payload)
 
         # Handle the response
@@ -106,7 +107,6 @@ def send_matomo_request(self, action_name, custom_variable, custom_dimension):
 
     except Exception as e:
         self.log.logging( "Matomo","Error", f"send_matomo_request - An error occurred: {e}")
-
 
 
 def get_os_info():
@@ -129,8 +129,7 @@ def get_os_info():
 
     else:
         return os_name, "Unknown"
-    
-    
+
 
 def get_architecture_model():
     """
@@ -147,7 +146,6 @@ def get_architecture_model():
         "processor": platform.processor(),
         "python_architecture": "64-bit" if sys.maxsize > 2**32 else "32-bit",
     }
-
 
 
 def get_ronelabs_model_custom_definition():
