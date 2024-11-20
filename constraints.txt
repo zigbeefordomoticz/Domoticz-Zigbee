@@ -1,4 +1,3 @@
-charset-normalizer==2.0.11
 zigpy==0.72.0
 zigpy_znp==0.13.1
 zigpy_deconz==0.24.1
