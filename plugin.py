@@ -169,6 +169,7 @@ from Modules.zigateCommands import (zigate_erase_eeprom,
 from Modules.zigateConsts import CERTIFICATION, HEARTBEAT, MAX_FOR_ZIGATE_BUZY
 from Modules.zigpyBackup import handle_zigpy_backup
 from Zigbee.zdpCommands import zdp_get_permit_joint_status
+from Modules.matomo_request import sending_plugin_analytics_infos
 
 VERSION_FILENAME = ".hidden/VERSION"
 
@@ -582,6 +583,7 @@ class BasePlugin:
             usage_percentage = round(((255 - free_slots) / 255) * 100, 1)
             self.log.logging("Plugin", "Status", f"Z4D Widgets usage is at {usage_percentage}% ({free_slots} units free)")
 
+        sending_plugin_analytics_infos(self)
         self.log.logging("Plugin", "Status", f"Z4D started with {framework_status}")
 
         self.busy = False
@@ -597,7 +599,8 @@ class BasePlugin:
             None
         """
         Domoticz.Log("onStop()")
-        
+        sending_plugin_analytics_infos(self)
+
         # Flush ListOfDevices
         if self.log:
             self.log.logging("Plugin", "Log", "Flushing plugin database onto disk")
@@ -880,6 +883,9 @@ class BasePlugin:
         # Checking Version
         if self.internet_available:
             _check_plugin_version( self )
+            
+            if self.HeartbeatCount % (3600 // HEARTBEAT) == 0: 
+                sending_plugin_analytics_infos(self)
 
         if self.transport == "None":
             return
