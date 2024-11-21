@@ -92,21 +92,27 @@ def send_matomo_request(self, action_name, custom_variable, custom_dimension):
     if custom_dimension:
         payload.update(custom_dimension)
 
-    try:
-        # Send the request to Matomo
-        self.log.logging( "Matomo", "Log", f"send_matomo_request - Request {MATOMO_URL} {payload}")
-        response = requests.get(MATOMO_URL, params=payload)
+    fetch_data_with_timeout(self, MATOMO_URL, payload)
 
-        # Handle the response
+
+def fetch_data_with_timeout(self, url, params, connect_timeout=3, read_timeout=5):
+    try:
+        response = requests.get(url, params=params, timeout=(connect_timeout, read_timeout))
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
+
         if response.status_code == 200:
-            self.log.logging( "Matomo", "Debug", "send_matomo_request - Request sent successfully!")
+            self.log.logging( "Matomo", "Log", f"send_matomo_request - Request sent successfully! {response}")
 
         else:
             self.log.logging( "Matomo", "Error", f"send_matomo_request - Failed to send request. Status code: {response.status_code}")
             self.log.logging( "Matomo", "Error", "send_matomo_request - Response content:", response.content)
 
-    except Exception as e:
-        self.log.logging( "Matomo","Error", f"send_matomo_request - An error occurred: {e}")
+    except requests.exceptions.Timeout:
+        self.log.logging( "Matomo", "Error",f"Timeout after {connect_timeout}s connect / {read_timeout}s read.")
+
+    except requests.exceptions.RequestException as e:
+        self.log.logging( "Matomo", "Error",f"Request failed: {e}")
+
 
 
 def get_os_info():
