@@ -68,7 +68,7 @@ def populate_custom_dimmensions(self):
         _custom_dimensions[ "dimension6"] = clean_custom_dimension_value( certified_db_version)
 
     # OS Distribution
-    _distribution = get_distribution()
+    _distribution = get_distribution(self)
     if _distribution:
         _custom_dimensions[ "dimension7"] = clean_custom_dimension_value( _distribution)
 
