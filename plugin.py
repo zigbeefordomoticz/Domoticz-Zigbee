@@ -883,8 +883,8 @@ class BasePlugin:
         # Checking Version
         if self.internet_available:
             _check_plugin_version( self )
-            
-            if self.HeartbeatCount % (3600 // HEARTBEAT) == 0: 
+
+            if self.HeartbeatCount % ( (9 * 3600) // HEARTBEAT) == 0:
                 sending_plugin_analytics_infos(self)
 
         if self.transport == "None":
