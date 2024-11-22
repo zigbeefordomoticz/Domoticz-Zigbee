@@ -155,17 +155,15 @@ def get_architecture_model(self):
     """
     try:
         return f"python: {platform.python_version()} arch: {platform.architecture()[0]} machine: {platform.machine()} processor:{platform.processor()}"
-
     except Exception as e:
-        self.log.logging( "Matomo", "Error", f"error {e}")
-
+        self.log.logging( "Matomo", "Error", f"get_architecture_model error {e}")
     return None
 
 
 def get_ronelabs_model_custom_definition():
-    with open(RONELABS_MODEL_INFO) as f:
-        return f.readline().strip()
-
+    if os.path.exists( RONELABS_MODEL_INFO ):
+        with open(RONELABS_MODEL_INFO) as f:
+            return f.readline().strip()
     return None
 
 
@@ -241,8 +239,12 @@ def classify_nwk_size(value):
         return "Xtra Large"
 
 
-def get_distribution():
-    return f"{distro.name()} {distro.version()}"
+def get_distribution(self):
+    try:
+        return f"{distro.name()} {distro.version()}"
+    except Exception as e:
+        self.log.logging( "Matomo", "Error", f"get_distribution error {e}")
+    return None
 
 
 def clean_custom_dimension_value(value: str) -> str:
