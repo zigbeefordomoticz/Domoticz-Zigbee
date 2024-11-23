@@ -21,6 +21,8 @@ import z4d_certified_devices
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 from Modules.database import import_local_device_conf
+from Modules.matomo_request import matomo_plugin_update
+
 
 PLUGIN_UPGRADE_SCRIPT = "Tools/plugin-auto-upgrade.sh"
 
@@ -55,6 +57,10 @@ def rest_plugin_upgrade(self, verb, data, parameters):
         self.logging( Logging_mode, "%s" %(line))
 
     _response["Data"] = json.dumps(result)
+    
+    if self.pluginconf.pluginConf["MatomoOptIn"]:
+        matomo_plugin_update(self, Logging_mode != "Error")
+    
     return _response
 
 def rest_reload_device_conf(self, verb, data, parameters):

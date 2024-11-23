@@ -95,12 +95,56 @@ def populate_custom_dimmensions(self):
     return _custom_dimensions
 
 
-def sending_plugin_analytics_infos(self):
+def matomo_plugin_analytics_infos(self):
     send_matomo_request(self, "Z4DPluginInfos", None, populate_custom_dimmensions(self))
 
 
-def send_matomo_request(self, action_name, custom_variable, custom_dimension):
+def matomo_opt_out_action(self):
+    """ Tracks a user's opt-out action in Matomo. """
+    send_matomo_request( self, action_name="Opt-Out Action", event_category="Privacy", event_action="Opt-Out", event_name="User Opted Out" )
 
+
+def matomo_opt_in_action(self):
+    """ Tracks a user's opt-oin action in Matomo. """
+    send_matomo_request( self, action_name="Opt-In Action", event_category="Privacy", event_action="Opt-In", event_name="User Opted In" )
+
+
+def matomo_coordinator_initialisation(self):
+    send_matomo_request( self, action_name="Coordinator Action", event_category="Coordinator", event_action="NewNetwork", event_name="Coordinator Formed new network" )
+
+
+def matomo_plugin_shutdown(self):
+    send_matomo_request( self, action_name="Plugin Action", event_category="Plugin", event_action="Shutdown", event_name="Plugin Shutdown" )
+
+
+def matomo_plugin_restart(self):
+    send_matomo_request( self, action_name="Plugin Action", event_category="Plugin", event_action="Restart", event_name="Plugin Restart" )
+
+
+def matomo_plugin_started(self):
+    send_matomo_request( self, action_name="Plugin Action", event_category="Plugin", event_action="Started", event_name="Plugin Started" )
+
+
+def matomo_plugin_update(self, status):
+    if status:
+        send_matomo_request( self, action_name="Plugin Action", event_category="Plugin", event_action="SuccessfullUpdate", event_name="Plugin Update Successfully" )
+    else:
+        send_matomo_request( self, action_name="Plugin Action", event_category="Plugin", event_action="ErrorUpdate", event_name="Plugin Update with error" )
+
+
+def send_matomo_request(self, action_name, custom_variable=None, custom_dimension=None, event_category=None, event_action=None, event_name=None):
+    """
+    Sends a tracking request to Matomo with optional custom variables, dimensions, and events.
+
+    Args:
+        action_name (str): Name of the action being tracked.
+        custom_variable (dict, optional): Custom variables to include.
+        custom_dimension (dict, optional): Custom dimensions to include.
+        event_category (str, optional): Category for the event (e.g., "Privacy").
+        event_action (str, optional): Action for the event (e.g., "Opt-Out").
+        event_name (str, optional): Name of the event (e.g., "User Opted Out").
+    """
+    
     client_id = get_clientid(self)
     self.log.logging( "Matomo", "Debug", f"send_matomo_request - Clien_id {client_id}")
     if client_id is None:
@@ -116,15 +160,28 @@ def send_matomo_request(self, action_name, custom_variable, custom_dimension):
         "uid": client_id,
     }
 
+    # Add custom variables if provided
     if custom_variable:
-        payload[ "cvar"] = json.dumps(custom_variable)
+        try:
+            payload["cvar"] = json.dumps(custom_variable)
+        except TypeError as e:
+            self.log.logging("Matomo", "Error", f"Failed to serialize custom_variable: {e}")
+            return
 
-    # Add Custom Dimensions to the request
+    # Add custom dimensions if provided
     if custom_dimension:
         payload.update(custom_dimension)
 
+    # Add event-specific parameters if provided
+    if event_category and event_action:
+        payload["e_c"] = event_category  # Event category
+        payload["e_a"] = event_action  # Event action
+        if event_name:
+            payload["e_n"] = event_name  # Event name (optional)
+
     self.log.logging( "Matomo", "Debug", f"send_matomo_request - payload {payload}")
-    fetch_data_with_timeout(self, MATOMO_URL, payload)
+    # Send the request
+    response = fetch_data_with_timeout(self, MATOMO_URL, payload)
 
 
 def fetch_data_with_timeout(self, url, params, connect_timeout=3, read_timeout=5):

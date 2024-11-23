@@ -31,6 +31,8 @@ from Modules.domoticzAbstractLayer import (domo_read_BatteryLevel,
                                            domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
+from Modules.matomo_request import (matomo_opt_in_action,
+                                    matomo_opt_out_action)
 from Modules.sendZigateCommand import sendZigateCmd
 from Modules.tools import get_device_nickname, is_hex
 from Modules.txPower import set_TxPower
@@ -679,6 +681,15 @@ class WebServer(object):
                                 domoticz_error_api("Unknown Certification code %s (allow are CE and FCC)" % (setting_lst[setting]["current"]))
                                 continue
 
+                        elif param == "MatomoOptIn" and self.pluginconf.pluginConf[param] != setting_lst[setting]["current"]:
+                            self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
+                            if self.pluginconf.pluginConf[param]:
+                                # Opt-In (we move from Out to In )
+                                matomo_opt_in_action(self)
+                            else:
+                                # Opt-Out (we move from In to Out)
+                                matomo_opt_out_action(self)
+                        
                         elif param == "blueLedOnOff":
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]["current"]:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
