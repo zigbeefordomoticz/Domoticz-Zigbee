@@ -464,9 +464,12 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         self.log.logging("Command", "Debug", "handle_command_off : Disable Window Cover Calibration")
         tuya_window_cover_calibration(self, Nwkid, "01")
 
-    elif DeviceType == "Switch" and ts0601_extract_data_point_infos( self, model_name):
+    elif (
+        DeviceType == "Switch"
+        and not get_deviceconf_parameter_value(self, model_name, "StandardZigbeeCommand", return_default=False)
+        and ts0601_extract_data_point_infos( self, model_name)
+        ):
         ts0601_actuator(self, Nwkid, "switch", 0)
-
     else:
         # Remaining Slider widget
         _off_command_default(self, Nwkid, EPout, profalux, model_name)
@@ -653,7 +656,11 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         self.log.logging("Command", "Debug", "mgtCommand : Enable Window Cover Calibration")
         tuya_window_cover_calibration(self, Nwkid, "00")
 
-    elif DeviceType == "Switch" and ts0601_extract_data_point_infos( self, model_name):
+    elif (
+        DeviceType == "Switch"
+        and not get_deviceconf_parameter_value(self, model_name, "StandardZigbeeCommand", return_default=False)
+        and ts0601_extract_data_point_infos( self, model_name)
+        ):
         ts0601_actuator(self, Nwkid, "switch", 1)
 
     elif profalux:
