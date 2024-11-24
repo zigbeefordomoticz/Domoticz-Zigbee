@@ -210,7 +210,7 @@ def parse_constraints(home_folder):
         "bellows": ""
     }
 
-    constraints_file = Path(home_folder) / "constraints.txt.txt"
+    constraints_file = Path(home_folder) / "constraints.txt"
     with open(constraints_file, 'r') as file:
         for line in file:
             # Remove leading/trailing whitespace and newlines
