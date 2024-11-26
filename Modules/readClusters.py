@@ -18,15 +18,13 @@
 """
 
 import binascii
-# import time
 import struct
 from time import time
+
 from Modules.domoMaj import MajDomoDevice
-from Modules.domoTools import timedOutDevice
 from Modules.ikeaTradfri import ikea_air_purifier_cluster
 from Modules.lumi import (AqaraOppleDecoding0012, cube_decode, decode_vibr,
-                          decode_vibrAngle, readLumiLock, readXiaomiCluster,
-                          store_lumi_attribute)
+                          decode_vibrAngle)
 from Modules.philips import philips_dimmer_switch
 from Modules.readZclClusters import (is_cluster_zcl_config_available,
                                      process_cluster_attribute_response)
@@ -35,19 +33,9 @@ from Modules.schneider_wiser import (receiving_heatingdemand_attribute,
 from Modules.tools import (DeviceExist, checkAndStoreAttributeValue,
                            checkAttribute, checkValidValue,
                            get_deviceconf_parameter_value, getEPforClusterType,
-                           is_hex, set_status_datastruct,
-                           set_timestamp_datastruct)
-from Modules.zclClusterHelpers import (compute_electrical_measurement_conso,
-                                       compute_metering_conso)
-from Modules.zigateConsts import (LEGRAND_REMOTE_SHUTTER,
-                                  LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES,
-                                  ZONE_TYPE)
-from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
-                            convert_kva_to_ampere, decode_STEG, linky_mode,
-                            store_ZLinky_infos,
-                            update_zlinky_device_model_if_needed,
-                            zlinky_check_alarm, zlinky_color_tarif,
-                            zlinky_totalisateur)
+                           set_status_datastruct, set_timestamp_datastruct)
+from Modules.zclClusterHelpers import compute_metering_conso
+from Modules.zigateConsts import ZONE_TYPE
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -197,7 +185,6 @@ def ReadCluster( self, Devices, MsgType, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgCluste
 
         self.log.logging( "Cluster", "Error", "ReadCluster - Warning - unknow %s/%s Cluster: %s Attribute: %s Status: %s DataType: %s DataSize: %s Data: %s" %(
             MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, _context, )
-
 
 
 def Cluster0006(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -747,39 +734,23 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         return
     _modelName = self.ListOfDevices[MsgSrcAddr]["Model"]
 
-    self.log.logging(
-        "Cluster",
-        "Debug",
-        "readCluster - %s - %s/%s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s Model: >%s<" % (
-            MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName),
-        MsgSrcAddr,
-    )
+    aqara_button3_behaviour = get_deviceconf_parameter_value(self, _modelName, "Aqara_Buton_3", return_default=None)
+    self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s Model: >%s<" % (
+        MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName), MsgSrcAddr, )
 
     # Hanlding Message from the Aqara Opple Switch 2,4,6 buttons
     if _modelName in ("lumi.remote.b686opcn01", "lumi.remote.b486opcn01", "lumi.remote.b286opcn01",):
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         AqaraOppleDecoding0012(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-    elif _modelName in (
-        "lumi.remote.b1acn01",
-        "lumi.remote.b28ac1", 
-        "lumi.remote.b186acn01",
-        "lumi.remote.b186acn02",
-        "lumi.remote.b286acn01",
-        "lumi.remote.b286acn02",
-        "lumi.remote.acn003"
-    ):
+    elif aqara_button3_behaviour or _modelName in ("lumi.remote.b1acn01","lumi.remote.b28ac1", "lumi.remote.b186acn01","lumi.remote.b186acn02","lumi.remote.b286acn01","lumi.remote.b286acn02","lumi.remote.acn003"):
         # 0 -> Hold
         # 1 -> Short Release
         # 2 -> Double press
         # 255 -> Long Release
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " % (MsgSrcEp, value),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " % (
+            MsgSrcEp, value), MsgSrcAddr, )
         if value == 0:
             value = 3
 
@@ -790,12 +761,8 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif _modelName in ("lumi.sensor_switch.aq3", "lumi.sensor_switch.aq3t"):
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - ClusterId=0012 - Switch Aqara (AQ2): EP: %s Value: %s " % (MsgSrcEp, value),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - ClusterId=0012 - Switch Aqara (AQ2): EP: %s Value: %s " % (
+            MsgSrcEp, value), MsgSrcAddr, )
 
         # Store the value in Cluster 0x0006 (as well)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006", str(value))
@@ -804,36 +771,20 @@ def Cluster0012(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif _modelName in ("lumi.ctrl_ln2.aq1",):
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - ClusterId=0012 - Switch Aqara lumi.ctrl_ln2.aq1: EP: %s Attr: %s Value: %s " % (MsgSrcEp, MsgAttrID, value),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - ClusterId=0012 - Switch Aqara lumi.ctrl_ln2.aq1: EP: %s Attr: %s Value: %s " % (
+            MsgSrcEp, MsgAttrID, value), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif _modelName in ("lumi.sensor_cube.aqgl01", "lumi.sensor_cube"):
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, cube_decode(self, MsgClusterData, MsgSrcAddr))
 
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, cube_decode(self, MsgClusterData, MsgSrcAddr))
-        self.log.logging(
-            "Cluster",
-            "Debug",
-            "ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(cube_decode(self, MsgClusterData, MsgSrcAddr)),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Debug", "ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(cube_decode(self, MsgClusterData, MsgSrcAddr)), MsgSrcAddr, )
 
     else:
-        self.log.logging(
-            "Cluster",
-            "Log",
-            "readCluster - %s - %s/%s unknown attribute: %s %s %s %s Model: %s" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName),
-            MsgSrcAddr,
-        )
+        self.log.logging( "Cluster", "Log", "readCluster - %s - %s/%s unknown attribute: %s %s %s %s Model: %s" % (
+            MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
-
-
-
 
 
 def Cluster0101(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
@@ -1891,11 +1842,6 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
 
-# Cluster Manufacturer specifics
-
-
-    
-
 def Clusterfe03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # Schneider Wiser (new)
     # Cluster 0xfe03
@@ -1953,6 +1899,7 @@ def pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAtt
 
     return self.ListOfDevices.get(MsgSrcAddr, {}).get("Model")
 
+
 def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     model = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
     if model is None:
@@ -1996,6 +1943,7 @@ def Clusterfc01(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # Enable Led if On
             self.ListOfDevices[MsgSrcAddr]["Legrand"]["EnableLedIfOn"] = int(MsgClusterData, 16)
 
+
 def Clusterfc03(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     # Philips cluster - NOT IMPLEMENTED
     model = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
@@ -2031,6 +1979,7 @@ def Clusterfc21(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, int(MsgClusterData, 16)), MsgSrcAddr, )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
+
 def Clusterfc57(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source):
     model = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
     
@@ -2039,6 +1988,7 @@ def Clusterfc7d(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     model = pre_process_cluster_message(self, MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)
     
     ikea_air_purifier_cluster(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+
 
 def create_context(MsgClusterId, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData):
     """
@@ -2063,6 +2013,7 @@ def create_context(MsgClusterId, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, Ms
         "MsgAttSize": str(MsgAttSize),
         "MsgClusterData": str(MsgClusterData),
     }
+
 
 DECODE_CLUSTER = {
     "0006": Cluster0006,
