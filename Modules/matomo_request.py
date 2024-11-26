@@ -148,7 +148,7 @@ def send_matomo_request(self, action_name, custom_variable=None, custom_dimensio
     client_id = get_clientid(self)
     self.log.logging( "Matomo", "Debug", f"send_matomo_request - Clien_id {client_id}")
     if client_id is None:
-        self.log.logging( "Matomo", "Error", "Noting reported as MacAddress is None!")
+        self.log.logging( "Matomo", "Error", "Nothing reported as MacAddress is None!")
         return
 
     # Construct the payload
