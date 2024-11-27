@@ -587,8 +587,6 @@ class BasePlugin:
             usage_percentage = round(((255 - free_slots) / 255) * 100, 1)
             self.log.logging("Plugin", "Status", f"Z4D Widgets usage is at {usage_percentage}% ({free_slots} units free)")
 
-        if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
-            matomo_plugin_analytics_infos(self)
         self.log.logging("Plugin", "Status", f"Z4D started with {framework_status}")
 
         self.busy = False
@@ -1346,6 +1344,9 @@ def zigateInit_Phase3(self):
     
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
         matomo_plugin_started(self)
+
+    if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
+        matomo_plugin_analytics_infos(self)
 
 
 def start_GrpManagement(self, homefolder):
