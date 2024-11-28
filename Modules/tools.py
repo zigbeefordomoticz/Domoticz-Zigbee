@@ -1429,34 +1429,18 @@ def extract_info_from_8085(MsgData):
 
     return (step_mod, up_down, step_size, transition)
 
-
 def how_many_devices(self):
     routers = enddevices = 0
     
-    for x in self.ListOfDevices:
-        if "DeviceType" in self.ListOfDevices[x] and self.ListOfDevices[x]["DeviceType"] == "FFD":
-            routers += 1
-            continue
-        
-        if "LogicalType" in self.ListOfDevices[x] and self.ListOfDevices[x]["LogicalType"] == "Router":
-            routers += 1
-            continue
-        
-        if "LogicalType" in self.ListOfDevices[x] and self.ListOfDevices[x]["LogicalType"] == "End Device":
-            enddevices += 1
-            continue
-        
-        if "DeviceType" in self.ListOfDevices[x] and self.ListOfDevices[x]["DeviceType"] == "RFD":
-            enddevices += 1
-            continue
+    for device in self.ListOfDevices.values():
+        device_type = device.get("DeviceType")
+        logical_type = device.get("LogicalType")
+        mac_capa = device.get("MacCapa")
 
-        if "MacCapa" in self.ListOfDevices[x] and self.ListOfDevices[x]["MacCapa"] == "8e":
+        if device_type == "FFD" or logical_type == "Router" or mac_capa == "8e":
             routers += 1
-            continue
-
-        if "MacCapa" in self.ListOfDevices[x] and self.ListOfDevices[x]["MacCapa"] == "80":
+        elif device_type == "RFD" or logical_type == "End Device" or mac_capa == "80":
             enddevices += 1
-            continue
 
     return routers, enddevices
 

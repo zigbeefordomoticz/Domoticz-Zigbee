@@ -16,9 +16,8 @@ import json
 import os
 import platform
 import re
-import sys
 import time
-
+from Modules.tools import how_many_devices
 import distro
 import requests
 
@@ -71,9 +70,7 @@ def populate_custom_dimmensions(self):
         _custom_dimensions[ "dimension4"] = clean_custom_dimension_value( _coordinator_version)
 
     # Network Size
-    total, router, end_devices = get_network_size_items(self.pluginParameters.get("NetworkSize"))
-    if total:
-        _custom_dimensions[ "dimension5"] = clean_custom_dimension_value(total)
+    _custom_dimensions[ "dimension5"] = clean_custom_dimension_value(get_network_size_items(self))
 
     # Certified Db Version
     certified_db_version = self.pluginParameters.get("CertifiedDbVersion")
@@ -273,28 +270,18 @@ def get_uptime_category(start_time):
     return classify_uptime(uptime_seconds)
 
 
-def get_network_size_items(networksize):
+def get_network_size_items(self):
 
-    if not networksize:
-        return None, None, None
-
-    # Split the string by " | " to separate each category
-    parts = networksize.split(" | ")
-
-    # Extract individual values using string splitting
-    try:
-        networkTotalsize = int(parts[0].split(":")[1].strip())  # Extract the number after "Total: "
-        networkRoutersize = int(parts[1].split(":")[1].strip())  # Extract the number after "Routers: "
-        networkEndDevicesize = int(parts[2].split(":")[1].strip())  # Extract the number after "End Devices: "
-
-    except IndexError:
-        print("Error: The string format doesn't match the expected pattern.")
-        return None, None, None
-
-    return classify_nwk_size(networkTotalsize), classify_nwk_size(networkRoutersize), classify_nwk_size(networkEndDevicesize)
+    routers, end_devices = how_many_devices(self)
+    networkTotalsize = routers + end_devices
+    
+    return classify_nwk_size(networkTotalsize)
 
 
 def classify_nwk_size(value):
+    if value == 0:
+        return "unknown"
+
     if value < 5:
         return "Micro"
     elif 5 <= value < 10:
@@ -305,8 +292,8 @@ def classify_nwk_size(value):
         return "Large"
     elif 50 <= value < 75:
         return "Very Large"
-    else:
-        return "Xtra Large"
+
+    return "Xtra Large"
 
 
 def get_distribution(self):
