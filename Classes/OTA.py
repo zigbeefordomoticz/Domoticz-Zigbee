@@ -702,26 +702,26 @@ def ota_upgrade_end_response(self, sqn, dest_addr, dest_ep, intMsgImageVersion, 
     #
     # UPGRADE_END_RESPONSE 	0x0504
     # u32UpgradeTime is the UTC time, in seconds, at which the client should upgrade the running image with the downloaded image
-
     # u32CurrentTime is the current UTC time, in seconds, on the server.
-    _UpgradeTime = 0x00
+
     EPOCTime = datetime(2000, 1, 1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+    _UpgradeTime = UTCTime + 10  # 10 seconds delay
 
     _FileVersion = intMsgImageVersion
     _ImageType = image_type
     _ManufacturerCode = intMsgManufCode
 
-    datas = "%02x" % ADDRESS_MODE["short"] + dest_addr + ZIGATE_EP + dest_ep
-    datas += "%08x" % _UpgradeTime
-    datas += "%08x" % 0x00
-    datas += "%08x" % _FileVersion
-    datas += "%04x" % _ImageType
-    datas += "%04x" % _ManufacturerCode
-    
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         zcl_raw_ota_upgrade_end_response(self, sqn, dest_addr, ZIGATE_EP, dest_ep, "%04x" % _ManufacturerCode, "%04x" % _ImageType, "%08x" % _FileVersion, "%08x" %UTCTime, "%08x" % _UpgradeTime)
     else:
+        datas = "%02x" % ADDRESS_MODE["short"] + dest_addr + ZIGATE_EP + dest_ep
+        datas += "%08x" % _UpgradeTime
+        datas += "%08x" % 0x00
+        datas += "%08x" % _FileVersion
+        datas += "%04x" % _ImageType
+        datas += "%04x" % _ManufacturerCode
+
         self.ControllerLink.sendData("0504", datas, ackIsDisabled=False, NwkId=dest_addr)
 
     logging( self, "Log", "ota_management - sending Upgrade End Response, for %s Version: 0x%08X Type: 0x%04x, Manuf: 0x%04X" % (dest_addr, _FileVersion, _ImageType, _ManufacturerCode), )
