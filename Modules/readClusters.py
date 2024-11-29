@@ -1752,6 +1752,14 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # Report Line 3 on fake Ep "f3"
 
         if MsgAttrID in ("2000", "2001", "2002"):  # Lx phase Power
+
+            if MsgAttType == "2a":
+                # That is a signed 24bit
+                signed_int = struct.unpack("i", struct.pack("I", int("0" + MsgClusterData, 16)))[0]
+                if (signed_int & 0x00800000) != 0:
+                    signed_int -= 0x01000000
+                value = signed_int
+
             line = 1 + (int(MsgAttrID, 16) - 0x2000)
             fake_ep = "f%s" % line
             conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
@@ -1767,6 +1775,13 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, fake_ep, MsgClusterId, str(conso))
 
         elif MsgAttrID in ("2100", "2101", "2102"):  # Reactive Power
+            if MsgAttType == "2a":
+                # That is a signed 24bit
+                signed_int = struct.unpack("i", struct.pack("I", int("0" + MsgClusterData, 16)))[0]
+                if (signed_int & 0x00800000) != 0:
+                    signed_int -= 0x01000000
+                value = signed_int
+
             line = 1 + (int(MsgAttrID, 16) - 0x2100)
             fake_ep = "f%s" % line
             conso = compute_metering_conso(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, "0400", value)
