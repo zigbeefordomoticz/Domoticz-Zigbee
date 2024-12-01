@@ -12,12 +12,10 @@
 
 
 import json
-from time import time
+import time
+from pathlib import Path
 
-from Modules.domoticzAbstractLayer import (domoticz_error_api,
-                                           domoticz_log_api,
-                                           domoticz_status_api)
-
+from Modules.domoticzAbstractLayer import domoticz_log_api, domoticz_status_api
 
 class TransportStatistics:
     def __init__(self, pluginconf, log, zigbee_communication):
@@ -49,7 +47,7 @@ class TransportStatistics:
         self._maxRxProcesses = self._cumulRxProcess = self._cntRxProcess = self._averageRxProcess = 0
         self._max_reading_thread_timing = self._cumul_reading_thread_timing = self._cnt_reading_thread_timing = self._average_reading_thread_timing = 0
         self._max_reading_zigpy_timing = self._cumul_reading_zigpy_timing = self._cnt_reading_zigpy_timing = self._average_reading_zigpy_timing = 0
-        self._start = int(time())
+        self._start = int(time.time())
         self.TrendStats = []
         self.pluginconf = pluginconf
         self.log = log
@@ -59,11 +57,14 @@ class TransportStatistics:
     def starttime(self):
         return self._start
 
+
     def pdm_loaded(self):
         self._pdmLoads += 1
 
+
     def get_pdm_loaded(self):
         return self._pdmLoads
+
 
     def add_timing_zigpy(self, timing):
         self._cumul_reading_zigpy_timing += timing
@@ -85,6 +86,7 @@ class TransportStatistics:
                 % (self._max_reading_thread_timing, self._average_reading_thread_timing)
             )
 
+
     def add_timing8000(self, timing):
 
         self._cumulTiming8000 += timing
@@ -96,6 +98,7 @@ class TransportStatistics:
                 "Coordinator command round trip 0x8000 Max: %s ms with an of average: %s ms"
                 % (self._maxTiming8000, self._averageTiming8000)
             )
+
 
     def add_timing8011(self, timing):
 
@@ -109,6 +112,7 @@ class TransportStatistics:
                 % (self._maxTiming8011, self._averageTiming8011)
             )
 
+
     def add_timing8012(self, timing):
 
         self._cumulTiming8012 += timing
@@ -120,6 +124,7 @@ class TransportStatistics:
                 "Coordinator command round trip 0x8012 Max: %s ms with an of average: %s ms"
                 % (self._maxTiming8012, self._averageTiming8012)
             )
+
 
     def add_rxTiming(self, timing):
 
@@ -133,151 +138,224 @@ class TransportStatistics:
                 % (self._maxRxProcesses, self._averageRxProcess)
             )
 
-    def addPointforTrendStats(self, TimeStamp):
 
+    def addPointforTrendStats(self, TimeStamp):
+        """
+        Adds a point to the trend statistics table, tracking Rx, Tx, and Load metrics.
+
+        Args:
+            TimeStamp (int): The timestamp for the data point.
+
+        Note:
+            The table is capped at MAX_TREND_STAT_TABLE entries, with the oldest entry removed when the limit is reached.
+        """
         MAX_TREND_STAT_TABLE = 120
 
-        uptime = int(time() - self._start)
-        Rxps = round(self._received / uptime, 2)
-        Txps = round(self._sent / uptime, 2)
-        if len(self.TrendStats) >= MAX_TREND_STAT_TABLE:
-            del self.TrendStats[0]
-        self.TrendStats.append({"_TS": TimeStamp, "Rxps": Rxps, "Txps": Txps, "Load": self._Load})
+        try:
+            # Calculate uptime and transmission rates
+            uptime = int(time.time() - self._start)
+            if uptime <= 0:
+                self.log.logging("Stats", "Error", "Invalid uptime calculation: uptime must be greater than 0.")
+                return
+
+            Rxps = round(self._received / uptime, 2)
+            Txps = round(self._sent / uptime, 2)
+
+            # Maintain the size of the TrendStats table
+            if len(self.TrendStats) >= MAX_TREND_STAT_TABLE:
+                self.TrendStats.pop(0)
+
+            # Append the new data point
+            self.TrendStats.append({
+                "_TS": TimeStamp,
+                "Rxps": Rxps,
+                "Txps": Txps,
+                "Load": self._Load
+            })
+
+        except Exception as e:
+            self.log.logging("Stats", "Error", f"Failed to add point to trend stats: {e}")
+
 
     def reTx(self):
         """ return the number of crc Errors """
         return self._reTx
 
+
     def crcErrors(self):
         " return the number of crc Errors "
         return self._crcErrors
+
 
     def frameErrors(self):
         " return the number of frame errors"
         return self._frameErrors
 
+
     def sent(self):
         " return he number of sent messages"
         return self._sent
+
 
     def received(self):
         " return the number of received messages"
         return self._received
 
+
     def ackReceived(self):
         return self._ack
+
 
     def ackKOReceived(self):
         return self._ackKO
 
+
     def dataReceived(self):
         return self._data
+
 
     def TOstatus(self):
         return self._TOstatus
 
+
     def TOdata(self):
         return self._TOdata
+
 
     def clusterOK(self):
         return self._clusterOK
 
+
     def clusterKO(self):
         return self._clusterKO
+
 
     def APSFailure(self):
         return self._APSFailure
 
+
     def APSAck(self):
         return self._APSAck
+
 
     def APSNck(self):
         return self._APSNck
 
+
     def printSummary(self):
-        if self.received() == 0:
+        """
+        Prints a summary of plugin statistics, including transmission,
+        reception, and timing metrics.
+        """
+        if self.received() == 0 or self.sent() == 0:
             return
-        if self.sent() == 0 or self.received() == 0:
-            return
+
+        def print_with_percentage(label, value, total):
+            percentage = round((value / total) * 100, 2)
+            domoticz_status_api(f"{label}: {value} ({percentage}%)")
+
         domoticz_status_api("Plugin statistics")
         domoticz_status_api("  Messages Sent:")
-        domoticz_status_api("     Max Load (Queue) : %s " % (self._MaxLoad))
-        domoticz_status_api("     TX commands      : %s" % (self.sent()))
-        domoticz_status_api("     TX failed        : %s (%s" % (self.ackKOReceived(), round((self.ackKOReceived() / self.sent()) * 10, 2))+ "%)")
+        domoticz_status_api(f"     Max Load (Queue) : {self._MaxLoad}")
+        domoticz_status_api(f"     TX commands      : {self.sent()}")
+
+        print_with_percentage("     TX failed", self.ackKOReceived(), self.sent())
 
         if self.zigbee_communication == "native":
-            domoticz_status_api("     TX timeout       : %s (%s" % (self.TOstatus(), round((self.TOstatus() / self.sent()) * 100, 2)) + "%)")
+            print_with_percentage("     TX timeout", self.TOstatus(), self.sent())
 
-        domoticz_status_api("     TX data timeout  : %s (%s" % (self.TOdata(), round((self.TOdata() / self.sent()) * 100, 2)) + "%)")
-        domoticz_status_api("     TX reTransmit    : %s (%s" % (self.reTx(), round((self.reTx() / self.sent()) * 100, 2)) + "%)")
+        print_with_percentage("     TX data timeout", self.TOdata(), self.sent())
+        print_with_percentage("     TX reTransmit", self.reTx(), self.sent())
 
         if self.zigbee_communication == "native":
-            domoticz_status_api("     TX APS Failure   : %s (%s" % (self.APSFailure(), round((self.APSFailure() / self.sent()) * 100, 2))+ "%)")
+            print_with_percentage("     TX APS Failure", self.APSFailure(), self.sent())
 
-        domoticz_status_api("     TX APS Ack       : %s (%s" % (self.APSAck(), round((self.APSAck() / self.sent()) * 100, 2)) + "%)")
-        domoticz_status_api("     TX APS Nck       : %s (%s" % (self.APSNck(), round((self.APSNck() / self.sent()) * 100, 2)) + "%)")
+        print_with_percentage("     TX APS Ack", self.APSAck(), self.sent())
+        print_with_percentage("     TX APS Nck", self.APSNck(), self.sent())
 
         domoticz_status_api("  Messages Received:")
-        domoticz_status_api("     RX frame         : %s" % (self.received()))
-        domoticz_status_api("     RX clusters      : %s" % (self.clusterOK()))
-        domoticz_status_api("     RX clusters KO   : %s" % (self.clusterKO()))
+        domoticz_status_api(f"     RX frame         : {self.received()}")
+        domoticz_status_api(f"     RX clusters      : {self.clusterOK()}")
+        domoticz_status_api(f"     RX clusters KO   : {self.clusterKO()}")
 
         if self.zigbee_communication == "native":
             domoticz_status_api("  Coordinator reacting time on Tx (if ReactTime enabled)")
-            domoticz_status_api("     Max              : %s sec" % (self._maxTiming8000))
-            domoticz_status_api("     Average          : %s sec" % (self._averageTiming8000))
-
+            domoticz_status_api(f"     Max              : {self._maxTiming8000} sec")
+            domoticz_status_api(f"     Average          : {self._averageTiming8000} sec")
         else:
             domoticz_status_api("  Plugin reacting time on Tx (if ReactTime enabled)")
-            domoticz_status_api("     Max              : %s ms" % (self._max_reading_zigpy_timing))
-            domoticz_status_api("     Average          : %s ms" % (self._average_reading_zigpy_timing))
+            domoticz_status_api(f"     Max              : {self._max_reading_zigpy_timing} ms")
+            domoticz_status_api(f"     Average          : {self._average_reading_zigpy_timing} ms")
 
         domoticz_status_api("  Plugin processing time on Rx (if ReactTime enabled)")
-        if self.zigbee_communication == "native":
-            domoticz_status_api("     Max              : %s sec" % (self._maxRxProcesses))
-            domoticz_status_api("     Average          : %s sec" % (self._averageRxProcess))
-        else:
-            domoticz_status_api("     Max              : %s ms" % (self._maxRxProcesses))
-            domoticz_status_api("     Average          : %s ms" % (self._averageRxProcess))
+        timing_unit = "sec" if self.zigbee_communication == "native" else "ms"
+        domoticz_status_api(f"     Max              : {self._maxRxProcesses} {timing_unit}")
+        domoticz_status_api(f"     Average          : {self._averageRxProcess} {timing_unit}")
 
-        t0 = self.starttime()
-        t1 = int(time())
-        _days = 0
-        _duration = t1 - t0
-        _hours = _duration // 3600
-        _duration = _duration % 3600
-        if _hours >= 24:
-            _days = _hours // 24
-            _hours = _hours % 24
-        _min = _duration // 60
-        _duration = _duration % 60
-        _sec = _duration % 60
-        domoticz_status_api("  Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
+        days, hours, mins, secs = _plugin_uptime(self.starttime())
+        domoticz_status_api("  Operating time      : %d Days %d Hours %d Mins %d Secs" % (days, hours, mins, secs))
 
 
     def writeReport(self):
+        """
+        Write transport statistics to a JSON file.
+        """
+        # Collect the current timestamp
+        current_time = int(time.time())
 
-        timing = int(time())
-        stats = {timing: {}}
-        stats[timing]["crcErrors"] = self._crcErrors
-        stats[timing]["frameErrors"] = self._frameErrors
-        stats[timing]["sent"] = self._sent
-        stats[timing]["received"] = self._received
-        stats[timing]["APS Ack"] = self._APSAck
-        stats[timing]["APS Nck"] = self._APSNck
-        stats[timing]["ack"] = self._ack
-        stats[timing]["ackKO"] = self._ackKO
-        stats[timing]["data"] = self._data
-        stats[timing]["TOstatus"] = self._TOstatus
-        stats[timing]["TOdata"] = self._TOdata
-        stats[timing]["clusterOK"] = self._clusterOK
-        stats[timing]["clusterKO"] = self._clusterKO
-        stats[timing]["reTx"] = self._reTx
-        stats[timing]["MaxLoad"] = self._MaxLoad
-        stats[timing]["start"] = self._start
-        stats[timing]["stop"] = timing
+        # Prepare stats dictionary
+        stats = {
+            current_time: {
+                "crcErrors": self._crcErrors,
+                "frameErrors": self._frameErrors,
+                "sent": self._sent,
+                "received": self._received,
+                "APS Ack": self._APSAck,
+                "APS Nck": self._APSNck,
+                "ack": self._ack,
+                "ackKO": self._ackKO,
+                "data": self._data,
+                "TOstatus": self._TOstatus,
+                "TOdata": self._TOdata,
+                "clusterOK": self._clusterOK,
+                "clusterKO": self._clusterKO,
+                "reTx": self._reTx,
+                "MaxLoad": self._MaxLoad,
+                "start": self._start,
+                "stop": current_time,
+            }
+        }
 
-        json_filename = self.pluginconf.pluginConf["pluginReports"] + "Transport-stats.json"
-        with open(json_filename, "at") as json_file:
-            json_file.write("\n")
-            json.dump(stats, json_file)
+        # Construct the JSON file path
+        json_filename = Path(self.pluginconf.pluginConf["pluginReports"]) / "Transport-stats.json"
+
+        try:
+            # Append statistics to the JSON file
+            with open(json_filename, "a") as json_file:  # Use 'a' for appending
+                json_file.write("\n")
+                json.dump(stats, json_file, indent=4)  # Add indent for better readability
+        except Exception as e:
+            self.log.logging("Plugin", "Error", f"Failed to write transport stats: {e}")
+
+
+def _plugin_uptime(starttime):
+    """
+    Calculates the uptime since the given start time.
+
+    Args:
+        starttime (int): The start time in seconds since the epoch.
+
+    Returns:
+        tuple: Uptime in days, hours, minutes, and seconds.
+    """
+    t1 = int(time.time())
+    _duration = t1 - starttime
+
+    _days = _duration // (24 * 3600)
+    _duration %= 24 * 3600
+    _hours = _duration // 3600
+    _duration %= 3600
+    _mins = _duration // 60
+    _secs = _duration % 60
+
+    return _days, _hours, _mins, _secs
