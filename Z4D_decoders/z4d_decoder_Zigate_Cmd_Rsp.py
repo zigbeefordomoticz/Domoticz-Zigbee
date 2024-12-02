@@ -63,9 +63,11 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):
 def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     self.log.logging('Input', 'Debug', 'Decode8011 - APS ACK: %s' % MsgData)
     MsgLen = len(MsgData)
+    if MsgLen > 6:
+        self.log.logging('Input', 'Error', f"Decode8011 - unexpected payload received {MsgData}")
     MsgStatus = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
-    
+
     if MsgSrcAddr not in self.ListOfDevices:
         if not zigpy_plugin_sanity_check(self, MsgSrcAddr):
             self.log.logging('Input', 'Debug', f"Decode8011 - not zigpy_plugin_sanity_check {MsgSrcAddr} {MsgStatus}")
@@ -97,11 +99,10 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
 
     if not _powered:
         return
-    
+
     self.log.logging('Input', 'Debug', f"Decode8011 - Timedout {MsgSrcAddr}")
 
     timedOutDevice(self, Devices, NwkId=MsgSrcAddr)
-
     set_health_state(self, MsgSrcAddr, MsgData[8:12], MsgStatus)
     
     
