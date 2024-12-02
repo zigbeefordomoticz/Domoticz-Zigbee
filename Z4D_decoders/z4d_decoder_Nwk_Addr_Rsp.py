@@ -1,7 +1,20 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
+
 from Modules.basicOutputs import handle_unknow_device
 from Modules.domoTools import lastSeenUpdate
 from Modules.errorCodes import DisplayStatusCode
-from Modules.tools import (DeviceExist, loggingMessages, timeStamped,
+from Modules.tools import (DeviceExist, loggingMessages,
                            zigpy_plugin_sanity_check)
 from Modules.zb_tables_management import store_NwkAddr_Associated_Devices
 from Z4D_decoders.z4d_decoder_helpers import \
@@ -40,7 +53,6 @@ def Decode8040(self, Devices, MsgData, MsgLQI):
         if extendedResponse:
             store_NwkAddr_Associated_Devices(self, MsgShortAddress, MsgStartIndex, MsgDeviceList)
 
-        timeStamped(self, MsgShortAddress, 32833)
         loggingMessages(self, '8040', MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
         lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
         return
@@ -58,7 +70,6 @@ def Decode8040(self, Devices, MsgData, MsgLQI):
         if extendedResponse:
             store_NwkAddr_Associated_Devices(self, MsgShortAddress, MsgStartIndex, MsgDeviceList)
 
-        timeStamped(self, MsgShortAddress, 32833)
         loggingMessages(self, '8040', MsgShortAddress, MsgIEEE, MsgLQI, MsgSequenceNumber)
         lastSeenUpdate(self, Devices, NwkId=MsgShortAddress)
 
