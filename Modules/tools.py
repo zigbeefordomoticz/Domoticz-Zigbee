@@ -421,15 +421,31 @@ def initDeviceInList(self, Nwkid):
 
 
 def timeStamped(self, key, Type):
+    """
+    Updates the timestamp information for a device.
+
+    Args:
+        key (str): The unique identifier (key) for the device in `ListOfDevices`.
+        Type (int): The message type or event type to be logged.
+
+    This method:
+    - Ensures the device exists in `ListOfDevices` before updating.
+    - Initializes the "Stamp" field if it is missing.
+    - Updates the current time in both UNIX timestamp and formatted string formats.
+    - Logs the message type in hexadecimal format.
+    """
+    # Ensure the device exists in ListOfDevices
     if key not in self.ListOfDevices:
         return
-    if "Stamp" not in self.ListOfDevices[key]:
-        self.ListOfDevices[key]["Stamp"] = {"LasteSeen": {}, "Time": {}, "MsgType": {}}
-    self.ListOfDevices[key]["Stamp"]["time"] = time.time()
-    self.ListOfDevices[key]["Stamp"]["Time"] = datetime.datetime.fromtimestamp(time.time()).strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
-    self.ListOfDevices[key]["Stamp"]["MsgType"] = "%4x" % (Type)
+
+    # Initialize the "Stamp" dictionary if not present
+    stamp = self.ListOfDevices[key].setdefault("Stamp", {"LastSeen": {}, "Time": {}, "MsgType": {}})
+
+    # Update the timestamp and message type
+    current_time = time.time()
+    stamp["time"] = current_time
+    stamp["Time"] = datetime.datetime.fromtimestamp(current_time).strftime("%Y-%m-%d %H:%M:%S")
+    stamp["MsgType"] = f"{Type:04x}"
 
 
 # Used by zcl/zdpRawCommands
@@ -467,28 +483,38 @@ def updSQN(self, key, newSQN):
 
 
 def updLQI(self, key, LQI):
+    """
+    Update the Link Quality Indicator (LQI) for a device.
 
+    Args:
+        key (str): The unique identifier of the device.
+        LQI (str): The LQI value in hexadecimal format.
+
+    This function ensures the LQI value is updated and maintains a rolling history
+    of the last 10 LQI values for the device.
+    """
+    # Ensure the device exists in the list
     if key not in self.ListOfDevices:
         return
 
-    if "LQI" not in self.ListOfDevices[key]:
-        self.ListOfDevices[key]["LQI"] = {}
+    # Initialize LQI fields if not present
+    device_info = self.ListOfDevices[key]
+    device_info.setdefault("LQI", {})
+    device_info.setdefault("RollingLQI", [])
 
-    if LQI == "00":
+    # Skip invalid LQI values
+    if LQI == "00" or not is_hex(LQI):
         return
 
-    if is_hex(LQI):  # Check if the LQI is Correct
+    # Convert the LQI to an integer and update
+    lqi_value = int(LQI, 16)
+    device_info["LQI"] = lqi_value
 
-        self.ListOfDevices[key]["LQI"] = int(LQI, 16)
-
-        if "RollingLQI" not in self.ListOfDevices[key]:
-            self.ListOfDevices[key]["RollingLQI"] = []
-
-        if len(self.ListOfDevices[key]["RollingLQI"]) > 10:
-            del self.ListOfDevices[key]["RollingLQI"][0]
-        self.ListOfDevices[key]["RollingLQI"].append(int(LQI, 16))
-
-    return
+    # Maintain a rolling history of up to 10 LQI values
+    rolling_lqi = device_info["RollingLQI"]
+    if len(rolling_lqi) >= 10:
+        rolling_lqi.pop(0)  # Remove the oldest value
+    rolling_lqi.append(lqi_value)
 
 
 def upd_RSSI(self, nwkid, rssi_value):
