@@ -827,9 +827,8 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
             result, _ = await zigpy_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout)
 
         except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError, AttributeError, DeliveryError) as e:
-            error_log_message = f"Warning while submitting - {Function} {_ieee}/0x{_nwkid} 0x{Profile:X} 0x{Cluster:X} payload: {payload} AckIsDisable: {ack_is_disable} Retry: {attempt}/{max_retry} with exception ({e})"
+            error_log_message = f"Warning while submitting - {Function} {_ieee}/0x{_nwkid} 0x{Profile:X} 0x{Cluster:X} payload: {payload} AckIsDisable: {ack_is_disable} Retry: {attempt}/{max_retry} with exception: '{e}' ({type(e)}))"
             self.log.logging("TransportZigpy", "Log", error_log_message)
-
             if await _retry_or_not(self, attempt, max_retry, Function, sequence, ack_is_disable, _ieee, _nwkid, destination, e):
                 self.statistics._reTx += 1
                 if isinstance(e, asyncio.exceptions.TimeoutError):
@@ -837,6 +836,7 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
                 continue
             else:
                 self.statistics._ackKO += 1
+                result = 0xB6
                 break
 
         except Exception as error:
@@ -848,7 +848,7 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
         else:
             # Success
             if delay_after_command_sent:
-                self.log.logging("TransportZigpy", "Log", f"sleeping {delay_after_command_sent} as per configured!!")
+                self.log.logging("TransportZigpy", "Debug", f"sleeping {delay_after_command_sent} as per configured!!")
                 await asyncio.sleep( delay_after_command_sent )
 
             handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
@@ -953,14 +953,14 @@ async def _retry_or_not(self, attempt, max_retry, Function, sequence,ack_is_disa
         return True
 
     # Stop here as we have exceed the max retrys
-    result = int(e.status) if hasattr(e, 'status') else 0xB6
+    self.log.logging("TransportZigpy", "Log", f"_retry_or_not: result: {e} ({(type(e))})")
+    result = min(int(e.status) if hasattr(e, 'status') else 0xB6, 0xB6)
 
     handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
     return False
 
 
 def handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):
-    self.log.logging("TransportZigpy", "Debug", f"handle_transport_result - {Function} - {_nwkid} - AckIsDisable: {ack_is_disable} Result: {result}")
     if ack_is_disable:
         # As Ack is disable, we cannot conclude that the target device is in trouble.
         # this could be the coordinator itself, or the next hop.
@@ -970,11 +970,9 @@ def handle_transport_result(self, Function, sequence, result, ack_is_disable, _i
 
     if result == 0x00 and _ieee in self._currently_not_reachable:
         self._currently_not_reachable.remove(_ieee)
-        self.log.logging("TransportZigpy", "Debug", f"handle_transport_result -removing {_ieee} to not_reachable queue")
 
     elif result != 0x00 and _ieee not in self._currently_not_reachable:
         # Mark the ieee has not reachable.
-        self.log.logging("TransportZigpy", "Debug", f"handle_transport_result -adding {_ieee} to not_reachable queue")
         self._currently_not_reachable.append(_ieee)
 
 
