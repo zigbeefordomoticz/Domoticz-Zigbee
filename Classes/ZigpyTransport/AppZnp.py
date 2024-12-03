@@ -66,6 +66,7 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
 
         self.shutting_down = False
         self.restarting = False
+        self.radio_lost_cnt = 0
 
         # Pipiche : 24-Oct-2022 Disabling CONF_MAX_CONCURRENT_REQUESTS so the default will be used ( 16 )
         # self.znp_config[znp_conf.CONF_MAX_CONCURRENT_REQUESTS] = 2

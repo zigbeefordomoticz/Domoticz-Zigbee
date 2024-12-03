@@ -825,6 +825,7 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
         try:
             self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {_ieee} {Profile:X} {Cluster:X} - AckIsDisable: {ack_is_disable} extended_timeout: {extended_timeout} Attempts: {attempt}/{max_retry}")
             result, _ = await zigpy_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout)
+            self.radio_lost_cnt = 0
 
         except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError, AttributeError, DeliveryError) as e:
             error_log_message = f"Warning while submitting - {Function} {_ieee}/0x{_nwkid} 0x{Profile:X} 0x{Cluster:X} payload: {payload} AckIsDisable: {ack_is_disable} Retry: {attempt}/{max_retry} with exception: '{e}' ({type(e)}))"
@@ -844,6 +845,7 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
             error_log_message = f"_send_and_retry - Unexpected Exception - {Function} {_ieee}/0x{_nwkid} 0x{Profile:X} 0x{Cluster:X} payload: {payload} AckIsDisable: {ack_is_disable} RETRY: {attempt}/{max_retry} ({error})"
             self.log.logging("TransportZigpy", "Error", error_log_message)
             result = 0xB6
+            break
 
         else:
             # Success

@@ -160,10 +160,15 @@ async def _create_backup(self) -> None:
 def connection_lost(self, exc: Exception) -> None:
     """Handle connection lost event."""
     LOGGER.warning( "+ Connection to the radio was lost (trying to recover): %s %r" %(type(exc), exc) )
+    self.radio_lost_cnt += 1
 
     super(type(self),self).connection_lost(exc)
 
-    if not self.shutting_down and not self.restarting and isinstance( exc, serial.serialutil.SerialException):
+    if self.radio_lost_cnt > 8:
+        LOGGER.error( "++++++++++++++++++++++ Connection to coordinator failed too many errors, let's restart the plugin")
+        self.callBackRestartPlugin()
+    
+    elif not self.shutting_down and not self.restarting and isinstance( exc, serial.serialutil.SerialException):
         LOGGER.error( "++++++++++++++++++++++ Connection to coordinator failed on Serial, let's restart the plugin")
         LOGGER.warning( f"--> : self.shutting_down: {self.shutting_down}, {self.restarting}")
 
