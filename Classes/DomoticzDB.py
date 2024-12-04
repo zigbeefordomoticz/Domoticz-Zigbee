@@ -10,12 +10,8 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-"""
-    Module: z_DomoticzDico.py
+""" This Classe allow retreiving and settings information in Domoticz via the JSON API """
 
-    Description: Retreive & Build Domoticz Dictionary
-
-"""
 import base64
 import binascii
 import json
@@ -26,11 +22,9 @@ import urllib.error
 import urllib.request
 from urllib.parse import urlsplit
 
-from Classes.LoggingManagement import LoggingManagement
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.tools import is_domoticz_new_API
 
-CACHE_TIMEOUT = (15 * 60) + 15  # num seconds
 REQ_TIMEOUT = .750  # 750 ms Timeout
 
 
@@ -194,6 +188,10 @@ def domoticz_request(self, url):
 
 
 def domoticz_base_url(self):
+    """
+    Returns the base URL for the Domoticz API, either from the configuration (if we have processed it once)
+    or by constructing it using credentials and host information.
+    """
     
     if self.url_ready:
         self.logging( "Debug", "domoticz_base_url - API URL ready %s Basic Authentication: %s" %(self.url_ready, self.authentication_str))
@@ -225,6 +223,8 @@ def domoticz_base_url(self):
 
 
 class DomoticzDB_Preferences:
+    """ interact in Read Only with the Domoticz Preferences Table (Domoticz Settings) """
+
     def __init__(self, api_base_url, pluginconf, log, DomoticzBuild, DomoticzMajor, DomoticzMinor):
         """
         Initializes the DomoticzDB_Preferences class with the necessary parameters
@@ -283,10 +283,10 @@ class DomoticzDB_Preferences:
 
 
 class DomoticzDB_Hardware:
+    """ interact in Read Write with the Domoticz Hardware Table (Domoticz Plugins) """
+
     def __init__(self, api_base_url, pluginconf, hardwareID, log, pluginParameters, DomoticzBuild, DomoticzMajor, DomoticzMinor):
-        """
-        Initializes the DomoticzDB_Hardware class with the necessary parameters and loads hardware information.
-        """
+        """ Initializes the DomoticzDB_Hardware class with the necessary parameters and loads hardware information. """
         self.api_base_url = api_base_url
         self.url_ready = None
         self.authentication_str = None
@@ -303,9 +303,7 @@ class DomoticzDB_Hardware:
         self.load_hardware()
 
     def load_hardware(self):  
-        """
-        Loads hardware data from the Domoticz API and stores it in the hardware attribute.
-        """
+        """ Loads hardware data from the Domoticz API and stores it in the hardware attribute. """
         url = domoticz_base_url(self)
         if not url:
             return
@@ -318,35 +316,32 @@ class DomoticzDB_Hardware:
                 self.hardware[x["idx"]] = x
 
     def logging(self, logType, message):
-        """
-        Logs messages to the specified log with the given log type.
-        """
+        """ Logs messages to the specified log with the given log type. """
         self.log.logging("DZDB", logType, message)
 
     def disable_erase_pdm(self, webUserName, webPassword):
-        """
-        Disables the ErasePDM feature by restarting the plugin.
-        """
+        """ Disables the ErasePDM feature by restarting the plugin. """
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=self.api_base_url)
 
     def get_loglevel_value(self):
-        """
-        Retrieves the log level for the hardware, defaults to 7 if not found.
-        """
+        """ Retrieves the log level for the hardware, defaults to 7 if not found. """
         hardware_info = self.hardware.get(str(self.HardwareID), {})
         log_level = hardware_info.get('LogLevel', 7)
         self.logging("Debug", f"get_loglevel_value {log_level}")
         return log_level
 
     def multiinstances_z4d_plugin_instance(self):
-        """
-        Checks if there are multiple instances of the Z4D plugin running.
-        """
+        """ Checks if there are multiple instances of the Z4D plugin running. """
         self.logging("Debug", "multiinstances_z4d_plugin_instance")
         return sum("Zigate" in x.get("Extra", "") for x in self.hardware.values()) > 1
 
 
 class DomoticzDB_DeviceStatus:
+    """
+    Interact in Read Only with the Domoticz DeviceStatus Table (Domoticz Devices).
+    This mainly is used to retrieve the Adjusted Value parameters for Temp/Baro and the Motion delay.
+    """
+
     def __init__(self, api_base_url, pluginconf, hardwareID, log, DomoticzBuild, DomoticzMajor, DomoticzMinor):
         """
         Initializes the DomoticzDB_DeviceStatus class with the necessary parameters.
@@ -357,23 +352,41 @@ class DomoticzDB_DeviceStatus:
         self.pluginconf = pluginconf
         self.log = log
         self.authentication_str = None
-        self.url_ready = None
         self.DomoticzBuild = DomoticzBuild
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
+        self.cache = {}  # Caching device status data
 
         init_domoticz_api(self)
 
     def logging(self, logType, message):
-        """
-        Logs messages with the specified log type.
-        """
+        """Logs messages with the specified log type."""
         self.log.logging("DZDB", logType, message)
+
+    def _get_cached_device_status(self, device_id):
+        """Returns the cached device status if it's still valid."""
+        cached_entry = self.cache.get(device_id)
+        if cached_entry:
+            timestamp, data = cached_entry
+            self.logging("Debug", f"Using cached data for device ID {device_id}: {data}")
+            return data
+        return None
+
+    def _cache_device_status(self, device_id, data):
+        """Caches the device status with the current timestamp."""
+        self.cache[device_id] = (time.time(), data)
+        self.logging("Debug", f"Cached data for device ID {device_id}")
 
     def get_device_status(self, device_id):
         """
-        Retrieves the device status for a given device ID.
+        Retrieves the device status for a given device ID, with caching.
         """
+        # Check if data is already cached
+        cached_data = self._get_cached_device_status(device_id)
+        if cached_data is not None:
+            return cached_data
+
+        # If not cached, make a request
         url = domoticz_base_url(self)
         if not url:
             return None
@@ -385,32 +398,27 @@ class DomoticzDB_DeviceStatus:
 
         result = json.loads(dz_result)
         self.logging("Debug", f"Result: {result}")
+
+        # Cache the result before returning
+        self._cache_device_status(device_id, result)
         return result
 
-    def extract_add_value(self, device_id, attribute):
-        """
-        Extracts the value of a specified attribute from the device status.
-        """
+    def _extract_add_value(self, device_id, attribute):
+        """Extracts the value of a specified attribute from the device status."""
         result = self.get_device_status(device_id)
         if result is None or 'result' not in result:
             return 0
 
-        return next( ( device[attribute] for device in result['result'] if attribute in device ), 0, )
+        return next((device[attribute] for device in result['result'] if attribute in device), 0)
 
     def retrieve_addj_value_baro(self, device_id):
-        """
-        Retrieves the AddjValue2 attribute for the given device.
-        """
-        return self.extract_add_value(device_id, 'AddjValue2')
+        """Retrieves the AddjValue2 attribute for the given device."""
+        return self._extract_add_value(device_id, 'AddjValue2')
 
     def retrieve_timeout_motion(self, device_id):
-        """
-        Retrieves the AddjValue (motion timeout) for the given device.
-        """
-        return self.extract_add_value(device_id, 'AddjValue')
+        """Retrieves the AddjValue (motion timeout) for the given device."""
+        return self._extract_add_value(device_id, 'AddjValue')
 
     def retrieve_addj_value_temp(self, device_id):
-        """
-        Retrieves the AddjValue (temperature) for the given device.
-        """
-        return self.extract_add_value(device_id, 'AddjValue')
+        """Retrieves the AddjValue (temperature) for the given device."""
+        return self._extract_add_value(device_id, 'AddjValue')
