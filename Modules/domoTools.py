@@ -224,7 +224,7 @@ def retreive_reset_delays(self, nwkid):
 def reset_motion(self, Devices, NwkId, WidgetType, DeviceId_, Unit_, SignalLevel, BatteryLvl, ID, now, lastupdate, TimedOut):
     nValue, sValue = domo_read_nValue_sValue(self, Devices, DeviceId_, Unit_)
 
-    if nValue == 0 and sValue == "Off" or (now - lastupdate) < TimedOut or (self.domoticzdb_DeviceStatus and self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion(ID) > 0):
+    if nValue == 0 and sValue == "Off" or (now - lastupdate) < TimedOut or (self.domoticzdb_DeviceStatus and self.domoticzdb_DeviceStatus.retrieve_timeout_motion(ID) > 0):
         return
 
     domo_update_api(self, Devices, DeviceId_, Unit_, nValue=0, sValue="Off")
