@@ -1695,7 +1695,7 @@ def calculate_baro_forecast(baroValue):
 def baro_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
     if self.domoticzdb_DeviceStatus:
         try:
-            return round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro(domo_read_Device_Idx(self, Devices, DeviceId, Device_Unit,)), 1)
+            return round(self.domoticzdb_DeviceStatus.retrieve_addj_value_baro(domo_read_Device_Idx(self, Devices, DeviceId, Device_Unit,)), 1)
         except Exception as e:
             self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Baro %s %s" % (
                 NwkId, e), NwkId)   
@@ -1704,7 +1704,7 @@ def baro_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
 def temp_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
     if self.domoticzdb_DeviceStatus:
         try:
-            return round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp(domo_read_Device_Idx(self, Devices, DeviceId, Device_Unit,)), 1)
+            return round(self.domoticzdb_DeviceStatus.retrieve_addj_value_temp(domo_read_Device_Idx(self, Devices, DeviceId, Device_Unit,)), 1)
         except Exception as e:
             self.log.logging("Widget", "Error", "Error while trying to get Adjusted Value for Temp %s %s" % (
                 NwkId, e), NwkId)

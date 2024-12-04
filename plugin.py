@@ -488,7 +488,7 @@ class BasePlugin:
             self.DomoticzMajor,
             self.DomoticzMinor,
             )
-        self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
+        self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retrieve_web_user_name_password()
 
         self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID, self.IEEE2NWK)
         self.adminWidgets.updateStatusWidget(Devices, "Starting up")

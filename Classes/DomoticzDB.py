@@ -16,37 +16,50 @@
     Description: Retreive & Build Domoticz Dictionary
 
 """
-
-
 import base64
 import binascii
 import json
 import socket
 import ssl
 import time
+import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 
 from Classes.LoggingManagement import LoggingManagement
 from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.tools import is_domoticz_new_API
 
 CACHE_TIMEOUT = (15 * 60) + 15  # num seconds
+REQ_TIMEOUT = .750  # 750 ms Timeout
+
 
 def init_domoticz_api(self):
+    """
+    Initializes the Domoticz API by determining whether to use the new or old API format.
+    """
+    is_new_api = is_domoticz_new_API(self)
+    self.logging(
+        "Debug",
+        f"Initializing Domoticz API using {'new' if is_new_api else 'old'} API format"
+    )
     
-    if is_domoticz_new_API(self):
-        self.logging("Debug", 'Init domoticz api based on new api')
-        init_domoticz_api_settings(
-            self,
+    api_settings = {
+        "new": (
             "type=command&param=getsettings",
             "type=command&param=gethardware",
             "type=command&param=getdevices&rid=",
-        )
-    else:
-        self.logging("Debug", 'Init domoticz api based on old api')
-        init_domoticz_api_settings(
-            self, "type=settings", "type=hardware", "type=devices&rid="
-        )
+        ),
+        "old": (
+            "type=settings",
+            "type=hardware",
+            "type=devices&rid=",
+        ),
+    }
+    
+    selected_settings = api_settings["new"] if is_new_api else api_settings["old"]
+    init_domoticz_api_settings(self, *selected_settings)
+
         
 def init_domoticz_api_settings(self, settings_api, hardware_api, devices_api):
     self.DOMOTICZ_SETTINGS_API = settings_api
@@ -54,111 +67,170 @@ def init_domoticz_api_settings(self, settings_api, hardware_api, devices_api):
     self.DOMOTICZ_DEVICEST_API = devices_api
 
 
-def isBase64( sb ):    
+def isBase64(sb):
+    """
+    Checks if the given string is valid Base64.
+    :param sb: The string to check.
+    :return: True if the string is valid Base64, False otherwise.
+    """
     try:
         return base64.b64encode(base64.b64decode(sb)).decode() == sb
-    except TypeError:
+    except (TypeError, binascii.Error):
         return False
-    except binascii.Error:
-        return False
-    
-def extract_username_password( self, url_base_api ):
-    
+   
+
+def extract_username_password(self, url_base_api):
+    """
+    Extracts the username, password, host, and protocol from a URL.
+    :param url_base_api: The URL containing credentials in the format <proto>://<username>:<password>@<host>
+    :return: A tuple (username, password, host_port, proto) or (None, None, None, None) if invalid.
+    """
     items = url_base_api.split('@')
     if len(items) != 2:
+        self.logging("Debug", f"no credentials in the URL: {url_base_api}")
         return None, None, None, None
     
-    self.logging("Debug", f'Extract username/password {url_base_api} ==> {items} ')
-    host_port = items[1]
+    self.logging("Debug", f"Extracting username/password from {url_base_api} ==> {items}")
+    
     proto = None
-    if items[0].find("https") == 0:
-        proto = 'https'
-        items[0] = items[0][:5].lower() + items[0][5:]
-        item1 = items[0].replace('https://','')
-        usernamepassword = item1.split(':')
-        if len(usernamepassword) == 2:
-            username, password = usernamepassword
-            return username, password, host_port, proto
-        self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ==> {item1} ==> {usernamepassword}')
-            
-    elif items[0].find("http") == 0:
-        proto = 'http'
-        items[0] = items[0][:4].lower() + items[0][4:]
-        item1 = items[0].replace('http://','')
-        usernamepassword = item1.split(':')
-        if len(usernamepassword) == 2:
-            username, password = usernamepassword
-            return username, password, host_port, proto
-        self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ==> {item1} ==> {usernamepassword}')
+    credentials, host_port = items
+    if credentials.startswith("https://"):
+        proto = "https"
+        credentials = credentials[8:]  # Remove 'https://'
+    elif credentials.startswith("http://"):
+        proto = "http"
+        credentials = credentials[7:]  # Remove 'http://'
+    else:
+        self.logging("Error", f"Unsupported protocol in URL: {url_base_api}")
+        return None, None, None, None
 
-    self.logging("Error", f'We are expecting a username and password but do not find it in {url_base_api} ==> {items} ')
+    username_password = credentials.split(':', 1)
+    if len(username_password) == 2:
+        username, password = username_password
+        return username, password, host_port, proto
+    
+    self.logging("Error", f"Missing username or password in {url_base_api} ==> {credentials} ==> {username_password}")
     return None, None, None, None
         
 
-def open_and_read( self, url ):
-    self.logging("Log", f'opening url {url}')
-    
-    myssl_context = None
+def open_and_read(self, url):
+    """
+    Opens a URL and reads the response with optional SSL context, retries, and a timeout.
+    :param url: The URL to open.
+    :return: Response content or None if the request fails.
+    """
+    self.logging("Log", f"Opening URL: {url}")
+
+    # Set up SSL context if necessary
+    ssl_context = None
     if "https" in url.lower() and not self.pluginconf.pluginConf["CheckSSLCertificateValidity"]:
-        myssl_context = ssl.create_default_context()
-        myssl_context.check_hostname=False
-        myssl_context.verify_mode=ssl.CERT_NONE
-    
-    retry = 3
-    while retry:
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
+    for retries in range(3, 0, -1):
         try:
-            self.logging("Debug", f'opening url {url} with context {myssl_context}')
-            with urllib.request.urlopen(url, context=myssl_context) as response:
+            self.logging("Log", f"Opening URL: {url} with SSL context: {ssl_context} and REQ_TIMEOUT timeout")
+            with urllib.request.urlopen(url, context=ssl_context, timeout=REQ_TIMEOUT) as response:
                 return response.read()
 
         except urllib.error.HTTPError as e:
-            if e.code in [429,504]:  # 429=too many requests, 504=gateway timeout
-                reason = f'{e.code} {str(e.reason)}'
+            if e.code in [429, 504]:
+                reason = f"{e.code} {e.reason}"
             elif isinstance(e.reason, socket.timeout):
-                reason = f'HTTPError socket.timeout {e.reason} - {e}'
+                reason = f"HTTPError socket.timeout {e.reason} - {e}"
             else:
                 raise
-        except urllib.error.URLError as e:
-            if isinstance(e.reason, socket.timeout):
-                reason = f'URLError socket.timeout {e.reason} - {e}'
-            else:
-                raise
-        except socket.timeout as e:
-            reason = f'socket.timeout {e}'
-        netloc = urllib.parse.urlsplit(url).netloc  # e.g. nominatim.openstreetmap.org
-        self.logging("Error", f'*** {netloc} {reason}; will retry')
-        time.sleep(1)
-        retry -= 1
 
-def domoticz_request( self, url):
-    self.logging("Debug",'domoticz request url: %s' %url)
+        except (urllib.error.URLError, socket.timeout) as e:
+            reason = f"{type(e).__name__} {e.reason}" if hasattr(e, 'reason') else str(e)
+
+        # Log retry information
+        netloc = urlsplit(url).netloc
+        self.logging("Error", f"*** {netloc} {reason}; retrying ({retries - 1} attempts left)")
+        time.sleep(1)
+    
+
+def domoticz_request(self, url):
+    """
+    Makes a request to the given Domoticz URL with optional SSL context, authentication, and a timeout.
+    :param url: The target URL.
+    :return: Response content or None if the request fails.
+    """
+    self.logging("Debug", f"Domoticz request URL: {url}")
+    
+    # Create the request object
     try:
         request = urllib.request.Request(url)
-    except urllib.error.URLError as e:
-        self.logging("Error", "Request to %s rejected. Error: %s" %(url, e))
+    except ValueError as e:
+        self.logging("Error", f"Invalid URL: {url}. Error: {e}")
         return None
     
-    self.logging("Debug",'domoticz request result: %s' %request)
+    # Add authorization header if available
     if self.authentication_str:
-        self.logging("Debug",'domoticz request Authorization: %s' %request)
-        request.add_header("Authorization", "Basic %s" % self.authentication_str)
-    self.logging("Debug",'domoticz request open url')
+        request.add_header("Authorization", f"Basic {self.authentication_str}")
+        self.logging("Debug", "Authorization header added to request.")
     
-    myssl_context = None
-    if "https" in url.lower() and not self.pluginconf.pluginConf["CheckSSLCertificateValidity"]:
-        myssl_context = ssl.create_default_context()
-        myssl_context.check_hostname=False
-        myssl_context.verify_mode=ssl.CERT_NONE
-
+    # Set up SSL context if necessary
+    ssl_context = None
+    if url.lower().startswith("https") and not self.pluginconf.pluginConf["CheckSSLCertificateValidity"]:
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+    
+    # Open the URL with a 750ms timeout
     try:
-        self.logging("Debug", f'opening url {request} with context {myssl_context}')
-        response = urllib.request.urlopen(request, context=myssl_context)
+        self.logging("Status", f"Opening URL: {url} with SSL context: {ssl_context} and REQ_TIMEOUT timeout")
+        with urllib.request.urlopen(request, context=ssl_context, timeout=REQ_TIMEOUT) as response:
+            return response.read()
     except urllib.error.URLError as e:
-        self.logging("Error", "Urlopen to %s rejected. Error: %s" %(url, e))
-        return None
+        self.logging("Error", f"Request to {url} failed. Error: {e}")
+    except socket.timeout:
+        self.logging("Error", f"Request to {url} timed out after 750ms.")
+    except Exception as e:
+        self.logging("Error", f"Unexpected error occurred for URL {url}: {e}")
     
-    return response.read()
-  
+    return None
+
+
+#def domoticz_base_url(self):
+#    """
+#    Returns the base URL for the Domoticz API, either from the configuration
+#    or by constructing it using credentials and host information.
+#    """
+#    # Return the already prepared URL if available
+#    if self.api_base_url:
+#        self.logging("Debug", f"API URL ready: {self.api_base_url} Basic Authentication: {self.authentication_str}")
+#        return self.api_base_url
+#
+#    # Extract credentials and host information
+#    username, password, host_port, proto = extract_username_password(self, self.api_base_url)
+#    
+#    # Log extracted details
+#    self.logging("Debug", f"Username: {username}")
+#    self.logging("Debug", f"Password: {password}")
+#    self.logging("Debug", f"Host+port: {host_port}")
+#
+#    # Validate that the API base URL is set
+#    if not self.api_base_url:
+#        self.logging("Error", "You need to set up the URL Base to access the Domoticz JSON/API")
+#        return None
+#
+#    # Ensure the URL does not end with a slash
+#    base_url = self.api_base_url.rstrip('/')
+#
+#    # Construct the URL based on whether authentication credentials are provided
+#    if username and password and host_port:
+#        self.authentication_str = base64.encodebytes(f'{username}:{password}'.encode()).decode().strip()
+#        url = f"{proto}://{host_port}/json.htm?"
+#    else:
+#        url = f"{base_url}/json.htm?"
+#
+#    # Log the constructed URL and set it as ready for future use
+#    self.logging("Debug", f"Constructed URL: {url}")
+#    self.api_base_url = url
+#    return url
+
 def domoticz_base_url(self):
     
     if self.url_ready:
@@ -189,11 +261,15 @@ def domoticz_base_url(self):
     self.url_ready = url
     return url      
 
+
 class DomoticzDB_Preferences:
-    # sourcery skip: replace-interpolation-with-fstring
-    
     def __init__(self, api_base_url, pluginconf, log, DomoticzBuild, DomoticzMajor, DomoticzMinor):
+        """
+        Initializes the DomoticzDB_Preferences class with the necessary parameters
+        and loads the preferences from the Domoticz API.
+        """
         self.api_base_url = api_base_url
+        self.url_ready = None
         self.preferences = {}
         self.pluginconf = pluginconf
         self.log = log
@@ -202,47 +278,56 @@ class DomoticzDB_Preferences:
         self.DomoticzBuild = DomoticzBuild
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
+        
+        # Initialize API settings and load preferences
         init_domoticz_api(self)
         self.load_preferences()
 
-
     def load_preferences(self):
-        # sourcery skip: replace-interpolation-with-fstring
+        """
+        Loads preferences from the Domoticz API and stores them in the preferences attribute.
+        """
         url = domoticz_base_url(self)
-        if url is None:
+        if not url:
             return
+
         url += self.DOMOTICZ_HARDWARE_API
+        dz_response = domoticz_request(self, url)
+        if dz_response:
+            self.preferences = json.loads(dz_response)
 
-        dz_response = domoticz_request( self, url)
-        if dz_response is None:
-            return
-
-        self.preferences = json.loads( dz_response )
-        
     def logging(self, logType, message):
-        # sourcery skip: replace-interpolation-with-fstring
+        """
+        Logs messages to the specified log with the given log type.
+        """
         self.log.logging("DZDB", logType, message)
 
-    def retreiveAcceptNewHardware(self):
-        # sourcery skip: replace-interpolation-with-fstring
-        self.logging("Debug", "retreiveAcceptNewHardware status %s" %self.preferences['AcceptNewHardware'])
-        return self.preferences['AcceptNewHardware']
+    def retrieve_accept_new_hardware(self):
+        """
+        Retrieves the 'AcceptNewHardware' status from the preferences.
+        """
+        accept_new_hardware = self.preferences.get('AcceptNewHardware', False)
+        self.logging("Debug", f"retrieve_accept_new_hardware status {accept_new_hardware}")
+        return accept_new_hardware
 
-    def retreiveWebUserNamePassword(self):
-        # sourcery skip: replace-interpolation-with-fstring
-        webUserName = webPassword = ''
-        if 'WebPassword' in self.preferences:
-            webPassword = self.preferences['WebPassword']
-        if 'WebUserName' in self.preferences:
-            webUserName = self.preferences['WebUserName']
-        self.logging("Debug", "retreiveWebUserNamePassword %s %s" %(webUserName, webPassword))   
-        return webUserName, webPassword
+    def retrieve_web_user_name_password(self):
+        """
+        Retrieves the web username and password from the preferences.
+        """
+        web_user_name = self.preferences.get('WebUserName', '')
+        web_password = self.preferences.get('WebPassword', '')
+        self.logging("Debug", f"retrieve_web_user_name_password {web_user_name} {web_password}")
+        return web_user_name, web_password
+
 
 class DomoticzDB_Hardware:
     def __init__(self, api_base_url, pluginconf, hardwareID, log, pluginParameters, DomoticzBuild, DomoticzMajor, DomoticzMinor):
+        """
+        Initializes the DomoticzDB_Hardware class with the necessary parameters and loads hardware information.
+        """
         self.api_base_url = api_base_url
-        self.authentication_str = None
         self.url_ready = None
+        self.authentication_str = None
         self.hardware = {}
         self.HardwareID = hardwareID
         self.pluginconf = pluginconf
@@ -256,51 +341,56 @@ class DomoticzDB_Hardware:
         self.load_hardware()
 
     def load_hardware(self):  
-        # sourcery skip: replace-interpolation-with-fstring
+        """
+        Loads hardware data from the Domoticz API and stores it in the hardware attribute.
+        """
         url = domoticz_base_url(self)
-        if url is None:
+        if not url:
             return
-        url += self.DOMOTICZ_HARDWARE_API
 
-        dz_result = domoticz_request( self, url)
-        if dz_result is None:
-            return
-        result = json.loads( dz_result )
-        
-        for x in result['result']:
-            idx = x[ "idx" ]
-            self.hardware[ idx ] = x
+        url += self.DOMOTICZ_HARDWARE_API
+        dz_result = domoticz_request(self, url)
+        if dz_result:
+            result = json.loads(dz_result)
+            for x in result.get('result', []):
+                self.hardware[x["idx"]] = x
 
     def logging(self, logType, message):
+        """
+        Logs messages to the specified log with the given log type.
+        """
         self.log.logging("DZDB", logType, message)
 
-    def disableErasePDM(self, webUserName, webPassword):
-        # sourcery skip: replace-interpolation-with-fstring
-        # To disable the ErasePDM, we have to restart the plugin
-        # This is usally done after ErasePDM
+    def disable_erase_pdm(self, webUserName, webPassword):
+        """
+        Disables the ErasePDM feature by restarting the plugin.
+        """
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=self.api_base_url)
 
     def get_loglevel_value(self):
-        # sourcery skip: replace-interpolation-with-fstring
-        if (
-            self.hardware 
-            and ("%s" %self.HardwareID) in self.hardware
-            and 'LogLevel' in self.hardware[ '%s' %self.HardwareID ]
-        ): 
-            self.logging("Debug", "get_loglevel_value %s " %(self.hardware[ '%s' %self.HardwareID ]['LogLevel']))
-            return self.hardware[ '%s' %self.HardwareID ]['LogLevel']
-        return 7
+        """
+        Retrieves the log level for the hardware, defaults to 7 if not found.
+        """
+        hardware_info = self.hardware.get(str(self.HardwareID), {})
+        log_level = hardware_info.get('LogLevel', 7)
+        self.logging("Debug", f"get_loglevel_value {log_level}")
+        return log_level
 
     def multiinstances_z4d_plugin_instance(self):
-        # sourcery skip: replace-interpolation-with-fstring
+        """
+        Checks if there are multiple instances of the Z4D plugin running.
+        """
         self.logging("Debug", "multiinstances_z4d_plugin_instance")
-        if sum("Zigate" in self.hardware[ x ]["Extra"] for x in self.hardware) > 1:
-            return True
-        return False
+        return sum("Zigate" in x.get("Extra", "") for x in self.hardware.values()) > 1
+
 
 class DomoticzDB_DeviceStatus:
     def __init__(self, api_base_url, pluginconf, hardwareID, log, DomoticzBuild, DomoticzMajor, DomoticzMinor):
+        """
+        Initializes the DomoticzDB_DeviceStatus class with the necessary parameters.
+        """
         self.api_base_url = api_base_url
+        self.url_ready = None
         self.HardwareID = hardwareID
         self.pluginconf = pluginconf
         self.log = log
@@ -313,52 +403,52 @@ class DomoticzDB_DeviceStatus:
         init_domoticz_api(self)
 
     def logging(self, logType, message):
-        # sourcery skip: replace-interpolation-with-fstring
+        """
+        Logs messages with the specified log type.
+        """
         self.log.logging("DZDB", logType, message)
 
-    def get_device_status(self, ID):
-        # "http://%s:%s@127.0.0.1:%s" 
-        # sourcery skip: replace-interpolation-with-fstring
+    def get_device_status(self, device_id):
+        """
+        Retrieves the device status for a given device ID.
+        """
         url = domoticz_base_url(self)
-        if url is None:
-            return
-        url += self.DOMOTICZ_DEVICEST_API + "%s" %ID
+        if not url:
+            return None
 
-        dz_result = domoticz_request( self, url)
+        url += f"{self.DOMOTICZ_DEVICEST_API}{device_id}"
+        dz_result = domoticz_request(self, url)
         if dz_result is None:
             return None
-        result = json.loads( dz_result )
-        self.logging("Debug", "Result: %s" %result)
+
+        result = json.loads(dz_result)
+        self.logging("Debug", f"Result: {result}")
         return result
-    
-    def extract_AddValue(self, ID, attribute):
-        # sourcery skip: replace-interpolation-with-fstring
-        result = self.get_device_status( ID)
-        if result is None:
+
+    def extract_add_value(self, device_id, attribute):
+        """
+        Extracts the value of a specified attribute from the device status.
+        """
+        result = self.get_device_status(device_id)
+        if result is None or 'result' not in result:
             return 0
 
-        if 'result' not in result:
-            return 0
-        AdjValue = 0
-        for x in result['result']:
-            AdjValue = x[attribute]    
-        self.logging("Debug", "return extract_AddValue %s %s %s" % (ID, attribute, AdjValue)  )  
-        return AdjValue
-       
-    def retreiveAddjValue_baro(self, ID):
-        # sourcery skip: replace-interpolation-with-fstring
-        return self.extract_AddValue( ID, 'AddjValue2')
+        return next( ( device[attribute] for device in result['result'] if attribute in device ), 0, )
 
-    def retreiveTimeOut_Motion(self, ID):
-        # sourcery skip: replace-interpolation-with-fstring
+    def retrieve_addj_value_baro(self, device_id):
         """
-        Retreive the TmeeOut Motion value of Device.ID
+        Retrieves the AddjValue2 attribute for the given device.
         """
-        return self.extract_AddValue( ID, 'AddjValue')  
+        return self.extract_add_value(device_id, 'AddjValue2')
 
-    def retreiveAddjValue_temp(self, ID):
-        # sourcery skip: replace-interpolation-with-fstring
+    def retrieve_timeout_motion(self, device_id):
         """
-        Retreive the AddjValue of Device.ID
+        Retrieves the AddjValue (motion timeout) for the given device.
         """
-        return self.extract_AddValue( ID, 'AddjValue')
+        return self.extract_add_value(device_id, 'AddjValue')
+
+    def retrieve_addj_value_temp(self, device_id):
+        """
+        Retrieves the AddjValue (temperature) for the given device.
+        """
+        return self.extract_add_value(device_id, 'AddjValue')
