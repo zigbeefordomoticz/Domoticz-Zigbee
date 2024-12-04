@@ -193,44 +193,6 @@ def domoticz_request(self, url):
     return None
 
 
-#def domoticz_base_url(self):
-#    """
-#    Returns the base URL for the Domoticz API, either from the configuration
-#    or by constructing it using credentials and host information.
-#    """
-#    # Return the already prepared URL if available
-#    if self.api_base_url:
-#        self.logging("Debug", f"API URL ready: {self.api_base_url} Basic Authentication: {self.authentication_str}")
-#        return self.api_base_url
-#
-#    # Extract credentials and host information
-#    username, password, host_port, proto = extract_username_password(self, self.api_base_url)
-#    
-#    # Log extracted details
-#    self.logging("Debug", f"Username: {username}")
-#    self.logging("Debug", f"Password: {password}")
-#    self.logging("Debug", f"Host+port: {host_port}")
-#
-#    # Validate that the API base URL is set
-#    if not self.api_base_url:
-#        self.logging("Error", "You need to set up the URL Base to access the Domoticz JSON/API")
-#        return None
-#
-#    # Ensure the URL does not end with a slash
-#    base_url = self.api_base_url.rstrip('/')
-#
-#    # Construct the URL based on whether authentication credentials are provided
-#    if username and password and host_port:
-#        self.authentication_str = base64.encodebytes(f'{username}:{password}'.encode()).decode().strip()
-#        url = f"{proto}://{host_port}/json.htm?"
-#    else:
-#        url = f"{base_url}/json.htm?"
-#
-#    # Log the constructed URL and set it as ready for future use
-#    self.logging("Debug", f"Constructed URL: {url}")
-#    self.api_base_url = url
-#    return url
-
 def domoticz_base_url(self):
     
     if self.url_ready:
