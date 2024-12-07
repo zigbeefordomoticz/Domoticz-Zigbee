@@ -306,8 +306,15 @@ def measure_execution_time(func):
             if t_start:
                 t_end = int(1000 * time.time())
                 t_elapse = t_end - t_start
-                self.statistics.add_rxTiming(t_elapse)  
-                self.log.logging("TransportZigpy", "Log", f"| (packet_received) | {t_elapse} | {packet.src.address.serialize()[::-1].hex()} | {packet.profile_id} | {packet.lqi} | {packet.rssi} |")
+                self.statistics.add_rxTiming(t_elapse)
+                self.log.logging(
+                    "TransportZigpy",
+                    "Log",
+                    f"| (packet_received) | {t_elapse} | {f'{packet.tsn:#02x}' if packet.tsn is not None else 'N/A'} | "
+                    f"0x{packet.src.address.serialize()[::-1].hex()} | {f'{packet.profile_id:#04x}' if packet.profile_id is not None else 'N/A'} | "
+                    f"{packet.lqi} | {packet.rssi} |"
+                )
+
     return wrapper
 
     
