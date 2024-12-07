@@ -1570,34 +1570,60 @@ class WebServer(object):
     def rest_ota_firmware_available(self, verb, data, parameters):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        
+
         if verb == "GET":
             _fwAvail = []
-            for x in self.ListOfDevices:
-                if x == "0000":
-                        continue
 
-                if "OTAUpdate" in self.ListOfDevices[x] and self.ListOfDevices[x]["OTAUpdate"] is not None:
-                    for y in self.ListOfDevices[x]["OTAUpdate"]:
-                        self.logging("Status", "AAA")
-                        device  = { 'zdevicename' : self.ListOfDevices[x]["ZDeviceName"],
-                            'model' : self.ListOfDevices[x]["Model"],
-                            'manufacturername' : self.ListOfDevices[x]["Manufacturer Name"],
-                            'ieee' : self.ListOfDevices[x]["IEEE"],
-                            'fwtype' : y,
-                            'currentversion' : self.ListOfDevices[x]["OTAUpdate"][y]["currentversion"],
-                            'newestversion' : self.ListOfDevices[x]["OTAUpdate"][y]["newestversion"],
-                            'url' : self.ListOfDevices[x]["OTAUpdate"][y]["url"],
-                        }
-                        self.logging("Status", str(device))
-                        _fwAvail.append(device)
-                self.logging("Status", str(_fwAvail))
+            # Iterate over devices
+            for device_key, device_data in self.ListOfDevices.items():
+                # Skip processing for device with key "0000"
+                if device_key == "0000":
+                    continue
+
+                ota_update = device_data.get("OTAUpdate")
+                if ota_update is None:
+                    continue
+                
+                # Retrieve device-level information
+                zdevice_name = device_data.get("ZDeviceName")
+                zdevice_name = zdevice_name if zdevice_name not in ( "", None) else device_key
+                model = device_data.get("Model", "Unknown")
+                manufacturer = device_data.get("Manufacturer Name", "Unknown")
+                ieee = device_data.get("IEEE", "Unknown")
+
+                # Process firmware updates
+                for fwtype, update_info in ota_update.items():
+                    current_version = update_info.get("currentversion", "N/A")
+                    newest_version = update_info.get("newestversion", "N/A")
+                    url = update_info.get("url", "N/A")
+
+                    device = {
+                        'zdevicename': zdevice_name,
+                        'model': model,
+                        'manufacturername': manufacturer,
+                        'ieee': ieee,
+                        'fwtype': fwtype,
+                        'currentversion': current_version,
+                        'newestversion': newest_version,
+                        'url': url,
+                    }
+
+                    self.logging("Status", f"Processing OTA update for {zdevice_name}: {device}")
+                    _fwAvail.append(device)
+
+            # Log collected firmware availability information
+            self.logging("Status", f"Collected OTA firmware availability: {_fwAvail}")
+
+            # Include firmware data in the response
             _response["Data"] = json.dumps(_fwAvail, sort_keys=True)
+
         return _response
-    
+
+   
     def logging(self, logType, message):
         self.log.logging("WebServer", logType, message)
 
+## Helpers
 def dummy_zdevice_name():
     
     return [{"Battery": "", "ConsistencyCheck": "ok", "Health": "Disabled", "IEEE": "90fd9ffffe86c7a1", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "TRADFRI bulb E27 WS clear 950lm", "Param": "{'Disabled': true, 'PowerOnAfterOffOn': 255, 'fadingOff': 0, 'moveToHueSatu': 0, 'moveToColourTemp': 0, 'moveToColourRGB': 0, 'moveToLevel': 0}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI bulb E27 WS clear 950lm_ColorControlWW-90fd9ffffe86c7a1-01"], "ZDeviceName": "Led Ikea", "_NwkId": "ada7"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "60a423fffe529d60", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "LXEK-1", "Param": "{'PowerOnAfterOffOn': 255, 'fadingOff': 0, 'moveToHueSatu': 0, 'moveToColourTemp': 0, 'moveToColourRGB': 0, 'moveToLevel': 0}", "Status": "inDB", "WidgetList": ["Zigbee - LXEK-1_ColorControlRGBWW-60a423fffe529d60-01"], "ZDeviceName": "Led LKex", "_NwkId": "7173"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "680ae2fffe7aca89", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "TRADFRI Signal Repeater", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI Signal Repeater_Voltage-680ae2fffe7aca89-01"], "ZDeviceName": "Repeater", "_NwkId": "a5ee"}, {"Battery": 16.0, "ConsistencyCheck": "ok", "Health": "Not seen last 24hours", "IEEE": "90fd9ffffeea89e8", "LQI": 25, "MacCapa": ["RFD", "Battery"], "Model": "TRADFRI remote control", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI remote control_Ikea_Round_5b-90fd9ffffeea89e8-01"], "ZDeviceName": "Remote Tradfri", "_NwkId": "cee1"}, {"Battery": 100, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000d6f0011087079", "LQI": 116, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "WarningDevice", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - WarningDevice_AlarmWD-000d6f0011087079-01"], "ZDeviceName": "IAS Sirene", "_NwkId": "2e33"}, {"Battery": 53, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "54ef441000298533", "LQI": 76, "MacCapa": ["RFD", "Battery"], "Model": "lumi.magnet.acn001", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - lumi.magnet.acn001_Door-54ef441000298533-01"], "ZDeviceName": "Lumi Door", "_NwkId": "bb45"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "00047400008aff8b", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "Shutter switch with neutral", "Param": "{'netatmoInvertShutter': 0, 'netatmoLedShutter': 0}", "Status": "inDB", "WidgetList": ["Zigbee - Shutter switch with neutral_Venetian-00047400008aff8b-01"], "ZDeviceName": "Inter Shutter Legrand", "_NwkId": "06ab"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000474000082a54f", "LQI": 18, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "Dimmer switch wo neutral", "Param": "{'netatmoEnableDimmer': 1, 'PowerOnAfterOffOn': 255, 'BallastMaxLevel': 254, 'BallastMinLevel': 1}", "Status": "inDB", "WidgetList": ["Zigbee - Dimmer switch wo neutral_LvlControl-000474000082a54f-01"], "ZDeviceName": "Inter Dimmer Legrand", "_NwkId": "9c25"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "00047400001f09a4", "LQI": 80, "MacCapa": ["FFD", "RxonIdle", "MainPower"], "Model": "Micromodule switch", "Param": "{'PowerOnAfterOffOn': 255}", "Status": "inDB", "WidgetList": ["Zigbee - Micromodule switch_Switch-00047400001f09a4-01"], "ZDeviceName": "Micromodule Legrand", "_NwkId": "8706"}, {"Battery": "", "ConsistencyCheck": "ok", "Health": "", "IEEE": "00158d0003021601", "LQI": 0, "MacCapa": ["RFD", "Battery"], "Model": "lumi.sensor_motion.aq2", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - lumi.sensor_motion.aq2_Motion-00158d0003021601-01", "Zigbee - lumi.sensor_motion.aq2_Lux-00158d0003021601-01"], "ZDeviceName": "Lumi Motion", "_NwkId": "6f81"}, {"Battery": 100, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "0015bc001a01aa27", "LQI": 83, "MacCapa": ["RFD", "Battery"], "Model": "MOSZB-140", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - MOSZB-140_Motion-0015bc001a01aa27-23", "Zigbee - MOSZB-140_Tamper-0015bc001a01aa27-23", "Zigbee - MOSZB-140_Voltage-0015bc001a01aa27-23", "Zigbee - MOSZB-140_Temp-0015bc001a01aa27-26", "Zigbee - MOSZB-140_Lux-0015bc001a01aa27-27"], "ZDeviceName": "Motion frient", "_NwkId": "b9bc"}, {"Battery": 63, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "00158d000323dabe", "LQI": 61, "MacCapa": ["RFD", "Battery"], "Model": "lumi.sensor_switch", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - lumi.sensor_switch_SwitchAQ2-00158d000323dabe-01"], "ZDeviceName": "Lumi Switch (rond)", "_NwkId": "a029"}, {"Battery": 100.0, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000d6ffffea1e6da", "LQI": 94, "MacCapa": ["RFD", "Battery"], "Model": "TRADFRI onoff switch", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI onoff switch_SwitchIKEA-000d6ffffea1e6da-01"], "ZDeviceName": "OnOff Ikea", "_NwkId": "c6ca"}, {"Battery": 100.0, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "000b57fffe2c0dde", "LQI": 87, "MacCapa": ["RFD", "Battery"], "Model": "TRADFRI wireless dimmer", "Param": "{}", "Status": "inDB", "WidgetList": ["Zigbee - TRADFRI wireless dimmer_GenericLvlControl-000b57fffe2c0dde-01"], "ZDeviceName": "Dim Ikea", "_NwkId": "6c43"}, {"Battery": 100, "ConsistencyCheck": "ok", "Health": "Live", "IEEE": "588e81fffe35f595", "LQI": 80, "MacCapa": ["RFD", "Battery"], "Model": "Wiser2-Thermostat", "Param": "{'WiserLockThermostat': 0, 'WiserRoomNumber': 1}", "Status": "inDB", "WidgetList": ["Zigbee - Wiser2-Thermostat_Temp+Hum-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_Humi-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_Temp-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_ThermoSetpoint-588e81fffe35f595-01", "Zigbee - Wiser2-Thermostat_Valve-588e81fffe35f595-01"], "ZDeviceName": "Wiser Thermostat", "_NwkId": "5a00"}]

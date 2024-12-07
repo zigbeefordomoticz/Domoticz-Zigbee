@@ -127,7 +127,8 @@ BUILD_ATTRIBUTES = (
     "IASBattery",
     "Operating Time",
     "DelayBindingAtPairing",
-    "CertifiedDevice"
+    "CertifiedDevice",
+    "OTAUpdate"
 )
 
 MANUFACTURER_ATTRIBUTES = (
