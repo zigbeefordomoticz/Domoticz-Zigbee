@@ -159,21 +159,28 @@ async def _create_backup(self) -> None:
 
 def connection_lost(self, exc: Exception) -> None:
     """Handle connection lost event."""
-    LOGGER.warning( "+ Connection to the radio was lost (trying to recover): %s %r" %(type(exc), exc) )
+
+    if exc is None:
+        # Connection closed cleanly. do nothing
+        return
+
+    if self.restarting:
+        # Restart in progress
+        return
+
+    LOGGER.error( "+ Connection to the radio was lost: [%s] %s %r" %(self.radio_lost_cnt, type(exc), exc) )
     self.radio_lost_cnt += 1
 
-    super(type(self),self).connection_lost(exc)
+    if isinstance(exc, serial.serialutil.SerialException):
+        _request_plugin_restart( self, "+ Connection to the radio was lost due to SerialException, restart plugin")
+    elif self.radio_lost_cnt > 8:
+        _request_plugin_restart( self, "+ Connection to the radio was lost since 8 occurances, restart plugin" )
 
-    if self.radio_lost_cnt > 8:
-        LOGGER.error( "++++++++++++++++++++++ Connection to coordinator failed too many errors, let's restart the plugin")
-        self.callBackRestartPlugin()
-    
-    elif not self.shutting_down and not self.restarting and isinstance( exc, serial.serialutil.SerialException):
-        LOGGER.error( "++++++++++++++++++++++ Connection to coordinator failed on Serial, let's restart the plugin")
-        LOGGER.warning( f"--> : self.shutting_down: {self.shutting_down}, {self.restarting}")
 
-        self.restarting = True
-        self.callBackRestartPlugin()
+def _request_plugin_restart(self, arg0):
+    LOGGER.error(arg0)
+    self.restarting = True
+    self.callBackRestartPlugin()  # Schedule plugin restart
 
 
 def _retreive_previous_backup(self):
