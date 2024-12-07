@@ -1586,9 +1586,9 @@ class WebServer(object):
                 
                 # Retrieve device-level information
                 zdevice_name = device_data.get("ZDeviceName")
-                zdevice_name = zdevice_name if zdevice_name not in ( "", None) else device_key
                 model = device_data.get("Model", "Unknown")
-                manufacturer = device_data.get("Manufacturer Name", "Unknown")
+                manufacturer_name = device_data.get("Manufacturer Name", "Unknown")
+                manufacturer_id = device_data.get("Manufacturer", "Unknown")
                 ieee = device_data.get("IEEE", "Unknown")
 
                 # Process firmware updates
@@ -1598,9 +1598,11 @@ class WebServer(object):
                     url = update_info.get("url", "N/A")
 
                     device = {
+                        'nwkid': device_key,
                         'zdevicename': zdevice_name,
                         'model': model,
-                        'manufacturername': manufacturer,
+                        'manufacturername': manufacturer_name,
+                        'manufacturerid': manufacturer_id,
                         'ieee': ieee,
                         'fwtype': fwtype,
                         'currentversion': current_version,
