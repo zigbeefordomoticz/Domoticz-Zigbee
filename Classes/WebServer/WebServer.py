@@ -1566,7 +1566,35 @@ class WebServer(object):
 
             _response["Data"] = json.dumps(_battEnv, sort_keys=True)
         return _response
+    
+    def rest_ota_firmware_available(self, verb, data, parameters):
+        _response = prepResponseMessage(self, setupHeadersResponse())
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        
+        if verb == "GET":
+            _fwAvail = []
+            for x in self.ListOfDevices:
+                if x == "0000":
+                        continue
 
+                if "OTAUpdate" in self.ListOfDevices[x] and self.ListOfDevices[x]["OTAUpdate"] is not None:
+                    for y in self.ListOfDevices[x]["OTAUpdate"]:
+                        self.logging("Status", "AAA")
+                        device  = { 'zdevicename' : self.ListOfDevices[x]["ZDeviceName"],
+                            'model' : self.ListOfDevices[x]["Model"],
+                            'manufacturername' : self.ListOfDevices[x]["Manufacturer Name"],
+                            'ieee' : self.ListOfDevices[x]["IEEE"],
+                            'fwtype' : y,
+                            'currentversion' : self.ListOfDevices[x]["OTAUpdate"][y]["currentversion"],
+                            'newestversion' : self.ListOfDevices[x]["OTAUpdate"][y]["newestversion"],
+                            'url' : self.ListOfDevices[x]["OTAUpdate"][y]["url"],
+                        }
+                        self.logging("Status", str(device))
+                        _fwAvail.append(device)
+                self.logging("Status", str(_fwAvail))
+            _response["Data"] = json.dumps(_fwAvail, sort_keys=True)
+        return _response
+    
     def logging(self, logType, message):
         self.log.logging("WebServer", logType, message)
 

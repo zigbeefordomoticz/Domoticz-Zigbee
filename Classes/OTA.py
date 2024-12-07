@@ -1458,6 +1458,17 @@ def notify_ota_firmware_available(self, srcnwkid, manufcode, imagetype, filevers
     logging(self, "Status", "     firmware type: %s" % _ota_available["imageType"])
     logging(self, "Status", "   URL to download: %s" % _ota_available["url"])
 
+    if srcnwkid in self.ListOfDevices:
+        if "OTAUpdate" not in self.ListOfDevices[srcnwkid]:
+            self.ListOfDevices[srcnwkid]["OTAUpdate"] = {}
+        if imagetype in self.ListOfDevices[srcnwkid]["OTAUpdate"]:
+            self.ListOfDevices[srcnwkid]["OTAUpdate"][imagetype].clear()
+        self.ListOfDevices[srcnwkid]["OTAUpdate"][imagetype] = {
+            "currentversion": str(fileversion),
+            "newestversion" : str(_ota_available["fileVersion"]),
+            "url": _ota_available["url"],
+        }
+
     if folder:
         logging(self, "Status", "   Folder to store: %s" % folder)
     else:
