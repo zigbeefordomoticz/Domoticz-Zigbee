@@ -103,15 +103,6 @@ def getConfigItem(Key=None, Attribute="", Default=None):
     return repair_dict_after_load(Value, Attribute)
 
 
-#def prepare_dict_for_storage(dict_items, Attribute):
-#
-#    from base64 import b64encode
-#
-#    if Attribute in dict_items:
-#        dict_items[Attribute] = b64encode(str(dict_items[Attribute]).encode("utf-8"))
-#    dict_items["Version"] = 1
-#    return dict_items
-
 def prepare_dict_for_storage(dict_items, Attribute):
     """
     Prepares the dictionary for storage by Base64-encoding the specified attribute.
@@ -158,13 +149,15 @@ def repair_dict_after_load(b64_dict, Attribute):
         domoticz_log_api("repair_dict_after_load - Not supported storage")
         return {}
 
-    if b64_dict["Version"] == 1:
+    _version = b64_dict["Version"]
+    if _version == 1:
         return _repair_dict_after_loadV1(b64_dict, Attribute)
 
-    elif b64_dict["Version"] == 3:
+    elif _version == 3:
         return _repair_dict_after_loadV3(b64_dict, Attribute)
     
-    domoticz_error_api(f"repair_dict_after_load - Unknown version number: {b64_dict['Version']} ({type(b64_dict['Version'])})")
+    domoticz_error_api(f"repair_dict_after_load - Unknown version number: {_version} ({type(_version)})")
+    # Return an empty dict
     return {}
 
 
