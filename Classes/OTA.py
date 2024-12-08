@@ -340,6 +340,10 @@ class OTAManagement(object):
             logging(self, "Status", "OTA upgrade completed with success - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s" % (
                 MsgSrcAddr, MsgEP, MsgClusterId, intMsgImageVersion, image_type, intMsgManufCode, MsgStatus))
             ota_upgrade_end_response(self, MsgSQN, MsgSrcAddr, MsgEP, intMsgImageVersion, image_type, intMsgManufCode)
+
+            # Remove "OTAUpdate" if existing and successful
+            self.ListOfDevices[MsgSrcAddr].pop("OTAUpdate", None)
+
             notify_upgrade_end(self, "OK", MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion)
 
         elif MsgStatus == "95":
@@ -1211,32 +1215,21 @@ def ota_aync_request( self, MsgSrcAddr, MsgEP, MsgIEEE, MsgFileOffset, image_ver
     return True
 
 
-def notify_upgrade_end(
-    self,
-    Status,
-    MsgSrcAddr,
-    MsgEP,
-    image_type,
-    intMsgManufCode,
-    intMsgImageVersion,
-    ):  # OK 26/10
+def _get_device_name_by_id(self, device_id):
+    return next((device.Name for device in self.Devices.values() if device.DeviceID == device_id), None)
+
+
+def notify_upgrade_end( self, Status, MsgSrcAddr, MsgEP, image_type, intMsgManufCode, intMsgImageVersion, ):
+    # OK 26/10
 
     _transferTime_hh, _transferTime_mm, _transferTime_ss = convert_time(int(time.time() - self.ListInUpdate["StartTime"]))
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
-    _name = None
+    _name = _get_device_name_by_id(self, _ieee)
     _textmsg = ""
-    for x in self.Devices:
-        if self.Devices[x].DeviceID == _ieee:
-            _name = self.Devices[x].Name
-
+ 
     if Status == "OK":
         _textmsg = "Device: %s has been updated with firmware %s in %s hour %s min %s sec" % (
-            _name,
-            intMsgImageVersion,
-            _transferTime_hh,
-            _transferTime_mm,
-            _transferTime_ss,
-        )
+            _name, intMsgImageVersion, _transferTime_hh, _transferTime_mm, _transferTime_ss, )
         logging(self, "Status", _textmsg)
         if "Firmware Update" in self.PluginHealth and len(self.PluginHealth["Firmware Update"]) > 0:
             self.PluginHealth["Firmware Update"]["Progress"] = "Success"
@@ -1252,6 +1245,7 @@ def notify_upgrade_end(
 
         if "Firmware Update" in self.PluginHealth and len(self.PluginHealth["Firmware Update"]) > 0:
             self.PluginHealth["Firmware Update"]["Progress"] = "Aborted"
+
     elif Status == "Failed":
         _textmsg = "Firmware update aborted error code %s for Device %s in %s hour %s min %s sec" % (
             Status,
@@ -1262,6 +1256,7 @@ def notify_upgrade_end(
         )
         if "Firmware Update" in self.PluginHealth and len(self.PluginHealth["Firmware Update"]) > 0:
             self.PluginHealth["Firmware Update"]["Progress"] = "Failed"
+
     elif Status == "More":
         _textmsg = "Device: %s has been updated to latest firmware in %s hour %s min %s sec, but additional Image needed" % (
             _name,
@@ -1385,8 +1380,8 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
 
     # Retrieve device name from the IEEE address
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
-    _name = next((self.Devices[x].Name for x in self.Devices if self.Devices[x].DeviceID == _ieee), None)
-
+    _name = _get_device_name_by_id(self, _ieee)
+    
     # Estimate upload time
     estimated_time_for_upload = ( self.ListInUpdate["intSize"] // MsgMaxDataSize )
     if self.zigbee_communication == "zigpy":
