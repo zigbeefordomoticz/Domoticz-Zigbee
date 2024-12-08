@@ -1083,19 +1083,18 @@ def _start_zigpy_ZNP(self):
 
     from Classes.ZigpyTransport.Transport import ZigpyTransport
 
-    #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-    # https://github.com/zigpy/zigpy-znp/issues/205
-    #self.pythonModuleVersion["zigpy_znp"] = import_version( 'zigpy-znp' )
-    
     check_python_modules_version( self )
     self.zigbee_communication = "zigpy"
     self.pluginParameters["Zigpy"] = True
     self.log.logging("Plugin", "Status", "Z4D starting ZNP")
     
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"]
-        )
-    self.ControllerLink.open_cie_connection()
+    try:
+        self.ControllerLink= ZigpyTransport(
+            self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "znp", Parameters["SerialPort"]
+            )
+        self.ControllerLink.open_cie_connection()
+    except Exception as e:
+        self.log.logging("Plugin", "Error", f"Failed to start Zigpy ZNP: {str(e)}")
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
 
@@ -1107,15 +1106,17 @@ def _start_zigpy_deConz(self):
 
     from Classes.ZigpyTransport.Transport import ZigpyTransport
 
-    #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-    #self.pythonModuleVersion["zigpy_deconz"] = (zigpy_deconz.__version__)
     check_python_modules_version( self )
     self.pluginParameters["Zigpy"] = True
-    self.log.logging("Plugin", "Status","Z4D starting deConz")            
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"]
-        )
-    self.ControllerLink.open_cie_connection()
+    self.log.logging("Plugin", "Status","Z4D starting deConz")
+    
+    try:
+        self.ControllerLink= ZigpyTransport(
+            self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "deCONZ", Parameters["SerialPort"]
+            )
+        self.ControllerLink.open_cie_connection()
+    except Exception as e:
+        self.log.logging("Plugin", "Error", f"Failed to start Zigpy deConz: {str(e)}")
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
 
@@ -1127,8 +1128,6 @@ def _start_zigpy_EZSP(self):
 
     from Classes.ZigpyTransport.Transport import ZigpyTransport
 
-    #self.pythonModuleVersion["zigpy"] = (zigpy.__version__)
-    #self.pythonModuleVersion["zigpy_ezsp"] = (bellows.__version__)
     check_python_modules_version( self )
     self.zigbee_communication = "zigpy"
     self.pluginParameters["Zigpy"] = True
@@ -1142,10 +1141,13 @@ def _start_zigpy_EZSP(self):
 
     SerialPort = Parameters["SerialPort"]
     
-    self.ControllerLink= ZigpyTransport(
-        self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort
-        )
-    self.ControllerLink.open_cie_connection()
+    try:
+        self.ControllerLink= ZigpyTransport(
+            self.ControllerData, self.pluginParameters, self.pluginconf,self.processFrame, self.zigpy_chk_upd_device, self.zigpy_get_device, self.zigpy_backup_available, self.restart_plugin, self.log, self.statistics, self.HardwareID, "ezsp", SerialPort
+            )
+        self.ControllerLink.open_cie_connection()
+    except Exception as e:
+        self.log.logging("Plugin", "Error", f"Failed to start Zigpy EZSP: {str(e)}")
     self.pluginconf.pluginConf["ControllerInRawMode"] = True
     
     
