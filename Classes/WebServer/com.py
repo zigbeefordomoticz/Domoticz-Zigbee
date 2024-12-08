@@ -154,7 +154,7 @@ def handle_client(self, client_socket, client_addr):
         while self.running:
             try:
                 # Let's receive the first chunck (to get the headers)
-                data = receive_data(self, client_socket).decode('utf-8')
+                data = receive_data(self, client_socket).decode('utf-8', errors='ignore')
 
                 if not data:
                     self.logging("Debug", f"no data from {client_addr}")
@@ -189,8 +189,8 @@ def handle_client(self, client_socket, client_addr):
                 break
 
             except Exception as e:
-                self.logging("Log", f"Unexpected error with {client_addr}: {e}")
-                self.logging("Log", f"{traceback.format_exc()}")
+                self.logging("Error", f"handle_client Unexpected error with {client_addr}: {e} from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {headers}")
+                self.logging("Error", f"{traceback.format_exc()}")
                 break
 
     finally:
