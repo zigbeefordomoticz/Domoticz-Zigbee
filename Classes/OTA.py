@@ -1390,7 +1390,7 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     # Estimate upload time
     estimated_time_for_upload = ( self.ListInUpdate["intSize"] // MsgMaxDataSize )
     if self.zigbee_communication == "zigpy":
-        estimated_time_for_upload //= 7
+        estimated_time_for_upload //= 4.5
 
     # Convert estimated time into hours, minutes, and seconds
     _durhh, _durmm, _durss = convert_time(estimated_time_for_upload)
