@@ -88,6 +88,44 @@ def validate_device_id(self, device_id):
     return True
 
 
+NORMALIZED_CLUSTERS = {
+    'rmt1': 'z001',
+    'LumiLock': 'z002',
+    'Strenght': 'z003',
+    'Orientation': 'z004',
+    'WaterCounter': 'z005',
+    'Distance': 'z006',
+    'TamperSwitch': 'z007',
+    'Notification': 'z008',
+    'PWFactor': 'z009',
+    'phMeter': 'z010',
+    'ec': 'z011',
+    'orp': 'z012',
+    'RainIntensity': 'z013',
+    'freeChlorine': 'z014',
+    'salinity': 'z015',
+    'tds': 'z016'
+    }
+
+
+REVERSE_MAPPING = {v: k for k, v in NORMALIZED_CLUSTERS.items()}
+
+
+def clustertype_old_to_new(cluster_name):
+    """
+    Convert an old-fashioned cluster name to its normalized form.
+    """
+    return NORMALIZED_CLUSTERS.get(cluster_name, f"Unknown cluster: {cluster_name}")
+
+
+def clustertype_new_to_old(normalized_name):
+    """
+    Convert a normalized cluster name back to its old-fashioned form.
+    """
+    return REVERSE_MAPPING.get(normalized_name, f"Unknown normalized name: {normalized_name}")
+
+# Example usage
+
 if __name__ == "__main__":
     # Simple tests for the module
 
@@ -120,3 +158,10 @@ if __name__ == "__main__":
     print("\nTesting validate_device_id...")
     print(validate_device_id(self, valid_device_id))  # Should return True
     print(validate_device_id(self, invalid_device_id))  # Should return False
+
+
+    # Test conversion from old to new cluster
+    print(clustertype_old_to_new("LumiLock"))  # Should output: z002
+
+    # Test conversion from new to old
+    print(clustertype_new_to_old("z002"))  # Should output: LumiLock
