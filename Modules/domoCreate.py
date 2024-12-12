@@ -16,7 +16,8 @@
 """
 
 
-from Modules.domoticzAbstractLayer import (FreeUnit, domo_create_api)
+from Modules.deviceId import clustertype_old_to_new, create_device_id
+from Modules.domoticzAbstractLayer import FreeUnit, domo_create_api
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2,
                                update_domoticz_widget)
@@ -148,7 +149,10 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     widgetName = deviceName(self, nwkid, cType, ieee, ep)
     # oldFashionWidgetName = cType + "-" + ieee + "-" + ep
 
-    myDev_ID = domo_create_api(self, Devices, ieee, unit, widgetName, widgetType=widgetType, Type_=Type_, Subtype_=Subtype_, Switchtype_=Switchtype_, widgetOptions=widgetOptions, Image=Image)
+    # Build ieee base out of ieee, ep and clustertype
+    build_ieee = create_device_id(self, ieee, ep, clustertype_old_to_new(( ForceClusterType or cType )))
+
+    myDev_ID = domo_create_api(self, Devices, build_ieee, unit, widgetName, widgetType=widgetType, Type_=Type_, Subtype_=Subtype_, Switchtype_=Switchtype_, widgetOptions=widgetOptions, Image=Image)
     
     if myDev_ID == -1:
         self.ListOfDevices[nwkid]["Status"] = "failDB"
