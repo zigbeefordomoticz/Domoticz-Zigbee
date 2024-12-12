@@ -113,16 +113,16 @@ REVERSE_MAPPING = {v: k for k, v in NORMALIZED_CLUSTERS.items()}
 
 def clustertype_old_to_new(cluster_name):
     """
-    Convert an old-fashioned cluster name to its normalized form.
+    Convert an old-fashioned cluster name if needed to its normalized form.
     """
-    return NORMALIZED_CLUSTERS.get(cluster_name, f"Unknown cluster: {cluster_name}")
+    return NORMALIZED_CLUSTERS.get(cluster_name, cluster_name)
 
 
 def clustertype_new_to_old(normalized_name):
     """
-    Convert a normalized cluster name back to its old-fashioned form.
+    Convert a normalized cluster name back to its old-fashioned form (if needed).
     """
-    return REVERSE_MAPPING.get(normalized_name, f"Unknown normalized name: {normalized_name}")
+    return REVERSE_MAPPING.get(normalized_name, normalized_name)
 
 # Example usage
 
