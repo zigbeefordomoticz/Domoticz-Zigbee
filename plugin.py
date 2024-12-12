@@ -137,10 +137,12 @@ from Modules.command import domoticz_command
 from Modules.database import (checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf, load_plugin_database,
                               save_plugin_database)
-from Modules.domoticzAbstractLayer import (
-    domo_read_Name, find_first_unit_widget_from_deviceID,
-    find_legacy_DeviceID_from_unit, how_many_legacy_slot_available,
-    is_domoticz_extended, load_list_of_domoticz_widget)
+from Modules.domoticzAbstractLayer import (domo_read_Name,
+                                           find_legacy_DeviceID_from_unit,
+                                           how_many_legacy_slot_available,
+                                           is_device_ieee_in_domoticz_db,
+                                           is_domoticz_extended,
+                                           load_list_of_domoticz_widget)
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.matomo_request import (matomo_coordinator_initialisation,
@@ -665,46 +667,6 @@ class BasePlugin:
 
 
     def onDeviceRemoved(self, Unit):
-        # def onDeviceRemoved(self, DeviceID, Unit):
-        if not self.ControllerIEEE:
-            self.log.logging( "Plugin", "Error", "onDeviceRemoved - too early, coordinator and plugin initialisation not completed", )
-
-        if self.log:
-            self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
-
-        if not is_domoticz_extended():
-            DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
-
-        device_name = domo_read_Name( self, Devices, DeviceID, Unit, )
-        
-        # Let's check if this is End Node, or Group related.
-        if DeviceID in self.IEEE2NWK:
-            NwkId = self.IEEE2NWK[DeviceID]
-
-            self.log.logging("Plugin", "Status", f"Removing Device {DeviceID} {device_name} in progress")
-            fullyremoved = removeDeviceInList(self, Devices, DeviceID, Unit)
-
-            # We might have to remove also the Device from Groups
-            if fullyremoved:
-                if self.groupmgt:
-                    self.groupmgt.RemoveNwkIdFromAllGroups(NwkId)
-
-                # sending a Leave Request to device, so the device will send a leave
-                leaveRequest(self, ShortAddr=NwkId, IEEE=DeviceID)
-
-                # for a remove in case device didn't send the leave
-                zigate_remove_device(self, str(self.ControllerIEEE), str(DeviceID) )
-                self.log.logging( "Plugin", "Status", f"Request device {device_name} -> {DeviceID} to be removed from coordinator" )
-
-            self.log.logging("Plugin", "Debug", f"ListOfDevices :After REMOVE {self.ListOfDevices}")
-            load_list_of_domoticz_widget(self, Devices)
-            return
-
-        if self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
-            self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be remove from Group(s)")
-            self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
-
-    def onDeviceRemoved(self, Unit):
         """
         Handles the removal of a device or group based on the Unit provided.
         """
@@ -731,9 +693,9 @@ class BasePlugin:
 
         # Handle removal of end devices or groups
         if DeviceID in self.IEEE2NWK:
-            _remove_end_device(self, DeviceID, Unit, device_name)
+            _remove_device_entry(self, DeviceID, Unit, device_name)
         elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
-            _remove_device_from_groups(self, Unit, DeviceID)
+            _remove_group_entry(self, Unit, DeviceID)
 
 
     def onConnect(self, Connection, Status, Description):
@@ -1594,9 +1556,9 @@ def debuging_information(self, mode):
     for info_name, info_value in debug_info.items():
         self.log.logging("Plugin", mode, "%s: %s" % (info_name, info_value))
 
-def _remove_end_device(self, DeviceID, Unit, device_name):
+def _remove_device_entry(self, DeviceID, Unit, device_name):
     """
-    Removes an end device and performs associated cleanup tasks.
+    Removes an device and performs associated cleanup tasks if required
     """
     NwkId = self.IEEE2NWK[DeviceID]
     self.log.logging("Plugin", "Status", f"Removing Device {DeviceID} {device_name} in progress")
@@ -1605,7 +1567,7 @@ def _remove_end_device(self, DeviceID, Unit, device_name):
     fully_removed = removeDeviceInList(self, Devices, DeviceID, Unit)
     
     # Let's check that we still don't have a reference in Domoticz . This could happen when a Replace is done.
-    fully_removed = fully_removed and find_first_unit_widget_from_deviceID(self, Devices, DeviceID) is None
+    fully_removed = fully_removed and not is_device_ieee_in_domoticz_db(self, Devices, DeviceID)
 
     if fully_removed:
         _cleanup_device(self, DeviceID, NwkId, device_name)
@@ -1631,9 +1593,9 @@ def _cleanup_device(self, DeviceID, NwkId, device_name):
         f"Request device {device_name} -> {DeviceID} to be removed from coordinator",
     )
 
-def _remove_device_from_groups(self, Unit, DeviceID):
+def _remove_group_entry(self, Unit, DeviceID):
     """
-    Removes a device from associated groups.
+    Removes a group from groups list.
     """
     self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be removed from Group(s)")
     self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
