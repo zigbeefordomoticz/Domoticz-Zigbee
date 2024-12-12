@@ -134,12 +134,13 @@ from Modules.checkingUpdate import (check_plugin_version_against_dns,
                                     is_plugin_update_available,
                                     is_zigate_firmware_available)
 from Modules.command import domoticz_command
-from Modules.database import (load_plugin_database, save_plugin_database,
-                              checkDevices2LOD, checkListOfDevice2Devices,
-                              import_local_device_conf)
+from Modules.database import (checkDevices2LOD, checkListOfDevice2Devices,
+                              import_local_device_conf, load_plugin_database,
+                              save_plugin_database)
 from Modules.domoticzAbstractLayer import (domo_read_Name,
                                            find_legacy_DeviceID_from_unit,
                                            how_many_legacy_slot_available,
+                                           is_device_ieee_in_domoticz_db,
                                            is_domoticz_extended,
                                            load_list_of_domoticz_widget)
 from Modules.heartbeat import processListOfDevices
@@ -666,44 +667,35 @@ class BasePlugin:
 
 
     def onDeviceRemoved(self, Unit):
-        # def onDeviceRemoved(self, DeviceID, Unit):
+        """
+        Handles the removal of a device or group based on the Unit provided.
+        """
+        # Early exit if the controller is not initialized
         if not self.ControllerIEEE:
-            self.log.logging( "Plugin", "Error", "onDeviceRemoved - too early, coordinator and plugin initialisation not completed", )
+            self.log.logging(
+                "Plugin",
+                "Error",
+                "onDeviceRemoved - too early, coordinator and plugin initialization not completed",
+            )
+            return
 
         if self.log:
             self.log.logging("Plugin", "Debug", "onDeviceRemoved called")
 
-        if not is_domoticz_extended():
-            DeviceID = find_legacy_DeviceID_from_unit(self, Devices, Unit)
+        # Determine DeviceID for legacy or extended cases
+        DeviceID = (
+            find_legacy_DeviceID_from_unit(self, Devices, Unit)
+            if not is_domoticz_extended()
+            else None
+        )
 
-        device_name = domo_read_Name( self, Devices, DeviceID, Unit, )
-        
-        # Let's check if this is End Node, or Group related.
+        device_name = domo_read_Name(self, Devices, DeviceID, Unit)
+
+        # Handle removal of end devices or groups
         if DeviceID in self.IEEE2NWK:
-            NwkId = self.IEEE2NWK[DeviceID]
-
-            self.log.logging("Plugin", "Status", f"Removing Device {DeviceID} {device_name} in progress")
-            fullyremoved = removeDeviceInList(self, Devices, DeviceID, Unit)
-
-            # We might have to remove also the Device from Groups
-            if fullyremoved:
-                if self.groupmgt:
-                    self.groupmgt.RemoveNwkIdFromAllGroups(NwkId)
-
-                # sending a Leave Request to device, so the device will send a leave
-                leaveRequest(self, ShortAddr=NwkId, IEEE=DeviceID)
-
-                # for a remove in case device didn't send the leave
-                zigate_remove_device(self, str(self.ControllerIEEE), str(DeviceID) )
-                self.log.logging( "Plugin", "Status", f"Request device {device_name} -> {DeviceID} to be removed from coordinator" )
-
-            self.log.logging("Plugin", "Debug", f"ListOfDevices :After REMOVE {self.ListOfDevices}")
-            load_list_of_domoticz_widget(self, Devices)
-            return
-
-        if self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
-            self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be remove from Group(s)")
-            self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
+            _remove_device_entry(self, DeviceID, Unit, device_name)
+        elif self.groupmgt and DeviceID in self.groupmgt.ListOfGroups:
+            _remove_group_entry(self, Unit, DeviceID)
 
 
     def onConnect(self, Connection, Status, Description):
@@ -1564,7 +1556,51 @@ def debuging_information(self, mode):
     for info_name, info_value in debug_info.items():
         self.log.logging("Plugin", mode, "%s: %s" % (info_name, info_value))
 
- 
+def _remove_device_entry(self, DeviceID, Unit, device_name):
+    """
+    Removes an device and performs associated cleanup tasks if required
+    """
+    NwkId = self.IEEE2NWK[DeviceID]
+    self.log.logging("Plugin", "Status", f"Removing Device {DeviceID} {device_name} in progress")
+
+    # Check that we don't have any reference in plugin
+    fully_removed = removeDeviceInList(self, Devices, DeviceID, Unit)
+
+    # Let's check that we still don't have a reference in Domoticz . This could happen when a Replace is done.
+    fully_removed = fully_removed and not is_device_ieee_in_domoticz_db(self, Devices, DeviceID)
+
+    if fully_removed:
+        _cleanup_device(self, DeviceID, NwkId, device_name)
+
+    self.log.logging("Plugin", "Debug", f"ListOfDevices: After REMOVE {self.ListOfDevices}")
+    load_list_of_domoticz_widget(self, Devices)
+
+def _cleanup_device(self, DeviceID, NwkId, device_name):
+    """
+    Performs cleanup operations for a removed device.
+    """
+    if self.groupmgt:
+        self.groupmgt.RemoveNwkIdFromAllGroups(NwkId)
+
+    # Send leave request to the device
+    leaveRequest(self, ShortAddr=NwkId, IEEE=DeviceID)
+
+    # Ensure removal from the coordinator
+    zigate_remove_device(self, str(self.ControllerIEEE), str(DeviceID))
+    self.log.logging(
+        "Plugin",
+        "Status",
+        f"Request device {device_name} -> {DeviceID} to be removed from coordinator",
+    )
+
+def _remove_group_entry(self, Unit, DeviceID):
+    """
+    Removes a group from groups list.
+    """
+    self.log.logging("Plugin", "Status", f"Request device {DeviceID} to be removed from Group(s)")
+    self.groupmgt.FullRemoveOfGroup(Unit, DeviceID)
+
+
 global _plugin  # pylint: disable=global-variable-not-assigned
 _plugin = BasePlugin()
 
