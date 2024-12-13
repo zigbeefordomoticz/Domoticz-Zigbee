@@ -85,7 +85,7 @@ class WebServer(object):
     from Classes.WebServer.rest_CfgReporting import (
         rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config)
     from Classes.WebServer.rest_change_ModelName import rest_change_model_name
-    from Classes.WebServer.rest_device_params import rest_device_param|
+    from Classes.WebServer.rest_device_params import rest_device_param
     from Classes.WebServer.rest_Device_Settings_Help import \
         rest_device_settings_help
     from Classes.WebServer.rest_Energy import (rest_req_nwk_full,
