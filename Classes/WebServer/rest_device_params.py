@@ -22,12 +22,12 @@ def rest_device_param(self, verb, data, parameters):
     
     self.logging("Log", "rest_update_device_param -->Verb: %s Data: %s Parameters: %s" % (verb, data, parameters))
     if verb == "GET":
-        return rest_get_device_param(self, data, parameters)
+        return rest_get_device_param(self, parameters)
+
     elif verb == "PUT":
-        return rest_update_device_param(self, data, parameters)
+        return rest_update_device_param(self, data)
     
     return prepResponseMessage(self, setupHeadersResponse())
-
 
 
 def rest_get_device_param( self, parameters):
@@ -35,28 +35,21 @@ def rest_get_device_param( self, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
 
     if len(parameters) != 1:
-        self.logging( "Error", "rest_get_device_param - unexpected parameter: %s" % parameters)
-        _response["Data"] = {"unexpected parameter %s " % parameters}
-        return _response
-
+        return _log_and_return_with_error(self, "rest_get_device_param - unexpected parameter: %s", parameters, "unexpected parameter %s ", _response, )
     nwkid = parameters[0]
     if nwkid not in self.ListOfDevices:
-        self.logging( "Error", "rest_get_device_param - Unknown device %s " % nwkid)
-        _response["Data"] = {"unknown device %s " % nwkid}
-        return _response
-   
+        return _log_and_return_with_error(self, "rest_get_device_param - Unknown device %s ", nwkid, "unknown device %s ", _response, )
     device_info = self.ListOfDevices.get( nwkid )
     device_param = device_info.get("Param", "{}")
 
     _response["Data"] = json.dumps(device_param, sort_keys=False)
     return _response
 
-    
-    
+
 def rest_update_device_param(self, data):
 
     # curl -X PUT -d '{
-    #   "Param": "{'Disabled': 0, 'resetMotiondelay': 0, 'ConfigurationReportChunk': 3, 'ReadAttributeChunk': 4}",
+    #   "Param": {'Disabled': 0, 'resetMotiondelay': 0, 'ConfigurationReportChunk': 3, 'ReadAttributeChunk': 4},
     #   "NWKID": "1234"
     # }' http://127.0.0.1:9441/rest-z4d/1/device-param
 
@@ -68,22 +61,22 @@ def rest_update_device_param(self, data):
 
     parameter = data.get("Param")
     nwkid = data.get("NWKID")
-    
+
     if parameter is None or nwkid is None:
-        self.logging( "Error", "rest_update_device_param - unexpected parameter: %s" % data)
-        _response["Data"] = {"unexpected parameter %s " % data}
-        return _response
-
+        return _log_and_return_with_error(self, "rest_update_device_param - unexpected parameter: %s", data, "unexpected parameter %s ", _response, )
     if nwkid not in self.ListOfDevices:
-        self.logging( "Error", "rest_update_device_param - Unknown device %s " % nwkid)
-        _response["Data"] = {"unknown device %s " % nwkid}
-        return _response
-
+        return _log_and_return_with_error(self, "rest_update_device_param - Unknown device %s ", nwkid, "unknown device %s ", _response, )
     old_parameter = self.ListOfDevices[ nwkid ].get("Param")
     _response["Data"] = {"NwkId %s set Param from: %s to %s" % (nwkid, old_parameter, parameter)}
 
     self.ListOfDevices[ nwkid ]["Param"] = parameter
-    
+
     sanity_check_of_param(self, nwkid)
 
+    return _response
+
+
+def _log_and_return_with_error(self, arg0, arg1, arg2, _response):
+    self.logging("Error", arg0 % arg1)
+    _response["Data"] = {arg2 % arg1}
     return _response
