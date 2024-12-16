@@ -1565,7 +1565,7 @@ def _remove_device_entry(self, DeviceID, Unit, device_name):
 
     # Check that we don't have any reference in plugin
     fully_removed = removeDeviceInList(self, Devices, DeviceID, Unit)
-    
+
     # Let's check that we still don't have a reference in Domoticz . This could happen when a Replace is done.
     fully_removed = fully_removed and not is_device_ieee_in_domoticz_db(self, Devices, DeviceID)
 
