@@ -18,6 +18,11 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Dec. 2024 - stable7.1.017 (2024.09)
+
+- [Issue] - Fix an issue with EZSP chipset ( KeyError: <XncpCommandId.undefined_0x03e8: 1000>)
+
+
 ## Dec. 2024 - stable7.1.016 (2024.08)
 
 - [Issue] - Important fix to detect non-functionning device, and setting then in Timeout (bug found on EZSP)
