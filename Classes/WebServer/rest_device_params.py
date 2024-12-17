@@ -19,14 +19,14 @@ from Modules.paramDevice import sanity_check_of_param
 
 
 def rest_device_param(self, verb, data, parameters):
-    
+
     self.logging("Log", "rest_update_device_param -->Verb: %s Data: %s Parameters: %s" % (verb, data, parameters))
     if verb == "GET":
         return rest_get_device_param(self, parameters)
 
     elif verb == "PUT":
         return rest_update_device_param(self, data)
-    
+
     return prepResponseMessage(self, setupHeadersResponse())
 
 
@@ -36,7 +36,12 @@ def rest_get_device_param( self, parameters):
 
     if len(parameters) != 1:
         return _log_and_return_with_error(self, "rest_get_device_param - unexpected parameter: %s", parameters, "unexpected parameter %s ", _response, )
+
     nwkid = parameters[0]
+    if len(nwkid) == 16:
+        # We are assuming that is an ieee instead of nwkid
+        nwkid = self.IEEE2NWK.get( nwkid )
+
     if nwkid not in self.ListOfDevices:
         return _log_and_return_with_error(self, "rest_get_device_param - Unknown device %s ", nwkid, "unknown device %s ", _response, )
     device_info = self.ListOfDevices.get( nwkid )
@@ -61,6 +66,13 @@ def rest_update_device_param(self, data):
 
     parameter = data.get("Param")
     nwkid = data.get("NWKID")
+    ieee = data.get("IEEE")
+
+    if nwkid is None and ieee is None:
+        return _log_and_return_with_error(self, "rest_update_device_param - missing IEEE or NWKID", "unexpected parameter %s ", _response, )
+
+    if ieee:
+        nwkid = self.IEEE2NWK.get( ieee )
 
     if parameter is None or nwkid is None:
         return _log_and_return_with_error(self, "rest_update_device_param - unexpected parameter: %s", data, "unexpected parameter %s ", _response, )
