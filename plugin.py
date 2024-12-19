@@ -310,6 +310,13 @@ class BasePlugin:
 
     def onStart(self):
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin.")
+
+        # Print PYTHONPATH if set
+        pythonpath = os.getenv('PYTHONPATH')
+        if pythonpath:
+            Domoticz.Status(f"PYTHONPATH is set to: {pythonpath}")
+        else:
+            Domoticz.Status("PYTHONPATH is not set")
         
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
