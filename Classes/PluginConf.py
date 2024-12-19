@@ -31,13 +31,14 @@ SETTINGS = {
     "Services": {
         "Order": 1,
         "param": {
+            "MatomoOptIn": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "enablegroupmanagement": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False, },
             "enableReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": True, "Advanced": True, },
             "internetAccess": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": False, },
             "CheckSSLCertificateValidity": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False, },
             "allowOTA": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": True, "Advanced": False, },
             "pingDevices": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": True, },
-            "PluginAnalytics": { "type": "bool", "default": -1, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
+            "PluginAnalytics": { "type": "bool", "default": -1, "current": None, "restart": 0, "hidden": true, "Advanced": False, },
             "DomoticzCustomMenu": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": False, },
             "NightShift": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, }
         },
@@ -202,7 +203,6 @@ SETTINGS = {
     "PluginConfiguration": {
         "Order": 12,
         "param": {
-            "MatomoOptIn": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "PosixPathUpdate": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "storeDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "useDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
