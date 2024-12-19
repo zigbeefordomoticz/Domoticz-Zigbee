@@ -1350,6 +1350,7 @@ def zigateInit_Phase3(self):
         self.iaszonemgt.setZigateIEEE(self.ControllerIEEE)
     
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
+        self.log.logging("Plugin", "Status", "Sending Analytics information. (disable the MatomoOptIn parameter to stop this)")
         matomo_plugin_started(self)
 
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
