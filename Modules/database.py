@@ -284,8 +284,8 @@ def _read_DeviceList_Domoticz(self):
     ListOfDevices_from_Domoticz = getConfigItem(Key="ListOfDevices", Attribute="Devices")
     time_stamp = 0
     if "TimeStamp" in ListOfDevices_from_Domoticz:
-        time_stamp = ListOfDevices_from_Domoticz["TimeStamp"]
-        ListOfDevices_from_Domoticz = ListOfDevices_from_Domoticz["Devices"]
+        time_stamp = ListOfDevices_from_Domoticz.get("TimeStamp",0)
+        ListOfDevices_from_Domoticz = ListOfDevices_from_Domoticz.get("Devices",{})
         self.log.logging(
             "Database",
             "Log",
