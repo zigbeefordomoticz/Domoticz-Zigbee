@@ -18,6 +18,15 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Dec. 2024 - stavle7.1.018 (2024.10)
+
+- [WebUI] - disable WebUI analytics as it is replaced by an embedded one in the plugin itself.
+- [WebUI] - dedicated REST API for updating device parameters. ( PR #1813 , on request of @wvries)
+
+- [Technical] - Handle PYTHONPATH during the plugin automatic upgrade
+- [Technical] - Better error management when reading plugin database from domoticz. (could allow downgrade from futur version storing database in domoticz)
+
+
 ## Dec. 2024 - stable7.1.017 (2024.09)
 
 - [Issue] - Fix an issue with EZSP chipset ( KeyError: <XncpCommandId.undefined_0x03e8: 1000>)

@@ -31,6 +31,7 @@ SETTINGS = {
     "Services": {
         "Order": 1,
         "param": {
+            "MatomoOptIn": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": False,},
             "enablegroupmanagement": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": False, "Advanced": False, },
             "enableReadAttributes": { "type": "bool", "default": 0, "current": None, "restart": 1, "hidden": True, "Advanced": True, },
             "internetAccess": { "type": "bool", "default": 1, "current": None, "restart": 1, "hidden": False, "Advanced": False, },
@@ -202,7 +203,6 @@ SETTINGS = {
     "PluginConfiguration": {
         "Order": 12,
         "param": {
-            "MatomoOptIn": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "PosixPathUpdate": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "storeDomoticzDatabase": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "useDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
@@ -552,6 +552,7 @@ def _load_Settings(self):
 
         if dz_timestamp != 0:
             Domoticz.Log( "Plugin data loaded where saved on %s" % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))) )
+
         if not isinstance(_domoticz_pluginConf, dict):
             _domoticz_pluginConf = {}
 

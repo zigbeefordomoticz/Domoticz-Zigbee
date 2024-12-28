@@ -31,8 +31,7 @@ from Modules.domoticzAbstractLayer import (domo_read_BatteryLevel,
                                            domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
-from Modules.matomo_request import (matomo_opt_in_action,
-                                    matomo_opt_out_action)
+from Modules.matomo_request import matomo_opt_in_action, matomo_opt_out_action
 from Modules.sendZigateCommand import sendZigateCmd
 from Modules.tools import get_device_nickname, is_hex
 from Modules.txPower import set_TxPower
@@ -86,6 +85,7 @@ class WebServer(object):
     from Classes.WebServer.rest_CfgReporting import (
         rest_cfgrpt_ondemand, rest_cfgrpt_ondemand_with_config)
     from Classes.WebServer.rest_change_ModelName import rest_change_model_name
+    from Classes.WebServer.rest_device_params import rest_device_param
     from Classes.WebServer.rest_Device_Settings_Help import \
         rest_device_settings_help
     from Classes.WebServer.rest_Energy import (rest_req_nwk_full,

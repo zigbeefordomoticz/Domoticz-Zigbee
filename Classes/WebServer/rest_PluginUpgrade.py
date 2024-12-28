@@ -14,6 +14,7 @@ import json
 import os
 import subprocess  # nosec
 from pathlib import Path
+import sys
 
 import distro
 import z4d_certified_devices
@@ -35,10 +36,14 @@ def rest_plugin_upgrade(self, verb, data, parameters):
     pluginFolder = Path(self.pluginParameters["HomeFolder"])
     upgrade_script = str( pluginFolder / PLUGIN_UPGRADE_SCRIPT)
 
+    # Identify the current Python version
+    python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+    self.logging("Log", f"Current Python version: {python_version}")
+
     self.logging("Log", "Plugin Upgrade starting: %s" %(upgrade_script))
     
     process = subprocess.run( 
-        upgrade_script ,
+        f"{upgrade_script} {python_version}",
         cwd=self.pluginParameters["HomeFolder"],
         universal_newlines=True,
         text=True,

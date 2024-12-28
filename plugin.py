@@ -311,6 +311,13 @@ class BasePlugin:
 
     def onStart(self):
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin.")
+
+        # Print PYTHONPATH if set
+        pythonpath = os.getenv('PYTHONPATH')
+        if pythonpath:
+            Domoticz.Status(f"PYTHONPATH is set to: {pythonpath}")
+        else:
+            Domoticz.Status("PYTHONPATH is not set")
         
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
@@ -396,6 +403,9 @@ class BasePlugin:
             self.zigbee_communication, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
 
+        self.pluginconf.pluginConf["useDomoticzDatabase"] = False 
+        self.pluginconf.pluginConf["storeDomoticzDatabase"] = False
+        
         if self.internet_available is None:
             self.internet_available = is_internet_available(self)
 
@@ -1343,6 +1353,7 @@ def zigateInit_Phase3(self):
         self.iaszonemgt.setZigateIEEE(self.ControllerIEEE)
     
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
+        self.log.logging("Plugin", "Status", "Sending Analytics information. (disable the MatomoOptIn parameter to stop this)")
         matomo_plugin_started(self)
 
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
