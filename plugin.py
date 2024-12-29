@@ -403,9 +403,6 @@ class BasePlugin:
             self.zigbee_communication, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
 
-        self.pluginconf.pluginConf["useDomoticzDatabase"] = False 
-        self.pluginconf.pluginConf["storeDomoticzDatabase"] = False
-        
         if self.internet_available is None:
             self.internet_available = is_internet_available(self)
 
