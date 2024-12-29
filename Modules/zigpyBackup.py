@@ -86,11 +86,11 @@ def handle_zigpy_retreive_last_backup( self ):
         if file_latest_coordinator_backup_record != dz_latest_coordinator_backup_record:
             self.log.logging("TransportZigpy", "Error", f"==> Sanity check : Domoticz Coordinator Backup versus File Backup NOT equal!! Domoticz: {dz_latest_coordinator_backup_record}  {_coordinator_backup}: {file_latest_coordinator_backup_record}")
 
-    # At that stage, we have loaded from Domoticz and from txt file.
-    if dz_latest_coordinator_backup_record and self.pluginconf.pluginConf["useDomoticzDatabase"] and backup_domoticz_more_recent:
-        # We will use the Domoticz import.
-        self.log.logging("Database", "Status", "Z4D loads coordinator backup from Domoticz")
-        return dz_latest_coordinator_backup_record
+        # At that stage, we have loaded from Domoticz and from txt file.
+        if dz_latest_coordinator_backup_record and self.pluginconf.pluginConf["useDomoticzDatabase"] and backup_domoticz_more_recent:
+            # We will use the Domoticz import.
+            self.log.logging("Database", "Status", "Z4D loads coordinator backup from Domoticz")
+            return dz_latest_coordinator_backup_record
 
     self.log.logging("Database", "Status", f"Z4D loads coordinator backup from {_coordinator_backup}")
     return file_latest_coordinator_backup_record
