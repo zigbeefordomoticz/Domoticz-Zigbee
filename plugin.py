@@ -146,8 +146,8 @@ from Modules.domoticzAbstractLayer import (domo_read_Name,
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
 from Modules.matomo_request import (matomo_coordinator_initialisation,
+                                    matomo_coordinator_restart_after_error,
                                     matomo_plugin_analytics_infos,
-                                    matomo_plugin_restart,
                                     matomo_plugin_shutdown,
                                     matomo_plugin_started)
 from Modules.paramDevice import initialize_device_settings
@@ -802,7 +802,7 @@ class BasePlugin:
         self.log.logging("Plugin", "Error", error_message)
         self.adminWidgets.updateNotificationWidget(Devices, error_message)
         if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
-            matomo_plugin_restart(self)
+            matomo_coordinator_restart_after_error(self)
 
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 

@@ -124,6 +124,10 @@ def matomo_coordinator_initialisation(self):
     send_matomo_request( self, action_name="Coordinator Action", event_category="Coordinator", event_action="NewNetwork", event_name="Coordinator Formed new network" )
 
 
+def matomo_coordinator_restart_after_error(self):
+    send_matomo_request( self, action_name="Coordinator Action", event_category="Coordinator", event_action="RestartAfterError", event_name="Coordinator Restart after commmunication error" )
+
+
 def matomo_plugin_shutdown(self):
     send_matomo_request( self, action_name="Plugin Action", event_category="Plugin", event_action="Shutdown", event_name="Plugin Shutdown" )
 
