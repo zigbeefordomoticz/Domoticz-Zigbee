@@ -17,7 +17,7 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
 from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             convert_kva_to_ampere, decode_STEG, get_OPTARIF,
-                            linky_mode, store_ZLinky_infos,
+                            get_tarif_color, linky_mode, store_ZLinky_infos,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
@@ -103,38 +103,46 @@ def zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribu
     previous_value = getAttributeValue(self, nwkid, ep, cluster, attribut, value)
     if value == 0 or previous_value == value:
         return
+    
+    previous_color = get_tarif_color(self, nwkid)
 
     # Set value based on attribute and tariff type
     if attribut == "0000" and op_tarifiare == "HC..":
-        value = "HP.."
+        new_color = "HP.."
     elif attribut == "0100":
         if op_tarifiare == "HC..":
-            value = "HC.."
+            new_color = "HC.."
         elif op_tarifiare == "TEMPO":
-            value = "BHC"
+            new_color = "BHC"
     elif attribut == "0102":
         if op_tarifiare == "HC..":
-            value = "HP.."
+            new_color = "HP.."
         elif op_tarifiare == "TEMPO":
-            value = "BHP"
+            new_color = "BHP"
     
     # If the tariff is not TEMPO, proceed with updating the device
     if op_tarifiare != "TEMPO":
-        MajDomoDevice(self, Devices, nwkid, ep, "0009", str(value), Attribute_="0020")
+        if new_color != previous_color:
+            self.log.logging( "ZLinky", "Status", "Updating ZLinky color based on Counter from {previous_color} to {new_color}", nwkid)
+            MajDomoDevice(self, Devices, nwkid, ep, "0009", new_color, Attribute_="0020")
+            zlinky_color_tarif(self, nwkid, new_color)
         return
 
     # Handle attributes specific to "TEMPO" tariff
     if attribut == "0104":
-        value = "WHC"
+        new_color = "WHC"
     elif attribut == "0106":
-        value = "WHP"
+        new_color = "WHP"
     elif attribut == "0108":
-        value = "RHC"
+        new_color = "RHC"
     elif attribut == "010a":
-        value = "RHP"
+        new_color = "RHP"
 
-    # Update device with the final value
-    MajDomoDevice(self, Devices, nwkid, ep, "0009", str(value), Attribute_="0020")
+    if new_color != previous_color:
+        # Update device with the final value
+        self.log.logging( "ZLinky", "Status", "Updating ZLinky color based on Counter", nwkid)
+        MajDomoDevice(self, Devices, nwkid, ep, "0009", new_color, Attribute_="0020")
+        zlinky_color_tarif(self, nwkid, new_color)
   
     
 def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
