@@ -1,31 +1,61 @@
-import binascii 
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+#
+
+import binascii
 
 from Modules.domoMaj import MajDomoDevice
-from Modules.tools import checkAndStoreAttributeValue
+from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
 from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
-                            convert_kva_to_ampere, decode_STEG, linky_mode,
-                            store_ZLinky_infos,
+                            convert_kva_to_ampere, decode_STEG, get_OPTARIF,
+                            linky_mode, store_ZLinky_infos,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
 
 
 def zlinky_clusters(self, Devices, nwkid, ep, cluster, attribut, value):
-    self.log.logging( "ZLinky", "Debug", "zlinky_clusters %s - %s/%s Attribute: %s Value: %s" % (
-        cluster, nwkid, ep, attribut, value), nwkid, )
-
-    if cluster == "0b01":
-        zlinky_meter_identification(self, Devices, nwkid, ep, cluster, attribut, value)
-        
-    elif cluster == "0702":
-        zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value)
-        
-    elif cluster == "0b04":
-        zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, attribut, value)
+    """
+    Handles the processing of different ZLinky clusters based on the cluster type.
     
-    elif cluster == "ff66":
-        zlinky_cluster_lixee_private(self, Devices, nwkid, ep, cluster, attribut, value)
-        
+    Parameters:
+        Devices: The list of devices to process.
+        nwkid: The network ID of the device.
+        ep: The endpoint identifier.
+        cluster: The cluster type (e.g., "0b01", "0702").
+        attribut: The attribute name being processed.
+        value: The value associated with the attribute.
+    """
+    self.log.logging(
+        "ZLinky", 
+        "Debug", 
+        f"zlinky_clusters {cluster} - {nwkid}/{ep} Attribute: {attribut} Value: {value}", 
+        nwkid
+    )
+
+    # Mapping clusters to their corresponding functions
+    cluster_handlers = {
+        "0b01": zlinky_meter_identification,
+        "0702": zlinky_cluster_metering,
+        "0b04": zlinky_cluster_electrical_measurement,
+        "ff66": zlinky_cluster_lixee_private
+    }
+
+    # Call the appropriate handler function if the cluster is found in the mapping
+    handler = cluster_handlers.get(cluster)
+    if handler:
+        handler(self, Devices, nwkid, ep, cluster, attribut, value)
+
+
 def zlinky_meter_identification(self, Devices, nwkid, ep, cluster, attribut, value):
     self.log.logging( "ZLinky", "Debug", "zlinky_meter_identification %s - %s/%s Attribute: %s Value: %s" % (
         cluster, nwkid, ep, attribut, value), nwkid, )
@@ -50,7 +80,63 @@ def zlinky_meter_identification(self, Devices, nwkid, ep, cluster, attribut, val
     elif attribut == "000e":
         store_ZLinky_infos( self, nwkid, 'PCOUP', value)
 
+    
+def zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value):
+    """
+    Sets the color based on the counter and tariff information for the given device.
+    
+    Parameters:
+        Devices: The list of devices to process.
+        nwkid: The network ID of the device.
+        ep: The endpoint identifier.
+        cluster: The cluster type (e.g., "0b01").
+        attribut: The attribute being processed.
+        value: The current value of the attribute.
+    """
+    op_tarifiare = get_OPTARIF(self, nwkid)
+    
+    # Exit if the tariff is BASE or not one of the supported types
+    if op_tarifiare == "BASE" or op_tarifiare not in ("TEMPO", "HC.."):
+        return
+    
+    # Get previous value to ensure there's a change
+    previous_value = getAttributeValue(self, nwkid, ep, cluster, attribut, value)
+    if value == 0 or previous_value == value:
+        return
 
+    # Set value based on attribute and tariff type
+    if attribut == "0000" and op_tarifiare == "HC..":
+        value = "HP.."
+    elif attribut == "0100":
+        if op_tarifiare == "HC..":
+            value = "HC.."
+        elif op_tarifiare == "TEMPO":
+            value = "BHC"
+    elif attribut == "0102":
+        if op_tarifiare == "HC..":
+            value = "HP.."
+        elif op_tarifiare == "TEMPO":
+            value = "BHP"
+    
+    # If the tariff is not TEMPO, proceed with updating the device
+    if op_tarifiare != "TEMPO":
+        MajDomoDevice(self, Devices, nwkid, ep, "0009", str(value), Attribute_="0020")
+        return
+
+    # Handle attributes specific to "TEMPO" tariff
+    if attribut == "0104":
+        value = "WHC"
+    elif attribut == "0106":
+        value = "WHP"
+    elif attribut == "0108":
+        value = "RHC"
+    elif attribut == "010a":
+        value = "RHP"
+
+    # Update device with the final value
+    MajDomoDevice(self, Devices, nwkid, ep, "0009", str(value), Attribute_="0020")
+  
+    
 def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
     # Smart Energy Metering
 
@@ -69,7 +155,6 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         self.log.logging("Cluster", "Debug", "Cluster0702 - CURRENT_SUMMATION_RECEIVED %s " % (value), nwkid)
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'EAIT', value)
-            
 
     elif attribut == "0020":
         if value == 0:
@@ -91,6 +176,7 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         store_ZLinky_infos( self, nwkid, 'HCHC', value)
         store_ZLinky_infos( self, nwkid, 'EJPHN', value)
         store_ZLinky_infos( self, nwkid, 'BBRHCJB', value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0102":
         # HP or BBRHPJB
@@ -104,6 +190,7 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         store_ZLinky_infos( self, nwkid, 'HCHP', value)
         store_ZLinky_infos( self, nwkid, 'EJPHPM', value)
         store_ZLinky_infos( self, nwkid, 'BBRHCJW', value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0104":
         if value == 0:
@@ -113,8 +200,8 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         MajDomoDevice(self, Devices, nwkid, "f2", cluster, str(value), Attribute_=attribut)
         store_ZLinky_infos( self, nwkid, 'EASF03', value)
         store_ZLinky_infos( self, nwkid, 'BBRHCJW', value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
 
-        
     elif attribut == "0106":
         if value == 0:
             return
@@ -123,6 +210,7 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         MajDomoDevice(self, Devices, nwkid, "f2", cluster, str(value), Attribute_=attribut)
         store_ZLinky_infos( self, nwkid, 'EASF04', value)
         store_ZLinky_infos( self, nwkid, 'BBRHPJW', value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0108":
         if value == 0:
@@ -132,6 +220,7 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         MajDomoDevice(self, Devices, nwkid, "f3", cluster, str(value), Attribute_=attribut)
         store_ZLinky_infos( self, nwkid, 'EASF05', value)
         store_ZLinky_infos( self, nwkid, 'BBRHCJR', value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "010a":
         if value == 0:
@@ -141,6 +230,7 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         MajDomoDevice(self, Devices, nwkid, "f3", cluster, str(value), Attribute_=attribut)
         store_ZLinky_infos( self, nwkid, 'EASF06', value)
         store_ZLinky_infos( self, nwkid, 'BBRHPJR', value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "010c":
         if value == 0:
