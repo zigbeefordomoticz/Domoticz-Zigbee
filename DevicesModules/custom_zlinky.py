@@ -100,7 +100,7 @@ def zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribu
         return
     
     # Get previous value to ensure there's a change
-    previous_value = getAttributeValue(self, nwkid, ep, cluster, attribut, value)
+    previous_value = getAttributeValue(self, nwkid, ep, cluster, attribut)
     if value == 0 or previous_value == value:
         return
     
