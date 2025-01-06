@@ -52,7 +52,6 @@ ZLINKY_UPGRADE_PATHS = {
     "ZLinky_TIC-standard-tri": (),
     "ZLinky_TIC-standard-tri-prod": (),
 }
-
 ZLinky_TIC_COMMAND = {
     # Mode Historique
     "0000": "OPTARIF",
@@ -100,28 +99,19 @@ ZLinky_TIC_COMMAND = {
     "0300": "PROTOCOL Linky"
 }
 
-
-def convert_kva_to_ampere(kva: float) -> float:
-    """
-    Converts kilovolt-amperes (kVA) to amperes (A) assuming a voltage of 200V.
-    
-    Parameters:
-        kva (float): The value in kilovolt-amperes to convert.
-    
-    Returns:
-        float: The equivalent value in amperes.
-    """
-    VOLTAGE = 200  # Assumed voltage in volts
-    return (kva * 1000) / VOLTAGE
-
+def convert_kva_to_ampere( kva ):
+    return ( kva * 1000) / 200
 
 def zlinky_color_tarif(self, MsgSrcAddr, color):
-    self.ListOfDevices.setdefault(MsgSrcAddr, {}).setdefault("ZLinky", {})["Color"] = color
+    if "ZLinky" not in self.ListOfDevices[MsgSrcAddr]:
+        self.ListOfDevices[MsgSrcAddr]["ZLinky"] = {}
+    self.ListOfDevices[MsgSrcAddr]["ZLinky"]["Color"] = color
 
+def store_ZLinky_infos( self, nwkid, command_tic, value):
 
-def store_ZLinky_infos(self, nwkid, command_tic, value):
-    self.ListOfDevices.setdefault(nwkid, {}).setdefault('ZLinky', {})[command_tic] = value
-
+    if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
+        self.ListOfDevices[ nwkid ][ 'ZLinky' ] = {}
+    self.ListOfDevices[ nwkid ][ 'ZLinky' ][ command_tic ] = value
 
 def get_ISOUSC( self, nwkid ):
 
@@ -155,53 +145,23 @@ def get_ISOUSC( self, nwkid ):
 
     return 0
 
+def get_OPTARIF( self, nwkid):
 
-def get_OPTARIF(self, nwkid):
-    """
-    Retrieves the OPTARIF value for a given network ID (nwkid).
-    If not found, defaults to "BASE".
-    
-    Parameters:
-        nwkid: The network ID to retrieve the value for.
-    
-    Returns:
-        The OPTARIF value as a string or "BASE" if not found.
-    """
-    return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("OPTARIF", "BASE")
+    if (
+        "ZLinky" in self.ListOfDevices[nwkid] 
+        and "OPTARIF" in self.ListOfDevices[nwkid]["ZLinky"]
+    ):
+        return self.ListOfDevices[nwkid]["ZLinky"]["OPTARIF"]
 
+    return "BASE"
 
-def get_instant_power(self, nwkid):
-    """
-    Retrieves the instant power value for a given network ID (nwkid).
-    If not available, returns 0.
-    
-    Parameters:
-        nwkid: The network ID to retrieve the value for.
-    
-    Returns:
-        The instant power value as a rounded float, or 0 if not found.
-    """
-    try:
-        value = self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"]["050f"]
-        return round(float(value), 2)
-    except (KeyError, TypeError, ValueError):
-        return 0
+def get_instant_power( self, nwkid ):
+    return round(float(self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"]["050f"]), 2) if "0b04" in self.ListOfDevices[nwkid]["Ep"]["01"] and "050f" in self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"] else 0
 
+def get_tarif_color( self, nwkid ):
+    return self.ListOfDevices[nwkid]["ZLinky"]["Color"] if "ZLinky" in self.ListOfDevices[nwkid] and "Color" in self.ListOfDevices[nwkid]["ZLinky"] else None
    
-def get_tarif_color(self, nwkid):
-    """
-    Retrieves the tarif color for a given network ID (nwkid).
-    If not found, returns None.
     
-    Parameters:
-        nwkid: The network ID to retrieve the color for.
-    
-    Returns:
-        The color value, or None if not found.
-    """
-    return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("Color")
-
- 
 def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
 
     if value == 0:
@@ -229,93 +189,55 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
     return "00|Normal"
         
 
-def linky_mode(self, nwkid, protocol=False):
-    """
-    Retrieves the Linky mode for a given network ID (nwkid).
-    If not available, returns None. If `protocol` is True, returns the protocol value instead.
+
+def linky_mode( self, nwkid , protocol=False):
     
-    Parameters:
-        nwkid: The network ID to retrieve the mode for.
-        protocol: A boolean flag to return the protocol value instead of the mode (default is False).
+    if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
+        return None
     
-    Returns:
-        The Linky mode or protocol, or None if not found.
-    """
-    device = self.ListOfDevices.get(nwkid, {})
-    zlinky = device.get('ZLinky', {})
+    if 'PROTOCOL Linky' not in self.ListOfDevices[ nwkid ]['ZLinky']:
+        return get_linky_mode_from_ep(self, nwkid )
     
-    # Return the protocol value if requested
-    if protocol:
-        return zlinky.get('PROTOCOL Linky')
-    
-    # Return mode if the protocol is in ZLINKY_MODE
-    protocol_linky = zlinky.get('PROTOCOL Linky')
-    if protocol_linky in ZLINKY_MODE:
-        return ZLINKY_MODE[protocol_linky].get("Mode")
-    
-    # Fallback to getting mode from Ep
-    return get_linky_mode_from_ep(self, nwkid) if protocol_linky is None else None
+    if self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] in ZLINKY_MODE and not protocol:
+        return ZLINKY_MODE[ self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ]["Mode"]
+    elif protocol:
+        return self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky']
+
+    return None
 
 
 def get_linky_mode_from_ep(self, nwkid):
-    """
-    Retrieves the Linky mode from the "Ep" section of a given network ID (nwkid).
-    If the mode is found in ZLINKY_MODE, it returns the mode. Otherwise, returns None.
-    
-    Parameters:
-        nwkid: The network ID to retrieve the mode from.
-    
-    Returns:
-        The Linky mode if found in ZLINKY_MODE, or None if not found.
-    """
     ep = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get("01", {}).get("ff66", {}).get("0300")
-    return ZLINKY_MODE.get(ep) if ep in ZLINKY_MODE else None
+    return ep if ep in ZLINKY_MODE else None
 
 
 def linky_device_conf(self, nwkid):
-    """
-    Retrieves the configuration for a Linky device based on its protocol.
-    If the protocol is not found, it attempts to get the mode from the Ep section.
-    
-    Parameters:
-        nwkid: The network ID of the device.
-    
-    Returns:
-        The configuration value for the Linky device or "ZLinky_TIC" if not found.
-    """
     device = self.ListOfDevices.get(nwkid, {})
     zlinky_info = device.get('ZLinky', {})
     protocol_linky = zlinky_info.get('PROTOCOL Linky')
 
-    # If protocol_linky is not present, try to retrieve the mode from the Ep section
     if not protocol_linky:
         mode = get_linky_mode_from_ep(self, nwkid)
         if mode:
             self.log.logging("Cluster", "Status", f"linky_device_conf {nwkid} found 0xff66/0x0300: {mode}")
             zlinky_info['PROTOCOL Linky'] = mode
-            return ZLINKY_MODE.get(mode, {}).get("Conf", "ZLinky_TIC")
+            return ZLINKY_MODE[mode]["Conf"]
+        else:
+            return "ZLinky_TIC"
 
-    # If the protocol is in ZLINKY_MODE, return its configuration
-    if protocol_linky in ZLINKY_MODE:
-        self.log.logging("Cluster", "Debug", f"linky_device_conf {nwkid} found Protocol Linky: {protocol_linky}")
-        return ZLINKY_MODE[protocol_linky].get("Conf", "ZLinky_TIC")
-
-    return "ZLinky_TIC"
+    if protocol_linky not in ZLINKY_MODE:
+        return "ZLinky_TIC"
+    
+    self.log.logging("Cluster", "Debug", f"linky_device_conf {nwkid} found Protocol Linky: {protocol_linky}")
+    return ZLINKY_MODE[protocol_linky]["Conf"]
 
  
-def linky_upgrade_authorized(current_model, new_model):
-    """
-    Checks if an upgrade from the current model to the new model is authorized.
-    
-    Parameters:
-        current_model: The model currently in use.
-        new_model: The model to upgrade to.
-    
-    Returns:
-        True if the upgrade is authorized, otherwise False.
-    """
-    return ZLINKY_UPGRADE_PATHS.get(current_model, {}).get(new_model, False)
+def linky_upgrade_authorized( current_model, new_model ):
 
+    return (
+        current_model in ZLINKY_UPGRADE_PATHS
+        and new_model in ZLINKY_UPGRADE_PATHS[current_model]
+    )
 
 def update_zlinky_device_model_if_needed( self, nwkid ):
     
@@ -355,7 +277,6 @@ def update_zlinky_device_model_if_needed( self, nwkid ):
             
         if "Heartbeat" in self.ListOfDevices[nwkid]:
             self.ListOfDevices[nwkid]["Heartbeat"] = "-1"
-
 
 CONTACT_SEC = {
     0: "fermé",
