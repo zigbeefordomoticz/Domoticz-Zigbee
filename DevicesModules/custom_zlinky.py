@@ -126,134 +126,67 @@ def zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribu
 
 
 def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
-    # Smart Energy Metering
+    """
+    Handles Smart Energy Metering cluster attributes and updates devices accordingly.
 
-    self.log.logging( "ZLinky", "Debug", "zlinky_cluster_metering - %s - %s/%s attribut: %s value: %s" % (
-        cluster, nwkid, ep, attribut, value), nwkid, )
-
-    if attribut == "0000":  # CurrentSummationDelivered
-        # HP or Base
-        self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0000 ZLinky_TIC Value: %s" % (value), nwkid, )
-        MajDomoDevice(self, Devices, nwkid, ep, cluster, str(value), Attribute_=attribut)
-        store_ZLinky_infos( self, nwkid, 'BASE', value)
-        store_ZLinky_infos( self, nwkid, 'EAST', value)
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-
-    elif attribut == "0001":  # CURRENT_SUMMATION_RECEIVED
-        self.log.logging("Cluster", "Debug", "Cluster0702 - CURRENT_SUMMATION_RECEIVED %s " % (value), nwkid)
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-        store_ZLinky_infos( self, nwkid, 'EAIT', value)
-
-    elif attribut == "0020":
-        if value == 0:
+    Parameters:
+        Devices: The list of devices to process.
+        nwkid: The network ID of the device.
+        ep: The endpoint identifier.
+        cluster: The cluster type.
+        attribut: The attribute being processed.
+        value: The current value of the attribute.
+    """
+    def handle_attribut_value(attribut, store_keys=None, update_color=False, totalize=False, maj_ep=None):
+        """Helper function to handle attribute values."""
+        if not value:
             return
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-        MajDomoDevice(self, Devices, nwkid, ep, "0009", str(value), Attribute_="0020")
-        zlinky_color_tarif(self, nwkid, str(value))
-        store_ZLinky_infos( self, nwkid, 'PTEC', value)
+        self.log.logging("ZLinky", "Debug", f"Cluster0702 - {attribut} ZLinky_TIC Value: {value}", nwkid)
+        maj_ep = maj_ep or ep
+        MajDomoDevice(self, Devices, nwkid, maj_ep, cluster, str(value), Attribute_=attribut)
 
-    elif attribut == "0100":
-        # HC or Base or BBRHCJB
-        if value == "":
-            return
-        self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Conso: %s " % (value), nwkid, )
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
-        zlinky_totalisateur(self, nwkid, attribut, value)
-        MajDomoDevice(self, Devices, nwkid, ep, cluster, str(value), Attribute_=attribut)
-        store_ZLinky_infos( self, nwkid, 'EASF01', value)
-        store_ZLinky_infos( self, nwkid, 'HCHC', value)
-        store_ZLinky_infos( self, nwkid, 'EJPHN', value)
-        store_ZLinky_infos( self, nwkid, 'BBRHCJB', value)
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        if update_color:
+            zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
 
-    elif attribut == "0102":
-        # HP or BBRHPJB
-        if value == 0:
-            return
-        self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Conso: %s " % (value), nwkid, )
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
-        zlinky_totalisateur(self, nwkid, attribut, value)
-        MajDomoDevice(self, Devices, nwkid, ep, cluster, str(value), Attribute_=attribut)
-        store_ZLinky_infos( self, nwkid, 'EASF02', value)
-        store_ZLinky_infos( self, nwkid, 'HCHP', value)
-        store_ZLinky_infos( self, nwkid, 'EJPHPM', value)
-        store_ZLinky_infos( self, nwkid, 'BBRHCJW', value)
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        if totalize:
+            zlinky_totalisateur(self, nwkid, attribut, value)
 
-    elif attribut == "0104":
-        if value == 0:
-            return
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
-        zlinky_totalisateur(self, nwkid, attribut, value)
-        MajDomoDevice(self, Devices, nwkid, "f2", cluster, str(value), Attribute_=attribut)
-        store_ZLinky_infos( self, nwkid, 'EASF03', value)
-        store_ZLinky_infos( self, nwkid, 'BBRHCJW', value)
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-
-    elif attribut == "0106":
-        if value == 0:
-            return
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
-        zlinky_totalisateur(self, nwkid, attribut, value)
-        MajDomoDevice(self, Devices, nwkid, "f2", cluster, str(value), Attribute_=attribut)
-        store_ZLinky_infos( self, nwkid, 'EASF04', value)
-        store_ZLinky_infos( self, nwkid, 'BBRHPJW', value)
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-
-    elif attribut == "0108":
-        if value == 0:
-            return
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
-        zlinky_totalisateur(self, nwkid, attribut, value)
-        MajDomoDevice(self, Devices, nwkid, "f3", cluster, str(value), Attribute_=attribut)
-        store_ZLinky_infos( self, nwkid, 'EASF05', value)
-        store_ZLinky_infos( self, nwkid, 'BBRHCJR', value)
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-
-    elif attribut == "010a":
-        if value == 0:
-            return
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
-        zlinky_totalisateur(self, nwkid, attribut, value)
-        MajDomoDevice(self, Devices, nwkid, "f3", cluster, str(value), Attribute_=attribut)
-        
-        store_ZLinky_infos( self, nwkid, 'EASF06', value)
-        store_ZLinky_infos( self, nwkid, 'BBRHPJR', value)
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-
-    elif attribut == "010c":
-        if value == 0:
-            return
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-        store_ZLinky_infos( self, nwkid, 'EASF07', value)
-
-    elif attribut == "010e":
-        if value == 0:
-            return
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-        store_ZLinky_infos( self, nwkid, 'EASF08', value)
-
-    elif attribut == "0110":
-        if value == 0:
-            return
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-        store_ZLinky_infos( self, nwkid, 'EASF09', value)
-
-    elif attribut == "0112":
-        if value == 0:
-            return
+        if store_keys:
+            for key in store_keys:
+                store_ZLinky_infos(self, nwkid, key, value)
 
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-        store_ZLinky_infos( self, nwkid, 'EASF10', value)
 
-    elif attribut == "0307":  # PRM
-        store_ZLinky_infos( self, nwkid, 'PRM', value)
+    self.log.logging(
+        "ZLinky", "Debug",
+        f"zlinky_cluster_metering - {cluster} - {nwkid}/{ep} attribut: {attribut} value: {value}",
+        nwkid,
+    )
 
-    elif attribut == "0308":  # Serial Number
-        self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0308 - Serial Number %s" % (value), nwkid, )
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-        store_ZLinky_infos( self, nwkid, 'ADC0', value)
-        store_ZLinky_infos( self, nwkid, 'ADSC', value)    
+    # Define attribute handlers
+    attribute_handlers = {
+        "0000": lambda: handle_attribut_value("0000", ["BASE", "EAST"]),
+        "0001": lambda: handle_attribut_value("0001", ["EAIT"]),
+        "0020": lambda: handle_attribut_value("0020", ["PTEC"], maj_ep="0009"),
+        "0100": lambda: handle_attribut_value("0100", ["EASF01", "HCHC", "EJPHN", "BBRHCJB"], update_color=True, totalize=True),
+        "0102": lambda: handle_attribut_value("0102", ["EASF02", "HCHP", "EJPHPM", "BBRHCJW"], update_color=True, totalize=True),
+        "0104": lambda: handle_attribut_value("0104", ["EASF03", "BBRHCJW"], update_color=True, totalize=True, maj_ep="f2"),
+        "0106": lambda: handle_attribut_value("0106", ["EASF04", "BBRHPJW"], update_color=True, totalize=True, maj_ep="f2"),
+        "0108": lambda: handle_attribut_value("0108", ["EASF05", "BBRHCJR"], update_color=True, totalize=True, maj_ep="f3"),
+        "010a": lambda: handle_attribut_value("010a", ["EASF06", "BBRHPJR"], update_color=True, totalize=True, maj_ep="f3"),
+        "010c": lambda: handle_attribut_value("010c", ["EASF07"]),
+        "010e": lambda: handle_attribut_value("010e", ["EASF08"]),
+        "0110": lambda: handle_attribut_value("0110", ["EASF09"]),
+        "0112": lambda: handle_attribut_value("0112", ["EASF10"]),
+        "0307": lambda: store_ZLinky_infos(self, nwkid, "PRM", value),
+        "0308": lambda: handle_attribut_value("0308", ["ADC0", "ADSC"]),
+    }
+
+    # Process attribute using handler
+    if attribut in attribute_handlers:
+        attribute_handlers[attribut]()
+    else:
+        self.log.logging("ZLinky", "Warning", f"Unhandled attribute: {attribut}", nwkid)
 
 
 def zlinky_cluster_electrical_measurement(self, Devices, nwkid, ep, cluster, attribut, value):
