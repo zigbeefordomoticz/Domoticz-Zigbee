@@ -76,18 +76,21 @@ def zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribu
         attribut: The attribute being processed.
         value: The current value of the attribute.
     """
+    self.log.logging( "ZLinky", "Debug", f"zlinky_set_color_based_on_counter Cluster: {cluster} Attribute: {attribut} Value: {value}", nwkid)
+
     op_tarifiare = get_OPTARIF(self, nwkid)
-    
+    self.log.logging( "ZLinky", "Debug", f"OPTARIF {op_tarifiare}", nwkid)
     # Exit if the tariff is BASE or not one of the supported types
     if op_tarifiare == "BASE" or op_tarifiare not in ("TEMPO", "HC.."):
         return
 
     # Get previous value to ensure there's a change
     previous_value = getAttributeValue(self, nwkid, ep, cluster, attribut)
+    previous_color = get_tarif_color(self, nwkid)
+    self.log.logging( "ZLinky", "Debug", f"PrevValue {previous_value} PrevColor {previous_color}", nwkid)
+
     if value == 0 or previous_value == value:
         return
-
-    previous_color = get_tarif_color(self, nwkid)
 
     # Set value based on attribute and tariff type
     if attribut == "0000" and op_tarifiare == "HC..":
@@ -103,8 +106,10 @@ def zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribu
         elif op_tarifiare == "TEMPO":
             new_color = "BHP"
 
-    # If the tariff is not TEMPO, proceed with updating the device
+    
+    # If the tariff is not TEMPO, proceed with updating the device (HC/HP)
     if op_tarifiare != "TEMPO":
+        self.log.logging( "ZLinky", "Debug", f"Not TEMPO / PrevColor {previous_color} NewColor {new_color}", nwkid)
         if new_color != previous_color:
             self.log.logging( "ZLinky", "Status", "Updating ZLinky color based on Counter from {previous_color} to {new_color}", nwkid)
             MajDomoDevice(self, Devices, nwkid, ep, "0009", new_color, Attribute_="0020")
@@ -122,6 +127,7 @@ def zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribu
         new_color = "RHP"
 
     if new_color != previous_color:
+        self.log.logging( "ZLinky", "Debug", f"PrevColor {previous_color} NewColor {new_color}", nwkid)
         # Update device with the final value
         self.log.logging( "ZLinky", "Status", "Updating ZLinky color based on Counter", nwkid)
         MajDomoDevice(self, Devices, nwkid, ep, "0009", new_color, Attribute_="0020")
