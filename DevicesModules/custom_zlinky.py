@@ -63,7 +63,6 @@ def zlinky_meter_identification(self, Devices, nwkid, ep, cluster, attribut, val
     elif attribut == "000e":
         store_ZLinky_infos( self, nwkid, 'PCOUP', value)
 
-
 def zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value):
     """
     Sets the color based on the counter and tariff information for the given device.
@@ -76,62 +75,54 @@ def zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribu
         attribut: The attribute being processed.
         value: The current value of the attribute.
     """
-    self.log.logging( "ZLinky", "Debug", f"zlinky_set_color_based_on_counter Cluster: {cluster} Attribute: {attribut} Value: {value}", nwkid)
+    def update_color(nwkid, previous_color, new_color):
+        """Update the device color if it has changed."""
+        if new_color != previous_color:
+            self.log.logging("ZLinky", "Status", f"Updating ZLinky color from {previous_color} to {new_color}", nwkid)
+            MajDomoDevice(self, Devices, nwkid, ep, "0009", new_color, Attribute_="0020")
+            zlinky_color_tarif(self, nwkid, new_color)
 
+    def get_new_color(attribut, op_tarifiare):
+        """Determine the new color based on the attribute and tariff type."""
+        color_map = {
+            "HC..": {"0000": "HP..", "0100": "HC..", "0102": "HP.."},
+            "TEMPO": {"0100": "BHC", "0102": "BHP", "0104": "WHC", "0106": "WHP", "0108": "RHC", "010a": "RHP"}
+        }
+        return color_map.get(op_tarifiare, {}).get(attribut)
+
+    self.log.logging("ZLinky", "Debug", f"Cluster: {cluster}, Attribute: {attribut}, Value: {value}", nwkid)
+
+    # Fetch current tariff
     op_tarifiare = get_OPTARIF(self, nwkid)
-    self.log.logging( "ZLinky", "Debug", f"OPTARIF {op_tarifiare}", nwkid)
-    # Exit if the tariff is BASE or not one of the supported types
-    if op_tarifiare == "BASE" or op_tarifiare not in ("TEMPO", "HC.."):
+    self.log.logging("ZLinky", "Debug", f"OPTARIF: {op_tarifiare}", nwkid)
+
+    # Exit early for unsupported tariffs
+    if op_tarifiare == "BASE" or op_tarifiare not in {"TEMPO", "HC.."}:
         return
 
-    # Get previous value to ensure there's a change
+    # Get previous values
     previous_value = getAttributeValue(self, nwkid, ep, cluster, attribut)
     previous_color = get_tarif_color(self, nwkid)
-    self.log.logging( "ZLinky", "Debug", f"PrevValue {previous_value} PrevColor {previous_color}", nwkid)
+    self.log.logging("ZLinky", "Debug", f"PrevValue: {previous_value}, PrevColor: {previous_color}", nwkid)
 
+    # Exit if value is zero or hasn't changed
     if value == 0 or previous_value == value:
         return
 
-    # Set value based on attribute and tariff type
-    if attribut == "0000" and op_tarifiare == "HC..":
-        new_color = "HP.."
-    elif attribut == "0100":
-        if op_tarifiare == "HC..":
-            new_color = "HC.."
-        elif op_tarifiare == "TEMPO":
-            new_color = "BHC"
-    elif attribut == "0102":
-        if op_tarifiare == "HC..":
-            new_color = "HP.."
-        elif op_tarifiare == "TEMPO":
-            new_color = "BHP"
-
-    
-    # If the tariff is not TEMPO, proceed with updating the device (HC/HP)
-    if op_tarifiare != "TEMPO":
-        self.log.logging( "ZLinky", "Debug", f"Not TEMPO / PrevColor {previous_color} NewColor {new_color}", nwkid)
-        if new_color != previous_color:
-            self.log.logging( "ZLinky", "Status", "Updating ZLinky color based on Counter from {previous_color} to {new_color}", nwkid)
-            MajDomoDevice(self, Devices, nwkid, ep, "0009", new_color, Attribute_="0020")
-            zlinky_color_tarif(self, nwkid, new_color)
+    # Determine the new color
+    new_color = get_new_color(attribut, op_tarifiare)
+    if not new_color:
         return
 
-    # Handle attributes specific to "TEMPO" tariff
-    if attribut == "0104":
-        new_color = "WHC"
-    elif attribut == "0106":
-        new_color = "WHP"
-    elif attribut == "0108":
-        new_color = "RHC"
-    elif attribut == "010a":
-        new_color = "RHP"
+    # Handle updates for non-TEMPO tariffs
+    if op_tarifiare != "TEMPO":
+        self.log.logging("ZLinky", "Debug", f"Non-TEMPO: PrevColor: {previous_color}, NewColor: {new_color}", nwkid)
+        update_color(nwkid, previous_color, new_color)
+        return
 
-    if new_color != previous_color:
-        self.log.logging( "ZLinky", "Debug", f"PrevColor {previous_color} NewColor {new_color}", nwkid)
-        # Update device with the final value
-        self.log.logging( "ZLinky", "Status", "Updating ZLinky color based on Counter", nwkid)
-        MajDomoDevice(self, Devices, nwkid, ep, "0009", new_color, Attribute_="0020")
-        zlinky_color_tarif(self, nwkid, new_color)
+    # Handle updates for TEMPO-specific tariffs
+    self.log.logging("ZLinky", "Debug", f"TEMPO: PrevColor: {previous_color}, NewColor: {new_color}", nwkid)
+    update_color(nwkid, previous_color, new_color)
 
 
 def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
@@ -143,10 +134,10 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
     if attribut == "0000":  # CurrentSummationDelivered
         # HP or Base
         self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0000 ZLinky_TIC Value: %s" % (value), nwkid, )
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         MajDomoDevice(self, Devices, nwkid, ep, cluster, str(value), Attribute_=attribut)
         store_ZLinky_infos( self, nwkid, 'BASE', value)
         store_ZLinky_infos( self, nwkid, 'EAST', value)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0001":  # CURRENT_SUMMATION_RECEIVED
         self.log.logging("Cluster", "Debug", "Cluster0702 - CURRENT_SUMMATION_RECEIVED %s " % (value), nwkid)
@@ -166,68 +157,69 @@ def zlinky_cluster_metering(self, Devices, nwkid, ep, cluster, attribut, value):
         if value == "":
             return
         self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Conso: %s " % (value), nwkid, )
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         zlinky_totalisateur(self, nwkid, attribut, value)
         MajDomoDevice(self, Devices, nwkid, ep, cluster, str(value), Attribute_=attribut)
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'EASF01', value)
         store_ZLinky_infos( self, nwkid, 'HCHC', value)
         store_ZLinky_infos( self, nwkid, 'EJPHN', value)
         store_ZLinky_infos( self, nwkid, 'BBRHCJB', value)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0102":
         # HP or BBRHPJB
         if value == 0:
             return
         self.log.logging( "ZLinky", "Debug", "Cluster0702 - 0x0100 ZLinky_TIC Conso: %s " % (value), nwkid, )
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         zlinky_totalisateur(self, nwkid, attribut, value)
         MajDomoDevice(self, Devices, nwkid, ep, cluster, str(value), Attribute_=attribut)
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'EASF02', value)
         store_ZLinky_infos( self, nwkid, 'HCHP', value)
         store_ZLinky_infos( self, nwkid, 'EJPHPM', value)
         store_ZLinky_infos( self, nwkid, 'BBRHCJW', value)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0104":
         if value == 0:
             return
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         zlinky_totalisateur(self, nwkid, attribut, value)
         MajDomoDevice(self, Devices, nwkid, "f2", cluster, str(value), Attribute_=attribut)
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'EASF03', value)
         store_ZLinky_infos( self, nwkid, 'BBRHCJW', value)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0106":
         if value == 0:
             return
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         zlinky_totalisateur(self, nwkid, attribut, value)
         MajDomoDevice(self, Devices, nwkid, "f2", cluster, str(value), Attribute_=attribut)
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'EASF04', value)
         store_ZLinky_infos( self, nwkid, 'BBRHPJW', value)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "0108":
         if value == 0:
             return
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         zlinky_totalisateur(self, nwkid, attribut, value)
         MajDomoDevice(self, Devices, nwkid, "f3", cluster, str(value), Attribute_=attribut)
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'EASF05', value)
         store_ZLinky_infos( self, nwkid, 'BBRHCJR', value)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "010a":
         if value == 0:
             return
-        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
+        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
         zlinky_totalisateur(self, nwkid, attribut, value)
         MajDomoDevice(self, Devices, nwkid, "f3", cluster, str(value), Attribute_=attribut)
-        zlinky_set_color_based_on_counter(self, Devices, nwkid, ep, cluster, attribut, value)
+        
         store_ZLinky_infos( self, nwkid, 'EASF06', value)
         store_ZLinky_infos( self, nwkid, 'BBRHPJR', value)
+        checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
     elif attribut == "010c":
         if value == 0:
