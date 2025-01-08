@@ -13,6 +13,7 @@
 import binascii
 
 from Modules.domoMaj import MajDomoDevice
+from Modules.readAttributes import ReadAttributeReq_Scheduled_ZLinky
 from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
 from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             convert_kva_to_ampere, decode_STEG, get_OPTARIF,
@@ -20,7 +21,6 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
-from Modules.readAttributes import ReadAttributeReq_Scheduled_ZLinky
 
 
 def zlinky_clusters(self, domoticz_devices, nwkid, ep, cluster, attribut, value):
