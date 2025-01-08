@@ -20,6 +20,7 @@ from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
+from Modules.readAttributes import ReadAttributeReq_Scheduled_ZLinky
 
 
 def zlinky_clusters(self, domoticz_devices, nwkid, ep, cluster, attribut, value):
@@ -81,6 +82,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
             self.log.logging("ZLinky", "Status", f"Updating ZLinky color from {previous_color} to {new_color}", nwkid)
             MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", new_color, Attribute_="0020")
             zlinky_color_tarif(self, nwkid, new_color)
+            ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
 
     def get_new_color(attribut, op_tarifiare):
         """Determine the new color based on the attribute and tariff type."""
