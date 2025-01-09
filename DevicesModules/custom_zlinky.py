@@ -64,6 +64,7 @@ def zlinky_meter_identification(self, domoticz_devices, nwkid, ep, cluster, attr
     elif attribut == "000e":
         store_ZLinky_infos( self, nwkid, 'PCOUP', value)
 
+
 def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster, attribut, value):
     """
     Sets the color based on the counter and tariff information for the given device.
@@ -80,7 +81,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         """Update the device color if it has changed."""
         if new_color != previous_color:
             self.log.logging("ZLinky", "Status", f"Updating ZLinky color from {previous_color} to {new_color}", nwkid)
-            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", new_color, Attribute_="0020")
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
             zlinky_color_tarif(self, nwkid, new_color)
             ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
 
@@ -147,6 +148,9 @@ def zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut
         maj_ep = maj_ep or ep
         MajDomoDevice(self, domoticz_devices, nwkid, maj_ep, cluster, str(value), Attribute_=attribut)
 
+        if attribut == "0020":
+            zlinky_color_tarif(self, nwkid, str(value))
+
         if update_color:
             zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster, attribut, value)
 
@@ -169,7 +173,7 @@ def zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut
     attribute_handlers = {
         "0000": lambda: handle_attribut_value("0000", ["BASE", "EAST"]),
         "0001": lambda: handle_attribut_value("0001", ["EAIT"]),
-        "0020": lambda: handle_attribut_value("0020", ["PTEC"], maj_ep="0009"),
+        "0020": lambda: handle_attribut_value("0020", ["PTEC"]),
         "0100": lambda: handle_attribut_value("0100", ["EASF01", "HCHC", "EJPHN", "BBRHCJB"], update_color=True, totalize=True),
         "0102": lambda: handle_attribut_value("0102", ["EASF02", "HCHP", "EJPHPM", "BBRHCJW"], update_color=True, totalize=True),
         "0104": lambda: handle_attribut_value("0104", ["EASF03", "BBRHCJW"], update_color=True, totalize=True, maj_ep="f2"),
