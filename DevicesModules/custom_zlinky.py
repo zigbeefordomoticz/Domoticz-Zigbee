@@ -28,7 +28,7 @@ def zlinky_clusters(self, domoticz_devices, nwkid, ep, cluster, attribut, value)
         cluster, nwkid, ep, attribut, value), nwkid, )
 
     if cluster == "0b01":
-        zlinky_meter_identification(self, domoticz_devices, nwkid, ep, cluster, attribut, value)
+        zlinky_meter_identification(self, nwkid, ep, cluster, attribut, value)
 
     elif cluster == "0702":
         zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut, value)
@@ -40,7 +40,7 @@ def zlinky_clusters(self, domoticz_devices, nwkid, ep, cluster, attribut, value)
         zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, attribut, value)
 
 
-def zlinky_meter_identification(self, domoticz_devices, nwkid, ep, cluster, attribut, value):
+def zlinky_meter_identification(self, nwkid, ep, cluster, attribut, value):
     self.log.logging( "ZLinky", "Debug", "zlinky_meter_identification %s - %s/%s Attribute: %s Value: %s" % (
         cluster, nwkid, ep, attribut, value), nwkid, )
 
