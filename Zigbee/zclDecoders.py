@@ -6,7 +6,7 @@
 
 
 import struct
-from distutils.command.build import build
+
 from os import stat
 
 from Modules.tools import (is_direction_to_client, is_direction_to_server,
