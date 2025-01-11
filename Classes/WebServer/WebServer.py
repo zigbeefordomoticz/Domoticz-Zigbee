@@ -1082,8 +1082,8 @@ class WebServer(object):
                         if attribut == "Battery" and attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item]["Battery"] in ( {}, ) and "IASBattery" in self.ListOfDevices[item]:
                                 device[attribut] = str(self.ListOfDevices[item][ "IASBattery" ])
-                            elif isinstance( self.ListOfDevices[item]["Battery"], int):
-                                device[attribut] = self.ListOfDevices[item]["Battery"]
+                            elif isinstance( self.ListOfDevices[item]["Battery"], (int,float)):
+                                device[attribut] = int(self.ListOfDevices[item]["Battery"])
                                 device["BatteryInside"] = True
                                 
                         elif item == "CheckParam":
