@@ -1573,7 +1573,7 @@ class WebServer(object):
                 else:
                     _battEnv["Update Time"]["Unknown"][_deviceName] = "Unknown"
 
-            self.logging("Log", f"rest_battery_state - {_battEnv}")
+            self.logging("Debug", f"rest_battery_state - {_battEnv}")
             _response["Data"] = json.dumps(_battEnv, sort_keys=True)
         return _response
       
