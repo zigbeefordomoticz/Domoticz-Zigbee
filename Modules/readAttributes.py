@@ -1333,6 +1333,16 @@ def ReadAttributeRequest_0702_0000(self, key):
         self.log.logging("ReadAttributes", "Debug", "Request Summation on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
         ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+
+def ReadAttributeRequest_0702_0017(self, key):
+    # Cluster 0x0702 Metering / Specific 0x0017 (Device Temperature)
+    ListOfEp = getListOfEpForCluster(self, key, "0702")
+    for EPout in ListOfEp:
+        listAttributes = [0x0017]
+        self.log.logging("ReadAttributes", "Debug", "Request InletTemperature on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
+        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+
+
 def ReadAttributeRequest_0702_multiplier_divisor(self, key):
     ListOfEp = getListOfEpForCluster(self, key, "0702")
     for EPout in ListOfEp:
