@@ -88,8 +88,16 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     def get_new_color(attribut, op_tarifiare):
         """Determine the new color based on the attribute and tariff type."""
         color_map = {
-            "HC..": {"0000": "HP..", "0100": "HC..", "0102": "HP.."},
-            "TEMPO": {"0100": "BHC", "0102": "BHP", "0104": "WHC", "0106": "WHP", "0108": "RHC", "010a": "RHP"}
+            "HC..": {
+                "0100": "HC..",
+                "0102": "HP.."},
+            "TEMPO": {
+                "0100": "BHC",
+                "0102": "BHP",
+                "0104": "WHC",
+                "0106": "WHP",
+                "0108": "RHC",
+                "010a": "RHP"}
         }
         return color_map.get(op_tarifiare, {}).get(attribut)
 
