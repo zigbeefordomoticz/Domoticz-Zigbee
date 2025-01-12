@@ -47,6 +47,7 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0402,
                                     ReadAttributeRequest_0405,
                                     ReadAttributeRequest_0702_0000,
+                                    ReadAttributeRequest_0702_0017,
                                     ReadAttributeRequest_0702_PC321,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
                                     ReadAttributeRequest_ff66,
@@ -344,7 +345,9 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "HumiPollingFreq": ReadAttributeRequest_0405,
         "BattPollingFreq": ReadAttributeRequest_0001,
         "ZLinkyIndexes": ReadAttributeReq_Scheduled_ZLinky,      # Based on a specific time
-        "ZLinkyPollingPTEC": ReadAttributeReq_Scheduled_ZLinky   # Every 15' by default
+        "ZLinkyPollingPTEC": ReadAttributeReq_Scheduled_ZLinky,   # Every 15' by default
+        "InletTempPolling": ReadAttributeRequest_0702_0017,      # Retreive Inlet Temperature
+
     }
 
     if "Param" not in self.ListOfDevices[NwkId]:
