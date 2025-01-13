@@ -16,7 +16,7 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.readAttributes import ReadAttributeReq_Scheduled_ZLinky
 from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
 from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
-                            convert_kva_to_ampere, decode_STEG, get_OPTARIF,
+                            convert_kva_to_ampere, decode_STEG, get_OPTARIF,get_ptec,
                             get_tarif_color, linky_mode, store_ZLinky_infos,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
@@ -77,14 +77,19 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         attribut: The attribute being processed.
         value: The current value of the attribute.
     """
-    def update_color(nwkid, previous_color, new_color):
-        """Update the device color if it has changed."""
-        self.log.logging("ZLinky", "Status", f"Updating ZLinky color from {previous_color} to {new_color}", nwkid)
+    def _zlinky_update_color(nwkid, previous_color, new_color):
+        """Update the device color, if it has changed request a Read Attribute to get the Color"""
+
         MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
         zlinky_color_tarif(self, nwkid, new_color)
-        ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
 
-    def get_new_color(attribut, op_tarifiare):
+        ptect_value = get_ptec(self, nwkid)
+        if ptect_value != new_color:
+            ### Looks like the PTEC info is not aligned with the current color !
+            self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
+            ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
+
+    def get_corresponding_color(attribut, op_tarifiare):
         """Determine the new color based on the attribute and tariff type."""
         color_map = {
             "HC..": {
@@ -100,6 +105,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         }
         return color_map.get(op_tarifiare, {}).get(attribut)
 
+
     self.log.logging("ZLinky", "Debug", f"Cluster: {cluster}, Attribute: {attribut}, Value: {value}", nwkid)
 
     # Fetch current tariff
@@ -112,27 +118,30 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
 
     # Get previous values
     previous_value = getAttributeValue(self, nwkid, ep, cluster, attribut)
-    previous_color = get_tarif_color(self, nwkid)
-    self.log.logging("ZLinky", "Debug", f"PrevValue: {previous_value}, PrevColor: {previous_color}", nwkid)
 
     # Exit if value is zero or hasn't changed
     if value == 0 or previous_value == value:
         return
 
-    # Determine the new color
-    new_color = get_new_color(attribut, op_tarifiare)
+    # Get previous Color
+    previous_color_value = getAttributeValue(self, nwkid, ep, "0702", "0020")
+    previous_color = get_tarif_color(self, nwkid)
+    self.log.logging("ZLinky", "Debug", f"PrevValue: {previous_value}, PrevValueAttributColor: {previous_color_value} PrevColor: {previous_color}", nwkid)
+
+    # Determine the current color
+    new_color = get_corresponding_color(attribut, op_tarifiare)
     if not new_color:
         return
 
     # Handle updates for non-TEMPO tariffs
     if op_tarifiare != "TEMPO":
         self.log.logging("ZLinky", "Debug", f"Non-TEMPO: PrevColor: {previous_color}, NewColor: {new_color}", nwkid)
-        update_color(nwkid, previous_color, new_color)
+        _zlinky_update_color(nwkid, previous_color, new_color)
         return
 
     # Handle updates for TEMPO-specific tariffs
     self.log.logging("ZLinky", "Debug", f"TEMPO: PrevColor: {previous_color}, NewColor: {new_color}", nwkid)
-    update_color(nwkid, previous_color, new_color)
+    _zlinky_update_color(nwkid, previous_color, new_color)
 
 
 def zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut, value):
