@@ -79,11 +79,10 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     """
     def update_color(nwkid, previous_color, new_color):
         """Update the device color if it has changed."""
-        if new_color != previous_color:
-            self.log.logging("ZLinky", "Status", f"Updating ZLinky color from {previous_color} to {new_color}", nwkid)
-            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
-            zlinky_color_tarif(self, nwkid, new_color)
-            ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
+        self.log.logging("ZLinky", "Status", f"Updating ZLinky color from {previous_color} to {new_color}", nwkid)
+        MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
+        zlinky_color_tarif(self, nwkid, new_color)
+        ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
 
     def get_new_color(attribut, op_tarifiare):
         """Determine the new color based on the attribute and tariff type."""
@@ -157,6 +156,7 @@ def zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut
         MajDomoDevice(self, domoticz_devices, nwkid, maj_ep, cluster, str(value), Attribute_=attribut)
 
         if attribut == "0020":
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", value, Attribute_="0020")
             zlinky_color_tarif(self, nwkid, str(value))
 
         if update_color:

@@ -102,16 +102,16 @@ ZLinky_TIC_COMMAND = {
 def convert_kva_to_ampere( kva ):
     return ( kva * 1000) / 200
 
+
 def zlinky_color_tarif(self, MsgSrcAddr, color):
-    if "ZLinky" not in self.ListOfDevices[MsgSrcAddr]:
-        self.ListOfDevices[MsgSrcAddr]["ZLinky"] = {}
-    self.ListOfDevices[MsgSrcAddr]["ZLinky"]["Color"] = color
+    self.ListOfDevices.setdefault(MsgSrcAddr, {}).setdefault("ZLinky", {})["Color"] = color
+
 
 def store_ZLinky_infos( self, nwkid, command_tic, value):
-
     if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
         self.ListOfDevices[ nwkid ][ 'ZLinky' ] = {}
     self.ListOfDevices[ nwkid ][ 'ZLinky' ][ command_tic ] = value
+
 
 def get_ISOUSC( self, nwkid ):
 
@@ -155,12 +155,20 @@ def get_OPTARIF( self, nwkid):
 
     return "BASE"
 
-def get_instant_power( self, nwkid ):
-    return round(float(self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"]["050f"]), 2) if "0b04" in self.ListOfDevices[nwkid]["Ep"]["01"] and "050f" in self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"] else 0
+def get_instant_power(self, nwkid):
+    try:
+        device = self.ListOfDevices.get(nwkid, {})
+        ep = device.get("Ep", {}).get("01", {})
+        cluster = ep.get("0b04", {})
+        power = cluster.get("050f")
+        return round(float(power), 2) if power is not None else 0
+    except (ValueError, TypeError):
+        return 0
 
-def get_tarif_color( self, nwkid ):
-    return self.ListOfDevices[nwkid]["ZLinky"]["Color"] if "ZLinky" in self.ListOfDevices[nwkid] and "Color" in self.ListOfDevices[nwkid]["ZLinky"] else None
-   
+
+def get_tarif_color(self, nwkid):
+    return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("Color")
+
     
 def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
 
