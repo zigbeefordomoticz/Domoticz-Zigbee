@@ -169,7 +169,12 @@ def get_instant_power(self, nwkid):
 def get_tarif_color(self, nwkid):
     return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("Color")
 
-    
+
+def get_ptec(self, nwkid):
+    """ Retreive Current Tarif."""
+    return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("PTEC")
+
+
 def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
 
     if value == 0:
