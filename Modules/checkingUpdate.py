@@ -205,7 +205,7 @@ def is_internet_available(self):
     Returns:
         bool: True if the internet is available, False otherwise.
     """
-    url = "http://www.google.com"
+    url = "https://www.google.com"
     timeout = 3
 
     try:
