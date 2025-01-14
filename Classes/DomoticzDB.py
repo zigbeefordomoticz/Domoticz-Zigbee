@@ -79,6 +79,9 @@ def extract_username_password(self, url_base_api):
     :param url_base_api: The URL containing credentials in the format <proto>://<username>:<password>@<host>
     :return: A tuple (username, password, host_port, proto) or (None, None, None, None) if invalid.
     """
+    HTTP_PROTO = "http://"  # noqa: S5332
+    HTTPS_PROTO = "https://"
+
     items = url_base_api.split('@')
     if len(items) != 2:
         self.logging("Debug", f"no credentials in the URL: {url_base_api}")
@@ -88,10 +91,10 @@ def extract_username_password(self, url_base_api):
     
     proto = None
     credentials, host_port = items
-    if credentials.startswith("https://"):
+    if credentials.startswith(HTTPS_PROTO):
         proto = "https"
         credentials = credentials[8:]  # Remove proto
-    elif credentials.startswith("http://"):   # noqa: S5332
+    elif credentials.startswith(HTTP_PROTO):
         proto = "http"
         credentials = credentials[7:]  # Remove proto
     else:
