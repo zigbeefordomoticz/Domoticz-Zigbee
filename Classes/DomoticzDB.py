@@ -90,10 +90,10 @@ def extract_username_password(self, url_base_api):
     credentials, host_port = items
     if credentials.startswith("https://"):
         proto = "https"
-        credentials = credentials[8:]  # Remove 'https://'
-    elif credentials.startswith("http://"):
+        credentials = credentials[8:]  # Remove proto
+    elif credentials.startswith("http://"):   # noqa: S5332
         proto = "http"
-        credentials = credentials[7:]  # Remove 'http://'
+        credentials = credentials[7:]  # Remove proto
     else:
         self.logging("Error", f"Unsupported protocol in URL: {url_base_api}")
         return None, None, None, None
