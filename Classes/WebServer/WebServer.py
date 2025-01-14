@@ -1082,8 +1082,8 @@ class WebServer(object):
                         if attribut == "Battery" and attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item]["Battery"] in ( {}, ) and "IASBattery" in self.ListOfDevices[item]:
                                 device[attribut] = str(self.ListOfDevices[item][ "IASBattery" ])
-                            elif isinstance( self.ListOfDevices[item]["Battery"], int):
-                                device[attribut] = self.ListOfDevices[item]["Battery"]
+                            elif isinstance( self.ListOfDevices[item]["Battery"], (int,float)):
+                                device[attribut] = int(self.ListOfDevices[item]["Battery"])
                                 device["BatteryInside"] = True
                                 
                         elif item == "CheckParam":
@@ -1530,43 +1530,53 @@ class WebServer(object):
                     _response["Data"] = json.dumps("ZiGate mode: %s requested" % mode)
         return _response
 
+
     def rest_battery_state(self, verb, data, parameters):
         _response = prepResponseMessage(self, setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == "GET":
             _battEnv = {"Battery":{"<30%":{}, "<50%": {}, ">50%" : {}},"Update Time":{ "Unknown": {}, "< 1 week": {}, "> 1 week": {}}}
             for x in self.ListOfDevices:
+                self.logging("Debug", f"rest_battery_state - {x}")
                 if x == "0000":
-                        continue
+                    continue
 
-                if self.ListOfDevices[x]["ZDeviceName"] == "":
-                    _deviceName = x
+                battery = self.ListOfDevices[x].get("Battery")
+
+                if battery is None:
+                    continue
+                self.logging("Debug", f"rest_battery_state - {x} Battery found")
+
+                _deviceName = self.ListOfDevices[x].get("ZDeviceName", x )
+
+                if not isinstance( battery, (int, float)):
+                    self.logging("Debug", f"rest_battery_state - {x} Battery found, but not int !! {type(battery)}")
+                    continue
+                battery = int(battery)
+
+                if self.ListOfDevices[x]["Battery"] > 50:
+                    _battEnv["Battery"][">50%"][_deviceName] = {"Battery": battery}
+
+                elif self.ListOfDevices[x]["Battery"] > 30:
+                    _battEnv["Battery"]["<50%"][_deviceName] = {"Battery": battery}
+
                 else:
-                    _deviceName = self.ListOfDevices[x]["ZDeviceName"]
+                    _battEnv["Battery"]["<30%"][_deviceName] = {"Battery": battery}
 
-                if "Battery" in self.ListOfDevices[x] and isinstance(self.ListOfDevices[x]["Battery"], int):
-                    if self.ListOfDevices[x]["Battery"] > 50:
-                        _battEnv["Battery"][">50%"][_deviceName] = {"Battery": self.ListOfDevices[x]["Battery"]}
-
-                    elif self.ListOfDevices[x]["Battery"] > 30:
-                        _battEnv["Battery"]["<50%"][_deviceName] = {"Battery": self.ListOfDevices[x]["Battery"]}
+                if "BatteryUpdateTime" in self.ListOfDevices[x]:
+                    if (int(time.time()) - self.ListOfDevices[x]["BatteryUpdateTime"]) > 604800:   # one week in seconds
+                        _battEnv["Update Time"]["> 1 week"][_deviceName] = {"BatteryUpdateTime": self.ListOfDevices[x]["BatteryUpdateTime"]}
 
                     else:
-                        _battEnv["Battery"]["<30%"][_deviceName] = {"Battery": self.ListOfDevices[x]["Battery"]}
+                        _battEnv["Update Time"]["< 1 week"][_deviceName] = {"BatteryUpdateTime": self.ListOfDevices[x]["BatteryUpdateTime"]}
 
-                    if "BatteryUpdateTime" in self.ListOfDevices[x]:
-                        if (int(time.time()) - self.ListOfDevices[x]["BatteryUpdateTime"]) > 604800:   # one week in seconds
-                            _battEnv["Update Time"]["> 1 week"][_deviceName] = {"BatteryUpdateTime": self.ListOfDevices[x]["BatteryUpdateTime"]}
+                else:
+                    _battEnv["Update Time"]["Unknown"][_deviceName] = "Unknown"
 
-                        else:
-                            _battEnv["Update Time"]["< 1 week"][_deviceName] = {"BatteryUpdateTime": self.ListOfDevices[x]["BatteryUpdateTime"]}
-
-                    else:
-                        _battEnv["Update Time"]["Unknown"][_deviceName] = "Unknown"
-
+            self.logging("Debug", f"rest_battery_state - {_battEnv}")
             _response["Data"] = json.dumps(_battEnv, sort_keys=True)
         return _response
-
+      
     def logging(self, logType, message):
         self.log.logging("WebServer", logType, message)
 
