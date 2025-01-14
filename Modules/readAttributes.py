@@ -1335,12 +1335,30 @@ def ReadAttributeRequest_0702_0000(self, key):
 
 
 def ReadAttributeRequest_0702_0017(self, key):
-    # Cluster 0x0702 Metering / Specific 0x0017 (Device Temperature)
-    ListOfEp = getListOfEpForCluster(self, key, "0702")
-    for EPout in ListOfEp:
-        listAttributes = [0x0017]
-        self.log.logging("ReadAttributes", "Debug", "Request InletTemperature on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
-        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+    """
+    Reads the InletTemperature (Attribute 0x0017) from the Metering cluster (0x0702).
+
+    Parameters:
+        self: The instance of the class.
+        key: The network identifier for the device.
+    """
+
+    # Define the cluster and attribute
+    cluster_id = "0702"
+    listAttributes = [0x0017]
+
+    # Get the list of endpoints for the cluster
+    endpoints = getListOfEpForCluster(self, key, cluster_id)
+    for endpoint in endpoints:
+        self.log.logging(
+            "ReadAttributes",
+            "Debug",
+            f"Requesting InletTemperature (Attribute {listAttributes}) on cluster {cluster_id} for key {key}, EP = {endpoint}.",
+            nwkid=key
+        )
+
+        # Send the read attribute request
+        ReadAttributeReq(self, key, ZIGATE_EP, endpoint, cluster_id, listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0702_multiplier_divisor(self, key):
