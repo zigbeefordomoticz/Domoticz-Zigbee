@@ -16,9 +16,9 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.readAttributes import ReadAttributeReq_Scheduled_ZLinky
 from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
 from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
-                            convert_kva_to_ampere, decode_STEG, get_OPTARIF,
-                            get_ptec, get_tarif_color, linky_mode,
-                            store_ZLinky_infos,
+                            convert_kva_to_ampere, decode_STEG,
+                            get_linky_mode_from_ep, get_OPTARIF, get_ptec,
+                            get_tarif_color, linky_mode, store_ZLinky_infos,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
@@ -85,10 +85,16 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         zlinky_color_tarif(self, nwkid, new_color)
 
         ptect_value = get_ptec(self, nwkid)
-        if ptect_value != new_color:
+        if ptect_value != new_color and get_linky_mode_from_ep(self, nwkid) in ( 0, 2):
             # Looks like the PTEC info is not aligned with the current color !
             self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
             ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
+        else:
+            # We are in Standard, and cannot rely on PTEC, so we will update the color
+            self.log.logging("ZLinky", "Status", f"Color updated from {previous_color} to {new_color}", nwkid)
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", value, Attribute_="0020")
+            zlinky_color_tarif(self, nwkid, new_color)
+
 
     def get_corresponding_color(attribut, op_tarifiare):
         """Determine the new color based on the attribute and tariff type."""
