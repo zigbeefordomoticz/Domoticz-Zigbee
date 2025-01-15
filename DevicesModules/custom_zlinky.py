@@ -84,15 +84,16 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
         zlinky_color_tarif(self, nwkid, new_color)
 
-        ptect_value = get_ptec(self, nwkid)
-        if ptect_value != new_color and get_linky_mode_from_ep(self, nwkid) in ( 0, 2):
-            # Looks like the PTEC info is not aligned with the current color !
-            self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
-            ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
-        else:
+        if get_linky_mode_from_ep(self, nwkid) in ( 0, 2):
+            ptect_value = get_ptec(self, nwkid)
+            if ptect_value != new_color:
+                # Looks like the PTEC info is not aligned with the current color !
+                self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
+                ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
+        elif new_color:
             # We are in Standard, and cannot rely on PTEC, so we will update the color
             self.log.logging("ZLinky", "Status", f"Color updated from {previous_color} to {new_color}", nwkid)
-            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", value, Attribute_="0020")
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
             zlinky_color_tarif(self, nwkid, new_color)
 
 
