@@ -169,6 +169,10 @@ def get_OPTARIF(self, nwkid):
         # Decode the byte string to UTF-8, ignoring errors, and remove null bytes
         optarif_value = optarif_value.decode('utf-8', errors='ignore').strip('\x00')
 
+    # Remove null characters and strip whitespace
+    if isinstance(optarif_value, str):
+        optarif_value = optarif_value.replace('\u0000', '').replace('\x00', '').strip()
+
     return optarif_value
 
 
