@@ -145,15 +145,32 @@ def get_ISOUSC( self, nwkid ):
 
     return 0
 
-def get_OPTARIF( self, nwkid):
+def get_OPTARIF(self, nwkid):
+    """
+    Retrieves the 'OPTARIF' value for a given network ID (nwkid) from the 'ZLinky' device data.
 
-    if (
-        "ZLinky" in self.ListOfDevices[nwkid] 
-        and "OPTARIF" in self.ListOfDevices[nwkid]["ZLinky"]
-    ):
-        return self.ListOfDevices[nwkid]["ZLinky"]["OPTARIF"]
+    If the 'OPTARIF' value is found and is a byte string, it decodes it to a regular string
+    and removes any null byte characters. If 'OPTARIF' is not found or if it's not a byte
+    string, the method returns the default value "BASE".
 
-    return "BASE"
+    Args:
+        nwkid (str): The network ID used to access the device data in ListOfDevices.
+
+    Returns:
+        str: The cleaned 'OPTARIF' value, or "BASE" if not found.
+    """
+    zlinky = self.ListOfDevices.get(nwkid, {}).get("ZLinky", {})
+
+    # Get the raw value of "OPTARIF", or default to "BASE"
+    optarif_value = zlinky.get("OPTARIF", "BASE")
+
+    # If the value is a byte string, decode and clean up
+    if isinstance(optarif_value, bytes):
+        # Decode the byte string to UTF-8, ignoring errors, and remove null bytes
+        optarif_value = optarif_value.decode('utf-8', errors='ignore').strip('\x00')
+
+    return optarif_value
+
 
 def get_instant_power(self, nwkid):
     try:
