@@ -104,6 +104,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
                 "0108": "RHC",
                 "010a": "RHP"}
         }
+        self.log.logging("ZLinky", "Debug", f"get_corresponding_color: >{op_tarifiare}< >{attribut}<", nwkid)
         return color_map.get(op_tarifiare, {}).get(attribut)
 
 
