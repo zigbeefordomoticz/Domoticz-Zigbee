@@ -192,11 +192,11 @@ def get_tarif_color(self, nwkid):
 
 
 def get_ptec(self, nwkid):
-    """ Retreive Current Tarif."""
+    """ Retreive Current Tarif. (Historic)"""
     return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("PTEC")
 
 def get_ltarf(self, nwkid):
-    """ Retreive Current Tarif."""
+    """ Retreive Current Tarif. (Standard)"""
     return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("LTARF")
 
 def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
