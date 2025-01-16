@@ -88,23 +88,26 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         """Update the device color, if it has changed request a Read Attribute to get the Color"""
 
         #MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
-        zlinky_color_tarif(self, nwkid, new_color)
 
         if get_linky_mode_from_ep(self, nwkid) in ( 0, 2):
             # Historique mode, we can rely on PTEC
             ptect_value = get_ptec(self, nwkid)
+            self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - PTEC {ptect_value}", nwkid)
+
             if ptect_value != new_color:
                 # Looks like the PTEC info is not aligned with the current color !
                 self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
                 ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
+                zlinky_color_tarif(self, nwkid, new_color)
             return
 
         # Standard mode, we rely on LTARF ( Libellé tarif fournisseur en cours)
         ltarf_value = get_ltarf(self, nwkid)
+        self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF {ltarf_value}", nwkid)
+
         if ltarf_value != new_color:
             self.log.logging("ZLinky", "Status", f"Requesting LTARF (0xff66) as not inline {ltarf_value} to {previous_color}/{new_color}", nwkid)
             ReadAttributeRequest_ff66(self, nwkid)
-            #MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
             zlinky_color_tarif(self, nwkid, new_color)
 
 
