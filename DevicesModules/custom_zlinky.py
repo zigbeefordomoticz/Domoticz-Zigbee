@@ -93,7 +93,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
                 # Looks like the PTEC info is not aligned with the current color !
                 self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
                 ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
-                return
+            return
 
         # Standard mode, we rely on LTARF ( Libellé tarif fournisseur en cours)
         ltarf_value = get_ltarf(self, nwkid)
