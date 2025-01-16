@@ -329,9 +329,6 @@ def pollingManufSpecificDevices(self, NwkId, HB):
 
     FUNC_MANUF = {
         "TuyaTRV5Polling": tuya_trv5_polling,
-        "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,
-        "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,
-        "PollingCusterff66": ReadAttributeRequest_ff66,
         "OnOffPollingFreq": ManufSpecOnOffPolling,
         "PowerPollingFreq": ReadAttributeRequest_0b04_050b_0505_0508,
         "MeterPollingFreq": ReadAttributeRequest_0702_0000,
@@ -344,7 +341,10 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "HumiPollingFreq": ReadAttributeRequest_0405,
         "BattPollingFreq": ReadAttributeRequest_0001,
         "ZLinkyIndexes": ReadAttributeReq_Scheduled_ZLinky,      # Based on a specific time
-        "ZLinkyPollingPTEC": ReadAttributeReq_Scheduled_ZLinky   # Every 15' by default
+        "ZLinkyPollingPTEC": ReadAttributeReq_Scheduled_ZLinky,  # Every 15' by default
+        "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,
+        "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,
+        "PollingCusterff66": ReadAttributeRequest_ff66,
     }
 
     if "Param" not in self.ListOfDevices[NwkId]:
@@ -369,6 +369,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
             if _current_time == _target_time and "ScheduledZLinkyRead" not in self.ListOfDevices[ NwkId ]:
                 self.ListOfDevices[ NwkId ][ "ScheduledZLinkyRead" ] = True
                 ReadAttributeReq_Scheduled_ZLinky( self, NwkId)
+                ReadAttributeRequest_ff66( self, NwkId)
 
             elif _current_time != _target_time and "ScheduledZLinkyRead" in self.ListOfDevices[ NwkId ]:
                 del self.ListOfDevices[ NwkId ][ "ScheduledZLinkyRead" ]
