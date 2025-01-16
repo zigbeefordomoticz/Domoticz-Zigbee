@@ -13,12 +13,14 @@
 import binascii
 
 from Modules.domoMaj import MajDomoDevice
-from Modules.readAttributes import ReadAttributeReq_Scheduled_ZLinky
+from Modules.readAttributes import (ReadAttributeReq_Scheduled_ZLinky,
+                                    ReadAttributeRequest_ff66)
 from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
 from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             convert_kva_to_ampere, decode_STEG,
-                            get_linky_mode_from_ep, get_OPTARIF, get_ptec,
-                            get_tarif_color, linky_mode, store_ZLinky_infos,
+                            get_linky_mode_from_ep, get_ltarf, get_OPTARIF,
+                            get_ptec, get_tarif_color, linky_mode,
+                            store_ZLinky_infos,
                             update_zlinky_device_model_if_needed,
                             zlinky_check_alarm, zlinky_color_tarif,
                             zlinky_totalisateur)
@@ -85,15 +87,20 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         zlinky_color_tarif(self, nwkid, new_color)
 
         if get_linky_mode_from_ep(self, nwkid) in ( 0, 2):
+            # Historique mode, we can rely on PTEC
             ptect_value = get_ptec(self, nwkid)
             if ptect_value != new_color:
                 # Looks like the PTEC info is not aligned with the current color !
                 self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
                 ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
-        elif new_color:
-            # We are in Standard, and cannot rely on PTEC, so we will update the color
-            self.log.logging("ZLinky", "Status", f"Color updated from {previous_color} to {new_color}", nwkid)
-            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
+                return
+
+        # Standard mode, we rely on LTARF ( Libellé tarif fournisseur en cours)
+        ltarf_value = get_ltarf(self, nwkid)
+        if ltarf_value != new_color:
+            self.log.logging("ZLinky", "Status", f"Requesting LTARF (0xff66) as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
+            ReadAttributeRequest_ff66(self, nwkid)
+            #MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
             zlinky_color_tarif(self, nwkid, new_color)
 
 
@@ -113,7 +120,6 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         }
         self.log.logging("ZLinky", "Debug", f"get_corresponding_color: >{op_tarifiare}< >{attribut}<", nwkid)
         return color_map.get(op_tarifiare, {}).get(attribut)
-
 
     self.log.logging("ZLinky", "Debug", f"Cluster: {cluster}, Attribute: {attribut}, Value: {value}", nwkid)
 
@@ -435,6 +441,9 @@ def zlinky_cluster_electrical_measurement(self, domoticz_devices, nwkid, ep, clu
 
         
 def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, attribut, value):
+
+    self.log.logging("Cluster", "Debug", f"zlinky_cluster_lixee_private ({attribut}) value: {value}", nwkid)
+
     if nwkid not in self.ListOfDevices:
         return
     if "Ep" not in self.ListOfDevices[nwkid]:
@@ -450,7 +459,6 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
             ZLinky_TIC_COMMAND[ attribut ] ,attribut, value), nwkid, )
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, ZLinky_TIC_COMMAND[ attribut ], value)
-
 
     if attribut == "0000":
         # Option tarifaire
@@ -472,6 +480,8 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
             return
 
         # Couleur du Lendemain DEMAIN Trigger Alarm
+        self.log.logging("Cluster", "Debug", f"zlinky_cluster_lixee_private ({attribut}) DEMAIN {value}", nwkid)
+
         if value == "BLAN":
             MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", "20|Tomorrow WHITE day", Attribute_="0001")
         elif value == "BLEU":
@@ -544,33 +554,33 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
         MajDomoDevice(self, domoticz_devices, nwkid, ep, "0b04", str(value), Attribute_=_tmpattr)
 
     elif attribut == "0201":
-        # Standard : NTARF
+        # Standard : NTARF / Numéro de l’index tarifaire en cours
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-        store_ZLinky_infos( self, nwkid, 'LTARF', value)
+        store_ZLinky_infos( self, nwkid, 'NTARF', value)
         
     elif attribut in ( "0200", ):
-        # Standard : LTARF
-        s_tarif = ""
-        if "BLEU" in value:
-            # HC BLUE
-            s_tarif = "B"
-        elif "BLAN" in value:
-            # HC BLANC
-            s_tarif = "W"
-        elif "ROUG" in value:
-            # HC ROUGE
-            s_tarif = "R"
+        # Standard : LTARF / Libellé tarif fournisseur en cours
+        tarif_mapping = {
+            "BLEU": "B",
+            "BLAN": "W",
+            "ROUG": "R"
+        }
+        s_tarif = next((tarif_mapping[key] for key in tarif_mapping if key in value), "")
+
         if "HP" in value:
             s_tarif += "HP"
         elif "HC" in value:
             s_tarif += "HC"
 
-        MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", s_tarif, Attribute_="0020")
+        if len(s_tarif) == 3:
+            self.log.logging("Cluster", "Debug", f"zlinky_cluster_lixee_private ({attribut}) LTARF {value}", nwkid)
+            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", s_tarif, Attribute_="0020")
+
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
-        store_ZLinky_infos( self, nwkid, 'NTARF', value)
-        
+        store_ZLinky_infos( self, nwkid, 'LTARF', value)
+
     elif attribut in ( "0202", ):
-        # Standard : DATE
+        # Standard : DATE / Date et heure courant
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'DATE', value)
         
