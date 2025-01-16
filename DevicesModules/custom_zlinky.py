@@ -30,6 +30,10 @@ def zlinky_clusters(self, domoticz_devices, nwkid, ep, cluster, attribut, value)
     self.log.logging( "ZLinky", "Debug", "zlinky_clusters %s - %s/%s Attribute: %s Value: >%s<" % (
         cluster, nwkid, ep, attribut, value), nwkid, )
 
+    if value == "":
+        self.log.logging( "ZLinky", "Debug", "zlinky_clusters - empty value, do not go further", nwkid)
+        return
+
     if cluster == "0b01":
         zlinky_meter_identification(self, nwkid, ep, cluster, attribut, value)
 
@@ -231,6 +235,7 @@ def zlinky_cluster_electrical_measurement(self, domoticz_devices, nwkid, ep, clu
     
     self.log.logging( "ZLinky", "Debug", "zlinky_cluster_electrical_measurement - %s - %s/%s attribut: %s value: %s" % (
         cluster, nwkid, ep, attribut, value), nwkid, )
+
 
     if attribut == "0305":
             store_ZLinky_infos( self, nwkid, 'ERQ1', value)
