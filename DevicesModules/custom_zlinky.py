@@ -250,7 +250,7 @@ def zlinky_cluster_electrical_measurement(self, domoticz_devices, nwkid, ep, clu
             store_ZLinky_infos( self, nwkid, 'ERQ4', value)
 
     elif attribut == "050b":  # Active Power
-        self.log.logging("Cluster", "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s Power %s" % (cluster, nwkid, ep, value))
+        self.log.logging([ "ZLinky", "Cluster"], "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s Power %s" % (cluster, nwkid, ep, value))
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         MajDomoDevice(self, domoticz_devices, nwkid, ep, cluster, str(value))
         store_ZLinky_infos( self, nwkid, 'CCASN', value)
@@ -259,7 +259,7 @@ def zlinky_cluster_electrical_measurement(self, domoticz_devices, nwkid, ep, clu
         store_ZLinky_infos( self, nwkid, 'CCASN-1',value)
 
     elif attribut in ("0505", "0905", "0a05"):  # RMS Voltage
-        self.log.logging("Cluster", "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s Voltage %s" % (cluster, nwkid, ep, value))
+        self.log.logging([ "ZLinky", "Cluster"], "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s Voltage %s" % (cluster, nwkid, ep, value))
         if value == 0xFFFF:
             return
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
@@ -424,12 +424,12 @@ def zlinky_cluster_electrical_measurement(self, domoticz_devices, nwkid, ep, clu
         MajDomoDevice(self, domoticz_devices, nwkid, ep, cluster, str(value), Attribute_=attribut)
         # Check if Intensity is below subscription level
         if attribut == "0908":
-            self.log.logging( [ "Zlinky", "Cluster"], "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s %s Current L2 %s" % (cluster, nwkid, ep, attribut, value), nwkid)
+            self.log.logging( [ "ZLinky", "Cluster"], "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s %s Current L2 %s" % (cluster, nwkid, ep, attribut, value), nwkid)
             MajDomoDevice( self, domoticz_devices, nwkid, "f2", "0009", zlinky_check_alarm(self, domoticz_devices, nwkid, ep, value), Attribute_="0005", )
             store_ZLinky_infos( self, nwkid, 'IRMS2', value)
 
         elif attribut == "0a08":
-            self.log.logging([ "Zlinky", "Cluster"], "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s %s Current L3 %s" % (cluster, nwkid, ep, attribut, value), nwkid)
+            self.log.logging([ "ZLinky", "Cluster"], "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s %s Current L3 %s" % (cluster, nwkid, ep, attribut, value), nwkid)
             MajDomoDevice( self, domoticz_devices, nwkid, "f3", "0009", zlinky_check_alarm(self, domoticz_devices, nwkid, ep, value), Attribute_="0005", )
             store_ZLinky_infos( self, nwkid, 'IRMS3', value)
 
@@ -447,7 +447,7 @@ def zlinky_cluster_electrical_measurement(self, domoticz_devices, nwkid, ep, clu
         
 def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, attribut, value):
 
-    self.log.logging([ "Zlinky", "Cluster"], "Debug", f"zlinky_cluster_lixee_private ({attribut}) value: {value}", nwkid)
+    self.log.logging([ "ZLinky", "Cluster"], "Debug", f"zlinky_cluster_lixee_private ({attribut}) value: {value}", nwkid)
 
     if nwkid not in self.ListOfDevices:
         return
@@ -485,7 +485,7 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
             return
 
         # Couleur du Lendemain DEMAIN Trigger Alarm
-        self.log.logging([ "Zlinky", "Cluster"], "Debug", f"zlinky_cluster_lixee_private ({attribut}) DEMAIN {value}", nwkid)
+        self.log.logging([ "ZLinky", "Cluster"], "Debug", f"zlinky_cluster_lixee_private ({attribut}) DEMAIN {value}", nwkid)
 
         if value == "BLAN":
             MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", "20|Tomorrow WHITE day", Attribute_="0001")
@@ -578,7 +578,7 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
             s_tarif += "HC"
 
         if len(s_tarif) == 3:
-            self.log.logging([ "Zlinky", "Cluster"], "Debug", f"zlinky_cluster_lixee_private ({attribut}) LTARF {value}", nwkid)
+            self.log.logging([ "ZLinky", "Cluster"], "Debug", f"zlinky_cluster_lixee_private ({attribut}) LTARF {value}", nwkid)
             MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", s_tarif, Attribute_="0020")
 
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
