@@ -98,7 +98,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         # Standard mode, we rely on LTARF ( Libellé tarif fournisseur en cours)
         ltarf_value = get_ltarf(self, nwkid)
         if ltarf_value != new_color:
-            self.log.logging("ZLinky", "Status", f"Requesting LTARF (0xff66) as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
+            self.log.logging("ZLinky", "Status", f"Requesting LTARF (0xff66) as not inline {ltarf_value} to {previous_color}/{new_color}", nwkid)
             ReadAttributeRequest_ff66(self, nwkid)
             #MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
             zlinky_color_tarif(self, nwkid, new_color)
