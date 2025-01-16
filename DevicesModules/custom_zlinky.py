@@ -83,7 +83,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     def _zlinky_update_color(nwkid, previous_color, new_color):
         """Update the device color, if it has changed request a Read Attribute to get the Color"""
 
-        MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
+        #MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
         zlinky_color_tarif(self, nwkid, new_color)
 
         if get_linky_mode_from_ep(self, nwkid) in ( 0, 2):
