@@ -84,6 +84,24 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         attribut: The attribute being processed.
         value: The current value of the attribute.
     """
+
+    def _normalize_tempo_color(color):
+        if "HP" in color:
+            prefix = "HP"
+        elif "HC" in color:
+            prefix = "HC"
+        else:
+            return color  # Return the original color if neither "HP" nor "HC" is found
+
+        if "ROUGE" in color:
+            return "R" + prefix
+        if "BLANC" in color:
+            return "W" + prefix
+        if "BLEU" in color:
+            return "B" + prefix
+        return color  # Return the original color if no matching color is found
+
+
     def _zlinky_update_color(nwkid, previous_color, new_color):
         """Update the device color, if it has changed request a Read Attribute to get the Color"""
 
@@ -99,20 +117,9 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
                 zlinky_color_tarif(self, nwkid, new_color)
             return
 
-        COLOR_MAPPING = {
-            "HP ROUGE": "RHP",
-            "HC ROUGE": "RHC",
-            "HP BLANC": "WHP",
-            "HC BLANC": "WHC",
-            "HP BLEU": "BHP",
-            "HC BLEU": "BHC",
-        }
         # Standard mode, we rely on LTARF ( Libellé tarif fournisseur en cours)
-        ltarf_value = get_ltarf(self, nwkid)
-        if ltarf_value in COLOR_MAPPING:
-            ltarf_value = COLOR_MAPPING[ltarf_value]
-
-        self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF {ltarf_value}", nwkid)
+        ltarf_value = _normalize_tempo_color( get_ltarf(self, nwkid) )
+        self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF >{ltarf_value}<", nwkid)
 
         if ltarf_value and ltarf_value != new_color:
             self.log.logging("ZLinky", "Status", f"Requesting LTARF (0xff66) as not inline {ltarf_value} to {previous_color}/{new_color}", nwkid)
