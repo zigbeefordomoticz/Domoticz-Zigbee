@@ -197,7 +197,18 @@ def get_ptec(self, nwkid):
 
 def get_ltarf(self, nwkid):
     """ Retreive Current Tarif. (Standard)"""
-    return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("LTARF")
+
+    _ltarf = self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("LTARF")
+    # If the value is a byte string, decode and clean up
+    if isinstance(_ltarf, bytes):
+        # Decode the byte string to UTF-8, ignoring errors, and remove null bytes
+        _ltarf = _ltarf.decode('utf-8', errors='ignore').strip('\x00')
+
+    # Remove null characters and strip whitespace
+    if isinstance(_ltarf, str):
+        _ltarf = _ltarf.replace('\u0000', '').replace('\x00', '').strip()
+
+    return _ltarf
 
 def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
 

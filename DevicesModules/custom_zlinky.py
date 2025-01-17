@@ -87,25 +87,34 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     def _zlinky_update_color(nwkid, previous_color, new_color):
         """Update the device color, if it has changed request a Read Attribute to get the Color"""
 
-        #MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", new_color, Attribute_="0020")
-
         if get_linky_mode_from_ep(self, nwkid) in ( 0, 2):
             # Historique mode, we can rely on PTEC
             ptect_value = get_ptec(self, nwkid)
             self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - PTEC {ptect_value}", nwkid)
 
-            if ptect_value != new_color:
+            if ptect_value and ptect_value != new_color:
                 # Looks like the PTEC info is not aligned with the current color !
                 self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
                 ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
                 zlinky_color_tarif(self, nwkid, new_color)
             return
 
+        COLOR_MAPPING = {
+            "HP ROUGE": "RHP",
+            "HC ROUGE": "RHC",
+            "HP BLANC": "WHP",
+            "HC BLANC": "WHC",
+            "HP BLEU": "BHP",
+            "HC BLEU": "BHC",
+        }
         # Standard mode, we rely on LTARF ( Libellé tarif fournisseur en cours)
         ltarf_value = get_ltarf(self, nwkid)
+        if ltarf_value in COLOR_MAPPING:
+            ltarf_value = COLOR_MAPPING[ltarf_value]
+
         self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF {ltarf_value}", nwkid)
 
-        if ltarf_value != new_color:
+        if ltarf_value and ltarf_value != new_color:
             self.log.logging("ZLinky", "Status", f"Requesting LTARF (0xff66) as not inline {ltarf_value} to {previous_color}/{new_color}", nwkid)
             ReadAttributeRequest_ff66(self, nwkid)
             zlinky_color_tarif(self, nwkid, new_color)
@@ -123,7 +132,10 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
                 "0104": "WHC",
                 "0106": "WHP",
                 "0108": "RHC",
-                "010a": "RHP"}
+                "010a": "RHP"},
+            "EJP": {
+                "0100": "EJPHN",
+                "0102": "EJPHPM"}
         }
         self.log.logging("ZLinky", "Debug", f"get_corresponding_color: >{op_tarifiare}< >{attribut}<", nwkid)
         return color_map.get(op_tarifiare, {}).get(attribut)
