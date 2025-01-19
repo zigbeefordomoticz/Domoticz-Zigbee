@@ -131,7 +131,7 @@ def is_zigate_firmware_available(self, currentMajorVersion, currentFirmwareVersi
 
 def is_internet_available():
     try:
-        response = requests.get("http://www.google.com", timeout=3)
+        response = requests.get("https://www.google.com", timeout=3)
         # Check if the status code is a success code (2xx)
         return response.status_code == 200
     except requests.ConnectionError:
