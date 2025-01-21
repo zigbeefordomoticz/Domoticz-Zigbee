@@ -160,28 +160,15 @@ async def _create_backup(self) -> None:
 def connection_lost(self, exc: Exception) -> None:
     """Handle connection lost event."""
 
-    if exc is None:
-        # Connection closed cleanly. do nothing
+    if exc is None or self.restarting:
+        # exc is None: Connection closed cleanly. do nothing
+        # self.restarting: Restart in progress
         return
 
-    if self.restarting:
-        # Restart in progress
-        return
+    LOGGER.error( f"+ Connection to the radio was lost due to {type(exc)}, restart plugin")
 
-    LOGGER.error( "+ Connection to the radio was lost: [%s] %s %r" %(self.radio_lost_cnt, type(exc), exc) )
-    self.radio_lost_cnt += 1
-
-    if isinstance(exc, serial.serialutil.SerialException, TimeoutError):
-        _request_plugin_restart( self, "+ Connection to the radio was lost due to SerialException, restart plugin")
-
-    elif self.radio_lost_cnt > 8:
-        _request_plugin_restart( self, "+ Connection to the radio was lost since 8 occurances, restart plugin" )
-
-
-def _request_plugin_restart(self, arg0):
-    LOGGER.error(arg0)
     self.restarting = True
-    self.callBackRestartPlugin()  # Schedule plugin restart
+    self.callBackRestartPlugin()  # Trigger plugin restart
 
 
 def _retreive_previous_backup(self):
