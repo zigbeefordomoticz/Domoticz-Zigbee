@@ -171,8 +171,9 @@ def connection_lost(self, exc: Exception) -> None:
     LOGGER.error( "+ Connection to the radio was lost: [%s] %s %r" %(self.radio_lost_cnt, type(exc), exc) )
     self.radio_lost_cnt += 1
 
-    if isinstance(exc, serial.serialutil.SerialException):
+    if isinstance(exc, serial.serialutil.SerialException, TimeoutError):
         _request_plugin_restart( self, "+ Connection to the radio was lost due to SerialException, restart plugin")
+
     elif self.radio_lost_cnt > 8:
         _request_plugin_restart( self, "+ Connection to the radio was lost since 8 occurances, restart plugin" )
 
