@@ -44,7 +44,7 @@ from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_temp_Setcurrent)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.thermostats import thermostat_Mode, thermostat_Setpoint
-from Modules.tools import get_deviceconf_parameter_value
+from Modules.tools import get_device_nickname, get_deviceconf_parameter_value
 from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_dimmer_dimmer, tuya_dimmer_onoff,
                           tuya_energy_onoff, tuya_garage_door_action,
@@ -173,9 +173,18 @@ def domoticz_command(self, Devices, DeviceID, Unit, Nwkid, Command, Level, Color
     forceUpdateDev = SWITCH_SELECTORS.get(DeviceType, {}).get("ForceUpdate", False)
 
     if DeviceType not in ACTIONATORS and not self.pluginconf.pluginConf.get("forcePassiveWidget"):
-        self.log.logging("Command", "Log", f"mgtCommand - You are trying to action not allowed for Device: {widget_name} Type: {ClusterTypeList} and DeviceType: {DeviceType} Command: {Command} Level:{Level}", Nwkid)
+        zdevice_name = get_device_nickname(self, NwkId=Nwkid)
+        self.log.logging(
+            "Command",
+            "Log",
+            (
+                f"mgtCommand - You are trying to action a Domoticz widget '{widget_name}' belonging to a 'remote' type of device '{zdevice_name}', which is not actionable by default. "
+                f"Please use the plugin WebUI advanced settings menu to enable the 'forcePassiveWidget: Allow Domoticz actions on widgets from remote devices' if that is what you need."
+            ),
+            Nwkid
+        )
         return
-    
+
     health_value = self.ListOfDevices.get(Nwkid, {}).get("Health")
     if health_value == "Not Reachable":
         self.ListOfDevices.setdefault(Nwkid, {})["Health"] = ""
