@@ -85,16 +85,30 @@ check_and_activate_venv() {
 
 # Function to install python3-pip on Debian if necessary
 install_pip_on_debian() {
+    # Check if lsb_release command exists
     if command -v lsb_release &> /dev/null; then
-        DISTRIB_ID=$(lsb_release -is)
-        DISTRIB_RELEASE=$(lsb_release -rs)
-        if [ "$DISTRIB_ID" = "Debian" ] && [ "$DISTRIB_RELEASE" = "12" ]; then
-            if ! command -v pip3 &> /dev/null; then
-                echo "pip3 is not installed. Installing python3-pip..."
-                sudo apt-get update
-                sudo apt-get install -y python3-pip
+        # Get distribution ID and release number
+        DISTRIB_ID=$(lsb_release -is 2>/dev/null)
+        DISTRIB_RELEASE=$(lsb_release -rs 2>/dev/null)
+
+        # Check if the distribution ID and release number were retrieved successfully
+        if [ -n "$DISTRIB_ID" ] && [ -n "$DISTRIB_RELEASE" ]; then
+            if [ "$DISTRIB_ID" = "Debian" ] && [ "$DISTRIB_RELEASE" = "12" ]; then
+                if ! command -v pip3 &> /dev/null; then
+                    echo "pip3 is not installed. Installing python3-pip..."
+                    sudo apt-get update
+                    sudo apt-get install -y python3-pip
+                else
+                    echo "pip3 is already installed."
+                fi
+            else
+                echo "This script is intended for Debian 12 only."
             fi
+        else
+            echo "Failed to retrieve distribution information."
         fi
+    else
+        echo "lsb_release command not found. This script requires lsb_release to determine the distribution."
     fi
 }
 
@@ -103,6 +117,41 @@ update_git_config() {
     echo "(1) git config --global --add safe.directory"
     git config  --global --add safe.directory $(pwd)
 }
+
+check_and_remove_duplicates() {
+    # Get the directory of the current script
+    SCRIPT_DIR=$(dirname "$(realpath "$0")")
+
+    # Print the directory (for debugging purposes)
+    echo "Script directory: $SCRIPT_DIR"
+    python3 $SCRIPT_DIR/check_and_remove_duplicates.py $VENV_PATH --remove-duplicates
+}
+
+check_and_remove_duplicates() {
+    # Get the directory of the current script
+    SCRIPT_DIR=$(dirname "$(realpath "$0")")
+
+    # Print the directory (for debugging purposes)
+    echo "Script directory: $SCRIPT_DIR"
+
+    # Check if the Python script exists
+    if [ ! -f "$SCRIPT_DIR/check_and_remove_duplicates.py" ]; then
+        echo "Error: Python script not found at $SCRIPT_DIR/check_and_remove_duplicates.py"
+        return 1
+    fi
+
+    # Launch the Python script
+    python3 "$SCRIPT_DIR/check_and_remove_duplicates.py" "$VENV_PATH" --remove-duplicates
+
+    # Check if the Python script executed successfully
+    if [ $? -ne 0 ]; then
+        echo "Error: Python script execution failed"
+        return 1
+    fi
+
+    echo "Duplicates removed successfully"
+}
+
 
 # Function to update python modules
 update_python_modules() {
@@ -144,6 +193,7 @@ set_pip_options
 check_and_activate_venv
 print_version_info
 update_git_config
+check_and_remove_duplicates
 update_python_modules
 
 echo " "
