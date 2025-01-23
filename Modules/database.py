@@ -146,7 +146,7 @@ MANUFACTURER_ATTRIBUTES = (
 def load_plugin_database(self):
     """ Load plugin database in memory. """
 
-    ListOfDevices_imported_from_Domoticz = None
+    ListOfDevices_imported_from_Domoticz = loaded_from = None
     list_of_device_txt_filename = Path( self.pluginconf.pluginConf["pluginData"] ) / self.DeviceListName
 
     if self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]:
@@ -178,7 +178,8 @@ def load_plugin_database(self):
         self.ListOfDevices = ListOfDevices_imported_from_Domoticz
         loaded_from = "Domoticz"
 
-    self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), loaded_from)) 
+    if loaded_from:
+        self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), loaded_from)) 
 
     cleanup_table_entries( self)
     hacks_after_loading(self)
