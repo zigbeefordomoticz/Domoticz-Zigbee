@@ -10,3 +10,11 @@ zigpy_deconz
 bellows
 requests
 distro
+zigpy_znp
+zigpy_deconz
+bellows
+dnspython
+pyserial
+charset-normalizer
+jsonschema
+cryptography
