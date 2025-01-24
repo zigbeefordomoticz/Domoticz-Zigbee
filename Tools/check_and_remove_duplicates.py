@@ -10,11 +10,11 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-import os
-import sys
-import subprocess
 import argparse
 import importlib.metadata
+import os
+import shutil
+
 
 def find_duplicates(directory):
     """
@@ -50,11 +50,16 @@ def remove_duplicates(directory, duplicates, keep_version):
         duplicates (dict): A dictionary where the keys are package names and the values are lists of duplicate versions.
         keep_version (str): The version to keep.
     """
+
     for pkg, versions in duplicates.items():
         for version in versions:
-            if version != keep_version:
-                print(f"Uninstalling {pkg}=={version}")
-                subprocess.run([sys.executable, '-m', 'pip', 'uninstall', f'{pkg}=={version}', '-y'], check=True)
+            print(f"Removing {pkg}=={version} from {directory}")
+            package_dir = os.path.join(directory, pkg + '-' + version + '.dist-info')
+            if os.path.exists(package_dir):
+                shutil.rmtree(package_dir)
+            else:
+                print(f"Directory {package_dir} does not exist.")
+
 
 def main():
     """
