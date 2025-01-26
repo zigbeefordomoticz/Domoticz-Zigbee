@@ -102,16 +102,16 @@ ZLinky_TIC_COMMAND = {
 def convert_kva_to_ampere( kva ):
     return ( kva * 1000) / 200
 
+
 def zlinky_color_tarif(self, MsgSrcAddr, color):
-    if "ZLinky" not in self.ListOfDevices[MsgSrcAddr]:
-        self.ListOfDevices[MsgSrcAddr]["ZLinky"] = {}
-    self.ListOfDevices[MsgSrcAddr]["ZLinky"]["Color"] = color
+    self.ListOfDevices.setdefault(MsgSrcAddr, {}).setdefault("ZLinky", {})["Color"] = color
+
 
 def store_ZLinky_infos( self, nwkid, command_tic, value):
-
     if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
         self.ListOfDevices[ nwkid ][ 'ZLinky' ] = {}
     self.ListOfDevices[ nwkid ][ 'ZLinky' ][ command_tic ] = value
+
 
 def get_ISOUSC( self, nwkid ):
 
@@ -145,23 +145,71 @@ def get_ISOUSC( self, nwkid ):
 
     return 0
 
-def get_OPTARIF( self, nwkid):
+def get_OPTARIF(self, nwkid):
+    """
+    Retrieves the 'OPTARIF' value for a given network ID (nwkid) from the 'ZLinky' device data.
 
-    if (
-        "ZLinky" in self.ListOfDevices[nwkid] 
-        and "OPTARIF" in self.ListOfDevices[nwkid]["ZLinky"]
-    ):
-        return self.ListOfDevices[nwkid]["ZLinky"]["OPTARIF"]
+    If the 'OPTARIF' value is found and is a byte string, it decodes it to a regular string
+    and removes any null byte characters. If 'OPTARIF' is not found or if it's not a byte
+    string, the method returns the default value "BASE".
 
-    return "BASE"
+    Args:
+        nwkid (str): The network ID used to access the device data in ListOfDevices.
 
-def get_instant_power( self, nwkid ):
-    return round(float(self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"]["050f"]), 2) if "0b04" in self.ListOfDevices[nwkid]["Ep"]["01"] and "050f" in self.ListOfDevices[nwkid]["Ep"]["01"]["0b04"] else 0
+    Returns:
+        str: The cleaned 'OPTARIF' value, or "BASE" if not found.
+    """
+    zlinky = self.ListOfDevices.get(nwkid, {}).get("ZLinky", {})
 
-def get_tarif_color( self, nwkid ):
-    return self.ListOfDevices[nwkid]["ZLinky"]["Color"] if "ZLinky" in self.ListOfDevices[nwkid] and "Color" in self.ListOfDevices[nwkid]["ZLinky"] else None
-   
-    
+    # Get the raw value of "OPTARIF", or default to "BASE"
+    optarif_value = zlinky.get("OPTARIF", "BASE")
+
+    # If the value is a byte string, decode and clean up
+    if isinstance(optarif_value, bytes):
+        # Decode the byte string to UTF-8, ignoring errors, and remove null bytes
+        optarif_value = optarif_value.decode('utf-8', errors='ignore').strip('\x00')
+
+    # Remove null characters and strip whitespace
+    if isinstance(optarif_value, str):
+        optarif_value = optarif_value.replace('\u0000', '').replace('\x00', '').strip()
+
+    return optarif_value
+
+
+def get_instant_power(self, nwkid):
+    try:
+        device = self.ListOfDevices.get(nwkid, {})
+        ep = device.get("Ep", {}).get("01", {})
+        cluster = ep.get("0b04", {})
+        power = cluster.get("050f")
+        return round(float(power), 2) if power is not None else 0
+    except (ValueError, TypeError):
+        return 0
+
+
+def get_tarif_color(self, nwkid):
+    return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("Color")
+
+
+def get_ptec(self, nwkid):
+    """ Retreive Current Tarif. (Historic)"""
+    return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("PTEC")
+
+def get_ltarf(self, nwkid):
+    """ Retreive Current Tarif. (Standard)"""
+
+    _ltarf = self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("LTARF")
+    # If the value is a byte string, decode and clean up
+    if isinstance(_ltarf, bytes):
+        # Decode the byte string to UTF-8, ignoring errors, and remove null bytes
+        _ltarf = _ltarf.decode('utf-8', errors='ignore').strip('\x00')
+
+    # Remove null characters and strip whitespace
+    if isinstance(_ltarf, str):
+        _ltarf = _ltarf.replace('\u0000', '').replace('\x00', '').strip()
+
+    return _ltarf
+
 def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
 
     if value == 0:
@@ -324,74 +372,133 @@ COULEUR = {
 }
 
 
-def decode_STEG(stge):
-    """ decoding of STGE Linky frame"""
-    # Contact Sec : bit 0
-    # Organe de coupure: bits 1 à 3
-    # Etat du cache-bornes distributeur: bit 4
-    # Surtension sur une des phases: bit 6
-    # Dépassement de la puissance de référence bit 7
-    # Fonctionnement produ/conso: bit 8
-    # Sens de l'énégerie active: bit 9
-    # Tarif en cours contrat fourniture: bit 10 à 13
-    # Tarif en cours contrat distributeur: bit 14 et 15
-    # Mode dégradée de l'horloge: bit 16
-    # Etat de sortie tic: bit 17
-    # Etat de sortie Euridis: bit 19 et 20
-    # Statut du CPL: bit 21 et 22
-    # Synchro CPL: bit 23
-    # Couleur du jour: bit 24 et 25
-    # Couleur du lendemain: bit 26 et 27
-    # Préavis points mobiles: bit 28 à 29
-    # Pointe mobile: bit 30 et 31
+#def decode_STEG(stge):
+#    """ decoding of STGE Linky frame"""
+#    # Contact Sec : bit 0
+#    # Organe de coupure: bits 1 à 3
+#    # Etat du cache-bornes distributeur: bit 4
+#    # Surtension sur une des phases: bit 6
+#    # Dépassement de la puissance de référence bit 7
+#    # Fonctionnement produ/conso: bit 8
+#    # Sens de l'énégerie active: bit 9
+#    # Tarif en cours contrat fourniture: bit 10 à 13
+#    # Tarif en cours contrat distributeur: bit 14 et 15
+#    # Mode dégradée de l'horloge: bit 16
+#    # Etat de sortie tic: bit 17
+#    # Etat de sortie Euridis: bit 19 et 20
+#    # Statut du CPL: bit 21 et 22
+#    # Synchro CPL: bit 23
+#    # Couleur du jour: bit 24 et 25
+#    # Couleur du lendemain: bit 26 et 27
+#    # Préavis points mobiles: bit 28 à 29
+#    # Pointe mobile: bit 30 et 31
+#
+#    try:
+#        stge = int(stge, 16)
+#    except ValueError:
+#        return {}
+#
+#    STEG_ATTRIBUTES = {
+#        'contact_sec': stge & 0x00000001,
+#        'organe_coupure': (stge & 0x0000000E) >> 1,
+#        'etat_cache_bornes': (stge & 0x00000010) >> 4,
+#        'sur_tension': (stge & 0x00000040) >> 6,
+#        'depassement_puissance': (stge & 0x00000080) >> 7,
+#        'mode_fonctionnement': (stge & 0x00000100) >> 8,
+#        'sens_energie': (stge & 0x00000200) >> 9,
+#        'tarif_fourniture': (stge & 0x0001F000) >> 12,
+#        'tarif_distributeur': (stge & 0x00060000) >> 14,
+#        'Mode_horloge': (stge & 0x00100000) >> 16,
+#        'sortie_tic': (stge & 0x00200000) >> 17,
+#        'sortie_euridis': (stge & 0x00C00000) >> 19,
+#        'status_cpl': (stge & 0x03000000) >> 21,
+#        'synchro_cpl': (stge & 0x08000000) >> 23,
+#        'couleur_jour': (stge & 0x30000000) >> 24,
+#        'couleur_demain': (stge & 0xC0000000) >> 26,
+#        'preavis_point_mobile': (stge & 0x30000000) >> 28,
+#        'pointe_mobile': (stge & 0xC0000000) >> 30,
+#    }
+#
+#    # Decode mapped values
+#    STEG_ATTRIBUTES_MAPPING = {
+#        'contact_sec': CONTACT_SEC,
+#        'etat_cache_bornes': ETAT_CACHE_BORNES,
+#        'mode_fonctionnement': FONCTION_PROD_CONSO,
+#        'sens_energie': SENS_ENERGIE,
+#        'Mode_horloge': HORLOGE,
+#        'sortie_tic': SORTIE_TIC,
+#        'sortie_euridis': SORTIE_EURIDIS,
+#        'status_cpl': STATUT_CPL,
+#        'synchro_cpl': SYNCHRO_CPL,
+#        'couleur_jour': COULEUR,
+#        'couleur_demain': COULEUR,
+#    }
+#
+#    # Decode mapped values for applicable attributes
+#    for attr, mapping in STEG_ATTRIBUTES_MAPPING.items():
+#        if attr in STEG_ATTRIBUTES and STEG_ATTRIBUTES[attr] in mapping:
+#            STEG_ATTRIBUTES[attr] = mapping[STEG_ATTRIBUTES[attr]]
+#
+#    return STEG_ATTRIBUTES
 
+def decode_STEG(stge):
+    """ Decoding of STGE Linky frame """
+
+    # Attempt to convert the input into an integer, return an empty dictionary on failure.
     try:
         stge = int(stge, 16)
     except ValueError:
         return {}
 
-    STEG_ATTRIBUTES = {
-        'contact_sec': stge & 0x00000001,
-        'organe_coupure': (stge & 0x0000000E) >> 1,
-        'etat_cache_bornes': (stge & 0x00000010) >> 4,
-        'sur_tension': (stge & 0x00000040) >> 6,
-        'depassement_puissance': (stge & 0x00000080) >> 7,
-        'mode_fonctionnement': (stge & 0x00000100) >> 8,
-        'sens_energie': (stge & 0x00000200) >> 9,
-        'tarif_fourniture': (stge & 0x0001F000) >> 12,
-        'tarif_distributeur': (stge & 0x00060000) >> 14,
-        'Mode_horloge': (stge & 0x00100000) >> 16,
-        'sortie_tic': (stge & 0x00200000) >> 17,
-        'sortie_euridis': (stge & 0x00C00000) >> 19,
-        'status_cpl': (stge & 0x03000000) >> 21,
-        'synchro_cpl': (stge & 0x08000000) >> 23,
-        'couleur_jour': (stge & 0x30000000) >> 24,
-        'couleur_demain': (stge & 0xC0000000) >> 26,
-        'preavis_point_mobile': (stge & 0x30000000) >> 28,
-        'pointe_mobile': (stge & 0xC0000000) >> 30,
+    # Define bit masks and corresponding shifts for each attribute
+    ATTRIBUTE_DEFINITIONS = [
+        ('contact_sec', 0x00000001, 0),                     # bit 0
+        ('organe_coupure', 0x0000000E, 1),                  # bits 1-3
+        ('etat_cache_bornes', 0x00000010, 4),               # bit 4
+        ('sur_tension', 0x00000040, 6),                     # bit 6
+        ('depassement_puissance', 0x00000080, 7),           # bit 7
+        ('mode_fonctionnement', 0x00000100, 8),             # bit 8
+        ('sens_energie', 0x00000200, 9),                    # bit 9
+        ('tarif_fourniture', 0x0001F000, 12),               # bits 10-13
+        ('tarif_distributeur', 0x00060000, 14),             # bits 14-15
+        ('Mode_horloge', 0x00100000, 16),                   # bit 16
+        ('sortie_tic', 0x00200000, 17),                     # bit 17
+        ('sortie_euridis', 0x00C00000, 19),                 # bits 19-20
+        ('status_cpl', 0x03000000, 21),                     # bits 21-22
+        ('synchro_cpl', 0x08000000, 23),                    # bit 23
+        ('couleur_jour', 0x30000000, 24),                   # bits 24-25
+        ('couleur_demain', 0xC0000000, 26),                 # bits 26-27
+        ('preavis_point_mobile', 0x30000000, 28),           # bits 28-29
+        ('pointe_mobile', 0xC0000000, 30),                  # bits 30-31
+    ]
+
+    # Define the mappings for each attribute
+    MAPPINGS = {
+        'contact_sec': {0: "fermé", 1: "ouvert"},
+        'etat_cache_bornes': {0: "fermé", 1: "ouvert"},
+        'mode_fonctionnement': {0: "consommateur", 1: "producteur"},
+        'sens_energie': {0: "énergie active positive", 1: "énergie active négative"},
+        'Mode_horloge': {0: "horloge correcte", 1: "horloge en mode dégradée"},
+        'sortie_tic': {0: "mode historique", 1: "mode standard"},
+        'sortie_euridis': {0: "désactivée", 1: "activée sans sécurité", 3: "activée avec sécurité"},
+        'status_cpl': {0: "New/Unlock", 1: "New/Lock", 2: "Registered"},
+        'synchro_cpl': {0: "compteur non synchronisé", 1: "compteur synchronisé"},
+        'couleur_jour': {0: "Pas d'annonce", 1: "Bleu", 2: "Blanc", 3: "Rouge"},
+        'couleur_demain': {0: "Pas d'annonce", 1: "Bleu", 2: "Blanc", 3: "Rouge"},
     }
 
-    # Decode mapped values
-    STEG_ATTRIBUTES_MAPPING = {
-        'contact_sec': CONTACT_SEC,
-        'etat_cache_bornes': ETAT_CACHE_BORNES,
-        'mode_fonctionnement': FONCTION_PROD_CONSO,
-        'sens_energie': SENS_ENERGIE,
-        'Mode_horloge': HORLOGE,
-        'sortie_tic': SORTIE_TIC,
-        'sortie_euridis': SORTIE_EURIDIS,
-        'status_cpl': STATUT_CPL,
-        'synchro_cpl': SYNCHRO_CPL,
-        'couleur_jour': COULEUR,
-        'couleur_demain': COULEUR,
-    }
+    # Initialize the result dictionary
+    result = {}
 
-    # Decode mapped values for applicable attributes
-    for attr, mapping in STEG_ATTRIBUTES_MAPPING.items():
-        if attr in STEG_ATTRIBUTES and STEG_ATTRIBUTES[attr] in mapping:
-            STEG_ATTRIBUTES[attr] = mapping[STEG_ATTRIBUTES[attr]]
+    # Extract and map each attribute based on the definitions
+    for attr, mask, shift in ATTRIBUTE_DEFINITIONS:
+        # Extract the value by applying the mask and shifting
+        value = (stge & mask) >> shift
 
-    return STEG_ATTRIBUTES
+        # Apply mapping if it exists, otherwise keep the raw value
+        result[attr] = MAPPINGS.get(attr, {}).get(value, value)
+
+    return result
 
 
 def zlinky_sum_all_indexes(self, nwkid):

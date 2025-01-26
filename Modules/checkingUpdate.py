@@ -20,6 +20,8 @@ ZIGATEV1_FIRMWARE_TXT_RECORD = "zigatev1.pipiche.net"
 ZIGATEV1OPTIPDM_TXT_RECORD = "zigatev1optipdm.pipiche.net"
 ZIGATEV2_FIRMWARE_TXT_RECORD = "zigatev2.pipiche.net"
 
+DNS_REQ_TIMEOUT = 2
+
 ZIGATE_DNS_RECORDS = {
     "03": ZIGATEV1_FIRMWARE_TXT_RECORD,
     "04": ZIGATEV1OPTIPDM_TXT_RECORD,
@@ -96,7 +98,7 @@ def _fetch_and_parse_dns_record(self, record_name, record_type):
     return parsed_record
 
 
-def _get_dns_txt_record(self, record, timeout=1):
+def _get_dns_txt_record(self, record, timeout=DNS_REQ_TIMEOUT):
     """
     Fetch a DNS TXT record.
 

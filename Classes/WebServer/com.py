@@ -352,6 +352,8 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
         self.logging( "Log", f"++ WebUI - SSL Private key {server_private_key}")
 
         context = check_cert_and_key(self, server_certificate, server_private_key)
+        if context:
+            context.minimum_version = ssl.TLSVersion.TLSv1_2
 
         if context:
             self.server = context.wrap_socket( self.server, server_side=True, )

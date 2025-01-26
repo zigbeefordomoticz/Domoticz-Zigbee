@@ -115,7 +115,32 @@ install_pip_on_debian() {
 # Function to update git configuration
 update_git_config() {
     echo "(1) git config --global --add safe.directory"
-    git config  --global --add safe.directory $(pwd)
+    # Define the directory you want to add
+    directory_to_add=$(pwd)
+
+    # Get the list of currently configured safe directories
+    configured_directories=$(git config --get-all --global safe.directory)
+
+    # Check if the directory is already configured
+    if [[ "$configured_directories" != *"$directory_to_add"* ]]; then
+      # Add the directory if it is not already configured
+      git config --global --add safe.directory "$directory_to_add"
+      echo "Directory added: $directory_to_add"
+    else
+      echo "Directory already configured: $directory_to_add"
+    fi
+
+    echo " "
+    echo "(2) updating Zigbee for Domoticz plugin"
+    echo ""
+    git pull 
+    #git pull --recurse-submodules  && git submodule update --recursive
+    ret="$?"
+    if [ "$ret" != "0" ] ; then
+        echo "ERROR while running command 'git pull --recurse-submodules'."
+        echo "Git Status: $(git status)"
+        exit -1
+    fi
 }
 
 check_and_remove_duplicates() {
@@ -156,7 +181,7 @@ check_and_remove_duplicates() {
 # Function to update python modules
 update_python_modules() {
     echo " "
-    echo "(2) update $PYTHON_VERSION modules if needed"
+    echo "(3) update $PYTHON_VERSION modules if needed"
     echo ""
     if [ "$VENV_ACTIVATED" = true ]; then
         $VENV_PATH/bin/python3 -m pip $PIP_OPTIONS -t $VENV_PATH

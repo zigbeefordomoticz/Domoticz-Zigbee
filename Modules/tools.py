@@ -108,6 +108,10 @@ def getListOfEpForCluster(self, NwkId, SearchCluster):
 
     oldFashion = ( "ClusterType" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["ClusterType"] not in ({}, "") )
     for Ep in list(self.ListOfDevices[NwkId]["Ep"].keys()):
+        # check that is not a Fake Ep
+        if is_fake_ep(self, NwkId, Ep):
+            continue
+
         if SearchCluster not in self.ListOfDevices[NwkId]["Ep"][Ep]:
             continue
 
