@@ -160,17 +160,35 @@ async def _create_backup(self) -> None:
 def connection_lost(self, exc: Exception) -> None:
     """Handle connection lost event."""
 
-    import bellows.ash  # pylint: disable=import-outside-toplevel
+    from bellows.ash import NcpFailure  # pylint: disable=import-outside-toplevel
+    from bellows.types.named import NcpResetCode  # pylint: disable=import-outside-toplevel
 
-    LOGGER.warning( "+ Connection to the radio was lost (trying to recover): %s %r" %(type(exc), exc) )
+    LOGGER.warning("+ Connection to the radio was lost (trying to recover): %s %r", type(exc), exc)
 
     if self.shutting_down or self.restarting:
         return
 
-    if isinstance( exc, (serial.serialutil.SerialException, TimeoutError, bellows.ash.NcpFailure)):
-        LOGGER.error( "++++++++++++++++++++++ Connection to coordinator lost, plugin restart required")
-        self.restarting = True
-        self.callBackRestartPlugin()
+    if isinstance(exc, NcpFailure) and exc.code == NcpResetCode.ERROR_EXCEEDED_MAXIMUM_ACK_TIMEOUT_COUNT:
+        connection_lost_error(
+            self,
+            "NCP reset due to exceeded maximum ACK timeout count, plugin restart required"
+        )
+    elif isinstance(exc, (serial.serialutil.SerialException, asyncio.CancelledError)):
+        connection_lost_error(
+            self,
+            "Connection to coordinator lost, SerialError or CancelledError, plugin restart required"
+        )
+    elif isinstance(exc, (TimeoutError, asyncio.TimeoutError)):
+        connection_lost_error(
+            self,
+            "Connection to coordinator lost, TimeOut, plugin restart required"
+        )
+
+
+def connection_lost_error(self, message: str) -> None:
+    LOGGER.error(message)
+    self.restarting = True
+    self.callBackRestartPlugin()
 
 
 def _retreive_previous_backup(self):
