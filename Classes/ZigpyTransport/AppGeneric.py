@@ -143,9 +143,12 @@ async def shutdown(self, *, db: bool = True) -> None:
     LOGGER.info("Zigpy shutdown")
     self.shutting_down = True
 
+    LOGGER.info("Backup")
     await _create_backup(self)
 
-    await ControllerApplication.shutdown(self, db=db)
+    LOGGER.info("zigpy application shutdown")
+    # await ControllerApplication.shutdown(self, db=db)
+    await super(type(self),self).shutdown( db=db)
 
 
 async def _create_backup(self) -> None:
@@ -163,9 +166,10 @@ def connection_lost(self, exc: Exception) -> None:
     from bellows.ash import NcpFailure  # pylint: disable=import-outside-toplevel
     from bellows.types.named import NcpResetCode  # pylint: disable=import-outside-toplevel
 
-    LOGGER.warning("+ Connection to the radio was lost (trying to recover): %s %r", type(exc), exc)
+    LOGGER.warning("+ Connection to the radio was lost: %s %r", type(exc), exc)
 
     if self.shutting_down or self.restarting:
+        LOGGER.warning("+ shutdown or restart in progress")
         return
 
     if isinstance(exc, NcpFailure) and exc.code == NcpResetCode.ERROR_EXCEEDED_MAXIMUM_ACK_TIMEOUT_COUNT:
@@ -186,8 +190,8 @@ def connection_lost(self, exc: Exception) -> None:
 
 
 def connection_lost_error(self, message: str) -> None:
-    LOGGER.error(message)
     self.restarting = True
+    LOGGER.error(message)
     self.callBackRestartPlugin()
 
 
