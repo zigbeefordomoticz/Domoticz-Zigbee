@@ -408,7 +408,7 @@ class BasePlugin:
         if self.internet_available is None:
             self.internet_available = is_internet_available()
 
-        if self.internet_available:
+        if self.internet_available and self.pluginconf.pluginConf.get("CheckRequirements", True):
             if check_requirements( Parameters[ "HomeFolder"] ):
                 # Check_requirements() return True if requirements not meet.
                 self.onStop()
