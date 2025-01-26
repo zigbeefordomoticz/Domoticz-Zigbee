@@ -178,11 +178,15 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     # We exit the worker_loop, shutdown time
     try:
+        self.log.logging("TransportZigpy", "Log", "Shutding down zigpy thread")
         await self.app.shutdown()
 
     except Exception as e:
         self.log.logging("TransportZigpy", "Error", f"start_zigpy_task shutdown(self) error: {e}")
         self.log.logging("TransportZigpy", "Error", f" {str(traceback.format_exc())}")
+
+        self.log.logging("TransportZigpy", "Log", "Disconnecting communication")
+        await self.app.disconnect()
 
     #await asyncio.gather(task, return_exceptions=False)
     await asyncio.sleep(1)
