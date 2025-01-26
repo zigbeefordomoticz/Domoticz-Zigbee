@@ -406,9 +406,11 @@ class BasePlugin:
         if self.internet_available is None:
             self.internet_available = is_internet_available(self)
 
-        if self.internet_available and check_requirements( Parameters[ "HomeFolder"] ):
-            self.onStop()
-            return
+        if self.internet_available and self.pluginconf.pluginConf.get("CheckRequirements", True):
+            if check_requirements( Parameters[ "HomeFolder"] ):
+                # Check_requirements() return True if requirements not meet.
+                self.onStop()
+                return
 
         # Create Domoticz Sub menu
         if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
