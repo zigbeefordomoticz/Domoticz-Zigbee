@@ -159,14 +159,16 @@ async def _create_backup(self) -> None:
 
 def connection_lost(self, exc: Exception) -> None:
     """Handle connection lost event."""
+
+    import bellows.ash  # pylint: disable=import-outside-toplevel
+
     LOGGER.warning( "+ Connection to the radio was lost (trying to recover): %s %r" %(type(exc), exc) )
 
-    super(type(self),self).connection_lost(exc)
+    if self.shutting_down or self.restarting:
+        return
 
-    if not self.shutting_down and not self.restarting and isinstance( exc, (serial.serialutil.SerialException, TimeoutError)):
-        LOGGER.error( "++++++++++++++++++++++ Connection to coordinator failed on Serial, let's restart the plugin")
-        LOGGER.warning( f"--> : self.shutting_down: {self.shutting_down}, {self.restarting}")
-
+    if isinstance( exc, (serial.serialutil.SerialException, TimeoutError, bellows.ash.NcpFailure)):
+        LOGGER.error( "++++++++++++++++++++++ Connection to coordinator lost, plugin restart required")
         self.restarting = True
         self.callBackRestartPlugin()
 
