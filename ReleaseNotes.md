@@ -18,7 +18,20 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-## Dec. 2024 - stavle7.1.018 (2024.10)
+## Jan. 2025 - stable7.1.020 (2025.2) - hot fix
+
+- [Issue] - fix issue which was preventing upgrading from 018 to later version
+
+
+## Jan. 2025 - stable7.1.019 (2025.1)
+
+- [Hardware] - Improve ZLinky integration with a better management of Color changes.
+- [Technical] - Fix issue on Battery, which was preventing to report to WebUI
+- [Technical] - Decouple the handling of Hue with saturation to ease Lidl LED integration
+- [Technical] - Enable polling of Inlet device temperature
+
+
+## Dec. 2024 - stable7.1.018 (2024.10)
 
 - [WebUI] - disable WebUI analytics as it is replaced by an embedded one in the plugin itself.
 - [WebUI] - dedicated REST API for updating device parameters. ( PR #1813 , on request of @wvries)
