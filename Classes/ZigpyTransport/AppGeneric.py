@@ -160,7 +160,7 @@ async def _create_backup(self) -> None:
 def connection_lost(self, exc: Exception) -> None:
     """Handle connection lost event."""
 
-    if exc is None or self.restarting:
+    if exc is None or self.restarting or self.shutting_down:
         # exc is None: Connection closed cleanly. do nothing
         # self.restarting: Restart in progress
         return
