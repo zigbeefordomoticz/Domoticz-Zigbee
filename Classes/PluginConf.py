@@ -402,6 +402,7 @@ SETTINGS = {
         "Order": 99,
         "param": {
             # Just for compatibility keep it but hidden ( move to Custom device "Param" section)
+            "CheckRequirements": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True},
             "nPDUaPDUThreshold": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,"ZigpyRadio": ""},
             "rebindLivolo": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": False,},
             "allowAutoPairing": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
