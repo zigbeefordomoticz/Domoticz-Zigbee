@@ -58,10 +58,13 @@ install_pip() {
 
 # Function to activate virtual environment
 activate_venv() {
-    echo "Using virtual environment at: $VENV_PATH"
-    source $VENV_PATH/bin/activate
+    if [ -d "$VENV_PATH" ] && [ -f "$VENV_PATH/bin/activate" ]; then
+        echo "Using virtual environment at: $VENV_PATH"
+        source "$VENV_PATH/bin/activate"
+    else
+        echo "Virtual environment not found at $VENV_PATH"
+    fi
 }
-
 # Function to check and activate virtual environment
 check_and_activate_venv() {
     if [ -n "$PYTHONPATH" ]; then
@@ -119,13 +122,16 @@ update_git_config() {
     echo " "
     echo "(2) updating Zigbee for Domoticz plugin"
     echo ""
+    # Configure the pull strategy to avoid the hint message
+    if is_docker; then
+        git config --global pull.rebase false  # You can choose true or false based on your preference
+    fi
+
     git pull 
-    #git pull --recurse-submodules  && git submodule update --recursive
     ret="$?"
     if [ "$ret" != "0" ] ; then
-        echo "ERROR while running command 'git pull --recurse-submodules'."
+        echo "ERROR while running command 'git pull ."
         echo "Git Status: $(git status)"
-        exit -1
     fi
 }
 
@@ -157,6 +163,15 @@ print_version_info() {
     echo "latest git commit: $(git log --pretty=oneline -1)"
     echo ""
 }
+
+is_docker() {
+    if [ -n "$DOCKER_CONTAINER" ]; then
+        return 0  # Running inside Docker
+    else
+        return 1  # Not running inside Docker
+    fi
+}
+
 
 # Main script execution
 PYTHON_VERSION="python${1:-3}"
