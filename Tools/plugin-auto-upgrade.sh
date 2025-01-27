@@ -130,7 +130,7 @@ update_git_config() {
     git pull 
     ret="$?"
     if [ "$ret" != "0" ] ; then
-        echo "ERROR while running command 'git pull ."
+        echo "ERROR while running command 'git pull, we continue."
         echo "Git Status: $(git status)"
     fi
 }
@@ -165,9 +165,11 @@ print_version_info() {
 }
 
 is_docker() {
-    if [ -n "$DOCKER_CONTAINER" ]; then
+    if [ -f /.dockerenv ] || [ -f /.dockerinit ]; then
+        echo "Running inside Docker"
         return 0  # Running inside Docker
     else
+    echo "Not running inside Docker"
         return 1  # Not running inside Docker
     fi
 }
