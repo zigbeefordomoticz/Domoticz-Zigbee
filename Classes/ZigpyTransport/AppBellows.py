@@ -10,7 +10,9 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import asyncio
 import logging
+import time
 
 import bellows.config as bellows_conf
 import bellows.types as t
@@ -63,9 +65,13 @@ class App_bellows(bellows.zigbee.application.ControllerApplication):
         self.captureRxFrame = captureRxFrame
         self.use_of_zigpy_persistent_db = use_of_zigpy_persistent_db
 
+        self.start_time = time.time()
+
         self.shutting_down = False
         self.restarting = False
 
+        await asyncio.sleep( 3 )
+        
         try:
             await self.connect()
             await self.initialize(auto_form=True, force_form=force_form)

@@ -12,6 +12,7 @@
 
 import asyncio
 import logging
+import time
 
 import zigpy.config as zigpy_conf
 import zigpy.device
@@ -59,7 +60,9 @@ class App_deconz(zigpy_deconz.zigbee.application.ControllerApplication):
         self.HardwareID = HardwareID
         self.captureRxFrame = captureRxFrame
         self.use_of_zigpy_persistent_db = use_of_zigpy_persistent_db
-
+        
+        self.start_time = time.time()
+        
         self.shutting_down = False
         self.restarting = False
 

@@ -10,7 +10,9 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import asyncio
 import logging
+import time
 
 import zigpy.config as zigpy_conf
 import zigpy.device
@@ -64,9 +66,13 @@ class App_znp(zigpy_znp.zigbee.application.ControllerApplication):
         self.captureRxFrame = captureRxFrame
         self.use_of_zigpy_persistent_db = use_of_zigpy_persistent_db
 
+        self.start_time = time.time()
+
         self.shutting_down = False
         self.restarting = False
 
+        await asyncio.sleep( 3 )
+        
         # Pipiche : 24-Oct-2022 Disabling CONF_MAX_CONCURRENT_REQUESTS so the default will be used ( 16 )
         # self.znp_config[znp_conf.CONF_MAX_CONCURRENT_REQUESTS] = 2
 

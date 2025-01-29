@@ -41,6 +41,7 @@ from Classes.ZigpyTransport.Transport import ZigpyTransport
 LOGGER = logging.getLogger(__name__)
 
 ENERGY_SCAN_WARN_THRESHOLD = 0.75 * 255
+GRACE_PERIOD_AFTER_START = 60  # 60 seconds of period after plugin start to allow NCP to recover
 
 
 async def _load_db(self) -> None:
@@ -173,20 +174,18 @@ def connection_lost(self, exc: Exception) -> None:
         return
 
     if isinstance(exc, NcpFailure) and exc.code == NcpResetCode.ERROR_EXCEEDED_MAXIMUM_ACK_TIMEOUT_COUNT:
-        connection_lost_error(
-            self,
-            "NCP reset due to exceeded maximum ACK timeout count, plugin restart required"
-        )
+        # it seems that the NCP is stuck, but during a plugin restart, it usally recovery, so let's give a grace period
+        if time.time() < (self.start_time + GRACE_PERIOD_AFTER_START):
+            LOGGER.warning("+ Connection to the radio was lost, give time for recover ...")
+            return
+
+        connection_lost_error( self, "NCP reset due to exceeded maximum ACK timeout count, plugin restart required" )
+
     elif isinstance(exc, (serial.serialutil.SerialException, asyncio.CancelledError)):
-        connection_lost_error(
-            self,
-            "Connection to coordinator lost, SerialError or CancelledError, plugin restart required"
-        )
+        connection_lost_error( self, "Connection to coordinator lost, SerialError or CancelledError, plugin restart required" )
+
     elif isinstance(exc, (TimeoutError, asyncio.TimeoutError)):
-        connection_lost_error(
-            self,
-            "Connection to coordinator lost, TimeOut, plugin restart required"
-        )
+        connection_lost_error( self, "Connection to coordinator lost, TimeOut, plugin restart required" )
 
 
 def connection_lost_error(self, message: str) -> None:
