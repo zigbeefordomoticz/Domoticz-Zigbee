@@ -110,7 +110,7 @@ def zigpy_thread_function(self):
     if self.pluginconf.pluginConf.get("EventLoopInstrumentation", False):
         zigpy_loop.set_debug(True)
 
-    self.log.logging("TransportZigpy", "Log", f"zigpyThread EventLoop: {zigpy_loop}")
+    self.log.logging("TransportZigpy", "Debug", f"zigpyThread EventLoop: {zigpy_loop}")
 
     try:
         # Run the Zigpy task asynchronously

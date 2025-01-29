@@ -22,7 +22,7 @@ from Modules.domoticzAbstractLayer import domoticz_connection
 
 def startWebServer(self):
 
-    self.logging("Status", "WebUI thread started")
+    self.logging("Debug", "WebUI thread started")
     if self.server_thread:
         self.logging("Error", "start_logging_thread - Looks like logging_thread already started !!!")
         return
@@ -367,9 +367,9 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
         self.server.settimeout(10)
 
         if context:
-            self.logging("Status", f"WebUI Server started on SSL https://{host}:{port}")
+            self.logging("Log", f"WebUI Server started on SSL https://{host}:{port}")
         else:
-            self.logging("Status", f"WebUI Server started on {host}:{port}")
+            self.logging("Log", f"WebUI Server started on {host}:{port}")
 
         server_loop(self, )
 

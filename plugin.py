@@ -34,7 +34,7 @@
             </options>
         </param>
         <param field="Mode2" label="Coordinator Type" width="75px" required="true" default="None">
-            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Wifi, Ethernet) or Socket. In case of Socket use the IP to put the remote ip</description>
+            <description><br/>Select the Radio Coordinator connection type : USB, DIN, Pi, TCPIP (Zigate Wifi, Ethernet) or Socket (ZNP and ESZP via Ethernet). In case of Socket use the IP to put the remote ip</description>
             <options>
                 <option label="USB"   value="USB" />
                 <option label="DIN"   value="DIN" />
@@ -47,10 +47,10 @@
         <param field="SerialPort" label="Serial Port" width="200px" required="true" default="/dev/ttyUSB0" >
             <description><br/>Set the serial port where the Radio Coordinator is connected (/dev/ttyUSB0 for example)</description>
         </param>
-        <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0">
+        <param field="Address" label="Socket or TCPIP IP" width="150px" required="true" default="0.0.0.0">
             <description><br/>Set the Radio Coordinator IP adresse (0.0.0.0 if not applicable)</description>
         </param>
-        <param field="Port" label="Port" width="75px" required="true" default="9999">
+        <param field="Port" label="Socket or TCPIP Port" width="75px" required="true" default="9999">
             <description><br/>Set the Radio Coordinator Port (9999 by default)</description>
         </param>
         <param field="Mode5" label="API base url <br/>(http://username:password@127.0.0.1:port)" width="250px" default="http://127.0.0.1:8080" required="true" >
@@ -58,7 +58,7 @@
                 <br/><h3>Domoticz Json/API base ( http://127.0.0.1:8080 should be the default)</h3>In case Domoticz listen to an other port change 8080 by what ever is the port, 
                 and if you have setup an authentication please add the username:password</description>
         </param>
-        <param field="Mode4" label="WebUI port" width="150px" required="true" default="9440" >
+        <param field="Mode4" label="Plugin WebUI port" width="150px" required="true" default="9440" >
             <description><br/><h3>Plugin definition</h3><br/>Set the plugin Dashboard port (9440 by default, None to disable)<br/>
             In case you would like to restrict the interface and to secure the access to the dashboard , you can also add use the format IP:PORT ( 127.0.0.1:9440)<br/> 
             To access the plugin WebUI, replace your DomoticZ port (8080 by default) in your web adress by your WebUI port (9440 by default).</description>
@@ -309,14 +309,14 @@ class BasePlugin:
         initialize_device_settings(self)
 
     def onStart(self):
-        Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin.")
+        Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
 
         # Print PYTHONPATH if set
         pythonpath = os.getenv('PYTHONPATH')
         if pythonpath:
-            Domoticz.Status(f"PYTHONPATH is set to: {pythonpath}")
+            Domoticz.Log(f"PYTHONPATH is set to: {pythonpath}")
         else:
-            Domoticz.Status("PYTHONPATH is not set")
+            Domoticz.Log("PYTHONPATH is not set")
         
         _current_python_version_major = sys.version_info.major
         _current_python_version_minor = sys.version_info.minor
@@ -397,7 +397,7 @@ class BasePlugin:
             return
 
         # Import PluginConf.txt
-        Domoticz.Log("Z4D loading PluginConf")
+        Domoticz.Status("Z4D is loading configuration settings")
         self.pluginconf = PluginConf(
             self.zigbee_communication, self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor, Parameters["HomeFolder"], self.HardwareID
         )
@@ -409,13 +409,15 @@ class BasePlugin:
             self.internet_available = is_internet_available()
 
         if self.internet_available and self.pluginconf.pluginConf.get("CheckRequirements", True):
+            Domoticz.Status("Z4D is checking the python modules requirements")
             if check_requirements( Parameters[ "HomeFolder"] ):
                 # Check_requirements() return True if requirements not meet.
                 self.onStop()
                 return
 
         # Create Domoticz Sub menu
-        if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"] :
+        if "DomoticzCustomMenu" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["DomoticzCustomMenu"]:
+            Domoticz.Status("Z4D is installing the WebUI in the domoticz custom menu")
             install_Z4D_to_domoticz_custom_ui( )
 
         # Create the adminStatusWidget if needed
@@ -436,7 +438,7 @@ class BasePlugin:
             self.log.openLogFile()
 
         # We can use from now the self.log.logging()
-        self.log.logging( "Plugin", "Status", "Z4D starting with %s-%s" % (
+        self.log.logging( "Plugin", "Status", "Z4D is starting with %s-%s" % (
             self.pluginParameters["PluginBranch"], self.pluginParameters["PluginVersion"]), )
 
         if ( _current_python_version_major , _current_python_version_minor) <= ( 3, 7):
@@ -451,6 +453,7 @@ class BasePlugin:
  
         self.StartupFolder = Parameters["StartupFolder"]
 
+        Domoticz.Status("Z4D is initializing a connection to Domoticz Api/Json")
         self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( 
             Parameters["Mode5"], 
             self.pluginconf, 
@@ -479,7 +482,7 @@ class BasePlugin:
             and ( self.pluginconf.pluginConf["forceZigpy_noasyncio"] or self.domoticzdb_Hardware.multiinstances_z4d_plugin_instance())
             ):
             # https://github.com/python/cpython/issues/91375
-            self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Enable workaround")
+            self.log.logging("Plugin", "Status", "Z4D Multi-instances detected. Enabling 'asyncio' workaround")
             sys.modules["_asyncio"] = None
 
         if "LogLevel" not in self.pluginParameters:
@@ -501,7 +504,7 @@ class BasePlugin:
         self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
 
         self.adminWidgets = AdminWidgets( self.log , self.pluginconf, self.pluginParameters, self.ListOfDomoticzWidget, Devices, self.ListOfDevices, self.HardwareID, self.IEEE2NWK)
-        self.adminWidgets.updateStatusWidget(Devices, "Starting up")
+        self.adminWidgets.updateStatusWidget(Devices, "Z4D Starting up")
 
         self.DeviceListName = "DeviceList-" + str(Parameters["HardwareID"]) + ".txt"
         self.log.logging("Plugin", "Log", "Z4D Database found: %s" % self.DeviceListName)
@@ -526,7 +529,7 @@ class BasePlugin:
         load_list_of_domoticz_widget(self, Devices)
         
         # Import DeviceList.txt Filename is : DeviceListName
-        self.log.logging("Plugin", "Status", "Z4D loading database")
+        self.log.logging("Plugin", "Status", "Z4D loading plugin database")
         if LoadDeviceList(self) == "Failed":
 
             self.log.logging("Plugin", "Error", "Something wennt wrong during the import of Load of Devices ...")
@@ -563,8 +566,6 @@ class BasePlugin:
         # Create Statistics object
         self.statistics = TransportStatistics(self.pluginconf, self.log, self.zigbee_communication)
 
-        # Connect to Coordinator only when all initialisation are properly done.
-        self.log.logging("Plugin", "Status", "Z4D configured to use transport mode: %s" % self.transport)
 
         if len(self.ListOfDevices) > 10:
             # Don't do Energy Scan if too many objects, as Energy scan don't make the difference between real traffic and noise
@@ -597,7 +598,7 @@ class BasePlugin:
             usage_percentage = round(((255 - free_slots) / 255) * 100, 1)
             self.log.logging("Plugin", "Status", f"Z4D Widgets usage is at {usage_percentage}% ({free_slots} units free)")
 
-        self.log.logging("Plugin", "Status", f"Z4D started with {framework_status}")
+        self.log.logging("Plugin", "Status", f"Z4D started with Domoticz {framework_status}")
 
         self.busy = False
 
@@ -1000,6 +1001,9 @@ def retreive_zigpy_topology_data(self):
 
 
 def start_zigbee_transport(self ):
+    # Connect to Coordinator only when all initialisation are properly done.
+    self.log.logging("Plugin", "Status", F"Z4D is starting transport Mode: '{self.transport}' Serial: '{Parameters['SerialPort']}' IP: '{Parameters['Address']} 'Port: '{Parameters['Port']}'")
+
     
     if self.transport in ("USB", "DIN", "V2-DIN", "V2-USB"):
         check_python_modules_version( self  )
@@ -1356,7 +1360,7 @@ def zigateInit_Phase3(self):
         self.iaszonemgt.setZigateIEEE(self.ControllerIEEE)
     
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
-        self.log.logging("Plugin", "Status", "Sending Analytics information. (disable the MatomoOptIn parameter to stop this)")
+        self.log.logging("Plugin", "Status", "Z4D sending analytics information. (if you need to disable, disable the MatomoOptIn parameter via the WebUI - Settings)")
         matomo_plugin_started(self)
 
     if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
@@ -1425,7 +1429,7 @@ def start_OTAManagement(self, homefolder):
 
 def start_web_server(self, webserver_port, webserver_homefolder):
  
-    self.log.logging("Plugin", "Status", "Z4D starts WebUI")
+    self.log.logging("Plugin", "Status", f"Z4D starting WebUI on port {webserver_port}" )
     self.webserver = WebServer(
         self.zigbee_communication,
         self.ControllerData,
@@ -1659,7 +1663,6 @@ def install_Z4D_to_domoticz_custom_ui():
 
     _startupfolder = pathlib.Path( Parameters['StartupFolder'] )
     custom_file = _startupfolder / 'www/templates' / f"{Parameters['Name']}.html"
-    Domoticz.Log(f"Installing plugin custom page {custom_file} ")
 
     try:
         with open( custom_file, "wt") as z4d_html_file:

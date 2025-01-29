@@ -136,6 +136,7 @@ class LoggingManagement:
         import sys
         
         if not self.pluginconf.pluginConf["enablePluginLogging"]:
+            domoticz_status_api("Z4D Plugin logs are redirected to Domoticz log")
             return
 
         _pluginlogs = Path(self.pluginconf.pluginConf["pluginLogs"] )
@@ -147,7 +148,7 @@ class LoggingManagement:
             _backupCount = int(self.pluginconf.pluginConf["loggingBackupCount"])
         if "loggingMaxMegaBytes" in self.pluginconf.pluginConf:
             _maxBytes = int(self.pluginconf.pluginConf["loggingMaxMegaBytes"]) * 1024 * 1024
-        domoticz_status_api("Please watch plugin log into %s" % _logfilename)
+        domoticz_status_api("Z4D Please watch plugin logs into %s" % _logfilename)
         if _maxBytes == 0:
             # Enable TimedRotating
             if sys.version_info >= (3, 9):
@@ -464,7 +465,7 @@ def loggingWriteErrorHistory(self):
 
 
 def start_logging_thread(self):
-    domoticz_log_api("start_logging_thread")
+    #domoticz_log_api("start_logging_thread")
     if self.logging_thread:
         domoticz_error_api("start_logging_thread - Looks like logging_thread already started !!!")
         return
@@ -478,7 +479,7 @@ def start_logging_thread(self):
 
 def logging_thread(self):
 
-    domoticz_log_api("logging_thread - listening")
+    #domoticz_log_api("logging_thread - listening")
     while self.running:
         # We loop until self.running is set to False,
         # which indicate plugin shutdown
