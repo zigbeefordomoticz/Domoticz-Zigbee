@@ -18,6 +18,11 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+##           - stable7.1.021 (2025.3) 
+
+- [Technical] - Improve plugin resiliance when connection with coordintaor is lost.
+- [Technical] - Support network based coordinator over Etherneth such as SMLIGHT - ADAPTATEUR USB ETHERNET POE ZIGBEE 3.0
+
 ## Jan. 2025 - stable7.1.020 (2025.2) - hot fix
 
 - [Issue] - fix issue which was preventing upgrading from 018 to later version
