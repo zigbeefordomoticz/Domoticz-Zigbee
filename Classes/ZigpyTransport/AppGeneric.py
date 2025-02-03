@@ -384,8 +384,8 @@ def packet_received(
     self.log.logging("TransportZigpy", "Debug", "packet_received Sender: %s frame for plugin: %s" % (sender, plugin_frame))
     self.callBackFunction(plugin_frame)
 
-    if cluster == 0x0019:
-        # Do not forward message to zigpy, it will be managed by Z4D plugin
+    if profile == 0x0104 and sender != "0000":
+        # ZCL Message sent by a device to the coordinator. Leave the answer to the plugin and not zigpy layer
         return
 
     super(type(self),self).packet_received(packet)
