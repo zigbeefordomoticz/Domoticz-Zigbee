@@ -16,126 +16,162 @@ from Zigbee.encoder_tools import decode_endian_data, encapsulate_plugin_frame
 from Zigbee.zclRawCommands import zcl_raw_default_response
 
 
-def is_duplicate_zcl_frame(self, Nwkid, ClusterId, Sqn):
+def is_duplicate_zcl_frame(self, nwkid, cluster_id, sqn, default_response_disable=False):
+    """
+    Checks if a given Zigbee ZCL frame is a duplicate based on its sequence number.
 
-    if self.zigbee_communication != "zigpy":
-        return False
-    if Nwkid not in self.ListOfDevices:
-        return False
+    This function prevents processing duplicate ZCL frames by maintaining a history 
+    of received sequence numbers per cluster for each device.
 
-    if "ZCL-IN-SQN" not in self.ListOfDevices[ Nwkid ]:
-        self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"] = {}
-    if ClusterId not in self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"]:
-        self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ] = Sqn
-        return False
-    if Sqn == self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ]:
-        return True
-    self.ListOfDevices[ Nwkid ]["ZCL-IN-SQN"][ ClusterId ] = Sqn
-    return False
-    
-def zcl_decoders(self, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Payload, frame):
-    # We are receiving an ZCL message
+    Parameters:
+        nwkid (int): The network ID of the Zigbee device.
+        cluster_id (int): The cluster ID associated with the frame.
+        sqn (int): The sequence number of the received frame.
+        default_response_disable (bool): Flag indicating if default response is disabled.
 
-    fcf = Payload[:2]
-    default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data = retreive_cmd_payload_from_8002(Payload)
-    if self.zigbee_communication == "zigpy" and not default_response_disable:
-        if self.pluginconf.pluginConf["enableZclDuplicatecheck"] and self.zigbee_communication == "zigpy" and is_duplicate_zcl_frame(self, SrcNwkId, ClusterId, Sqn):
-            self.log.logging("zclDecoder", "Debug", "zcl_decoders Duplicate frame [%s] %s" %(Sqn, Payload))
-            return None
-
-        # Let's answer , Since 7.1.12 zigpy is handling the default response, so no need to do it
-        #self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" %(Command))
-        #zcl_raw_default_response( self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf )
-
-    self.log.logging("zclDecoder", "Debug", "zcl_decoders Zcl.ddr: %s GlobalCommand: %s Sqn: %s ManufCode: %s Command: %s Data: %s Payload: %s" %(
-        default_response_disable, GlobalCommand, Sqn, ManufacturerCode, Command, Data, Payload))
-
-    if GlobalCommand:
-        return buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data )
-
-    if ClusterId == "0003":
-        return buildframe_for_cluster_0003(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
-
-    if ClusterId == "0004":
-        return buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
-
-    if ClusterId == "0005" and Command == "05":  # Only Recall Scene supported
-        return buildframe_for_cluster_0005(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data )
-
-    if ClusterId == "0006":
-        return buildframe_80x5_message(self, "8095", frame, Sqn, SrcNwkId, SrcEndPoint,TargetEp, ClusterId, ManufacturerCode, Command, Data)
-
-    if ClusterId == "0008":
-        return buildframe_80x5_message(self, "8085", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
-
-    if ClusterId == "0019":
-        return buildframe_for_cluster_0019(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
-        
-    if ClusterId == "0020":
-        return buildframe_for_cluster_0020(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
-
-    if ClusterId == "0500" and is_direction_to_server(fcf) and Command == "00":
-        return buildframe_0400_cmd(self, "0400", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
-
-    if ClusterId == "0500" and is_direction_to_client(fcf) and Command == "00":
-        return buildframe_8401_cmd(self, "8401", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
-
-    if ClusterId == "0500" and is_direction_to_client(fcf) and Command == "01":
-        return buildframe_8400_cmd(self, "8400", frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Command, Data)
-    
-    if ClusterId == "0501":
-        # Handle in inRawAPS
-        return frame
-
-    # Do not log a message as this will be handled by the inRawAPS and delegated. (or we don't know those)
+    Returns:
+        bool: True if the frame is a duplicate, False otherwise.
+    """
     if (
-        ClusterId in ( "ef00", "ff00")
-        or ( ClusterId == "fc00" and ManufacturerCode == "100b")
-        or ( ClusterId == "ffac" and ManufacturerCode == "113c")
-        or ( ClusterId == "e001" )  # TS011F Plug does every 24 hours
-        ):
+        self.zigbee_communication != "zigpy" 
+        or nwkid not in self.ListOfDevices 
+        or not default_response_disable
+        or not self.pluginconf.pluginConf.get("enableZclDuplicatecheck", False)
+    ):
+        return False  # No duplicate check needed
+
+    zcl_sqn = self.ListOfDevices.setdefault(nwkid, {}).setdefault("ZCL-IN-SQN", {})
+
+    if sqn == zcl_sqn.get(cluster_id):
+        return True  # Duplicate frame detected
+
+    zcl_sqn[cluster_id] = sqn  # Store new sequence number
+    return False
+
+
+def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload, frame):
+    """
+    Decodes ZCL messages, checks for duplicates, and processes specific cluster commands.
+
+    Parameters:
+        src_nwk_id (int): Source network ID.
+        src_endpoint (int): Source endpoint.
+        target_ep (int): Target endpoint.
+        cluster_id (str): Cluster ID of the message.
+        payload (str): The payload data of the message.
+        frame (str): The frame data of the message.
+
+    Returns:
+        Processed frame data or None if the frame is a duplicate or unhandled.
+    """
+    
+    # Note: Since zigpy 7.1.12 handles the default response, no need to send it manually
+    # self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" % Command)
+    # zcl_raw_default_response(self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf)
+
+    fcf = payload[:2]  # Extract frame control field
+    default_response_disable, global_command, sqn, manufacturer_code, command, data = retreive_cmd_payload_from_8002(payload)
+
+    # Check for duplicate ZCL frames
+    if is_duplicate_zcl_frame(self, src_nwk_id, cluster_id, sqn, default_response_disable):
+        self.log.logging("zclDecoder", "Debug", f"Duplicate frame [{sqn}] {payload}")
+        return None
+
+    # Log ZCL message details
+    self.log.logging("zclDecoder", "Debug",
+                     f"Zcl.ddr: {default_response_disable} GlobalCommand: {global_command} "
+                     f"Sqn: {sqn} ManufCode: {manufacturer_code} Command: {command} Data: {data} Payload: {payload}")
+
+    if global_command:
+        return buildframe_foundation_cluster(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data)
+
+    cluster_builders = {
+        "0003": buildframe_for_cluster_0003,
+        "0004": buildframe_for_cluster_0004,
+        "0019": buildframe_for_cluster_0019,
+        "0020": buildframe_for_cluster_0020,
+        "0005": lambda *args: buildframe_for_cluster_0005(*args) if command == "05" else None,  # Only Recall Scene supported
+        "0006": lambda *args: buildframe_80x5_message(self, "8095", *args),
+        "0008": lambda *args: buildframe_80x5_message(self, "8085", *args),
+        "0501": lambda *_: frame  # Handle in inRawAPS
+    }
+
+    if cluster_id in cluster_builders:
+        return cluster_builders[cluster_id](self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data)
+
+    if cluster_id == "0500":
+        if is_direction_to_server(fcf) and command == "00":
+            return buildframe_0400_cmd(self, "0400", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
+        if is_direction_to_client(fcf):
+            if command == "00":
+                return buildframe_8401_cmd(self, "8401", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
+            if command == "01":
+                return buildframe_8400_cmd(self, "8400", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
+
+    # Frames handled by inRawAPS (no logging needed)
+    if (
+        cluster_id in {"ef00", "ff00"}
+        or (cluster_id == "fc00" and manufacturer_code == "100b")
+        or (cluster_id == "ffac" and manufacturer_code == "113c")
+        or cluster_id == "e001"  # TS011F Plug does this every 24 hours
+    ):
         return frame
 
-    self.log.logging( "zclDecoder", "Log", "zcl_decoders Unknown Command: %s NwkId: %s Ep: %s Cluster: %s Payload: %s - GlobalCommand: %s, Sqn: %s, ManufacturerCode: %s" % (
-        Command, SrcNwkId, SrcEndPoint, ClusterId, Data, GlobalCommand, Sqn, ManufacturerCode, ), )
+    # Log unknown commands
+    self.log.logging("zclDecoder", "Log",
+                     f"Unknown Command: {command} NwkId: {src_nwk_id} Ep: {src_endpoint} Cluster: {cluster_id} "
+                     f"Payload: {data} - GlobalCommand: {global_command}, Sqn: {sqn}, ManufacturerCode: {manufacturer_code}")
 
     return frame
 
 
-def buildframe_foundation_cluster( self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data ):
-    self.log.logging("zclDecoder", "Debug", "zcl_decoders Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(Sqn, 16), Sqn, ManufacturerCode, Command, Data))
-    if Command == "00":  # Read Attribute
-        return buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data)
+def buildframe_foundation_cluster(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data):
+    """
+    Processes ZCL foundation cluster commands and builds the appropriate frame.
 
-    if Command == "01":  # Read Attribute response
-        return buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+    Parameters:
+        command (str): The ZCL command identifier.
+        frame (str): The full message frame.
+        sqn (str): Sequence number.
+        src_nwk_id (int): Source network ID.
+        src_endpoint (int): Source endpoint.
+        target_ep (int): Target endpoint.
+        cluster_id (str): Cluster ID.
+        manufacturer_code (str): Manufacturer code.
+        data (str): Payload data.
 
-    if Command == "02":  # Write Attributes
-        return buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data)
+    Returns:
+        Processed frame data or None if not handled.
+    """
 
-    if Command == "04":  # Write Attribute response
-        return buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+    self.log.logging("zclDecoder", "Debug",
+                     f"buildframe_foundation_cluster Sqn: {int(sqn, 16)}/{sqn} ManufCode: {manufacturer_code} "
+                     f"Command: {command} Data: {data}")
 
-    if Command == "06":  # Configure Reporting
-        return frame
+    command_handlers = {
+        "00": buildframe_read_attribute_request,  # Read Attribute
+        "01": buildframe_read_attribute_response,  # Read Attribute Response
+        "02": buildframe_write_attribute_request,  # Write Attributes
+        "04": buildframe_write_attribute_response,  # Write Attribute Response
+        "07": buildframe_configure_reporting_response,  # Configure Reporting Response
+        "09": buildframe_read_configure_reporting_response,  # Read Configure Reporting Response
+        "0a": buildframe_report_attribute_response,  # Report Attributes
+        "0d": buildframe_discover_attribute_response,  # Discover Attributes Response
+    }
 
-    if Command == "07":  # Configure Reporting Response
-        return buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
-    
-    if Command == '09':  # Read Configure Reporting Response
-        return buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+    if command in command_handlers:
+        return command_handlers[command](self, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data)
 
-    if Command == "0a":  # Report attributes
-        return buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+    if command in {"06", "0b"}:  # Configure Reporting & Default Response
+        return frame  # No specific processing required
 
-    if Command == "0b":  # Default Response
-        return frame
+    self.log.logging("zclDecoder", "Debug",
+                     f"buildframe_foundation_cluster unhandled command Sqn: {int(sqn, 16)}/{sqn} ManufCode: {manufacturer_code} "
+                     f"Command: {command} Data: {data}")
 
-    if Command == "0d":  # Discover Attributes Response
-        return buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+    return None  # Unhandled command
 
-
-def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     # 01 0000f0010023020023030021040023050021060030070021080021090021fdff21
     self.log.logging("zclDecoder", "Debug", "buildframe_discover_attribute_response - Data: %s" % Data)
     
@@ -212,7 +248,7 @@ def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
     return encapsulate_plugin_frame("0110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+def buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     # This is based on assumption that we only Write 1 attribute at a time
@@ -220,7 +256,7 @@ def buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint,
     return encapsulate_plugin_frame("8110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     nbAttribute = 0
@@ -252,7 +288,7 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
     return encapsulate_plugin_frame("8100", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId,ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_report_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
@@ -277,7 +313,7 @@ def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint
     return encapsulate_plugin_frame("8102", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     if len(Data) == 2:
@@ -303,7 +339,7 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
     return encapsulate_plugin_frame("8120", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
+def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - %s %s %s Data: %s" % (
         SrcNwkId, SrcEndPoint, ClusterId, Data))
   
