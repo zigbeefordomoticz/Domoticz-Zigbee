@@ -42,6 +42,7 @@ CONNECTED_OUTLET = "Connected outlet"
 MOBILE_OUTLET = "Mobile outlet"
 SHUTTER_SWITCH = "Shutter switch with neutral"
 MICROMODULE_SWITCH = "Micromodule switch"
+LEGRAND_FILPILOTE = "LegrandFilPilote"
 
 ENABLE_LED_IN_DARK = "EnableLedInDark"
 ENABLE_DIMMER = "EnableDimmer"
@@ -58,8 +59,7 @@ LEGRAND_CLUSTER_FC01 = {
 }
 
 LEGRAND_REFRESH_TIME = 10815   # (3 * 3600) + 15
-LEGRAND_COMMAND_NAME = ("LegrandFilPilote",ENABLE_LED_IN_DARK, ENABLE_DIMMER, ENABLE_LED_IF_ON, ENABLE_LED_SHUTTER)
-
+LEGRAND_COMMAND_NAME = (LEGRAND_FILPILOTE, ENABLE_LED_IN_DARK, ENABLE_DIMMER, ENABLE_LED_IF_ON, ENABLE_LED_SHUTTER)
 
 GENERIC_LEGRAND_CLUSTER_FC01 = {
     "DIMMER": { ENABLE_LED_IN_DARK: "0001", ENABLE_DIMMER: "0000", ENABLE_LED_IF_ON: "0002"},
@@ -141,7 +141,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         assign_group_membership_to_legrand_remote(self, srcNWKID, srcEp, leftright)
 
     elif ClusterID == "fc01" and Command == "0a":
-        LegrandGroupMemberShip = Data[0:4]
+        LegrandGroupMemberShip = Data[:4]
         _ieee = "%08x" % struct.unpack("q", struct.pack(">Q", int(Data[4:20], 16)))[0]  # IEEE of Device
         _code = Data[20:24]
         self.log.logging(
@@ -152,7 +152,7 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
         status = "00"
         # _ieee = '%08x' %struct.unpack('q',struct.pack('>Q',int(ieee,16)))[0]
         _ieee = "4fa5820000740400"  # IEEE du Dimmer
-        sendFC01Command(self, Sqn, srcNWKID, srcEp, ClusterID, "10", status + _code + _ieee)
+        send_legrand_command(self, Sqn, srcNWKID, srcEp, ClusterID, "10", status + _code + _ieee)
 
 
 def assign_group_membership_to_legrand_remote(self, NwkId, Ep, leftright=None):
@@ -168,9 +168,9 @@ def assign_group_membership_to_legrand_remote(self, NwkId, Ep, leftright=None):
     if groupid:
         LegrandGroupMemberShip = "%04x" % struct.unpack("H", struct.pack(">H", int(groupid, 16)))[0]
         if leftright:
-            sendFC01Command(self, sqn, NwkId, Ep, "fc01", cmd, LegrandGroupMemberShip + leftright)
+            send_legrand_command(self, sqn, NwkId, Ep, "fc01", cmd, LegrandGroupMemberShip + leftright)
         else:
-            sendFC01Command(self, sqn, NwkId, Ep, "fc01", cmd, LegrandGroupMemberShip)
+            send_legrand_command(self, sqn, NwkId, Ep, "fc01", cmd, LegrandGroupMemberShip)
 
 
 def get_groupid_for_remote(self, NwkId, Ep, leftright):
@@ -202,18 +202,18 @@ def get_groupid_for_remote(self, NwkId, Ep, leftright):
     return GroupId
 
 
-def sendFC01Command(self, sqn, nwkid, ep, ClusterID, cmd, data):
+def send_legrand_command(self, sqn, nwkid, ep, cluster_id, cmd, data):
     """
-    Handles the FC01 command processing for Legrand devices.
+    Handles the command processing for Legrand devices.
     """
 
-    self.log.logging("Legrand", "Debug", f"sendFC01Command Cmd: {cmd} Data: {data}")
+    self.log.logging("Legrand", "Debug", f"send_legrand_command Cmd: {cmd} Data: {data}")
 
     if cmd == "00":
         # Read Attribute received
         attribute = data[2:4] + data[:2]
 
-        if ClusterID == "0000" and attribute == "f000":
+        if cluster_id == "0000" and attribute == "f000":
             # Respond to Time Of Operation
             cmd = "01"
             status = "00"
@@ -225,8 +225,7 @@ def sendFC01Command(self, sqn, nwkid, ep, ClusterID, cmd, data):
             formatted_time = "".join(plugin_time_of_operation[i:i + 2] for i in (6, 4, 0, 2))
 
             payload = f"{cluster_frame}{sqn}{cmd}{attribute}{status}{data_type}{formatted_time}"
-            self._send_raw_aps_request(nwkid, ep, ClusterID, payload)
-
+            _send_raw_aps_request(self, nwkid, ep, cluster_id, payload)
         return
 
     if cmd in {"08", "0c"}:
@@ -234,8 +233,7 @@ def sendFC01Command(self, sqn, nwkid, ep, ClusterID, cmd, data):
         manuf_spec = "2110"  # Legrand Manufacturer Specific: 0x1021
         cluster_frame = "1d"  # Cluster Specific, Manufacturer Specific
         payload = f"{cluster_frame}{manuf_spec}{sqn}{cmd}{data}"
-        _send_raw_aps_request(self, nwkid, ep, ClusterID, payload)
-
+        _send_raw_aps_request(self, nwkid, ep, cluster_id, payload)
         return
 
 
@@ -322,7 +320,7 @@ def legrand_fc01(self, nwkid, command, on_off):
 
     self.log.logging("Legrand", "Debug", f"legrand_fc01 Nwkid: {nwkid} Cmd: {command} OnOff: {on_off}", nwkid)
 
-    LEGRAND_COMMAND_NAME = ( "LegrandFilPilote", ENABLE_LED_IN_DARK, ENABLE_DIMMER, ENABLE_LED_IF_ON, ENABLE_LED_SHUTTER )
+    LEGRAND_COMMAND_NAME = ( LEGRAND_FILPILOTE, ENABLE_LED_IN_DARK, ENABLE_DIMMER, ENABLE_LED_IF_ON, ENABLE_LED_SHUTTER )
 
     # Validate command
     if command not in LEGRAND_COMMAND_NAME:
@@ -330,6 +328,8 @@ def legrand_fc01(self, nwkid, command, on_off):
         return
 
     legrand_features = get_legrand_cluster_fc01_features(self, nwkid)
+    self.log.logging("Legrand", "Debug", f"legrand_fc01 Avaliable features {legrand_features}", nwkid)
+
     if not legrand_features:
         self.log.logging("Legrand", "Error", f"{nwkid} is not an Legrand known model: {model_name}", nwkid)
         return
@@ -339,6 +339,7 @@ def legrand_fc01(self, nwkid, command, on_off):
         legrand_data.setdefault(cmd, 0xFF)
 
     if command not in legrand_features:
+        self.log.logging("Legrand", "Debug", f"legrand_fc01 Nwkid: {nwkid} Cmd: {command} not in legrand_features: {legrand_features}", nwkid)
         return
 
     # Process the command
@@ -388,7 +389,8 @@ def _process_legrand_command(self, command, on_off):
     """
     # Define a dictionary for commands that use the same data format (Bool for on/off)
     bool_commands = {ENABLE_LED_IN_DARK, ENABLE_LED_SHUTTER, ENABLE_LED_IF_ON}
-    
+    self.log.logging( "Legrand", "Debug", f"_process_legrand_command {command} with value {on_off}", )
+
     # Handle Bool-type commands
     if command in bool_commands:
         data_type = "10"  # Bool
@@ -528,7 +530,8 @@ def legrand_Dimmer_by_nwkid(self, NwkId, on_off):
         return
 
     # Ensure the model is a dimmer
-    if device["Model"] not in (DIMMER_WO_NEUTRAL,):
+    if ENABLE_DIMMER not in get_legrand_cluster_fc01_features(self, NwkId):
+        self.log.logging("Legrand", "Error", f"legrand_Dimmer_by_nwkid - NwkId: {NwkId} OnOff: {on_off} but not a dimmer {get_legrand_cluster_fc01_features(self, NwkId)}", NwkId)
         return
 
     # Initialize Legrand data if missing
@@ -549,7 +552,10 @@ def legrand_Dimmer_by_nwkid(self, NwkId, on_off):
         del legrand_data[ENABLE_DIMMER]
 
         # Enable or disable dimmer functionality
-        (legrand_dimmer_enable if on_off else legrand_dimmer_disable)(self, NwkId)
+        if on_off:
+            legrand_dimmer_enable(self, NwkId)
+        else:
+            legrand_dimmer_disable(self, NwkId)
 
     else:
         # For older Zigate versions, set the dimmer state to 0 before sending the command
