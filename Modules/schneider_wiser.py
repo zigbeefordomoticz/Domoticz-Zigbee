@@ -486,13 +486,15 @@ def schneider_hact_heater_type(self, key, type_heater):
     # bit 1 - mode of heater : 0 is conventional heater, 1 is fip enabled heater
     # for validation , 0x80 is added to he value retrived from HACT
 
-    current_value = current_value - 0x80
+    current_value -= 0x80
     if type_heater == "conventional":
         new_value = current_value & 0xFD  # we set the bit 1 to 0 and dont touch the other ones . logical_AND 1111 1101
-    elif type_heater == "fip":
+    elif type_heater in ("fip", "FIP"):
         new_value = current_value | 2  # we set the bit 1 to 1 and dont touch the other ones . logical_OR 0000 0010
-    elif type_heater == "registration":
+    else:
+        # Registration or unknown mode
         new_value = current_value
+
 
     new_value = new_value & 3  # cleanup, to remove everything else but the last two bits
     if (current_value == new_value) and not force_update:  # no change, let's get out
