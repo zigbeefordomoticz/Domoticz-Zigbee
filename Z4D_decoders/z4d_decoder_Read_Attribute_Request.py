@@ -8,6 +8,7 @@ from Modules.schneider_wiser import wiser_read_attribute_request
 from Modules.timeServer import timeserver_read_attribute_request
 from Modules.tools import (timeStamped, updLQI, updSQN,
                            zigpy_plugin_sanity_check)
+from Modules.schneider_wiser import schneider_multiple_read_attribute_request
 
 
 def Decode0100(self, Devices, MsgData, MsgLQI):
@@ -37,9 +38,10 @@ def Decode0100(self, Devices, MsgData, MsgLQI):
             handle_unknow_device(self, MsgSrcAddr)
         return
 
+    model_name = self.ListOfDevices[MsgSrcAddr].get('Model', '')
+    manufacturer_name = self.ListOfDevices[MsgSrcAddr].get('Manufacturer Name', '')
     # Handle Livolo specific devices
-    if ('Model' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001') or \
-       ('Manufacturer Name' in self.ListOfDevices[MsgSrcAddr] and self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == 'LIVOLO'):
+    if (model_name == 'TI0001') or (manufacturer_name == 'LIVOLO'):
         self.log.logging('Input', 'Debug', 'Decode0100 - (Livolo) Read Attribute Request %s/%s Data %s' % (MsgSrcAddr, MsgSrcEp, MsgData))
         livolo_read_attribute_request(self, Devices, MsgSrcAddr, MsgSrcEp, MsgData[30:32])
         return
@@ -61,6 +63,11 @@ def Decode0100(self, Devices, MsgData, MsgLQI):
     # Retrieve manufacturer details
     manuf = self.ListOfDevices[MsgSrcAddr].get('Manufacturer', '')
     manuf_name = self.ListOfDevices[MsgSrcAddr].get('Manufacturer Name', '')
+
+    if MsgClusterId == '0201' and (manuf == '105e' or manuf_name in ('Schneider', 'Schneider Electric')) and int(nbAttribute) > 1:
+        self.log.logging('Input', 'Debug', 'Decode0100 - specific ---- schneider_multiple_read_attribute_request')
+        schneider_multiple_read_attribute_request(self, Devices, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgSqn, MsgClusterId, MsgManufSpec, MsgManufCode, MsgData[24:], nbAttribute)  
+        return
 
     # Iterate over attributes in the message data
     for idx in range(24, len(MsgData), 4):
