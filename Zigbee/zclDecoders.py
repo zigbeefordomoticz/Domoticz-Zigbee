@@ -94,7 +94,7 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
 
     if cluster_id == "0004":
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
-        return buildframe_for_cluster_0004(self, fcf, disable_default_response, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data )
+        return buildframe_for_cluster_0004(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data )
 
     if cluster_id == "0005" and command == "05":  # Only Recall Scene supported
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
