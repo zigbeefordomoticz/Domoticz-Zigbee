@@ -1421,8 +1421,8 @@ def is_domoticz_db_available(self):
 def get_device_nickname(self, NwkId=None, Ieee=None):
     if Ieee:
         NwkId = self.IEEE2NWK.get(Ieee, NwkId)
-
-    return self.ListOfDevices.get(NwkId, {}).get('ZDeviceName', "")
+    nickname = self.ListOfDevices.get(NwkId, {}).get('ZDeviceName', "")
+    return "0x%s" %NwkId if nickname == "" else nickname
 
     
 def extract_info_from_8085(MsgData):
