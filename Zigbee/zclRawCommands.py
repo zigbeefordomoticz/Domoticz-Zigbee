@@ -141,41 +141,43 @@ def zcl_raw_write_attributeNoResponse(self, nwkid, EPin, EPout, cluster, manuf_i
 
     raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, ackIsDisabled=ackIsDisabled)
     return sqn
-    
-def zcl_raw_default_response( self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
-    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}")
 
-    if "disableZCLDefaultResponse" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["disableZCLDefaultResponse"]:
+
+def zcl_raw_default_response(self, nwkid, EPin, EPout, cluster, response_to_command, sqn, command_status="00", manufcode=None, orig_fcf=None):
+    self.log.logging(
+        "zclCommand", "Debug",
+        f"zcl_raw_default_response {nwkid} {EPin} {EPout} {cluster} {sqn} for command {response_to_command} with Status: {command_status}, Manufcode: {manufcode}, OrigFCF: {orig_fcf}"
+    )
+
+    if self.pluginconf.pluginConf.get("disableZCLDefaultResponse"):
         return
-    zcl_command_formated_logging( self, "Default_Response (Raw)", nwkid, EPout, cluster, response_to_command, sqn, command_status, manufcode, orig_fcf)
-    
+
+    zcl_command_formated_logging(self, "Default_Response (Raw)", nwkid, EPout, cluster, response_to_command, sqn, command_status, manufcode, orig_fcf)
+
     if response_to_command == "0b":
-        # Never return a default response to a default response
-        return
-    cmd = "0b"
-    if orig_fcf is None:
-        frame_control_field = "%02x" %0b00000000  # The frame type sub-field SHALL be set to indicate a global command (0b00)
-    else:
-        # The frame control field SHALL be specified as follows. The frame type sub-field SHALL be set to indicate
-        # a global command (0b00). The manufacturer specific sub-field SHALL be set to 0 if this command is being
-        # sent in response to a command defined for any cluster in the ZCL or 1 if this command is being sent in
-        # response to a manufacturer specific command.
-        zcl_frame_type = "0"
-        zcl_manuf_specific = "1" if (manufcode and manufcode != "0000") else "0"
-        zcl_target_direction = "%02x" %( not fcf_direction( orig_fcf ))
-        zcl_disabled_default = "1"
-        frame_control_field = build_fcf(zcl_frame_type, zcl_manuf_specific, zcl_target_direction, zcl_disabled_default)
-    
-    payload = frame_control_field 
+        return  # Never return a default response to a default response
+
+    frame_control_field = (
+        build_fcf("0", "1" if manufcode and manufcode != "0000" else "0", "%02x" % (not fcf_direction(orig_fcf)), "1")
+        if orig_fcf is not None else "%02x" % 0b00000000
+    )
+
+    payload = frame_control_field
     if manufcode and manufcode != "0000":
         payload += manufcode[2:4] + manufcode[:2]
-    payload += sqn + cmd + response_to_command + command_status
-    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}")
 
-    raw_APS_request(self, nwkid, EPout, cluster, "0104", payload, zigpyzqn=sqn, zigate_ep=EPin, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid))
+    payload += sqn + "0b" + response_to_command + command_status
+
+    self.log.logging("zclCommand", "Log", f"zcl_raw_default_response ==== payload: {payload}")
+
+    raw_APS_request(
+        self, nwkid, EPout, cluster, "0104", payload,
+        zigpyzqn=sqn, zigate_ep=EPin, highpriority=True, ackIsDisabled=is_ack_tobe_disabled(self, nwkid)
+    )
+
     return sqn
-    
-    
+
+
 # Configure Reporting
 def zcl_raw_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, ackIsDisabled=DEFAULT_ACK_MODE):
     self.log.logging("zclCommand", "Debug", "zcl_raw_configure_reporting_requestv2 %s %s %s %s %s %s %s %s" % (nwkid, epin, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration))

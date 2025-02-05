@@ -49,6 +49,13 @@ def is_duplicate_zcl_frame(self, nwkid, cluster_id, sqn, default_response_disabl
     return False
 
 
+def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufcode, status="00"):
+    self.log.logging("zclDecoder", "Debug",f"zcl_decoders default response disabled ? {disable_default_response} for command {command}")
+    if not disable_default_response:
+        self.log.logging("zclDecoder", "Debug",f"zcl_decoders sending a default response {disable_default_response} for command {command}")
+        zcl_raw_default_response(self, src_nwk_id, ZIGATE_EP, src_endpoint, cluster_id, command, sqn, command_status="00", manufcode=manufcode, orig_fcf=fcf)
+
+
 def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload, frame):
     """
     Decodes ZCL messages, checks for duplicates, and processes specific cluster commands.
@@ -65,56 +72,77 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
         Processed frame data or None if the frame is a duplicate or unhandled.
     """
     
-    # Note: Since zigpy 7.1.12 handles the default response, no need to send it manually
-    # self.log.logging("zclDecoder", "Debug", "zcl_decoders sending a default response for command %s" % Command)
-    # zcl_raw_default_response(self, SrcNwkId, ZIGATE_EP, SrcEndPoint, ClusterId, Command, Sqn, command_status="00", manufcode=ManufacturerCode, orig_fcf=fcf)
-
     fcf = payload[:2]  # Extract frame control field
-    default_response_disable, global_command, sqn, manufacturer_code, command, data = retreive_cmd_payload_from_8002(payload)
+    disable_default_response, global_command, sqn, manufacturer_code, command, data = retreive_cmd_payload_from_8002(payload)
 
     # Check for duplicate ZCL frames
-    if is_duplicate_zcl_frame(self, src_nwk_id, cluster_id, sqn, default_response_disable):
+    if is_duplicate_zcl_frame(self, src_nwk_id, cluster_id, sqn, disable_default_response):
         self.log.logging("zclDecoder", "Debug", f"Duplicate frame [{sqn}] {payload}")
         return None
 
     # Log ZCL message details
     self.log.logging("zclDecoder", "Debug",
-                     f"Zcl.ddr: {default_response_disable} GlobalCommand: {global_command} "
+                     f"Zcl.ddr: {disable_default_response} GlobalCommand: {global_command} "
                      f"Sqn: {sqn} ManufCode: {manufacturer_code} Command: {command} Data: {data} Payload: {payload}")
 
     if global_command:
-        return buildframe_foundation_cluster(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data)
+        return buildframe_foundation_cluster(self, fcf, disable_default_response, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data)
 
-    cluster_builders = {
-        "0003": buildframe_for_cluster_0003,
-        "0004": buildframe_for_cluster_0004,
-        "0019": buildframe_for_cluster_0019,
-        "0020": buildframe_for_cluster_0020,
-        "0005": lambda *args: buildframe_for_cluster_0005(*args) if command == "05" else None,  # Only Recall Scene supported
-        "0006": lambda *args: buildframe_80x5_message(self, "8095", *args),
-        "0008": lambda *args: buildframe_80x5_message(self, "8085", *args),
-        "0501": lambda *_: frame  # Handle in inRawAPS
-    }
+    if cluster_id == "0003":
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_for_cluster_0003(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data )
 
-    if cluster_id in cluster_builders:
-        return cluster_builders[cluster_id](self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data)
+    if cluster_id == "0004":
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_for_cluster_0004(self, fcf, disable_default_response, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data )
 
-    if cluster_id == "0500":
-        if is_direction_to_server(fcf) and command == "00":
-            return buildframe_0400_cmd(self, "0400", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
-        if is_direction_to_client(fcf):
-            if command == "00":
-                return buildframe_8401_cmd(self, "8401", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
-            if command == "01":
-                return buildframe_8400_cmd(self, "8400", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
+    if cluster_id == "0005" and command == "05":  # Only Recall Scene supported
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_for_cluster_0005(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data )
+
+    if cluster_id == "0006":
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_80x5_message(self, "8095", frame, sqn, src_nwk_id, src_endpoint,target_ep, cluster_id, manufacturer_code, command, data)
+
+    if cluster_id == "0008":
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_80x5_message(self, "8085", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
+
+    if cluster_id == "0019":
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_for_cluster_0019(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data)
+
+    if cluster_id == "0020":
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_for_cluster_0020(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, data)
+
+    if cluster_id == "0500" and is_direction_to_server(fcf) and command == "00":
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_0400_cmd(self, "0400", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
+
+    if cluster_id == "0500" and is_direction_to_client(fcf) and command == "00":
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_8401_cmd(self, "8401", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
+
+    if cluster_id == "0500" and is_direction_to_client(fcf) and command == "01":
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return buildframe_8400_cmd(self, "8400", frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, command, data)
+
+    if cluster_id == "0501":
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        # Handle in inRawAPS
+        return frame
 
     # Frames handled by inRawAPS (no logging needed)
     if (
         cluster_id in {"ef00", "ff00"}
+        or (command == "80" and cluster_id == "0201" and manufacturer_code == "105e")  # Schneider Electric
         or (cluster_id == "fc00" and manufacturer_code == "100b")
         or (cluster_id == "ffac" and manufacturer_code == "113c")
         or cluster_id == "e001"  # TS011F Plug does this every 24 hours
     ):
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+
         return frame
 
     # Log unknown commands
@@ -125,7 +153,7 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
     return frame
 
 
-def buildframe_foundation_cluster(self, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data):
+def buildframe_foundation_cluster(self, fcf, disable_default_response, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data):
     """
     Processes ZCL foundation cluster commands and builds the appropriate frame.
 
@@ -149,15 +177,18 @@ def buildframe_foundation_cluster(self, command, frame, sqn, src_nwk_id, src_end
                      f"Command: {command} Data: {data}")
 
     command_handlers = {
-        "00": buildframe_read_attribute_request,  # Read Attribute
-        "01": buildframe_read_attribute_response,  # Read Attribute Response
-        "02": buildframe_write_attribute_request,  # Write Attributes
-        "04": buildframe_write_attribute_response,  # Write Attribute Response
-        "07": buildframe_configure_reporting_response,  # Configure Reporting Response
-        "09": buildframe_read_configure_reporting_response,  # Read Configure Reporting Response
-        "0a": buildframe_report_attribute_response,  # Report Attributes
-        "0d": buildframe_discover_attribute_response,  # Discover Attributes Response
+        "00": foundation_cluster_read_attribute_request,  # Read Attribute
+        "01": foundation_cluster_read_attribute_response,  # Read Attribute Response
+        "02": foundation_cluster_write_attribute_request,  # Write Attributes
+        "04": foundation_cluster_write_attribute_response,  # Write Attribute Response
+        "07": foundation_cluster_configure_reporting_response,  # Configure Reporting Response
+        "09": foundation_cluster_read_configure_reporting_response,  # Read Configure Reporting Response
+        "0a": foundation_cluster_report_attribute_response,  # Report Attributes
+        "0d": foundation_cluster_discover_attribute_response,  # Discover Attributes Response
     }
+
+    if command not in { "00", }:
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
 
     if command in command_handlers:
         return command_handlers[command](self, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data)
@@ -171,7 +202,7 @@ def buildframe_foundation_cluster(self, command, frame, sqn, src_nwk_id, src_end
 
     return None  # Unhandled command
 
-def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     # 01 0000f0010023020023030021040023050021060030070021080021090021fdff21
     self.log.logging("zclDecoder", "Debug", "buildframe_discover_attribute_response - Data: %s" % Data)
     
@@ -190,7 +221,7 @@ def buildframe_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoi
     return encapsulate_plugin_frame("8140", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
     if len(Data) % 4 != 0:
         self.log.logging("zclDecoder", "Debug", "Most Likely Livolo Frame : %s (%s)" % (Data, len(Data)))
@@ -215,7 +246,7 @@ def buildframe_read_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, T
     return encapsulate_plugin_frame("0100", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_request - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     ManufSpec = "00"
@@ -248,7 +279,7 @@ def buildframe_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
     return encapsulate_plugin_frame("0110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     # This is based on assumption that we only Write 1 attribute at a time
@@ -256,7 +287,7 @@ def buildframe_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint,
     return encapsulate_plugin_frame("8110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     nbAttribute = 0
@@ -288,7 +319,7 @@ def buildframe_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, 
     return encapsulate_plugin_frame("8100", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId,ManufacturerCode, Data):
+def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId,ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_report_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
@@ -313,7 +344,7 @@ def buildframe_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint
     return encapsulate_plugin_frame("8102", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     if len(Data) == 2:
@@ -339,7 +370,7 @@ def buildframe_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPo
     return encapsulate_plugin_frame("8120", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def buildframe_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - %s %s %s Data: %s" % (
         SrcNwkId, SrcEndPoint, ClusterId, Data))
   
@@ -411,10 +442,13 @@ def buildframe_for_cluster_0003(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint
 def buildframe_for_cluster_0004(self, Command, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     if Command == "00":
         return buildframe_8060_add_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+
     if Command == "01":
         return buildframe_8061_check_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+
     if Command == "02":
         return buildframe8062_look_for_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
+
     if Command == "03":
         return buildframe8063_remove_group_member_ship_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data)
 
