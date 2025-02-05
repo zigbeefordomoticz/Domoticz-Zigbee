@@ -168,7 +168,7 @@ def zcl_raw_default_response(self, nwkid, EPin, EPout, cluster, response_to_comm
 
     payload += sqn + "0b" + response_to_command + command_status
 
-    self.log.logging("zclCommand", "Log", f"zcl_raw_default_response ==== payload: {payload}")
+    self.log.logging("zclCommand", "Debug", f"zcl_raw_default_response ==== payload: {payload}")
 
     raw_APS_request(
         self, nwkid, EPout, cluster, "0104", payload,
