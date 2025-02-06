@@ -1091,7 +1091,7 @@ def schneider_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst_
         self.log.logging("Schneider", "Debug", f"schneider_multiple_read_attribute_request - nwkid {nwkid} attribute {attribute}", nwkid)
 
         # Handle different cluster IDs and attributes
-        zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, nwkid, attribute)
+        zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, src_ep, nwkid, attribute)
         self.log.logging("Schneider", "Debug", f"schneider_multiple_read_attribute_request -  response {data_type} {data}", nwkid)
         if payload is None:
             payload = cluster_frame + sqn + cmd
@@ -1119,7 +1119,7 @@ def schneider_thermostat_answer_attribute_request(self, Devices, nwkid, EPout, c
     cmd = "01"
     status = "00"
 
-    zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, nwkid, attribute)
+    zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, nwkid, EPout, attribute)
 
     if data == data_type == "":
         # Unable to find a match
@@ -1134,7 +1134,7 @@ def schneider_thermostat_answer_attribute_request(self, Devices, nwkid, EPout, c
     raw_APS_request( self, nwkid, EPout, cluster_id, "0104", payload, zigate_ep=zigate_ep, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
 
 
-def get_response_data_for_schneider_thermostat_request(self, Devices, NWKID, attr):
+def get_response_data_for_schneider_thermostat_request(self, Devices, NWKID, EPout, attr):
 
     model_name = self.ListOfDevices[NWKID].get("Model", "")
 
@@ -1656,47 +1656,6 @@ def schneider_find_attribute(self, NWKID, EP, ClusterID, attr):
         self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = 0
 
     return self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr]
-
-
-#def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID, attr, defaultValue, newValue=None):
-#    self.log.logging("Schneider", "Debug", f"schneider_find_attribute_or_set NWKID:{NWKID}, EP:{EP}, ClusterID:{ClusterID}, attr:{attr} ,defaultValue:{defaultValue}, newValue:{newValue}", NWKID)
-#
-#    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "iTRV",):
-#        EP = '01'   # Indeed iTRV request on Ep 0x02, but we store all on Ep 0x01
-#
-#    found = newValue
-#    if EP not in self.ListOfDevices[NWKID]["Ep"]:
-#        self.ListOfDevices[NWKID]["Ep"][EP] = {}
-#    if ClusterID not in self.ListOfDevices[NWKID]["Ep"][EP]:
-#        self.ListOfDevices[NWKID]["Ep"][EP][ClusterID] = {}
-#    if not isinstance(self.ListOfDevices[NWKID]["Ep"][EP][ClusterID], dict):
-#        self.ListOfDevices[NWKID]["Ep"][EP][ClusterID] = {}
-#    if attr not in self.ListOfDevices[NWKID]["Ep"][EP][ClusterID]:
-#        self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = {}
-#    if (
-#        "Ep" in self.ListOfDevices[NWKID]
-#        and EP in self.ListOfDevices[NWKID]["Ep"]
-#        and ClusterID in self.ListOfDevices[NWKID]["Ep"][EP]
-#        and attr in self.ListOfDevices[NWKID]["Ep"][EP][ClusterID]
-#    ):
-#        if self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] == {}:
-#            if newValue is None:
-#                self.log.logging("Schneider", "Debug", f"schneider_find_attribute_or_set: could not find value, setting default value  {defaultValue}", NWKID)
-#
-#                self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = defaultValue
-#            else:
-#                self.log.logging("Schneider", "Debug", f"schneider_find_attribute_or_set: could not find value, setting new value  {newValue}", NWKID)
-#
-#                self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = newValue
-#
-#        self.log.logging("Schneider", "Debug", f'schneider_find_attribute_or_set : found value {self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr]}', NWKID)
-#
-#        found = self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr]
-#        if newValue is not None:
-#            self.log.logging("Schneider", "Debug", f"schneider_find_attribute_or_set : setting new value {newValue} on {NWKID}/{EP}", NWKID)
-#
-#            self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = newValue
-#    return found
 
 
 def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID, attr, defaultValue, newValue=None):
