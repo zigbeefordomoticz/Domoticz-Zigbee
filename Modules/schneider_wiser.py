@@ -65,6 +65,12 @@ TIMESTAMP_MODE = "TimeStamp Mode"
 TEMPERATURE_CLUSTER = "0402"
 TEMPERATURE_VALUE = "0000"
 
+SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER = "ff23"
+PILOT_MODE_ATTRIBUTE = "0031"
+PILOT_MODE_DATA_TYPE = "30"
+DEFAULT_PILOT_MODE = 0x01  # Conventional mode (relay)
+FIP_PILOT_MODE = 0x03
+
 FAST_REPORTING_INTERVAL = 14 * 60  # 14 minutes
 
 CONFIG_REPORTING_FAST = {
@@ -536,6 +542,17 @@ def wiser_set_thermostat_default_temp(self, Devices, key, EPout):  # 0x0201/0x00
 
 
 def schneider_hact_heater_type(self, key, type_heater):
+
+    model_name = self.ListOfDevices[key].get("Model")
+    if model_name == "EH-ZB-HACT":
+        return schneider_hact_heater_type_wiser1(self, key, type_heater)
+    if model_name == "CCTFR6700":
+        return schneider_hact_heater_type_wiser2(self, key, type_heater)
+    _context = {"Error code": "SCHN0004", "model_name": model_name, 'type_heater': type_heater}
+    self.log.logging( "Schneider", "Error", "schneider_hact_heater_type - %s unknown model %s" % (key, model_name), key, _context )
+
+
+def schneider_hact_heater_type_wiser1(self, key, type_heater):
     """[summary]
          allows to set the heater in "fip" or "conventional" mode
          by default it will set it to fip mode
@@ -603,6 +620,47 @@ def schneider_hact_heater_type(self, key, type_heater):
         self.ListOfDevices[key]["Ep"][EPout][THERMOSTAT_CLUSTER]["e011"] = "%02x" % (new_value + 0x80)
 
 
+
+def schneider_hact_heater_type_wiser2(self, nwkid: str, type_heater: str) -> None:
+    """
+    Configure the pilot mode for a Schneider HACT heater via Wiser2.
+
+    Parameters:
+        self: Reference to the class instance.
+        key (str): Unique identifier for the device.
+        type_heater (str): Type of heater mode to set. Accepted values:
+            - "conventional": Sets pilot mode to 0x01 (Relay mode).
+            - "fip" or "FIP": Sets pilot mode to 0x03 (FIP mode).
+    """
+
+    # Determine the correct pilot mode
+    pilot_mode = FIP_PILOT_MODE if type_heater.lower() == "fip" else DEFAULT_PILOT_MODE
+    self.log.logging( "Schneider", "Debug", "Determined pilot_mode: %s", hex(pilot_mode), nwkid=nwkid )
+
+    # Write the attribute to configure the heater
+    self.log.logging(
+        "Schneider",
+        "Debug",
+        "Writing attribute with params: CLUSTER=%s, MANUF_ID=%s, ATTRIBUTE=%s, DATA_TYPE=%s, VALUE=%s",
+        SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER, SCHNEIDER_MANUF_ID, PILOT_MODE_ATTRIBUTE, PILOT_MODE_DATA_TYPE, hex(pilot_mode),
+        nwkid=nwkid)
+
+    write_attribute(
+        self,
+        nwkid,
+        ZIGATE_EP,
+        "01",
+        SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER,
+        SCHNEIDER_MANUF_ID,
+        "01",
+        PILOT_MODE_ATTRIBUTE,
+        PILOT_MODE_DATA_TYPE,
+        pilot_mode,
+        ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
+    )
+    self.log.logging( "Schneider", "Debug", "Attribute write completed for key=%s", nwkid )
+
+
 def schneider_hact_heating_mode(self, key, mode):
     """
     Allow switching between "setpoint" and "FIP" mode
@@ -641,7 +699,7 @@ def schneider_hact_heating_mode(self, key, mode):
     if mode == "setpoint":
         new_value = current_value & 0xFE  # we set the bit 0 to 0 and dont touch the other ones . logical_AND 1111 1110
 
-    elif mode == "FIP":
+    elif mode in ("fip", "FIP"):
         new_value = current_value | 1  # we set the bit 0 to 1 and dont touch the other ones . logical_OR 0000 0001
 
     new_value = new_value & 3  # cleanup, to remove everything else but the last two bits
