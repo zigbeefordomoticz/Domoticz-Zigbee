@@ -187,7 +187,7 @@ def buildframe_foundation_cluster(self, fcf, disable_default_response, command, 
         "0d": foundation_cluster_discover_attribute_response,  # Discover Attributes Response
     }
 
-    if command not in { "00", }:
+    if command not in { "00", "02" }:
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
 
     if command in command_handlers:
