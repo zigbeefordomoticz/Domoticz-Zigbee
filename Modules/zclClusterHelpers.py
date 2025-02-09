@@ -87,28 +87,28 @@ def decode_xiaomi_float(attribute_value):
     return struct.unpack("f", struct.pack("I", int(attribute_value, 16)))[0]
 
 
-def _decode_caracter_string( attribute_value, handleErrors):
+def _decode_caracter_string( attribute_value, handle_errors):
     """
     Decode a hexadecimal string representing a character string.
 
     Args:
         attribute_value (str): The hexadecimal representation of the character string.
-        handleErrors (bool): Whether to handle decoding errors. If True, returns an empty string on error. 
+        handle_errors (bool): Whether to handle decoding errors. If True, returns an empty string on error.
                              If False, attempts to decode and replaces invalid characters with '?'.
 
     Returns:
         str: The decoded character string.
 
     Notes:
-        - If handleErrors is False, invalid characters are replaced with '?' in the decoded string.
+        - If handle_errors is False, invalid characters are replaced with '?' in the decoded string.
         - Any trailing null bytes ('\x00') are stripped from the decoded string.
     """
 
     try:
         decode = binascii.unhexlify(attribute_value).decode("utf-8")
         
-    except Exception as e:
-        if handleErrors:  # If there is an error we force the result to '' This is used for 0x0000/0x0005
+    except Exception as _:
+        if handle_errors:  # If there is an error we force the result to '' This is used for 0x0000/0x0005
             decode = ""
         else:
             decode = binascii.unhexlify(attribute_value).decode("utf-8", errors="ignore").replace("\x00", "").strip()
@@ -116,14 +116,14 @@ def _decode_caracter_string( attribute_value, handleErrors):
     return decode.strip("\x00").strip() if decode else ""
 
 
-def decoding_attribute_data( AttType, attribute_value, handleErrors=False):
+def decoding_attribute_data( attribute_type, attribute_value, handle_errors=False):
     """
     Decode attribute values based on their attribute type.
 
     Args:
-        AttType (str): The hexadecimal representation of the attribute type.
+        attribute_type (str): The hexadecimal representation of the attribute type.
         attribute_value (str): The hexadecimal representation of the attribute value.
-        handleErrors (bool, optional): Whether to handle errors gracefully. Defaults to False.
+        handle_errors (bool, optional): Whether to handle errors gracefully. Defaults to False.
 
     Returns:
         Any: The decoded attribute value.
@@ -155,16 +155,16 @@ def decoding_attribute_data( AttType, attribute_value, handleErrors=False):
         0x39: decode_xiaomi_float
     }
    
-    if int(AttType, 16) == 0x00:
+    if int(attribute_type, 16) == 0x00:
         return attribute_value
 
-    if int(AttType, 16) in decoding_functions:
-        return decoding_functions[int(AttType, 16)](attribute_value)
+    if int(attribute_type, 16) in decoding_functions:
+        return decoding_functions[int(attribute_type, 16)](attribute_value)
     
-    if int(AttType, 16) in {0x41, 0x42, 0x43}:  # CharacterString
-        return _decode_caracter_string( attribute_value, handleErrors)
+    if int(attribute_type, 16) in {0x41, 0x42, 0x43}:  # CharacterString
+        return _decode_caracter_string( attribute_value, handle_errors)
     
-    if int(AttType, 16) in { 0xe1, 0xe2, 0xe3 } :  # UTC
+    if int(attribute_type, 16) in { 0xe1, 0xe2, 0xe3 } :  # UTC
         return struct.unpack("i", struct.pack("I", int(attribute_value[:8], 16)))[0]
     return attribute_value
 
@@ -307,174 +307,259 @@ def _build_model_name( self, nwkid, modelName):
     return check_found_plugin_model( self, modelName, manufacturer_name=manufacturer_name, manufacturer_code=manuf_code, device_id=zdevice_id)
 
 
-def _is_device_already_provisioned(self, nwkid, modelName):
-    # sourcery skip: extract-method, use-next
-    device_info = self.ListOfDevices.get(nwkid, {})
+def _is_device_already_provisioned(self, nwk_id, model_name):
+    """
+    Checks if the device is already provisioned in the system. If the device exists, updates its model name and configuration if necessary.
+
+    Parameters:
+        nwk_id (str): The network ID of the device.
+        model_name (str): The model name of the device.
+
+    Returns:
+        bool: True if the device is provisioned (or updated), False otherwise.
+    """
+
+    # Get device info using the network ID
+    device_info = self.ListOfDevices.get(nwk_id, {})
+
+    # If the device has no endpoints, it's not provisioned
     if "Ep" not in device_info:
         return False
 
-    for iterEp, ep_info in device_info["Ep"].items():
+    # Iterate over each endpoint to check the device's provisioning status
+    for ep_id, ep_info in device_info["Ep"].items():
         if "ClusterType" in ep_info:
-            self.log.logging(["ZclClusters", "Pairing"], "Debug", "%s / %s - %s is already provisioned in Domoticz" % (nwkid, iterEp, modelName), nwkid)
-            if device_info.get("Model") == modelName:
+            self.log.logging(
+                ["ZclClusters", "Pairing"],
+                "Debug",
+                f"{nwk_id} / {ep_id} - {model_name} is already provisioned in Domoticz",
+                nwk_id
+            )
+
+            # If the device model matches, it's considered provisioned
+            if device_info.get("Model") == model_name:
                 return True
 
-            self.log.logging(["ZclClusters", "Pairing"], "Debug", "%s / %s - Update Model Name %s" % (nwkid, iterEp, modelName), nwkid)
-            device_info["Model"] = modelName
-            if modelName in self.DeviceConf:
-                device_info["ConfigSource"] = "DeviceConf"
-                device_info["Param"] = dict(self.DeviceConf[modelName].get("Param", {}))
-                device_info["CertifiedDevice"] = True
-            return True
-    return False
-   
+            # Log the model name update and apply the new configuration
+            self.log.logging(
+                ["ZclClusters", "Pairing"],
+                "Debug",
+                f"{nwk_id} / {ep_id} - Update Model Name {model_name}",
+                nwk_id
+            )
 
-def _cleanup_model_name( MsgAttType, value):
-    # Stop at the first Null
-    idx = 0
-    for _ in value:
-        if value[idx : idx + 2] == "00":
-            break
-        idx += 2
-    AttrModelName = decoding_attribute_data( MsgAttType, value[:idx], handleErrors=True) 
-    modelName = AttrModelName.replace("/", "")
-    modelName = modelName.replace("  ", " ")
-    return modelName
+            # Update device information with the new model name
+            device_info["Model"] = model_name
+
+            # If the model is in DeviceConf, update its configuration
+            if model_name in self.DeviceConf:
+                device_info["ConfigSource"] = "DeviceConf"
+                device_info["Param"] = dict(self.DeviceConf[model_name].get("Param", {}))
+                device_info["CertifiedDevice"] = True
+
+            return True
+
+    # If no matching endpoint found or model was not updated
+    return False
+
+
+def _cleanup_model_name(msg_att_type, value):
+    """
+    Cleans up the model name by decoding attribute data and removing any null values or extra spaces.
+
+    Parameters:
+        msg_att_type (str): The message attribute type for decoding.
+        value (str): The raw attribute value as a string.
+
+    Returns:
+        str: The cleaned-up model name.
+    """
+
+    # Find the index of the first "00" (null) in the value string
+    null_index = value.find("00")
+
+    # If no "00" found, use the entire string
+    if null_index != -1:
+        value = value[:null_index]
+
+    # Decode the attribute data before processing
+    attr_model_name = decoding_attribute_data(msg_att_type, value, handle_errors=True)
+
+    return attr_model_name.replace("/", "").replace("  ", " ")
 
 
 # Used by Cluster 0x0702
-def compute_metering_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
-    # For Instant Power
-    # Device Configuration PowerMeteringMultiplier can overwrite the Multiplier
-    # Device Configuration PowerMeteringDivisor can overwrite the Divisor
-    # For Summation 
-    # Device Configuration SummationMeteringMultiplier can overwrite the Multiplier
-    # Device Configuration SummationMeteringDivisor can overwrite the Divisor
+def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id, raw_value):
+    """
+    Compute the metering consumption value based on device configuration.
+
+    Parameters:
+    - nwk_id (str): Network ID of the device.
+    - msg_src_ep (str): Source endpoint of the message.
+    - msg_cluster_id (str): Cluster ID of the message.
+    - msg_attr_id (str): Attribute ID indicating the type of data.
+    - raw_value (int or str): Raw metering value (hex string or integer).
+
+    Returns:
+    - float: Computed consumption value.
+    """
+
+    CONVERSION_FACTORS = {
+        "kW": 1000,  # Convert to Watts
+        "Unitless": 1  # No conversion needed
+    }
 
     if isinstance(raw_value, str):
-        raw_value = int(raw_value,16)
+        raw_value = int(raw_value, 16)
 
-    # Get the Unit, to see if we have Kilo, so then multiply by 1000.
-    unit = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "MeteringUnit")
-    if unit is None:
-        unit = ( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0300"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0300" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else "kW" )
-    if unit == "kW":
-        # Domoticz expect in Watts
-        conso = raw_value * 1000
-    elif unit == "Unitless":
-        conso = raw_value
-    else:
-        # We assumed default as kW
-        self.log.logging("ZclClusters", "Log", "compute_metering_conso - Unknown %s/%s assuming kW" %( 
-            NwkId, MsgSrcEp ), NwkId)
-        conso = raw_value * 1000
-        
-    multiplier = None
-    divisor = None
-    modelName = self.ListOfDevices[NwkId]["Model"] if "Model" in self.ListOfDevices[NwkId] else None
-    # Check if we have a Device configuration overwrite
-    if modelName and modelName not in ( '', {} ):
-        if MsgAttrID == "0400":
-            # Instant Power
-            multiplier = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "PowerMeteringMultiplier")
-            divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "PowerMeteringDivisor")
-        elif MsgAttrID == "0000":
-            # Summation
-            multiplier = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "SummationMeteringMultiplier")
-            divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "SummationMeteringDivisor")
+    # Retrieve device data
+    device_data = self.ListOfDevices.get(nwk_id, {})
+    model_name = device_data.get("Model")
+    cluster_data = device_data.get("Ep", {}).get(msg_src_ep, {}).get(msg_cluster_id, {})
 
-    if multiplier is None:
-        # By default Multiplier is assumed to be 1
-        multiplier = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0301"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0301" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
-    if divisor is None:
-        # By default Multiplier is assumed to be 1
-        divisor = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]["0302"] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and "0302" in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
-    # mulCheck if we have a Device configuration overwrite      
- 
-    conso = round( (( conso * multiplier ) / divisor ), 3)
-    self.log.logging("ZclClusters", "Debug", "compute_metering_conso - %s/%s Unit: %s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
-        NwkId, MsgSrcEp, unit, multiplier, divisor, raw_value, conso), NwkId)
-    if ( 
-        MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] 
-        and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] 
-        and ("0301" not in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] or "0302" not in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId]
-             or "0300" not in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId])
-    ):
-        ReadAttributeRequest_0702_multiplier_divisor(self,NwkId )
+    # Determine unit of measurement, defaulting to "kW"
+    unit = get_deviceconf_parameter_value(self, model_name, "MeteringUnit") or cluster_data.get("0300", "kW")
+
+    conso = raw_value * CONVERSION_FACTORS.get(unit, 1000)  # Default to kW conversion
+    if unit not in CONVERSION_FACTORS:
+        self.log.logging("ZclClusters", "Log", f"compute_metering_conso - Unknown {nwk_id}/{msg_src_ep} assuming kW", nwk_id)
+
+    # Check for device-specific multiplier/divisor overrides
+    multiplier, divisor = None, None
+    if model_name:
+        if msg_attr_id == "0400":
+            multiplier = get_deviceconf_parameter_value(self, model_name, "PowerMeteringMultiplier")
+            divisor = get_deviceconf_parameter_value(self, model_name, "PowerMeteringDivisor")
+        elif msg_attr_id == "0000":
+            multiplier = get_deviceconf_parameter_value(self, model_name, "SummationMeteringMultiplier")
+            divisor = get_deviceconf_parameter_value(self, model_name, "SummationMeteringDivisor")
+
+    # Retrieve default multiplier and divisor if not set
+    multiplier = int(cluster_data.get("0301", 1)) if multiplier is None else multiplier
+    divisor = int(cluster_data.get("0302", 1)) if divisor is None else divisor
+
+    # Compute final consumption value
+    conso = round((conso * multiplier) / divisor, 3)
+
+    self.log.logging("ZclClusters", "Debug",
+                     f"compute_metering_conso - {nwk_id}/{msg_src_ep} Unit: {unit}, "
+                     f"Multiplier: {multiplier}, Divisor: {divisor}, raw: {raw_value}, result: {conso}", nwk_id)
+
+    # Request missing attributes if they are not present
+    if any(key not in cluster_data for key in ["0300", "0301", "0302"]):
+        ReadAttributeRequest_0702_multiplier_divisor(self, nwk_id)
+
     return conso
 
 
-def compute_electrical_measurement_conso(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
-    # ActivePowerDivisor 	
-    # RMSVoltageDivisor
-    # RMSCurrentDivisor
-    self.log.logging("Cluster", "Debug", "compute_electrical_measurement_conso - %s/%s %s %s %s %s" % (
-        NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value, type(raw_value)), NwkId)
+def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_id, raw_value):
+    """
+    Computes electrical measurement consumption using device-specific multipliers and divisors.
 
-    MULTIPLIER_DIVISOR_MATRIX = {
-        '0505': { 'multiplier': '0600', 'divisor': '0601', 'custom': 'RMSVoltageDivisor'},    # RMSVoltage
-        '0508': { 'multiplier': '0602', 'divisor': '0603', 'custom': 'RMSCurrentDivisor'},    # RMSCurrent
-        '050b': { 'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},   # ActivePower
+    Parameters:
+        nwk_id (str): Network ID of the device.
+        src_ep (str): Source endpoint.
+        cluster_id (str): Cluster ID.
+        attr_id (str): Attribute ID indicating the measurement type.
+        raw_value (str | int): Raw measurement value, which may be a hex string.
+
+    Returns:
+        float: Computed consumption value, rounded to 3 decimal places.
+    """
+
+    self.log.logging("Cluster", "Debug",
+                     f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} {cluster_id} {attr_id} {raw_value} {type(raw_value)}",
+                     nwk_id)
+
+    MULTIPLIER_DIVISOR_MAPPING = {
+        '0505': {'multiplier': '0600', 'divisor': '0601', 'custom': 'RMSVoltageDivisor'},  # RMS Voltage
+        '0508': {'multiplier': '0602', 'divisor': '0603', 'custom': 'RMSCurrentDivisor'},  # RMS Current
+        '050b': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Active Power
     }
-    if isinstance( raw_value, str):
-        raw_value = int(raw_value,16)
+
+    if isinstance(raw_value, str):
+        raw_value = int(raw_value, 16)
+
+    # Return early if attr_id is not in the mapping
+    if attr_id not in MULTIPLIER_DIVISOR_MAPPING:
+        return None
 
     conso = raw_value
-    multiplier = None
-    divisor = None
+    mapping = MULTIPLIER_DIVISOR_MAPPING[attr_id]
+    custom_divisor_key = mapping['custom']
 
-    if MsgAttrID not in MULTIPLIER_DIVISOR_MATRIX:
-        return
-    
-    # Check if we have a Custom divisor, we assumed multiplier = 1
-    custom = MULTIPLIER_DIVISOR_MATRIX[ MsgAttrID ]['custom']
-    divisor = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], custom)
-    if divisor is not None and int(divisor ) != 0:
-        divisor = int(divisor )
-        self.log.logging("ZclClusters", "Debug", "compute_electrical_measurement_conso - %s/%s Custom Divisor: %s , raw: %s result: %s" % (
-            NwkId, MsgSrcEp, divisor, raw_value, conso), NwkId)
-        return round( (( conso ) / divisor ), 3)
-        
-    multiplier_attribute = MULTIPLIER_DIVISOR_MATRIX[ MsgAttrID ]['multiplier']
-    divisor_attribute = MULTIPLIER_DIVISOR_MATRIX[ MsgAttrID ]['divisor']
-        
-    # By default Multiplier is assumed to be 1
-    multiplier = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId][ multiplier_attribute ] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and multiplier_attribute in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
-    # By default Multiplier is assumed to be 1
-    divisor = int( self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId][ divisor_attribute ] if ( MsgSrcEp in self.ListOfDevices[NwkId]["Ep"] and MsgClusterId in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp] and divisor_attribute in self.ListOfDevices[NwkId]["Ep"][MsgSrcEp][MsgClusterId] ) else 1 )
+    # Retrieve device data
+    device_data = self.ListOfDevices.get(nwk_id, {})
+    model_name = device_data.get("Model")
+    cluster_data = device_data.get("Ep", {}).get(src_ep, {}).get(cluster_id, {})
 
-    # compute_electrical_measurement_conso Sometimes device Attributes are 0 Exemple Legrand Cable outlet Attributes 0600,0601,0602,0603 Default to 1 to avoid conso=0 or division by 0
-    if multiplier==0:
-        multiplier=1
-    if divisor==0:
-        divisor=1
-    conso = round( (( conso * multiplier ) / divisor ), 3)
+    # Check for a custom divisor in the device configuration
+    custom_divisor = get_deviceconf_parameter_value(self, model_name, custom_divisor_key)
+    if custom_divisor is not None and int(custom_divisor) != 0:
+        custom_divisor = int(custom_divisor)
+        self.log.logging("ZclClusters", "Debug",
+                         f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} Custom Divisor: {custom_divisor}, raw: {raw_value}, result: {conso}",
+                         nwk_id)
+        return round(conso / custom_divisor, 3)
 
-    self.log.logging("ZclClusters", "Debug", "compute_electrical_measurement_conso - %s/%s Multiplier: %s , Divisor: %s , raw: %s result: %s" % (
-        NwkId, MsgSrcEp, multiplier, divisor, raw_value, conso), NwkId)
+    # Retrieve multiplier and divisor from the device attribute list
+    multiplier = int(cluster_data.get(mapping['multiplier'], 1))
+    divisor = int(cluster_data.get(mapping['divisor'], 1))
+
+    # Ensure multiplier and divisor are not zero (e.g., for Legrand Cable outlets)
+    multiplier = multiplier or 1
+    divisor = divisor or 1
+
+    conso = round((conso * multiplier) / divisor, 3)
+
+    self.log.logging("ZclClusters", "Debug",
+                     f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} Multiplier: {multiplier}, Divisor: {divisor}, raw: {raw_value}, result: {conso}",
+                     nwk_id)
 
     return conso
 
+
 # Used by Cluster 0x0102
+def CurrentPositionLiftPercentage(self, nwk_id, src_ep, cluster_id, attr_id, raw_value):
+    """
+    Computes the corrected lift position percentage for a window covering device.
 
-def CurrentPositionLiftPercentage(self, NwkId, MsgSrcEp, MsgClusterId, MsgAttrID, raw_value):
-    if isinstance( raw_value, str):
-        raw_value = int(raw_value,16)
+    Parameters:
+        nwk_id (str): Network ID of the device.
+        src_ep (str): Source endpoint.
+        cluster_id (str): Cluster ID.
+        attr_id (str): Attribute ID.
+        raw_value (str | int): Raw lift percentage value, may be in hexadecimal format.
 
-    if get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "IgnoreWindowsCoverringValue50"):
-        # TS0302
-        return
-    
-    value = raw_value
-    if get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "WindowsCoverringInverted"):
-        # "TS0302", "1GANGSHUTTER1", "NHPBSHUTTER1"
-        value = 0 if raw_value > 100 else 100 - raw_value
-        
-    if "Param" in self.ListOfDevices[NwkId] and "netatmoInvertShutter" in self.ListOfDevices[NwkId]["Param"] and self.ListOfDevices[NwkId]["Param"]["netatmoInvertShutter"]:
-        # "Shutter switch with neutral"
-        value = 0 if raw_value > 100 else 100 - raw_value
+    Returns:
+        int: Corrected lift position percentage (0-100) or None if ignored.
+    """
 
-    self.log.logging( "ZclClusters", "Debug", "CurrentPositionLiftPercentage - %s - %s/%s - Shutter after correction value: %s" % (
-        MsgClusterId, NwkId, MsgSrcEp, value), NwkId, )
+    # Convert raw_value to an integer if it's a hex string
+    if isinstance(raw_value, str):
+        raw_value = int(raw_value, 16)
 
-    return value
+    # Retrieve device model
+    device_model = self.ListOfDevices.get(nwk_id, {}).get("Model", "")
+
+    # Check if the device configuration specifies to ignore the value ( for TS0302)
+    if get_deviceconf_parameter_value(self, device_model, "IgnoreWindowsCoverringValue50"):
+        return None
+
+    # Default lift percentage
+    lift_percentage = raw_value
+
+    # Check if the shutter position should be inverted (for Legrand "Shutter switch with neutral")
+    if get_deviceconf_parameter_value(self, device_model, "WindowsCoverringInverted"):
+        lift_percentage = 0 if raw_value > 100 else 100 - raw_value
+
+    # Check if Netatmo shutter inversion setting is enabled
+    if self.ListOfDevices.get(nwk_id, {}).get("Param", {}).get("netatmoInvertShutter", False):
+        lift_percentage = 0 if raw_value > 100 else 100 - raw_value
+
+    # Log the corrected shutter position
+    self.log.logging("ZclClusters", "Debug",
+                     f"CurrentPositionLiftPercentage - {cluster_id} - {nwk_id}/{src_ep} - Shutter after correction value: {lift_percentage}",
+                     nwk_id)
+
+    return lift_percentage
