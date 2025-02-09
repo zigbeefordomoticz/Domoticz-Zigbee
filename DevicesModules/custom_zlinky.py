@@ -126,7 +126,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
             ReadAttributeRequest_ff66(self, nwkid)
             zlinky_color_tarif(self, nwkid, new_color)
 
-    def known_op_tarifaire(op_tarifaire):
+    def _known_op_tarifaire(op_tarifaire):
         """ check that is a known and valid tarif"""
         # Set of valid prefixes
         valid_prefixes = {"TEMPO", "HC", "BBR", "EJP"}
@@ -135,7 +135,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         return any(op_tarifaire.startswith(prefix) for prefix in valid_prefixes)
 
     
-    def get_corresponding_color(self, attribut, op_tarifaire):
+    def _get_corresponding_color(self, attribut, op_tarifaire):
         """Determine the new color based on the attribute and tariff type, with support for extended prefixes."""
         # Determine the base tariff type (handle variations like BBRx, EJPx)
         if op_tarifaire.startswith("BBR"):
@@ -158,7 +158,6 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         # Return the corresponding color based on the base tariff type and attribute
         return color_map.get(base_tarifaire, {}).get(attribut)
 
-
     self.log.logging("ZLinky", "Debug", f"Cluster: {cluster}, Attribute: {attribut}, Value: {value}", nwkid)
 
     # Fetch current tariff
@@ -166,7 +165,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     self.log.logging("ZLinky", "Debug", f"OPTARIF: {op_tarifaire}", nwkid)
 
     # Exit early for unsupported tariffs
-    if op_tarifaire == "BASE" or not known_op_tarifaire(op_tarifaire):
+    if op_tarifaire == "BASE" or not _known_op_tarifaire(op_tarifaire):
         self.log.logging("ZLinky", "Log", f"get_corresponding_color - unknown op_tarifaire {op_tarifaire}", nwkid)
         return
 
@@ -183,7 +182,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     self.log.logging("ZLinky", "Debug", f"PrevValue: {previous_value}, PrevValueAttributColor: {previous_color_value} PrevColor: {previous_color}", nwkid)
 
     # Determine the current color
-    new_color = get_corresponding_color(attribut, op_tarifaire)
+    new_color = _get_corresponding_color(self, attribut, op_tarifaire)
     if not new_color:
         return
 
@@ -204,17 +203,19 @@ def zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut
         attribut: The attribute being processed.
         value: The current value of the attribute.
     """
-    def handle_attribut_value(attribut, store_keys=None, update_color=False, totalize=False, maj_ep=None):
+    def _handle_attribut_value(attribut, store_keys=None, update_color=False, totalize=False, maj_ep=None):
         """Helper function to handle attribute values."""
+
         if not value:
             return
-        self.log.logging("ZLinky", "Debug", f"Cluster0702 - {attribut} ZLinky_TIC Value: {value}", nwkid)
+        self.log.logging("ZLinky", "Debug", f"zlinky_cluster_metering - {attribut} ZLinky_TIC Value: {value}", nwkid)
         maj_ep = maj_ep or ep
-        MajDomoDevice(self, domoticz_devices, nwkid, maj_ep, cluster, str(value), Attribute_=attribut)
 
         if attribut == "0020":
             MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", value, Attribute_="0020")
             zlinky_color_tarif(self, nwkid, str(value))
+        else:
+            MajDomoDevice(self, domoticz_devices, nwkid, maj_ep, cluster, str(value), Attribute_=attribut)
 
         if update_color:
             zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster, attribut, value)
@@ -236,21 +237,21 @@ def zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut
 
     # Define attribute handlers
     attribute_handlers = {
-        "0000": lambda: handle_attribut_value("0000", ["BASE", "EAST"]),
-        "0001": lambda: handle_attribut_value("0001", ["EAIT"]),
-        "0020": lambda: handle_attribut_value("0020", ["PTEC"]),
-        "0100": lambda: handle_attribut_value("0100", ["EASF01", "HCHC", "EJPHN", "BBRHCJB"], update_color=True, totalize=True),
-        "0102": lambda: handle_attribut_value("0102", ["EASF02", "HCHP", "EJPHPM", "BBRHCJW"], update_color=True, totalize=True),
-        "0104": lambda: handle_attribut_value("0104", ["EASF03", "BBRHCJW"], update_color=True, totalize=True, maj_ep="f2"),
-        "0106": lambda: handle_attribut_value("0106", ["EASF04", "BBRHPJW"], update_color=True, totalize=True, maj_ep="f2"),
-        "0108": lambda: handle_attribut_value("0108", ["EASF05", "BBRHCJR"], update_color=True, totalize=True, maj_ep="f3"),
-        "010a": lambda: handle_attribut_value("010a", ["EASF06", "BBRHPJR"], update_color=True, totalize=True, maj_ep="f3"),
-        "010c": lambda: handle_attribut_value("010c", ["EASF07"]),
-        "010e": lambda: handle_attribut_value("010e", ["EASF08"]),
-        "0110": lambda: handle_attribut_value("0110", ["EASF09"]),
-        "0112": lambda: handle_attribut_value("0112", ["EASF10"]),
+        "0000": lambda: _handle_attribut_value("0000", ["BASE", "EAST"]),
+        "0001": lambda: _handle_attribut_value("0001", ["EAIT"]),
+        "0020": lambda: _handle_attribut_value("0020", ["PTEC"]),
+        "0100": lambda: _handle_attribut_value("0100", ["EASF01", "HCHC", "EJPHN", "BBRHCJB"], update_color=True, totalize=True),
+        "0102": lambda: _handle_attribut_value("0102", ["EASF02", "HCHP", "EJPHPM", "BBRHCJW"], update_color=True, totalize=True),
+        "0104": lambda: _handle_attribut_value("0104", ["EASF03", "BBRHCJW"], update_color=True, totalize=True, maj_ep="f2"),
+        "0106": lambda: _handle_attribut_value("0106", ["EASF04", "BBRHPJW"], update_color=True, totalize=True, maj_ep="f2"),
+        "0108": lambda: _handle_attribut_value("0108", ["EASF05", "BBRHCJR"], update_color=True, totalize=True, maj_ep="f3"),
+        "010a": lambda: _handle_attribut_value("010a", ["EASF06", "BBRHPJR"], update_color=True, totalize=True, maj_ep="f3"),
+        "010c": lambda: _handle_attribut_value("010c", ["EASF07"]),
+        "010e": lambda: _handle_attribut_value("010e", ["EASF08"]),
+        "0110": lambda: _handle_attribut_value("0110", ["EASF09"]),
+        "0112": lambda: _handle_attribut_value("0112", ["EASF10"]),
         "0307": lambda: store_ZLinky_infos(self, nwkid, "PRM", value),
-        "0308": lambda: handle_attribut_value("0308", ["ADC0", "ADSC"]),
+        "0308": lambda: _handle_attribut_value("0308", ["ADC0", "ADSC"]),
     }
 
     # Process attribute using handler
@@ -309,8 +310,6 @@ def zlinky_cluster_electrical_measurement(self, domoticz_devices, nwkid, ep, clu
         self.log.logging( "ZLinky", "Debug", "zlinky_cluster_electrical_measurement %s - %s/%s %s Current L1 %s" % (
             cluster, nwkid, ep, attribut, value), nwkid, )
 
-        # from random import randrange
-        # value = randrange( 0x0, 0x3c)
         if value == 0xFFFF:
             return
 
