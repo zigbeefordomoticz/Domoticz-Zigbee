@@ -95,19 +95,13 @@ ZLINKY_STEG_ATTRIBUTS = (
     'Pointe mobile ',
 )
 def zlinky_version_infos(self, nwkid ):
-
-    date_build = version_build = ''
-    # Retreive Build time
-    if 'SWBUILD_1' in self.ListOfDevices[ nwkid ]:
-        date_build = self.ListOfDevices[ nwkid ]['SWBUILD_1' ]
-    # Retreive Version number
-    if 'SWBUILD_3' in self.ListOfDevices[ nwkid ]:
-        version_build = self.ListOfDevices[ nwkid ]['SWBUILD_3' ]
+    cluster_0000 = self.ListOfDevices.get(nwkid, {}).get("Ep",{}).get("01", {}).get("0000",{})
     
+    date_build = cluster_0000.get("0006","")
+    version_build = cluster_0000.get("4000","")
+    
+    self.logging("Debug", f"rest_zlinky - found date_build: {date_build} version_build {version_build}")  
     return date_build, version_build
-        
-    
-
 
 
 def rest_zlinky(self, verb, data, parameters): 
