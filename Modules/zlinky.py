@@ -145,6 +145,7 @@ def get_ISOUSC( self, nwkid ):
 
     return 0
 
+
 def get_OPTARIF(self, nwkid):
     """
     Retrieves the 'OPTARIF' value for a given network ID (nwkid) from the 'ZLinky' device data.
@@ -195,6 +196,7 @@ def get_ptec(self, nwkid):
     """ Retreive Current Tarif. (Historic)"""
     return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("PTEC")
 
+
 def get_ltarf(self, nwkid):
     """ Retreive Current Tarif. (Standard)"""
 
@@ -209,6 +211,7 @@ def get_ltarf(self, nwkid):
         _ltarf = _ltarf.replace('\u0000', '').replace('\x00', '').strip()
 
     return _ltarf
+
 
 def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
 
@@ -235,28 +238,41 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
         
     self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
     return "00|Normal"
-        
 
 
-def linky_mode( self, nwkid , protocol=False):
-    
-    if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
-        return None
-    
-    if 'PROTOCOL Linky' not in self.ListOfDevices[ nwkid ]['ZLinky']:
-        return get_linky_mode_from_ep(self, nwkid )
-    
-    if self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] in ZLINKY_MODE and not protocol:
-        return ZLINKY_MODE[ self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky'] ]["Mode"]
-    elif protocol:
-        return self.ListOfDevices[ nwkid ]['ZLinky']['PROTOCOL Linky']
+def linky_mode(self, nwkid, protocol=False):
+    """Retrieve the Linky mode for a given device."""
 
-    return None
+    # Get or set "PROTOCOL Linky" only if it hasn't been set
+    zlinky_data = self.ListOfDevices.setdefault(nwkid, {}).setdefault("ZLinky", {})
+
+    if "PROTOCOL Linky" not in zlinky_data:
+        protocol_linky = get_linky_mode_from_ep(self, nwkid)
+        if protocol_linky is None:
+            return None  # Do nothing if get_linky_mode_from_ep returns None
+        zlinky_data["PROTOCOL Linky"] = protocol_linky
+    else:
+        protocol_linky = zlinky_data["PROTOCOL Linky"]
+
+    if protocol:
+        return protocol_linky  # Return protocol name if requested
+
+    return ZLINKY_MODE.get(protocol_linky, {}).get("Mode")
 
 
 def get_linky_mode_from_ep(self, nwkid):
-    ep = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get("01", {}).get("ff66", {}).get("0300")
-    return ep if ep in ZLINKY_MODE else None
+    """Retrieve the Linky protocol mode from endpoint data."""
+
+    protocol_linky = (
+        self.ListOfDevices
+        .get(nwkid, {})
+        .get("Ep", {})
+        .get("01", {})
+        .get("ff66", {})
+        .get("0300")
+    )
+
+    return protocol_linky if protocol_linky in ZLINKY_MODE else None
 
 
 def linky_device_conf(self, nwkid):
@@ -287,44 +303,38 @@ def linky_upgrade_authorized( current_model, new_model ):
         and new_model in ZLINKY_UPGRADE_PATHS[current_model]
     )
 
-def update_zlinky_device_model_if_needed( self, nwkid ):
-    
-    if "Model" not in self.ListOfDevices[ nwkid ]:
+
+def update_zlinky_device_model_if_needed(self, nwkid):
+    """Update ZLinky device model if an upgrade is authorized and necessary."""
+
+    device_info = self.ListOfDevices.get(nwkid, {})
+    model_name = device_info.get("Model")
+
+    if not model_name:
         return
 
     zlinky_conf = linky_device_conf(self, nwkid)
 
-    if self.ListOfDevices[ nwkid ]["Model"] != zlinky_conf:
-        if not linky_upgrade_authorized( self.ListOfDevices[ nwkid ]["Model"], zlinky_conf ):
-            self.log.logging( "ZLinky", "Log", "Not authorized adjustement ZLinky model from %s to %s" %( 
-                self.ListOfDevices[ nwkid ]["Model"], zlinky_conf  ))
-            return
+    if not linky_upgrade_authorized(model_name, zlinky_conf):
+        self.log.logging("ZLinky", "Log", f"Not authorized to adjust ZLinky model from {model_name} to {zlinky_conf}")
+        return
 
-        self.log.logging( "ZLinky", "Status", "Adjusting ZLinky model from %s to %s" %( 
-            self.ListOfDevices[ nwkid ]["Model"], zlinky_conf  ))
-        
-        # Looks like we have to update the Model in order to use the right attributes
-        self.ListOfDevices[ nwkid ]["Model"] = zlinky_conf
+    self.log.logging("ZLinky", "Status", f"Adjusting ZLinky model from {model_name} to {zlinky_conf}")
 
-        # Read Attribute has to be redone from scratch
-        if "ReadAttributes" in self.ListOfDevices[nwkid]:
-            del self.ListOfDevices[nwkid]["ReadAttributes"]
+    # Update the model name
+    device_info["Model"] = zlinky_conf
 
-        if 'ZLinky' in self.ListOfDevices[ nwkid ]:
-            del self.ListOfDevices[ nwkid ]['ZLinky']
+    # Remove outdated attributes to trigger a fresh read
+    for key in ["ReadAttributes", "ZLinky", STORE_CONFIGURE_REPORTING, STORE_READ_CONFIGURE_REPORTING]:
+        device_info.pop(key, None)
 
-        # Configure Reporting to be done
-        if STORE_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
-            del self.ListOfDevices[nwkid][STORE_CONFIGURE_REPORTING]
+    # Force configuration reporting if enabled
+    if self.configureReporting:
+        self.configureReporting.check_configuration_reporting_for_device(nwkid, force=True)
 
-        if STORE_READ_CONFIGURE_REPORTING in self.ListOfDevices[nwkid]:
-            del self.ListOfDevices[nwkid][STORE_READ_CONFIGURE_REPORTING]
-            
-        if self.configureReporting:
-            self.configureReporting.check_configuration_reporting_for_device( nwkid, force=True)
-            
-        if "Heartbeat" in self.ListOfDevices[nwkid]:
-            self.ListOfDevices[nwkid]["Heartbeat"] = "-1"
+    # Reset heartbeat status
+    device_info["Heartbeat"] = "-1"
+
 
 CONTACT_SEC = {
     0: "fermé",
@@ -371,75 +381,6 @@ COULEUR = {
     3: "Rouge"
 }
 
-
-#def decode_STEG(stge):
-#    """ decoding of STGE Linky frame"""
-#    # Contact Sec : bit 0
-#    # Organe de coupure: bits 1 à 3
-#    # Etat du cache-bornes distributeur: bit 4
-#    # Surtension sur une des phases: bit 6
-#    # Dépassement de la puissance de référence bit 7
-#    # Fonctionnement produ/conso: bit 8
-#    # Sens de l'énégerie active: bit 9
-#    # Tarif en cours contrat fourniture: bit 10 à 13
-#    # Tarif en cours contrat distributeur: bit 14 et 15
-#    # Mode dégradée de l'horloge: bit 16
-#    # Etat de sortie tic: bit 17
-#    # Etat de sortie Euridis: bit 19 et 20
-#    # Statut du CPL: bit 21 et 22
-#    # Synchro CPL: bit 23
-#    # Couleur du jour: bit 24 et 25
-#    # Couleur du lendemain: bit 26 et 27
-#    # Préavis points mobiles: bit 28 à 29
-#    # Pointe mobile: bit 30 et 31
-#
-#    try:
-#        stge = int(stge, 16)
-#    except ValueError:
-#        return {}
-#
-#    STEG_ATTRIBUTES = {
-#        'contact_sec': stge & 0x00000001,
-#        'organe_coupure': (stge & 0x0000000E) >> 1,
-#        'etat_cache_bornes': (stge & 0x00000010) >> 4,
-#        'sur_tension': (stge & 0x00000040) >> 6,
-#        'depassement_puissance': (stge & 0x00000080) >> 7,
-#        'mode_fonctionnement': (stge & 0x00000100) >> 8,
-#        'sens_energie': (stge & 0x00000200) >> 9,
-#        'tarif_fourniture': (stge & 0x0001F000) >> 12,
-#        'tarif_distributeur': (stge & 0x00060000) >> 14,
-#        'Mode_horloge': (stge & 0x00100000) >> 16,
-#        'sortie_tic': (stge & 0x00200000) >> 17,
-#        'sortie_euridis': (stge & 0x00C00000) >> 19,
-#        'status_cpl': (stge & 0x03000000) >> 21,
-#        'synchro_cpl': (stge & 0x08000000) >> 23,
-#        'couleur_jour': (stge & 0x30000000) >> 24,
-#        'couleur_demain': (stge & 0xC0000000) >> 26,
-#        'preavis_point_mobile': (stge & 0x30000000) >> 28,
-#        'pointe_mobile': (stge & 0xC0000000) >> 30,
-#    }
-#
-#    # Decode mapped values
-#    STEG_ATTRIBUTES_MAPPING = {
-#        'contact_sec': CONTACT_SEC,
-#        'etat_cache_bornes': ETAT_CACHE_BORNES,
-#        'mode_fonctionnement': FONCTION_PROD_CONSO,
-#        'sens_energie': SENS_ENERGIE,
-#        'Mode_horloge': HORLOGE,
-#        'sortie_tic': SORTIE_TIC,
-#        'sortie_euridis': SORTIE_EURIDIS,
-#        'status_cpl': STATUT_CPL,
-#        'synchro_cpl': SYNCHRO_CPL,
-#        'couleur_jour': COULEUR,
-#        'couleur_demain': COULEUR,
-#    }
-#
-#    # Decode mapped values for applicable attributes
-#    for attr, mapping in STEG_ATTRIBUTES_MAPPING.items():
-#        if attr in STEG_ATTRIBUTES and STEG_ATTRIBUTES[attr] in mapping:
-#            STEG_ATTRIBUTES[attr] = mapping[STEG_ATTRIBUTES[attr]]
-#
-#    return STEG_ATTRIBUTES
 
 def decode_STEG(stge):
     """ Decoding of STGE Linky frame """
