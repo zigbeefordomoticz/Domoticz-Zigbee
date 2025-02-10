@@ -103,17 +103,30 @@ def get_notification_day_color(value):
     """Determine the numeric and string representation of the day color and peak status for Domoticz UpdateDevice()"""
 
     color_map = {
+        "BASE": (0, "All Hours"),
+        
         "TH..": (0, "All Hours"),
+
         "HC..": (1, "Off-peak Hours"),
         "HP..": (2, "Peak Hours"),
+
         "HN..": (1, "Normal Hours"),
         "PM..": (4, "Mobile Peak Hours"),
+        
         "BHC": (1, "Bleu HC"),
         "BHP": (1, "Bleu HP"),
+        "HCJB": (1, "Bleu HC"),
+        "HPJB": (1, "Bleu HP"),          
+        
         "WHC": (2, "Blanc HC"),
         "WHP": (2, "Blanc HP"),
+        "HCJW": (2, "Blanc HC"),
+        "HPJW": (2, "Blanc HP"),
+        
         "RHC": (4, "Rouge HC"),
-        "RHP": (4, "Rouge HP")
+        "RHP": (4, "Rouge HP"),
+        "HCJR": (4, "Rouge HC"),
+        "HPJR": (4, "Rouge HP"),
     }
 
     # Check if value exists in color_map
