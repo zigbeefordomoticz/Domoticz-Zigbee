@@ -99,6 +99,37 @@ ZLinky_TIC_COMMAND = {
     "0300": "PROTOCOL Linky"
 }
 
+def get_notification_day_color(value):
+    """Determine the numeric and string representation of the day color and peak status for Domoticz UpdateDevice()"""
+
+    color_map = {
+        "TH..": (0, "All Hours"),
+        "HC..": (1, "Off-peak Hours"),
+        "HP..": (2, "Peak Hours"),
+        "HN..": (1, "Normal Hours"),
+        "PM..": (4, "Mobile Peak Hours"),
+        "BHC": (1, "Bleu HC"),
+        "BHP": (1, "Bleu HP"),
+        "WHC": (2, "Blanc HC"),
+        "WHP": (2, "Blanc HP"),
+        "RHC": (4, "Rouge HC"),
+        "RHP": (4, "Rouge HP")
+    }
+
+    # Check if value exists in color_map
+    if value in color_map:
+        return color_map[value]
+
+    # Fallback for values starting with B/W/R
+    color_prefix_map = {
+        "B": (1, "Blue Hours"),
+        "W": (2, "White Hours"),
+        "R": (4, "Red Hours")
+    }
+
+    return color_prefix_map.get(value[0], (3, "Unknown"))  # Default to (3, "Unknown") if no match
+
+
 def convert_kva_to_ampere( kva ):
     return ( kva * 1000) / 200
 

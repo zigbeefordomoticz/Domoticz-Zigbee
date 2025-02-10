@@ -149,7 +149,7 @@ def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
         # Historique mode, we can rely on PTEC
         ptect_value = get_ptec(self, nwkid)
         if _is_tempo_tarif(self, op_tarifaire):
-            _normalize_tempo_color(self, ptect_value)
+            ptect_value = _normalize_tempo_color(self, ptect_value)
 
         self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - PTEC {ptect_value}", nwkid)
 

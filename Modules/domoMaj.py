@@ -36,7 +36,8 @@ from Modules.tools import (get_deviceconf_parameter_value, str_round,
                            zigpy_plugin_sanity_check)
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 from Modules.zlinky import (ZLINK_CONF_MODEL, get_instant_power,
-                            get_tarif_color, zlinky_sum_all_indexes)
+                            get_notification_day_color, get_tarif_color,
+                            zlinky_sum_all_indexes)
 from Zigbee.zdpCommands import zdp_IEEE_address_request
 
 WIDGET_TO_BYPASS_EP_MATCH = ("XCube", "Aqara", "DSwitch", "DButton", "DButton_3")
@@ -142,71 +143,9 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         if ClusterType == "Alarm" and WidgetType == "Alarm_ZL3" and Attribute_ == "0020":
             if value is None or len(value) == 0:
                 return
-            # Notification Day Color and Peak
-            if value == "TH..":
-                # Toutes Heures
-                nValue = 0
-                sValue = "All Hours"
+            nValue, sValue = get_notification_day_color( value )
+            self.log.logging( "Widget", "Log", f"ZLinky Color of the Day {value} => {nValue},{sValue}", NwkId, )
 
-            elif value == "HC..":
-                # Heures Creuses
-                nValue = 1
-                sValue = "Off-peak Hours"
-
-            elif value == "HP..":
-                # Heures Pleines
-                nValue = 2
-                sValue = "Peak Hours"
-
-            elif value == "HN..":
-                # Heures Normales
-                nValue = 1
-                sValue = "Normal Hours"
-
-            elif value == "PM..":
-                # Pointe Mobile
-                nValue = 4
-                sValue = "Mobile peak Hours"
-                
-            # Standard Tempo
-            elif value == "BHC":
-                nValue = 1
-                sValue = "Bleu HC"
-            elif value == "BHP":
-                nValue = 1
-                sValue = "Bleu HP"
-                
-            elif value == "WHC":
-                nValue = 2
-                sValue = "Blanc HC"
-            elif value == "WHP":
-                nValue = 2
-                sValue = "Blanc HP"
-                
-            elif value == "RHC":
-                nValue = 4
-                sValue = "Rouge HC"
-            elif value == "RHP":
-                nValue = 4
-                sValue = "Rouge HP"
-                
-            elif value[0] == "B":
-                # Blue
-                nValue = 1
-                sValue = "Blue Hours"
-            elif value[0] == "W":
-                # Whte
-                nValue = 2
-                sValue = "White Hours"
-            elif value[0] == "R":
-                # Red
-                nValue = 4
-                sValue = "RED Hours"
-                
-            else:
-                # Unknow
-                nValue = 3
-                sValue = "Unknown"
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if "Ampere" in ClusterType and WidgetType == "Ampere" and Attribute_ == "0508":
