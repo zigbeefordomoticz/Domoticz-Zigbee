@@ -86,20 +86,28 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     """
 
     def _normalize_tempo_color(color):
+        """Normalize the given color to the Tempo format."""
         if "HP" in color:
             prefix = "HP"
         elif "HC" in color:
             prefix = "HC"
         else:
-            return color  # Return the original color if neither "HP" nor "HC" is found
+            return color  # No "HP" or "HC" found, return as is
 
-        if "ROUGE" in color:
-            return "R" + prefix
-        if "BLANC" in color:
-            return "W" + prefix
-        if "BLEU" in color:
-            return "B" + prefix
-        return color  # Return the original color if no matching color is found
+        color_map = {
+            "ROUGE": "R",
+            "R": "R",
+            "BLANC": "W",
+            "W": "W",
+            "BLEU": "B",
+            "B": "B",
+        }
+
+        for key, value in color_map.items():
+            if key in color:
+                return f"{value}{prefix}"
+
+        return color  # No matching color found, return original
 
  
     def _zlinky_update_color(nwkid, op_tarifaire, previous_color, new_color):
