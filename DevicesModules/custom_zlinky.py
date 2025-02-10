@@ -102,29 +102,35 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         return color  # Return the original color if no matching color is found
 
  
-    def _zlinky_update_color(nwkid, previous_color, new_color):
+    def _zlinky_update_color(nwkid, op_tarifaire, previous_color, new_color):
         """Update the device color, if it has changed request a Read Attribute to get the Color"""
 
         if get_linky_mode_from_ep(self, nwkid) in ( 0, 2):
             # Historique mode, we can rely on PTEC
             ptect_value = get_ptec(self, nwkid)
+            if _is_tempo_tarif(op_tarifaire):
+                _normalize_tempo_color(ptect_value)
+
             self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - PTEC {ptect_value}", nwkid)
 
             if ptect_value and ptect_value != new_color:
                 # Looks like the PTEC info is not aligned with the current color !
-                self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline {ptect_value} to {previous_color}/{new_color}", nwkid)
+                self.log.logging("ZLinky", "Status", f"Requesting PTEC as not inline ptec: {ptect_value} to prev_volor: {previous_color} new_color: {new_color}", nwkid)
                 ReadAttributeReq_Scheduled_ZLinky(self, nwkid)
                 zlinky_color_tarif(self, nwkid, new_color)
             return
 
         # Standard mode, we rely on LTARF ( Libellé tarif fournisseur en cours)
-        ltarf_value = _normalize_tempo_color( get_ltarf(self, nwkid) )
+        ltarf_value = get_ltarf(self, nwkid)
+        if _is_tempo_tarif(op_tarifaire):
+            ltarf_value = _normalize_tempo_color( ltarf_value)
         self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF >{ltarf_value}<", nwkid)
 
         if ltarf_value and ltarf_value != new_color:
             self.log.logging("ZLinky", "Status", f"Requesting LTARF (0xff66) as not inline {ltarf_value} to {previous_color}/{new_color}", nwkid)
             ReadAttributeRequest_ff66(self, nwkid)
             zlinky_color_tarif(self, nwkid, new_color)
+
 
     def _known_op_tarifaire(op_tarifaire):
         """ check that is a known and valid tarif"""
@@ -134,16 +140,27 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
         # Check if op_tarifaire matches any of the valid prefixes
         return any(op_tarifaire.startswith(prefix) for prefix in valid_prefixes)
 
-    
-    def _get_corresponding_color(self, attribut, op_tarifaire):
-        """Determine the new color based on the attribute and tariff type, with support for extended prefixes."""
-        # Determine the base tariff type (handle variations like BBRx, EJPx)
+
+    def _normalize_tarif(op_tarifaire):
+        """ Normalize Op Tarif """
         if op_tarifaire.startswith("BBR"):
             base_tarifaire = "TEMPO"  # Treat any BBRx as TEMPO
         elif op_tarifaire.startswith("EJP"):
             base_tarifaire = "EJP"  # Treat any EJPx as EJP
         else:
             base_tarifaire = op_tarifaire
+        return base_tarifaire
+
+
+    def _is_tempo_tarif(op_tarifaire):
+        """ Return true if the current op tarif is Tempo """
+        return _normalize_tarif( op_tarifaire ) == "TEMPO"
+
+
+    def _get_corresponding_color(self, attribut, op_tarifaire):
+        """Determine the new color based on the attribute and tariff type, with support for extended prefixes."""
+        # Determine the base tariff type (handle variations like BBRx, EJPx)
+        base_tarifaire = _normalize_tarif(op_tarifaire)
 
         # Define the color map for tariff types
         color_map = {
@@ -161,7 +178,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     self.log.logging("ZLinky", "Debug", f"Cluster: {cluster}, Attribute: {attribut}, Value: {value}", nwkid)
 
     # Fetch current tariff
-    op_tarifaire = get_OPTARIF(self, nwkid)
+    op_tarifaire = _normalize_tarif( get_OPTARIF(self, nwkid) )
     self.log.logging("ZLinky", "Debug", f"OPTARIF: {op_tarifaire}", nwkid)
 
     # Exit early for unsupported tariffs
@@ -188,7 +205,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
 
     # Handle updates for TEMPO-specific tariffs
     self.log.logging("ZLinky", "Debug", f"TEMPO: PrevColor: {previous_color}, NewColor: {new_color}", nwkid)
-    _zlinky_update_color(nwkid, previous_color, new_color)
+    _zlinky_update_color(nwkid, op_tarifaire, previous_color, new_color)
 
 
 def zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut, value):

@@ -160,6 +160,16 @@ def get_OPTARIF(self, nwkid):
     Returns:
         str: The cleaned 'OPTARIF' value, or "BASE" if not found.
     """
+    def _normalize_tarif(op_tarifaire):
+        """ Normalize Op Tarif """
+        if op_tarifaire.startswith("BBR"):
+            base_tarifaire = "TEMPO"  # Treat any BBRx as TEMPO
+        elif op_tarifaire.startswith("EJP"):
+            base_tarifaire = "EJP"  # Treat any EJPx as EJP
+        else:
+            base_tarifaire = op_tarifaire
+        return base_tarifaire
+
     zlinky = self.ListOfDevices.get(nwkid, {}).get("ZLinky", {})
 
     # Get the raw value of "OPTARIF", or default to "BASE"
@@ -174,7 +184,7 @@ def get_OPTARIF(self, nwkid):
     if isinstance(optarif_value, str):
         optarif_value = optarif_value.replace('\u0000', '').replace('\x00', '').strip()
 
-    return optarif_value
+    return _normalize_tarif(optarif_value)
 
 
 def get_instant_power(self, nwkid):
