@@ -15,7 +15,7 @@ import time
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 
-ATTR_ZLINKY = "Zlinky"
+ATTR_ZLINKY = "ZLinky"
 ATTR_PROTO_LINKY = "PROTOCOL Linky"
 
 ISOUSC_THRESHOLD_MAX = 98
