@@ -15,6 +15,15 @@ import time
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
 
+ATTR_ZLINKY = "Zlinky"
+ATTR_PROTO_LINKY = "PROTOCOL Linky"
+
+ISOUSC_THRESHOLD_MAX = 98
+ISOUSC_THRESHOLD_MED = 90
+
+TENSION_NOMINAL = 230
+KILO = 1000
+
 ZLINK_CONF_MODEL = (
     "ZLinky_TIC",
     "ZLinky_TIC-historique-mono" , "ZLinky_TIC-historique-tri",
@@ -31,23 +40,13 @@ ZLINKY_MODE = {
     7: { "Mode": ('standard', 'tri prod'), "Conf": "ZLinky_TIC-standard-tri-prod" },
 }
 
-ZLINKY_UPGRADE_PATHS = {
-    "ZLinky_TIC": ( 
-        "ZLinky_TIC-historique-mono",
-        "ZLinky_TIC-historique-tri",
-        "ZLinky_TIC-standard-mono",
-        "ZLinky_TIC-standard-mono-prod", 
-        "ZLinky_TIC-standard-tri",
-        "ZLinky_TIC-standard-tri-prod" 
-        ),
-    "ZLinky_TIC-historique-mono": ( 
-        "ZLinky_TIC-standard-mono",
-        "ZLinky_TIC-standard-mono-prod",
-        ),
-    "ZLinky_TIC-historique-tri": ( 
-        "ZLinky_TIC-standard-tri",
-        "ZLinky_TIC-standard-tri-prod" 
-        ),
+ZLINKY_UPGRADE_PATHS = { 
+    "ZLinky_TIC": (
+        "ZLinky_TIC-historique-mono", "ZLinky_TIC-historique-tri",
+        "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod",
+        "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod"),
+    "ZLinky_TIC-historique-mono": ( "ZLinky_TIC-standard-mono", "ZLinky_TIC-standard-mono-prod"),
+    "ZLinky_TIC-historique-tri": ( "ZLinky_TIC-standard-tri", "ZLinky_TIC-standard-tri-prod" ),
     "ZLinky_TIC-standard-mono-prod": (),
     "ZLinky_TIC-standard-tri": (),
     "ZLinky_TIC-standard-tri-prod": (),
@@ -96,42 +95,47 @@ ZLinky_TIC_COMMAND = {
     "0226": "NJOURF+1",
     "0227": "PJOURF+1",
     "0228": "PPOINTE1",
-    "0300": "PROTOCOL Linky"
+    "0300": ATTR_PROTO_LINKY
 }
+
+OP_TARIFAIRE_MAP = {
+    "BASE": (0, "All Hours"),
+    
+    "TH..": (0, "All Hours"),
+
+    "HC..": (1, "Off-peak Hours"),
+    "HP..": (2, "Peak Hours"),
+
+    "HN..": (1, "Normal Hours"),
+    "EJPHN": (1, "Normal Hours"),
+    "PM..": (4, "Mobile Peak Hours"),
+    "EJPHPM": (4, "Mobile Peak Hours"),
+    
+    "BHC": (1, "Bleu HC"),
+    "BHP": (1, "Bleu HP"),
+    "HCJB": (1, "Bleu HC"),
+    "HPJB": (1, "Bleu HP"),          
+    
+    "WHC": (2, "Blanc HC"),
+    "WHP": (2, "Blanc HP"),
+    "HCJW": (2, "Blanc HC"),
+    "HPJW": (2, "Blanc HP"),
+    
+    "RHC": (4, "Rouge HC"),
+    "RHP": (4, "Rouge HP"),
+    "HCJR": (4, "Rouge HC"),
+    "HPJR": (4, "Rouge HP"),
+   
+}
+
+
 
 def get_notification_day_color(value):
     """Determine the numeric and string representation of the day color and peak status for Domoticz UpdateDevice()"""
 
-    color_map = {
-        "BASE": (0, "All Hours"),
-        
-        "TH..": (0, "All Hours"),
-
-        "HC..": (1, "Off-peak Hours"),
-        "HP..": (2, "Peak Hours"),
-
-        "HN..": (1, "Normal Hours"),
-        "PM..": (4, "Mobile Peak Hours"),
-        
-        "BHC": (1, "Bleu HC"),
-        "BHP": (1, "Bleu HP"),
-        "HCJB": (1, "Bleu HC"),
-        "HPJB": (1, "Bleu HP"),          
-        
-        "WHC": (2, "Blanc HC"),
-        "WHP": (2, "Blanc HP"),
-        "HCJW": (2, "Blanc HC"),
-        "HPJW": (2, "Blanc HP"),
-        
-        "RHC": (4, "Rouge HC"),
-        "RHP": (4, "Rouge HP"),
-        "HCJR": (4, "Rouge HC"),
-        "HPJR": (4, "Rouge HP"),
-    }
-
     # Check if value exists in color_map
-    if value in color_map:
-        return color_map[value]
+    if value in OP_TARIFAIRE_MAP:
+        return OP_TARIFAIRE_MAP[value]
 
     # Fallback for values starting with B/W/R
     color_prefix_map = {
@@ -144,48 +148,34 @@ def get_notification_day_color(value):
 
 
 def convert_kva_to_ampere( kva ):
-    return ( kva * 1000) / 200
+    return ( kva * KILO) / TENSION_NOMINAL
 
 
-def zlinky_color_tarif(self, MsgSrcAddr, color):
-    self.ListOfDevices.setdefault(MsgSrcAddr, {}).setdefault("ZLinky", {})["Color"] = color
+def zlinky_color_tarif(self, nwkid, color):
+    self.ListOfDevices.setdefault(nwkid, {}).setdefault(ATTR_ZLINKY, {})["Color"] = color
 
 
-def store_ZLinky_infos( self, nwkid, command_tic, value):
-    if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
-        self.ListOfDevices[ nwkid ][ 'ZLinky' ] = {}
-    self.ListOfDevices[ nwkid ][ 'ZLinky' ][ command_tic ] = value
+def store_ZLinky_infos(self, nwkid, command_tic, value):
+    zlinky_dict = self.ListOfDevices[nwkid].setdefault('ZLinky', {})
+    zlinky_dict[command_tic] = value
 
 
-def get_ISOUSC( self, nwkid ):
+def get_ISOUSC(self, nwkid):
+    # Retrieve 'ISOUSC' if it exists
+    if 'ISOUSC' in self.ListOfDevices[nwkid]:
+        return self.ListOfDevices[nwkid]['ISOUSC']
 
-    if (
-        "ZLinky" in self.ListOfDevices[nwkid] 
-        and "ISOUSC" in self.ListOfDevices[nwkid]["ZLinky"]
-    ):
-        return self.ListOfDevices[nwkid]["ZLinky"]["ISOUSC"]
+    # Retrieve 'PROTOCOL Linky' from 'ZLinky' if it exists
+    protocol_linky = self.ListOfDevices[nwkid].get('ZLinky', {}).get('PROTOCOL Linky')
 
-    ampere = False
-    if (
-        "ZLinky" in self.ListOfDevices[nwkid] 
-        and "PROTOCOL Linky" in self.ListOfDevices[nwkid]["ZLinky"]
-        and self.ListOfDevices[nwkid]["ZLinky"]["PROTOCOL Linky"] in (0, 2)
-    ):
-        # We are in Historique mode , so value is given in Ampere
-        ampere = True
+    # Retrieve '000d' from nested dictionaries in 'Ep'
+    isousc_from_cluster_0b01 = self.ListOfDevices[nwkid].get('Ep', {}).get('01', {}).get('0b01', {}).get('000d', 0)
 
-    # Let's check if we have in the Ep values
-    if (
-        "Ep" in self.ListOfDevices[nwkid]
-        and "01" in self.ListOfDevices[nwkid]["Ep"]
-        and "0b01" in self.ListOfDevices[nwkid]["Ep"]["01"]
-        and "000d" in self.ListOfDevices[nwkid]["Ep"]["01"]["0b01"]
-    ):
-
-        if ampere:
-            return self.ListOfDevices[nwkid]["Ep"]["01"]["0b01"]["000d"]
-
-        return convert_kva_to_ampere( self.ListOfDevices[nwkid]["Ep"]["01"]["0b01"]["000d"] )
+    if isousc_from_cluster_0b01:
+        # Check protocol and convert if necessary
+        if protocol_linky in (0, 2):
+            return isousc_from_cluster_0b01
+        return convert_kva_to_ampere(isousc_from_cluster_0b01)
 
     return 0
 
@@ -214,7 +204,7 @@ def get_OPTARIF(self, nwkid):
             base_tarifaire = op_tarifaire
         return base_tarifaire
 
-    zlinky = self.ListOfDevices.get(nwkid, {}).get("ZLinky", {})
+    zlinky = self.ListOfDevices.get(nwkid, {}).get(ATTR_ZLINKY, {})
 
     # Get the raw value of "OPTARIF", or default to "BASE"
     optarif_value = zlinky.get("OPTARIF", "BASE")
@@ -243,18 +233,18 @@ def get_instant_power(self, nwkid):
 
 
 def get_tarif_color(self, nwkid):
-    return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("Color")
+    return self.ListOfDevices.get(nwkid, {}).get(ATTR_ZLINKY, {}).get("Color")
 
 
 def get_ptec(self, nwkid):
     """ Retreive Current Tarif. (Historic)"""
-    return self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("PTEC")
+    return self.ListOfDevices.get(nwkid, {}).get(ATTR_ZLINKY, {}).get("PTEC")
 
 
 def get_ltarf(self, nwkid):
     """ Retreive Current Tarif. (Standard)"""
 
-    _ltarf = self.ListOfDevices.get(nwkid, {}).get("ZLinky", {}).get("LTARF")
+    _ltarf = self.ListOfDevices.get(nwkid, {}).get(ATTR_ZLINKY, {}).get("LTARF")
     # If the value is a byte string, decode and clean up
     if isinstance(_ltarf, bytes):
         # Decode the byte string to UTF-8, ignoring errors, and remove null bytes
@@ -272,22 +262,22 @@ def zlinky_check_alarm(self, Devices, MsgSrcAddr, MsgSrcEp, value):
     if value == 0:
         return "00|Normal"
 
-    Isousc = get_ISOUSC( self, MsgSrcAddr )
+    isousc = get_ISOUSC( self, MsgSrcAddr )
 
-    if Isousc == 0:
+    if isousc == 0:
         return "00|Normal"
 
-    flevel = (value * 100) / Isousc
-    self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, Isousc, flevel), MsgSrcAddr, )
+    flevel = (value * 100) / isousc
+    self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s flevel- %s %s %s" % (MsgSrcAddr, MsgSrcEp, value, isousc, flevel), MsgSrcAddr, )
 
-    if flevel > 98:
+    if flevel > ISOUSC_THRESHOLD_MAX:
         self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-01" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
-        return "03|Reach >98 %% of Max subscribe %s" % (Isousc)
+        return "03|Reach >98 %% of Max subscribe %s" % (isousc)
 
        
-    elif flevel > 90:
+    elif flevel > ISOUSC_THRESHOLD_MED:
         self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-02" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
-        return "02|Reach >90 %% of Max subscribe %s" % (Isousc)
+        return "02|Reach >90 %% of Max subscribe %s" % (isousc)
 
         
     self.log.logging( "Cluster", "Debug", "zlinky_check_alarm - %s/%s Alarm-03" % (MsgSrcAddr, MsgSrcEp), MsgSrcAddr, )
@@ -298,15 +288,15 @@ def linky_mode(self, nwkid, protocol=False):
     """Retrieve the Linky mode for a given device."""
 
     # Get or set "PROTOCOL Linky" only if it hasn't been set
-    zlinky_data = self.ListOfDevices.setdefault(nwkid, {}).setdefault("ZLinky", {})
+    zlinky_data = self.ListOfDevices.setdefault(nwkid, {}).setdefault(ATTR_ZLINKY, {})
 
-    if "PROTOCOL Linky" not in zlinky_data:
+    if ATTR_PROTO_LINKY not in zlinky_data:
         protocol_linky = get_linky_mode_from_ep(self, nwkid)
         if protocol_linky is None:
             return None  # Do nothing if get_linky_mode_from_ep returns None
-        zlinky_data["PROTOCOL Linky"] = protocol_linky
+        zlinky_data[ATTR_PROTO_LINKY] = protocol_linky
     else:
-        protocol_linky = zlinky_data["PROTOCOL Linky"]
+        protocol_linky = zlinky_data[ATTR_PROTO_LINKY]
 
     if protocol:
         return protocol_linky  # Return protocol name if requested
@@ -379,7 +369,7 @@ def update_zlinky_device_model_if_needed(self, nwkid):
     device_info["Model"] = zlinky_conf
 
     # Remove outdated attributes to trigger a fresh read
-    for key in ["ReadAttributes", "ZLinky", STORE_CONFIGURE_REPORTING, STORE_READ_CONFIGURE_REPORTING]:
+    for key in ["ReadAttributes", ATTR_ZLINKY, STORE_CONFIGURE_REPORTING, STORE_READ_CONFIGURE_REPORTING]:
         device_info.pop(key, None)
 
     # Force configuration reporting if enabled
@@ -497,14 +487,14 @@ def decode_STEG(stge):
 
 
 def zlinky_sum_all_indexes(self, nwkid):
-    zlinky_info = self.ListOfDevices.get(nwkid, {}).get("ZLinky", {})
+    zlinky_info = self.ListOfDevices.get(nwkid, {}).get(ATTR_ZLINKY, {})
     index_mid_info = zlinky_info.get("INDEX_MID", {})
 
     return index_mid_info.get("CompteurTotalisateur", 0)
 
 
 def zlinky_totalisateur(self, nwkid, attribute, value):
-    zlinky_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault("ZLinky", {})
+    zlinky_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault(ATTR_ZLINKY, {})
     index_mid_info = zlinky_info.setdefault("INDEX_MID", {"CompteurTotalisateur": 0})
 
     previous_index = index_mid_info.get(attribute, {}).get("Compteur", 0)

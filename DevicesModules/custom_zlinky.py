@@ -53,17 +53,15 @@ def zlinky_meter_identification(self, nwkid, ep, cluster, attribut, value):
 
     checkAndStoreAttributeValue( self, nwkid, ep, cluster, attribut, value, )
     if attribut == "000d":
-        # Looks like in standard mode PREF is in VA while in historique mode ISOUSC is in A
-        # Donc en mode standard ISOUSC = ( value * 1000) / 200
-        if "ZLinky" in self.ListOfDevices[nwkid] and "PROTOCOL Linky" in self.ListOfDevices[nwkid]["ZLinky"]:
-            if self.ListOfDevices[nwkid]["ZLinky"]["PROTOCOL Linky"] in (0, 2):
-                # Mode Historique mono ( 0 )
-                # Mode Historique tri ( 2 )
-                store_ZLinky_infos( self, nwkid, 'ISOUSC', value)
-            else:
-                # Mode standard 
-                store_ZLinky_infos( self, nwkid, 'PREF', value)
-                store_ZLinky_infos( self, nwkid, 'ISOUSC', convert_kva_to_ampere(value) )
+        protocol_linky = self.ListOfDevices[nwkid].get( "ZLinky", {}).get( "PROTOCOL Linky")
+        
+        if protocol_linky in (0, 2):
+            # Mode Historique , it is given in A
+            store_ZLinky_infos( self, nwkid, 'ISOUSC', value)
+        else:
+            # Mode standard , needs to convert the KVA into A
+            store_ZLinky_infos( self, nwkid, 'PREF', value)
+            store_ZLinky_infos( self, nwkid, 'ISOUSC', convert_kva_to_ampere(value) )
 
     elif attribut == "000a":
         store_ZLinky_infos( self, nwkid, 'VTIC', value)
