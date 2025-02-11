@@ -1392,6 +1392,9 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
         "ff66": [  
             0x0001,   # Couleur du lendemain 
             0x0217,   # STGE 
+            0x0225,   # NJOURF
+            0x0226,   # NJOURF+1
+            0x0227,   # PJOURF+1
         ],
         "0702": [ 
             0x0020,   # Periode Tarifaire en cours 
