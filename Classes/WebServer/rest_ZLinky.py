@@ -29,10 +29,10 @@ ZLINKY_INDEXES = [
 ZLINKY_PARAMETERS = {
     # Historique
     0: ( 
-        "ADC0", "BASE", "OPTARIF", "ISOUSC", "IMAX", "PTEC", "DEMAIN", "HHPHC", "PEJP", "ADPS",  "STGE",
+        "ADC0", "BASE", "OPTARIF", "ISOUSC", "IMAX", "PTEC", "DEMAIN", "HHPHC", "PEJP", "ADPS",
         ),
     2: ( 
-        "ADC0", "BASE", "OPTARIF", "ISOUSC", "IMAX", "STGE",
+        "ADC0", "BASE", "OPTARIF", "ISOUSC", "IMAX",
         "IMAX1", "IMAX2", "IMAX3", "PMAX", "PTEC", "DEMAIN", "HHPHC", "PPOT", "PEJP", "ADPS", "ADIR1", "ADIR2", "ADIR3" 
     ),
     
