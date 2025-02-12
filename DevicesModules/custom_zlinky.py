@@ -541,13 +541,13 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
         self.log.logging([ "ZLinky", "Cluster"], "Debug", f"zlinky_cluster_lixee_private ({attribut}) DEMAIN {value}", nwkid)
 
         if value == "BLAN":
-            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", "20|Tomorrow WHITE day", Attribute_="0001")
+            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", "2|Tomorrow WHITE day", Attribute_="0001")
         elif value == "BLEU":
-            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", "10|Tomorrow BLUE day", Attribute_="0001")
+            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", "1|Tomorrow BLUE day", Attribute_="0001")
         elif value == "ROUG":
-            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", "40|Tomorrow RED day", Attribute_="0001")
+            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", "4|Tomorrow RED day", Attribute_="0001")
         else:
-            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", "00|No information", Attribute_="0001")
+            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", "0|No information", Attribute_="0001")
 
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
@@ -804,12 +804,12 @@ def process_tomorrow_color(self, domoticz_devices, nwkid):
         return
     
     if couleur_lendemain in ( "Pas d'annonce", "Bleu", "Blanc", "Rouge"):
-        if couleur_lendemain == "Blanc":
-            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "20|Tomorrow WHITE day", Attribute_="0001")
-        elif couleur_lendemain == "Bleu":
-            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "10|Tomorrow BLUE day", Attribute_="0001")
+        if couleur_lendemain == "Bleu":
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "1|Tomorrow BLUE day", Attribute_="0001")
+        elif couleur_lendemain == "Blanc":
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "2|Tomorrow WHITE day", Attribute_="0001")
         elif couleur_lendemain == "Rouge":
-            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "40|Tomorrow RED day", Attribute_="0001")
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "4|Tomorrow RED day", Attribute_="0001")
         else:
             MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "00|No Information yet", Attribute_="0001")
         return
