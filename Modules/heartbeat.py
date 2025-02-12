@@ -304,7 +304,8 @@ def pollingManufSpecificDevices(self, NwkId, HB):
             should_execute = (_current_time == _target_value)
         else:
             _target_value = int(_target_value)
-            should_execute = (heartbeat_counter % _target_value) == 0
+            if _target_value:
+                should_execute = (heartbeat_counter % _target_value) == 0
 
         self.log.logging(
             "Heartbeat", "Debug",
