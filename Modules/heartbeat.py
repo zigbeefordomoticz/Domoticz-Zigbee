@@ -300,11 +300,12 @@ def pollingManufSpecificDevices(self, NwkId, HB):
 
         # Determine execution condition
         should_execute = False
-        if ":" in _target_value:
+        if isinstance( _target_value, str) and ":" in _target_value:
             should_execute = (_current_time == _target_value)
-        else:
-            _target_value = int(_target_value)
-            if _target_value:
+
+        elif isinstance( _target_value, int, float):
+            _target_value = _target_value // HEARTBEAT
+            if _target_value != 0:
                 should_execute = (heartbeat_counter % _target_value) == 0
 
         self.log.logging(
