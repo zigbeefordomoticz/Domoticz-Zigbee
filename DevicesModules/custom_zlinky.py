@@ -786,6 +786,7 @@ def process_tomorrow_color(self, domoticz_devices, nwkid):
     
     # We have receive a STGE info, let's check if the Color has been updated, in that case troger an update
     zlinky_infosstge_infos = self.ListOfDevices[ nwkid].get("ZLinky",{}).get("STGE")
+
     if zlinky_infosstge_infos is None:
         return
 
@@ -815,6 +816,10 @@ def process_tomorrow_color(self, domoticz_devices, nwkid):
     
     colour_mapping = get_device_config_param(self, nwkid, "TEMPO_DEMAIN_COLOR_MAPPING")
     self.log.logging( "ZLinky", "Log", f"process_tomorrow_color {nwkid} mapping {colour_mapping}")
+
+    if colour_mapping is None:
+        self.log.logging( "ZLinky", "Log", f"process_tomorrow_color {nwkid} TEMPO_DEMAIN_COLOR_MAPPING not found in Param {self.ListOfDevices[nwkid].get('Param')}")
+        return
 
     # Convert JSON string to Python dictionary
     colour_mapping = json.loads(colour_mapping)
