@@ -139,9 +139,9 @@ def get_notification_day_color(value):
 
     # Fallback for values starting with B/W/R
     color_prefix_map = {
-        "B": (1, "Blue Hours"),
-        "W": (2, "White Hours"),
-        "R": (4, "Red Hours")
+        "B": [ 1, "Blue Hours"],
+        "W": [ 2, "White Hours"],
+        "R": [ 4, "Red Hours"]
     }
 
     return color_prefix_map.get(value[0], (3, "Unknown"))  # Default to (3, "Unknown") if no match

@@ -11,11 +11,13 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 import binascii
+import json
 
 from Modules.domoMaj import MajDomoDevice
 from Modules.readAttributes import (ReadAttributeReq_Scheduled_ZLinky,
                                     ReadAttributeRequest_ff66)
-from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
+from Modules.tools import (checkAndStoreAttributeValue,
+                           get_device_config_param, getAttributeValue)
 from Modules.zlinky import (ZLINK_CONF_MODEL, ZLinky_TIC_COMMAND,
                             convert_kva_to_ampere, decode_STEG,
                             get_linky_mode_from_ep, get_ltarf, get_OPTARIF,
@@ -529,14 +531,9 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
     elif attribut == "0001":
         # Histo : DEMAIN
         value = ''.join(map(lambda x: x if ord(x) in range(128) else ' ', value))
-        tarif = None
-        if (
-            "ff66" in self.ListOfDevices[nwkid]["Ep"][ep]
-            and "0000" in self.ListOfDevices[nwkid]["Ep"][ep]["ff66"]
-            and self.ListOfDevices[nwkid]["Ep"][ep]["ff66"]["0000"]
-            not in ("", {})
-        ):
-            tarif = self.ListOfDevices[nwkid]["Ep"][ep]["ff66"]["0000"]
+
+        # Extract tarif if conditions are met
+        tarif = self.ListOfDevices[nwkid]["Ep"][ep].get("ff66", {}).get("0000")
         if tarif and "BBR" not in tarif:
             return
 
@@ -720,6 +717,8 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
         self.log.logging( "ZLinky", "Log", "STGE decoded %s : %s" % ( stge, decode_STEG( stge ) ))
         store_ZLinky_infos( self, nwkid, "STGE", decode_STEG( stge ))
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, stge)
+        
+        process_tomorrow_color(self, domoticz_devices)
 
     elif attribut in ( "0218", ):
         # Standard : DPM1
@@ -779,3 +778,51 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
     elif attribut == "0300":
         # Linky Mode
         update_zlinky_device_model_if_needed( self, nwkid )
+        
+        
+def process_tomorrow_color(self, domoticz_devices, nwkid):
+
+    self.log.logging( "ZLinky", "Log", f"process_tomorrow_color {nwkid}")
+    
+    # We have receive a STGE info, let's check if the Color has been updated, in that case troger an update
+    zlinky_infosstge_infos = self.ListOfDevices[ nwkid].get("ZLinky",{}).get("STGE")
+    if zlinky_infosstge_infos is None:
+        return
+
+    preavis_pointe_mobile = zlinky_infosstge_infos.get("preavis_point_mobile")
+    pointe_mobile = zlinky_infosstge_infos.get("pointe_mobile")
+
+    couleur_du_jour = zlinky_infosstge_infos.get("couleur_jour")
+    couleur_lendemain = zlinky_infosstge_infos.get("couleur_demain")
+    
+    self.log.logging( "ZLinky", "Log", f"process_tomorrow_color {nwkid} Jour: {couleur_du_jour} Demain: {couleur_lendemain}")
+    self.log.logging( "ZLinky", "Log", f"process_tomorrow_color {nwkid} Preavis: {preavis_pointe_mobile} Pointe: {pointe_mobile}")
+
+    if couleur_lendemain is None:
+        MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "00|No information", Attribute_="0001")
+        return
+
+    # Get the mapping from Debvice Sepecifc parameters
+    # Should be in the form of
+    # "Param": {
+    #   "TEMPO_DEMAIN_COLOR_MAPPING": { "0":  "00 | No Information", "8":  "10 | Jour Bleu", "16": "20 | Jour Blanc", "32": "40 | Jour Rouge"},
+    #   "PollingCusterff66": 3600,
+    #   "ConfigurationReportChunk": 1,
+    #   "ZLinkyPollingGlobal": 86400,
+    #   "ReadAttributesChunk": 2,
+    #   "ZLinkyPollingPTEC": 900
+    # },
+    
+    colour_mapping = get_device_config_param(self, nwkid, "TEMPO_DEMAIN_COLOR_MAPPING")
+    self.log.logging( "ZLinky", "Log", f"process_tomorrow_color {nwkid} mapping {colour_mapping}")
+
+    # Convert JSON string to Python dictionary
+    colour_mapping = json.loads(colour_mapping)
+    # Convert keys to integers
+    converted_dict = { int(key): value for key, value in colour_mapping["TEMPO_DEMAIN_COLOR_MAPPING"].items() }
+
+    if couleur_lendemain in converted_dict:
+        value = converted_dict[ couleur_lendemain]
+        self.log.logging( "ZLinky", "Log", f"process_tomorrow_color {nwkid} Updating Domoticz with {value}")
+        MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", value, Attribute_="0001")
+        

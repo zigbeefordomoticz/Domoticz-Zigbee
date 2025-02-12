@@ -132,8 +132,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 )
                 return
 
-            value, text = tuple_value
-            nValue = int(value)
+            nValue, text = int(tuple_value[0]), tuple_value[1]
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, text, BatteryLevel, SignalLevel)
 
         if WidgetType == "BatteryPercentage" and ClusterType == "Voltage" and Attribute_ == "0021":
