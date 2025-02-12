@@ -718,7 +718,7 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
         store_ZLinky_infos( self, nwkid, "STGE", decode_STEG( stge ))
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, stge)
         
-        process_tomorrow_color(self, domoticz_devices)
+        process_tomorrow_color(self, domoticz_devices, nwkid)
 
     elif attribut in ( "0218", ):
         # Standard : DPM1
