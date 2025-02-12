@@ -802,32 +802,15 @@ def process_tomorrow_color(self, domoticz_devices, nwkid):
     if couleur_lendemain is None:
         MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "00|No information", Attribute_="0001")
         return
-
-    # Get the mapping from Debvice Sepecifc parameters
-    # Should be in the form of
-    # "Param": {
-    #   "TEMPO_DEMAIN_COLOR_MAPPING": { "0":  "00 | No Information", "8":  "10 | Jour Bleu", "16": "20 | Jour Blanc", "32": "40 | Jour Rouge"},
-    #   "PollingCusterff66": 3600,
-    #   "ConfigurationReportChunk": 1,
-    #   "ZLinkyPollingGlobal": 86400,
-    #   "ReadAttributesChunk": 2,
-    #   "ZLinkyPollingPTEC": 900
-    # },
     
-    colour_mapping = get_device_config_param(self, nwkid, "TEMPO_DEMAIN_COLOR_MAPPING")
-    self.log.logging( "ZLinky", "Log", f"process_tomorrow_color {nwkid} mapping {colour_mapping}")
-
-    if colour_mapping is None:
-        self.log.logging( "ZLinky", "Log", f"process_tomorrow_color {nwkid} TEMPO_DEMAIN_COLOR_MAPPING not found in Param {self.ListOfDevices[nwkid].get('Param')}")
+    if couleur_lendemain in ( "Pas d'annonce", "Bleu", "Blanc", "Rouge"):
+        if couleur_lendemain == "Blanc":
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "20|Tomorrow WHITE day", Attribute_="0001")
+        elif couleur_lendemain == "Bleu":
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "10|Tomorrow BLUE day", Attribute_="0001")
+        elif couleur_lendemain == "Rouge":
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "40|Tomorrow RED day", Attribute_="0001")
+        else:
+            MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", "00|No Information yet", Attribute_="0001")
         return
-
-    # Convert JSON string to Python dictionary
-    colour_mapping = json.loads(colour_mapping)
-    # Convert keys to integers
-    converted_dict = { int(key): value for key, value in colour_mapping["TEMPO_DEMAIN_COLOR_MAPPING"].items() }
-
-    if couleur_lendemain in converted_dict:
-        value = converted_dict[ couleur_lendemain]
-        self.log.logging( "ZLinky", "Log", f"process_tomorrow_color {nwkid} Updating Domoticz with {value}")
-        MajDomoDevice(self, domoticz_devices, nwkid, "01", "0009", value, Attribute_="0001")
         
