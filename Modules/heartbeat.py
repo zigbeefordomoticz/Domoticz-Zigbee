@@ -309,7 +309,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
                 should_execute = (heartbeat_counter % _target_value) == 0
 
         self.log.logging(
-            "Heartbeat", "Debug",
+            ["Heartbeat", "ZLinky"], "Debug",
             f"++ pollingManufSpecificDevices - {NwkId} ScheduledZLinkyRead: Current: {_current_time} Target: {_target_value} should_execute {should_execute}",
             NwkId,
         )
