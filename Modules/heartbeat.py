@@ -307,7 +307,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
 
         self.log.logging(
             ["Heartbeat", "ZLinky"], "Debug",
-            f"++ pollingManufSpecificDevices - {NwkId} ScheduledZLinkyRead: Current: {_current_time} Target: {_target_value} should_execute {should_execute}",
+            f"++ pollingManufSpecificDevices - {NwkId} {parameter}: Current: {_current_time} Target: {_target_value} should_execute {should_execute}",
             NwkId,
         )
 
