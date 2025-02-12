@@ -295,9 +295,6 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         _current_time = datetime.datetime.now().strftime("%H:%M")
         _target_value = device_parameters.get(parameter)
 
-        if not isinstance(_target_value, str):
-            return
-
         # Determine execution condition
         should_execute = False
         if isinstance( _target_value, str) and ":" in _target_value:
