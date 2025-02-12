@@ -142,7 +142,6 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
         or cluster_id == "e001"  # TS011F Plug does this every 24 hours
     ):
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
-
         return frame
 
     # Log unknown commands
@@ -152,8 +151,7 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
 
     return frame
 
-
-def buildframe_foundation_cluster(self, fcf, disable_default_response, command, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data):
+def buildframe_foundation_cluster(self, fcf, disable_default_response, command, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, manufacturer_code, data):
     """
     Processes ZCL foundation cluster commands and builds the appropriate frame.
 
@@ -172,37 +170,46 @@ def buildframe_foundation_cluster(self, fcf, disable_default_response, command, 
         Processed frame data or None if not handled.
     """
 
-    self.log.logging("zclDecoder", "Debug",
-                     f"buildframe_foundation_cluster Sqn: {int(sqn, 16)}/{sqn} ManufCode: {manufacturer_code} "
-                     f"Command: {command} Data: {data}")
+    self.log.logging("zclDecoder", "Debug", "zcl_decoders Sqn: %s/%s ManufCode: %s Command: %s Data: %s " % (int(sqn, 16), sqn, manufacturer_code, command, data))
+    if command == "00":  # Read Attribute
+        return foundation_cluster_read_attribute_request(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, manufacturer_code, data)
 
-    command_handlers = {
-        "00": foundation_cluster_read_attribute_request,  # Read Attribute
-        "01": foundation_cluster_read_attribute_response,  # Read Attribute Response
-        "02": foundation_cluster_write_attribute_request,  # Write Attributes
-        "04": foundation_cluster_write_attribute_response,  # Write Attribute Response
-        "07": foundation_cluster_configure_reporting_response,  # Configure Reporting Response
-        "09": foundation_cluster_read_configure_reporting_response,  # Read Configure Reporting Response
-        "0a": foundation_cluster_report_attribute_response,  # Report Attributes
-        "0d": foundation_cluster_discover_attribute_response,  # Discover Attributes Response
-    }
-
-    if command not in { "00", "02" }:
+    if command == "01":  # Read Attribute response
         send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return foundation_cluster_read_attribute_response(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, data)
 
-    if command in command_handlers:
-        return command_handlers[command](self, frame, sqn, src_nwk_id, src_endpoint, target_ep, cluster_id, manufacturer_code, data)
+    if command == "02":  # Write Attributes
+        return foundation_cluster_write_attribute_request(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, manufacturer_code, data)
 
-    if command in {"06", "0b"}:  # Configure Reporting & Default Response
-        return frame  # No specific processing required
+    if command == "04":  # Write Attribute response
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return foundation_cluster_write_attribute_response(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, data)
 
-    self.log.logging("zclDecoder", "Debug",
-                     f"buildframe_foundation_cluster unhandled command Sqn: {int(sqn, 16)}/{sqn} ManufCode: {manufacturer_code} "
-                     f"Command: {command} Data: {data}")
+    if command == "06":  # Configure Reporting
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return frame
 
-    return None  # Unhandled command
+    if command == "07":  # Configure Reporting Response
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return foundation_cluster_configure_reporting_response(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, data)
 
-def foundation_cluster_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+    if command == '09':  # Read Configure Reporting Response
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return foundation_cluster_read_configure_reporting_response(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, data)
+
+    if command == "0a":  # Report attributes
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return foundation_cluster_report_attribute_response(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, data)
+
+    if command == "0b":  # Default Response
+        return frame
+
+    if command == "0d":  # Discover Attributes Response
+        send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufacturer_code, status="00")
+        return foundation_cluster_discover_attribute_response(self, frame, sqn, src_nwk_id, src_endpoint, TargetEp, cluster_id, data)
+
+
+def foundation_cluster_discover_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     # 01 0000f0010023020023030021040023050021060030070021080021090021fdff21
     self.log.logging("zclDecoder", "Debug", "buildframe_discover_attribute_response - Data: %s" % Data)
     
@@ -279,7 +286,7 @@ def foundation_cluster_write_attribute_request(self, frame, Sqn, SrcNwkId, SrcEn
     return encapsulate_plugin_frame("0110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def foundation_cluster_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_write_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     # This is based on assumption that we only Write 1 attribute at a time
@@ -287,7 +294,7 @@ def foundation_cluster_write_attribute_response(self, frame, Sqn, SrcNwkId, SrcE
     return encapsulate_plugin_frame("8110", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     nbAttribute = 0
@@ -319,7 +326,7 @@ def foundation_cluster_read_attribute_response(self, frame, Sqn, SrcNwkId, SrcEn
     return encapsulate_plugin_frame("8100", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId,ManufacturerCode, Data):
+def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_report_attribute_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     buildPayload = Sqn + SrcNwkId + SrcEndPoint + ClusterId
@@ -344,7 +351,7 @@ def foundation_cluster_report_attribute_response(self, frame, Sqn, SrcNwkId, Src
     return encapsulate_plugin_frame("8102", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def foundation_cluster_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_configure_reporting_response - %s %s %s Data: %s" % (SrcNwkId, SrcEndPoint, ClusterId, Data))
 
     if len(Data) == 2:
@@ -370,7 +377,7 @@ def foundation_cluster_configure_reporting_response(self, frame, Sqn, SrcNwkId, 
     return encapsulate_plugin_frame("8120", buildPayload, frame[len(frame) - 4 : len(frame) - 2])
 
 
-def foundation_cluster_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, ManufacturerCode, Data):
+def foundation_cluster_read_configure_reporting_response(self, frame, Sqn, SrcNwkId, SrcEndPoint, TargetEp, ClusterId, Data):
     self.log.logging("zclDecoder", "Debug", "buildframe_read_configure_reporting_response - %s %s %s Data: %s" % (
         SrcNwkId, SrcEndPoint, ClusterId, Data))
   
