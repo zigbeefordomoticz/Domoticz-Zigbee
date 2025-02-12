@@ -1149,7 +1149,7 @@ def schneider_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst_
         self.log.logging("Schneider", "Debug", f"schneider_multiple_read_attribute_request - nwkid {nwkid} attribute {attribute}", nwkid)
 
         # Handle different cluster IDs and attributes
-        zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, src_ep, nwkid, attribute)
+        zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, nwkid, src_ep, attribute)
         self.log.logging("Schneider", "Debug", f"schneider_multiple_read_attribute_request -  response {data_type} {data}", nwkid)
         if payload is None:
             payload = cluster_frame + sqn + cmd
