@@ -75,6 +75,9 @@ OTA_CODES = {
     "Schneider": {"Folder": "SCHNEIDER-WISER", "ManufCode": 0x105E, "ManufName": "Schneider Electric", "Enabled": True},
     "SonOff": {"Folder": "SONOFF", "ManufCode": 0x1286, "ManufName": "Sonoff", "Enabled": True},
     "Xiaomi": {"Folder": "XIAOMI", "ManufCode": 0x115f, "ManufName": "Xiaomi", "Enabled": True},
+    "Lumi": {"Folder": "XIAOMI", "ManufCode": 0x1037, "ManufName": "Lumi", "Enabled": True},
+    "devbis": {"Folder": "XIAOMI", "ManufCode": 0xdb15, "ManufName": "Lumi", "Enabled": True},
+    "z03mmc": {"Folder": "XIAOMI", "ManufCode": 0x0084, "ManufName": "Lumi", "Enabled": True},
 }
 
 
@@ -1026,7 +1029,7 @@ def ota_extract_image_headers(self, subfolder, image):  # OK 13/10
     logging(
         self,
         "Status",
-        "Available Firmware - ManufCode: %4x ImageType: 0x%04x FileVersion: 0x%8x Size: %8s Bytes Filename: %s"
+        "Available Firmware - ManufCode: 0x%04x ImageType: 0x%04x FileVersion: 0x%08x Size: %8s Bytes Filename: %s"
         % (headers["manufacturer_code"], headers["image_type"], headers["image_version"], headers["size"], image),
     )
 
