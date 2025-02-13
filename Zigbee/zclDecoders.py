@@ -8,7 +8,8 @@
 import struct
 from os import stat
 
-from Modules.tools import (is_direction_to_client, is_direction_to_server,
+from Modules.tools import (get_deviceconf_parameter_value,
+                           is_direction_to_client, is_direction_to_server,
                            retreive_cmd_payload_from_8002)
 from Modules.zigateConsts import (SIZE_DATA_TYPE, ZIGATE_EP, composite_value,
                                   discrete_value)
@@ -32,20 +33,33 @@ def is_duplicate_zcl_frame(self, nwkid, cluster_id, sqn, default_response_disabl
     Returns:
         bool: True if the frame is a duplicate, False otherwise.
     """
+    if self.zigbee_communication != "zigpy":
+        # No check for zigate
+        return False
+    if nwkid not in self.ListOfDevices:
+        # The device is not yet known
+        return False
+    if "Model" not in self.ListOfDevices[nwkid]:
+        return False
+    if not default_response_disable:
+        # ????
+        return False
+
     if (
-        self.zigbee_communication != "zigpy" 
-        or nwkid not in self.ListOfDevices 
-        or not default_response_disable
-        or not self.pluginconf.pluginConf.get("enableZclDuplicatecheck", False)
+        get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "enableZclDuplicatecheck", return_default=False)
+        or self.pluginconf.pluginConf.get("enableZclDuplicatecheck", False)
     ):
-        return False  # No duplicate check needed
+        # We have disabled the ZCL SQN duplicate check
+        return False
 
     zcl_sqn = self.ListOfDevices.setdefault(nwkid, {}).setdefault("ZCL-IN-SQN", {})
 
-    if sqn == zcl_sqn.get(cluster_id):
+    if sqn != "00" and sqn == zcl_sqn.get(cluster_id):
+        self.log.logging("zclDecoder", "Log", f"Duplicate frame {nwkid} sqn: {sqn} sqn_clusters{zcl_sqn} cluster_id: {cluster_id} default_response_disable: {default_response_disable}", nwkid)
         return True  # Duplicate frame detected
 
     zcl_sqn[cluster_id] = sqn  # Store new sequence number
+
     return False
 
 
@@ -77,7 +91,7 @@ def zcl_decoders(self, src_nwk_id, src_endpoint, target_ep, cluster_id, payload,
 
     # Check for duplicate ZCL frames
     if is_duplicate_zcl_frame(self, src_nwk_id, cluster_id, sqn, disable_default_response):
-        self.log.logging("zclDecoder", "Debug", f"Duplicate frame [{sqn}] {payload}")
+        self.log.logging("zclDecoder", "Log", f"Duplicate frame found [{sqn}] {payload}")
         return None
 
     # Log ZCL message details
