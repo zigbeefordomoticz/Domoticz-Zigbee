@@ -1368,10 +1368,11 @@ def ReadAttributeRequest_0702_multiplier_divisor(self, key):
         self.log.logging("ReadAttributes", "Debug", "Request ReadAttributeRequest_0702 requesting Multiplier/Divisor" + key + " EPout = " + EPout, nwkid=key)
         ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+
 def ReadAttributeReq_ZLinky(self, nwkid):
  
     EPout = "01"
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
 
     for cluster in ( "0702", "0b01", "0b04" ):
         self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout + " Cluster = " + cluster, nwkid=nwkid)
@@ -1390,7 +1391,7 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
     WORK_TO_BE_DONE = { 
         "ff66": [  
             0x0001,   # Couleur du lendemain 
-            0x0217,   # STGE 
+            0x0217,   # STGE to get next day color for Standard
         ],
         "0702": [ 
             0x0020,   # Periode Tarifaire en cours 
@@ -1399,7 +1400,7 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
 
     EPout = "01"
     for cluster in WORK_TO_BE_DONE:
-        self.log.logging(["ReadAttributes", "ZLinky"], "Log", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
+        self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
             nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
         ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
    
@@ -1423,7 +1424,7 @@ def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
         else:
             listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
 
-    self.log.logging(["ReadAttributes", "ZLinky"], "ZLinky", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
 
 
@@ -1438,9 +1439,9 @@ def ReadAttribute_ZLinkyIndex( self, nwkid ):
     }
 
     EPout = "01"
-    self.log.logging("ZLinky", "Debug", "ReadAttribute_ZLinkyIndex: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttribute_ZLinkyIndex: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
     optarif = get_OPTARIF( self, nwkid)[:2]
-    self.log.logging("ZLinky", "Debug", "ReadAttribute_ZLinkyIndex: %s Cluster: %s Attributes: %s Optarif: %s" %(
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttribute_ZLinkyIndex: %s Cluster: %s Attributes: %s Optarif: %s" %(
         nwkid, "0702", INDEX_ATTRIBUTES[ optarif ], optarif), nwkid=nwkid)
     if optarif in INDEX_ATTRIBUTES:
         ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "0702", INDEX_ATTRIBUTES[ optarif ], ackIsDisabled=False)
