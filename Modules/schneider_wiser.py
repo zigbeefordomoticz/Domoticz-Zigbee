@@ -1136,27 +1136,28 @@ def schneiderRenforceent(self, NWKID):
     return rescheduleAction
 
 
-def schneider_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst_ep, sqn, cluster_id, manuf_specif, mabnuf_code, MsgData, nbAttribute):
+def schneider_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst_ep, sqn, cluster_id, manuf_specif, manuf_code, MsgData, nbAttribute):
+
     """ Handle a read request with multiple attributes on cluster 0x0201"""
 
     payload = None
     cmd = "01"
     status = "00"
 
-    # Extract additional message components, and build a response
+    # Extract all attributes, and build a response
     for idx in range(0, len(MsgData), 4):
         attribute = MsgData[idx:idx + 4]
-        self.log.logging("Schneider", "Debug", f"schneider_multiple_read_attribute_request - nwkid {nwkid} attribute {attribute}", nwkid)
+        self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request - nwkid {nwkid} attribute {attribute}", nwkid)
 
         # Handle different cluster IDs and attributes
         zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, nwkid, src_ep, attribute)
-        self.log.logging("Schneider", "Debug", f"schneider_multiple_read_attribute_request -  response {data_type} {data}", nwkid)
+        self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request -  response {data_type} {data}", nwkid)
         if payload is None:
             payload = cluster_frame + sqn + cmd
         payload += attribute[2:4] + attribute[:2] + status + data_type
         payload += data[2:4] + data[:2] if data_type == "29" else data
     
-    self.log.logging("Schneider", "Debug", f"schneider_multiple_read_attribute_request Response - nwkid {nwkid} ep: {src_ep} , clusterId: {cluster_id}, sqn: {sqn},payload: {payload}", nwkid)
+    self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request Response - nwkid {nwkid} ep: {src_ep} , clusterId: {cluster_id}, sqn: {sqn},payload: {payload}", nwkid)
         
     raw_APS_request( self, nwkid, src_ep, cluster_id, "0104", payload, zigate_ep=zigate_ep, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
     

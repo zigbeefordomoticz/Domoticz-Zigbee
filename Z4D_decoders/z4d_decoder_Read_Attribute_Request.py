@@ -65,7 +65,7 @@ def Decode0100(self, Devices, MsgData, MsgLQI):
     manuf_name = self.ListOfDevices[MsgSrcAddr].get('Manufacturer Name', '')
 
     if MsgClusterId == '0201' and (manuf == '105e' or manuf_name in ('Schneider', 'Schneider Electric')) and int(nbAttribute) > 1:
-        self.log.logging('Input', 'Debug', 'Decode0100 - specific ---- schneider_multiple_read_attribute_request')
+        self.log.logging(['Input', 'Schneider'], 'Debug', 'Decode0100 - specific ---- schneider_multiple_read_attribute_request')
         schneider_multiple_read_attribute_request(self, Devices, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgSqn, MsgClusterId, MsgManufSpec, MsgManufCode, MsgData[24:], nbAttribute)  
         return
 
