@@ -259,19 +259,19 @@ def retreive_attributes_based_on_configuration(self, key, cluster):
 def retreive_manufacturer_specifics_attributes(self, nwkid, cluster):
     model_name = self.ListOfDevices[nwkid].get("Model")
     if model_name is None:
-        return None
+        return None, None
 
     if model_name not in self.DeviceConf:
-        return None
+        return None, None
 
     manufacturer_clusters = self.DeviceConf[model_name].get("ManufacturerAttributes")
     manufacturer_code = self.DeviceConf[model_name].get("ManufacturerCode")
 
-    if manufacturer_clusters is None or  manufacturer_code is None:
-        return None
+    if manufacturer_clusters is None or manufacturer_code is None:
+        return None, None
 
     if cluster not in manufacturer_clusters:
-        return None
+        return None, None
 
     return manufacturer_code, [ int(attr, 16) for attr in manufacturer_clusters[ cluster ] ]
  
