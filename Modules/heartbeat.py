@@ -89,65 +89,6 @@ PING_DEVICE_VIA_GROUPID = 3567 // HEARTBEAT    # Secondes ( 59minutes et 45 seco
 FIRST_PING_VIA_GROUP = 127 // HEARTBEAT
 
 
-#def attributeDiscovery(self, NwkId):
-#
-#    rescheduleAction = False
-#    # If Attributes not yet discovered, let's do it
-#
-#    if "ConfigSource" not in self.ListOfDevices[NwkId]:
-#        return False
-#
-#    if self.ListOfDevices[NwkId]["ConfigSource"] == "DeviceConf":
-#        return False
-#
-#    if "Attributes List" in self.ListOfDevices[NwkId] and len(self.ListOfDevices[NwkId]["Attributes List"]) > 0:
-#        return False
-#
-#    if "Attributes List" not in self.ListOfDevices[NwkId]:
-#        self.ListOfDevices[NwkId]["Attributes List"] = {'Ep': {}}
-#    if "Request" not in self.ListOfDevices[NwkId]["Attributes List"]:
-#        self.ListOfDevices[NwkId]["Attributes List"]["Request"] = {}
-#
-#    for iterEp in list(self.ListOfDevices[NwkId]["Ep"]):
-#        if iterEp == "ClusterType":
-#            continue
-#        if iterEp not in self.ListOfDevices[NwkId]["Attributes List"]["Request"]:
-#            self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp] = {}
-#
-#        for iterCluster in list(self.ListOfDevices[NwkId]["Ep"][iterEp]):
-#            if iterCluster in ("Type", "ClusterType", "ColorMode"):
-#                continue
-#            if iterCluster not in self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp]:
-#                self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp][iterCluster] = 0
-#
-#            if self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp][iterCluster] != 0:
-#                continue
-#
-#            if not self.busy and self.ControllerLink.loadTransmit() <= MAX_LOAD_ZIGATE:
-#                if int(iterCluster, 16) < 0x0FFF:
-#                    getListofAttribute(self, NwkId, iterEp, iterCluster)
-#                    # getListofAttributeExtendedInfos(self, NwkId, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None)
-#                elif (
-#                    "Manufacturer" in self.ListOfDevices[NwkId]
-#                    and len(self.ListOfDevices[NwkId]["Manufacturer"]) == 4
-#                    and is_hex(self.ListOfDevices[NwkId]["Manufacturer"])
-#                ):
-#                    getListofAttribute(
-#                        self,
-#                        NwkId,
-#                        iterEp,
-#                        iterCluster,
-#                        manuf_specific="01",
-#                        manuf_code=self.ListOfDevices[NwkId]["Manufacturer"],
-#                    )
-#                    # getListofAttributeExtendedInfos(self, NwkId, EpOut, cluster, start_attribute=None, manuf_specific=None, manuf_code=None)
-#
-#                self.ListOfDevices[NwkId]["Attributes List"]["Request"][iterEp][iterCluster] = time.time()
-#
-#            else:
-#                rescheduleAction = True
-#
-#    return rescheduleAction
 
 def attributeDiscovery(self, NwkId):
     # If Attributes not yet discovered, let's do it
@@ -341,56 +282,84 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "TempPollingFreq": ReadAttributeRequest_0402,
         "HumiPollingFreq": ReadAttributeRequest_0405,
         "BattPollingFreq": ReadAttributeRequest_0001,
-        "ZLinkyIndexes": ReadAttributeReq_Scheduled_ZLinky,      # Based on a specific time
-        "ZLinkyPollingPTEC": ReadAttributeReq_Scheduled_ZLinky,  # Every 15' by default
-        "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,
-        "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,
-        "PollingCusterff66": ReadAttributeRequest_ff66,
+        "ZLinkyPollingPTEC": ReadAttributeReq_Scheduled_ZLinky,     # Color of day and next day
+        "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,  # Metering
+        "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,             # All ZLinky Clusters/Attributes
+        "PollingCusterff66": ReadAttributeRequest_ff66,             # All Manufacturer Specific ZLinky attributes
         "InletTempPolling": ReadAttributeRequest_0702_0017,      # Retreive Inlet Temperature
     }
 
-    if "Param" not in self.ListOfDevices[NwkId]:
+    def _scheduled_zlinky_read(self, NwkId, parameter, device_parameters, heartbeat_counter):
+        """Handles scheduled ZLinky read operations based on time or heartbeat intervals."""
+
+        _current_time = datetime.datetime.now().strftime("%H:%M")
+        _target_value = device_parameters.get(parameter)
+
+        # Determine execution condition
+        should_execute = False
+        if isinstance( _target_value, str) and ":" in _target_value:
+            should_execute = (_current_time == _target_value)
+
+        elif isinstance( _target_value, (int, float)):
+            _target_value = _target_value // HEARTBEAT
+            if _target_value != 0:
+                should_execute = (heartbeat_counter % _target_value) == 0
+
+        self.log.logging(
+            ["Heartbeat", "ZLinky"], "Debug",
+            f"++ pollingManufSpecificDevices - {NwkId} {parameter}: Current: {_current_time} Target: {_target_value} should_execute {should_execute}",
+            NwkId,
+        )
+
+        if should_execute:
+            if "ScheduledZLinkyRead" in self.ListOfDevices[NwkId]:
+                return
+            if parameter == "ZLinkyPollingPTEC":
+                self.log.logging("Heartbeat", "Status", "Reading ZLinky Color of Day and Next Day")
+
+            self.ListOfDevices[NwkId]["ScheduledZLinkyRead"] = True
+            func = FUNC_MANUF[param]
+            func(self, NwkId)
+
+        elif "ScheduledZLinkyRead" in self.ListOfDevices[NwkId]:
+            # Prevent multiple executions within the same time unit
+            self.ListOfDevices[NwkId].pop("ScheduledZLinkyRead", None)
+
+
+    device_parameters = self.ListOfDevices[NwkId].get("Param")
+    if device_parameters is None:
         return False
 
     if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
         return True
 
-    if "LastPollingManufSpecificDevices" in self.ListOfDevices[ NwkId ] and self.ListOfDevices[ NwkId ][ "LastPollingManufSpecificDevices"] == HB:
+    last_polling = self.ListOfDevices[ NwkId ].get("LastPollingManufSpecificDevices")
+    if last_polling and last_polling == HB:
         return False
 
     self.log.logging( "Heartbeat", "Debug", "++ pollingManufSpecificDevices -  %s " % (NwkId,), NwkId, )
 
-    for param in self.ListOfDevices[NwkId]["Param"]:
-        if param == "ZLinkyPollingPTEC":
-            # We are requesting to execute at a particular time
-            _current_time = datetime.datetime.now().strftime("%H:%M" )
-            _target_time = self.ListOfDevices[NwkId]["Param"][ param ]
-            self.log.logging( "Heartbeat", "Debug", "++ pollingManufSpecificDevices -  %s ScheduledZLinkyRead: Current: %s Target: %s" % (
-                NwkId,_current_time, _target_time  ), NwkId, )
-
-            if _current_time == _target_time and "ScheduledZLinkyRead" not in self.ListOfDevices[ NwkId ]:
-                self.ListOfDevices[ NwkId ][ "ScheduledZLinkyRead" ] = True
-                ReadAttributeReq_Scheduled_ZLinky( self, NwkId)
-                ReadAttributeRequest_ff66( self, NwkId)
-
-            elif _current_time != _target_time and "ScheduledZLinkyRead" in self.ListOfDevices[ NwkId ]:
-                del self.ListOfDevices[ NwkId ][ "ScheduledZLinkyRead" ]
+    for param in device_parameters:
+        if param in ("ZLinkyPollingPTEC", "ScheduledZLinkyRead", "ZLinkyPolling0702", "ZLinkyPollingGlobal", "PollingCusterff66"):
+            _scheduled_zlinky_read(self, NwkId, param, device_parameters, HB)
 
         elif param in FUNC_MANUF:
-            _FEQ = self.ListOfDevices[NwkId]["Param"][param] // HEARTBEAT
+            _FEQ = device_parameters[param] // HEARTBEAT
             if _FEQ == 0:  # Disable
                 continue
             self.log.logging( "Heartbeat", "Debug", "++ pollingManufSpecificDevices -  %s Found: %s=%s HB: %s FEQ: %s Cycle: %s" % (
-                NwkId, param, self.ListOfDevices[NwkId]["Param"][param], HB, _FEQ, (HB % _FEQ)), NwkId, )
+                NwkId, param, device_parameters[param], HB, _FEQ, (HB % _FEQ)), NwkId, )
             if _FEQ and ((HB % _FEQ) != 0):
                 continue
             self.log.logging( "Heartbeat", "Debug", "++ pollingManufSpecificDevices -  %s Found: %s=%s" % (
-                NwkId, param, self.ListOfDevices[NwkId]["Param"][param]), NwkId, )
+                NwkId, param, device_parameters[param]), NwkId, )
 
             func = FUNC_MANUF[param]
             func(self, NwkId)
 
     return False
+
+
 
 
 def pollingDeviceStatus(self, NwkId):
