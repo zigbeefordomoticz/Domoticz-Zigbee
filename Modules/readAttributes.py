@@ -1391,6 +1391,7 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
     WORK_TO_BE_DONE = { 
         "ff66": [  
             0x0001,   # Couleur du lendemain 
+            0x0200,   # LTARF ( Libellé tarif fournisseur en cours)
             0x0217,   # STGE to get next day color for Standard
         ],
         "0702": [ 
@@ -1398,11 +1399,11 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
         ]
     }
 
-    EPout = "01"
+    ep_out = "01"
     for cluster in WORK_TO_BE_DONE:
         self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
             nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
-        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
    
 
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):

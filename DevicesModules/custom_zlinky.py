@@ -621,7 +621,13 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
         tarif_mapping = {
             "BLEU": "B",
             "BLAN": "W",
-            "ROUG": "R"
+            "ROUG": "R",
+            "HP  BLEU": "B",
+            "HC  BLEU": "B",
+            "HP  BLANC": "W",
+            "HC  BLANC": "W",
+            "HP  ROUGE": "R",
+            "HC  ROUGE": "R",
         }
         s_tarif = next((tarif_mapping[key] for key in tarif_mapping if key in value), "")
 
