@@ -121,6 +121,18 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufa
             normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, shortlist, manufacturer_spec, manufacturer, ackIsDisabled)
 
 
+def read_manufacturer_specific_attributes(self, nwkid, ep_out, cluster):
+    """ Request a Read Attributes of Manufacturer specific attributes defined in Config file for this cluster"""
+    manufacturer_code, manufacturer_attributes = retreive_manufacturer_specifics_attributes(self, nwkid, cluster)
+    if manufacturer_code and manufacturer_attributes:
+        # Log the message
+        attributes_str = " ".join(f"0x{num:04x}" for num in manufacturer_attributes)
+        self.log.logging("ReadAttributes", "Debug", f"Request Manuf.Specific Attributes for cluster {cluster} for {nwkid} {ep_out} {attributes_str}", nwkid=nwkid)
+
+        # Perform the Request
+        ReadAttributeReq( self, nwkid, ZIGATE_EP, ep_out, "0201", manufacturer_attributes, manufacturer_spec="01", manufacturer=manufacturer_code, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), checkTime=False, )
+
+
 def split_list(list_in, wanted_parts=1):
     """
     Split the list of attrributes in wanted part
@@ -227,22 +239,42 @@ def retreive_ListOfAttributesByCluster(self, key, Ep, cluster):
 
 
 def retreive_attributes_based_on_configuration(self, key, cluster):
-    if "Model" not in self.ListOfDevices[key]:
+    model_name = self.ListOfDevices[key].get("Model")
+    if model_name is None:
         return None
-    if self.ListOfDevices[key]["Model"] not in self.DeviceConf:
+    if model_name not in self.DeviceConf:
         return None
-    if "ReadAttributes" not in self.DeviceConf[self.ListOfDevices[key]["Model"]]:
+    if "ReadAttributes" not in self.DeviceConf[model_name]:
         return None
-    if cluster not in self.DeviceConf[self.ListOfDevices[key]["Model"]]["ReadAttributes"]:
+    if cluster not in self.DeviceConf[model_name]["ReadAttributes"]:
         return None
 
     return [
         int(attr, 16)
-        for attr in self.DeviceConf[self.ListOfDevices[key]["Model"]][
+        for attr in self.DeviceConf[model_name][
             "ReadAttributes"
         ][cluster]
     ]
 
+def retreive_manufacturer_specifics_attributes(self, nwkid, cluster):
+    model_name = self.ListOfDevices[nwkid].get("Model")
+    if model_name is None:
+        return None, None
+
+    if model_name not in self.DeviceConf:
+        return None, None
+
+    manufacturer_clusters = self.DeviceConf[model_name].get("ManufacturerAttributes")
+    manufacturer_code = self.DeviceConf[model_name].get("ManufacturerCode")
+
+    if manufacturer_clusters is None or manufacturer_code is None:
+        return None, None
+
+    if cluster not in manufacturer_clusters:
+        return None, None
+
+    return manufacturer_code, [ int(attr, 16) for attr in manufacturer_clusters[ cluster ] ]
+ 
 
 def retreive_attributes_from_default_device_list(self, key, Ep, cluster):
 
@@ -823,127 +855,80 @@ def ReadAttributeRequest_0201(self, key):
     # Thermostat
 
     self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0201 - Key: %s " % key, nwkid=key)
-    _model = "Model" in self.ListOfDevices[key]
-    disableAck = True
-    if "PowerSource" in self.ListOfDevices[key] and self.ListOfDevices[key]["PowerSource"] == "Battery":
-        disableAck = False
+    _model_name = self.ListOfDevices[key].get("Model","")
+    manufacturer = self.ListOfDevices[key].get("Manufacturer")
+    manufacturer_name = self.ListOfDevices[key].get("Manufacturer Name")
 
-    ListOfEp = getListOfEpForCluster(self, key, "0201")
-    for EPout in ListOfEp:
-        listAttributes = []
-        for iterAttr in retreive_ListOfAttributesByCluster(self, key, EPout, "0201"):
-            if iterAttr not in listAttributes:
-                listAttributes.append(iterAttr)
+    eps_list = getListOfEpForCluster(self, key, "0201")
+    for ep_out in eps_list:
+        attribute_list = []
+        for attr in retreive_ListOfAttributesByCluster(self, key, ep_out, "0201"):
+            if attr not in attribute_list:
+                attribute_list.append(attr)
 
-            if _model and str(self.ListOfDevices[key]["Model"]).find("Super TR") == 0:
-                self.log.logging("ReadAttributes", "Debug", "- req Attributes for  Super TR", nwkid=key)
-                listAttributes.append(0x0403)
-                listAttributes.append(0x0405)
-                listAttributes.append(0x0406)
-                listAttributes.append(0x0408)
-                listAttributes.append(0x0409)
+                if _model_name.find("Super TR") == 0:
+                    self.log.logging("ReadAttributes", "Debug", "- req Attributes for  Super TR", nwkid=key)
+                    attribute_list.append(0x0403)
+                    attribute_list.append(0x0405)
+                    attribute_list.append(0x0406)
+                    attribute_list.append(0x0408)
+                    attribute_list.append(0x0409)
 
         # Adjustement before request
-        listAttrSpecific = []
-        listAttrGeneric = []
+        attr_spec_list = []
+        appt_generic_list = []
         manufacturer_code = "0000"
 
-        if ( 
-            ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "105e") 
-            or (
-                ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "113c") 
-                or ( "Manufacturer Name" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric")
-            )
-        ):
-            # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
-            if self.ListOfDevices[key]["Manufacturer Name"] == "Schneider Electric":
+        if manufacturer in ("105e","113c") or manufacturer_name in ("Schneider Electric", "OWON", "CASAIA"):
+            # We need to break the Read Attribute between Manufacturer specifcs one and the generic one
+            if manufacturer_name == "Schneider Electric":
                 manufacturer_code = "105e"
 
-            elif self.ListOfDevices[key]["Manufacturer Name"] in ("OWON", "CASAIA"):
+            elif manufacturer_name in ("OWON", "CASAIA"):
                 manufacturer_code = "113c"
 
-            for _attr in list(listAttributes):
+            for _attr in list(attribute_list):
                 if _attr in (0xE011, 0x0E20, 0xFD00):
-                    listAttrSpecific.append(_attr)
+                    appt_generic_list.append(_attr)
                 else:
-                    listAttrGeneric.append(_attr)
-            del listAttributes
-            listAttributes = listAttrGeneric
+                    appt_generic_list.append(_attr)
+            del attribute_list
+            attribute_list = appt_generic_list
 
-        if ("Manufacturer" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer"] == "1246") or (
-            "Manufacturer Name" in self.ListOfDevices[key] and self.ListOfDevices[key]["Manufacturer Name"] == "Danfoss"
-        ):
+        elif manufacturer == "1246" or manufacturer_name == "Danfoss":
             manufacturer_code = "1246"
-            for _attr in list(listAttributes):
+            for _attr in list(attribute_list):
                 if _attr in (0x4000, 0x4010, 0x4011, 0x4015, 0x4020):
-                    listAttrSpecific.append(_attr)
+                    attr_spec_list.append(_attr)
                 else:
-                    listAttrGeneric.append(_attr)
-            del listAttributes
-            listAttributes = listAttrGeneric
+                    appt_generic_list.append(_attr)
+            del attribute_list
+            attribute_list = appt_generic_list
 
-        if listAttributes:
-            # self.log.logging( "ReadAttributes", 'Debug', "Request 0201 %s/%s 0201 %s " %(key, EPout, listAttributes), nwkid=key)
-            self.log.logging(
-                "ReadAttributes",
-                "Debug",
-                "Request Thermostat  via Read Attribute request %s/%s " % (key, EPout)
-                + " ".join("0x{:04x}".format(num) for num in listAttributes),
-                nwkid=key,
-            )
-            ReadAttributeReq(
-                self,
-                key,
-                ZIGATE_EP,
-                EPout,
-                "0201",
-                listAttributes,
-                ackIsDisabled=is_ack_tobe_disabled(self, key),
-                checkTime=False,
-            )
+        if attribute_list:
+            self.log.logging( "ReadAttributes", "Debug", "Request Thermostat via Read Attribute request %s/%s " % (key, ep_out) + " ".join("0x{:04x}".format(num) for num in attribute_list), nwkid=key, )
+            ReadAttributeReq( self, key, ZIGATE_EP, ep_out, "0201", attribute_list, ackIsDisabled=is_ack_tobe_disabled(self, key), checkTime=False, )
 
-        if listAttrSpecific:
-            # self.log.logging( "ReadAttributes", 'Debug', "Request Thermostat info via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttrSpecific)), nwkid=key)
-            self.log.logging(
-                "ReadAttributes",
-                "Debug",
-                "Request Thermostat  via Read Attribute request Manuf Specific %s/%s " % (key, EPout)
-                + " ".join("0x{:04x}".format(num) for num in listAttrSpecific),
-                nwkid=key,
-            )
-            ReadAttributeReq(
-                self,
-                key,
-                ZIGATE_EP,
-                EPout,
-                "0201",
-                listAttrSpecific,
-                manufacturer_spec="01",
-                manufacturer=manufacturer_code,
-                ackIsDisabled=is_ack_tobe_disabled(self, key),
-                checkTime=False,
-            )
+        if attr_spec_list:
+            self.log.logging( "ReadAttributes", "Debug", "Request Thermostat via Read Attribute request Manuf Specific %s/%s " % (key, ep_out) + " ".join("0x{:04x}".format(num) for num in attr_spec_list), nwkid=key, )
+            ReadAttributeReq( self, key, ZIGATE_EP, ep_out, "0201", attr_spec_list, manufacturer_spec="01", manufacturer=manufacturer_code, ackIsDisabled=is_ack_tobe_disabled(self, key), checkTime=False, )
+
+        read_manufacturer_specific_attributes(self, key, ep_out, "0201")
+
 
 
 def ReadAttributeRequest_0201_0012(self, key):
+    """ Request attribute 0x0012 (Occupied Setpoint)"""
 
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0201 - Key: %s " % key, nwkid=key)
-    _model = False
-    if "Model" in self.ListOfDevices[key]:
-        _model = True
+    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0201 / 0x0012 - Key: %s " % key, nwkid=key)
+    eps_list = getListOfEpForCluster(self, key, "0201")
+    for EPout in eps_list:
 
-    disableAck = True
-    if "PowerSource" in self.ListOfDevices[key] and self.ListOfDevices[key]["PowerSource"] == "Battery":
-        disableAck = False
+        cluster_0201 = self.ListOfDevices.get(key, {}).get("Ep", {}).get(EPout, {}).get("0201")
+        if cluster_0201:
+            attributes_list = [0x0012,]
 
-    ListOfEp = getListOfEpForCluster(self, key, "0201")
-    for EPout in ListOfEp:
-        listAttributes = [0x0012]
-
-        if "0201" in self.ListOfDevices[key]["Ep"][EPout] and "0010" in self.ListOfDevices[key]["Ep"][EPout]["0201"]:
-            listAttributes.append(0x0010)
-
-        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0201", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
+        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0201", attributes_list, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
 def ReadAttributeRequest_0202(self, key):
@@ -1368,10 +1353,11 @@ def ReadAttributeRequest_0702_multiplier_divisor(self, key):
         self.log.logging("ReadAttributes", "Debug", "Request ReadAttributeRequest_0702 requesting Multiplier/Divisor" + key + " EPout = " + EPout, nwkid=key)
         ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
+
 def ReadAttributeReq_ZLinky(self, nwkid):
  
     EPout = "01"
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
 
     for cluster in ( "0702", "0b01", "0b04" ):
         self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_ZLinky: " + nwkid + " EPout = " + EPout + " Cluster = " + cluster, nwkid=nwkid)
@@ -1390,18 +1376,19 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
     WORK_TO_BE_DONE = { 
         "ff66": [  
             0x0001,   # Couleur du lendemain 
-            0x0217,   # STGE 
+            0x0200,   # LTARF ( Libellé tarif fournisseur en cours)
+            0x0217,   # STGE to get next day color for Standard
         ],
         "0702": [ 
             0x0020,   # Periode Tarifaire en cours 
         ]
     }
 
-    EPout = "01"
+    ep_out = "01"
     for cluster in WORK_TO_BE_DONE:
-        self.log.logging(["ReadAttributes", "ZLinky"], "Log", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
+        self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
             nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
-        ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
    
 
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
@@ -1423,7 +1410,7 @@ def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
         else:
             listAttributes = [0x0020, 0x0100, 0x0102, 0x0104, 0x0106, 0x0108, 0x10A]
 
-    self.log.logging(["ReadAttributes", "ZLinky"], "ZLinky", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "Request ZLinky infos on 0x0702 cluster: " + key + " EPout = " + EPout, nwkid=key)
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=False)
 
 
@@ -1438,9 +1425,9 @@ def ReadAttribute_ZLinkyIndex( self, nwkid ):
     }
 
     EPout = "01"
-    self.log.logging("ZLinky", "Debug", "ReadAttribute_ZLinkyIndex: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttribute_ZLinkyIndex: " + nwkid + " EPout = " + EPout, nwkid=nwkid)
     optarif = get_OPTARIF( self, nwkid)[:2]
-    self.log.logging("ZLinky", "Debug", "ReadAttribute_ZLinkyIndex: %s Cluster: %s Attributes: %s Optarif: %s" %(
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttribute_ZLinkyIndex: %s Cluster: %s Attributes: %s Optarif: %s" %(
         nwkid, "0702", INDEX_ATTRIBUTES[ optarif ], optarif), nwkid=nwkid)
     if optarif in INDEX_ATTRIBUTES:
         ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "0702", INDEX_ATTRIBUTES[ optarif ], ackIsDisabled=False)
