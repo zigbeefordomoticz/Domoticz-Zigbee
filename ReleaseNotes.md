@@ -22,8 +22,11 @@ Release Numbering
 
 - [Technical] - Improve plugin resiliance when connection with coordintaor is lost.
 - [Technical] - Support network based coordinator over Etherneth such as SMLIGHT - ADAPTATEUR USB ETHERNET POE ZIGBEE 3.0
+- [Technical] - Better Time server implementation
+- [Technical] - Support multi read attributes in one request for Schneider and Timeserver
 
 - [Hardware] - Improve ZLinky integration and manage TEMPO Colour on Historic and Standard mode
+- [Hardware] - Integration of Nodon TRV
 
 ## Jan. 2025 - stable7.1.020 (2025.2) - hot fix
 
