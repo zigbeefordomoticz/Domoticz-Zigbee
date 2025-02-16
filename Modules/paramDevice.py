@@ -22,58 +22,69 @@ from Modules.occupancy_settings import OCCUPANCY_DEVICE_PARAMETERS
 from Modules.onoff_settings import ONOFF_DEVICE_PARAMETERS
 from Modules.philips import PHILIPS_DEVICE_PARAMETERS
 from Modules.schneider_wiser import SCHNEIDER_DEVICE_PARAMETERS
+from Modules.thermo_settings import THERMOSTAT_DEVICE_PARAMETERS
 from Modules.tuya import TUYA_DEVICE_PARAMETERS
 from Modules.tuyaSiren import TUYA_SIREN_DEVICE_PARAMETERS
 from Modules.tuyaTRV import TUYA_TRV_DEVICE_PARAMETERS
 from Modules.tuyaTS011F import TUYA_TS011F_DEVICE_PARAMETERS
 from Modules.tuyaTS0601 import ts0601_extract_data_point_infos, ts0601_settings
 
+
 def initialize_device_settings(self):
+    """Initializes device settings by loading general and manufacturer-specific parameters."""
     self.device_settings = {}
-    
-    # Load specific settings
-    self.device_settings.update(ONOFF_DEVICE_PARAMETERS)
-    self.device_settings.update(OCCUPANCY_DEVICE_PARAMETERS)
-    self.device_settings.update(IAS_DEVICE_PARAMETERS)
-    self.device_settings.update(BALLAST_DEVICE_PARAMETERS)
 
-    # Load Manufacturer specific settings
-    self.device_settings.update(DANFOSS_DEVICE_PARAMETERS)
+    # General device parameters
+    general_parameters = [
+        ONOFF_DEVICE_PARAMETERS,
+        OCCUPANCY_DEVICE_PARAMETERS,
+        IAS_DEVICE_PARAMETERS,
+        BALLAST_DEVICE_PARAMETERS,
+        THERMOSTAT_DEVICE_PARAMETERS,
+    ]
 
-    self.device_settings.update(LEGRAND_DEVICE_PARAMETERS)
+    # Manufacturer-specific device parameters
+    manufacturer_parameters = [
+        DANFOSS_DEVICE_PARAMETERS,
+        LEGRAND_DEVICE_PARAMETERS,
+        LUMI_DEVICE_PARAMETERS,
+        PHILIPS_DEVICE_PARAMETERS,
+        SONOFF_DEVICE_PARAMETERS,
+        SUNRICHER_DEVICE_PARAMETERS,
+        TUYA_DEVICE_PARAMETERS,
+        TUYA_TS011F_DEVICE_PARAMETERS,
+        TUYA_TRV_DEVICE_PARAMETERS,
+        TUYA_SIREN_DEVICE_PARAMETERS,
+        SCHNEIDER_DEVICE_PARAMETERS,
+    ]
 
-    self.device_settings.update(LUMI_DEVICE_PARAMETERS)
+    # Update device settings in a single loop
+    for param_group in general_parameters + manufacturer_parameters:
+        self.device_settings.update(param_group)
 
-    self.device_settings.update(PHILIPS_DEVICE_PARAMETERS)
-
-    self.device_settings.update(SONOFF_DEVICE_PARAMETERS)
-
-    self.device_settings.update(SUNRICHER_DEVICE_PARAMETERS)
-
-    self.device_settings.update(TUYA_DEVICE_PARAMETERS)
-    self.device_settings.update(TUYA_TS011F_DEVICE_PARAMETERS)
-    self.device_settings.update(TUYA_TRV_DEVICE_PARAMETERS)
-    self.device_settings.update(TUYA_SIREN_DEVICE_PARAMETERS)
-
-    self.device_settings.update(SCHNEIDER_DEVICE_PARAMETERS)
 
 def sanity_check_of_param(self, NwkId):
+    """Performs a sanity check on device parameters and applies relevant settings."""
 
-    self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param  {NwkId}")
+    self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param {NwkId}")
 
-    param_data = self.ListOfDevices.get(NwkId, {}).get("Param", {})
-    model_name = self.ListOfDevices.get(NwkId, {}).get("Model", "")
+    device_data = self.ListOfDevices.get(NwkId, {})
+    param_data = device_data.get("Param", {})
+    model_name = device_data.get("Model", "")
+
+    dps_mapping = ts0601_extract_data_point_infos(self, model_name)
 
     for param, value in param_data.items():
-        self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param  {param}, {value}")
-        
-        dps_mapping = ts0601_extract_data_point_infos( self, model_name) 
+        self.log.logging("Heartbeat", "Debug", f"Checking param: {param}, Value: {value}")
+
         if dps_mapping:
-            ts0601_settings( self, NwkId, dps_mapping, param, value)
+            ts0601_settings(self, NwkId, dps_mapping, param, value)
+            continue
 
-        elif param in self.device_settings:
-            if callable( self.device_settings[param] ):
-                self.device_settings[param](self, NwkId, value)
+        param_setting = self.device_settings.get(param)
 
-            elif "callable" in self.device_settings[param]:
-                self.device_settings[param]["callable"](self, NwkId, value)
+        if callable(param_setting):
+            param_setting(self, NwkId, value)
+
+        elif isinstance(param_setting, dict) and "callable" in param_setting and callable(param_setting["callable"]):
+            param_setting["callable"](self, NwkId, value)
