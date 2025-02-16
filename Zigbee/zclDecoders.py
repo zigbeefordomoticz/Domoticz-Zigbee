@@ -46,8 +46,8 @@ def is_duplicate_zcl_frame(self, nwkid, cluster_id, sqn, default_response_disabl
         return False
 
     if (
-        get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "enableZclDuplicatecheck", return_default=False)
-        or self.pluginconf.pluginConf.get("enableZclDuplicatecheck", False)
+        not get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid]["Model"], "enableZclDuplicatecheck", return_default=False)
+        or not self.pluginconf.pluginConf.get("enableZclDuplicatecheck", False)
     ):
         # We have disabled the ZCL SQN duplicate check
         return False
