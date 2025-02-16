@@ -11,6 +11,7 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 
+import calendar
 import os
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -33,7 +34,6 @@ def get_local_timezone():
     return os.environ.get('TZ', 'UTC') or 'UTC'
 
 
-
 def calculate_dst_times(self):
     """
     Calculate the DST start and end times for the current year in the local time zone.
@@ -42,9 +42,11 @@ def calculate_dst_times(self):
     """
     # Get the local time zone name
     local_tz_name = get_local_timezone()
-    local_tz = ZoneInfo(local_tz_name)
+    # If the time zone is UTC, no DST exists → return (0, 0, 0) immediately
+    if local_tz_name == "UTC":
+        return 0, 0, 0
 
-    # Get the current year
+    local_tz = ZoneInfo(local_tz_name)
     current_year = datetime.now().year
 
     # Find the DST start and end times for the current year
@@ -53,18 +55,20 @@ def calculate_dst_times(self):
 
     # Iterate over the year to find DST transitions
     for month in range(1, 13):
-        for day in range(1, 32):
+        num_days = calendar.monthrange(current_year, month)[1]  # Get correct number of days
+        for day in range(1, num_days + 1):
             try:
                 date = datetime(current_year, month, day, tzinfo=local_tz)
                 if date.dst() != timedelta(0) and dst_start is None:
                     dst_start = date
                 elif date.dst() == timedelta(0) and dst_start is not None:
                     dst_end = date
-                    break
-            except ValueError:
+                    break  # Stop searching once we find dst_end
+
+            except Exception as er:
                 _context = {
                     'Error': "TimeServer_001",
-                    'Description': "Value Error",
+                    'Description': str(er),
                     'Local_tz_name': local_tz_name,
                     'Local_tz': local_tz,
                     'Current_year': current_year,
@@ -74,8 +78,13 @@ def calculate_dst_times(self):
                 }
                 self.log.logging(["TimeServer","Input"], "Error", "Decode0100 - calculate_dst_times - invalid date ", context=_context)
                 return 0, 0, 0
+
         if dst_end:
             break
+
+    if dst_start is None or dst_end is None:
+        print("No DST transition found for this time zone.")
+        return 0, 0, 0  # Return zero values if no DST change occurs
 
     # Calculate the DST shift in seconds
     dst_shift = int(dst_start.dst().total_seconds())
