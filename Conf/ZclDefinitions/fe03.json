@@ -1,0 +1,19 @@
+{
+    "ClusterId": "fe03",
+    "Description": "Schneider Touch Screen cluster",
+    "Version": "1",
+    "Enabled": true,
+    "ManufSpecificCluster": "schneider_touch_screen_cluster",
+    "Attributes": {
+        "0020": {
+            "Enabled": true,
+            "Name": "UI Information",
+            "DataType": "42",
+            "Acc": "R",
+            "Mandatory": false,
+            "ActionList": [
+                "check_store_value"
+            ]
+        }
+    }
+}

@@ -8,7 +8,9 @@ from Modules.schneider_wiser import wiser_read_attribute_request
 from Modules.timeServer import timeserver_read_attribute_request
 from Modules.tools import (timeStamped, updLQI, updSQN,
                            zigpy_plugin_sanity_check)
+from Modules.schneider_wiser import schneider_multiple_read_attribute_request
 from Modules.timeServer import timeserver_multiple_read_attribute_request
+
 
 
 def Decode0100(self, Devices, MsgData, MsgLQI):
@@ -64,12 +66,15 @@ def Decode0100(self, Devices, MsgData, MsgLQI):
     manuf = self.ListOfDevices[MsgSrcAddr].get('Manufacturer', '')
     manuf_name = self.ListOfDevices[MsgSrcAddr].get('Manufacturer Name', '')
 
+    if MsgClusterId == '0201' and (manuf == '105e' or manuf_name in ('Schneider', 'Schneider Electric')) and int(nbAttribute) > 1:
+        self.log.logging(['Input', 'Schneider'], 'Debug', 'Decode0100 - specific ---- schneider_multiple_read_attribute_request')
+        schneider_multiple_read_attribute_request(self, Devices, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgSqn, MsgClusterId, MsgManufSpec, MsgManufCode, MsgData[24:], nbAttribute)  
+        return
     
     if MsgClusterId == '000a':
         self.log.logging(['Input', 'Schneider'], 'Debug', 'Decode0100 - specific ---- schneider_multiple_read_attribute_request')
         timeserver_multiple_read_attribute_request(self, Devices, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgSqn, MsgClusterId, MsgManufSpec, MsgManufCode, MsgData[24:], nbAttribute)  
         return
-
 
     # Iterate over attributes in the message data
     for idx in range(24, len(MsgData), 4):

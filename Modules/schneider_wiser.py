@@ -29,7 +29,8 @@ from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import ReadAttributeRequest_0001
 from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
-                           getAttributeValue, is_ack_tobe_disabled,
+                           get_device_nickname, getAttributeValue,
+                           is_ack_tobe_disabled,
                            retreive_cmd_payload_from_8002)
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
@@ -47,8 +48,13 @@ METERING_CLUSTER = "0702"
 INSTANT_POWER = "0400"
 
 THERMOSTAT_CLUSTER = "0201"
+LOCAL_TEMPERATURE = "0000"
 PI_HEATING_DEMAND = "0008"
 OCCUPIED_SETPOINT = "0012"
+MIN_SETPOINT = "0015"
+MAX_SETPOINT = "0016"
+CONTROL_SEQUENCE_OPERATION = "001b"
+SYSTEM_MODE = "001c"
 SCHNEIDER_ZONE_MODE = "e010"
 
 TARGET_SETPOINT = "Target SetPoint"
@@ -58,6 +64,12 @@ TIMESTAMP_MODE = "TimeStamp Mode"
 
 TEMPERATURE_CLUSTER = "0402"
 TEMPERATURE_VALUE = "0000"
+
+SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER = "ff23"
+PILOT_MODE_ATTRIBUTE = "0031"
+PILOT_MODE_DATA_TYPE = "30"
+DEFAULT_PILOT_MODE = 0x01  # Conventional mode (relay)
+FIP_PILOT_MODE = 0x03
 
 FAST_REPORTING_INTERVAL = 14 * 60  # 14 minutes
 
@@ -485,7 +497,7 @@ def wiser_set_commission_done(self, key, EPout):  # 0x0000/0xE050
     cluster_id = "%04x" % 0x0000
     Hattribute = "%04x" % 0xE050
     data_type = "10"  # Bool
-    data = "%02x" % True
+    data = "%02x" % 1
     self.log.logging("Schneider", "Debug", f"wiser_set_commission_done Schneider Write Attribute (commisionning done) {key} with value {data} / Endpoint : {EPout}, cluster: {cluster_id}, attribute: {Hattribute} type: {data_type}", nwkid=key)
 
     write_attribute(
@@ -530,6 +542,17 @@ def wiser_set_thermostat_default_temp(self, Devices, key, EPout):  # 0x0201/0x00
 
 
 def schneider_hact_heater_type(self, key, type_heater):
+
+    model_name = self.ListOfDevices[key].get("Model")
+    if model_name == "EH-ZB-HACT":
+        return schneider_hact_heater_type_wiser1(self, key, type_heater)
+    if model_name == "CCTFR6700":
+        return schneider_hact_heater_type_wiser2(self, key, type_heater)
+    _context = {"Error code": "SCHN0004", "model_name": model_name, 'type_heater': type_heater}
+    self.log.logging( "Schneider", "Error", "schneider_hact_heater_type - %s unknown model %s" % (key, model_name), key, _context )
+
+
+def schneider_hact_heater_type_wiser1(self, key, type_heater):
     """[summary]
          allows to set the heater in "fip" or "conventional" mode
          by default it will set it to fip mode
@@ -597,6 +620,47 @@ def schneider_hact_heater_type(self, key, type_heater):
         self.ListOfDevices[key]["Ep"][EPout][THERMOSTAT_CLUSTER]["e011"] = "%02x" % (new_value + 0x80)
 
 
+
+def schneider_hact_heater_type_wiser2(self, nwkid: str, type_heater: str) -> None:
+    """
+    Configure the pilot mode for a Schneider HACT heater via Wiser2.
+
+    Parameters:
+        self: Reference to the class instance.
+        key (str): Unique identifier for the device.
+        type_heater (str): Type of heater mode to set. Accepted values:
+            - "conventional": Sets pilot mode to 0x01 (Relay mode).
+            - "fip" or "FIP": Sets pilot mode to 0x03 (FIP mode).
+    """
+
+    # Determine the correct pilot mode
+    pilot_mode = FIP_PILOT_MODE if type_heater.lower() == "fip" else DEFAULT_PILOT_MODE
+    self.log.logging( "Schneider", "Debug", "Determined pilot_mode: %s", hex(pilot_mode), nwkid=nwkid )
+
+    # Write the attribute to configure the heater
+    self.log.logging(
+        "Schneider",
+        "Debug",
+        "Writing attribute with params: CLUSTER=%s, MANUF_ID=%s, ATTRIBUTE=%s, DATA_TYPE=%s, VALUE=%s",
+        SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER, SCHNEIDER_MANUF_ID, PILOT_MODE_ATTRIBUTE, PILOT_MODE_DATA_TYPE, hex(pilot_mode),
+        nwkid=nwkid)
+
+    write_attribute(
+        self,
+        nwkid,
+        ZIGATE_EP,
+        "01",
+        SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER,
+        SCHNEIDER_MANUF_ID,
+        "01",
+        PILOT_MODE_ATTRIBUTE,
+        PILOT_MODE_DATA_TYPE,
+        pilot_mode,
+        ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
+    )
+    self.log.logging( "Schneider", "Debug", "Attribute write completed for key=%s", nwkid )
+
+
 def schneider_hact_heating_mode(self, key, mode):
     """
     Allow switching between "setpoint" and "FIP" mode
@@ -635,7 +699,7 @@ def schneider_hact_heating_mode(self, key, mode):
     if mode == "setpoint":
         new_value = current_value & 0xFE  # we set the bit 0 to 0 and dont touch the other ones . logical_AND 1111 1110
 
-    elif mode == "FIP":
+    elif mode in ("fip", "FIP"):
         new_value = current_value | 1  # we set the bit 0 to 1 and dont touch the other ones . logical_OR 0000 0001
 
     new_value = new_value & 3  # cleanup, to remove everything else but the last two bits
@@ -1072,9 +1136,35 @@ def schneiderRenforceent(self, NWKID):
     return rescheduleAction
 
 
-def schneider_thermostat_answer_attribute_request(self, Devices, NWKID, EPout, ClusterID, sqn, attr):
+def schneider_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst_ep, sqn, cluster_id, manuf_specif, manuf_code, MsgData, nbAttribute):
+
+    """ Handle a read request with multiple attributes on cluster 0x0201"""
+
+    payload = None
+    cmd = "01"
+    status = "00"
+
+    # Extract all attributes, and build a response
+    for idx in range(0, len(MsgData), 4):
+        attribute = MsgData[idx:idx + 4]
+        self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request - nwkid {nwkid} attribute {attribute}", nwkid)
+
+        # Handle different cluster IDs and attributes
+        zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, nwkid, src_ep, attribute)
+        self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request -  response {data_type} {data}", nwkid)
+        if payload is None:
+            payload = cluster_frame + sqn + cmd
+        payload += attribute[2:4] + attribute[:2] + status + data_type
+        payload += data[2:4] + data[:2] if data_type == "29" else data
+    
+    self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request Response - nwkid {nwkid} ep: {src_ep} , clusterId: {cluster_id}, sqn: {sqn},payload: {payload}", nwkid)
+        
+    raw_APS_request( self, nwkid, src_ep, cluster_id, "0104", payload, zigate_ep=zigate_ep, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+    
+
+def schneider_thermostat_answer_attribute_request(self, Devices, nwkid, EPout, cluster_id, sqn, attribute):
     """Receive an attribute request from thermostat to know if the user has change the domoticz widget
-        we answer the current temperature stored in the device
+    we answer the current temperature stored in the device
 
     Arguments:
         NWKID {[type]} -- [description]
@@ -1083,143 +1173,162 @@ def schneider_thermostat_answer_attribute_request(self, Devices, NWKID, EPout, C
         sqn {[type]} -- [description]
         rawAttr {[type]} -- [description]
     """
-    self.log.logging("Schneider", "Debug", f"Schneider receive attribute request: nwkid {NWKID} ep: {EPout} , clusterId: {ClusterID}, sqn: {sqn},rawAttr: {attr}", NWKID)
+    self.log.logging("Schneider", "Debug", f"schneider_thermostat_answer_attribute_request: nwkid {nwkid} ep: {EPout} , clusterId: {cluster_id}, sqn: {sqn},rawAttr: {attribute}", nwkid)
 
+    cmd = "01"
+    status = "00"
+
+    zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, nwkid, EPout, attribute)
+
+    if data == data_type == "":
+        # Unable to find a match
+        wiser_unsupported_attribute(self, nwkid, EPout, sqn, cluster_id, attribute)
+        return
+
+    payload = cluster_frame + sqn + cmd + attribute[2:4] + attribute[:2] + status + data_type
+    payload += data[2:4] + data[:2] if data_type == "29" else data
+
+    self.log.logging("Schneider", "Debug", f"schneider_thermostat_answer_attribute_request Response - nwkid {nwkid} ep: {EPout} , clusterId: {cluster_id}, sqn: {sqn},payload: {payload}", nwkid)
+
+    raw_APS_request( self, nwkid, EPout, cluster_id, "0104", payload, zigate_ep=zigate_ep, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
+
+
+def get_response_data_for_schneider_thermostat_request(self, Devices, NWKID, EPout, attr):
+
+    model_name = self.ListOfDevices[NWKID].get("Model", "")
+
+    # default values
+    zigate_ep = ZIGATE_EP
+    cluster_frame = "18"  # Disable default response
+
+    # Mapping of model names to their configurations
+    model_config = {
+        "Wiser2-Thermostat": {"EPout": "01", "zigate_ep": "01", "cluster_frame": "08"},  
+        "iTRV": {"EPout": "02", "zigate_ep": "01", "cluster_frame": "08"},
+    }
+
+    # Apply configuration based on model_name
+    config = model_config.get(model_name)
+    if config:
+        EPout = config["EPout"]
+        zigate_ep = config["zigate_ep"]
+        cluster_frame = config["cluster_frame"]
+
+    self.log.logging("Schneider", "Debug", f"Schneider receive attribute request: nwkid {NWKID} ep: {EPout} , zigate_ep {zigate_ep} cluster_frame= {cluster_frame}", NWKID)
 
     data = data_type = payload = ""
-
-    zigate_ep = ZIGATE_EP
-    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("Wiser2-Thermostat",):
-        EPout = "01"
-        zigate_ep = "01"
-        cluster_frame = "08"
-    elif "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ("iTRV",):
-        EPout = "02"
-        zigate_ep = "01"
-        cluster_frame = "08"        
-    else:
-        cluster_frame = "18"
-
-    if attr == "0000":  # Local Temperature
+    boost_mode = is_boost_in_progress(self, NWKID)
+    diagnostic_e001 = self.ListOfDevices[NWKID].get("Ep", {}).get("01", {}).get("0b05", {}).get("e001", 0xffff)
+ 
+    if attr == LOCAL_TEMPERATURE:  # Local Temperature
         data_type = "29"
-        if ( "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "iTRV",) ):
+        if ( model_name in ( "iTRV",) ):
             # In case we have an iTRV alone (no room sensor, then we just return 0x8000)
             data = '%04x' %iTRV_local_temperature(self, NWKID)
         else:
-            data = "%04x" % int(100 * schneider_find_attribute(self, NWKID, "01", THERMOSTAT_CLUSTER, "0000"))
+            data = "%04x" % int(100 * schneider_find_attribute(self, NWKID, "01", THERMOSTAT_CLUSTER, LOCAL_TEMPERATURE))
 
     elif attr == SCHNEIDER_ZONE_MODE:  # mode of operation
         data_type = "30"
         data = "01"  # Manual
 
-    elif attr == "0015":  # min setpoint temp
+    elif attr == MIN_SETPOINT:  # min setpoint temp
         data_type = "29"
         data = ( "02bc" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT",) else "0032" )
 
-    elif attr == "0016":  # max setpoint temp
+    elif attr == MAX_SETPOINT:  # max setpoint temp
         data_type = "29"
         data = ( "0bb8" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT",) else "0dac" )
 
     elif attr == OCCUPIED_SETPOINT:  # occupied setpoint temp
-        if SCHNEIDER_META_DATA in self.ListOfDevices[NWKID ] and "BoostDemand" in self.ListOfDevices[NWKID ][SCHNEIDER_META_DATA]:
-            # Let's remove this flag which prevent the Report Attribute to override it
-            del self.ListOfDevices[NWKID ][SCHNEIDER_META_DATA]["BoostDemand"]
+        if (
+           NWKID in self.ListOfDevices
+           and SCHNEIDER_META_DATA in self.ListOfDevices[NWKID]
+           and "BoostDemand" in self.ListOfDevices[NWKID][SCHNEIDER_META_DATA]
+           ):
+            del self.ListOfDevices[NWKID][SCHNEIDER_META_DATA]["BoostDemand"]
 
         data_type = "29"
-        value = int(schneider_find_attribute_and_set(self, NWKID, EPout, ClusterID, attr, 2000))
+        value = int(schneider_find_attribute_and_set(self, NWKID, EPout, THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT, 2000))
         data = "%04X" % value
 
-    elif attr == "001c":  # System Mode for Wiser Home
+    elif attr == SYSTEM_MODE:  # System Mode for Wiser Home
         data_type = "30"  # enum8
         data = "04"  # 0x00 Off, 0x01 Auto, 0x04 Heat
 
-    elif attr == "001b":  # ControlSequenceOfOperation for Wiser Home
+    elif attr == CONTROL_SEQUENCE_OPERATION:  # ControlSequenceOfOperation for Wiser Home
         data_type = "30"  # enum8
         data = "02"  # Heating only
 
     elif attr == PI_HEATING_DEMAND:  # Pi Heating Demand  (valve position %) for Wiser Home
-        # In case of iTRV, it looks like we have to trigger the heating demand.
+        # In case eof iTRV, it looks like we have to trigger the heating demand.
         # In case the new setpoint is above the local temp, and the Heating Demand is 0, let's enable it
-        define_heating_demand_for_iTRV(self, Devices, NWKID)
-        if SCHNEIDER_META_DATA in self.ListOfDevices[NWKID ] and "BoostDemand" in self.ListOfDevices[NWKID ][SCHNEIDER_META_DATA]:
-            # Let's remove this flag which prevent the Report Attribute to override it
-            del self.ListOfDevices[NWKID ][SCHNEIDER_META_DATA]["BoostDemand"]
+        if (
+           NWKID in self.ListOfDevices
+           and SCHNEIDER_META_DATA in self.ListOfDevices[NWKID]
+           and "BoostDemand" in self.ListOfDevices[NWKID][SCHNEIDER_META_DATA]
+           ):
+            del self.ListOfDevices[NWKID][SCHNEIDER_META_DATA]["BoostDemand"]
 
+        define_heating_demand_for_iTRV(self, Devices, NWKID)
+        
         data_type = "20"  # uint8
         data = "%02x" % schneider_find_attribute_and_set(self, NWKID, EPout, THERMOSTAT_CLUSTER, PI_HEATING_DEMAND, 0)
 
     elif attr == "e110":  # ?? for Wiser Home
+        # 0x02 then 0x01, 0x12 (after 0x80 - 0x0301 Boost) and back to 0x01 after 0x80 - 0x0300 Cancel Boost)
+        # Mostlikely we are 0x02 during the pairing phase and when getting 0x0b05/0xe001 is shitfing from 0xfffe to 0x0000, then 0x01
         data_type = "30"  # enum8
-        data = "01"  # 0x02 then 0x030, 0x11
+        data = "02" if diagnostic_e001 != 0 else ("12" if boost_mode else "01")
 
-    else:
-        return
-
-    if data == data_type == "":
-        # Unable to find a match
-        wiser_unsupported_attribute(self, NWKID, EPout, sqn, ClusterID, attr)
-        return
-
-    cmd = "01"
-    status = "00"
-
-    self.log.logging("Schneider", "Debug", f"schneider_thermostat_answer_attribute_request: nwkid {NWKID} ep: {EPout} , clusterId: {ClusterID}, sqn: {sqn}, attr: {attr}, data_type: {data_type}, data: {data}", NWKID)
+    return zigate_ep, cluster_frame, data_type, data 
 
 
-    if data_type == "29":
-        payload = cluster_frame + sqn + cmd + attr[2:4] + attr[:2] + status + data_type + data[2:4] + data[:2]
-
-    else:
-        payload = cluster_frame + sqn + cmd + attr[2:4] + attr[:2] + status + data_type + data
-
-    raw_APS_request(
-        self,
-        NWKID,
-        EPout,
-        ClusterID,
-        "0104",
-        payload,
-        zigate_ep=zigate_ep,
-        ackIsDisabled=is_ack_tobe_disabled(self, NWKID),
-    )
-
-def define_heating_demand_for_iTRV(self, Devices, NwkId):
+def define_heating_demand_for_iTRV(self, Devices, nwkid):
     # We force to use Ep 0x01 even if the iTRV is communicating on Ep 0x02
 
-    if "Model" not in self.ListOfDevices[NwkId] or self.ListOfDevices[NwkId]["Model"] not in ( "Wiser2-Thermostat", "iTRV",):
+    GAP_TO_DEMAND = {
+        -1000: 100,
+        -700: 75,
+        -400: 50,
+        0: 25
+    }
+
+    if self.ListOfDevices.get(nwkid, {}).get("Model") not in {"Wiser2-Thermostat", "iTRV"}:
         return
 
-    local_temp = iTRV_local_temperature(self, NwkId)
-    self.log.logging("Schneider", "Debug", f'define_heating_demand_for_iTRV: 0x0000 = {schneider_find_attribute(self, NwkId, "01", THERMOSTAT_CLUSTER, "0000")} ({type(schneider_find_attribute(self, NwkId, "01", THERMOSTAT_CLUSTER, "0000"))}) 0x0012 {schneider_find_attribute(self, NwkId, "01", THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT)} ({type(schneider_find_attribute(self, NwkId, "01", THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT))})')
+    current_setpoint = int(schneider_find_attribute(self, nwkid, "01", THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT))
+    current_demand = schneider_find_attribute_and_set(self, nwkid, "01", THERMOSTAT_CLUSTER, PI_HEATING_DEMAND, 0)
 
+    local_temp = iTRV_local_temperature(self, nwkid)
     if local_temp == 0x8000:
-        # We use the inside Temp sensor, let's get local temperature
-        local_temp = int( 100 * schneider_find_attribute(self, NwkId, "01", THERMOSTAT_CLUSTER, "0000") )
+        # We use the inside Temp sensor, let's get local sensor temp (instead of the room sensor)
+        local_temp = int( 100 * schneider_find_attribute(self, nwkid, "01", THERMOSTAT_CLUSTER, LOCAL_TEMPERATURE) )
 
-    gap_temp = local_temp - int(schneider_find_attribute(self, NwkId, "01", THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT))
-    self.log.logging("Schneider", "Debug", f'define_heating_demand_for_iTRV: Local_temp: {local_temp} , Target: {int(schneider_find_attribute(self, NwkId, "01", THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT))} gap: {gap_temp}')
+    self.log.logging( "Schneider", "Debug", f"define_heating_demand_for_iTRV: local temp {local_temp} current setpoint {current_setpoint} current demand {current_demand}", nwkid)
 
-    if ( schneider_find_attribute_and_set( self, NwkId, "01", THERMOSTAT_CLUSTER, PI_HEATING_DEMAND, 0 ) == 0 and gap_temp < 0):
-        if gap_temp < -500:
-            pi_demand = 100
-        elif gap_temp < -250:
-            pi_demand = 75
-        elif gap_temp < -100:
-            pi_demand = 50
-        else:
-            pi_demand = 25
+    gap_temp = local_temp - current_setpoint
+    self.log.logging("Schneider", "Debug", f'define_heating_demand_for_iTRV: gap: {gap_temp}')
 
-        self.ListOfDevices[NwkId]["Ep"]["01"][THERMOSTAT_CLUSTER][PI_HEATING_DEMAND] = pi_demand
-        MajDomoDevice(self, Devices, NwkId, "01", THERMOSTAT_CLUSTER, pi_demand, Attribute_=PI_HEATING_DEMAND)
+    # Define the ranges and corresponding pi_demand values
 
-    elif ( schneider_find_attribute_and_set( self, NwkId, "01", THERMOSTAT_CLUSTER, PI_HEATING_DEMAND, 0 ) != 0 and gap_temp > 0):
-        self.ListOfDevices[NwkId]["Ep"]["01"][THERMOSTAT_CLUSTER][PI_HEATING_DEMAND] = 0
-        MajDomoDevice(self, Devices, NwkId, "01", THERMOSTAT_CLUSTER, 0, Attribute_=PI_HEATING_DEMAND)
+    # Determine pi_demand based on gap_temp
+    pi_demand = 0 if gap_temp >= 0 else next(
+        GAP_TO_DEMAND[threshold] for threshold in sorted(GAP_TO_DEMAND) if gap_temp < threshold
+    )
 
-    self.log.logging("Schneider", "Debug", f'define_heating_demand_for_iTRV: Local_temp: {local_temp} , Target: {int(schneider_find_attribute(self, NwkId, "01", THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT))} gap: {gap_temp} Heating Demand: {self.ListOfDevices[NwkId]["Ep"]["01"][THERMOSTAT_CLUSTER][PI_HEATING_DEMAND]}')
+    self.log.logging("Schneider", "Debug", f'define_heating_demand_for_iTRV: pi_demand: {pi_demand}')
+
+    if ( current_demand != 0 and gap_temp > 0):
+        self.ListOfDevices[nwkid]["Ep"]["01"][THERMOSTAT_CLUSTER][PI_HEATING_DEMAND] = 0
+        MajDomoDevice(self, Devices, nwkid, "01", THERMOSTAT_CLUSTER, 0, Attribute_=PI_HEATING_DEMAND)
+
+    elif pi_demand != current_demand:
+        self.ListOfDevices[nwkid]["Ep"]["01"][THERMOSTAT_CLUSTER][PI_HEATING_DEMAND] = pi_demand
+        MajDomoDevice(self, Devices, nwkid, "01", THERMOSTAT_CLUSTER, pi_demand, Attribute_=PI_HEATING_DEMAND)
 
 
-def schneider_update_ThermostatDevice(self, Devices, NWKID, srcEp, ClusterID, setpoint):
+def schneider_update_ThermostatDevice(self, Devices, NWKID, srcEp, ClusterID, new_setpoint):
     """we received a new setpoint from the thermostat device , we need to update the domoticz widget
 
     Arguments:
@@ -1233,16 +1342,9 @@ def schneider_update_ThermostatDevice(self, Devices, NWKID, srcEp, ClusterID, se
     if NWKID not in self.ListOfDevices:
         return
 
-    # Look for TargetSetPoint
-    domoTemp = round(setpoint / 100, 1)
-
-    self.log.logging("Schneider", "Debug", f"Schneider updateThermostat setpoint:{setpoint}  , domoTemp : {domoTemp}", NWKID)
-
-
-    MajDomoDevice(self, Devices, NWKID, srcEp, ClusterID, domoTemp, Attribute_=OCCUPIED_SETPOINT)
-
     # modify attribute of thermostat to store the new temperature requested
-    schneider_find_attribute_and_set(self, NWKID, srcEp, ClusterID, OCCUPIED_SETPOINT, setpoint, setpoint)
+    schneider_find_attribute_and_set(self, NWKID, srcEp, ClusterID, OCCUPIED_SETPOINT, new_setpoint, new_setpoint)
+    MajDomoDevice(self, Devices, NWKID, srcEp, ClusterID, round(new_setpoint / 100, 1), Attribute_=OCCUPIED_SETPOINT)
 
     importSchneiderZoning(self)
     if self.SchneiderZone is not None:
@@ -1385,14 +1487,6 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
 
     if ClusterID == THERMOSTAT_CLUSTER:  # Thermostat cluster
         if GlobalCommand and Command == "00":  # read attributes
-            # ManufSpec = "00"
-            # ManufCode = "0000"
-            # if ManufacturerCode:
-            #     ManufSpec = "01"
-            #     ManufCode = ManufacturerCode
-            # buildPayload = (
-            #     Sqn + srcNWKID + srcEp + "01" + ClusterID + "01" + ManufSpec + ManufCode + "%02x" % (len(Data) // 4)
-            # )
             idx = nbAttribute = 0
             while idx < len(Data):
                 nbAttribute += 1
@@ -1402,15 +1496,14 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
                     wiser_unsupported_attribute(self, srcNWKID, srcEp, Sqn, ClusterID, Attribute)
                 else:
                     self.log.logging("Schneider", "Debug", f"Schneider cmd 0x00 [{Sqn}] Read Attribute Request on Src: {srcNWKID}/{srcEp} for {ClusterID}/{Attribute} Dst: {dstNWKID}/{dstEP}", srcNWKID)
-
                     schneider_thermostat_answer_attribute_request(self, Devices, srcNWKID, srcEp, ClusterID, Sqn, Attribute)
 
-        elif not GlobalCommand and Command == "00":  # Setpoint Raise/Lower
-            # Decode8002 - NwkId: 656d Ep: 01 Cluster: 0201 GlobalCommand: False Command: 00 Data: 00fb  - 0,05
-            # inRawAps Nwkid: 656d Ep: 01 Cluster: 0201 ManufCode: None manuf: 105e manuf_name: Schneider Electric Cmd: 00 Data: 0005   + 0,05
-            setpoint_mode = Data[:2]
-            amount = Data[2:4]
-            wiser2_setpoint_raiserlower(self, Devices, srcNWKID, setpoint_mode, amount)
+        #elif not GlobalCommand and Command == "00":  # Setpoint Raise/Lower
+        #    # Decode8002 - NwkId: 656d Ep: 01 Cluster: 0201 GlobalCommand: False Command: 00 Data: 00fb  - 0,05
+        #    # inRawAps Nwkid: 656d Ep: 01 Cluster: 0201 ManufCode: None manuf: 105e manuf_name: Schneider Electric Cmd: 00 Data: 0005   + 0,05
+        #    setpoint_mode = Data[:2]
+        #    amount = Data[2:4]
+        #    wiser2_setpoint_raiserlower(self, Devices, srcNWKID, setpoint_mode, amount)
 
         elif Command == "e0":  # command to change setpoint from thermostat
             sTemp = Data[4:8]
@@ -1435,14 +1528,19 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
 
 def wiser2_setpoint_raiserlower(self, Devices, NwkId, mode, amount):
 
+    self.log.logging("Schneider", "Debug", f"wiser2_setpoint_raiserlower {NwkId} mode: {mode} {amount}", NwkId)
+    
+    if is_boost_in_progress(self, NwkId):
+        self.log.logging("Schneider", "Debug", "wiser2_setpoint_raiserlower Boost in progress - EXIT", NwkId)
+        return
+
     amount = int((struct.unpack("b", struct.pack(">B", int(amount, 16)))[0])) * 10
 
     if mode == "00":  # Heat adjust Heat Setpoint
-        self.log.logging("Schneider", "Debug", f"wiser2_setpoint_raiserlower cmd Mode [Heat] amount: {amount}")
-
-        value = schneider_find_attribute_and_set(self, NwkId, "01", THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT, 2000)
-        setpoint = int(((value + amount) * 20) / 20)  # Round to °.5
-        schneider_update_ThermostatDevice(self, Devices, NwkId, "01", THERMOSTAT_CLUSTER, setpoint)
+        current_setpoint = schneider_find_attribute_and_set(self, NwkId, "01", THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT, 2000)
+        new_setpoint = int(((current_setpoint + amount) * 20) / 20)  # Round to °.5
+        self.log.logging("Schneider", "Debug", f"wiser2_setpoint_raiserlower cmd Mode [Heat] amount: {amount} {current_setpoint} => {new_setpoint}")
+        schneider_update_ThermostatDevice(self, Devices, NwkId, "01", THERMOSTAT_CLUSTER, new_setpoint)
 
     elif mode == "01":  # Cool (adjust Cool Setpoint)
         self.log.logging("Schneider", "Debug", "wiser2_setpoint_raiserlower cmd Mode [Cool] amount: %s" % amount)
@@ -1620,46 +1718,6 @@ def schneider_find_attribute(self, NWKID, EP, ClusterID, attr):
 
 
 def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID, attr, defaultValue, newValue=None):
-    self.log.logging("Schneider", "Debug", f"schneider_find_attribute_or_set NWKID:{NWKID}, EP:{EP}, ClusterID:{ClusterID}, attr:{attr} ,defaultValue:{defaultValue}, newValue:{newValue}", NWKID)
-
-    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] in ( "iTRV",):
-        EP = '01'   # Indeed iTRV request on Ep 0x02, but we store all on Ep 0x01
-
-    found = newValue
-    if EP not in self.ListOfDevices[NWKID]["Ep"]:
-        self.ListOfDevices[NWKID]["Ep"][EP] = {}
-    if ClusterID not in self.ListOfDevices[NWKID]["Ep"][EP]:
-        self.ListOfDevices[NWKID]["Ep"][EP][ClusterID] = {}
-    if not isinstance(self.ListOfDevices[NWKID]["Ep"][EP][ClusterID], dict):
-        self.ListOfDevices[NWKID]["Ep"][EP][ClusterID] = {}
-    if attr not in self.ListOfDevices[NWKID]["Ep"][EP][ClusterID]:
-        self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = {}
-    if (
-        "Ep" in self.ListOfDevices[NWKID]
-        and EP in self.ListOfDevices[NWKID]["Ep"]
-        and ClusterID in self.ListOfDevices[NWKID]["Ep"][EP]
-        and attr in self.ListOfDevices[NWKID]["Ep"][EP][ClusterID]
-    ):
-        if self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] == {}:
-            if newValue is None:
-                self.log.logging("Schneider", "Debug", f"schneider_find_attribute_or_set: could not find value, setting default value  {defaultValue}", NWKID)
-
-                self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = defaultValue
-            else:
-                self.log.logging("Schneider", "Debug", f"schneider_find_attribute_or_set: could not find value, setting new value  {newValue}", NWKID)
-
-                self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = newValue
-
-        self.log.logging("Schneider", "Debug", f'schneider_find_attribute_or_set : found value {self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr]}', NWKID)
-
-        found = self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr]
-        if newValue is not None:
-            self.log.logging("Schneider", "Debug", f"schneider_find_attribute_or_set : setting new value {newValue} on {NWKID}/{EP}", NWKID)
-
-            self.ListOfDevices[NWKID]["Ep"][EP][ClusterID][attr] = newValue
-    return found
-
-def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID, attr, defaultValue, newValue=None):
     """
     Finds an attribute in the device list and updates it if needed.
 
@@ -1704,7 +1762,6 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID, attr, defaultVa
         found = newValue
 
     return found
-
 
 
 def schneider_bms_change_reporting(self, NWKID, srcEp, fast):
@@ -1798,8 +1855,23 @@ def schneider_UpdateConfigureReporting(self, NwkId, Ep, ClusterId=None, Attribut
 
 # Management of EH-ZB-VACT, iTRV
 def is_boost_in_progress(self, NwkId):
-    return bool(SCHNEIDER_META_DATA in self.ListOfDevices[NwkId] and "BoostDemand" in self.ListOfDevices[NwkId][SCHNEIDER_META_DATA] and self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["BoostDemand"])
-    
+    device = self.ListOfDevices.get(NwkId, {})
+    boost_demand = device.get(SCHNEIDER_META_DATA, {}).get("BoostDemand")
+    if boost_demand:
+        return True
+
+    thermostat_override = device.get(SCHNEIDER_META_DATA, {}).get("ThermostatOverride")
+
+    if thermostat_override is None:
+        return False
+
+    thermostat_override_start_time = thermostat_override.get("OverrideStartTime")
+    thermostat_override_duration = thermostat_override.get("OverrideDuration")
+
+    remaining_time = int(thermostat_override_start_time + thermostat_override_duration - time())
+    return remaining_time > 0
+
+  
 def receiving_heatingdemand_attribute( self, Devices, NwkId, Ep, value, MsgClusterId, MsgAttrID):
     
     self.log.logging("Schneider", "Debug", f"receiving_heatingdemand_attribute -- for device {NwkId} / {Ep}")
@@ -1872,14 +1944,15 @@ def wiser_home_lockout_thermostat(self, NwkId, mode):
     self.log.logging("Schneider", "Debug", f"wiser_home_lockout_thermostat -- mode: {mode}")
 
     mode = int(mode)
-    if mode not in (0, 1):
+    if mode in {0, 1}:
+        write_attribute(
+            self, NwkId, ZIGATE_EP, "01", "0204", "0000", "00", "0001", "30", "%02x" % mode, ackIsDisabled=False
+        )
+    else:
         return
-    write_attribute(
-        self, NwkId, ZIGATE_EP, "01", "0204", "0000", "00", "0001", "30", "%02x" % mode, ackIsDisabled=False
-    )
 
 
-def change_setpoint_for_time(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, data):
+def change_setpoint_for_time(self, Devices, nwkid, srcEp, ClusterID, dstNWKID, dstEP, data):
     # sourcery skip: merge-comparisons, merge-duplicate-blocks, remove-redundant-if, remove-redundant-slice-index
     # Command 0x80: 0301 2e09 7800
     #               0301 d007 1e00   ( 20° for 30 minutes)
@@ -1891,142 +1964,124 @@ def change_setpoint_for_time(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID
     #               0202 ca08 3c00   ( 22.5 for 60 )
     #               0202 ca08 3c00
 
+    BOOST = [ "0102", "0103", "0202"]
+    CANCEL_BOOST = "0003"
+
     action = data[2:4] + data[0:2]
     setpoint = int(data[6:8] + data[4:6], 16)
     duration = int(data[10:12] + data[8:10], 16)
+    
+    self.log.logging("Schneider", "Debug", f"change_setpoint_for_time -- action: {action} setpoint: {setpoint} duration: {duration}", nwkid)
+    
+    schneider_data = self.ListOfDevices.get(nwkid, {}).get(SCHNEIDER_META_DATA, {})
+    ep_out = "01" if self.ListOfDevices.get(nwkid, {}).get("Model") == "iTRV" else srcEp
 
-    EPout = srcEp
-    if "Model" in self.ListOfDevices[srcNWKID] and self.ListOfDevices[srcNWKID]["Model"] in ("iTRV"):
-        EPout = "01"
-
-    if SCHNEIDER_META_DATA not in self.ListOfDevices[srcNWKID ]:
-        self.ListOfDevices[srcNWKID ][SCHNEIDER_META_DATA] ={}
-
-    if action == "0102":  # Increase temp for CCTFR6100
+    if action in BOOST:
         self.log.logging("Schneider", "Debug", f"change_setpoint_for_time -- Setpoint to {setpoint} for {duration} min")
+        setpoint = override_setpoint(self, nwkid, ep_out, setpoint, duration)
+        schneider_update_ThermostatDevice(self, Devices, nwkid, ep_out, ClusterID, setpoint)
+        schneider_data["BoostDemand"] = True
 
-        setpoint = override_setpoint(self, srcNWKID, EPout, setpoint, duration)
-        schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
-        self.ListOfDevices[srcNWKID ][SCHNEIDER_META_DATA]["BoostDemand"] = True
-
-    elif action == "0103":
-        # Set setpoint On
-        self.log.logging("Schneider", "Debug", f"change_setpoint_for_time -- Setpoint to {setpoint} for {duration} min")
-
-        setpoint = override_setpoint(self, srcNWKID, EPout, setpoint, duration)
-        schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
-        self.ListOfDevices[srcNWKID ][SCHNEIDER_META_DATA]["BoostDemand"] = True
-
-
-    elif action == "0202":  # Decrease temp for CCTFR6100
-        self.log.logging("Schneider", "Debug", f"change_setpoint_for_time -- Setpoint to {setpoint} for {duration} min")
-
-        setpoint = override_setpoint(self, srcNWKID, EPout, setpoint, duration)
-        schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, ClusterID, setpoint)
-        self.ListOfDevices[srcNWKID ][SCHNEIDER_META_DATA]["BoostDemand"] = True
-
-    elif action == "0300":
-        # Disable setpoint
+    elif action == CANCEL_BOOST :
         self.log.logging("Schneider", "Debug", "change_setpoint_for_time -- Cancel setpoint")
-        if ( SCHNEIDER_META_DATA in self.ListOfDevices[srcNWKID] and "ThermostatOverride" in self.ListOfDevices[srcNWKID][SCHNEIDER_META_DATA] ):
-            # previous_setpoint = self.ListOfDevices[srcNWKID][SCHNEIDER_META_DATA]["ThermostatOverride"]["CurrentSetpoint"]
-            schneider_update_ThermostatDevice(self, Devices, srcNWKID, EPout, THERMOSTAT_CLUSTER, setpoint)
-            del self.ListOfDevices[srcNWKID][SCHNEIDER_META_DATA]["ThermostatOverride"]
-            del self.ListOfDevices[srcNWKID ][SCHNEIDER_META_DATA]["BoostDemand"]
-
+        cancel_override_attribute( self, nwkid )
+        thermostat_override_current_setpoint = schneider_data.get("ThermostatOverride", {}).get("CurrentSetpoint")
+        if thermostat_override_current_setpoint:
+            schneider_update_ThermostatDevice(self, Devices, nwkid, ep_out, ClusterID, thermostat_override_current_setpoint)
     else:
-        self.log.logging("Schneider", "Error", f"change_setpoint_for_time -- Unknown action: {action} setpoint: {setpoint} duration: {duration}")
+        self.log.logging("Schneider", "Error", f"change_setpoint_for_time -- Unknown action: {action} setpoint: {setpoint} duration: {duration}", nwkid)
 
-def cancel_override_attribute( self, NwkId ):
-    if SCHNEIDER_META_DATA not in self.ListOfDevices[NwkId]:
+
+def cancel_override_attribute( self, nwkid ):
+    if SCHNEIDER_META_DATA not in self.ListOfDevices[nwkid]:
         return
-    if "ThermostatOverride" not in self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]:
+    if "ThermostatOverride" not in self.ListOfDevices[nwkid][SCHNEIDER_META_DATA]:
         return
-    self.log.logging("Schneider", "Status", "Cancelling current temperature override for {Nwkid}")
-    del self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]
-    self.ListOfDevices[NwkId ][SCHNEIDER_META_DATA]["BoostDemand"] = True
+    nickname = get_device_nickname(self, NwkId=nwkid)
+    self.log.logging("Schneider", "Status", f"Cancelling temperature boost for device {nickname}", nwkid)
+    
+    del self.ListOfDevices[nwkid][SCHNEIDER_META_DATA]["ThermostatOverride"]
+    self.ListOfDevices[nwkid ][SCHNEIDER_META_DATA]["BoostDemand"] = False
 
 
 def check_end_of_override_setpoint(self, Devices, NwkId, Ep):
+    """Check if the override setpoint duration has ended and revert the thermostat setpoint if needed."""
 
-    #self.log.logging( "Schneider", "Debug", "check_end_of_override_setpoint -- for device %s / %s" % ( NwkId, Ep))
+    device = self.ListOfDevices.get(NwkId, {})
+    thermostat_override = self.ListOfDevices.get(NwkId, {}).get(SCHNEIDER_META_DATA, {}).get("ThermostatOverride", {})
 
-    if (
-        SCHNEIDER_META_DATA in self.ListOfDevices[NwkId]
-        and "ThermostatOverride" in self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]
-        and "OverrideStartTime" in self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]
-        and "OverrideDuration" in self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]
-        and "CurrentSetpoint" in self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]
-    ):
-        ThermostatOverride = self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]["OverrideSetpoint"]
-        OverrideStartTime = self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]["OverrideStartTime"]
-        OverrideDuration = self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]["OverrideDuration"]
-        CurrentSetpoint = self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]["CurrentSetpoint"]
+    thermostat_override_override_setpoint = thermostat_override.get("OverrideSetpoint")
+    thermostat_override_start_time = thermostat_override.get("OverrideStartTime")
+    thermostat_override_duration = thermostat_override.get("OverrideDuration")
+    thermostat_override_current_setpoint = thermostat_override.get("CurrentSetpoint")
 
-        remaining_time = int(OverrideStartTime + OverrideDuration - time()) 
+    if None in (thermostat_override_override_setpoint, thermostat_override_start_time, thermostat_override_duration, thermostat_override_current_setpoint):
+        return  # Missing required override data, exit early
 
+    current_setpoint = device.get("Ep", {}).get(Ep, {}).get(THERMOSTAT_CLUSTER, {}).get(OCCUPIED_SETPOINT)
+
+    remaining_time = int(thermostat_override_start_time + thermostat_override_duration - time())
+
+    self.log.logging(
+        "Schneider",
+        "Debug",
+        f"check_end_of_override_setpoint remains {remaining_time} sec before reverting Setpoint to {thermostat_override_current_setpoint} (from override {thermostat_override_override_setpoint})"
+    )
+
+    if remaining_time > 0 and current_setpoint != thermostat_override_override_setpoint:
+        schneider_setpoint_thermostat(self, NwkId, thermostat_override_override_setpoint)
+        schneider_update_ThermostatDevice(self, Devices, NwkId, Ep, THERMOSTAT_CLUSTER, thermostat_override_override_setpoint)
+
+    if remaining_time <= 0:
         self.log.logging(
             "Schneider",
             "Debug",
-            "check_end_of_override_setpoint -- remains %s seconds prior to revert Setpoint to %s (from override %s)" % ( 
-                remaining_time, CurrentSetpoint, ThermostatOverride, ),
+            f"check_end_of_override_setpoint -- Time to update the Thermostat back from {thermostat_override_override_setpoint} to {thermostat_override_current_setpoint}"
         )
-
-        if remaining_time <= 0:
-            self.log.logging(
-                "Schneider",
-                "Debug",
-                "check_end_of_override_setpoint -- Time to update the Thermostat back from %s to %s" % (
-                    ThermostatOverride, CurrentSetpoint, ),
-            )
-            setpoint = CurrentSetpoint
-            schneider_setpoint_thermostat(self, NwkId, setpoint)
-            schneider_update_ThermostatDevice( self, Devices, NwkId, Ep, THERMOSTAT_CLUSTER, setpoint, )
-            cancel_override_attribute( self, NwkId )
+        schneider_setpoint_thermostat(self, NwkId, thermostat_override_current_setpoint)
+        schneider_update_ThermostatDevice(self, Devices, NwkId, Ep, THERMOSTAT_CLUSTER, thermostat_override_current_setpoint)
+        cancel_override_attribute(self, NwkId)
 
 
-def override_setpoint(self, NwkId, Ep, override, duration):
+def override_setpoint(self, nwkid, ep, override, duration):
+    """ Override the setpoint of a thermostat device for a specified duration. """
 
-    self.log.logging("Schneider", "Debug", f"override_setpoint -- NwkId: {NwkId} Ep: {Ep} Override: {override} Duration: {duration}")
+    self.log.logging("Schneider", "Debug", f"override_setpoint -- NwkId: {nwkid} Ep: {ep} Override: {override} Duration: {duration}")
 
-    override_base_setpoint = None
-    if SCHNEIDER_META_DATA in self.ListOfDevices[NwkId] and "ThermostatOverride" in self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]:
-            override_base_setpoint = self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]["CurrentSetpoint"]
+    device = self.ListOfDevices.get(nwkid)
+    if device is None:
+        return
 
-    if SCHNEIDER_META_DATA not in self.ListOfDevices[NwkId]:
-            self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]
-    if "ThermostatOverride" not in self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]:      
-        self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"] = {}
+    schneider_meta_data = device.setdefault(SCHNEIDER_META_DATA, {})
+    thermostat_override = schneider_meta_data.setdefault("ThermostatOverride", {})
 
     # Get current Setpoint
-    current_setpoint = schneider_find_attribute(self, NwkId, Ep, THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT)
+    current_setpoint = schneider_find_attribute(self, nwkid, ep, THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT)
     if current_setpoint == {}:
         current_setpoint = 2000
 
-    if "Param" in self.ListOfDevices[NwkId]:
-        if "OverrideDurationInMinutes" in self.ListOfDevices[NwkId]["Param"]:
-            self.log.logging("Schneider", "Debug", f"override_setpoint -- Duration: {duration}")
-
-            duration = self.ListOfDevices[NwkId]["Param"]["OverrideDurationInMinutes"]
+    if "Param" in device:
+        if "OverrideDurationInMinutes" in device["Param"]:
+            duration = device["Param"]["OverrideDurationInMinutes"]
             self.log.logging("Schneider", "Debug", f"override_setpoint -- Get from Device Param Duration: {duration}")
 
-
-        if "OverrideTempInDegree" in self.ListOfDevices[NwkId]["Param"]:
+        if "OverrideTempInDegree" in device["Param"]:
             if current_setpoint < override:
-                override = current_setpoint + ( self.ListOfDevices[NwkId]["Param"]["OverrideTempInDegree"] * 100)
+                override = current_setpoint + ( device["Param"]["OverrideTempInDegree"] * 100)
                 override = min(override, 3000)
             else:
-                override = current_setpoint - ( self.ListOfDevices[NwkId]["Param"]["OverrideTempInDegree"] * 100)
+                override = current_setpoint - ( device["Param"]["OverrideTempInDegree"] * 100)
                 override = max(override, 700)
             self.log.logging("Schneider", "Debug", f"override_setpoint -- override: {override}")
 
-
-    self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]["CurrentSetpoint"] = override_base_setpoint or current_setpoint
-
-    self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]["OverrideSetpoint"] = override
-    self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]["OverrideDuration"] = duration * 60
-    self.ListOfDevices[NwkId][SCHNEIDER_META_DATA]["ThermostatOverride"]["OverrideStartTime"] = time()
-    self.ListOfDevices[NwkId ][SCHNEIDER_META_DATA]["BoostDemand"] = True
+    thermostat_override["CurrentSetpoint"] = current_setpoint
+    thermostat_override["OverrideSetpoint"] = override
+    thermostat_override["OverrideDuration"] = duration * 60
+    thermostat_override["OverrideStartTime"] = time()
+    schneider_meta_data["BoostDemand"] = True
+    
+    nickname = get_device_nickname(self, NwkId=nwkid)
+    self.log.logging("Schneider", "Status", f"Temperature boost for device {nickname} from {current_setpoint} to {override}", nwkid)
 
     return override
 
@@ -2067,59 +2122,70 @@ def iTRV_open_window_detection(self, NwkId, enable=False):
         self, NwkId, ZIGATE_EP, "01", cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled=False
     )
 
-def iTRV_local_temperature(self, NwkId):
-    self.log.logging("Schneider", "Debug", f"iTRV_local_temperature for: {NwkId}")
-    room_temperature = get_local_temperature_from_wiserroom( self, NwkId, get_wiserroom(self, NwkId))
-    self.log.logging("Schneider", "Debug", f"iTRV_local_temperature for: {NwkId} room temp: {room_temperature}")
 
-    if room_temperature is None:
-        return 0x8000
+def iTRV_local_temperature(self, nwk_id):
+    """Retrieve the local temperature for an iTRV device in the WiserRoom."""
     
-    return room_temperature
+    self.log.logging("Schneider", "Debug", f"iTRV_local_temperature for: {nwk_id}")
+
+    # Get room temperature from a related device
+    wiser_room = get_wiserroom(self, nwk_id)
+    room_temperature = get_local_temperature_from_wiserroom(self, nwk_id, wiser_room)
+
+    self.log.logging("Schneider", "Debug", f"iTRV_local_temperature for: {nwk_id} room temp: {room_temperature}")
+
+    # If no room temperature is found and the device is a Wiser2-Thermostat, fetch stored temperature
+    if room_temperature is None and self.ListOfDevices.get(nwk_id, {}).get("Model") == "Wiser2-Thermostat":
+        room_temperature = schneider_find_attribute_and_set(self, nwk_id, "01", TEMPERATURE_CLUSTER, TEMPERATURE_VALUE, 0) * 100
+
+    return room_temperature if room_temperature is not None else 0x8000
+
 
 def get_wiserroom(self, NwkId):
+    """Retrieve the WiserRoomNumber for a given device if available."""
     self.log.logging("Schneider", "Debug", f"get_wiserroom for: {NwkId}")
-    if "Param" in self.ListOfDevices[ NwkId ] and "WiserRoomNumber" in self.ListOfDevices[ NwkId ]["Param"]:
-        self.log.logging("Schneider", "Debug", f'get_wiserroom for: {NwkId} is room: {self.ListOfDevices[ NwkId ]["Param"]["WiserRoomNumber"]}')
 
-        return self.ListOfDevices[ NwkId ]["Param"]["WiserRoomNumber"]
-    return None
+    wiser_room = self.ListOfDevices.get(NwkId, {}).get("Param", {}).get("WiserRoomNumber")
+    
+    if wiser_room is not None:
+        self.log.logging("Schneider", "Debug", f"get_wiserroom for: {NwkId} is room: {wiser_room}")
+    
+    return wiser_room
 
-def get_local_temperature_from_wiserroom( self, NwkId, room=None):
+
+def get_local_temperature_from_wiserroom(self, NwkId, room=None):
+    """Retrieve the local temperature from a device in the same WiserRoomNumber."""
     
     self.log.logging("Schneider", "Debug", f"get_local_temperature_from_wiserroom for: {NwkId} and room: {room}")
-
+    
     if room is None:
         return None
 
-    for x in list(self.ListOfDevices):
+    for x, device in self.ListOfDevices.items():
+        
         if x == NwkId:
             continue
-        if "Param" not in self.ListOfDevices[x]:
-            continue
-        if "WiserRoomNumber" not in self.ListOfDevices[x]["Param"]:
-            continue
-        if self.ListOfDevices[x]["Param"]["WiserRoomNumber"] != room:
+        
+        wiser_room = device.get("Param", {}).get("WiserRoomNumber")
+        if wiser_room != room:
             continue
 
-        # We have a device which belongs to the same WiserRoomNumber
-        self.log.logging("Schneider", "Debug", f"get_local_temperature_from_wiserroom for: {NwkId} and room: {room} potential candidat: {x}")
+        # We have a matching device in the same room
+        self.log.logging("Schneider", "Debug", f"get_local_temperature_from_wiserroom: potential candidate {x}")
 
-        # Is that a Temperature Sensor ?
-        if "Model" in self.ListOfDevices[x] and self.ListOfDevices[x]["Model"] in ( "iTRV", ):
-            # This is an iTRV skip it, we don't want to use the local sensor of an eTRV
+        # Ignore iTRV models
+        if device.get("Model") in ("iTRV",):
             continue
 
-        for y in self.ListOfDevices[x]["Ep"]:
-            if TEMPERATURE_CLUSTER not in self.ListOfDevices[x]["Ep"][y]:
-                continue
-            if TEMPERATURE_VALUE not in self.ListOfDevices[x]["Ep"][y][TEMPERATURE_CLUSTER]:
-                continue
-            self.log.logging("Schneider", "Debug", f'get_local_temperature_from_wiserroom for: {NwkId} and room: {room} confirmed candidat: {x} with temp: {self.ListOfDevices[x]["Ep"][y][TEMPERATURE_CLUSTER][TEMPERATURE_VALUE]}')
+        # Check for temperature sensor
+        for ep_data in device.get("Ep", {}).values():
+            temp_cluster = ep_data.get(TEMPERATURE_CLUSTER, {})
+            if TEMPERATURE_VALUE in temp_cluster:
+                local_temp = temp_cluster[TEMPERATURE_VALUE]
+                self.log.logging("Schneider", "Debug", f"get_local_temperature_from_wiserroom: confirmed candidate {x} with temp: {local_temp}")
 
-            local_temp = self.ListOfDevices[x]["Ep"][y][TEMPERATURE_CLUSTER][TEMPERATURE_VALUE]
-            if isinstance(local_temp, (int, float) ):
-                return int(local_temp * 100 )
+                if isinstance(local_temp, (int, float)):
+                    return int(local_temp * 100)
 
     return None
 
