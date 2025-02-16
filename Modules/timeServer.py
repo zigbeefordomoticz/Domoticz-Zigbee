@@ -34,7 +34,7 @@ def get_local_timezone():
 
 
 
-def calculate_dst_times():
+def calculate_dst_times(self):
     """
     Calculate the DST start and end times for the current year in the local time zone.
 
@@ -62,8 +62,18 @@ def calculate_dst_times():
                     dst_end = date
                     break
             except ValueError:
-                # Handle invalid dates (e.g., February 30)
-                break
+                _context = {
+                    'Error': "TimeServer_001",
+                    'Description': "Value Error",
+                    'Local_tz_name': local_tz_name,
+                    'Local_tz': local_tz,
+                    'Current_year': current_year,
+                    'Month': month,
+                    'Day': day,
+                    'Date': date
+                }
+                self.log.logging(["TimeServer","Input"], "Error", "Decode0100 - calculate_dst_times - invalid date ", context=_context)
+                return 0, 0, 0
         if dst_end:
             break
 
@@ -125,9 +135,9 @@ def get_response_data_for_timer_attribute_request( self, nwkid, attribute):
             "data_type": "2b",
             "status": "00",
         },  # Timezone
-        "0003": {"value": f"{calculate_dst_times()[0]:08x}", "data_type": "23", "status": "00"},  # DST Start
-        "0004": {"value": f"{calculate_dst_times()[1]:08x}", "data_type": "23", "status": "00"},  # DST End
-        "0005": {"value": f"{calculate_dst_times()[2]:08x}", "data_type": "2B", "status": "00"},  # DST Shift
+        "0003": {"value": f"{calculate_dst_times(self)[0]:08x}", "data_type": "23", "status": "00"},  # DST Start
+        "0004": {"value": f"{calculate_dst_times(self)[1]:08x}", "data_type": "23", "status": "00"},  # DST End
+        "0005": {"value": f"{calculate_dst_times(self)[2]:08x}", "data_type": "2B", "status": "00"},  # DST Shift
         "0006": {"value": "00000000", "data_type": "23", "status": "00"},  # Standard Time
     }
 
