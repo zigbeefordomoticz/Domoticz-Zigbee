@@ -94,7 +94,7 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
 
     rounding = dps_mapping_item.get("domo_round", 0)
     value = round(value, rounding) if rounding else int(value)
-
+    
     self.log.logging("Tuya0601", "Debug", "                - after sensor_type() value: %s divisor: %s rounding: %s" % (value, divisor, rounding), NwkId)
    
     sensor_type = dps_mapping_item[ "sensor_type"]
@@ -209,16 +209,18 @@ def evaluate_expression_with_data(self, expression, value):
     return value
 
 
-def check_domo_format_req( self, dp_informations, value):
-    
-    if "DomoDeviceFormat" not in dp_informations:
-        return value
-    if dp_informations[ "DomoDeviceFormat" ] == "str":
-        value = str(value)
-    elif dp_informations[ "DomoDeviceFormat" ] == "strhex":
-        value = "%x" %value
-    
-    return value
+def check_domo_format_req(self, dp_informations, value):
+    format_map = {
+        "str": str,
+        "str_2digits": lambda v: f"{int(v):02d}",
+        "str_4digits": lambda v: f"{int(v):04d}",
+        "strhex": lambda v: f"{v:x}",
+        "str2hex": lambda v: f"{v:02x}",
+        "str4hex": lambda v: f"{v:04x}",
+    }
+
+    format_type = dp_informations.get("DomoDeviceFormat")
+    return format_map.get(format_type, lambda v: v)(value)
 
 
 def ts0601_extract_data_point_infos( self, model_name):
