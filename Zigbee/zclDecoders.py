@@ -64,6 +64,10 @@ def is_duplicate_zcl_frame(self, nwkid, cluster_id, sqn, default_response_disabl
 
 
 def send_default_rsp( self, fcf, disable_default_response, src_nwk_id, src_endpoint, cluster_id, command, sqn, manufcode, status="00"):
+    if self.zigbee_communication != "zigpy":
+        # No check for zigate
+        return False
+
     self.log.logging("zclDecoder", "Debug",f"zcl_decoders default response disabled ? {disable_default_response} for command {command}")
     if not disable_default_response:
         self.log.logging("zclDecoder", "Debug",f"zcl_decoders sending a default response {disable_default_response} for command {command}")
