@@ -35,6 +35,7 @@ class ZigateTransport(object):
 
     def __init__(
         self,
+        ListOfDevices,
         HardwareID,
         DomoticzBuild,
         DomoticzMajor,
@@ -49,7 +50,7 @@ class ZigateTransport(object):
         wifiPort=None,
     ):
         self.zigbee_communication = "native"
-        
+        self.ListOfDevices = ListOfDevices
         # Call back function to send back to plugin
         self.F_out = processFrame  # Function to call to bring the decoded Frame at plugin
 

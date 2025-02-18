@@ -1063,6 +1063,7 @@ def _start_native_zigate(self, serialPort=None, wifiAddress=None, wifiPort=None)
     self.pluginParameters["Zigpy"] = False
     
     kwargs = {
+        "ListOfDevices": self.ListOfDevices,
         "HardwareID": self.HardwareID,
         "DomoticzBuild": self.DomoticzBuild,
         "DomoticzMajor": self.DomoticzMajor,

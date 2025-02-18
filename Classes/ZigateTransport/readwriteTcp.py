@@ -19,20 +19,24 @@ MAX_RETRY = 5
 WAITING_TIME = 10.0
 
 # Manage TCP connection
+
 def open_tcpip(self):
+    """ Open TCTIP connection to the ZiGate"""
     try:
-        self._connection = None
         self._connection = socket.create_connection((self._wifiAddress, self._wifiPort))
 
+        # Set socket options: allow address reuse
+        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        set_keepalive(self, self._connection)
+
+        self.logging_tcpip("Status", f"ZigateTransport: TCPIP Connection open: {self._connection}")
+        time.sleep(1.0)  # Optional
+        return True
+
     except Exception as e:
-        self.logging_tcpip( "Error", "Cannot open Zigate Wifi %s Port %s error: %s" % (self._wifiAddress, self._serialPort, e) )
+        self.logging_tcpip("Error", f"Cannot open Zigate Wifi {self._wifiAddress} Port {self._wifiPort} error: {e}")
         return False
-
-    set_keepalive(self, self._connection)
-    self.logging_tcpip("Status", "ZigateTransport: TCPIP Connection open: %s" % self._connection)
-    time.sleep(1.0)
-    return True
-
 
 def set_keepalive(self, sock):
     set_keepalive_linux(sock)
@@ -52,92 +56,97 @@ def set_keepalive_linux(sock, after_idle_sec=1, interval_sec=3, max_fails=5):
 
 
 def tcp_re_connect(self):
-    self.logging_tcpip("Error", "tcp_re_connect - Trying to reconnect the TCP connection !!!! %s" % self._connection)
+    """ Reconnect the TCP connection to the ZiGate"""
+    self.logging_tcpip("Error", f"tcp_re_connect - Trying to reconnect the TCP connection !!!! {self._connection}")
+
     if self._connection:
         with contextlib.suppress(Exception):
             self._connection.shutdown(socket.SHUT_RDWR)
             self.logging_tcpip("Debug", "tcp_re_connect - TCP connection nicely shutdown")
-    
-    nb_attempt = 1
-    while nb_attempt < MAX_RETRY:
+
+    for attempt in range(1, MAX_RETRY + 1):
         if open_tcpip(self):
-            self.logging_tcpip("Error", "tcp_re_connect - TCP connection successfuly re-established :-) %s" % self._connection)  
+            self.logging_tcpip("Error", f"tcp_re_connect - TCP connection successfully re-established :-) {self._connection}")
             return True
-        nb_attempt += 1
-        time.sleep( WAITING_TIME )
-        self.logging_tcpip("Error", "tcp_re_connect - reconnection %s attempt" % ( nb_attempt) )
+        self.logging_tcpip("Error", f"tcp_re_connect - reconnection attempt {attempt}")
+        time.sleep(WAITING_TIME)
+
     return False
 
 
 def tcpip_read_from_zigate(self):
+    """Handles both reading from and writing to the TCP socket."""
+
     # Does Read and Write , as python is not socket thread-safe
     while self.running:
-        if self._connection is None:
-            # Connection not yet ready !
-            self.logging_tcpip("Error", "tcpip_read_from_zigate Connection not yet ready !")
-            if tcp_re_connect(self):
-                continue
-            return "SocketClosed"
+        # Check if the connection is valid
+        if not self._connection or self._connection.fileno() == -1:
+            self.logging_tcpip("Error", "tcpip_read_from_zigate: Connection is not available.")
+            if not tcp_re_connect(self):
+                return "SocketClosed"
+            continue  # Retry after reconnection
 
-        socket_list = [self._connection]
-        if self._connection.fileno() == -1:
-            self.logging_tcpip("Error", "tcpip_read_from_zigate Socket seems to be closed!!!! ")
-            if tcp_re_connect(self):
-                continue
-            return "SocketClosed"
+        try:
+            readable, writable, exceptional = select.select([self._connection], [self._connection], [], 5)
+        except socket.error as e:
+            self.logging_tcpip("Error", f"tcpip_read_from_zigate: Select error: {e}")
+            if not tcp_re_connect(self):
+                return "WifiError"
+            continue
 
-        readable, writable, exceptional = select.select(socket_list, socket_list, [], 5)
         # Read data if any
-        data = None
         if readable:
             if self.pluginconf.pluginConf["ZiGateReactTime"]:
                 # Start
                 self.reading_thread_timing = 1000 * time.time()
+
             try:
                 data = self._connection.recv(1024)
-                self.logging_tcpip("Debug", "Receiving: %s" %str(data))
+
                 if data:
+                    self.logging_tcpip("Debug", "Receiving: %s" %str(data))
                     decode_and_split_message(self, data)
+                else:
+                    self.logging_tcpip("Error", "tcpip_read_from_zigate: Received empty data (socket closed by remote).")
+                    if not tcp_re_connect(self):
+                        return "WifiError"
+                    continue
+
+            except socket.error as e:
+                self.logging_tcpip("Error", f"tcpip_read_from_zigate: Error while receiving data: {e}")
+                if not tcp_re_connect(self):
+                    return "WifiError"
+                continue
 
             except Exception as e:
-                self.logging_tcpip(
-                    "Error",
-                    "tcpip_read_from_zigate: Connection error while receiving data %s on %s" % (e, self._connection),
-                )
+                self.logging_tcpip( "Error", f"tcpip_read_from_zigate: Connection error while receiving data {e} on {self._connection}" % (e, self._connection), )
                 if tcp_re_connect(self):
                     continue
                 return "WifiError"
 
-        # Write data if any
-        if self.tcp_send_queue.qsize() > 0 and writable:
-            encode_data = self.tcp_send_queue.get()
-            self.logging_tcpip("Debug", "Sending: %s" %str(encode_data))
-            
+        # Write data if available
+        if writable:
             try:
+                encode_data = self.tcp_send_queue.get_nowait()
+                self.logging_tcpip("Debug", f"Sending: {encode_data}")
+
                 len_data_sent = self._connection.send(encode_data)
                 if len_data_sent != len(encode_data):
-                    self.logging_tcpip(
-                        "Error", "tcpip_read_from_zigate - Not all data have been sent !!! Please report !!!!%s "
-                    )
+                    self.logging_tcpip("Error", "tcpip_read_from_zigate - Not all data was sent. Please report!")
+
+            except socket.error as e:
+                self.logging_tcpip("Error", f"tcpip_read_from_zigate: Error while sending data: {e}")
+                if not tcp_re_connect(self):
+                    return "WifiError"
                 continue
 
-            except Exception as e:
-                self.logging_tcpip(
-                    "Error",
-                    "tcpip_read_from_zigate: Connection error while sending data %s on %s" % (e, self._connection),
-                )
-                if tcp_re_connect(self):
-                    continue
+            except Exception:
+                pass  # No data to send
+
+        if exceptional:
+            self.logging_tcpip("Error", f"tcpip_read_from_zigate: Socket error detected on {self._connection}")
+            if not tcp_re_connect(self):
                 return "WifiError"
 
-        elif exceptional:
-            self.logging_tcpip("Error", "native_write_to_zigate We have detected an error .... on %s" % self._connection)
-            if tcp_re_connect(self):
-                continue
-            return "WifiError"
-
-        time.sleep(0.05)
-    
-    self.logging_tcpip("Status", "ZigateTransport: ZiGateTcpIpListen Thread stop.")
+    self.logging_tcpip("Status", "ZigateTransport: ZiGateTcpIpListen Thread stopped.")
     stop_waiting_on_queues(self)
-    
