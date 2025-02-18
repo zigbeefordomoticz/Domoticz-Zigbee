@@ -328,10 +328,13 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
         self.HBcount = self.HBcount + 1
         return
 
-    self.log.logging("Database", "Debug", "WriteDeviceList %s %s" %(self.HBcount, count))
+    if self.log:
+        self.log.logging("Database", "Debug", "WriteDeviceList %s %s" %(self.HBcount, count))
+
     if self.pluginconf.pluginConf["pluginData"] is None or self.DeviceListName is None:
-        self.log.logging("Database", "Error", "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
-            self.pluginconf.pluginConf["pluginData"], self.DeviceListName))
+        if self.log:
+            self.log.logging("Database", "Error", "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
+                self.pluginconf.pluginConf["pluginData"], self.DeviceListName))
         return
 
     if self.pluginconf.pluginConf["expJsonDatabase"]:
