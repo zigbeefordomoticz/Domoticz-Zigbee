@@ -783,47 +783,79 @@ def schneider_hact_fip_mode(self, key, mode):
     self.ListOfDevices[key]["Heartbeat"] = "0"
 
 
-def schneider_thermostat_check_and_bind(self, key, forceRebind=False):
-    """bind the thermostat to the actuators based on the zoning json fie
-    Arguments:
-        key {[type]} -- [description]
-    """
-    self.log.logging("Schneider", "Debug", f"schneider_thermostat_check_and_bind : {key} ", key)
+#def schneider_thermostat_check_and_bind(self, nwkid, force_rebinding=False):
+#    """bind the thermostat to the actuators based on the zoning json fie
+#    Arguments:
+#        key {[type]} -- [description]
+#    """
+#    self.log.logging("Schneider", "Debug", f"schneider_thermostat_check_and_bind : {nwkid} ", nwkid)
+#
+#    importSchneiderZoning(self)
+#    if self.SchneiderZone is None:
+#        return
+#
+#    for zone in self.SchneiderZone:
+#        if self.SchneiderZone[zone]["Thermostat"]["NWKID"] != nwkid:
+#            continue
+#
+#        for hact in self.SchneiderZone[zone]["Thermostat"]["HACT"]:
+#
+#            if hact not in self.ListOfDevices:
+#                continue
+#
+#            src_ieee = self.SchneiderZone[zone]["Thermostat"]["IEEE"]
+#            src_ep = WISER_LEGACY_BASE_EP
+#            target_ieee = self.SchneiderZone[zone]["Thermostat"]["HACT"][hact]["IEEE"]
+#            target_ep = WISER_LEGACY_BASE_EP
+#
+#            status_bind1 = WebBindStatus(self, src_ieee, src_ep, target_ieee, WISER_LEGACY_BASE_EP, THERMOSTAT_CLUSTER)
+#
+#            if status_bind1 not in ["requested", "binded"] or force_rebinding:
+#                webBind(self, src_ieee, src_ep, target_ieee, target_ep, THERMOSTAT_CLUSTER)
+#                webBind(self, target_ieee, src_ep, src_ieee, target_ep, THERMOSTAT_CLUSTER)
+#
+#            status_bind2 = WebBindStatus( self, src_ieee, WISER_LEGACY_BASE_EP, target_ieee, target_ep, TEMPERATURE_CLUSTER )
+#            if status_bind2 not in ["requested", "binded"] or force_rebinding:
+#                webBind(self, src_ieee, src_ep, target_ieee, target_ep, TEMPERATURE_CLUSTER)
+#                webBind(self, target_ieee, src_ep, src_ieee, target_ep, TEMPERATURE_CLUSTER)
 
+
+def schneider_thermostat_check_and_bind(self, nwkid, force_rebinding=False):
+    """Bind the thermostat to the actuators based on the zoning JSON file.
+
+    Arguments:
+        nwkid: Network ID of the thermostat.
+        force_rebinding: If True, forces rebinding even if already bound.
+    """
+    self.log.logging("Schneider", "Debug", f"schneider_thermostat_check_and_bind : {nwkid} ", nwkid)
 
     importSchneiderZoning(self)
-    if self.SchneiderZone is None:
+    if not self.SchneiderZone:
         return
 
-    Cluster_bind1 = THERMOSTAT_CLUSTER
-    Cluster_bind2 = TEMPERATURE_CLUSTER
-    for zone in self.SchneiderZone:
-        if self.SchneiderZone[zone]["Thermostat"]["NWKID"] != key:
+    for zone, zone_data in self.SchneiderZone.items():
+        thermostat = zone_data.get("Thermostat", {})
+        if thermostat.get("NWKID") != nwkid:
             continue
 
-        for hact in self.SchneiderZone[zone]["Thermostat"]["HACT"]:
+        src_ieee = thermostat.get("IEEE")
+        src_ep = WISER_LEGACY_BASE_EP
 
+        for hact, hact_data in thermostat.get("HACT", {}).items():
             if hact not in self.ListOfDevices:
                 continue
 
-            srcIeee = self.SchneiderZone[zone]["Thermostat"]["IEEE"]
-            targetIeee = self.SchneiderZone[zone]["Thermostat"]["HACT"][hact]["IEEE"]
-            statusBind1 = WebBindStatus(
-                self, srcIeee, WISER_LEGACY_BASE_EP, targetIeee, WISER_LEGACY_BASE_EP, Cluster_bind1
-            )
+            target_ieee = hact_data.get("IEEE")
+            target_ep = WISER_LEGACY_BASE_EP
 
-            if not (statusBind1 == "requested"):
-                if (statusBind1 != "binded") or forceRebind:
-                    webBind(self, srcIeee, WISER_LEGACY_BASE_EP, targetIeee, WISER_LEGACY_BASE_EP, Cluster_bind1)
-                    webBind(self, targetIeee, WISER_LEGACY_BASE_EP, srcIeee, WISER_LEGACY_BASE_EP, Cluster_bind1)
+            if target_ieee is None:
+                continue
 
-            statusBind2 = WebBindStatus(
-                self, srcIeee, WISER_LEGACY_BASE_EP, targetIeee, WISER_LEGACY_BASE_EP, Cluster_bind2
-            )
-            if not (statusBind2 == "requested"):
-                if (statusBind2 != "binded") or forceRebind:
-                    webBind(self, srcIeee, WISER_LEGACY_BASE_EP, targetIeee, WISER_LEGACY_BASE_EP, Cluster_bind2)
-                    webBind(self, targetIeee, WISER_LEGACY_BASE_EP, srcIeee, WISER_LEGACY_BASE_EP, Cluster_bind2)
+            # Bind Thermostat and Temperature clusters
+            for cluster in [THERMOSTAT_CLUSTER, TEMPERATURE_CLUSTER]:
+                if force_rebinding or WebBindStatus(self, src_ieee, src_ep, target_ieee, target_ep, cluster) not in ["requested", "binded"]:
+                    webBind(self, src_ieee, src_ep, target_ieee, target_ep, cluster)
+                    webBind(self, target_ieee, src_ep, src_ieee, target_ep, cluster)
 
 
 def schneider_actuator_check_and_bind(self, key, forceRebind=False):
