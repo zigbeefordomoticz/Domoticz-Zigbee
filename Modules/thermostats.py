@@ -267,29 +267,26 @@ def thermostat_Mode(self, NwkId, mode):
         self.log.logging("Thermostats", "Error", "thermostat_Mode - unknown system mode: %s" % mode)
         return
 
-    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
+    model_name = self.ListOfDevices[NwkId].get("Model", "")
+    if model_name in ("AC211", "AC221", "CAC221"):
         casaia_check_irPairing(self, NwkId)
 
     manuf_id = "0000"
     manuf_spec = "00"
+
+    # Find the Ep we should send the request
+    ep_out = next( ( ep for ep in self.ListOfDevices[NwkId]["Ep"] if "0201" in self.ListOfDevices[NwkId]["Ep"][ep] ), "01", )
     cluster_id = "%04x" % 0x0201
     attribute = "%04x" % 0x001C
     data_type = "30"  # Enum8
     data = "%02x" % SYSTEM_MODE[mode]
 
-    EPout = "01"
-    for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
-        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
-            EPout = tmpEp
+    # Set the Mode
+    write_attribute(self, NwkId, "01", ep_out, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+    self.log.logging( "Thermostats", "Debug", "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s" % (
+        NwkId, data, cluster_id, attribute, data_type), nwkid=NwkId, )
 
-    write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    self.log.logging(
-        "Thermostats",
-        "Debug",
-        "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s" % (NwkId, data, cluster_id, attribute, data_type),
-        nwkid=NwkId,
-    )
-    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("TAFFETAS2 D1.00P1.01Z1.00"):
+    if model_name in ("TAFFETAS2 D1.00P1.01Z1.00"):
         self.log.logging(
             "Thermostats",
             "Debug",
@@ -297,6 +294,15 @@ def thermostat_Mode(self, NwkId, mode):
             % (NwkId, data, cluster_id, attribute, data_type),
             nwkid=NwkId,
         )
+
+    if model_name in ( "CCRFR6700", ) and mode == "Heat":
+        # Set the Control Sequence Of operation to Heating
+        cluster_id = "%04x" % 0x0201
+        attribute = "%04x" % 0x001B  # Control Sequence Of operation
+        data_type = "30"  # Enum8
+        data = "%02x" % 0x02   # Heating Only
+
+        write_attribute(self, NwkId, "01", ep_out, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 
 def Thermostat_LockMode(self, NwkId, lockmode):
