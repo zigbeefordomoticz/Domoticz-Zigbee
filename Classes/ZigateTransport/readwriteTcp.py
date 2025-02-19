@@ -140,7 +140,7 @@ def tcpip_read_from_zigate(self):
                     return "WifiError"
                 continue
 
-            except Exception:
+            except Exception as _:
                 pass  # No data to send
 
         if exceptional:
