@@ -839,6 +839,26 @@ def ts0601_min_setpoint_temp( self, NwkId, Ep, dp, value=None):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
+def ts0601_antiscale(self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_antiscale - %s AntiScale Mode: %s" % (NwkId, value))
+    action = "%02x01" % dp
+    data = "%02x" % value
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_antifrost(self, NwkId, Ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_antifrost - %s AntiFrost Mode: %s" % (NwkId, value))
+    action = "%02x01" % dp
+    data = "%02x" % value
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
 def ts0601_settings( self, NwkId, dps_mapping, param, value):
     """ Handle in a more generic way TS0601 settings, by extracting Data Type from the config """
     
@@ -1199,6 +1219,8 @@ TS0601_COMMANDS = {
     "TuyaAlarmDuration": ts0601_solar_siren_alarm_duration,
     "MaxSetpointTemp": ts0601_max_setpoint_temp,
     "MinSetpointTemp": ts0601_min_setpoint_temp,
+    "TuyaAntiscale": ts0601_antiscale,
+    "TuyaAntifrost": ts0601_antifrost,
 }
 
 
