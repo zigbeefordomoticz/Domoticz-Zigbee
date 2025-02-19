@@ -1578,7 +1578,8 @@ class WebServer(object):
         return _response
       
     def logging(self, logType, message):
-        self.log.logging("WebServer", logType, message)
+        if self.log:
+            self.log.logging("WebServer", logType, message)
 
 def dummy_zdevice_name():
     
