@@ -383,7 +383,8 @@ def schneider_wiser_registration(self, Devices, key):
     if self.ListOfDevices[key]["Model"] in ("EH-ZB-VACT"):  # Actuator, Valve
         wiser_set_calibration(self, key, EPout)
     self.ListOfDevices[key]["Heartbeat"] = "0"
-    
+
+
     
 def wiser_set_zone_mode(self, key, EPout):  # 0x0201/0xe010
 
@@ -655,7 +656,7 @@ def schneider_hact_heater_type_wiser2(self, nwkid: str, type_heater: str) -> Non
         "01",
         PILOT_MODE_ATTRIBUTE,
         PILOT_MODE_DATA_TYPE,
-        pilot_mode,
+        "%02x" %pilot_mode,
         ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
     )
     self.log.logging( "Schneider", "Debug", "Attribute write completed for key=%s", nwkid )
