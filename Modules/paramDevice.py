@@ -23,6 +23,7 @@ from Modules.onoff_settings import ONOFF_DEVICE_PARAMETERS
 from Modules.philips import PHILIPS_DEVICE_PARAMETERS
 from Modules.schneider_wiser import SCHNEIDER_DEVICE_PARAMETERS
 from Modules.thermo_settings import THERMOSTAT_DEVICE_PARAMETERS
+from Modules.thermo_ui_setting import THERMOSTAT_UI_DEVICE_PARAMETERS
 from Modules.tuya import TUYA_DEVICE_PARAMETERS
 from Modules.tuyaSiren import TUYA_SIREN_DEVICE_PARAMETERS
 from Modules.tuyaTRV import TUYA_TRV_DEVICE_PARAMETERS
