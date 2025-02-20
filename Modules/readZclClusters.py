@@ -107,8 +107,12 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
                 "checking_ranges": str(checking_ranges),
                 "ranges": str(_ranges),
             }
-            self.log.logging("ZclClusters", "Error", " %s/%s %s %s . value out of ranges : %s -> %s" %( 
-                MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, str(_ranges) ),nwkid=MsgSrcAddr, context=_context )
+            if self.pluginconf.pluginConf["TrackingEraticValue"]:
+                self.log.logging("ZclClusters", "Error", "Warning - %s/%s %s %s . value out of ranges : %s -> %s" %(
+                    MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value, str(_ranges) ),nwkid=MsgSrcAddr, context=_context )
+
+            # As the value is out of range, it is not a valid value , so just stop the processing here
+            return
     
     _eval_inputs = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalExpCustomVariables", model=device_model)
     _function = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "EvalFunc", model=device_model)
@@ -184,8 +188,6 @@ def _read_zcl_cluster( self, cluster_filename ):
 
 
 def _check_range( self, value, datatype, _range):
-    #self.log.logging("ZclClusters", "Debug", " . _check_range %s %s %s (%s)" %(value, datatype, _range, type(_range)))
-    
     if len(_range) != 2:
         self.log.logging("ZclClusters", "Error", " . Incorrect range %s" %str(_range))
         return None
@@ -196,9 +198,6 @@ def _check_range( self, value, datatype, _range):
     else:
         _range1 = decoding_attribute_data( datatype, _range[0])
         _range2 = decoding_attribute_data( datatype, _range[1])
-    
-    #self.log.logging("ZclClusters", "Debug", " . _check_range range1: %s" %(_range1))
-    #self.log.logging("ZclClusters", "Debug", " . _check_range range2: %s" %(_range2))
     
     if _range1 < _range2:
         return _range1 <= value <= _range2

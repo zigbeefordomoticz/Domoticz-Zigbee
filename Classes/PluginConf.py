@@ -140,6 +140,7 @@ SETTINGS = {
             "forceSwitchSelectorPushButton": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
             "doUnbindBind": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "allowReBindingClusters": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
+            "TrackingEraticValue": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": False, },
         },
     },
     # Zigate Configuration
