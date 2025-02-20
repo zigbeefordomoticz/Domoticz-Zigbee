@@ -544,12 +544,15 @@ def wiser_set_thermostat_default_temp(self, Devices, key, ep_out):  # 0x0201/0x0
 
 
 def schneider_hact_heater_type(self, key, type_heater):
+    self.log.logging( "Schneider", "Debug", "schneider_hact_heater_type - %s type_heater %s" % (key, type_heater), key )
 
     model_name = self.ListOfDevices[key].get("Model")
     if model_name == "EH-ZB-HACT":
         return schneider_hact_heater_type_wiser1(self, key, type_heater)
+
     if model_name == "CCTFR6700":
         return schneider_hact_heater_type_wiser2(self, key, type_heater)
+
     _context = {"Error code": "SCHN0004", "model_name": model_name, 'type_heater': type_heater}
     self.log.logging( "Schneider", "Error", "schneider_hact_heater_type - %s unknown model %s" % (key, model_name), key, _context )
 
@@ -861,35 +864,40 @@ def schneider_setpoint_thermostat(self, key, setpoint):
     """
     # SetPoint is in centidegrees
 
+    model_name = self.ListOfDevices[key].get("Model")
     EPout = WISER_LEGACY_BASE_EP
-    if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] in ("Wiser2-Thermostat", "iTRV"):
+    if model_name in ("Wiser2-Thermostat", "iTRV", "CCTFR6700"):
         EPout = "01"
 
     ClusterID = THERMOSTAT_CLUSTER
     attr = OCCUPIED_SETPOINT
     NWKID = key
 
-    if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] not in ( "EH-ZB-VACT", ):
+    if model_name not in ( "EH-ZB-VACT", ):
         schneider_find_attribute_and_set(self, NWKID, EPout, ClusterID, attr, OCCUPIED_SETPOINT, setpoint)
 
     importSchneiderZoning(self)
     schneider_thermostat_check_and_bind(self, NWKID)
 
-    if self.SchneiderZone is not None:
-        for zone in self.SchneiderZone:
-            self.log.logging("Schneider", "Debug", f"schneider_setpoint - Zone Information: {zone} ", NWKID)
+    if self.SchneiderZone is None:
+        return
 
-            if self.SchneiderZone[zone]["Thermostat"]["NWKID"] == NWKID:
-                self.log.logging("Schneider", "Debug", f"schneider_setpoint - found {zone} ", NWKID)
+    for zone in self.SchneiderZone:
+        self.log.logging("Schneider", "Debug", f"schneider_setpoint - Zone Information: {zone} ", NWKID)
 
-                for hact in self.SchneiderZone[zone]["Thermostat"]["HACT"]:
-                    self.log.logging("Schneider", "Debug", f"schneider_setpoint - found hact {hact} ", NWKID)
+        if self.SchneiderZone[zone]["Thermostat"]["NWKID"] != NWKID:
+            continue
 
-                    schneider_setpoint_actuator(self, hact, setpoint)
-                    # Reset Heartbeat in order to force a ReadAttribute when possible
-                    self.ListOfDevices[key]["Heartbeat"] = "0"
-                    schneider_actuator_check_and_bind(self, hact)
-                    # ReadAttributeRequest_0201(self,key)
+        self.log.logging("Schneider", "Debug", f"schneider_setpoint - found {zone} ", NWKID)
+
+        for hact in self.SchneiderZone[zone]["Thermostat"]["HACT"]:
+            self.log.logging("Schneider", "Debug", f"schneider_setpoint - found hact {hact} ", NWKID)
+
+            schneider_setpoint_actuator(self, hact, setpoint)
+            # Reset Heartbeat in order to force a ReadAttribute when possible
+            self.ListOfDevices[key]["Heartbeat"] = "0"
+            schneider_actuator_check_and_bind(self, hact)
+            # ReadAttributeRequest_0201(self,key)
 
 def schneider_setpoint_actuator(self, key, setpoint,send_command=True):
     """[summary]
@@ -955,26 +963,26 @@ def schneider_setpoint(self, NwkId, setpoint, call_back=False):
         self.log.logging("Schneider", "Debug", f"schneider_setpoint - unknown NwkId: {NwkId} in ListOfDevices!")
         return
 
-    if "Model" in self.ListOfDevices[NwkId]:
-        if self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT":
-            self.log.logging("Schneider", "Debug", f"schneider_setpoint - Call_Back : {call_back} setpoint {setpoint} for {NwkId} model EH-ZB-VACT")
-            
-            wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
-            #schneider_setpoint_thermostat(self, NwkId, setpoint)
-            schneider_setpoint_actuator(self, NwkId, setpoint, send_command=call_back)
-            return
+    model_name = self.ListOfDevices[NwkId].get("Model")
+    if model_name == "EH-ZB-VACT":
+        self.log.logging("Schneider", "Debug", f"schneider_setpoint - Call_Back : {call_back} setpoint {setpoint} for {NwkId} model EH-ZB-VACT")
         
-        if self.ListOfDevices[NwkId]["Model"] in ("EH-ZB-RTS", "Wiser2-Thermostat", ):
-            schneider_setpoint_thermostat(self, NwkId, setpoint)
-            return
-        
-        if self.ListOfDevices[NwkId]["Model"] == "iTRV": 
-            cancel_override_attribute( self, NwkId )
-            schneider_setpoint_thermostat(self, NwkId, setpoint)   
-            return
-            
         wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
-        schneider_setpoint_actuator(self, NwkId, setpoint)
+        #schneider_setpoint_thermostat(self, NwkId, setpoint)
+        schneider_setpoint_actuator(self, NwkId, setpoint, send_command=call_back)
+        return
+    
+    if model_name in ("EH-ZB-RTS", "Wiser2-Thermostat", "CCTFR6700"):
+        schneider_setpoint_thermostat(self, NwkId, setpoint)
+        return
+    
+    if model_name == "iTRV": 
+        cancel_override_attribute( self, NwkId )
+        schneider_setpoint_thermostat(self, NwkId, setpoint)   
+        return
+        
+    wiser_set_calibration(self, NwkId, WISER_LEGACY_BASE_EP)
+    schneider_setpoint_actuator(self, NwkId, setpoint)
 
 
 def schneider_temp_Setcurrent(self, key, setpoint):
@@ -1071,22 +1079,8 @@ def schneider_EHZBRTS_thermoMode(self, key, mode):
 
     self.log.logging("Schneider", "Debug", f"Schneider EH-ZB-RTS Thermo Mode  {key} with value {data} / cluster: {cluster_id}, attribute: {Hattribute} type: {data_type}", nwkid=key)
 
+    write_attribute(self,key,ZIGATE_EP,EPout,cluster_id,manuf_id,manuf_spec,Hattribute,data_type,data,ackIsDisabled=is_ack_tobe_disabled(self, key),)
 
-    write_attribute(
-        self,
-        key,
-        ZIGATE_EP,
-        EPout,
-        cluster_id,
-        manuf_id,
-        manuf_spec,
-        Hattribute,
-        data_type,
-        data,
-        ackIsDisabled=is_ack_tobe_disabled(self, key),
-    )
-
-    self.ListOfDevices[key]["Heartbeat"] = "0"
     self.ListOfDevices[key]["Heartbeat"] = "0"
 
 
