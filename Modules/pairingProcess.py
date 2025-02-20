@@ -40,8 +40,9 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0300)
 from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
-                                     wiser_home_lockout_thermostat)
-from Modules.thermostats import thermostat_Calibration
+                                     wiser_home_lockout_thermostat,
+                                     wiser_set_thermostat_default_temp)
+from Modules.thermostats import thermostat_Calibration, thermostat_Setpoint
 from Modules.tools import (get_device_config_param,
                            get_deviceconf_parameter_value,
                            getListOfEpForCluster, is_fake_ep)
@@ -637,10 +638,12 @@ def handle_device_specific_needs(self, Devices, NWKID):
     
     self.log.logging("Pairing", "Debug", f"handle_device_specific_needs for {NWKID} tuya_registration_parameter: {tuya_registration_parameter} tuya_data_request: {tuya_data_request} tuya_data_request_polling: {tuya_data_request_polling}")
 
-    # In case of Schneider Wiser, let's do the Registration Process
     MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
-    if device_model in ("Wiser2-Thermostat",):
+    if device_model in ("Wiser2-Thermostat", "CCTFR6700"):
         wiser_home_lockout_thermostat(self, NWKID, 0)
+
+        if device_model in ("CCTFR6700",):
+            thermostat_Setpoint(self, NWKID, 400)
 
     if get_device_config_param( self, NWKID, "AqaraMultiClick"):
         enable_click_mode_aqara( self, NWKID)
