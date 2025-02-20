@@ -653,7 +653,7 @@ def schneider_hact_heating_mode(self, key, mode):
     HAC into Fil Pilot FIP 0x03, in Covential Mode 0x00
     """
 
-    MODE = {"setpoint": 0x02, "FIP": 0x03}
+    MODE = {"setpoint": 0x02, "FIP": 0x03, "conventional": 0x02}
 
     self.log.logging(
         "Schneider", "Debug", "schneider_hact_heating_mode for device %s requesting mode: %s" % (key, mode), nwkid=key
@@ -766,43 +766,6 @@ def schneider_hact_fip_mode(self, key, mode):
     )
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]["Heartbeat"] = "0"
-
-
-#def schneider_thermostat_check_and_bind(self, nwkid, force_rebinding=False):
-#    """bind the thermostat to the actuators based on the zoning json fie
-#    Arguments:
-#        key {[type]} -- [description]
-#    """
-#    self.log.logging("Schneider", "Debug", f"schneider_thermostat_check_and_bind : {nwkid} ", nwkid)
-#
-#    importSchneiderZoning(self)
-#    if self.SchneiderZone is None:
-#        return
-#
-#    for zone in self.SchneiderZone:
-#        if self.SchneiderZone[zone]["Thermostat"]["NWKID"] != nwkid:
-#            continue
-#
-#        for hact in self.SchneiderZone[zone]["Thermostat"]["HACT"]:
-#
-#            if hact not in self.ListOfDevices:
-#                continue
-#
-#            src_ieee = self.SchneiderZone[zone]["Thermostat"]["IEEE"]
-#            src_ep = WISER_LEGACY_BASE_EP
-#            target_ieee = self.SchneiderZone[zone]["Thermostat"]["HACT"][hact]["IEEE"]
-#            target_ep = WISER_LEGACY_BASE_EP
-#
-#            status_bind1 = WebBindStatus(self, src_ieee, src_ep, target_ieee, WISER_LEGACY_BASE_EP, THERMOSTAT_CLUSTER)
-#
-#            if status_bind1 not in ["requested", "binded"] or force_rebinding:
-#                webBind(self, src_ieee, src_ep, target_ieee, target_ep, THERMOSTAT_CLUSTER)
-#                webBind(self, target_ieee, src_ep, src_ieee, target_ep, THERMOSTAT_CLUSTER)
-#
-#            status_bind2 = WebBindStatus( self, src_ieee, WISER_LEGACY_BASE_EP, target_ieee, target_ep, TEMPERATURE_CLUSTER )
-#            if status_bind2 not in ["requested", "binded"] or force_rebinding:
-#                webBind(self, src_ieee, src_ep, target_ieee, target_ep, TEMPERATURE_CLUSTER)
-#                webBind(self, target_ieee, src_ep, src_ieee, target_ep, TEMPERATURE_CLUSTER)
 
 
 def schneider_thermostat_check_and_bind(self, nwkid, force_rebinding=False):
@@ -1364,16 +1327,18 @@ def schneider_update_ThermostatDevice(self, Devices, NWKID, srcEp, ClusterID, ne
     MajDomoDevice(self, Devices, NWKID, srcEp, ClusterID, round(new_setpoint / 100, 1), Attribute_=OCCUPIED_SETPOINT)
 
     importSchneiderZoning(self)
-    if self.SchneiderZone is not None:
-        for zone in self.SchneiderZone:
-            if self.SchneiderZone[zone]["Thermostat"]["NWKID"] != NWKID:
-                continue
-            self.log.logging("Schneider", "Debug", f"schneider_update_ThermostatDevice - found {zone} ", NWKID)
+    if self.SchneiderZone is None:
+        return
 
-            for hact in self.SchneiderZone[zone]["Thermostat"]["HACT"]:
-                self.log.logging("Schneider", "Debug", f"schneider_update_ThermostatDevice - update hact setpoint mode hact nwwkid:{hact} ", NWKID)
+    for zone in self.SchneiderZone:
+        if self.SchneiderZone[zone]["Thermostat"]["NWKID"] != NWKID:
+            continue
+        self.log.logging("Schneider", "Debug", f"schneider_update_ThermostatDevice - found {zone} ", NWKID)
 
-                schneider_hact_heating_mode(self, hact, "setpoint")
+        for hact in self.SchneiderZone[zone]["Thermostat"]["HACT"]:
+            self.log.logging("Schneider", "Debug", f"schneider_update_ThermostatDevice - update hact setpoint mode hact nwwkid:{hact} ", NWKID)
+
+            schneider_hact_heating_mode(self, hact, "setpoint")
 
 
 def schneiderAlarmReceived(self, Devices, NWKID, srcEp, ClusterID, start, payload):
