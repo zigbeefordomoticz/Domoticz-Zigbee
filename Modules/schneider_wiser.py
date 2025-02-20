@@ -636,30 +636,14 @@ def schneider_hact_heater_type_wiser2(self, nwkid: str, type_heater: str) -> Non
 
     # Determine the correct pilot mode
     pilot_mode = FIP_PILOT_MODE if type_heater.lower() == "fip" else DEFAULT_PILOT_MODE
-    self.log.logging( "Schneider", "Debug", "Determined pilot_mode: %s" %pilot_mode, nwkid=nwkid )
+    self.log.logging( "Schneider", "Debug", "%s Determined pilot_mode: %s" %( nwkid, pilot_mode), nwkid=nwkid )
 
     # Write the attribute to configure the heater
-    self.log.logging(
-        "Schneider",
-        "Debug",
-        "Writing attribute with params: CLUSTER=%s, MANUF_ID=%s, ATTRIBUTE=%s, DATA_TYPE=%s, VALUE=%s",
-        SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER, SCHNEIDER_MANUF_ID, PILOT_MODE_ATTRIBUTE, PILOT_MODE_DATA_TYPE, pilot_mode,
-        nwkid=nwkid)
+    self.log.logging( "Schneider", "Debug", "Writing attribute with params: CLUSTER=%s, MANUF_ID=%s, ATTRIBUTE=%s, VALUE=%s" % (
+        SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER, SCHNEIDER_MANUF_ID, PILOT_MODE_ATTRIBUTE, pilot_mode), nwkid=nwkid)
 
-    write_attribute(
-        self,
-        nwkid,
-        ZIGATE_EP,
-        "01",
-        SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER,
-        SCHNEIDER_MANUF_ID,
-        "01",
-        PILOT_MODE_ATTRIBUTE,
-        PILOT_MODE_DATA_TYPE,
-        "%02x" %pilot_mode,
-        ackIsDisabled=is_ack_tobe_disabled(self, nwkid),
-    )
-    self.log.logging( "Schneider", "Debug", "Attribute write completed for key=%s", nwkid )
+    write_attribute(self,nwkid,ZIGATE_EP,"01",SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER,SCHNEIDER_MANUF_ID,"01",PILOT_MODE_ATTRIBUTE,PILOT_MODE_DATA_TYPE,"%02x" %pilot_mode,ackIsDisabled=is_ack_tobe_disabled(self, nwkid),)
+    self.log.logging( "Schneider", "Debug", "Attribute write completed for key=%s" %nwkid, nwkid )
 
 
 def schneider_hact_heating_mode(self, key, mode):
