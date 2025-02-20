@@ -183,7 +183,6 @@ def callbackDeviceAwake_Schneider(self, Devices, nwk_id, ep, cluster):
         check_end_of_override_setpoint(self, Devices, nwk_id, ep)
 
 
-
 def wiser_thermostat_monitoring_heating_demand(self, Devices):
     # Let check what is the Heating Demand
     updated_pi_demand = None
@@ -385,7 +384,6 @@ def schneider_wiser_registration(self, Devices, key):
     self.ListOfDevices[key]["Heartbeat"] = "0"
 
 
-    
 def wiser_set_zone_mode(self, key, EPout):  # 0x0201/0xe010
 
     # Set 0x0201/0xe010
@@ -534,12 +532,15 @@ def iTRV_registration(self, NwkId):
     )
 
 
-def wiser_set_thermostat_default_temp(self, Devices, key, EPout):  # 0x0201/0x0012
+def wiser_set_thermostat_default_temp(self, Devices, key, ep_out):  # 0x0201/0x0012
     cluster_id = "%04x" % 0x0201
-    Hattribute = "%04x" % 0x0012
-    default_temperature = 2000
-    setpoint = schneider_find_attribute_and_set(self, key, EPout, cluster_id, Hattribute, default_temperature)
-    schneider_update_ThermostatDevice(self, Devices, key, EPout, cluster_id, setpoint)
+    attribute = "%04x" % 0x0012
+
+    model_name = self.ListOfDevices[key].get("Model")
+    default_temperature = 400 if model_name == "CCTFR6700" else 2000
+
+    setpoint = schneider_find_attribute_and_set(self, key, ep_out, cluster_id, attribute, default_temperature)
+    schneider_update_ThermostatDevice(self, Devices, key, ep_out, cluster_id, setpoint)
 
 
 def schneider_hact_heater_type(self, key, type_heater):
@@ -619,7 +620,6 @@ def schneider_hact_heater_type_wiser1(self, key, type_heater):
 
     if EPout in self.ListOfDevices[key]["Ep"] and THERMOSTAT_CLUSTER in self.ListOfDevices[key]["Ep"][EPout]:
         self.ListOfDevices[key]["Ep"][EPout][THERMOSTAT_CLUSTER]["e011"] = "%02x" % (new_value + 0x80)
-
 
 
 def schneider_hact_heater_type_wiser2(self, nwkid: str, type_heater: str) -> None:
