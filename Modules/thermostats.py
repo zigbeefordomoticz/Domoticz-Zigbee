@@ -15,7 +15,7 @@ from Modules.basicOutputs import write_attribute
 from Modules.casaia import casaia_check_irPairing, casaia_setpoint
 from Modules.danfoss import thermostat_Setpoint_Danfoss
 from Modules.readAttributes import ReadAttributeRequest_0201
-from Modules.schneider_wiser import schneider_setpoint
+from Modules.schneider_wiser import schneider_setpoint, schneider_hact_heater_type_wiser2
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaTRV import tuya_setpoint
 from Modules.tuyaTS0601 import (ts0601_action_calibration, ts0601_actuator,
@@ -82,7 +82,10 @@ def thermostat_Setpoint(self, NwkId, setpoint):
             # Schneider CCTFR6700, we do the work on Schneider, but we will continue with the write attribute
             self.log.logging( ["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - calling Schneider for %s with value %s" % (
                 NwkId, setpoint), nwkid=NwkId, )
-            thermostat_Calibration(self, NwkId)
+
+            type_heater = self.ListOfDevices[NwkId]["Schneider"].get('HeaterType')
+            if type_heater in ("fip", "conventional"):
+                schneider_hact_heater_type_wiser2(self, NwkId, type_heater)
             schneider_setpoint(self, NwkId, setpoint)
 
         if model_name in (TUYA_eTRV_MODEL):
