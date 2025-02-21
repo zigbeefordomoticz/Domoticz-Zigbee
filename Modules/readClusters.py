@@ -946,14 +946,19 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     manufacturer_code = self.ListOfDevices[MsgSrcAddr].get("Manufacturer","")
     manufacturer_name = self.ListOfDevices[MsgSrcAddr].get("Manufacturer Name","")
 
-    eurotronics = True if (manufacturer_name == "Eurotronic" or manufacturer_code == "1037") else False
-    danfoss = True if (manufacturer_name == "Danfoss" or manufacturer_code == "1246") else False
+    eurotronics = manufacturer_name == "Eurotronic" or manufacturer_code == "1037"
+    danfoss = manufacturer_name == "Danfoss" or manufacturer_code == "1246"
 
     value = decodeAttribute(self, MsgAttType, MsgClusterData)
 
     if MsgAttrID == "0000":  # Local Temperature (Zint16)
+        if value == 0x8000:  
+            # Unknown value
+            return
+
         if model_name == "VOC_Sensor":
             return
+
         ValueTemp = round(int(value) / 100, 2)
         if model_name == "TAFFETAS2 D1.00P1.01Z1.00":
             # This is use to communicate the SetPoint, so let's update the SetPoint on Cluster Thermostat
