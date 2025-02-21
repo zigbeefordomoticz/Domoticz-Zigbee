@@ -652,6 +652,9 @@ def schneider_hact_heater_type_wiser2(self, nwkid: str, type_heater: str) -> Non
 
     write_attribute(self,nwkid,ZIGATE_EP,"01",SCHNEIDER_SPECIFIC_PILOT_MODE_CLUSTER,SCHNEIDER_MANUF_ID,"01",PILOT_MODE_ATTRIBUTE,PILOT_MODE_DATA_TYPE,"%02x" %pilot_mode,ackIsDisabled=is_ack_tobe_disabled(self, nwkid),)
     self.log.logging( "Schneider", "Debug", "Attribute write completed for key=%s" %nwkid, nwkid )
+    
+    self.ListOfDevices[nwkid][SCHNEIDER_META_DATA]['HACT_Mode'] = pilot_mode
+    self.ListOfDevices[nwkid][SCHNEIDER_META_DATA]['HeaterType'] = type_heater
 
 
 def schneider_hact_heating_mode(self, key, mode):
