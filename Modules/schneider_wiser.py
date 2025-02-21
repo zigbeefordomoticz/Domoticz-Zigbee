@@ -1253,7 +1253,7 @@ def get_response_data_for_schneider_thermostat_request(self, Devices, NWKID, EPo
         # 0x02 then 0x01, 0x12 (after 0x80 - 0x0301 Boost) and back to 0x01 after 0x80 - 0x0300 Cancel Boost)
         # Mostlikely we are 0x02 during the pairing phase and when getting 0x0b05/0xe001 is shitfing from 0xfffe to 0x0000, then 0x01
         data_type = "30"  # enum8
-        data = "02" if diagnostic_e001 != 0 else ("12" if boost_mode else "01")
+        data = "02" if diagnostic_e001 != 0 else ("12" if boost_mode else "11")
 
     return zigate_ep, cluster_frame, data_type, data 
 
