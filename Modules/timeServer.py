@@ -121,8 +121,12 @@ def timeserver_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst
         if payload is None:
             payload = cluster_frame + sqn + cmd
         payload += attribute[2:4] + attribute[:2] + status + data_type
-        payload += value[2:4] + value[:2] if data_type == "29" else value
-    
+
+        if data_type in ("e2", "2b", "29", "32", "23"):  # UTC Time, Timezone, DST Shift
+            payload += value[6:8] + value[4:6] + value[2:4] + value[:2]
+        else:  # Int8
+            payload +=  value
+
     self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request Response - nwkid {nwkid} ep: {src_ep} , clusterId: {cluster_id}, sqn: {sqn},payload: {payload}", nwkid)
         
     raw_APS_request( self, nwkid, src_ep, cluster_id, "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwkid), )
@@ -138,7 +142,7 @@ def get_response_data_for_timer_attribute_request( self, nwkid, attribute):
 
     attribute_map = {
         "0000": {"value": f"{int((now - ZIGBEE_EPOCH).total_seconds()):08x}", "data_type": "e2", "status": "00"},  # Time
-        "0001": {"value": f"{0x03:02x}", "data_type": "18", "status": "00"},  # Time Status
+        "0001": {"value": f"{0x07:02x}", "data_type": "18", "status": "00"},  # Time Status: Master, Synchronized, MasterZone
         "0002": {
             "value": f"{int(datetime.now().astimezone().utcoffset().total_seconds() if datetime.now().astimezone().utcoffset() else 0):08x}",
             "data_type": "2b",
@@ -146,7 +150,7 @@ def get_response_data_for_timer_attribute_request( self, nwkid, attribute):
         },  # Timezone
         "0003": {"value": f"{calculate_dst_times(self)[0]:08x}", "data_type": "23", "status": "00"},  # DST Start
         "0004": {"value": f"{calculate_dst_times(self)[1]:08x}", "data_type": "23", "status": "00"},  # DST End
-        "0005": {"value": f"{calculate_dst_times(self)[2]:08x}", "data_type": "2B", "status": "00"},  # DST Shift
+        "0005": {"value": f"{calculate_dst_times(self)[2]:08x}", "data_type": "2b", "status": "00"},  # DST Shift
         "0006": {"value": "00000000", "data_type": "23", "status": "00"},  # Standard Time
     }
 
