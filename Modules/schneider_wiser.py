@@ -637,6 +637,11 @@ def schneider_hact_heater_type_wiser2(self, nwkid: str, type_heater: str) -> Non
             - "fip" or "FIP": Sets pilot mode to 0x03 (FIP mode).
     """
 
+    self.log.logging( "Schneider", "Debug", "%s schneider_hact_heater_type_wiser2 pilot_mode: %s" %( nwkid, type_heater), nwkid=nwkid )
+
+    if type_heater.lower() not in ( "fip", "conventional"):
+        return
+
     # Determine the correct pilot mode
     pilot_mode = FIP_PILOT_MODE if type_heater.lower() == "fip" else DEFAULT_PILOT_MODE
     self.log.logging( "Schneider", "Debug", "%s Determined pilot_mode: %s" %( nwkid, pilot_mode), nwkid=nwkid )
@@ -656,16 +661,20 @@ def schneider_hact_heating_mode(self, key, mode):
     HAC into Fil Pilot FIP 0x03, in Covential Mode 0x00
     """
 
-    MODE = {"setpoint": 0x02, "FIP": 0x03, "conventional": 0x02}
+    model_name = self.ListOfDevices[key].get("Model")
+    if model_name == "CCTFR6700":
+        schneider_hact_heater_type_wiser2(self, key, mode)
+        return
 
-    self.log.logging(
-        "Schneider", "Debug", "schneider_hact_heating_mode for device %s requesting mode: %s" % (key, mode), nwkid=key
-    )
+    MODE = {"setpoint": 0x02, "FIP": 0x03, "fip": 0x03}
+
+    self.log.logging( "Schneider", "Debug", "schneider_hact_heating_mode for device %s requesting mode: %s" % (
+        key, mode), nwkid=key )
+
     if mode not in MODE:
         _context = {"Error code": "SCHN0002", "mode": mode, "MODE": MODE}
-        self.log.logging(
-            "Schneider", "Error", "schneider_hact_heating_mode - %s unknown mode %s" % (key, mode), key, _context
-        )
+        self.log.logging( "Schneider", "Error", "schneider_hact_heating_mode - %s unknown mode %s" % (
+            key, mode), key, _context )
         return
 
     EPout = WISER_LEGACY_BASE_EP
@@ -700,32 +709,16 @@ def schneider_hact_heating_mode(self, key, mode):
     Hattribute = "%04x" % 0xE011
     data_type = "18"
     data = "%02X" % new_value
-    self.log.logging(
-        "Schneider",
-        "Debug",
-        "schneider_hact_heating_mode Write Attribute (heating mode) %s with value %s / cluster: %s, attribute: %s type: %s"
-        % (key, data, cluster_id, Hattribute, data_type),
-        nwkid=key,
-    )
-    write_attribute(
-        self,
-        key,
-        ZIGATE_EP,
-        EPout,
-        cluster_id,
-        manuf_id,
-        manuf_spec,
-        Hattribute,
-        data_type,
-        data,
-        ackIsDisabled=is_ack_tobe_disabled(self, key),
-    )
+    self.log.logging( "Schneider", "Debug", "schneider_hact_heating_mode Write Attribute (heating mode) %s with value %s / cluster: %s, attribute: %s type: %s" % (
+        key, data, cluster_id, Hattribute, data_type), nwkid=key, )
+    write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data, ackIsDisabled=is_ack_tobe_disabled(self, key), )
+
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]["Heartbeat"] = "0"
+
     # ReadAttributeRequest_0201(self,key)
-    if EPout in self.ListOfDevices[key]["Ep"]:
-        if THERMOSTAT_CLUSTER in self.ListOfDevices[key]["Ep"][EPout]:
-            self.ListOfDevices[key]["Ep"][EPout][THERMOSTAT_CLUSTER]["e011"] = "%02x" % (new_value + 0x80)
+    if EPout in self.ListOfDevices[key]["Ep"] and THERMOSTAT_CLUSTER in self.ListOfDevices[key]["Ep"][EPout]:
+        self.ListOfDevices[key]["Ep"][EPout][THERMOSTAT_CLUSTER]["e011"] = "%02x" % (new_value + 0x80)
 
 
 def schneider_hact_fip_mode(self, key, mode):
