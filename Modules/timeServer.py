@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 from Modules.basicInputs import read_attribute_response
 from Modules.sendZigateCommand import raw_APS_request
-from Modules.tools import is_ack_tobe_disabled
+from Modules.tools import is_ack_tobe_disabled, to_little_endian
 from Modules.zigateConsts import ZIGATE_EP
 
 ZIGBEE_EPOCH = datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=timezone.utc)
@@ -122,10 +122,7 @@ def timeserver_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst
             payload = cluster_frame + sqn + cmd
         payload += attribute[2:4] + attribute[:2] + status + data_type
 
-        if data_type in ("e2", "2b", "29", "32", "23"):  # UTC Time, Timezone, DST Shift
-            payload += value[6:8] + value[4:6] + value[2:4] + value[:2]
-        else:  # Int8
-            payload +=  value
+        payload += to_little_endian(value)
 
     self.log.logging(["TimeServer","Input"], "Debug", f"Decode0100 - timeserver_multiple_read_attribute_request Response - nwkid {nwkid} ep: {src_ep} , clusterId: {cluster_id}, sqn: {sqn},payload: {payload}", nwkid)
         
