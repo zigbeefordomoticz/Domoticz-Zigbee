@@ -31,7 +31,7 @@ from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            get_device_config_param, get_device_nickname,
                            getAttributeValue, is_ack_tobe_disabled,
-                           retreive_cmd_payload_from_8002)
+                           retreive_cmd_payload_from_8002, to_little_endian)
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
 from Zigbee.zclCommands import zcl_onoff_off_noeffect, zcl_onoff_on
@@ -1137,9 +1137,7 @@ def schneiderRenforceent(self, NWKID):
 
 
 def schneider_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst_ep, sqn, cluster_id, manuf_specif, manuf_code, MsgData, nbAttribute):
-
     """ Handle a read request with multiple attributes on cluster 0x0201"""
-
     payload = None
     cmd = "01"
     status = "00"
@@ -1151,11 +1149,21 @@ def schneider_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst_
 
         # Handle different cluster IDs and attributes
         zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, nwkid, src_ep, attribute)
-        self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request -  response {data_type} {data}", nwkid)
+
         if payload is None:
             payload = cluster_frame + sqn + cmd
-        payload += attribute[2:4] + attribute[:2] + status + data_type
-        payload += data[2:4] + data[:2] if data_type == "29" else data
+
+        if data == data_type == "":
+            # Unable to find a match, unsupported attribute
+            self.log.logging("Schneider", "Error", f"Decode0100 - schneider_multiple_read_attribute_request - {nwkid}/{src_ep} Unsupported Attribute {cluster_id} {attribute}", nwkid)
+            
+            status = "86"
+            payload = to_little_endian(attribute) + status
+            continue
+
+        self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request -  response {data_type} {data}", nwkid)
+        payload += to_little_endian(attribute) + status + data_type
+        payload += to_little_endian(data)
     
     self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request Response - nwkid {nwkid} ep: {src_ep} , clusterId: {cluster_id}, sqn: {sqn},payload: {payload}", nwkid)
         
@@ -1185,8 +1193,8 @@ def schneider_thermostat_answer_attribute_request(self, Devices, nwkid, EPout, c
         wiser_unsupported_attribute(self, nwkid, EPout, sqn, cluster_id, attribute)
         return
 
-    payload = cluster_frame + sqn + cmd + attribute[2:4] + attribute[:2] + status + data_type
-    payload += data[2:4] + data[:2] if data_type == "29" else data
+    payload = cluster_frame + sqn + cmd + to_little_endian(attribute) + status + data_type
+    payload += to_little_endian(data)
 
     self.log.logging("Schneider", "Debug", f"schneider_thermostat_answer_attribute_request Response - nwkid {nwkid} ep: {EPout} , clusterId: {cluster_id}, sqn: {sqn},payload: {payload}", nwkid)
 
