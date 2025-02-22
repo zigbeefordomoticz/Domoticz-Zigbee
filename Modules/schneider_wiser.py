@@ -1151,19 +1151,18 @@ def schneider_multiple_read_attribute_request(self, Devices, nwkid, src_ep, dst_
         zigate_ep, cluster_frame, data_type, data = get_response_data_for_schneider_thermostat_request(self, Devices, nwkid, src_ep, attribute)
 
         if payload is None:
+            # Initialize payload
             payload = cluster_frame + sqn + cmd
 
         if data == data_type == "":
             # Unable to find a match, unsupported attribute
             self.log.logging("Schneider", "Error", f"Decode0100 - schneider_multiple_read_attribute_request - {nwkid}/{src_ep} Unsupported Attribute {cluster_id} {attribute}", nwkid)
             
-            status = "86"
-            payload = to_little_endian(attribute) + status
+            payload += to_little_endian(attribute) + "86"
             continue
 
         self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request -  response {data_type} {data}", nwkid)
-        payload += to_little_endian(attribute) + status + data_type
-        payload += to_little_endian(data)
+        payload += to_little_endian(attribute) + status + data_type + to_little_endian(data)
     
     self.log.logging("Schneider", "Debug", f"Decode0100 - schneider_multiple_read_attribute_request Response - nwkid {nwkid} ep: {src_ep} , clusterId: {cluster_id}, sqn: {sqn},payload: {payload}", nwkid)
         
@@ -1224,7 +1223,7 @@ def get_response_data_for_schneider_thermostat_request(self, Devices, NWKID, EPo
 
     self.log.logging("Schneider", "Debug", f"Schneider receive attribute request: nwkid {NWKID} ep: {EPout} , zigate_ep {zigate_ep} cluster_frame= {cluster_frame}", NWKID)
 
-    data = data_type = payload = ""
+    data = data_type = ""
     boost_mode = is_boost_in_progress(self, NWKID)
     diagnostic_e001 = self.ListOfDevices[NWKID].get("Ep", {}).get("01", {}).get("0b05", {}).get("e001", 0xffff)
  
@@ -1242,23 +1241,22 @@ def get_response_data_for_schneider_thermostat_request(self, Devices, NWKID, EPo
 
     elif attr == MIN_SETPOINT:  # min setpoint temp
         data_type = "29"
-        data = ( "02bc" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT",) else "0032" )
+        data = "02bc" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT",) else "0032"
 
     elif attr == MAX_SETPOINT:  # max setpoint temp
         data_type = "29"
-        data = ( "0bb8" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT",) else "0dac" )
+        data = "0bb8" if self.ListOfDevices[NWKID]["Model"] in ("EH-ZB-VACT",) else "0dac"
 
     elif attr == OCCUPIED_SETPOINT:  # occupied setpoint temp
-        if (
-           NWKID in self.ListOfDevices
-           and SCHNEIDER_META_DATA in self.ListOfDevices[NWKID]
-           and "BoostDemand" in self.ListOfDevices[NWKID][SCHNEIDER_META_DATA]
-           ):
+        if ( NWKID in self.ListOfDevices and SCHNEIDER_META_DATA in self.ListOfDevices[NWKID] and "BoostDemand" in self.ListOfDevices[NWKID][SCHNEIDER_META_DATA] ):
             del self.ListOfDevices[NWKID][SCHNEIDER_META_DATA]["BoostDemand"]
 
         data_type = "29"
-        value = int(schneider_find_attribute_and_set(self, NWKID, EPout, THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT, 2000))
-        data = "%04X" % value
+        setpoint_value = schneider_find_attribute_and_set(self, NWKID, EPout, THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT, 2000)
+        if setpoint_value < 0:
+            # If Setpoint is negative, this is not a valid value, let's return 20°C
+            setpoint_value = 2000
+        data = "%04x" %setpoint_value
 
     elif attr == SYSTEM_MODE:  # System Mode for Wiser Home
         data_type = "30"  # enum8
