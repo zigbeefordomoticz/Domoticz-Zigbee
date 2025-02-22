@@ -78,7 +78,7 @@ def thermostat_Setpoint(self, NwkId, setpoint):
             schneider_setpoint(self, NwkId, setpoint)
             return
 
-        if model_name in  ("CCTFR6700", ):
+        if model_name in ("CCTFR6700", ):
             # Schneider CCTFR6700, we do the work on Schneider, but we will continue with the write attribute
             self.log.logging( ["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - calling Schneider for %s with value %s" % (
                 NwkId, setpoint), nwkid=NwkId, )
