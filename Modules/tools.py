@@ -19,17 +19,36 @@
 
 import datetime
 import os.path
+import struct
 import time
 from pathlib import Path
 
 from Modules.database import WriteDeviceList
+from Modules.domoticzAbstractLayer import domo_read_Device_Idx, domo_read_Name
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.zigateConsts import HEARTBEAT
-from Modules.domoticzAbstractLayer import domo_read_Device_Idx, domo_read_Name
 
 HEX_DIGIT = "0123456789abcdefABCDEF"
 INT_DIGIT = "0123456789"
 
+def to_little_endian(value: str) -> str:
+    length = len(value)
+
+    if length == 4:  # 16-bit (2 bytes)
+        return struct.pack("<H", int(value, 16)).hex()
+
+    elif length == 6:  # 24-bit (3 bytes)
+        return bytes.fromhex(value)[::-1].hex()  # Reverse byte order manually
+
+    elif length == 8:  # 32-bit (4 bytes)
+        return struct.pack("<I", int(value, 16)).hex()
+
+    elif length == 16:  # 64-bit (8 bytes)
+        return struct.pack("<Q", int(value, 16)).hex()
+
+    else:  # Treat as raw bytes (possibly 8-bit)
+        return value  # Assuming `value` is already hex
+    
 def is_hex(s):
     return all(char in HEX_DIGIT for char in s)
 
