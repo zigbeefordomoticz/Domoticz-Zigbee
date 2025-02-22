@@ -46,7 +46,17 @@ def calculate_dst_times(self):
     if local_tz_name == "UTC":
         return 0, 0, 0
 
-    local_tz = ZoneInfo(local_tz_name)
+    try:
+        local_tz = ZoneInfo(local_tz_name)
+    except Exception as er:
+        _context = {
+            'Error': "TimeServer_001",
+            'Description': str(er),
+            'Local_tz_name': local_tz_name,
+        }
+        self.log.logging(["TimeServer","Input"], "Error", "Decode0100 - calculate_dst_times - invalid time zone ", context=_context)
+        return 0, 0, 0
+
     current_year = datetime.now().year
 
     # Find the DST start and end times for the current year
