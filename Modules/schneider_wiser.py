@@ -20,7 +20,7 @@
 import json
 import os.path
 import struct
-from time import time
+import time
 
 from Modules.basicOutputs import read_attribute, write_attribute
 from Modules.bindings import WebBindStatus, webBind
@@ -29,8 +29,8 @@ from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import ReadAttributeRequest_0001
 from Modules.sendZigateCommand import raw_APS_request
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
-                           get_device_nickname, getAttributeValue,
-                           is_ack_tobe_disabled,
+                           get_device_config_param, get_device_nickname,
+                           getAttributeValue, is_ack_tobe_disabled,
                            retreive_cmd_payload_from_8002)
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP
@@ -167,13 +167,14 @@ def callbackDeviceAwake_Schneider(self, Devices, nwk_id, ep, cluster):
         return
 
     model = device.get("Model")
+    now = time.time()
 
     # Handle "EH-ZB-VACT" Reporting Mode change
     schneider_data = device.get(SCHNEIDER_META_DATA)
     if (
         model == "EH-ZB-VACT" and schneider_data 
         and (schneider_data.get("ReportingMode") == "Fast" )
-        and (schneider_data.get("Registration", 0) + FAST_REPORTING_INTERVAL) <= time()
+        and (schneider_data.get("Registration", 0) + FAST_REPORTING_INTERVAL) <= now
     ):
         self.log.logging("Schneider", "Status", f"{nwk_id}/{ep} Switching Reporting to NORMAL mode")
         vact_config_reporting_normal(self, nwk_id, ep)
@@ -181,6 +182,35 @@ def callbackDeviceAwake_Schneider(self, Devices, nwk_id, ep, cluster):
     # Handle override setpoint check for thermostats
     if model in ("Wiser2-Thermostat", "iTRV"):
         check_end_of_override_setpoint(self, Devices, nwk_id, ep)
+
+    if model in ( "CCTFR6700", ) and get_device_config_param(self, nwk_id, "SimulateThermostat6400"):
+        # purpose is to Simulate a Thermostat 6400 reporting local temperature to HACT 6700
+        # Send a Report Attributes 0x0402/0x0000 to 0x0201/0x0000
+        # every 5 minutes
+        last_report = device.get("FakeThermostat6400", 0)
+        if now < last_report + 300:
+            # too early
+            return
+
+        temperature_attribute_report(self, nwk_id, ep, get_device_config_param(self, nwk_id, "SimulateThermostat6400"))
+        device["FakeThermostat6400"] = now
+
+
+def temperature_attribute_report(self, nwk_id, ep, temperature=700):
+    """ Report Temperature Measurement to Hact, to simulate a bind with a Thermostat 6400 """
+
+    fcf = "08"  # Frame Control Field ( Server to Client)
+    sqn = sqn = get_and_inc_ZCL_SQN(self, nwk_id)
+    cluster_id = "%04x" % 0x0402
+    measured_value = "%04x" % 0x0000
+    data_type = "29"
+    # Convert to little-endian format
+    value_little_endian_bytes = struct.pack("<H", temperature)
+    cmd = "0a"
+
+    payload = f"{fcf}{sqn}{cmd}{measured_value}{data_type}{value_little_endian_bytes}"
+    self.log.logging("Schneider", "Log", f"Temperature Measurement report to Hact {nwk_id} with value {temperature} / cluster: {cluster_id}, attribute: {measured_value} type: {data_type}", nwkid=nwk_id)
+    raw_APS_request( self, nwk_id, ep, TEMPERATURE_CLUSTER, "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwk_id) )
 
 
 def wiser_thermostat_monitoring_heating_demand(self, Devices):
@@ -255,7 +285,7 @@ def callbackDeviceAwake_Schneider_SetPoints(self, NwkId, EndPoint, cluster):
         return
 
     # Manage SetPoint
-    now = time()
+    now = time.time()
     ep_data = device.get("Ep", {}).get(EndPoint, {})
     thermostat_cluster_data = ep_data.get(THERMOSTAT_CLUSTER, {})
     schneider_data = device.get(SCHNEIDER_META_DATA, {})
@@ -307,7 +337,7 @@ def schneider_wiser_registration(self, Devices, key):
 
     if SCHNEIDER_META_DATA not in self.ListOfDevices[key]:
         self.ListOfDevices[key][SCHNEIDER_META_DATA] = {}
-    self.ListOfDevices[key][SCHNEIDER_META_DATA]["Registration"] = int(time())
+    self.ListOfDevices[key][SCHNEIDER_META_DATA]["Registration"] = int(time.time())
 
     # nwkid might have changed so we need to reload the zoning
     self.SchneiderZone = None
@@ -933,7 +963,7 @@ def schneider_setpoint_actuator(self, key, setpoint,send_command=True):
     if SCHNEIDER_META_DATA not in self.ListOfDevices[key]:
         self.ListOfDevices[key][SCHNEIDER_META_DATA] = {}
     self.ListOfDevices[key][SCHNEIDER_META_DATA]["Target SetPoint"] = setpoint
-    self.ListOfDevices[key][SCHNEIDER_META_DATA][TIMESTAMP_SETPOINT] = int(time())
+    self.ListOfDevices[key][SCHNEIDER_META_DATA][TIMESTAMP_SETPOINT] = int(time.time())
 
     # Make sure that we are in setpoint Mode
     if "Model" in self.ListOfDevices[key] and self.ListOfDevices[key]["Model"] == "EH-ZB-HACT":
@@ -1059,7 +1089,7 @@ def schneider_EHZBRTS_thermoMode(self, key, mode):
     if SCHNEIDER_META_DATA not in self.ListOfDevices[key]:
         self.ListOfDevices[key][SCHNEIDER_META_DATA] = {}
     self.ListOfDevices[key][SCHNEIDER_META_DATA][TARGET_MODE] = mode
-    self.ListOfDevices[key][SCHNEIDER_META_DATA][TIMESTAMP_MODE] = int(time())
+    self.ListOfDevices[key][SCHNEIDER_META_DATA][TIMESTAMP_MODE] = int(time.time())
 
     manuf_id = SCHNEIDER_MANUF_ID
     manuf_spec = "01"
@@ -1840,7 +1870,7 @@ def is_boost_in_progress(self, NwkId):
     thermostat_override_start_time = thermostat_override.get("OverrideStartTime")
     thermostat_override_duration = thermostat_override.get("OverrideDuration")
 
-    remaining_time = int(thermostat_override_start_time + thermostat_override_duration - time())
+    remaining_time = int(thermostat_override_start_time + thermostat_override_duration - time.time())
     return remaining_time > 0
 
   
@@ -1895,7 +1925,7 @@ def receiving_heatingpoint_attribute( self, Devices, NwkId, Ep, ValueTemp, value
     if (
         "Model" in self.ListOfDevices[NwkId] 
         and self.ListOfDevices[NwkId]["Model"] == "EH-ZB-VACT" 
-        and ( time() > ( self.ListOfDevices[NwkId][SCHNEIDER_META_DATA][TIMESTAMP_SETPOINT] + ( 12 * 60) ))
+        and ( time.time() > ( self.ListOfDevices[NwkId][SCHNEIDER_META_DATA][TIMESTAMP_SETPOINT] + ( 12 * 60) ))
     ):
         # We reached here because the Setpoint do not equal to the Setpoint in the plugin
         # Most likely we have tried to set a new setpoint, but didn't go through
@@ -1992,7 +2022,7 @@ def check_end_of_override_setpoint(self, Devices, NwkId, Ep):
 
     current_setpoint = device.get("Ep", {}).get(Ep, {}).get(THERMOSTAT_CLUSTER, {}).get(OCCUPIED_SETPOINT)
 
-    remaining_time = int(thermostat_override_start_time + thermostat_override_duration - time())
+    remaining_time = int(thermostat_override_start_time + thermostat_override_duration - time.time())
 
     self.log.logging(
         "Schneider",
@@ -2049,7 +2079,7 @@ def override_setpoint(self, nwkid, ep, override, duration):
     thermostat_override["CurrentSetpoint"] = current_setpoint
     thermostat_override["OverrideSetpoint"] = override
     thermostat_override["OverrideDuration"] = duration * 60
-    thermostat_override["OverrideStartTime"] = time()
+    thermostat_override["OverrideStartTime"] = time.time()
     schneider_meta_data["BoostDemand"] = True
     
     nickname = get_device_nickname(self, NwkId=nwkid)
