@@ -828,7 +828,6 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             nValue = 1 + (round(int(value, 16) / 10))
             if nValue > 10:
                 nValue = 10
-        
             sValue = str(nValue * 10)
             self.log.logging("Widget", "Debug", " BSO-Orientation Angle: 0x%s/%s Converted into nValue: %s sValue: %s" % (value, int(value, 16), nValue, sValue))
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
@@ -841,10 +840,17 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 self.log.logging("Widget", "Error", "Looks like this value is not provided in str for %s/%s %s %s %s %s %s" %(
                     NwkId, Ep, model_name, ClusterId, ClusterType, WidgetType, value))
                 nValue = value
-                
             sValue = "%02x" %nValue
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-            
+
+        if ClusterType == "ThermostatUI" and WidgetType =="KeypadLockout" and Attribute_ == "0001":
+            # Switch ChildLock
+            self.log.logging("Command", "Status", "mgtCommand : Switch %s ChildLock %s" % (bool(value), NwkId), NwkId)
+            nValue = value
+            sValue = "Off" if value == 0 else "On"
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+            return
+
         if ClusterType == "TamperSwitch" and WidgetType == "SwitchAlarm":
             nValue = value
             sValue = "%02x" %nValue

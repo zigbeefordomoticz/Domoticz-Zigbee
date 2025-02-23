@@ -838,6 +838,11 @@ SIMPLE_WIDGET = {
         "Subtype": 73,
         "Switchtype": 0
     },
+    "KeypadLockout": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
     "SwitchCleaning": {
         "Type": 244,
         "Subtype": 73,

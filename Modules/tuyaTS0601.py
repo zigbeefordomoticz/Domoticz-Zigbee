@@ -505,6 +505,12 @@ def ts0601_trv6_system_mode(self, Devices, nwkid, ep, value):
     checkAndStoreAttributeValue(self, nwkid, "01", "0201", "0012", value)
 
 
+def ts0601_child_lock_mode(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_child_lock_mode - After Nwkid: %s/%s Child Lock Mode: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "KeypadLockout", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0204", value, Attribute_="0001")
+
+
 def ts0601_sirene_switch(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_sirene_switch - After Nwkid: %s/%s Alarm: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "Alarm", value)
@@ -740,6 +746,7 @@ DP_SENSOR_FUNCTION = {
     "TRV6SystemMode": ts0601_trv6_system_mode,
     "TRV7SystemMode": ts0601_trv7_system_mode,
     "TRV8SystemMode": ts0601_trv8_system_mode,
+    "KeypadLockout": ts0601_child_lock_mode,
     "TuyaAlarmDuration": ts0601_sirene_duration,
     "TuyaAlarmMelody": ts0601_sirene_melody,
     "TuyaAlarmLevel": ts0601_sirene_level,
@@ -912,10 +919,10 @@ def ts0601_window_detection_mode( self, NwkId, Ep, dp, value=None):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
-def ts0601_child_lock_mode( self, NwkId, Ep, dp, value=None):
+def ts0601_action_child_lock_mode( self, NwkId, Ep, dp, value=None):
     if value is None:
         return
-    self.log.logging("Tuya0601", "Debug", "ts0601_child_lock_mode - %s ChildLock mode: %s" % (NwkId, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_child_lock_mode - %s ChildLock mode: %s" % (NwkId, value))
     action = "%02x01" % dp
     data = "%02x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
@@ -1211,7 +1218,8 @@ TS0601_COMMANDS = {
     "SmallDetectionSensitivity": ( None, "04"),
     "TuyaFadingTime": ( None, "02"),
     "TRV7WindowDetection": ts0601_window_detection_mode,
-    "TRV7ChildLock": ts0601_child_lock_mode,
+    "TRV7ChildLock": ts0601_action_child_lock_mode,
+    "KeypadLockout": ts0601_action_child_lock_mode,
     "TuyaIrrigationTarget": ts0601_irrigation_valve_target,
     "TuyaIrrigationMode": ts0601_irrigation_mode,
     "TuyaAlarmMelody": ts0601_solar_siren_alarm_melody,
@@ -1233,4 +1241,5 @@ DP_ACTION_FUNCTION = {
     "TRV7SystemMode": ts0601_action_trv7_system_mode,
     "TuyaAlarmSwitch": ts0601_action_siren_switch,
     "TuyaTamperSwitch": ts0601_tamper_siren_switch,
+    "KeypadLockout": ts0601_action_child_lock_mode,
 }

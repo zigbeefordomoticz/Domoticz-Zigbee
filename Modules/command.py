@@ -145,6 +145,7 @@ ACTIONATORS = [
     "ShutterCalibration",
     "SwitchAlarm",
     "SwitchCalibration",
+    "KeypadLockout"
     "TamperSwitch",
     "PollingControl",
     "PollingControlV2"
@@ -281,9 +282,16 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
 
     if DeviceType == "SwitchCalibration" and model_name == "TS0601-Moes-Curtain":
         # Switch Off Calibration
-        self.log.logging("Command", "Status", "mgtCommand : Switch Off Calibration on %s/%s" % (Nwkid,EPout))
+        self.log.logging("Command", "Status", "mgtCommand : Switch Off Child Lock %s/%s" % (Nwkid,EPout))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         ts0601_curtain_accurate_calibration_cmd( self, Nwkid, EPout, 0x03, mode=1)
+        return
+
+    if DeviceType == "KeypadLockout" and ts0601_extract_data_point_infos( self, model_name):
+        # Switch ChildLock
+        self.log.logging("Command", "Status", "mgtCommand : Switch Off KeypadLockout on %s/%s" % (Nwkid,EPout))
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        ts0601_actuator(self, Nwkid, "KeypadLockout", 0)
         return
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":
@@ -532,6 +540,13 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         self.log.logging("Command", "Status", "mgtCommand : Switch ON Calibration on %s/%s" % (Nwkid,EPout))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         ts0601_curtain_accurate_calibration_cmd( self, Nwkid, EPout, 0x03, mode=0)
+        return
+
+    if DeviceType == "KeypadLockout" and ts0601_extract_data_point_infos( self, model_name):
+        # Switch ChildLock
+        self.log.logging("Command", "Status", "mgtCommand : Switch On ChildLock  %s/%s" % (Nwkid,EPout))
+        update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
+        ts0601_actuator(self, Nwkid, "TuyaChildLock", 1)
         return
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":
