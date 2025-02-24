@@ -145,7 +145,7 @@ ACTIONATORS = [
     "ShutterCalibration",
     "SwitchAlarm",
     "SwitchCalibration",
-    "KeypadLockout"
+    "KeypadLockout",
     "TamperSwitch",
     "PollingControl",
     "PollingControlV2"
