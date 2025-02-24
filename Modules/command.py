@@ -546,7 +546,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         # Switch ChildLock
         self.log.logging("Command", "Status", "mgtCommand : Switch On ChildLock  %s/%s" % (Nwkid,EPout))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
-        ts0601_actuator(self, Nwkid, "TuyaChildLock", 1)
+        ts0601_actuator(self, Nwkid, "KeypadLockout", 1)
         return
 
     if DeviceType == "SwitchAlarm" and model_name == "TS0601-_TZE200_t1blo2bj":
