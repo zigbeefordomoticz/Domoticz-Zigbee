@@ -83,7 +83,7 @@ def thermostat_Setpoint(self, NwkId, setpoint):
             self.log.logging( ["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - calling Schneider for %s with value %s" % (
                 NwkId, setpoint), nwkid=NwkId, )
 
-            type_heater = self.ListOfDevices[NwkId]["Schneider"].get('HeaterType')
+            type_heater = self.ListOfDevices[NwkId].get("Schneider",{}).get('HeaterType')
             if type_heater in ("fip", "conventional"):
                 schneider_hact_heater_type_wiser2(self, NwkId, type_heater)
             schneider_setpoint(self, NwkId, setpoint)
