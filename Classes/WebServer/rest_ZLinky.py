@@ -90,7 +90,7 @@ def rest_zlinky(self, verb, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
     _response["Data"] = None
 
-    self.logging("Debug", "rest_zlinky - for %s %s %s" % (verb, data, parameters))
+    self.logging([ "Debug", "rest_zlinky - for %s %s %s" % (verb, data, parameters))
     # find if we have a ZLinky
     zlinky = []
 
@@ -103,11 +103,13 @@ def rest_zlinky(self, verb, data, parameters):
 
         if "PROTOCOL Linky" not in zlinky_datas:
             continue
-        if "OPTARIF" not in zlinky_datas or "LTARF" not in zlinky_datas:
+        if "OPTARIF" not in zlinky_datas and "LTARF" not in zlinky_datas:
             continue
 
         self.logging("Debug", "rest_zlinky - found %s " % (nwkid))
-        tarif = next( ( _tarif for _tarif in ZLINK_TARIF_MODE_EXCLUDE if (_tarif in zlinky_datas["OPTARIF"] or _tarif in zlinky_datas["LTARF"]) ), "BASE", )
+        tarif = next( ( _tarif for _tarif in 
+                       
+                       if (_tarif in zlinky_datas["OPTARIF"] or _tarif in zlinky_datas["LTARF"]) ), "BASE", )
 
         linky_mode = zlinky_datas["PROTOCOL Linky"]
         version_info = zlinky_version_infos(self, nwkid )
