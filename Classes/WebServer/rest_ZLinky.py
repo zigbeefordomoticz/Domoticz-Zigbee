@@ -107,9 +107,15 @@ def rest_zlinky(self, verb, data, parameters):
             continue
 
         self.logging("Debug", "rest_zlinky - found %s " % (nwkid))
-        tarif = next( ( _tarif for _tarif in 
-                       
-                       if (_tarif in zlinky_datas["OPTARIF"] or _tarif in zlinky_datas["LTARF"]) ), "BASE", )
+
+        tarif = "BASE"
+        for _tarif in ZLINK_TARIF_MODE_EXCLUDE:
+            if _tarif in self.ListOfDevices[ nwkid ]['ZLinky'][ "OPTARIF"]:
+                tarif = _tarif
+                break
+            if _tarif in self.ListOfDevices[ nwkid ]['ZLinky'][ "LTARF"]:
+                tarif = _tarif
+                break
 
         linky_mode = zlinky_datas["PROTOCOL Linky"]
         version_info = zlinky_version_infos(self, nwkid )
