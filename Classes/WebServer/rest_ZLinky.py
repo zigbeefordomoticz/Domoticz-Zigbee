@@ -71,6 +71,8 @@ ZLINKY_PARAMETERS = {
 ZLINK_TARIF_MODE_EXCLUDE = {
     "BASE": ( "PTEC", "DEMAIN", "HHPHC", "HCHP","HCHC", "PEJP", "EJPHN", "EJPHPM", "BBRHCJB", "BBRHPJB", "BBRHCJW", "BBRHPJW", "BBRHCJR", "BBRHPJR" ),
     "HC": ( "DEMAIN", "PEJP", "EJPHN", "EJPHPM", "BBRHCJB", "BBRHPJB", "BBRHCJW", "BBRHPJW", "BBRHCJR", "BBRHPJR" ),
+    "HEURES PLEINES": ( "DEMAIN", "PEJP", "EJPHN", "EJPHPM", "BBRHCJB", "BBRHPJB", "BBRHCJW", "BBRHPJW", "BBRHCJR", "BBRHPJR" ),
+    "HEURES CREUSES": ( "DEMAIN", "PEJP", "EJPHN", "EJPHPM", "BBRHCJB", "BBRHPJB", "BBRHCJW", "BBRHPJW", "BBRHCJR", "BBRHPJR" ),
     "EJP": ( "DEMAIN", "HHPHC", "HCHP","HCHC", "BBRHPJB", "BBRHCJW", "BBRHPJW", "BBRHCJR", "BBRHPJR"),
     "BBR": ( "HHPHC", "HCHP","HCHC", "PEJP", "EJPHN", "EJPHPM",)
 }
@@ -95,8 +97,6 @@ def rest_zlinky(self, verb, data, parameters):
     zlinky = []
 
     for nwkid in self.ListOfDevices:
-        if 'ZLinky' not in self.ListOfDevices[ nwkid ]:
-            continue
         zlinky_datas = self.ListOfDevices[ nwkid ].get("ZLinky")
         if zlinky_datas is None:
             continue
@@ -110,13 +110,15 @@ def rest_zlinky(self, verb, data, parameters):
 
         tarif = "BASE"
         for _tarif in ZLINK_TARIF_MODE_EXCLUDE:
-            if _tarif in self.ListOfDevices[ nwkid ]['ZLinky'][ "OPTARIF"]:
+            if _tarif in zlinky_datas[ "OPTARIF"]:
                 tarif = _tarif
                 break
-            if _tarif in self.ListOfDevices[ nwkid ]['ZLinky'][ "LTARF"]:
+            if _tarif in zlinky_datas[ "LTARF"]:
                 tarif = _tarif
                 break
 
+        self.logging("Debug", "rest_zlinky - Tarif %s " % (tarif))
+  
         linky_mode = zlinky_datas["PROTOCOL Linky"]
         version_info = zlinky_version_infos(self, nwkid )
         
