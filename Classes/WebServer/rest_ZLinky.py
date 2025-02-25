@@ -90,7 +90,7 @@ def rest_zlinky(self, verb, data, parameters):
     _response = prepResponseMessage(self, setupHeadersResponse())
     _response["Data"] = None
 
-    self.logging([ "Debug", "rest_zlinky - for %s %s %s" % (verb, data, parameters))
+    self.logging( "Debug", "rest_zlinky - for %s %s %s" % (verb, data, parameters))
     # find if we have a ZLinky
     zlinky = []
 
