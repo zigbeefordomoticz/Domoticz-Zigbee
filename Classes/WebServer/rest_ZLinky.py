@@ -110,10 +110,10 @@ def rest_zlinky(self, verb, data, parameters):
 
         tarif = "BASE"
         for _tarif in ZLINK_TARIF_MODE_EXCLUDE:
-            if _tarif in zlinky_datas[ "OPTARIF"]:
+            if _tarif in zlinky_datas.get("OPTARIF",[]):
                 tarif = _tarif
                 break
-            if _tarif in zlinky_datas[ "LTARF"]:
+            if _tarif in zlinky_datas.get("LTARF",[]):
                 tarif = _tarif
                 break
 
