@@ -87,7 +87,7 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     self.log.logging("ZLinky", "Debug", f"Cluster: {cluster}, Attribute: {attribut}, Value: {value}", nwkid)
 
     # Fetch current tariff
-    _opt_tarifaire = get_OPTARIF(self, nwkid) or get_ltarf(self, nwkid)
+    _opt_tarifaire = get_OPTARIF(self, nwkid) or get_ltarf(self, nwkid) or "BASE"
     op_tarifaire = _normalize_tarif(self, _opt_tarifaire )
     self.log.logging("ZLinky", "Debug", f"OPTARIF: {op_tarifaire}", nwkid)
 
