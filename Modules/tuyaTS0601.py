@@ -1219,6 +1219,9 @@ TS0601_COMMANDS = {
     "MinSetpointTemp": ts0601_min_setpoint_temp,
     "TuyaAntiscale": ts0601_antiscale,
     "TuyaAntifrost": ts0601_antifrost,
+    "calibration": ts0601_action_calibration,
+    "Calibration": ts0601_action_calibration,
+
 }
 
 
