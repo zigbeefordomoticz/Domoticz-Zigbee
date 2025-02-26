@@ -87,7 +87,8 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     self.log.logging("ZLinky", "Debug", f"Cluster: {cluster}, Attribute: {attribut}, Value: {value}", nwkid)
 
     # Fetch current tariff
-    op_tarifaire = _normalize_tarif(self, get_OPTARIF(self, nwkid) )
+    _opt_tarifaire = get_OPTARIF(self, nwkid) or get_ltarf(self, nwkid)
+    op_tarifaire = _normalize_tarif(self, _opt_tarifaire )
     self.log.logging("ZLinky", "Debug", f"OPTARIF: {op_tarifaire}", nwkid)
 
     # Exit early for unsupported tariffs
@@ -131,6 +132,8 @@ def _normalize_tarif(self, op_tarifaire):
         base_tarifaire = "TEMPO"  # Treat any BBRx as TEMPO
     elif op_tarifaire.startswith("EJP"):
         base_tarifaire = "EJP"  # Treat any EJPx as EJP
+    elif op_tarifaire == "HEURES PLEINES":
+        base_tarifaire = "HC"
     else:
         base_tarifaire = op_tarifaire
     self.log.logging("ZLinky", "Debug", f"_normalize_tarif {op_tarifaire} -> {base_tarifaire}")
@@ -180,6 +183,7 @@ def _get_corresponding_color(self, attribut, op_tarifaire):
     # Define the color map for tariff types
     color_map = {
         "HC..": { "0100": "HC..", "0102": "HP.."},
+        "HEURES PLEINES": { "0100": "HC..", "0102": "HP.."},
         "TEMPO": { "0100": "BHC", "0102": "BHP", "0104": "WHC", "0106": "WHP", "0108": "RHC", "010a": "RHP"},
         "EJP": { "0100": "EJPHN", "0102": "EJPHPM"}
     }
@@ -524,7 +528,7 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
         store_ZLinky_infos( self, nwkid, ZLinky_TIC_COMMAND[ attribut ], value)
 
     if attribut == "0000":
-        # Option tarifaire
+        # OHisto : ption tarifaire
         value = ''.join(map(lambda x: x if ord(x) in range(128) else ' ', value))
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
@@ -619,6 +623,7 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
     elif attribut in ( "0200", ):
         # Standard : LTARF / Libellé tarif fournisseur en cours
         tarif_mapping = {
+            # Tempo
             "BLEU": "B",
             "BLAN": "W",
             "ROUG": "R",
