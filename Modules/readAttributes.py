@@ -1389,7 +1389,13 @@ def ReadAttributeReq_Scheduled_ZLinky(self, nwkid):
         self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq_Scheduled_ZLinky: %s cluster %s attribute: %s" %( 
             nwkid, cluster, WORK_TO_BE_DONE[ cluster ]), nwkid=nwkid)
         ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, cluster, WORK_TO_BE_DONE[ cluster ], ackIsDisabled=False)
-   
+
+
+def ReadAttributeReq_Scheduled_linky_mode(self, nwkid):
+    ep_out = "01"
+    self.log.logging(["ReadAttributes", "ZLinky"], "Debug", "ReadAttributeReq Linky Mode")
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, "ff66", [ 0x0300], ackIsDisabled=False)
+
 
 def ReadAttributeRequest_0702_ZLinky_TIC(self, key):
     # The list of Attributes could be based on the Contract
@@ -1420,6 +1426,7 @@ def ReadAttribute_ZLinkyIndex( self, nwkid ):
     INDEX_ATTRIBUTES = {
         "BA": [ 0x0100 ],
         "HC": [ 0x0100, 0x0102],
+        "HE": [ 0x0100, 0x0102],  # In standard mode we get "HEURES PLEINES"
         "EJ": [ 0x0100, 0x0102],
         "BB": [ 0x0100, 0x0102, 0x014, 0x016, 0x0108, 0x010a]
     }
