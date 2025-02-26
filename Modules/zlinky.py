@@ -207,7 +207,7 @@ def get_OPTARIF(self, nwkid):
     zlinky = self.ListOfDevices.get(nwkid, {}).get(ATTR_ZLINKY, {})
 
     # Get the raw value of "OPTARIF", or default to "BASE"
-    optarif_value = zlinky.get("OPTARIF", "BASE")
+    optarif_value = zlinky.get("OPTARIF")
 
     # If the value is a byte string, decode and clean up
     if isinstance(optarif_value, bytes):
