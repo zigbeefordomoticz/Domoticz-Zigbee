@@ -35,6 +35,7 @@ from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttribute_ZLinkyIndex,
                                     ReadAttributeReq,
+                                    ReadAttributeReq_Scheduled_linky_mode,
                                     ReadAttributeReq_Scheduled_ZLinky,
                                     ReadAttributeReq_ZLinky,
                                     ReadAttributeRequest_0b04_050b_0505_0508,
@@ -282,6 +283,7 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "TempPollingFreq": ReadAttributeRequest_0402,
         "HumiPollingFreq": ReadAttributeRequest_0405,
         "BattPollingFreq": ReadAttributeRequest_0001,
+        "ZLinkyPollingLinkyMode": ReadAttributeReq_Scheduled_linky_mode,  # Linky Mode
         "ZLinkyPollingPTEC": ReadAttributeReq_Scheduled_ZLinky,     # Color of day and next day
         "ZLinkyPolling0702": ReadAttributeRequest_0702_ZLinky_TIC,  # Metering
         "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,             # All ZLinky Clusters/Attributes
