@@ -239,6 +239,7 @@ SETTINGS = {
             "Danfoss": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Database": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "DeviceAnnoucement": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "DeviceParameter": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Enki": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Garbage": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": True, "Advanced": True },
             "Gledopto": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
