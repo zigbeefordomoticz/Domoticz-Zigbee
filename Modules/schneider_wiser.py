@@ -183,17 +183,21 @@ def callbackDeviceAwake_Schneider(self, Devices, nwk_id, ep, cluster):
     if model in ("Wiser2-Thermostat", "iTRV"):
         check_end_of_override_setpoint(self, Devices, nwk_id, ep)
 
-    if model in ( "CCTFR6700", ) and get_device_config_param(self, nwk_id, "SimulateThermostat6400"):
-        # purpose is to Simulate a Thermostat 6400 reporting local temperature to HACT 6700
-        # Send a Report Attributes 0x0402/0x0000 to 0x0201/0x0000
-        # every 5 minutes
-        last_report = device.get("FakeThermostat6400", 0)
-        if now < last_report + 300:
-            # too early
-            return
+    if model in ( "CCTFR6700", ):
+        simulate_thermostat_6400 = get_device_config_param(self, nwk_id, "SimulateThermostat6400")
+        self.log.logging("Schneider", "Debug", f"callbackDeviceAwake_Schneider CCTFR6700 - Simulate {simulate_thermostat_6400}", nwkid=nwk_id)
+        if simulate_thermostat_6400:
+            # purpose is to Simulate a Thermostat 6400 reporting local temperature to HACT 6700
+            # Send a Report Attributes 0x0402/0x0000 to 0x0201/0x0000
+            # every 5 minutes
+            last_report = device.get("FakeThermostat6400", 0)
+            self.log.logging("Schneider", "Debug", f"callbackDeviceAwake_Schneider CCTFR6700 - last report {last_report}", nwkid=nwk_id)
 
-        temperature_attribute_report(self, nwk_id, ep, get_device_config_param(self, nwk_id, "SimulateThermostat6400"))
-        device["FakeThermostat6400"] = now
+            if now < (last_report + 300):  # too early
+                return
+
+            temperature_attribute_report(self, nwk_id, ep, get_device_config_param(self, nwk_id, "SimulateThermostat6400"))
+            device["FakeThermostat6400"] = now
 
 
 def temperature_attribute_report(self, nwk_id, ep, temperature=700):
@@ -202,14 +206,14 @@ def temperature_attribute_report(self, nwk_id, ep, temperature=700):
     fcf = "08"  # Frame Control Field ( Server to Client)
     sqn = sqn = get_and_inc_ZCL_SQN(self, nwk_id)
     cluster_id = "%04x" % 0x0402
-    measured_value = "%04x" % 0x0000
+    measured_value_attr = "%04x" % 0x0000
     data_type = "29"
     # Convert to little-endian format
-    value_little_endian_bytes = struct.pack("<H", temperature)
+    value_little_endian_bytes = struct.pack("<H", temperature).hex()
     cmd = "0a"
 
-    payload = f"{fcf}{sqn}{cmd}{measured_value}{data_type}{value_little_endian_bytes}"
-    self.log.logging("Schneider", "Log", f"Temperature Measurement report to Hact {nwk_id} with value {temperature} / cluster: {cluster_id}, attribute: {measured_value} type: {data_type}", nwkid=nwk_id)
+    payload = f"{fcf}{sqn}{cmd}{measured_value_attr}{data_type}{value_little_endian_bytes}"
+    self.log.logging("Schneider", "Log", f"Temp Measure report to Hact {nwk_id} with value {temperature} -> payload: {payload}", nwkid=nwk_id)
     raw_APS_request( self, nwk_id, ep, TEMPERATURE_CLUSTER, "0104", payload, zigate_ep=ZIGATE_EP, ackIsDisabled=is_ack_tobe_disabled(self, nwk_id) )
 
 
