@@ -891,12 +891,7 @@ def ts0601_action_calibration(self, NwkId, Ep, dp, value=None):
     self.log.logging("Tuya0601", "Debug", "ts0601_action_calibration - %s Calibration: %s" % (NwkId, value))
 
     target_calibration = 0
-    if (
-        "Param" in self.ListOfDevices[NwkId]
-        and "Calibration" in self.ListOfDevices[NwkId]["Param"]
-        and isinstance(self.ListOfDevices[NwkId]["Param"]["Calibration"], (float, int))
-    ):
-        target_calibration = int(self.ListOfDevices[NwkId]["Param"]["Calibration"])
+    target_calibration = int(self.ListOfDevices[NwkId].get("Param", {}).get("Calibration", 0))
 
     value = target_calibration if value is None else value
     
@@ -1236,6 +1231,7 @@ DP_ACTION_FUNCTION = {
     "switch": ts0601_action_switch,
     "setpoint": ts0601_action_setpoint,
     "calibration": ts0601_action_calibration,
+    "Calibration": ts0601_action_calibration,
     "TRV6SystemMode": ts0601_action_trv6_system_mode,
     "TRV8SystemMode": ts0601_action_trv8_system_mode,
     "TRV7SystemMode": ts0601_action_trv7_system_mode,
