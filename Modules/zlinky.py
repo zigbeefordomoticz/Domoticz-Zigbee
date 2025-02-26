@@ -208,6 +208,9 @@ def get_OPTARIF(self, nwkid):
 
     # Get the raw value of "OPTARIF", or default to "BASE"
     optarif_value = zlinky.get("OPTARIF")
+    
+    if optarif_value is None:
+        return None
 
     # If the value is a byte string, decode and clean up
     if isinstance(optarif_value, bytes):
