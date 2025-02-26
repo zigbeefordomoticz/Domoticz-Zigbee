@@ -224,12 +224,7 @@ def check_domo_format_req(self, dp_informations, value):
 
 
 def ts0601_extract_data_point_infos( self, model_name):
-    
-    if model_name not in self.DeviceConf:
-        return None
-    if "TS0601_DP" not in self.DeviceConf[model_name ]:
-        return None
-    return self.DeviceConf[model_name ][ "TS0601_DP" ]
+    return self.DeviceConf.get(model_name, {}).get("TS0601_DP")
 
 def ts0601_actuator_dp( command, dps_mapping):
     return next( ( dp for dp in dps_mapping if "action_type" in dps_mapping[dp] and command == dps_mapping[dp]["action_type"] ), None, )
@@ -869,20 +864,20 @@ def ts0601_antifrost(self, NwkId, Ep, dp, value=None):
 def ts0601_settings( self, NwkId, dps_mapping, param, value):
     """ Handle in a more generic way TS0601 settings, by extracting Data Type from the config """
     
-    self.log.logging("Tuya0601", "Debug", f"ts0601_settings  {NwkId}")
+    self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {NwkId}")
     
     for key, dps_value in dps_mapping.items():
-        self.log.logging("Tuya0601", "Debug", f"ts0601_settings  {key}:{dps_value}")
+        self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {key}:{dps_value}")
         if "action_type" in dps_value and dps_value["action_type"] == param:
             dt = dps_value[ "data_type"] if "data_type" in dps_value else None
             if dt:
                 dp = int( key, 16)
-                self.log.logging("Tuya0601", "Debug", f"ts0601_settings  {param} {dp} {dt} {value}")
+                self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {param} {dp} {dt} {value}")
                 ts0601_tuya_action(self, NwkId, "01", param, dp, dt, value)
                 return
             
     if param in TS0601_COMMANDS:
-        self.log.logging("Tuya0601", "Debug", f"sanity_check_of_param  {param} {value}")
+        self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"sanity_check_of_param  {param} {value}")
         ts0601_actuator(self, NwkId, param, value)
 
 
