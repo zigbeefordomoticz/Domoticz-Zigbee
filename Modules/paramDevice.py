@@ -74,7 +74,7 @@ def sanity_check_of_param(self, NwkId):
     model_name = device_data.get("Model", "")
     dps_mapping = ts0601_extract_data_point_infos(self, model_name)
 
-    self.log.logging("DeviceParameter", "Debug", f"sanity_check_of_param {NwkId} model_name: {model_name}, param_data: {param_data}, dps_mapping: {dps_mapping}")
+    self.log.logging("DeviceParameter", "Debug", f"sanity_check_of_param {NwkId} model_name: {model_name}, param_data: {param_data}, Tuya dps_mapping: {dps_mapping}")
 
     for param, value in param_data.items():
         self.log.logging("DeviceParameter", "Debug", f"Checking param: {param}, Value: {value}")
