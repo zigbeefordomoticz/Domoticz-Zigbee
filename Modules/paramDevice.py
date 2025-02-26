@@ -67,23 +67,23 @@ def initialize_device_settings(self):
 def sanity_check_of_param(self, NwkId):
     """Performs a sanity check on device parameters and applies relevant settings."""
 
-    self.log.logging("Heartbeat", "Debug", f"sanity_check_of_param {NwkId}")
+    self.log.logging("DeviceParameter", "Debug", f"sanity_check_of_param {NwkId}")
 
     device_data = self.ListOfDevices.get(NwkId, {})
     param_data = device_data.get("Param", {})
     model_name = device_data.get("Model", "")
-
     dps_mapping = ts0601_extract_data_point_infos(self, model_name)
 
+    self.log.logging("DeviceParameter", "Debug", f"sanity_check_of_param {NwkId} model_name: {model_name}, param_data: {param_data}, dps_mapping: {dps_mapping}")
+
     for param, value in param_data.items():
-        self.log.logging("Heartbeat", "Debug", f"Checking param: {param}, Value: {value}")
+        self.log.logging("DeviceParameter", "Debug", f"Checking param: {param}, Value: {value}")
 
         if dps_mapping:
             ts0601_settings(self, NwkId, dps_mapping, param, value)
             continue
 
         param_setting = self.device_settings.get(param)
-
         if callable(param_setting):
             param_setting(self, NwkId, value)
 
