@@ -105,6 +105,8 @@ OP_TARIFAIRE_MAP = {
 
     "HC..": (1, "Off-peak Hours"),
     "HP..": (2, "Peak Hours"),
+    "HEURES CREUSES": (1, "Off-peak Hours"),
+    "HEURES PLEINES": (2, "Peak Hours"),
 
     "HN..": (1, "Normal Hours"),
     "EJPHN": (1, "Normal Hours"),

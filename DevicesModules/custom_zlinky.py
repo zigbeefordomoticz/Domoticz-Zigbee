@@ -179,10 +179,10 @@ def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
 
     # Standard mode, we rely on LTARF ( Libellé tarif fournisseur en cours)
     self.log.logging("ZLinky", "Debug", "_zlinky_update_color - Linky is in Standard mode", nwkid)
-    
+
     ltarf_value = get_ltarf(self, nwkid)
     self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF >{ltarf_value}<", nwkid)
-    
+
     if _is_tempo_tarif(self, op_tarifaire):
         ltarf_value = _normalize_tempo_color(self, ltarf_value)
         self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - TEMPO Tarif corrected >{ltarf_value}<", nwkid)
@@ -252,16 +252,16 @@ def _normalize_tempo_color(self, color):
 
 def _normalize_hchp_color(self, ltarf_value):
     """Normalize the given color to the HC/HP format."""
-    self.log.logging("ZLinky", "Status", f"_normalize_hchp_color {ltarf_value}")
+    self.log.logging("ZLinky", "Debug", f"_normalize_hchp_color {ltarf_value}")
     
     if ltarf_value == "HEURES PLEINES":
-        self.log.logging("ZLinky", "Status", f"_normalize_hchp_color {ltarf_value} --> HP..")
+        self.log.logging("ZLinky", "Debug", f"_normalize_hchp_color {ltarf_value} --> HP..")
         return "HP.."
     elif ltarf_value == "HEURES CREUSES":
-        self.log.logging("ZLinky", "Status", f"_normalize_hchp_color {ltarf_value} --> HC..")
+        self.log.logging("ZLinky", "Debug", f"_normalize_hchp_color {ltarf_value} --> HC..")
         return "HC.."
 
-    self.log.logging("ZLinky", "Status", f"_normalize_hchp_color {ltarf_value} no change !!!")
+    self.log.logging("ZLinky", "Debug", f"_normalize_hchp_color {ltarf_value} no change !!!")
     return ltarf_value
 
 
@@ -681,10 +681,12 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
         elif "HC" in value:
             s_tarif += "HC"
 
+        self.log.logging([ "ZLinky", "Cluster"], "Debug", f"zlinky_cluster_lixee_private ({attribut}) LTARF {value}", nwkid)
         if len(s_tarif) == 3:
-            self.log.logging([ "ZLinky", "Cluster"], "Debug", f"zlinky_cluster_lixee_private ({attribut}) LTARF {value}", nwkid)
             MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", s_tarif, Attribute_="0020")
-
+        else:
+            MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", value, Attribute_="0020")
+            
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
         store_ZLinky_infos( self, nwkid, 'LTARF', value)
 
