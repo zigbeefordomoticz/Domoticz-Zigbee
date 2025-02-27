@@ -15,11 +15,11 @@ from Modules.basicOutputs import write_attribute
 from Modules.casaia import casaia_check_irPairing, casaia_setpoint
 from Modules.danfoss import thermostat_Setpoint_Danfoss
 from Modules.readAttributes import ReadAttributeRequest_0201
-from Modules.schneider_wiser import schneider_setpoint, schneider_hact_heater_type_wiser2
+from Modules.schneider_wiser import (schneider_hact_heater_type_wiser2,
+                                     schneider_setpoint)
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaTRV import tuya_setpoint
-from Modules.tuyaTS0601 import (ts0601_action_calibration, ts0601_actuator,
-                                ts0601_extract_data_point_infos)
+from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
 
 
 def thermostat_Setpoint_SPZB(self, NwkId, setpoint):
