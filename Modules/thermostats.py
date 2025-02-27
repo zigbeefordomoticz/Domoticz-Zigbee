@@ -211,7 +211,7 @@ def thermostat_Calibration(self, NwkId, calibration=None):
 
     if calibration < 0:
         # in two’s complement form
-        calibration = int(hex(-calibration - pow(2, 32))[9:], 16)
+        calibration = abs((-calibration - pow(2, 32)) & 0xFFFFFFFF)
         self.log.logging( "Thermostats", "Debug", "thermostat_Calibration - 2 complement form of Calibration offset on %s off %s" % (
             NwkId, calibration), )
 
