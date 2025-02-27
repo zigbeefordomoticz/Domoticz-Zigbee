@@ -195,6 +195,7 @@ def _get_corresponding_color(self, attribut, op_tarifaire):
     color_map = {
         "HC..": { "0100": "HC..", "0102": "HP.."},
         "HC": { "0100": "HC..", "0102": "HP.."},
+        "HCHP 22h-6h": { "0100": "HC..", "0102": "HP.."},
         "HEURES PLEINES": { "0100": "HC..", "0102": "HP.."},
         "TEMPO": { "0100": "BHC", "0102": "BHP", "0104": "WHC", "0106": "WHP", "0108": "RHC", "010a": "RHP"},
         "EJP": { "0100": "EJPHN", "0102": "EJPHPM"}
