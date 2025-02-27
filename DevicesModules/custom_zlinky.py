@@ -150,6 +150,11 @@ def _is_tempo_tarif(self, op_tarifaire):
     return _normalize_tarif(self, op_tarifaire ) == "TEMPO"
 
 
+def _is_hchp_standard_tarif(self, op_tarifaire):
+    """ Return true if the current op tarif is HC/HP """
+    return _normalize_tarif(self, op_tarifaire ) in ("HEURES PLEINE", "HC", "HC..")
+
+
 def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
     """Update the device color, if it has changed request a Read Attribute to get the Color"""
 
@@ -178,6 +183,10 @@ def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
     ltarf_value = get_ltarf(self, nwkid)
     if _is_tempo_tarif(self, op_tarifaire):
         ltarf_value = _normalize_tempo_color(self, ltarf_value)
+
+    elif _is_hchp_standard_tarif(self, op_tarifaire):
+        ltarf_value = _normalize_hchp_color(self, ltarf_value)
+
     self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF >{ltarf_value}<", nwkid)
 
     if ltarf_value and ltarf_value != new_color:
@@ -236,6 +245,15 @@ def _normalize_tempo_color(self, color):
 
     self.log.logging("ZLinky", "Debug", f"_normalize_tempo_color - no color found {color} - {suffix}")
     return color  # No matching color found, return original
+
+
+def _normalize_hchp_color(self, ltarf_value):
+    """Normalize the given color to the HC/HP format."""
+    if ltarf_value == "HEURES PLEINES":
+        return "HP.."
+    elif ltarf_value == "HEURES CREUSES":
+        return "HC.."
+    return ltarf_value
 
 
 def zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut, value):
