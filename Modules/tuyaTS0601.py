@@ -881,21 +881,35 @@ def ts0601_settings( self, NwkId, dps_mapping, param, value):
         ts0601_actuator(self, NwkId, param, value)
 
 
-def ts0601_action_calibration(self, NwkId, Ep, dp, value=None):
+def ts0601_action_calibration_legacy(self, NwkId, Ep, dp, calibration=None):
     
-    self.log.logging("Tuya0601", "Debug", "ts0601_action_calibration - %s Calibration: %s" % (NwkId, value))
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_calibration - %s Calibration: %s" % (NwkId, calibration))
 
     target_calibration = 0
     target_calibration = int(self.ListOfDevices[NwkId].get("Param", {}).get("Calibration", 0))
 
-    value = target_calibration if value is None else value
+    calibration = target_calibration if calibration is None else calibration
     
     action = "%02x02" % dp
     # determine which Endpoint
-    if value < 0:
-        value = ( 0xffffffff - value + 1 )
-        #calibration = abs(int(hex(-calibration - pow(2, 32)), 16))
-    data = "%08x" % value
+    if calibration < 0:
+        calibration = ( 0xffffffff - calibration + 1 )
+    data = "%08x" % calibration
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_action_calibration_corrected(self, NwkId, Ep, dp, calibration=None):
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_calibration_corrected - %s Calibration: %s" % (NwkId, calibration))
+
+    target_calibration = int(self.ListOfDevices[NwkId].get("Param", {}).get("Calibration", 0))
+    calibration = target_calibration if calibration is None else calibration
+
+    action = "%02x02" % dp
+    if calibration < 0:
+        # 32-bit two’s complement conversion
+        calibration = abs((-calibration - pow(2, 32)) & 0xFFFFFFFF)
+    data = "%08x" % calibration
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
@@ -1219,17 +1233,16 @@ TS0601_COMMANDS = {
     "MinSetpointTemp": ts0601_min_setpoint_temp,
     "TuyaAntiscale": ts0601_antiscale,
     "TuyaAntifrost": ts0601_antifrost,
-    "calibration": ts0601_action_calibration,
-    "Calibration": ts0601_action_calibration,
-
+    "calibration": ts0601_action_calibration_legacy,
+    "Calibration": ts0601_action_calibration_corrected,
 }
 
 
 DP_ACTION_FUNCTION = {
     "switch": ts0601_action_switch,
     "setpoint": ts0601_action_setpoint,
-    "calibration": ts0601_action_calibration,
-    "Calibration": ts0601_action_calibration,
+    "calibration": ts0601_action_calibration_legacy,
+    "Calibration": ts0601_action_calibration_corrected,
     "TRV6SystemMode": ts0601_action_trv6_system_mode,
     "TRV8SystemMode": ts0601_action_trv8_system_mode,
     "TRV7SystemMode": ts0601_action_trv7_system_mode,
