@@ -181,14 +181,17 @@ def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
     self.log.logging("ZLinky", "Debug", "_zlinky_update_color - LInky is in Standard mode", nwkid)
     
     ltarf_value = get_ltarf(self, nwkid)
+    self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF >{ltarf_value}<", nwkid)
+    
     if _is_tempo_tarif(self, op_tarifaire):
         ltarf_value = _normalize_tempo_color(self, ltarf_value)
+        self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - TEMPO Tarif corrected >{ltarf_value}<", nwkid)
 
     elif _is_hchp_standard_tarif(self, op_tarifaire):
         ltarf_value = _normalize_hchp_color(self, ltarf_value)
+        self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - HC/HP Tarif corrected >{ltarf_value}<", nwkid)
 
     self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF >{ltarf_value}<", nwkid)
-
     if ltarf_value and ltarf_value != new_color:
         self.log.logging("ZLinky", "Status", f"Requesting LTARF (0xff66) as not inline {ltarf_value} to {previous_color}/{new_color}", nwkid)
         ReadAttributeRequest_ff66(self, nwkid)
@@ -249,10 +252,16 @@ def _normalize_tempo_color(self, color):
 
 def _normalize_hchp_color(self, ltarf_value):
     """Normalize the given color to the HC/HP format."""
+    self.log.logging("ZLinky", "Status", f"_normalize_hchp_color {ltarf_value}")
+    
     if ltarf_value == "HEURES PLEINES":
+        self.log.logging("ZLinky", "Status", f"_normalize_hchp_color {ltarf_value} --> HP..")
         return "HP.."
     elif ltarf_value == "HEURES CREUSES":
+        self.log.logging("ZLinky", "Status", f"_normalize_hchp_color {ltarf_value} --> HC..")
         return "HC.."
+
+    self.log.logging("ZLinky", "Status", f"_normalize_hchp_color {ltarf_value} no change !!!")
     return ltarf_value
 
 
