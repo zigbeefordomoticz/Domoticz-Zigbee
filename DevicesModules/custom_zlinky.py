@@ -685,6 +685,15 @@ def zlinky_cluster_lixee_private(self, domoticz_devices, nwkid, ep, cluster, att
         if len(s_tarif) == 3:
             MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", s_tarif, Attribute_="0020")
         else:
+            # If the value is a byte string, decode and clean up
+            if isinstance(value, bytes):
+                # Decode the byte string to UTF-8, ignoring errors, and remove null bytes
+                value = value.decode('utf-8', errors='ignore').strip('\x00')
+
+            # Remove null characters and strip whitespace
+            if isinstance(value, str):
+                value = value.replace('\u0000', '').replace('\x00', '').strip()
+
             MajDomoDevice(self, domoticz_devices, nwkid, ep, "0009", value, Attribute_="0020")
             
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
