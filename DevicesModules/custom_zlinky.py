@@ -87,9 +87,14 @@ def zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster
     self.log.logging("ZLinky", "Debug", f"Cluster: {cluster}, Attribute: {attribut}, Value: {value}", nwkid)
 
     # Fetch current tariff
-    _opt_tarifaire = get_OPTARIF(self, nwkid) or get_ltarf(self, nwkid) or "BASE"
+    _opt_tarifaire = get_OPTARIF(self, nwkid)
+    _ltarf = get_ltarf(self, nwkid)
+    self.log.logging("ZLinky", "Debug", f"zlinky_set_color_based_on_counter: _opt_tarifaire: {_opt_tarifaire}", nwkid)
+    self.log.logging("ZLinky", "Debug", f"zlinky_set_color_based_on_counter: _ltarf: {_ltarf}", nwkid)
+    
+    _opt_tarifaire = _opt_tarifaire or _ltarf or "BASE"
     op_tarifaire = _normalize_tarif(self, _opt_tarifaire )
-    self.log.logging("ZLinky", "Debug", f"OPTARIF: {op_tarifaire}", nwkid)
+    self.log.logging("ZLinky", "Debug", f"op_tarifaire: {op_tarifaire}", nwkid)
 
     # Exit early for unsupported tariffs
     if not _known_op_tarifaire(op_tarifaire):
@@ -148,7 +153,11 @@ def _is_tempo_tarif(self, op_tarifaire):
 def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
     """Update the device color, if it has changed request a Read Attribute to get the Color"""
 
+    self.log.logging("ZLinky", "Debug", f"_zlinky_update_color {op_tarifaire} prev_volor: {previous_color} new_color: {new_color}", nwkid)
+
     if get_linky_mode_from_ep(self, nwkid) in ( 0, 2):
+        self.log.logging("ZLinky", "Debug", "_zlinky_update_color - LInky is in Historic mode", nwkid)
+        
         # Historique mode, we can rely on PTEC
         ptect_value = get_ptec(self, nwkid)
         if _is_tempo_tarif(self, op_tarifaire):
@@ -164,6 +173,8 @@ def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
         return
 
     # Standard mode, we rely on LTARF ( Libellé tarif fournisseur en cours)
+    self.log.logging("ZLinky", "Debug", "_zlinky_update_color - LInky is in Standard mode", nwkid)
+    
     ltarf_value = get_ltarf(self, nwkid)
     if _is_tempo_tarif(self, op_tarifaire):
         ltarf_value = _normalize_tempo_color(self, ltarf_value)
