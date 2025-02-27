@@ -152,7 +152,7 @@ def _is_tempo_tarif(self, op_tarifaire):
 
 def _is_hchp_standard_tarif(self, op_tarifaire):
     """ Return true if the current op tarif is HC/HP """
-    return _normalize_tarif(self, op_tarifaire ) in ("HEURES PLEINE", "HC", "HC..")
+    return _normalize_tarif(self, op_tarifaire ) in ("HCHP 22h-6h",)
 
 
 def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
@@ -178,7 +178,7 @@ def _zlinky_update_color(self, nwkid, op_tarifaire, previous_color, new_color):
         return
 
     # Standard mode, we rely on LTARF ( Libellé tarif fournisseur en cours)
-    self.log.logging("ZLinky", "Debug", "_zlinky_update_color - LInky is in Standard mode", nwkid)
+    self.log.logging("ZLinky", "Debug", "_zlinky_update_color - Linky is in Standard mode", nwkid)
     
     ltarf_value = get_ltarf(self, nwkid)
     self.log.logging("ZLinky", "Debug", f"_zlinky_update_color - LTARF >{ltarf_value}<", nwkid)
