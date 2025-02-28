@@ -23,7 +23,8 @@ from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (checkAndStoreAttributeValue, get_and_inc_ZCL_SQN,
                            get_device_config_param,
-                           get_deviceconf_parameter_value, getAttributeValue)
+                           get_deviceconf_parameter_value, getAttributeValue,
+                           twos_complement)
 from Modules.tuyaTools import (get_tuya_attribute, store_tuya_attribute,
                                tuya_cmd)
 
@@ -906,10 +907,7 @@ def ts0601_action_calibration_corrected(self, NwkId, Ep, dp, calibration=None):
     calibration = target_calibration if calibration is None else calibration
 
     action = "%02x02" % dp
-    if calibration < 0:
-        # 32-bit two’s complement conversion
-        calibration = abs((-calibration - pow(2, 32)) & 0xFFFFFFFF)
-    data = "%08x" % calibration
+    data = "%08x" % twos_complement(calibration, 32)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
