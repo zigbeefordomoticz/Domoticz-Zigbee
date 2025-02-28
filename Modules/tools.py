@@ -48,7 +48,21 @@ def to_little_endian(value: str) -> str:
 
     else:  # Treat as raw bytes (possibly 8-bit)
         return value  # Assuming `value` is already hex
-    
+
+
+def twos_complement(value: int, bits: int) -> int:
+    """
+    Convert a signed integer to its two's complement representation as an integer.
+
+    :param value: The signed integer to convert.
+    :param bits: The number of bits to use in the representation.
+    :return: The two's complement integer.
+    """
+    if value < 0:
+        value = (1 << bits) + value  # Compute two's complement
+    return value & ((1 << bits) - 1)
+
+
 def is_hex(s):
     return all(char in HEX_DIGIT for char in s)
 
