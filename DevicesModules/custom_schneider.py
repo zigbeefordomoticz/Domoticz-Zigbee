@@ -11,8 +11,10 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 from Modules.domoMaj import MajDomoDevice
-from Modules.schneider_wiser import wiser2_setpoint_raiserlower
-from Modules.tools import checkAndStoreAttributeValue, getAttributeValue
+from Modules.schneider_wiser import (schneider_setpoint,
+                                     schneider_update_ThermostatDevice,
+                                     wiser2_setpoint_raiserlower)
+from Modules.tools import checkAndStoreAttributeValue
 
 THERMOSTAT_CLUSTER = "0201"
 LOCAL_TEMPERATURE = "0000"
@@ -49,12 +51,16 @@ def process_env_command(self, domoticz_devices, nwkid, ep, values):
     MajDomoDevice(self, domoticz_devices, nwkid, ep, TEMPERATURE_CLUSTER, round(local_temp / 100, 1))
 
     # Update humidity
-    checkAndStoreAttributeValue(self, nwkid, ep, HUMIDITY_CLUSTER, HUMIDITY_VALUE, humidity)
-    MajDomoDevice(self, domoticz_devices, nwkid, ep, HUMIDITY_CLUSTER, round(humidity / 100))
+    if humidity > 0:
+        checkAndStoreAttributeValue(self, nwkid, ep, HUMIDITY_CLUSTER, HUMIDITY_VALUE, humidity)
+        MajDomoDevice(self, domoticz_devices, nwkid, ep, HUMIDITY_CLUSTER, round(humidity / 100))
 
     # Update setpoint
-    checkAndStoreAttributeValue(self, nwkid, ep, THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT, setpoint)
-    MajDomoDevice(self, domoticz_devices, nwkid, ep, THERMOSTAT_CLUSTER, round(setpoint / 100, 1), Attribute_=OCCUPIED_SETPOINT)
+    if setpoint > 0:
+        checkAndStoreAttributeValue(self, nwkid, ep, THERMOSTAT_CLUSTER, OCCUPIED_SETPOINT, setpoint)
+        schneider_setpoint(self, nwkid, setpoint)
+        schneider_update_ThermostatDevice(self, domoticz_devices, nwkid, "01", THERMOSTAT_CLUSTER, setpoint)
+        MajDomoDevice(self, domoticz_devices, nwkid, ep, THERMOSTAT_CLUSTER, round(setpoint / 100, 1), Attribute_=OCCUPIED_SETPOINT)
 
 
 def process_ui_command(self, domoticz_devices, nwkid, values):
