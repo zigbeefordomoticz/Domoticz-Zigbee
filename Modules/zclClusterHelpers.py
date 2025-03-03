@@ -422,7 +422,7 @@ def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id
 
     conso = raw_value * CONVERSION_FACTORS.get(unit, 1000)  # Default to kW conversion
     if unit not in CONVERSION_FACTORS:
-        self.log.logging("ZclClusters", "Log", f"compute_metering_conso - Unknown {nwk_id}/{msg_src_ep} assuming kW", nwk_id)
+        self.log.logging(["ZclClusters", "Electric"], "Log", f"compute_metering_conso - Unknown {nwk_id}/{msg_src_ep} assuming kW", nwk_id)
 
     # Check for device-specific multiplier/divisor overrides
     multiplier, divisor = None, None
@@ -441,7 +441,7 @@ def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id
     # Compute final consumption value
     conso = round((conso * multiplier) / divisor, 3)
 
-    self.log.logging("ZclClusters", "Debug",
+    self.log.logging(["ZclClusters", "Electric"], "Debug",
                      f"compute_metering_conso - {nwk_id}/{msg_src_ep} Unit: {unit}, "
                      f"Multiplier: {multiplier}, Divisor: {divisor}, raw: {raw_value}, result: {conso}", nwk_id)
 
@@ -467,7 +467,7 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
         float: Computed consumption value, rounded to 3 decimal places.
     """
 
-    self.log.logging("Cluster", "Debug",
+    self.log.logging(["ZclClusters", "Electric"], "Debug",
                      f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} {cluster_id} {attr_id} {raw_value} {type(raw_value)}",
                      nwk_id)
 
@@ -497,7 +497,7 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
     custom_divisor = get_deviceconf_parameter_value(self, model_name, custom_divisor_key)
     if custom_divisor is not None and int(custom_divisor) != 0:
         custom_divisor = int(custom_divisor)
-        self.log.logging("ZclClusters", "Debug",
+        self.log.logging(["ZclClusters", "Electric"], "Debug",
                          f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} Custom Divisor: {custom_divisor}, raw: {raw_value}, result: {conso}",
                          nwk_id)
         return round(conso / custom_divisor, 3)
@@ -512,7 +512,7 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
 
     conso = round((conso * multiplier) / divisor, 3)
 
-    self.log.logging("ZclClusters", "Debug",
+    self.log.logging(["ZclClusters", "Electric"], "Debug",
                      f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} Multiplier: {multiplier}, Divisor: {divisor}, raw: {raw_value}, result: {conso}",
                      nwk_id)
 
