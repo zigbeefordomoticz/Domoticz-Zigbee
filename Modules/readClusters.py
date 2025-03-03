@@ -1566,13 +1566,13 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     # Smart Energy Metering
     if int(MsgAttSize, 16) == 0:
-        self.log.logging("Cluster", "Debug", "Cluster0702 - empty message ", MsgSrcAddr)
+        self.log.logging(["Clusters", "Electric"], "Debug", "Cluster0702 - empty message ", MsgSrcAddr)
         return
 
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
 
     if not checkValidValue(self, MsgSrcAddr, MsgAttType, MsgClusterData):
-        self.log.logging( "Cluster", "Error", "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s : invalid Data Value found : %s" % (
+        self.log.logging( ["Clusters", "Electric"], "Error", "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s : invalid Data Value found : %s" % (
             MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
         return
 
@@ -1581,7 +1581,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         # Convert to int
         value = int(value)
 
-    self.log.logging( "Cluster", "Debug", "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" % (
+    self.log.logging( ["Clusters", "Electric"], "Debug", "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" % (
         MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr, )
 
     if MsgAttrID in ( "5000", "5001", "5101", "5121", "5500", "5501", "5601", "5622", "5a20", "5a22", "e200", "e201", "e202", ):
@@ -1596,7 +1596,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
         if MsgAttrID in ELECTRICAL_MEASURES:
             self.log.logging(
-                "Cluster",
+                ["Clusters", "Electric"],
                 "Debug",
                 "Cluster0702 - %s/%s Schneider %s : %s " % (MsgSrcAddr, MsgSrcEp, ELECTRICAL_MEASURES[MsgAttrID], value),
                 MsgSrcAddr,
@@ -1604,7 +1604,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         else:
             self.log.logging(
-                "Cluster",
+                ["Clusters", "Electric"],
                 "Debug",
                 "readCluster - %s - %s/%s Schneider Attribute: %s  Raw Data: %s Decoded Data: %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, value),
                 MsgSrcAddr,
@@ -1633,7 +1633,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.ListOfDevices[MsgSrcAddr]["Ep"][fake_ep][MsgClusterId]["0400"] = str(conso)
 
             self.log.logging(
-                "Cluster",
+                ["Clusters", "Electric"],
                 "Debug",
                 "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Power %s" % (MsgClusterId, MsgSrcAddr, fake_ep, line, conso),
             )
@@ -1663,7 +1663,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.ListOfDevices[MsgSrcAddr]["Ep"][fake_ep]["0001"]["0000"] = str(value)
 
             self.log.logging(
-                "Cluster",
+                ["Clusters", "Electric"],
                 "Debug",
                 "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Voltage %s" % (MsgClusterId, MsgSrcAddr, fake_ep, line, value),
             )
@@ -1680,7 +1680,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.ListOfDevices[MsgSrcAddr]["Ep"][fake_ep]["0b04"]["0508"] = str(value)
 
             self.log.logging(
-                "Cluster",
+                ["Clusters", "Electric"],
                 "Debug",
                 "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Current %s" % (MsgClusterId, MsgSrcAddr, fake_ep, line, value),
             )
@@ -1695,7 +1695,7 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             self.ListOfDevices[MsgSrcAddr]["Ep"][fake_ep][MsgClusterId]["0000"] = str(conso)
 
             self.log.logging(
-                "Cluster",
+                ["Clusters", "Electric"],
                 "Debug",
                 "readCluster - %s - %s/%s CASAIA PC321 phase Power Line: %s Summation Power %s" % (MsgClusterId, MsgSrcAddr, fake_ep, line, conso),
             )
@@ -1710,14 +1710,14 @@ def Cluster0702(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         else:
 
             self.log.logging(
-                "Cluster",
+                ["Clusters", "Electric"],
                 "Debug",
                 "readCluster - %s - %s/%s CASAIA PC321 phase Power Clamp: %s %s %s %s (value: %s)" % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value),
                 MsgSrcAddr,
             )
 
     else:
-        self.log.logging( "Cluster", "Log", "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (
+        self.log.logging( ["Clusters", "Electric"], "Log", "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
