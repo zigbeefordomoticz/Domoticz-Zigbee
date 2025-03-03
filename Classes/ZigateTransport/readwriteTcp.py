@@ -140,8 +140,9 @@ def tcpip_read_from_zigate(self):
                     return "WifiError"
                 continue
 
-            except Exception as _:
-                pass  # No data to send
+            except Exception as e:
+                self.logging_tcpip("Log", f"Unexpected error in tcpip_read_from_zigate: {e}")
+                continue  # Handle the error gracefully
 
         if exceptional:
             self.logging_tcpip("Error", f"tcpip_read_from_zigate: Socket error detected on {self._connection}")
