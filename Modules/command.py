@@ -44,7 +44,8 @@ from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_temp_Setcurrent)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.thermostats import thermostat_Mode, thermostat_Setpoint
-from Modules.tools import get_deviceconf_parameter_value
+from Modules.tools import (get_device_config_param,
+                           get_deviceconf_parameter_value)
 from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_dimmer_dimmer, tuya_dimmer_onoff,
                           tuya_energy_onoff, tuya_garage_door_action,
@@ -210,7 +211,7 @@ def handle_command_stop(self,Devices, DeviceID, Unit, Nwkid, EPout, DeviceType, 
 
     model_name = self.ListOfDevices[Nwkid].get("Model", "")
     profalux = self.ListOfDevices[Nwkid].get("Manufacturer") == "1110" and self.ListOfDevices[Nwkid].get("ZDeviceID") in ("0200", "0202")
-    
+
     if DeviceType == "LvlControl" and model_name == "TS0601-curtain":
         tuya_curtain_openclose(self, Nwkid, EPout, "01")
 
@@ -496,7 +497,9 @@ def _off_command_default(self, Nwkid, EPout, profalux, model_name):
     """ Handle all other widgets for the OFF command"""
 
     if profalux:  # Profalux are define as LvlControl but should be managed as Blind Inverted
-        actuator_setlevel(self, Nwkid, EPout, 0, "Light", "0000", withOnOff=False)
+        move_withonoff = bool( get_device_config_param(self, Nwkid, "MoveWithOnOff") or get_deviceconf_parameter_value(self, model_name, "MoveWithOnOff", return_default=False) )
+        self.log.logging( "Command", "Log", f"Profalux {Nwkid}/{EPout} Set Level 'Off' with MoveWithOnOff set to {move_withonoff}", Nwkid, )
+        actuator_setlevel(self, Nwkid, EPout, 0, "Light", "0000", withOnOff=move_withonoff)
 
     elif self.ListOfDevices[Nwkid].get("Param", {}).get("fadingOff", False):
         effect_mapping = {
@@ -679,7 +682,9 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         ts0601_actuator(self, Nwkid, "switch", 1)
 
     elif profalux:
-            actuator_setlevel(self, Nwkid, EPout, 255, "Light", "0000", withOnOff=False)
+            move_withonoff = bool( get_device_config_param(self, Nwkid, "MoveWithOnOff") or get_deviceconf_parameter_value(self, model_name, "MoveWithOnOff", return_default=False) )
+            self.log.logging( "Command", "Log", f"Profalux {Nwkid}/{EPout} Set Level 'On' with MoveWithOnOff set to {move_withonoff}", Nwkid, )
+            actuator_setlevel(self, Nwkid, EPout, 255, "Light", "0000", withOnOff=move_withonoff)
 
     else:
         actuator_on(self, Nwkid, EPout, "Light")
@@ -1032,7 +1037,9 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         tuya_curtain_lvl(self, Nwkid, (Level))
 
     elif profalux:
-        actuator_setlevel(self, Nwkid, EPout, Level, "Light", "0000", withOnOff=False)
+        move_withonoff = bool( get_device_config_param(self, Nwkid, "MoveWithOnOff") or get_deviceconf_parameter_value(self, model_name, "MoveWithOnOff", return_default=False) )
+        self.log.logging( "Command", "Log", f"Profalux {Nwkid}/{EPout} Set Level {Level} with MoveWithOnOff set to {move_withonoff}", Nwkid, )
+        actuator_setlevel(self, Nwkid, EPout, Level, "Light", "0000", withOnOff=move_withonoff)
 
     else:
         if Level > 1 and get_deviceconf_parameter_value(self, model_name, "ForceSwitchOnformoveToLevel", return_default=False):
