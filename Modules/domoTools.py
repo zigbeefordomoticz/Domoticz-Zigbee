@@ -473,6 +473,7 @@ CLUSTER_TO_TYPE = {
     "0400": "Lux", 
     "0402": "Temp", 
     "0403": "Baro", 
+    "0404": "Flow",
     "0405": "Humi", 
     "0406": "Motion",
     "042a": "PM25", 

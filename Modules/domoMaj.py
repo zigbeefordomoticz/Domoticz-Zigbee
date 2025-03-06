@@ -362,10 +362,15 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             # For Counters the standard counter dividers apply (menu setup - settings - tab counters)
             # will increment the counter value by 1. 
             # To reset an incremental counter, set the svalue to a negative integer equal to the current total of the counter. 
-                sValue = "%s" %value 
-                self.log.logging("Widget", "Log", "WaterCounter ------>  : %s" %sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-  
+            sValue = "%s" %value
+            self.log.logging("Widget", "Log", "WaterCounter ------>  : %s" %sValue, NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+        if ClusterType == "Flow" and WidgetType == "Flow":
+            sValue = "%s" %value
+            self.log.logging("Widget", "Log", "Waterflow measurement ------>  : %s" %sValue, NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
         if "Voltage" in ClusterType and (WidgetType == "Voltage" and Attribute_ == ""):
             nValue = round(float(value), 2)
             sValue = "%s;%s" % (nValue, nValue)

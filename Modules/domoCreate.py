@@ -672,6 +672,13 @@ SIMPLE_WIDGET = {
         "Subtype": 6,
         "Switchtype": 0
     },
+    "Flow": {
+        "Type": 243,
+        "Subtype": 30,
+        "Switchtype": 0,
+        "sValue": "0.0",
+        "nValue": 0
+    },
     "GazMeter": {
         "Type": 251,
         "Subtype": 2,
