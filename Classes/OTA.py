@@ -78,6 +78,7 @@ OTA_CODES = {
     "Lumi": {"Folder": "XIAOMI", "ManufCode": 0x1037, "ManufName": "Lumi", "Enabled": True},
     "devbis": {"Folder": "XIAOMI", "ManufCode": 0xdb15, "ManufName": "Lumi", "Enabled": True},
     "z03mmc": {"Folder": "XIAOMI", "ManufCode": 0x0084, "ManufName": "Lumi", "Enabled": True},
+    "Namron": {"Folder": "NAMRON", "ManufCode": 0x11224, "ManufName": "Namron", "Enabled": True},
 }
 
 

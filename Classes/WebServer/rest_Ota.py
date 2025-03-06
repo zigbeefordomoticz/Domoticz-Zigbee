@@ -39,6 +39,7 @@ MATRIX_MANUFACTURER_NAME = {
     "0084": "Lumi",
     "db15": "Lumi",
     "1037": "Lumi",
+    "1224": "Namron"
 }
 
 
