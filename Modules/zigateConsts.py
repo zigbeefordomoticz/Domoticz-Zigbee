@@ -1786,6 +1786,7 @@ CLUSTERS_LIST = [
     "0100",  # Shade Configuration
     "0102",  # Windows Covering / SHutter
     "0403",  # Measurement: Pression atmospherique
+    "0404",  # Measurement: Flow
     "0405",  # Relative Humidity Measurement
     "0702",  # Smart Energy Metering
     "0006",  # On/Off
@@ -1968,6 +1969,12 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
             },
         }
     },
+    "0404": {
+        "Attributes": {
+            "0000": {"DataType": "20", "MinInterval": "003C", "MaxInterval": "0384", "TimeOut": "0000", "Change": "01"},
+        }
+    },
+
     # Humidity
     "0405": {
         "Attributes": {
