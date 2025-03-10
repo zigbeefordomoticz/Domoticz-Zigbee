@@ -660,10 +660,12 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, clust
         # In case Attributes List exists, we have give the list of reported attribute.
         if cluster == "0300":
             # We need to evaluate the Attribute on ZDevice basis
-            if self.ListOfDevices[key]["ZDeviceID"] == {}:
+            ZDeviceID = self.ListOfDevices[key].get("ZDeviceID")
+
+            if ZDeviceID is None or ZDeviceID in ( "", {}):
+                self.logging( "Debug", f"------> configure_reporting_for_one_cluster - {key}/{Ep} skip Attribute {attr} for Cluster {cluster} due to ZDeviceID {ZDeviceID}", nwkid=key, )
                 continue
 
-            ZDeviceID = self.ListOfDevices[key]["ZDeviceID"]
             if "ZDeviceID" in cluster_configuration[attr] and (
                 ZDeviceID not in cluster_configuration[attr]["ZDeviceID"] and len(cluster_configuration[attr]["ZDeviceID"]) != 0
             ):
@@ -675,6 +677,7 @@ def configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, clust
             continue
 
         if is_tobe_skip(self, key, Ep, cluster, attr):
+            self.logging( "Debug", f"------> configure_reporting_for_one_cluster - {key}/{Ep} skip Attribute {attr} for Cluster {cluster} due tis_tobe_skip()", nwkid=key, )
             continue
 
         # Check if we have a Manufacturer Specific Cluster/Attribute. If that is the case, we need to send what we have ,
