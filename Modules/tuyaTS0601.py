@@ -1233,6 +1233,11 @@ TS0601_COMMANDS = {
     "TuyaAntifrost": ts0601_antifrost,
     "calibration": ts0601_action_calibration_legacy,
     "Calibration": ts0601_action_calibration_corrected,
+    "PowerOnAfterOffOn": (None, "04"),
+    "ReclosingAllowedTimes": (None, "02"),
+    "ReclosingEnabled": (None, "01"),
+    "RecloseRecover": (None, "02"),
+    "PoweronDelay": (None, "02"),
 }
 
 
