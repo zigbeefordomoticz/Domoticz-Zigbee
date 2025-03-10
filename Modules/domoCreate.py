@@ -16,12 +16,12 @@
 """
 
 
-from Modules.domoticzAbstractLayer import (FreeUnit, domo_create_api)
+from Modules.domoticzAbstractLayer import FreeUnit, domo_create_api
 from Modules.domoTools import (GetType, subtypeRGB_FromProfile_Device_IDs,
                                subtypeRGB_FromProfile_Device_IDs_onEp2,
                                update_domoticz_widget)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
-from Modules.tools import is_domoticz_new_blind
+from Modules.tools import get_deviceconf_parameter_value, is_domoticz_new_blind
 
 
 def cleanup_widget_Type(widget_type_list):
@@ -72,6 +72,7 @@ def deviceName(self, NWKID, DeviceType, IEEE_, EP_):
     self.log.logging("WidgetCreation", "Debug", "deviceName - Dev Name: %s" % devName, NWKID)
 
     return devName
+
 
 def createSwitchSelector(self, nbSelector, DeviceType=None, OffHidden=False, SelectorStyle=0):
     """
@@ -256,7 +257,8 @@ def CreateDomoDevice(self, Devices, NWKID):
         self.log.logging("WidgetCreation", "Error", "CreateDomoDevice - Cannot create a Device without an IEEE or not in ListOfDevice .")
         return
 
-    DeviceID_IEEE = self.ListOfDevices[NWKID]["IEEE"]
+    DeviceID_IEEE = self.ListOfDevices[NWKID].get("IEEE", "")
+    model_name = self.ListOfDevices[NWKID].get("Model", "")
 
     # When Type is at Global level, then we create all Type against the 1st EP
     # If Type needs to be associated to EP, then it must be at EP level and nothing at Global level
@@ -285,8 +287,11 @@ def CreateDomoDevice(self, Devices, NWKID):
         # In such case and the device is a Bulb or a Dimmer Switch we will get a combinaison of Switch/LvlControl and ColorControlxxx
         # We want to avoid creating of 3 widgets while 1 is enought.
         # if self.ListOfDevices[NWKID][ "Model"] not in self.DeviceConf:
-        self.log.logging("WidgetCreation", "Debug", "---> Check if we need to reduce Type: %s" % Type)
-        Type = cleanup_widget_Type(Type)
+        allow_switch_lvlcontrol = get_deviceconf_parameter_value(self, model_name, "AllowSwitchLvlControl", return_default=False)
+        self.log.logging("WidgetCreation", "Debug", "---> Check if we need to reduce Type: %s, AllowSwitchLvlControl: %s" % (Type, allow_switch_lvlcontrol), NWKID)
+
+        if not allow_switch_lvlcontrol:
+            Type = cleanup_widget_Type(Type)
 
         self.log.logging("WidgetCreation", "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
@@ -321,6 +326,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
     # for Ep
     update_device_type( self, NWKID, GlobalType )
+
 
 def update_device_type( self, NWKID, GlobalType ):
     self.log.logging("WidgetCreation", "Debug", "GlobalType: %s" % (str(GlobalType)), NWKID)
@@ -392,6 +398,7 @@ def create_xcube_widgets(self, Devices, NWKID, DeviceID_IEEE, Ep, t):
     else:
         self.log.logging( "WidgetCreation", "Debug", f"create_xcube_widgets - widgetID {idx} for 'Text'")
         self.ListOfDevices[NWKID]["Ep"][Ep]["ClusterType"][str(idx)] = "Text"
+
 
 def number_switch_selectors( widget_type ):
     if widget_type not in SWITCH_SELECTORS:
@@ -529,13 +536,15 @@ def create_native_widget( self, Devices, NwkId, DeviceID_IEEE, Ep, widget_name):
         set_default_value( self, Devices, DeviceID_IEEE, unit, widget_record)
     return True
 
+
 def set_default_value( self, Devices, device_id_ieee, device_unit, widget_record):
     # Check if we need to initialize the Widget immediatly
     if device_unit and "sValue" in widget_record and "nValue" in widget_record:
         sValue = widget_record["sValue"] 
         nValue = widget_record["nValue"] 
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, 0, 0, ForceUpdate_=True)
-   
+
+ 
 SIMPLE_WIDGET = {
     "AirPurifierAlarm": {
         "Type": 243,
@@ -942,6 +951,7 @@ BLIND_DOMOTICZ_2022 = {
     "Vanne": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
     "Curtain": { "Type": 244, "Subtype": 73, "Switchtype": 22 },
 } 
+
 
 BLIND_DOMOTICZ_2023 = {
     # Blinds new version after 2023.1
