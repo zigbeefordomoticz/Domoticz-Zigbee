@@ -14,7 +14,9 @@ import os
 import socket
 import ssl
 import threading
+import time
 import traceback
+import tracemalloc
 
 from Classes.WebServer.tools import MAX_BLOCK_SIZE
 from Modules.domoticzAbstractLayer import domoticz_connection
@@ -150,23 +152,36 @@ def handle_client(self, client_socket, client_addr):
     self.clients[str(client_addr)] = client_socket
 
     client_socket.settimeout(1)
+    # tracemalloc.start()
     try:
         while self.running:
             try:
-                # Let's receive the first chunck (to get the headers)
-                data = receive_data(self, client_socket).decode('utf-8')
+                #snapshot = tracemalloc.take_snapshot()
+                #top_stats = snapshot.statistics('lineno')
 
-                if not data:
+                # Let's receive the first chunck (to get the headers)
+                incoming_data = receive_data(self, client_socket)
+                self.logging("Debug", f"incoming_data {incoming_data}")
+
+                try:
+                    incoming_data = incoming_data.decode('utf-8')
+                    self.logging("Debug", f"incoming_data decoded {incoming_data}")
+
+                except UnicodeDecodeError:
+                    self.logging("Debug", "Received non-UTF-8 data, handling as binary")
+                    continue
+
+                if not incoming_data:
                     self.logging("Debug", f"no data from {client_addr}")
                     break
 
-                method, path, headers, body = parse_http_request(data)
+                method, path, headers, body = parse_http_request(incoming_data)
                 content_length = int(headers.get('Content-Length', 0))
 
                 self.logging("Debug", f"handle_client from method: {method} path: {path} content_length: {content_length} len_body: {len(body)} headers: {headers}")
 
                 received_length = len(body)
-                
+
                 while received_length <= content_length:
                     self.logging("Debug", f"handle_client received_length: {received_length} content_length: {content_length} {content_length - received_length}")
                     additional_data = receive_data(self, client_socket, content_length - len(body)).decode('utf-8')
@@ -177,8 +192,12 @@ def handle_client(self, client_socket, client_addr):
                     received_length += len(additional_data)
 
                 self.logging("Debug", f"handle_client content_length: {content_length} len_body: {len(body)}")
-                Data = decode_http_data(self, method, path, headers, body.encode('utf-8'))
-                self.onMessage(client_socket, Data)
+                self.onMessage(client_socket, decode_http_data(self, method, path, headers, body.encode('utf-8')))
+
+                #self.logging("Log", "[ Top 10 Memory-consuming Lines ]")
+                #for stat in top_stats[:10]:
+                #    self.logging("Log", stat)
+
 
             except socket.timeout:
                 self.logging("Debug", f"Socket timeout {client_addr}")

@@ -11,20 +11,24 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 def prepResponseMessage(self, _response):
+    plugin_conf = self.pluginconf.pluginConf  # Cache the config reference
 
-    if self.pluginconf.pluginConf["enableKeepalive"]:
-        _response["Headers"]["Connection"] = "Keep-alive"
-    else:
-        _response["Headers"]["Connection"] = "Close"
+    # Default headers
+    _response["Headers"].update({
+        "Connection": "Keep-alive" if plugin_conf.get("enableKeepalive", False) else "Close",
+        "Content-Type": "application/json; charset=utf-8"
+    })
+
     _response["Data"] = {}
     _response["Status"] = "200 OK"
-    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-    if not self.pluginconf.pluginConf["enableCache"]:
-        _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        _response["Headers"]["Pragma"] = "no-cache"
-        _response["Headers"]["Expires"] = "0"
-        _response["Headers"]["Accept"] = "*/*"
+    if not plugin_conf.get("enableCache", False):
+        _response["Headers"].update({
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+            "Accept": "*/*"
+        })
     else:
         _response["Headers"]["Cache-Control"] = "private"
 
@@ -32,24 +36,19 @@ def prepResponseMessage(self, _response):
 
 
 def setupHeadersResponse(cookie=None):
+    _response = {
+        "Headers": {
+            "Server": "Domoticz",
+            "User-Agent": "Plugin-Zigbee4Domoticz/v1",
+            "Access-Control-Allow-Headers": "Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With",
+            "Access-Control-Allow-Methods": "GET, POST, DELETE",
+            "Access-Control-Allow-Origin": "*",
+            "Referrer-Policy": "no-referrer"
+        }
+    }
 
-    _response = {"Headers": {}}
-    _response["Headers"]["Server"] = "Domoticz"
-    _response["Headers"]["User-Agent"] = "Plugin-Zigbee4Domoticz/v1"
-
-    _response["Headers"]["Access-Control-Allow-Headers"] = "Cache-Control, Pragma, Origin, Authorization,   Content-Type, X-Requested-With"
-    _response["Headers"]["Access-Control-Allow-Methods"] = "GET, POST, DELETE"
-    _response["Headers"]["Access-Control-Allow-Origin"] = "*"
-
-    _response["Headers"]["Referrer-Policy"] = "no-referrer"
-
+    # Add cookie only if provided
     if cookie:
         _response["Headers"]["Cookie"] = cookie
-
-    # _response["Headers"]["Accept-Ranges"] = "bytes"
-    # allow users of a web application to include images from any origin in their own conten
-    # and all scripts only to a specific server that hosts trusted code.
-    # _response["Headers"]["Content-Security-Policy"] = "default-src 'self'; img-src *"
-    # _response["Headers"]["Content-Security-Policy"] = "default-src * 'unsafe-inline' 'unsafe-eval'"
 
     return _response
