@@ -174,16 +174,19 @@ def getEPforClusterType(self, NWKID, ClusterType):
 
 def getClusterListforEP(self, NWKID, Ep):
 
-    ClusterList = [
-        cluster
-        for cluster in ["fc00", "0500", "0502", "0406", "0400", "0402", "0001"]
-        if cluster in self.ListOfDevices[NWKID]["Ep"][Ep]
-    ]
+    ClusterList = []
+    #ClusterList = [
+    #    cluster
+    #    for cluster in ["fc00", "0500", "0502", "0406", "0400", "0402", "0001"]
+    #    if cluster in self.ListOfDevices[NWKID]["Ep"][Ep]
+    #]
+    #if self.ListOfDevices[NWKID]["Ep"][Ep]:
+    #    for cluster in list(self.ListOfDevices[NWKID]["Ep"][Ep].keys()):
+    #        if cluster not in ("ClusterType", "Type", "ColorMode") and cluster not in ClusterList:
+    #            ClusterList.append(cluster)
 
-    if self.ListOfDevices[NWKID]["Ep"][Ep]:
-        for cluster in list(self.ListOfDevices[NWKID]["Ep"][Ep].keys()):
-            if cluster not in ("ClusterType", "Type", "ColorMode") and cluster not in ClusterList:
-                ClusterList.append(cluster)
+    device = self.ListOfDevices.get(NWKID, {}).get("Ep", {}).get(Ep, {})
+    ClusterList.extend( [cluster for cluster in device if cluster not in {"ClusterType", "Type", "ColorMode"} and cluster not in ClusterList] )
     return ClusterList
 
 
