@@ -19,7 +19,6 @@ DEBUG_HTTP = False
 
 
 def keepConnectionAlive(self):
-
     self.heartbeats += 1
 
 
