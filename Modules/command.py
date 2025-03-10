@@ -687,6 +687,11 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
             actuator_setlevel(self, Nwkid, EPout, 255, "Light", "0000", withOnOff=move_withonoff)
 
     else:
+        min_dim_percent = get_device_config_param(self, Nwkid, "MinDimmerPercentage") or 0
+        if min_dim_percent:
+            self.log.logging( "Command", "Log", f"Min Dimmer Percentage {min_dim_percent}", Nwkid, )
+            actuator_setlevel(self, Nwkid, EPout, min_dim_percent, "Light", "0000",withOnOff=False)
+
         actuator_on(self, Nwkid, EPout, "Light")
 
     if is_dimmable_blind(self, Devices, DeviceID, Unit):
@@ -1048,7 +1053,11 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         move_to_level = self.ListOfDevices.get(Nwkid, {}).get("Param", {}).get("moveToLevel")
         transitionMoveLevel = f"{int(move_to_level):04x}" if move_to_level is not None else "0010"
 
-        actuator_setlevel(self, Nwkid, EPout, Level, "Light", transitionMoveLevel, withOnOff=True)
+        min_dim_percent = get_device_config_param(self, Nwkid, "MinDimmerPercentage") or 0
+        move_withonoff = bool( get_device_config_param(self, Nwkid, "MoveWithOnOff") or get_deviceconf_parameter_value(self, model_name, "MoveWithOnOff", return_default=True) )
+
+        Level = max(min_dim_percent, Level)
+        actuator_setlevel(self, Nwkid, EPout, Level, "Light", transitionMoveLevel, withOnOff=move_withonoff)
 
     # Domoticz widget update
     dimmable_blind = is_dimmable_blind(self, Devices, DeviceID, Unit)

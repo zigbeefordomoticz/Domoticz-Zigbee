@@ -142,6 +142,7 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         else:
             self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
 
+
 def do_we_have_key_clusters( self, NWKID ):
     # We will just check if we have at least One cluster for whcih a Widget would be created
     if "Ep" not in self.ListOfDevices[NWKID]:
@@ -350,12 +351,14 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
         full_provision_device(self, Devices, NWKID, RIA, status)
         return
 
+
 def create_device_without_Domoticz_Widgets( self, Nwkid):
         self.ListOfDevices[Nwkid]["Status"] = "notDB"
         self.ListOfDevices[Nwkid]["PairingInProgress"] = False
         self.CommiSSionning = False
         self.ListOfDevices[ Nwkid ]["CertifiedDevice"] = self.ListOfDevices[Nwkid]["Model"] in self.DeviceConf
-   
+
+
 def full_provision_device(self, Devices, NWKID, RIA, status):
 
     self.log.logging(
@@ -403,7 +406,6 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
 
     self.ListOfDevices[NWKID]["PairingInProgress"] = False
 
-    
 
 def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 
@@ -469,17 +471,9 @@ def zigbee_provision_device(self, Devices, NWKID, RIA, status):
 def binding_needed_clusters_with_zigate(self, NWKID):
     cluster_to_bind = CLUSTERS_LIST
 
-    # if (
-    #    "BindingTimeStamps" in self.ListOfDevices[NWKID]
-    #    and self.ListOfDevices[NWKID]["BindingTimeStamps"] < time.time() + 60
-    # ):
-    #    # skip it . alreday in progress
-    #    return
-    # self.ListOfDevices[NWKID]["BindingTimeStamps"] = time.time()
-
-
     # Do we have to follow Certified Conf file, or look for standard mecanishm ?
-    if "Model" in self.ListOfDevices[NWKID] and self.ListOfDevices[NWKID]["Model"] not in ( {}, "") and self.ListOfDevices[NWKID]["Model"] in self.DeviceConf:
+    model_name = self.ListOfDevices[NWKID].get("Model", "")
+    if model_name not in ( {}, "") and model_name in self.DeviceConf:
         self.log.logging("Pairing", "Debug", "binding_needed_clusters_with_zigate %s based on Device Configuration" % (NWKID))
         _model = self.ListOfDevices[NWKID]["Model"]
 
@@ -523,6 +517,7 @@ def binding_needed_clusters_with_zigate(self, NWKID):
                     # Finaly binding
                     bindDevice(self, self.ListOfDevices[NWKID]["IEEE"], ep, iterBindCluster)
 
+
 def delay_binding_and_reporting(self, Nwkid):
     
     if "Model" not in self.ListOfDevices[Nwkid] or self.ListOfDevices[Nwkid]["Model"] in ( "", {}):
@@ -559,6 +554,7 @@ def handle_IAS_enrollmment_if_needed(self, NWKID, RIA, status):
             self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" % (RIA, NWKID, status))
             self.iaszonemgt.IASWD_enroll(NWKID, iterEp)
 
+
 def device_interview(self, Nwkid):
     self.log.logging("Pairing", "Debug", "device_interview %s" %Nwkid)
                 
@@ -568,6 +564,7 @@ def device_interview(self, Nwkid):
         self.log.logging("Pairing", "Debug", "device_interview %s Read Attribute for cluster: %s" %(Nwkid, iterReadAttrCluster ))
         func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
         func(self, Nwkid)
+
 
 def get_list_of_clusters_for_device( self, Nwkid):
     # We want to collect all clusters for this devices despite the EndPoint
@@ -585,6 +582,7 @@ def get_list_of_clusters_for_device( self, Nwkid):
             if iterReadAttrCluster not in target_list_of_cluster:
                 target_list_of_cluster.append( iterReadAttrCluster )
     return target_list_of_cluster   
+
 
 def send_identify_effect(self, NWKID):
     # Identify for ZLL compatible devices
