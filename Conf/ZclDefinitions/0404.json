@@ -9,7 +9,7 @@
             "Enabled": true,
             "Name": "MeasuredValue",
             "DataType": "29" ,
-            "Range": [ "954d", "7fff"] ,
+            "Range": [ "0000", "7fff"] ,
             "Acc": "RP" ,
             "Default": "ffff",
             "Mandatory": true,
