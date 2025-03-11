@@ -16,12 +16,9 @@ import ssl
 import threading
 import time
 import traceback
-import tracemalloc
+
 
 from Classes.WebServer.tools import MAX_BLOCK_SIZE
-
-FILTER_PATH = "/opt/domoticz/userdata/plugins/Domoticz-Zigbee"
-FILTER_PACKAGE = "zigpy"
 
 def startWebServer(self):
 
@@ -153,13 +150,10 @@ def handle_client(self, client_socket, client_addr):
     self.clients[str(client_addr)] = client_socket
 
     client_socket.settimeout(1)
-    tracemalloc.start()
+
     try:
         while self.running:
             try:
-                snapshot = tracemalloc.take_snapshot()
-                top_stats = snapshot.statistics('lineno')
-
                 # Let's receive the first chunck (to get the headers)
                 incoming_data = receive_data(self, client_socket)
                 self.logging("Debug", f"incoming_data {incoming_data}")
@@ -207,15 +201,6 @@ def handle_client(self, client_socket, client_addr):
                 self.logging("Log", f"Unexpected error with {client_addr}: {e}")
                 self.logging("Log", f"{traceback.format_exc()}")
                 break
-
-            self.logging("Log", "[ Top 10 Memory-consuming Lines ]")
-            filtered_stats = [
-                stat for stat in top_stats 
-                if FILTER_PATH in stat.traceback[0].filename or FILTER_PACKAGE in stat.traceback[0].filename 
-            ]
-
-            for stat in filtered_stats[:25]:
-                self.logging("Log", stat)
 
     finally:
         self.logging("Debug", f"Closing connection to {client_addr}.")
