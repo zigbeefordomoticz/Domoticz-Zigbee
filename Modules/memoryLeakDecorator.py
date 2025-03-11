@@ -14,8 +14,8 @@
 import functools
 import tracemalloc
 
-FILTER_PATH = "/opt/domoticz/userdata/plugins/Domoticz-Zigbee"
-FILTER_PACKAGE = "zigpy"
+FILTER_PATH = "Domoticz-Zigbee"
+
 
 def memory_leak_detector(func):
     """Decorator to trace memory usage before and after function execution."""
@@ -39,17 +39,15 @@ def memory_leak_detector(func):
         # Filter for relevant lines (optional)
         filtered_stats = [
             stat for stat in top_stats
-            if stat.count > 1
-            and stat.size > 50 * 1024 
-            and (FILTER_PATH in stat.traceback[0].filename or FILTER_PACKAGE in stat.traceback[0].filename)
+            if stat.count > 1 and stat.size > (5 * 1024)
+            and FILTER_PATH in stat.traceback[0].filename
         ]
 
         # Log memory usage
         if filtered_stats:
-            self.log.logging("MemoryLeak", "Log", f"[ Memory Leak Detected in '{func.__name__}' ]")
+            self.log.logging("MemoryLeak", "Debug", f"[ Memory Leak Detected in '{func.__name__}' ]")
             for stat in filtered_stats[:10]:  # Limit to top 10 results
-                self.log.logging("MemoryLeak", "Log", stat)
+                self.log.logging("MemoryLeak", "Debug", stat)
 
         return result
-
     return wrapper
