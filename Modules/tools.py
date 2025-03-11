@@ -1326,17 +1326,28 @@ def set_request_phase_datastruct(self, DeviceAttribute, key, endpoint, clusterId
 
 
 def get_list_waiting_request_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
-    # Return a list of Attributes which are waiting to be writeAttrbutes
-    if key not in self.ListOfDevices:
+    """Return a list of Attributes that are waiting to be written"""
+
+    # Return early if key is not in ListOfDevices
+    device = self.ListOfDevices.get(key)
+    if not device:
         return []
+
+    # Check if data structure is valid
     if check_datastruct(self, DeviceAttribute, key, endpoint, clusterId) is None:
         return []
-    return [
-        x
-        for x in list(self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["ZigateRequest"].keys())
-        if self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["ZigateRequest"][x]["Status"]
-        == "waiting"
-    ]
+
+    # Navigate safely through nested dictionary
+    zigate_request = (
+        device.get(DeviceAttribute, {})
+        .get("Ep", {})
+        .get(endpoint, {})
+        .get(clusterId, {})
+        .get("ZigateRequest", {})
+    )
+
+    # Return attributes where status is "waiting"
+    return [attr for attr, data in zigate_request.items() if data.get("Status") == "waiting"]
 
 
 def set_isqn_datastruct(self, DeviceAttribute, key, endpoint, clusterId, AttributeId, isqn):
