@@ -23,6 +23,8 @@ SONOFF_MIN_TEMP = "0004"
 SONOFF_MAX_HUMI = "0005"
 SONOFF_MIN_HUMI = "0006"
 
+SONOFF_WATER_CLOSE_VALVE_TIMEOUT_ATTRIBUTE = "5011"
+
 
 def is_sonoff_device(self, nwkid):
     return self.ListOfDevices[nwkid]["Manufacturer"] == SONOFF_MANUFACTURER_ID or self.ListOfDevices[nwkid]["Manufacturer Name"] == SONOFF_MAUFACTURER_NAME
@@ -51,6 +53,13 @@ def sonoff_temp_humi_ranges(self, nwkid, value):
     write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", SONOFF_MIN_HUMI, "21", "%04x" %humi_min, ackIsDisabled=False)
 
 
+def auto_close_when_water_shortage(self, nwkid, value):
+    """ Automatically shut down the water valve after the water shortage exceeds 30 minutes. """
+
+    self.log.logging("Sonoff", "Debug", "auto_close_when_water_shortage - Nwkid: %s value: %s" % (nwkid, value))
+    water_close_valve_timeout = "%04x" % value
+    write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", SONOFF_WATER_CLOSE_VALVE_TIMEOUT_ATTRIBUTE, "20", water_close_valve_timeout, ackIsDisabled=False)
+
 
 SONOFF_DEVICE_PARAMETERS = {
     "SonOffTRVChildLock": sonoff_child_lock,
@@ -58,5 +67,6 @@ SONOFF_DEVICE_PARAMETERS = {
     "SONOFF_TEMP_MAX": sonoff_temp_humi_ranges,
     "SONOFF_TEMP_MIN": sonoff_temp_humi_ranges,
     "SONOFF_HUMI_MAX": sonoff_temp_humi_ranges,
-    "SONOFF_HUMI_MIN": sonoff_temp_humi_ranges
+    "SONOFF_HUMI_MIN": sonoff_temp_humi_ranges,
+    "SONOFF_SWV_WATER_CLOSE_VALVE_TIMEOUT": auto_close_when_water_shortage
 }
