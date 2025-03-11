@@ -19,8 +19,9 @@ import traceback
 import tracemalloc
 
 from Classes.WebServer.tools import MAX_BLOCK_SIZE
-from Modules.domoticzAbstractLayer import domoticz_connection
 
+FILTER_PATH = "/opt/domoticz/userdata/plugins/Domoticz-Zigbee"
+FILTER_PACKAGE = "zigpy"
 
 def startWebServer(self):
 
@@ -152,12 +153,12 @@ def handle_client(self, client_socket, client_addr):
     self.clients[str(client_addr)] = client_socket
 
     client_socket.settimeout(1)
-    # tracemalloc.start()
+    tracemalloc.start()
     try:
         while self.running:
             try:
-                #snapshot = tracemalloc.take_snapshot()
-                #top_stats = snapshot.statistics('lineno')
+                snapshot = tracemalloc.take_snapshot()
+                top_stats = snapshot.statistics('lineno')
 
                 # Let's receive the first chunck (to get the headers)
                 incoming_data = receive_data(self, client_socket)
@@ -194,11 +195,6 @@ def handle_client(self, client_socket, client_addr):
                 self.logging("Debug", f"handle_client content_length: {content_length} len_body: {len(body)}")
                 self.onMessage(client_socket, decode_http_data(self, method, path, headers, body.encode('utf-8')))
 
-                #self.logging("Log", "[ Top 10 Memory-consuming Lines ]")
-                #for stat in top_stats[:10]:
-                #    self.logging("Log", stat)
-
-
             except socket.timeout:
                 self.logging("Debug", f"Socket timeout {client_addr}")
                 continue
@@ -211,6 +207,15 @@ def handle_client(self, client_socket, client_addr):
                 self.logging("Log", f"Unexpected error with {client_addr}: {e}")
                 self.logging("Log", f"{traceback.format_exc()}")
                 break
+
+            self.logging("Log", "[ Top 10 Memory-consuming Lines ]")
+            filtered_stats = [
+                stat for stat in top_stats 
+                if FILTER_PATH in stat.traceback[0].filename or FILTER_PACKAGE in stat.traceback[0].filename 
+            ]
+
+            for stat in filtered_stats[:25]:
+                self.logging("Log", stat)
 
     finally:
         self.logging("Debug", f"Closing connection to {client_addr}.")
@@ -392,7 +397,7 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
 
         server_loop(self, )
 
-        self.logging( "Debug", "webui_thread - ended")
+        self.logging( "Log", "++ WebUI - server stopped")
 
     except Exception as error:
         self.logging( "Error", f"webui_thread - error in run_server {host} {port}")
@@ -425,6 +430,9 @@ def server_loop(self, ):
         Exception: Logs a generic error message and breaks the loop.
 
     """
+    # Start cleanup thread once when server starts
+    self.cleanup_thread = threading.Thread(target=cleanup_threads, args=(self,), daemon=True)
+    self.cleanup_thread.start()
 
     try:
         self.running = True
@@ -439,6 +447,9 @@ def server_loop(self, ):
                 client_thread.daemon = True
                 client_thread.start()
                 self.client_threads.append(client_thread)
+                
+                # Clean up completed threads
+                self.client_threads = [t for t in self.client_threads if t.is_alive()]
 
             except (socket.timeout, TimeoutError):
                 self.logging("Debug", "server_loop timeout")
@@ -479,6 +490,12 @@ def onDisconnect(self, Connection):
 
     self.logging("Error", "onDisconnect %s on WebUI deprecated" % (Connection))
 
+def cleanup_threads(self):
+    """Background thread to clean up completed client threads periodically."""
+    while self.running:
+        self.client_threads = [t for t in self.client_threads if t.is_alive()]
+        time.sleep(15)
+
 
 def onStop(self):
 
@@ -486,8 +503,12 @@ def onStop(self):
     
     self.running = False
 
-    for client_thread in self.client_threads:
-        client_thread.join()
+    if hasattr(self, "cleanup_thread") and self.cleanup_thread.is_alive():
+        self.cleanup_thread.join()  # Wait for cleanup thread to exit
+
+    for t in self.client_threads:
+        if t.is_alive():
+            t.join(timeout=2)  # Gracefully wait for client threads to finish
     
     self.server_thread.join()
     self.logging("Status", "WebUI shutdown completed")

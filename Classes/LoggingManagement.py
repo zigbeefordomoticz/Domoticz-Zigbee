@@ -17,6 +17,7 @@
 
 """
 
+import ast
 import inspect
 import json
 import logging
@@ -506,8 +507,10 @@ def process_logging_event( self, logging_tuple):
         self.zigpy_login()
 
     try:
-        context = eval(context)
-
+        context = ast.literal_eval(context)
+    except (ValueError, SyntaxError) as err:
+        _catch_error_event(self, context, logging_tuple, err)
+        return
     except Exception as err:
         _catch_error_event(self, context,logging_tuple, err )
         return
