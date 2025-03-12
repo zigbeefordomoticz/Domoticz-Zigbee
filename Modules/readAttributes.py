@@ -141,57 +141,66 @@ def split_list(list_in, wanted_parts=1):
 
 
 def normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled, force=False):
-
-    if "Health" in self.ListOfDevices[addr] and self.ListOfDevices[addr]["Health"] == "Not Reachable":
+    # Check if the device is unreachable
+    device_health = self.ListOfDevices.get(addr, {}).get("Health")
+    if device_health == "Not Reachable":
         return
 
     direction = "00"
+    # Check if datastruct exists
     check_datastruct(self, "ReadAttributes", addr, EpOut, Cluster)
 
+    # Ensure ListOfAttributes is always a list
     if not isinstance(ListOfAttributes, list):
-        # We received only 1 attribute
-        _tmpAttr = ListOfAttributes
-        ListOfAttributes = []
-        ListOfAttributes.append(_tmpAttr)
+        ListOfAttributes = [ListOfAttributes]
 
     lenAttr = 0
     Attr = ""
     attributeList = []
-    self.log.logging("ReadAttributes", "Debug2", "attributes: " + str(ListOfAttributes), nwkid=addr)
+
+    # Logging received attributes
+    self.log.logging("ReadAttributes", "Debug2", f"attributes: {ListOfAttributes}", nwkid=addr)
+
+    # Process each attribute
     for x in ListOfAttributes:
+        # Skip if the EpOut is 'f2' (GreenZigbee)
         if EpOut == 'f2':
-            # Zigbee Green skiping
-            self.log.logging("ReadAttributes", "Debug", "Skiping Read attribute on GreenZigbee Ep: %s Cluster: %s Attribute: %s" %( EpOut, Cluster, x), nwkid=addr)
-            continue
-        
-        Attr_ = "%04x" % (x)
-        if not force and skipThisAttribute(self, addr, EpOut, Cluster, Attr_):
-            self.log.logging("ReadAttributes", "Debug", "Skiping attribute %s/%s %s %s" %(addr, EpOut, Cluster, Attr_), nwkid=addr)
+            self.log.logging("ReadAttributes", "Debug", f"Skipping Read attribute on GreenZigbee Ep: {EpOut} Cluster: {Cluster} Attribute: {x}", nwkid=addr)
             continue
 
+        Attr_ = f"{x:04x}"
+        # Skip the attribute if needed
+        if not force and skipThisAttribute(self, addr, EpOut, Cluster, Attr_):
+            self.log.logging("ReadAttributes", "Debug", f"Skipping attribute {addr}/{EpOut} {Cluster} {Attr_}", nwkid=addr)
+            continue
+
+        # Reset attribute datastruct
         reset_attr_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, Attr_)
+
         Attr += Attr_
         lenAttr += 1
         attributeList.append(Attr_)
 
+    # If no attributes to read, return
     if lenAttr == 0:
         return
 
+    # Log the final request details
     self.log.logging(
         "ReadAttributes",
         "Debug",
-        "-- normalizedReadAttrReq ---- addr ="
-        + str(addr)
-        + " Cluster = "
-        + str(Cluster)
-        + " Attributes = "
-        + ", ".join("0x{:04x}".format(num) for num in ListOfAttributes),
+        f"-- normalizedReadAttrReq ---- addr = {addr} Cluster = {Cluster} Attributes = {', '.join(f'0x{num:04x}' for num in ListOfAttributes)}",
         nwkid=addr,
     )
-    i_sqn = read_attribute( self, addr, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=ackIsDisabled, )
 
+    # Read attributes
+    i_sqn = read_attribute(self, addr, EpIn, EpOut, Cluster, direction, manufacturer_spec, manufacturer, lenAttr, Attr, ackIsDisabled=ackIsDisabled)
+
+    # Set ISQN for each attribute
     for x in attributeList:
         set_isqn_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, x, i_sqn)
+
+    # Set timestamp for the read attributes
     set_timestamp_datastruct(self, "ReadAttributes", addr, EpOut, Cluster, int(time.time()))
 
 

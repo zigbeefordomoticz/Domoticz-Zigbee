@@ -12,11 +12,13 @@
 
 
 import json
-from time import time
+import time
 
 from Modules.domoticzAbstractLayer import (domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
+
+MAX_TREND_STAT_TABLE = 120
 
 
 class TransportStatistics:
@@ -49,7 +51,7 @@ class TransportStatistics:
         self._maxRxProcesses = self._cumulRxProcess = self._cntRxProcess = self._averageRxProcess = 0
         self._max_reading_thread_timing = self._cumul_reading_thread_timing = self._cnt_reading_thread_timing = self._average_reading_thread_timing = 0
         self._max_reading_zigpy_timing = self._cumul_reading_zigpy_timing = self._cnt_reading_zigpy_timing = self._average_reading_zigpy_timing = 0
-        self._start = int(time())
+        self._start = int(time.time())
         self.TrendStats = []
         self.pluginconf = pluginconf
         self.log = log
@@ -59,11 +61,14 @@ class TransportStatistics:
     def starttime(self):
         return self._start
 
+
     def pdm_loaded(self):
         self._pdmLoads += 1
 
+
     def get_pdm_loaded(self):
         return self._pdmLoads
+
 
     def add_timing_zigpy(self, timing):
         self._cumul_reading_zigpy_timing += timing
@@ -85,6 +90,7 @@ class TransportStatistics:
                 % (self._max_reading_thread_timing, self._average_reading_thread_timing)
             )
 
+
     def add_timing8000(self, timing):
 
         self._cumulTiming8000 += timing
@@ -96,6 +102,7 @@ class TransportStatistics:
                 "Coordinator command round trip 0x8000 Max: %s ms with an of average: %s ms"
                 % (self._maxTiming8000, self._averageTiming8000)
             )
+
 
     def add_timing8011(self, timing):
 
@@ -109,6 +116,7 @@ class TransportStatistics:
                 % (self._maxTiming8011, self._averageTiming8011)
             )
 
+
     def add_timing8012(self, timing):
 
         self._cumulTiming8012 += timing
@@ -120,6 +128,7 @@ class TransportStatistics:
                 "Coordinator command round trip 0x8012 Max: %s ms with an of average: %s ms"
                 % (self._maxTiming8012, self._averageTiming8012)
             )
+
 
     def add_rxTiming(self, timing):
 
@@ -133,66 +142,85 @@ class TransportStatistics:
                 % (self._maxRxProcesses, self._averageRxProcess)
             )
 
+
     def addPointforTrendStats(self, TimeStamp):
 
-        MAX_TREND_STAT_TABLE = 120
-
-        uptime = int(time() - self._start)
+        uptime = max(1, int(time.time() - self._start))  # Avoid division by zero
         Rxps = round(self._received / uptime, 2)
         Txps = round(self._sent / uptime, 2)
-        if len(self.TrendStats) >= MAX_TREND_STAT_TABLE:
-            del self.TrendStats[0]
+
+        # Append new data point
         self.TrendStats.append({"_TS": TimeStamp, "Rxps": Rxps, "Txps": Txps, "Load": self._Load})
+
+        # Keep only the last MAX_TREND_STAT_TABLE entries
+        if len(self.TrendStats) > MAX_TREND_STAT_TABLE:
+            self.TrendStats = self.TrendStats[-MAX_TREND_STAT_TABLE:]  # Efficient slicing
+
 
     def reTx(self):
         """ return the number of crc Errors """
         return self._reTx
 
+
     def crcErrors(self):
         " return the number of crc Errors "
         return self._crcErrors
+
 
     def frameErrors(self):
         " return the number of frame errors"
         return self._frameErrors
 
+
     def sent(self):
         " return he number of sent messages"
         return self._sent
+
 
     def received(self):
         " return the number of received messages"
         return self._received
 
+
     def ackReceived(self):
         return self._ack
+
 
     def ackKOReceived(self):
         return self._ackKO
 
+
     def dataReceived(self):
         return self._data
+
 
     def TOstatus(self):
         return self._TOstatus
 
+
     def TOdata(self):
         return self._TOdata
+
 
     def clusterOK(self):
         return self._clusterOK
 
+
     def clusterKO(self):
         return self._clusterKO
+
 
     def APSFailure(self):
         return self._APSFailure
 
+
     def APSAck(self):
         return self._APSAck
 
+
     def APSNck(self):
         return self._APSNck
+
 
     def printSummary(self):
         if self.received() == 0:
@@ -241,7 +269,7 @@ class TransportStatistics:
             domoticz_status_api("     Average          : %s ms" % (self._averageRxProcess))
 
         t0 = self.starttime()
-        t1 = int(time())
+        t1 = int(time.time())
         _days = 0
         _duration = t1 - t0
         _hours = _duration // 3600
@@ -257,7 +285,7 @@ class TransportStatistics:
 
     def writeReport(self):
 
-        timing = int(time())
+        timing = int(time.time())
         stats = {timing: {}}
         stats[timing]["crcErrors"] = self._crcErrors
         stats[timing]["frameErrors"] = self._frameErrors

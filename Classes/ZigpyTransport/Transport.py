@@ -156,13 +156,7 @@ class ZigpyTransport(object):
         return self.forwarder_queue.qsize()
 
     def loadTransmit(self):
-        # Provide the Load of the Sending Queue
-        #for device in list(self._currently_waiting_requests_list):
-        #    _queue += self._currently_waiting_requests_list[device]
-        #return self.writer_queue.qsize()
         if self.writer_queue is None:
             return 0
         _queue = sum(self._currently_waiting_requests_list[device] + 1 for device in list(self._currently_waiting_requests_list) if self._concurrent_requests_semaphores_list[device].locked())
-        _ret_value = max(_queue - 1, 0) + self.writer_queue.qsize()
-        self.log.logging("Transport", "Debug", "Load: PluginQueue: %3s ZigpyQueue: %3s => %s" %(self.writer_queue.qsize(), _queue, _ret_value ))
-        return _ret_value
+        return max(_queue - 1, 0) + self.writer_queue.qsize()

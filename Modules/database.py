@@ -18,6 +18,7 @@
 """
 
 
+import ast
 import json
 import os.path
 import time
@@ -533,15 +534,19 @@ def CheckDeviceList(self, key, val):
     self.log.logging("Database", "Debug", "CheckDeviceList - Address search : " + str(key), key)
     self.log.logging("Database", "Debug2", "CheckDeviceList - with value : " + str(val), key)
 
-    DeviceListVal = eval(val)
+    try:
+        val = val.strip()  # Remove leading/trailing spaces or newlines
+        device_list_dict = ast.literal_eval(val)
+
+    except (SyntaxError, NameError, TypeError, ZeroDivisionError):
+        self.log.logging("Database", "Error", "CheckDeviceList failed on %s" % val)
+        return
+
+    status = device_list_dict.get("Status")
+
     # Do not load Devices in State == 'unknown' or 'left'
-    if "Status" in DeviceListVal and DeviceListVal["Status"] in (
-        "UNKNOW",
-        "failDB",
-        "DUP",
-        "Removed"
-    ):
-        self.log.logging("Database", "Error", "Not Loading %s as Status: %s" % (key, DeviceListVal["Status"]))
+    if status in ( "UNKNOW", "failDB", "DUP", "Removed" ):
+        self.log.logging("Database", "Error", "Not Loading %s as Status: %s" % (key, status))
         return
 
     if key in self.ListOfDevices:
@@ -549,7 +554,7 @@ def CheckDeviceList(self, key, val):
         self.log.logging("Database", "Error", "CheckDeviceList - Object %s already in the plugin Db !!!" % key)
         return
 
-    if Modules.tools.DeviceExist(self, key, DeviceListVal.get("IEEE", "")):
+    if Modules.tools.DeviceExist(self, key, device_list_dict.get("IEEE", "")):
         # Do not load Devices
         self.log.logging("Database", "Error", "Not Loading %s as no existing IEEE: %s" % (key, str(val)))
         return
@@ -564,29 +569,29 @@ def CheckDeviceList(self, key, val):
     # List of Attribnutes that will be Loaded from the deviceList-xx.txt database
 
     if self.pluginconf.pluginConf["resetPluginDS"]:
-        self.log.logging("Database", "Status", "Z4D resets Build Attributes for %s" % DeviceListVal["IEEE"])
+        self.log.logging("Database", "Status", "Z4D resets Build Attributes for %s" % device_list_dict["IEEE"])
         IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
 
     elif key == "0000":
         # Reduce the number of Attributes loaded for Zigate
         self.log.logging(
-            "Database", "Debug", "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" % DeviceListVal["IEEE"]
+            "Database", "Debug", "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" % device_list_dict["IEEE"]
         )
         IMPORT_ATTRIBUTES = list(set(CIE_ATTRIBUTES))
         self.log.logging("Database", "Debug", "--> Attributes loaded: %s" % IMPORT_ATTRIBUTES)
     else:
         self.log.logging(
-            "Database", "Debug", "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" % DeviceListVal["IEEE"]
+            "Database", "Debug", "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" % device_list_dict["IEEE"]
         )
         IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES + MANUFACTURER_ATTRIBUTES))
 
     self.log.logging("Database", "Debug", "--> Attributes loaded: %s" % IMPORT_ATTRIBUTES)
     for attribute in IMPORT_ATTRIBUTES:
-        if attribute not in DeviceListVal:
+        if attribute not in device_list_dict:
             # self.log.logging( "Database", 'Debug', "--> Attributes not existing: %s" %attribute)
             continue
 
-        self.ListOfDevices[key][attribute] = DeviceListVal[attribute]
+        self.ListOfDevices[key][attribute] = device_list_dict[attribute]
 
         # Patching unitialize Model to empty
         if attribute == "Model" and self.ListOfDevices[key][attribute] == {}:
@@ -601,22 +606,22 @@ def CheckDeviceList(self, key, val):
 
     self.ListOfDevices[key]["Health"] = ""
 
-    if "IEEE" in DeviceListVal:
-        self.ListOfDevices[key]["IEEE"] = DeviceListVal["IEEE"]
+    if "IEEE" in device_list_dict:
+        self.ListOfDevices[key]["IEEE"] = device_list_dict["IEEE"]
         self.log.logging(
             "Database",
             "Debug",
-            "CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal["IEEE"]) + " for NetworkID = " + str(key),
+            "CheckDeviceList - DeviceID (IEEE)  = " + str(device_list_dict["IEEE"]) + " for NetworkID = " + str(key),
             key,
         )
-        if DeviceListVal["IEEE"]:
-            IEEE = DeviceListVal["IEEE"]
+        if device_list_dict["IEEE"]:
+            IEEE = device_list_dict["IEEE"]
             self.IEEE2NWK[IEEE] = key
         else:
             self.log.logging(
                 "Database",
                 "Log",
-                "CheckDeviceList - IEEE = " + str(DeviceListVal["IEEE"]) + " for NWKID = " + str(key),
+                "CheckDeviceList - IEEE = " + str(device_list_dict["IEEE"]) + " for NWKID = " + str(key),
                 key,
             )
 

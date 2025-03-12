@@ -15,8 +15,6 @@ import json
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
 
-REST_COMMANDS = {}
-
 
 def setup_list_rest_commands( self ):
 
@@ -93,10 +91,10 @@ def setup_list_rest_commands( self ):
 
     for rest_command in list_rest_commands:
         name = rest_command["Name"]
-        if name in REST_COMMANDS:
+        if name in self.REST_COMMANDS:
             self.logging("Error", f"setup_list_rest_commands - {name} already loaded")
         else:
-            REST_COMMANDS[name] = {
+            self.REST_COMMANDS[name] = {
                 "Name": name,
                 "Verbs": rest_command["Verbs"],
                 "function": rest_command["function"]
@@ -108,7 +106,7 @@ def do_rest(self, Connection, verb, data, version, command, parameters):
 
     HTTPresponse = None
 
-    if command in REST_COMMANDS and verb in REST_COMMANDS[command]["Verbs"]:
+    if command in self.REST_COMMANDS and verb in self.REST_COMMANDS[command]["Verbs"]:
         self.logging("Debug", f"do_rest - Verb: {verb}, Command: {command}, Param: {parameters} found, ready to execute")
         HTTPresponse = execute_rest_command(self, verb, data, version, command, parameters)
     else:
@@ -137,11 +135,11 @@ def execute_rest_command(self, verb, data, version, command, parameters):
     if command == "help":
         return prepare_help_response(self)
 
-    if version == "1" and (func := REST_COMMANDS[command].get("function")):
+    if version == "1" and (func := self.REST_COMMANDS[command].get("function")):
         self.logging("Debug", f"do_rest - calling REST_COMMANDS[{command}]['function'] with {verb}, {data}, {parameters}")
         return func(verb, data, parameters)
 
-    if version == "2" and (func_v2 := REST_COMMANDS[command].get("functionv2")):
+    if version == "2" and (func_v2 := self.REST_COMMANDS[command].get("functionv2")):
         return func_v2(verb, data, parameters)
 
     return response
@@ -150,7 +148,7 @@ def execute_rest_command(self, verb, data, version, command, parameters):
 def prepare_help_response(self):
     response = prepResponseMessage(self, setupHeadersResponse())
     response["Data"] = json.dumps({
-        x: {"Verbs": REST_COMMANDS[x]["Verbs"]} for x in REST_COMMANDS
+        x: {"Verbs": self.REST_COMMANDS[x]["Verbs"]} for x in self.REST_COMMANDS
     })
     return response
 

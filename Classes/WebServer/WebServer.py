@@ -147,6 +147,7 @@ class WebServer(object):
         readZclClusters,
         device_settings
     ):
+        self.REST_COMMANDS = {}    # Constructed in setup_list_rest_commands
         self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
         self.httpClientConn = None

@@ -280,38 +280,54 @@ def _update_eval_formula( self, formula, input_variable, variable_name):
 
     
 def load_zcl_cluster(self):
-    zcl_cluster_path = Path( self.pluginconf.pluginConf["pluginConfig"]) / "ZclDefinitions"
-    if not isdir(zcl_cluster_path):
-        return
+    """Loads ZCL Cluster definitions from the plugin configuration directory."""
+
+    zcl_cluster_path = Path(self.pluginconf.pluginConf["pluginConfig"]) / "ZclDefinitions"
+    if not zcl_cluster_path.is_dir():
+        return  # No directory found, exit early
 
     self.log.logging("ZclClusters", "Status", "Z4D loads ZCL Cluster definitions")
 
-    zcl_cluster_definition = [f for f in listdir(zcl_cluster_path) if isfile(join(zcl_cluster_path, f))]
-    for cluster_definition in sorted(zcl_cluster_definition):
-        cluster_filename = zcl_cluster_path / cluster_definition
-        cluster_definition = _read_zcl_cluster( self, cluster_filename )
+    for cluster_filename in sorted(zcl_cluster_path.iterdir()):
+        if not cluster_filename.is_file():
+            continue  # Skip directories
 
-        if (
-            cluster_definition is None
-            or "ClusterId" not in cluster_definition
-            or "Enabled" not in cluster_definition or not cluster_definition["Enabled"]
-            or cluster_definition[ "ClusterId"] in self.readZclClusters
-            or "Description" not in cluster_definition
-        ):
+        cluster_definition = _read_zcl_cluster(self, cluster_filename)
+        if not cluster_definition:
+            continue  # Skip if file could not be read
+
+        # Extract required fields safely
+        cluster_id = cluster_definition.get("ClusterId")
+        enabled = cluster_definition.get("Enabled", False)
+        description = cluster_definition.get("Description")
+        version = cluster_definition.get("Version")
+        attributes = cluster_definition.get("Attributes", {})
+
+        # Validation: Ensure required fields exist and are enabled
+        if not (cluster_id and enabled and description):
             continue
-        
-        self.readZclClusters[ cluster_definition[ "ClusterId"] ] = {
-            "Description": cluster_definition[ "Description" ],
-            "Version": cluster_definition[ "Version" ],
-            "Attributes": dict( cluster_definition[ "Attributes" ] )
-        }
-        
-        if "Debug" in cluster_definition:
-            self.readZclClusters[ cluster_definition[ "ClusterId"] ]["Debug"] = cluster_definition[ "Debug" ]
 
-            
-        self.log.logging("ZclClusters", "Debug", " - ZCL Cluster %s - (V%s) %s loaded" %( 
-            cluster_definition[ "ClusterId"], cluster_definition[ "Version" ], cluster_definition["Description"],))
+        # Avoid duplicate cluster definitions
+        if cluster_id in self.readZclClusters:
+            continue
+
+        # Store cluster data
+        self.readZclClusters[cluster_id] = {
+            "Description": description,
+            "Version": version,
+            "Attributes": attributes,
+        }
+
+        # Optional Debug field
+        if "Debug" in cluster_definition:
+            self.readZclClusters[cluster_id]["Debug"] = cluster_definition["Debug"]
+
+        # Logging
+        self.log.logging(
+            "ZclClusters",
+            "Debug",
+            f" - ZCL Cluster {cluster_id} - (V{version}) {description} loaded"
+        )
 
 
 def is_cluster_specific_config(self, model, ep, cluster, attribute=None):
@@ -450,7 +466,7 @@ def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_in
 
     self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
 
-    if _function and _function in dict(FUNCTION_MODULE):
+    if _function and _function in FUNCTION_MODULE:
         func = FUNCTION_MODULE[ _function ]
         return func( self, nwkid, ep, cluster, attribut, value )
         
