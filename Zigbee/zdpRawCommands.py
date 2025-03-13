@@ -307,7 +307,8 @@ def zdp_raw_binding_device(self, source, src_ep, cluster, addrmode, destination,
         self.log.logging( "zdpCommand", "Log", "zdp_raw_binding_device  - [%s] %s Queue Length: %s" % (
             sqn, source, self.ControllerLink.loadTransmit()),)
 
-    delayAfterSent=self.pluginconf.pluginConf.get("bindingDelay", False)
+    # bindingDelay offer a possibility to delay the command following that one. This leave some time for the device to properly bind
+    delayAfterSent=self.pluginconf.pluginConf.get("bindingDelay", 0)
  
     raw_APS_request(
         self,
@@ -349,7 +350,7 @@ def zdp_raw_unbinding_device(self, source, src_ep, cluster, addrmode, destinatio
         self.log.logging( "zdpCommand", "Log", "zdp_raw_unbinding_device  - [%s] %s Queue Length: %s" % (
             sqn, source, self.ControllerLink.loadTransmit()), )
 
-    delayAfterSent=self.pluginconf.pluginConf.get("bindingDelay", False)
+    delayAfterSent=self.pluginconf.pluginConf.get("bindingDelay", 0)
 
     raw_APS_request(
         self,
