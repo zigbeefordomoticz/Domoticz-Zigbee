@@ -24,7 +24,10 @@ Release Numbering
 - [Technical] - Support network based coordinator over Etherneth such as SMLIGHT - ADAPTATEUR USB ETHERNET POE ZIGBEE 3.0
 - [Technical] - Better Time server implementation
 - [Technical] - Support multi read attributes in one request for Schneider and Timeserver
+- [Technical] - Fix Memory lead in the WebUI Server when handling client connections
+- [Technical] - Do not trigger Tuya magic packet at start of pairing. Wait that model name is known.
 
+- [Hardware] - Integration of Gledopto Din Rail Dimmer switch, to allow working as switch or dimmer.
 - [Hardware] - Improve ZLinky integration and manage TEMPO Colour on Historic and Standard mode
 - [Hardware] - Integration of Nodon TRV
 
