@@ -42,6 +42,8 @@ def cleanup_widget_Type(widget_type_list):
 
     if "" in widget_type_list:
         widget_type_list.remove("")
+    if "{}" in widget_type_list:
+        widget_type_list.remove("{}")
 
     return widget_type_list
 
@@ -161,86 +163,132 @@ def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, widgetType=None
     return unit
 
 
-def over_write_type_from_deviceconf( self, Devices, NwkId):
+def over_write_type_from_deviceconf(self, Devices, NwkId):
+    """
+    Updates the 'Type' of endpoints (Ep) for a given device (NwkId) based on `DeviceConf`.
 
-    self.log.logging( "WidgetCreation", "Debug", "over_write_type_from_deviceconf - NwkId to be processed : %s " % NwkId, NwkId )
-    if NwkId not in self.ListOfDevices:
-        self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s not found " % NwkId, NwkId )
-        return
-    if "Ep" not in self.ListOfDevices[ NwkId ]:
-        self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Ep' not found" % NwkId, NwkId )
+    This function:
+    - Checks if the device exists in `ListOfDevices`.
+    - Validates that the device has a model and endpoint data.
+    - Updates the 'Type' field for each endpoint if it differs from the configuration.
+
+    Args:
+        Devices (dict): Device data (not directly used in this function).
+        NwkId (str): The network identifier of the device.
+
+    Returns:
+        None
+    """
+    self.log.logging("WidgetCreation", "Debug", f"over_write_type_from_deviceconf - Processing NwkId: {NwkId}", NwkId)
+
+    device_data = self.ListOfDevices.get(NwkId)
+    if not device_data:
+        self.log.logging("WidgetCreation", "Log", f"over_write_type_from_deviceconf - NwkId: {NwkId} not found", NwkId)
         return
 
-    if "Model" not in self.ListOfDevices[ NwkId ]:
-        self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Model' not found" % NwkId, NwkId )
+    ep_data = device_data.get("Ep")
+    if not ep_data:
+        self.log.logging("WidgetCreation", "Log", f"over_write_type_from_deviceconf - NwkId: {NwkId} 'Ep' not found", NwkId)
         return
-    _model = self.ListOfDevices[ NwkId ]["Model"]
-    if _model not in self.DeviceConf:
-        self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s Model: %s not found in DeviceConf" % (NwkId, _model), NwkId )
-        return
-    _deviceConf = self.DeviceConf[ _model ]
 
-    for _ep in self.ListOfDevices[ NwkId ]["Ep"]:
-        if _ep not in _deviceConf["Ep"]:
-            self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'ep: %s' not found in DeviceConf" % (NwkId, _ep), NwkId )
+    model = device_data.get("Model")
+    if not model:
+        self.log.logging("WidgetCreation", "Log", f"over_write_type_from_deviceconf - NwkId: {NwkId} 'Model' not found", NwkId)
+        return
+
+    device_conf = self.DeviceConf.get(model)
+    if not device_conf:
+        self.log.logging("WidgetCreation", "Log", f"over_write_type_from_deviceconf - NwkId: {NwkId} Model: {model} not found in DeviceConf", NwkId)
+        return
+
+    for ep, ep_conf in ep_data.items():
+        conf_ep = device_conf.get("Ep", {}).get(ep)
+        if not conf_ep:
+            self.log.logging("WidgetCreation", "Log", f"over_write_type_from_deviceconf - NwkId: {NwkId} Ep: {ep} not found in DeviceConf", NwkId)
             continue
-        if "Type" not in _deviceConf["Ep"][ _ep ]:
-            self.log.logging( "WidgetCreation", "Log", "over_write_type_from_deviceconf - NwkId : %s 'Type' not found in DeviceConf" % (NwkId,), NwkId )
-            continue
-        if "Type" in self.ListOfDevices[ NwkId ]["Ep"][ _ep ] and self.ListOfDevices[ NwkId ]["Ep"][ _ep ]["Type"] == _deviceConf["Ep"][ _ep ]["Type"]:
-            self.log.logging( "WidgetCreation", "Debug", "over_write_type_from_deviceconf - NwkId : %s Device Type: %s == Device Conf Type: %s" % (
-                NwkId,self.ListOfDevices[ NwkId ]["Ep"][ _ep ]["Type"] , _deviceConf["Ep"][ _ep ]["Type"]), NwkId )
+
+        new_type = conf_ep.get("Type")
+        if not new_type:
+            self.log.logging("WidgetCreation", "Log", f"over_write_type_from_deviceconf - NwkId: {NwkId} Ep: {ep} 'Type' not found in DeviceConf", NwkId)
             continue
 
-        self.log.logging(
-            "WidgetCreation", "Debug", "over_write_type_from_deviceconf - Ep Overwrite Type with a new one %s on ep: %s" % (
-                _deviceConf["Ep"][ _ep ]["Type"], _ep), NwkId )
+        current_type = ep_conf.get("Type", "")
+        if current_type == new_type:
+            self.log.logging("WidgetCreation", "Debug",
+                             f"over_write_type_from_deviceconf - NwkId: {NwkId} Ep: {ep} Type unchanged: {current_type}", NwkId)
+            continue
 
-        self.ListOfDevices[ NwkId ]["Ep"][ _ep ]["Type"] = _deviceConf["Ep"][ _ep ]["Type"]
+        self.log.logging("WidgetCreation", "Debug",
+                         f"over_write_type_from_deviceconf - Updating Ep: {ep} with new Type: {new_type}", NwkId)
+
+        ep_conf["Type"] = new_type
 
 
-def extract_key_infos( self, NWKID, Ep, GlobalEP, GlobalType):
-    self.log.logging( "WidgetCreation", "Debug", "extract_key_infos - entering %s %s %s" % ( Ep, GlobalEP, str(GlobalType)), NWKID )
-    _dType = ""
-    _aType = ""
-    _Type = ""
-    # First time, or we dont't GlobalType
-    if "Type" in self.ListOfDevices[NWKID]["Ep"][Ep]:
-        if self.ListOfDevices[NWKID]["Ep"][Ep]["Type"] == "":
-            _Type = GetType(self, NWKID, Ep).split("/")
-            self.log.logging( "WidgetCreation", "Debug", "extract_key_infos - Type via GetType: %s Ep: %s" %( 
-                str(_Type) , str(Ep)), NWKID )
-        else:
-            _dType = self.ListOfDevices[NWKID]["Ep"][Ep]["Type"]
-            _aType = str(_dType)
-            _Type = _aType.split("/")
-            self.log.logging( "WidgetCreation", "Debug", "extract_key_infos - Type via ListOfDevice: %s Ep: %s" %( 
-                str(_Type), str(Ep)), NWKID, )
-            
-    elif self.ListOfDevices[NWKID]["Type"] in [{}, ""]:
-        _Type = GetType(self, NWKID, Ep).split("/")
-        self.log.logging( "WidgetCreation", "Debug", "extract_key_infos - Type via GetType: %s Ep: %s" %( 
-            str(_Type), str(Ep)), NWKID )
-        
+
+def extract_key_infos(self, NWKID, Ep, GlobalEP, GlobalType):
+    """
+    Extracts and returns the key device type information for a given network ID (NWKID) and endpoint (Ep).
+
+    This function determines the device type by checking:
+    1. The device's endpoint data in `ListOfDevices[NWKID]["Ep"][Ep]`.
+    2. The global device type in `ListOfDevices[NWKID]`.
+    3. If neither exists, it calls `GetType()` to determine the type.
+
+    The extracted types are added to `GlobalType` if they are not already present.
+
+    Args:
+        NWKID (str): The network identifier of the device.
+        Ep (str): The endpoint identifier.
+        GlobalEP (bool): A flag indicating if a global endpoint type is being used.
+        GlobalType (list): A list of known global types, which may be updated.
+
+    Returns:
+        tuple[list, bool, list]:
+            - A list of extracted device types (`_Type`).
+            - The updated `GlobalEP` flag.
+            - The updated `GlobalType` list.
+    """
+
+    self.log.logging("WidgetCreation", "Debug",
+                     f"extract_key_infos - entering {Ep} {GlobalEP} {GlobalType}", NWKID)
+
+    _Type = []
+
+    # Extract Type from ListOfDevices safely
+    ep_data = self.ListOfDevices.get(NWKID, {}).get("Ep", {}).get(Ep, {})
+    dev_type = ep_data.get("Type", "")
+
+    if dev_type:
+        _Type = dev_type.split("/")
+        self.log.logging("WidgetCreation", "Debug",
+                         f"extract_key_infos - Type via ListOfDevice: {_Type} Ep: {Ep}", NWKID)
     else:
-        GlobalEP = True
-        if "Type" in self.ListOfDevices[NWKID]:
-            _Type = self.ListOfDevices[NWKID]["Type"].split("/")
-            self.log.logging("WidgetCreation", "Debug", "extract_key_infos - Type : %s " %(str(_Type)), NWKID)
+        # Check global Type if endpoint Type is missing
+        global_dev_type = self.ListOfDevices.get(NWKID, {}).get("Type", "")
+        if global_dev_type in [{}, ""]:
+            _Type = GetType(self, NWKID, Ep).split("/")
+            self.log.logging("WidgetCreation", "Debug",
+                             f"extract_key_infos - Type via GetType: {_Type} Ep: {Ep}", NWKID)
+        else:
+            GlobalEP = True
+            _Type = global_dev_type.split("/")
+            self.log.logging("WidgetCreation", "Debug",
+                             f"extract_key_infos - Type from global device: {_Type}", NWKID)
 
     # Check if Type is known
-    if len(_Type) == 1 and _Type[0] == "":
+    if not _Type or _Type == [""]:
         return None, GlobalEP, GlobalType
 
+    # Add new types to GlobalType if not already present
     for iterType in _Type:
-        if iterType not in GlobalType and iterType != "":
-            self.log.logging( "WidgetCreation", "Debug", "adding Type : %s to Global Type: %s" % (
-                iterType, str(GlobalType)), NWKID )
+        if iterType and iterType != '{}' and iterType not in GlobalType:
+            self.log.logging("WidgetCreation", "Debug",
+                             f"adding Type: {iterType} to Global Type: {GlobalType}", NWKID)
             GlobalType.append(iterType)
-            
-    self.log.logging( "WidgetCreation", "Debug", "extract_key_infos - returning %s %s %s" % (
-        _Type, GlobalEP, str(GlobalType)), NWKID )
-            
+
+    self.log.logging("WidgetCreation", "Debug",
+                     f"extract_key_infos - returning {_Type} {GlobalEP} {GlobalType}", NWKID)
+
     return _Type, GlobalEP, GlobalType
 
 
