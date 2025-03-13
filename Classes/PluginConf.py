@@ -106,6 +106,7 @@ SETTINGS = {
             "ReadAttributeChunk": { "type": "int", "default": 3, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "ZiGateConfigureReporting": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,"ZigpyRadio": ""},
             "bindingDelay": {"type": "int","default": 0.75,"current": None,"restart": 0,"hidden": False,"Advanced": True},
+            "pairingCommandsDelay": {"type": "int","default": 0.25,"current": None,"restart": 0,"hidden": False,"Advanced": True},
         },
     },
     "WebInterface": {
