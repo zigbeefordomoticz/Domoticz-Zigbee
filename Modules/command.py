@@ -690,7 +690,9 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         min_dim_percent = get_device_config_param(self, Nwkid, "MinDimmerPercentage") or 0
         if min_dim_percent:
             self.log.logging( "Command", "Log", f"Min Dimmer Percentage {min_dim_percent}", Nwkid, )
-            actuator_setlevel(self, Nwkid, EPout, min_dim_percent, "Light", "0000",withOnOff=False)
+            new_level = max( min_dim_percent, get_previous_switch_level_in_percentage(self, Nwkid, EPout))
+            self.log.logging( "Command", "Log", f"Set Level to {new_level}", Nwkid, )
+            actuator_setlevel(self, Nwkid, EPout, new_level, "Light", "0000",withOnOff=False)
 
         actuator_on(self, Nwkid, EPout, "Light")
 
@@ -1079,6 +1081,11 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
 
     # Let's force a refresh of Attribute in the next Heartbeat
     request_read_device_status(self, Nwkid)
+
+
+def get_previous_switch_level_in_percentage( self, Nwkid, Ep):
+    previous_level = get_previous_switch_level(self, Nwkid, Ep)  # Given in analog ( 1 to 255)
+    return min(round((previous_level / 255) * 100), 100)  # Converted in %
 
 
 def get_previous_switch_level(self, Nwkid, Ep):
