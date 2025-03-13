@@ -608,7 +608,7 @@ def hr_process_device(self, Devices, NwkId):
         pingDevices(self, NwkId, health, _checkHealth, _mainPowered)
 
     # Check if we are in the process of provisioning a new device. If so, just stop
-    if self.CommiSSionning:
+    if self.pairing_in_progress:
         return
 
     # If device flag as Not Reachable, don't do anything
@@ -749,54 +749,6 @@ def clear_last_polling_data(self, NwkId):
     for key in ["LastPollingManufSpecificDevices", "LastCustomPolling"]:
         self.ListOfDevices[NwkId].pop(key, None)
 
-
-#def process_read_attributes(self, NwkId, model):
-#    self.log.logging( "Heartbeat", "Debug", f"process_read_attributes  -  for {NwkId} {model}")
-#    process_next_ep_later = False
-#    now = int(time.time())  # Will be used to trigger ReadAttributes
-#    
-#    device_infos = self.ListOfDevices[NwkId]
-#    for ep in device_infos["Ep"]:
-#        if ep == "ClusterType":
-#            continue
-#        
-#        if model == "lumi.ctrl_neutral1" and ep != "02" :  # All Eps other than '02' are blacklisted
-#            continue
-#        
-#        if model == "lumi.ctrl_neutral2" and ep not in ("02", "03"):
-#            continue
-#
-#        for Cluster in READ_ATTRIBUTES_REQUEST:
-#            # We process ALL available clusters for a particular EndPoint
-#
-#            if ( Cluster not in READ_ATTRIBUTES_REQUEST or Cluster not in device_infos["Ep"][ep] ):
-#                continue
-#
-#            if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
-#                self.log.logging( "Heartbeat", "Debug", "process_read_attributes  -  %s skip ReadAttribute for now ... system too busy (%s/%s)" % (
-#                    NwkId, self.busy, self.ControllerLink.loadTransmit()), NwkId, )
-#                process_next_ep_later = True
-#
-#            if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
-#                timing = self.pluginconf.pluginConf[READ_ATTRIBUTES_REQUEST[Cluster][1]]
-#            else:
-#                self.log.logging( "Heartbeat", "Error", "proprocess_read_attributescessKnownDevices - missing timing attribute for Cluster: %s - %s" % (
-#                    Cluster, READ_ATTRIBUTES_REQUEST[Cluster][1]), NwkId )
-#                continue
-#
-#            # Let's check the timing
-#            if not is_time_to_perform_work(self, "ReadAttributes", NwkId, ep, Cluster, now, timing):
-#                continue
-#
-#            self.log.logging( "Heartbeat", "Debug", "process_read_attributes -  %s/%s and time to request ReadAttribute for %s" % (
-#                NwkId, ep, Cluster), NwkId, )
-#
-#            func = READ_ATTRIBUTES_REQUEST[Cluster][0]
-#            func(self, NwkId)
-#            
-#            if process_next_ep_later:
-#                return True
-#    return False
 
 def process_read_attributes(self, NwkId, model):
     self.log.logging("Heartbeat", "Debug", f"process_read_attributes - for {NwkId} {model}")
@@ -971,28 +923,32 @@ def processListOfDevices(self, Devices):
         elif status not in ("inDB", "UNKNOW", "erasePDM"):
             # Discovery process 0x004d -> 0x0042 -> 0x8042 -> 0w0045 -> 0x8045 -> 0x0043 -> 0x8043
             processNotinDBDevices(self, Devices, NwkId, status, RIA)
-    # end for key in ListOfDevices
 
-    if (
-        self.groupmgt 
-        and self.pluginconf.pluginConf["pingViaGroup"]
+    should_ping_via_group = (
+        self.groupmgt
+        and self.pluginconf.pluginConf.get("pingViaGroup", False)  # Use .get() to avoid KeyErrors
         and (
-            self.HeartbeatCount == FIRST_PING_VIA_GROUP        # Let's do a group ping 2 minutes after start
-            or (self.HeartbeatCount % PING_DEVICE_VIA_GROUPID ) == 0   # Let's do a group ping every PING_DEVICE_VIA_GROUPID seconds
+            self.HeartbeatCount == FIRST_PING_VIA_GROUP  # First group ping after 2 minutes
+            or self.HeartbeatCount % PING_DEVICE_VIA_GROUPID == 0  # Recurring group pings
         )
-    ):
+    )
+
+    if should_ping_via_group:
         ping_devices_via_group(self)
-    
-    
+
     for iterDevToBeRemoved in entriesToBeRemoved:
         if "IEEE" in self.ListOfDevices[iterDevToBeRemoved]:
             del self.ListOfDevices[iterDevToBeRemoved]["IEEE"]
         del self.ListOfDevices[iterDevToBeRemoved]
 
-    if self.CommiSSionning or self.busy:
+    if self.pairing_in_progress or self.busy:
         self.log.logging( "Heartbeat", "Debug", "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" % (
-            self.busy, self.CommiSSionning), )
+            self.busy, self.pairing_in_progress), )
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
+
+    if self.pairing_in_progress and self.Ping['Permit'] is None and self.Ping['TimeStamp'] > time.time() + 60:
+        self.log.logging( "Heartbeat", "Log", "Timeout on pairing in progress status, reseting")
+        self.pairing_in_progress = False
 
     # Network Topology
     if self.networkmap:
@@ -1014,7 +970,7 @@ def processListOfDevices(self, Devices):
         self.networkenergy.do_scan()
 
     self.log.logging( "Heartbeat", "Debug", "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" % (
-        self.HeartbeatCount, self.busy, self.CommiSSionning, self.ControllerLink.loadTransmit()), )
+        self.HeartbeatCount, self.busy, self.pairing_in_progress, self.ControllerLink.loadTransmit()), )
     return
 
 
