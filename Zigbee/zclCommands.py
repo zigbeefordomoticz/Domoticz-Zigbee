@@ -116,10 +116,12 @@ def zcl_configure_reporting_requestv2(self, nwkid, epin, epout, cluster, directi
         nwkid, epin, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, ), )
     zcl_command_formated_logging( self, "Configure_Reporting_Req", nwkid, epout, cluster, direction, manufacturer_spec, manufacturer, attribute_reporting_configuration, ackIsDisabled)
 
-    if (
-        ( "ControllerInRawMode" not in self.pluginconf.pluginConf or not self.pluginconf.pluginConf["ControllerInRawMode"])
-        and "ZiGateConfigureReporting" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ZiGateConfigureReporting"]
-    ):
+    plugin_conf = self.pluginconf.pluginConf  # Store reference for efficiency
+
+    controller_not_raw = not plugin_conf.get("ControllerInRawMode", False)
+    zigate_config_enabled = plugin_conf.get("ZiGateConfigureReporting", False)
+
+    if controller_not_raw and zigate_config_enabled:
         data = epin + epout + cluster + direction + manufacturer_spec + manufacturer + "%02x" % len(attribute_reporting_configuration)
         for x in attribute_reporting_configuration:
             self.log.logging("zclCommand", "Debug", "zcl_configure_reporting_requestv2 record: %s" % str(x))
