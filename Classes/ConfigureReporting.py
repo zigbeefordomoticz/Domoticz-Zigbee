@@ -68,7 +68,8 @@ class ConfigureReporting:
         FirmwareVersion,
         IEEE2NWK,
         ZigateIEEE,
-        readZclClusters
+        readZclClusters,
+        pairing_in_progress,
     ):
 
         self.zigbee_communication = zigbee_communitation
@@ -81,6 +82,7 @@ class ConfigureReporting:
         self.busy = busy
         self.FirmwareVersion = FirmwareVersion
         self.readZclClusters = readZclClusters
+        self.pairing_in_progress = pairing_in_progress
 
         # Needed for bind
         self.IEEE2NWK = IEEE2NWK
@@ -127,10 +129,6 @@ class ConfigureReporting:
         attribute_reporting_configuration = []
         for attr in ListOfAttributesToConfigure:
             attrType = cluster_configuration[attr]["DataType"]
-            #minInter = cluster_configuration[attr]["MinInterval"]
-            #maxInter = cluster_configuration[attr]["MaxInterval"]
-            #timeOut = cluster_configuration[attr]["TimeOut"]
-            #chgFlag = cluster_configuration[attr]["Change"]
 
             if analog_value(int(attrType, 16)):
                 # Analog values: For attributes with 'analog' data type (see 2.6.2), 
@@ -570,7 +568,9 @@ def configure_reporting_for_one_device(self, key, batchMode):
 
 def configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_configuration):
     self.logging("Debug", f"-- configure_reporting_for_one_endpoint - key: {key} ep: {Ep} batchMode: {batchMode} Cfg: {cfgrpt_configuration}", nwkid=key)
-    
+
+    check_config_reporting = self.pluginconf.pluginConf.get("checkConfigurationReporting", False)
+
     if is_fake_ep(self, key, Ep):
         self.logging("Debug", f"--> configure_reporting_for_one_endpoint - Fake Ep {key}/{Ep} skiping", nwkid=key)
         return
@@ -607,20 +607,22 @@ def configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_config
             and Ep in self.ListOfDevices[key][STORE_CONFIGURE_REPORTING]["Ep"]
             and cluster in self.ListOfDevices[key][STORE_CONFIGURE_REPORTING]["Ep"][Ep]
         ):
-            if self.pluginconf.pluginConf["checkConfigurationReporting"]:
-                if not is_time_to_perform_work( self, STORE_CONFIGURE_REPORTING, key, Ep, cluster, now, (CONFIGURE_REPORT_PERFORM_TIME * 3600), ):
-                    self.logging("Debug", f"----> configure_reporting_for_one_endpoint Not time to perform  {key}/{Ep} - {cluster}", nwkid=key)
-                    continue
-                self.logging("Debug", f"----> configure_reporting_for_one_endpoint it is time to work  {key}/{Ep} - {cluster}", nwkid=key) 
-            
-            else:
+            if not check_config_reporting:
                 self.logging(
                     "Debug",
-                    "----> configure_reporting_for_one_endpoint ['checkConfigurationReporting']: %s then skip" % self.pluginconf.pluginConf["checkConfigurationReporting"],
+                    f"----> configure_reporting_for_one_endpoint ['checkConfigurationReporting']: {check_config_reporting} then skip",
                     nwkid=key
                 )
                 continue
             
+            is_time = is_time_to_perform_work( self, STORE_CONFIGURE_REPORTING, key, Ep, cluster, now, (CONFIGURE_REPORT_PERFORM_TIME * 3600) )
+
+            if not is_time:
+                self.logging("Debug", f"----> configure_reporting_for_one_endpoint Not time to perform {key}/{Ep} - {cluster}", nwkid=key)
+                continue
+
+            self.logging("Debug", f"----> configure_reporting_for_one_endpoint it is time to work {key}/{Ep} - {cluster}", nwkid=key)
+
         self.logging("Debug", f"----> configure_reporting_for_one_endpoint it is time to work .....  {key}/{Ep} - {cluster}", nwkid=key) 
 
         if batchMode and (self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE):
@@ -635,12 +637,11 @@ def configure_reporting_for_one_endpoint(self, key, Ep, batchMode, cfgrpt_config
 
         # If NWKID is not None, it means that we are asking a ConfigureReporting for a specific device
         # Which happens on the case of New pairing, or a re-join
-        
 
         if "Attributes" not in cfgrpt_configuration[ cluster ]:
             self.logging("Debug", f"----> configure_reporting_for_one_endpoint - for device: {key} on Cluster: {cluster} no Attributes key on {cfgrpt_configuration[ cluster ]}", nwkid=key)
             continue
-        
+
         set_timestamp_datastruct(self, STORE_CONFIGURE_REPORTING, key, Ep, cluster, time.time())
         configure_reporting_for_one_cluster(self, key, Ep, cluster, batchMode, cfgrpt_configuration[cluster]["Attributes"])
 
