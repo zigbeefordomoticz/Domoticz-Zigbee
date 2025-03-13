@@ -320,7 +320,6 @@ def retreive_attributes_from_default_plugin_list(self, key, Ep, cluster):
     return targetAttribute
 
 
-    
 def ping_tuya_device(self, key):
 
     PING_CLUSTER = "0000" 
@@ -412,9 +411,9 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
         if 0xF000 not in listAttributes:
             listAttributes.append(0xF000)
             
-    elif self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
-        self.log.logging("ReadAttributes", "Debug", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
-        listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
+    #elif self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
+    #    self.log.logging("ReadAttributes", "Debug", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
+    #    listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
 
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
     self.log.logging("ReadAttributes", "Log", "EP: %s Attributes: %s" % (self.ListOfDevices[key]["Ep"], str(listAttributes)))
@@ -479,10 +478,8 @@ def add_attributes_from_device_certified_conf(self, key, cluster, listAttributes
     return listAttributes
 
 def ReadAttributeRequest_0000_for_tuya(self, key):
-    self.log.logging("ReadAttributes", "Log", "ReadAttributeRequest_0000_for_tuya %s" %key, nwkid=key)
-
+    self.log.logging("ReadAttributes", "Status", "-- Magic packet read for tuya %s" %key, nwkid=key)
     listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
-
     ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False, forceLen=True)
             
 
