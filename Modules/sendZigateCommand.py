@@ -202,7 +202,7 @@ def sendZigateCmd(self, cmd, datas, ackIsDisabled=False):
     return send_zigatecmd_raw(self, cmd, datas, ackIsDisabled)
 
 
-def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False, delayAfterSent=False):
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False, delayAfterSent=0):
     self.log.logging(
         "outRawAPS",
         "Debug",
@@ -211,6 +211,13 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     )
 
     if self.zigbee_communication == "zigpy":
+        # If pairing mode, we might delay each commands to avoid overloading the network
+        pairing_mode = self.pairing_in_progress
+        if pairing_mode and delayAfterSent == 0:
+            delayAfterSent = self.pluginconf.pluginConf.get("pairingCommandsDelay",0)
+
+        self.log.logging( "BasicOutput", "Delay", f"Pairing Mode - Pairing mode {pairing_mode} Delaying command by {delayAfterSent} seconds", targetaddr, )
+
         return zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn, groupaddrmode, highpriority, ackIsDisabled, delayAfterSent)
     
     return zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled)
@@ -269,11 +276,11 @@ def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, paylo
     )
     
     
-def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False, delayAfterSent=False):
+def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn=None, groupaddrmode=False, highpriority=False, ackIsDisabled=False, delayAfterSent=0):
 
     if zigpyzqn is None:
         zigpyzqn = "0"
-        
+
     # Debug mode
     callingfunction = sys._getframe(2).f_code.co_name
     data = {
