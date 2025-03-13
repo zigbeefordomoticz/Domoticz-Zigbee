@@ -415,10 +415,6 @@ def server_loop(self, ):
         Exception: Logs a generic error message and breaks the loop.
 
     """
-    # Start cleanup thread once when server starts
-    self.cleanup_thread = threading.Thread(target=cleanup_threads, args=(self,), daemon=True)
-    self.cleanup_thread.start()
-
     try:
         self.running = True
         while self.running:
