@@ -108,6 +108,7 @@ import pathlib
 import sys
 import threading
 import time
+#import tracemalloc
 
 import z4d_certified_devices
 
@@ -186,6 +187,7 @@ STARTUP_TIMEOUT_DELAY_FOR_WARNING = 60
 STARTUP_TIMEOUT_DELAY_FOR_STOP = 120
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_WARNING = 110
 ZNP_STARTUP_TIMEOUT_DELAY_FOR_STOP = 160
+
 
 class BasePlugin:
     enabled = False
@@ -309,6 +311,8 @@ class BasePlugin:
         initialize_device_settings(self)
 
     def onStart(self):
+        #tracemalloc.start()
+
         Domoticz.Status( "Welcome to Zigbee for Domoticz (Z4D) plugin. (c)pipiche38 - 2018 - 2025")
 
         # Print PYTHONPATH if set
@@ -669,7 +673,6 @@ class BasePlugin:
         if self.adminWidgets:
             self.adminWidgets.updateStatusWidget(Devices, "No Communication")
 
-
     def onDeviceRemoved(self, Unit):
         # def onDeviceRemoved(self, DeviceID, Unit):
         if not self.ControllerIEEE:
@@ -749,6 +752,7 @@ class BasePlugin:
 
     def onMessage(self, Connection, Data):
         # self.log.logging( 'Plugin', 'Debug', "onMessage called on Connection " + " Data = '" +str(Data) + "'")
+
         if self.webserver and isinstance(Data, dict):
             self.webserver.onMessage(Connection, Data)
             return
@@ -773,7 +777,6 @@ class BasePlugin:
 
     def zigpy_chk_upd_device(self, ieee, nwkid ):
         chk_and_update_IEEE_NWKID(self, nwkid, ieee)
-
 
     def zigpy_get_device(self, ieee=None, nwkid=None):
         # allow to inter-connect zigpy world and plugin
@@ -959,6 +962,7 @@ class BasePlugin:
             retreive_zigpy_topology_data(self)
 
         self.busy = _check_if_busy(self)
+
         return True
 
 

@@ -83,6 +83,9 @@ def send_http_message( self, socket, http_response, response_body, chunked=False
     else:
         socket.sendall( http_response.encode('utf-8') + response_body )
 
+    del http_response
+    del response_body
+
 
 def encode_body_to_bytes(response):
     """Convert data payload into an HTTP response body encoded bytes."""

@@ -149,6 +149,7 @@ class WebServer(object):
         pairing_in_progress,
     ):
         self.pairing_in_progress = pairing_in_progress
+        self.REST_COMMANDS = {}    # Constructed in setup_list_rest_commands
         self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
         self.httpClientConn = None
