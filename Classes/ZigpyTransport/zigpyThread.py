@@ -495,7 +495,7 @@ async def get_next_command(self):
 async def dispatch_command(self, data):
     cmd = data["cmd"]
     datas = data["datas"]
-    delayAfterSent = datas.get("delayAfterSent", False) if datas else False
+    delayAfterSent = datas.get("delayAfterSent", 0) if datas else 0
 
     if cmd == "COORDINATOR-BACKUP":
         await self.app.coordinator_backup()
@@ -569,7 +569,7 @@ async def _permit_to_joint(self, data):
     log.logging("TransportZigpy", "Debug", f"Returning from app.permit(time_s={duration}, node={target_router})")
 
 
-async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAfterSent=False):
+async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAfterSent=0):
     Function = data["Function"]
     TimeStamp = data["timestamp"]
     Profile = data["Profile"]
@@ -581,6 +581,8 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
     sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
     delayAfterSent= delayAfterSent
+
+    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: delayAfterSent {delayAfterSent}")
 
     extended_timeout = not data.get("RxOnIdle", False) and not self.pluginconf.pluginConf["PluginRetrys"]
     self.log.logging("TransportZigpy", "Debug", f"process_raw_command: extended_timeout {extended_timeout}")
@@ -780,7 +782,7 @@ def measure_execution_time(func):
 
 
 @measure_execution_time
-async def transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False, delayAfterSent=False):
+async def transport_request(self, Function, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=False, use_ieee=False, delay=None, extended_timeout=False, delayAfterSent=0):
     """Send a zigbee message based on different arguments
 
     Args:
@@ -824,6 +826,7 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
 
     max_retry = MAX_ATTEMPS_REQUEST if self.pluginconf.pluginConf["PluginRetrys"] else 1
     delay_after_command_sent = max( delayAfterSent, self.pluginconf.pluginConf.get("DelayAfterCommandSent", 0))
+    self.log.logging("TransportZigpy", "Debug", f"transport_request: delay_after_command_sent for {delay_after_command_sent} seconds")
   
     for attempt in range(1, (max_retry + 1)):
         try:
