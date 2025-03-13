@@ -21,7 +21,7 @@ import zigpy.types as t
 ZIGPY_TOPOLOGY_REPORT_FILENAME = "Zigpy-Topology-"
 class ZigpyTopology:
     
-    def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, IEEE2NWK, Devices, HardwareID, log):
+    def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, IEEE2NWK, Devices, HardwareID, log, pairing_in_progress):
         self.zigbee_communication = zigbee_communitation
         self.pluginconf = PluginConf
         self.ControllerLink = ZigateComm
@@ -33,7 +33,7 @@ class ZigpyTopology:
         self.FirmwareVersion = None
         self.new_scan_detected = None
         self.neighbors_table = {}
-
+        self.pairing_in_progress = pairing_in_progress
 
     def copy_zigpy_infos_to_plugin(self, neighbors_list=None, routes_list=None):
         if neighbors_list is None and routes_list is None:

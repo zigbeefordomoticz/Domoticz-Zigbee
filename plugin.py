@@ -227,7 +227,7 @@ class BasePlugin:
 
         self.UnknownDevices = []  # List of unknown Device NwkId
         self.permitTojoin = {"Duration": 0, "Starttime": 0}
-        self.CommiSSionning = (
+        self.pairing_in_progress = (
             False  # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
         )
 
@@ -581,7 +581,7 @@ class BasePlugin:
         if self.iaszonemgt is None:
             # Create IAS Zone object
             # Domoticz.Log("Init IAS_Zone_management ZigateComm: %s" %self.ControllerLink)
-            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communication, self.readZclClusters, self.FirmwareVersion)
+            self.iaszonemgt = IAS_Zone_Management(self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, self.DeviceConf, self.log, self.zigbee_communication, self.readZclClusters, self.pairing_in_progress, self.FirmwareVersion)
 
         # Starting WebServer
         if self.webserver is None:
@@ -933,7 +933,7 @@ class BasePlugin:
   
         _trigger_coordinator_backup( self )
 
-        if self.CommiSSionning:
+        if self.pairing_in_progress:
             self.PluginHealth["Flag"] = 2
             self.PluginHealth["Txt"] = "Enrollment in Progress"
             self.adminWidgets.updateStatusWidget(Devices, "Enrollment")
@@ -1277,7 +1277,6 @@ def zigateInit_Phase3(self):
         #sendZigateCmd(self, "0019", "%02x" % self.pluginconf.pluginConf["CertificationCode"])
         zigate_set_certificate(self, "%02x" % self.pluginconf.pluginConf["CertificationCode"] )
 
-
         # Create Configure Reporting object
         if self.configureReporting is None:
             self.log.logging("Plugin", "Status", "Z4D starts Configure Reporting handling")
@@ -1293,7 +1292,8 @@ def zigateInit_Phase3(self):
                 self.FirmwareVersion,
                 self.IEEE2NWK,
                 self.ControllerIEEE,
-                self.readZclClusters
+                self.readZclClusters,
+                self.pairing_in_progress
             )
         if self.configureReporting:
             self.webserver.update_configureReporting(self.configureReporting )
@@ -1306,7 +1306,7 @@ def zigateInit_Phase3(self):
     # Create Network Energy object
     if self.networkenergy is None:
         self.networkenergy = NetworkEnergy(
-            self.zigbee_communication, self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
+            self.zigbee_communication, self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log, self.pairing_in_progress
         )
 
     if self.networkenergy:
@@ -1315,12 +1315,12 @@ def zigateInit_Phase3(self):
         # Create Network Map object
     if self.networkmap is None:
         self.networkmap = NetworkMap(
-            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log
+            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, Devices, self.HardwareID, self.log, self.pairing_in_progress
         )
     
     if self.zigpy_topology is None:
         self.zigpy_topology = ZigpyTopology(
-            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, Devices, self.HardwareID, self.log
+            self.zigbee_communication ,self.pluginconf, self.ControllerLink, self.ListOfDevices, self.IEEE2NWK, Devices, self.HardwareID, self.log, self.pairing_in_progress
         )
 
     if self.networkmap:
@@ -1389,6 +1389,7 @@ def start_GrpManagement(self, homefolder):
         self.log,
         self.readZclClusters,
         self.pluginParameters,
+        self.pairing_in_progress,
     )
     if self.groupmgt and self.ControllerIEEE:
         self.groupmgt.updateZigateIEEE(self.ControllerIEEE)
@@ -1422,7 +1423,8 @@ def start_OTAManagement(self, homefolder):
         self.log,
         self.PluginHealth,
         self.readZclClusters,
-        self.internet_available
+        self.internet_available,
+        self.pairing_in_progress
     )
     if self.OTA:
         self.webserver.update_OTA(self.OTA)
@@ -1457,7 +1459,8 @@ def start_web_server(self, webserver_port, webserver_homefolder):
         self.DomoticzMajor,
         self.DomoticzMinor,
         self.readZclClusters,
-        self.device_settings
+        self.device_settings,
+        self.pairing_in_progress
     )
     if self.FirmwareVersion:
         self.webserver.update_firmware(self.FirmwareVersion)

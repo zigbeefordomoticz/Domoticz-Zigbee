@@ -145,8 +145,10 @@ class WebServer(object):
         DomoticzMajor,
         DomoticzMinor,
         readZclClusters,
-        device_settings
+        device_settings,
+        pairing_in_progress,
     ):
+        self.pairing_in_progress = pairing_in_progress
         self.zigbee_communication = zigbee_communitation
         self.httpServerConn = None
         self.httpClientConn = None

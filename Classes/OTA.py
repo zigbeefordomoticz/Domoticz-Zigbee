@@ -151,7 +151,8 @@ class OTAManagement(object):
         log,
         PluginHealth,
         readZclClusters,
-        internet_available
+        internet_available,
+        pairing_in_progress,
         ):
         
         # Pointers to external objects
@@ -169,6 +170,7 @@ class OTAManagement(object):
         self.PluginHealth = PluginHealth
         self.readZclClusters = readZclClusters
         self.internet_available = internet_available
+        self.pairing_in_progress = pairing_in_progress
 
         # Properties for firmware/image management
         self.ListOfImages = {}  # List of available firmware loaded at plugin startup

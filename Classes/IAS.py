@@ -101,7 +101,7 @@ strobe_mode = 0x00
 
 class IAS_Zone_Management:
     
-    def __init__(self, pluginconf, ZigateComm, ListOfDevices, IEEE2NWK, DeviceConf, log, zigbee_communitation, FirmwareVersion, readZclClusters, ZigateIEEE=None):
+    def __init__(self, pluginconf, ZigateComm, ListOfDevices, IEEE2NWK, DeviceConf, log, zigbee_communitation, FirmwareVersion, readZclClusters, pairing_in_progress, ZigateIEEE=None):
         self.ListOfDevices = ListOfDevices
         self.IEEE2NWK = IEEE2NWK
         self.DeviceConf = DeviceConf
@@ -114,6 +114,7 @@ class IAS_Zone_Management:
         self.zigbee_communication = zigbee_communitation
         self.readZclClusters = readZclClusters
         self.FirmwareVersion = FirmwareVersion
+        self.pairing_in_progress = pairing_in_progress
 
     def logging(self, logType, message):
         self.log.logging("IAS", logType, message)

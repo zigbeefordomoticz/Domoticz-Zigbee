@@ -106,7 +106,8 @@ class GroupsManagement(object):
         DeviceConf,
         log,
         readZclClusters,
-        pluginParameters
+        pluginParameters,
+        pairing_in_progress,
     ):
         self.zigbee_communication = zigbee_communitation
         self.HB = 0
@@ -132,6 +133,7 @@ class GroupsManagement(object):
         self.readZclClusters = readZclClusters
         self.pluginParameters = pluginParameters
         self.ListOfDomoticzWidget = ListOfDomoticzWidget
+        self.pairing_in_progress = pairing_in_progress
         
         # Check if we have to open the old format
         if os.path.isfile(self.pluginconf.pluginConf["pluginData"] + "/GroupsList-%02d.pck" % hardwareID):

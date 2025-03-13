@@ -40,7 +40,7 @@ DURATION = 0x03
 
 
 class NetworkEnergy:
-    def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log):
+    def __init__(self, zigbee_communitation, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, log, pairing_in_progress):
         self.zigbee_communication = zigbee_communitation
         self.pluginconf = PluginConf
         self.ControllerLink = ZigateComm
@@ -48,6 +48,7 @@ class NetworkEnergy:
         self.Devices = Devices
         self.HardwareID = HardwareID
         self.log = log
+        self.pairing_in_progress = pairing_in_progress
 
         self.EnergyLevel = None
         self.ScanInProgress = False
