@@ -114,10 +114,6 @@ def processNotinDBDevices(self, Devices, NWKID, status, RIA):
         )
         status = "CreateDB"
 
-    # if status == "8043" and request_node_descriptor( self, NWKID, RIA=None, status=None):
-    #    # We have to request the node_descriptor
-    #    return
-
     if status != "CreateDB" and RIA == 4 and do_we_have_key_clusters( self, NWKID ):
         # Looks like we are ready to give up, but as we have cluster which translate into Widget, let's move
         status = "CreateDB"
@@ -164,9 +160,6 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
         self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
     self.ListOfDevices[NWKID]["Heartbeat"] = "0"
     self.ListOfDevices[NWKID]["Status"] = "0045"
-
-    request_tuya_magic_read = self.pluginconf.pluginConf["TuyaMagicRead"]
-
     MsgIEEE = self.ListOfDevices[NWKID].get("IEEE", None)
 
     if ( MsgIEEE and ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE ) ):
@@ -175,8 +168,6 @@ def interview_state_004d(self, NWKID, RIA=None, status=None):
     elif ( self.pluginconf.pluginConf["enableSchneiderWiser"] and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_WIZER_LEGACY ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
 
-    elif request_tuya_magic_read and ( MsgIEEE and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA):
-        ReadAttributeRequest_0000_for_tuya( self, NWKID)
 
     # Check if Cluster 0500 is on this device. If so this will trigger IAS asap
     zdp_raw_match_desc_req_0500( self,NWKID )
@@ -250,6 +241,7 @@ def interview_state_8045(self, NWKID, RIA=None, status=None):
 
     return "0043" if request_next_Ep(self, NWKID) else "0045"
 
+
 def request_next_Ep(self, Nwkid):
     if "ReqEpv2" not in self.ListOfDevices[Nwkid]:
         self.ListOfDevices[Nwkid]["ReqEpv2"] = {}
@@ -288,7 +280,7 @@ def interview_timeout(self, Devices, NWKID, RIA, status):
     self.log.logging("Pairing", "Error", "processNotinDB - not able to find response from " + str(NWKID) + " stop process at " + str(status))
     self.log.logging("Pairing", "Error", "processNotinDB - Collected Infos are : %s" % (str(self.ListOfDevices[NWKID])))
     self.adminWidgets.updateNotificationWidget(Devices, "Unable to collect all informations for enrollment of this devices. See Logs")
-    self.CommiSSionning = False
+    self.pairing_in_progress = False
     if "ReqEpv2" in self.ListOfDevices[NWKID]:
         del self.ListOfDevices[NWKID]["ReqEpv2"]
 
@@ -355,7 +347,7 @@ def interview_state_createDB(self, Devices, NWKID, RIA, status):
 def create_device_without_Domoticz_Widgets( self, Nwkid):
         self.ListOfDevices[Nwkid]["Status"] = "notDB"
         self.ListOfDevices[Nwkid]["PairingInProgress"] = False
-        self.CommiSSionning = False
+        self.pairing_in_progress = False
         self.ListOfDevices[ Nwkid ]["CertifiedDevice"] = self.ListOfDevices[Nwkid]["Model"] in self.DeviceConf
 
 
@@ -377,18 +369,18 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
         # Something went wrong in the Widget creation
         self.log.logging("Pairing", "Error","processNotinDBDevices - Creat Domo Device Failed !!! for %s status: %s" % (NWKID, self.ListOfDevices[NWKID]["Status"]))
         self.ListOfDevices[NWKID]["Status"] = "UNKNOW"
-        self.CommiSSionning = False
+        self.pairing_in_progress = False
         return
 
     self.ListOfDevices[ NWKID ]["PairingTime"] = time.time()
     # Don't know why we need as this seems very weird
     if NWKID not in self.ListOfDevices:
         self.log.logging("Pairing", "Error","processNotinDBDevices - %s doesn't exist in Post creation widget" % NWKID)
-        self.CommiSSionning = False
+        self.pairing_in_progress = False
         return
     if "Ep" not in self.ListOfDevices[NWKID]:
         self.log.logging("Pairing", "Error","processNotinDBDevices - %s doesn't have Ep in Post creation widget" % NWKID)
-        self.CommiSSionning = False
+        self.pairing_in_progress = False
         return
 
     if "ConfigSource" in self.ListOfDevices[NWKID]:
@@ -402,7 +394,7 @@ def full_provision_device(self, Devices, NWKID, RIA, status):
     # Reset HB in order to force Read Attribute Status
     self.ListOfDevices[NWKID]["Heartbeat"] = 0
     self.adminWidgets.updateNotificationWidget(Devices, "Successful creation of Widget for :%s DeviceID: %s" % (self.ListOfDevices[NWKID]["Model"], NWKID))
-    self.CommiSSionning = False
+    self.pairing_in_progress = False
 
     self.ListOfDevices[NWKID]["PairingInProgress"] = False
 
@@ -625,18 +617,24 @@ def handle_device_specific_needs(self, Devices, NWKID):
         return
     device_model = self.ListOfDevices[NWKID]["Model"]
 
-    # Do the Magic Read Attributes
-    if get_deviceconf_parameter_value(self, device_model, "TUYA_MAGIC_READ_ATTRIBUTES", return_default=False):
-        ReadAttributeRequest_0000_for_tuya( self, NWKID)
-
     # Tuya_regitration ?
     tuya_registration_parameter = get_deviceconf_parameter_value(self, device_model, "TUYA_REGISTRATION", return_default=None)
     tuya_data_request = get_deviceconf_parameter_value(self, device_model, "TUYA_RESET_CMD", return_default=False) 
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=False)
-    
+
+    request_tuya_magic_read = self.pluginconf.pluginConf["TuyaMagicRead"]
+
     self.log.logging("Pairing", "Debug", f"handle_device_specific_needs for {NWKID} tuya_registration_parameter: {tuya_registration_parameter} tuya_data_request: {tuya_data_request} tuya_data_request_polling: {tuya_data_request_polling}")
 
     MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
+
+    # Do the Magic Read Attributes
+    if request_tuya_magic_read and ( MsgIEEE and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA):
+        # we have Tuya range Mac Address
+        tuya_magic_read = get_deviceconf_parameter_value(self, device_model, "TUYA_MAGIC_READ_ATTRIBUTES", return_default=None)
+        if tuya_magic_read is not False:
+            ReadAttributeRequest_0000_for_tuya( self, NWKID)
+
     if device_model in ("Wiser2-Thermostat", "CCTFR6700"):
         wiser_home_lockout_thermostat(self, NWKID, 0)
 
