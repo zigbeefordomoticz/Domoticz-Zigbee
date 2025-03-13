@@ -1391,7 +1391,7 @@ def handle_normalized_other(self, dimm_blind_nvalue, prev_nValue, prev_sValue, n
 
 def is_time_to_domo_update(self, NwkId, Ep):
 
-    if self.CommiSSionning and NwkId not in self.ListOfDevices:
+    if self.pairing_in_progress and NwkId not in self.ListOfDevices:
         return False
 
     if NwkId not in self.ListOfDevices:
