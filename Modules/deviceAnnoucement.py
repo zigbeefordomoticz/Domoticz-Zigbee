@@ -364,7 +364,7 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     # 2- Create the Data Structutre
     initDeviceInList(self, NwkId)
     self.log.logging("DeviceAnnoucement", "Debug", "Decode004d - Looks like it is a new device sent by Zigate")
-    self.CommiSSionning = True
+    self.pairing_in_progress = True
     self.ListOfDevices[NwkId]["MacCapa"] = MsgMacCapa
     self.ListOfDevices[NwkId]["Capability"] = deviceMacCapa
     self.ListOfDevices[NwkId]["IEEE"] = MsgIEEE
