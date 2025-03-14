@@ -96,7 +96,9 @@ def populate_custom_dimmensions(self):
     ronelab_model = get_ronelabs_model_custom_definition()
     if ronelab_model:
         _custom_dimensions[ "dimension10"] = clean_custom_dimension_value(ronelab_model)
-        _custom_dimensions[ "dimension12"] = self.ListOfDevices.get('0000', {}).get('IEEE', "")
+        mac = self.ListOfDevices.get('0000', {}).get('IEEE', "")
+        formatted_mac = ":".join(mac[i:i + 2] for i in range(0, len(mac), 2))
+        _custom_dimensions[ "dimension12"] = formatted_mac
 
     # Platform Id ( Pi Model )
     pi_model = get_raspberry_pi_model()
