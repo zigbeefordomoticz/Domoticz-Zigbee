@@ -18,15 +18,22 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-##           - stable7.1.021 (2025.3) 
+## March 2025 - stable7.1.021 (2025.3) 
 
+- [Technical] - Open OTA for Xiaomi 
+- [Technical] - Improve docker script
+- [Technical] - More resilient to zigpy failure
 - [Technical] - Improve plugin resiliance when connection with coordintaor is lost.
 - [Technical] - Support network based coordinator over Etherneth such as SMLIGHT - ADAPTATEUR USB ETHERNET POE ZIGBEE 3.0
 - [Technical] - Better Time server implementation
 - [Technical] - Support multi read attributes in one request for Schneider and Timeserver
 - [Technical] - Fix Memory lead in the WebUI Server when handling client connections
+- [Technical] - Adding Cluster 0x0404 Flox measurement
 - [Technical] - Do not trigger Tuya magic packet at start of pairing. Wait that model name is known.
 
+- [Hardware] - Integration of Nodon Temp+Humi without battery
+- [Hardware] - Integration of Nodon Thermostatic Valve
+- [Hardware] - Integration of Sonoff SWV valve
 - [Hardware] - Integration of Gledopto Din Rail Dimmer switch, to allow working as switch or dimmer.
 - [Hardware] - Improve ZLinky integration and manage TEMPO Colour on Historic and Standard mode
 - [Hardware] - Integration of Nodon TRV
