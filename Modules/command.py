@@ -36,6 +36,8 @@ from Modules.fanControl import change_fan_mode
 from Modules.ikeaTradfri import ikea_air_purifier_mode
 from Modules.legrand_netatmo import cable_connected_mode, legrand_fc40
 from Modules.livolo import livolo_OnOff
+from Modules.occupancy_settings import (report_occupancy_sensing_occupied,
+                                        report_occupancy_sensing_unoccupied)
 from Modules.profalux import profalux_MoveToLiftAndTilt, profalux_stop
 from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_hact_fip_mode,
@@ -88,6 +90,7 @@ DEVICE_SWITCH_MATRIX = {
 
 ACTIONATORS = [
     "Switch",
+    "OccupancySensing",
     "Plug",
     "Motion",
     "SwitchAQ2",
@@ -326,6 +329,10 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         # Let's force a refresh of Attribute in the next Heartbeat
         request_read_device_status(self, Nwkid)
         return
+
+    if DeviceType == "OccupancySensing":
+        # Occupancy bit 1 set to 0
+        report_occupancy_sensing_unoccupied(self, Nwkid, EPout)
 
     if DeviceType == "LivoloSWR":
         livolo_OnOff(self, Nwkid, EPout, "Right", "Off")
@@ -607,6 +614,10 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         # Let's force a refresh of Attribute in the next Heartbeat
         request_read_device_status(self, Nwkid)
         return
+
+    if DeviceType == "OccupancySensing":
+        # Occupancy bit 1 set to 1
+        report_occupancy_sensing_occupied(self, Nwkid, EPout)
 
     if DeviceType == "DoorLock":
         cluster0101_lock_door(self, Nwkid)
