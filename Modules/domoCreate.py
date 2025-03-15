@@ -886,6 +886,11 @@ SIMPLE_WIDGET = {
         "Subtype": 73,
         "Switchtype": 0
     },
+    "OccupancySensing": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
     "SwitchAlarm": {
         "Type": 244,
         "Subtype": 73,
@@ -957,7 +962,6 @@ SIMPLE_WIDGET = {
         "Type": 242,
         "Subtype": 1
     },
-
     "TuyaDoorLock": {
         "Type": 244,
         "Subtype": 73,
