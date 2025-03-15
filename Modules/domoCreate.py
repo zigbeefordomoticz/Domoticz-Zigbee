@@ -925,6 +925,10 @@ SIMPLE_WIDGET = {
     "Temp": {
         "widgetType": "Temperature"
     },
+    "OutDoorTemperature": {
+        "widgetType": "Temperature"
+    },
+
     "Temp+Hum": {
         "widgetType": "Temp+Hum"
     },
@@ -945,6 +949,15 @@ SIMPLE_WIDGET = {
         "Type": 242,
         "Subtype": 1
     },
+    "UnoccupiedHeatingSetpoint": {
+        "Type": 242,
+        "Subtype": 1
+    },
+    "OccupiedCollingSetpoint": {
+        "Type": 242,
+        "Subtype": 1
+    },
+
     "TuyaDoorLock": {
         "Type": 244,
         "Subtype": 73,
