@@ -739,6 +739,21 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             sValue = str(nValue)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
+        if Attribute_ == "0001" and WidgetType == "OutDoorTemperature" and "OutDoorTemperature" in ClusterType:
+            nValue = value
+            sValue = "%s" %(10 * value,)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+        if Attribute_ == "0014" and WidgetType == "UnoccupiedHeatingSetpoint" and "UnoccupiedHeatingSetpoint" in ClusterType:
+            nValue = value
+            sValue = "%s" %(10 * value,)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+        if Attribute_ == "0011" and WidgetType == "OccupiedCollingSetpoint" and "OccupiedCollingSetpoint" in ClusterType:
+            nValue = value
+            sValue = "%s" %(10 * value,)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
         if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
             # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
             nvalue = round(value, 0)
