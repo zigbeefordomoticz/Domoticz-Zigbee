@@ -1060,6 +1060,9 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
 
         Level = max(min_dim_percent, Level)
         actuator_setlevel(self, Nwkid, EPout, Level, "Light", transitionMoveLevel, withOnOff=move_withonoff)
+        if model_name == "GL-SD-003P" and not move_withonoff:
+            # Request by Erwan, we switch on, so it behave in a standard way
+            actuator_on(self, Nwkid, EPout, "Light")
 
     # Domoticz widget update
     dimmable_blind = is_dimmable_blind(self, Devices, DeviceID, Unit)
