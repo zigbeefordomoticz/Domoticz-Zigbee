@@ -1060,7 +1060,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
 
         Level = max(min_dim_percent, Level)
         actuator_setlevel(self, Nwkid, EPout, Level, "Light", transitionMoveLevel, withOnOff=move_withonoff)
-        if model_name == "GL-SD-003P" and not move_withonoff:
+        if get_deviceconf_parameter_value(self, model_name, "ForceSwitchOnWithLevel", return_default=False) or (model_name == "GL-SD-003P" and not move_withonoff):
             # Request by Erwan, we switch on, so it behave in a standard way
             actuator_on(self, Nwkid, EPout, "Light")
 
