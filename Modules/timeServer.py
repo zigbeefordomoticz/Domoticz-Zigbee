@@ -14,7 +14,9 @@
 import calendar
 import os
 from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError  # ZoneInfoNotFoundError exists in Python 3.9+
+
+
 
 from Modules.basicInputs import read_attribute_response
 from Modules.sendZigateCommand import raw_APS_request
@@ -33,6 +35,47 @@ def get_local_timezone():
     """
     return os.environ.get('TZ', 'UTC') or 'UTC'
 
+def is_valid_timezone_system_check(self, tz_name):
+    """Check if a timezone exists by verifying against system time zone files."""
+    tz_path = os.path.join("/usr/share/zoneinfo", tz_name)
+    if not os.path.exists(tz_path):
+        _context = {
+            'Error': "TimeServer_002",
+            'Description': "/usr/share/zoneinfo/ not existing, please check your OS installation",
+            'Local_tz_name': tz_name,
+        }
+        self.log.logging(["TimeServer", "Input"], "Log", "TimeServer - TimeZone system missing", context=_context)
+        return False
+
+    return True
+
+
+def is_valid_timezone(self, tz_name):
+    """Check if a given timezone exists in the system."""
+    try:
+        ZoneInfo(tz_name)  # Try initializing the time zone
+
+    except ZoneInfoNotFoundError:  # Specific exception for missing ZoneInfo
+        _context = {
+            'Error': "TimeServer_003",
+            'Description': "Invalid time zone",
+            'Local_tz_name': tz_name,
+        }
+        self.log.logging(["TimeServer", "Input"], "Log", "TimeServer - calculate_dst_times - invalid time zone", context=_context)
+
+        return False
+
+    except Exception as e:  # Catch unexpected errors (optional)
+        _context = {
+            'Error': "TimeServer_001",
+            'Description': "Catch unexpected errors",
+            'Local_tz_name': tz_name,
+        }
+        self.log.logging(["TimeServer", "Input"], "Error", f"TimeServer - Unexpected error checking time zone '{tz_name}': {e}")
+        return False
+
+    return True
+
 
 def calculate_dst_times(self):
     """
@@ -42,19 +85,30 @@ def calculate_dst_times(self):
     """
     # Get the local time zone name
     local_tz_name = get_local_timezone()
+
     # If the time zone is UTC, no DST exists → return (0, 0, 0) immediately
     if local_tz_name == "UTC":
         return 0, 0, 0
 
+    # Checking Against System TZ Files
+    if not is_valid_timezone_system_check(self, local_tz_name):
+        return 0, 0, 0
+
+    # Check if the time zone exists before proceeding
+    if not is_valid_timezone(self, local_tz_name):
+        return 0, 0, 0
+
     try:
         local_tz = ZoneInfo(local_tz_name)
+
     except Exception as er:
         _context = {
-            'Error': "TimeServer_001",
+            'Error': "TimeServer_004",
             'Description': str(er),
+            'Type': type(er),
             'Local_tz_name': local_tz_name,
         }
-        self.log.logging(["TimeServer","Input"], "Error", "Decode0100 - calculate_dst_times - invalid time zone ", context=_context)
+        self.log.logging(["TimeServer","Input"], "Error", "TimeServer - calculate_dst_times - ZoneInfo initialization failed, default to UTC", context=_context)
         return 0, 0, 0
 
     current_year = datetime.now().year
@@ -77,7 +131,7 @@ def calculate_dst_times(self):
 
             except Exception as er:
                 _context = {
-                    'Error': "TimeServer_001",
+                    'Error': "TimeServer_005",
                     'Description': str(er),
                     'Local_tz_name': local_tz_name,
                     'Local_tz': local_tz,
@@ -86,14 +140,14 @@ def calculate_dst_times(self):
                     'Day': day,
                     'Date': date
                 }
-                self.log.logging(["TimeServer","Input"], "Error", "Decode0100 - calculate_dst_times - invalid date ", context=_context)
+                self.log.logging(["TimeServer","Input"], "Error", "Decode0100 - calculate_dst_times - invalid date, default to UTC", context=_context)
                 return 0, 0, 0
 
         if dst_end:
             break
 
     if dst_start is None or dst_end is None:
-        print("No DST transition found for this time zone.")
+        self.log.logging(["TimeServer","Input"], "Log", "No DST transition found for this time zone.")
         return 0, 0, 0  # Return zero values if no DST change occurs
 
     # Calculate the DST shift in seconds
