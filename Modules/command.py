@@ -45,7 +45,9 @@ from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_set_contract,
                                      schneider_temp_Setcurrent)
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
-from Modules.thermostats import thermostat_Mode, thermostat_Setpoint
+from Modules.thermostats import (thermostat_cool_setpoint, thermostat_Mode,
+                                 thermostat_Setpoint,
+                                 thermostat_unoccupied_heat_setpoint)
 from Modules.tools import (get_device_config_param,
                            get_deviceconf_parameter_value)
 from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
@@ -118,6 +120,8 @@ ACTIONATORS = [
     "ColorControlRGBWZ",
     "ColorControlRGBW",
     "ThermoSetpoint",
+    "UnoccupiedHeatingSetpoint",
+    "OccupiedCollingSetpoint",
     "ThermoMode",
     "ACMode", "CAC221ACMode",
     "ThermoMode_2",
@@ -745,6 +749,14 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
         return
 
+    if DeviceType == "UnoccupiedHeatingSetpoint":
+        _set_level_unoccupied_heating_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
+        return
+
+    if DeviceType == "OccupiedCollingSetpoint":
+        _set_level_occupied_cool_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
+        return        
+
     if DeviceType == "TempSetCurrent":
         _set_level_set_current_temp(self, Devices, DeviceID, Unit, Nwkid, EPout, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev)
         return
@@ -1189,6 +1201,47 @@ def _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name,
         request_read_device_status(self, Nwkid)
 
     return
+
+def _set_level_unoccupied_heating_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev ):
+    # Log the command
+    self.log.logging( "Command", "Debug", f"_set_level_unoccupied_heating_setpoint : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid, )
+
+    # Convert Level to the appropriate format for the thermostat
+    unoccupied_heating_setpoint = int(float(Level) * 100)
+
+    # Set the thermostat setpoint
+    thermostat_unoccupied_heat_setpoint(self, Nwkid, unoccupied_heating_setpoint)
+
+    # Normalize the Level value to 2 decimal places
+    normalized_level = round(float(Level), 2)
+
+    # Update the Domoticz widget
+    update_domoticz_widget( self, Devices, DeviceID, Unit, 0, str(normalized_level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+
+    # Request a refresh of the attribute in the next Heartbeat
+    if get_deviceconf_parameter_value(self, model_name, "READ_ATTRIBUTE_AFTER_COMMAND", return_default=True):
+        request_read_device_status(self, Nwkid)
+
+
+def _set_level_occupied_cool_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev ):
+    # Log the command
+    self.log.logging( "Command", "Debug", f"_set_level_occupied_cool_setpoint : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid, )
+
+    # Convert Level to the appropriate format for the thermostat
+    cool_setpoint = int(float(Level) * 100)
+
+    # Set the thermostat setpoint
+    thermostat_cool_setpoint(self, Nwkid, cool_setpoint)
+
+    # Normalize the Level value to 2 decimal places
+    normalized_level = round(float(Level), 2)
+
+    # Update the Domoticz widget
+    update_domoticz_widget( self, Devices, DeviceID, Unit, 0, str(normalized_level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev )
+
+    # Request a refresh of the attribute in the next Heartbeat
+    if get_deviceconf_parameter_value(self, model_name, "READ_ATTRIBUTE_AFTER_COMMAND", return_default=True):
+        request_read_device_status(self, Nwkid)
 
 
 def _set_level_fan_control(self, Devices, DeviceID, Unit, BatteryLevel, SignalLevel, forceUpdateDev, DeviceType, Nwkid, EPout, Level, model_name):

@@ -14,12 +14,19 @@
 from Modules.basicOutputs import write_attribute
 from Modules.casaia import casaia_check_irPairing, casaia_setpoint
 from Modules.danfoss import thermostat_Setpoint_Danfoss
-from Modules.readAttributes import ReadAttributeRequest_0201
+from Modules.readAttributes import (
+    ReadAttributeRequest_0201, ReadAttributeRequest_thermostat_cool_setpoint,
+    ReadAttributeRequest_thermostat_unoccupied_heat_setpoint)
 from Modules.schneider_wiser import (schneider_hact_heater_type_wiser2,
                                      schneider_setpoint)
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaTRV import tuya_setpoint
 from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
+
+THERMOSTAT_CLUSTER = "0201"
+OCCUPIED_HEATING_SETPOINT = "0012"
+UNOCCUPIED_HEATING_SETPOINT = "0013"
+OCCUPIED_COOLING_SETPOINT = "0011"
 
 
 def thermostat_Setpoint_SPZB(self, NwkId, setpoint):
@@ -35,7 +42,7 @@ def thermostat_Setpoint_SPZB(self, NwkId, setpoint):
     Hdata = "%04x" % setpoint
     EPout = "01"
     for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
-        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
+        if THERMOSTAT_CLUSTER in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
             EPout = tmpEp
 
     self.log.logging(
@@ -46,6 +53,64 @@ def thermostat_Setpoint_SPZB(self, NwkId, setpoint):
         nwkid=NwkId,
     )
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+
+def thermostat_unoccupied_heat_setpoint(self, nwkid, unoccupied_heating_setpoint):
+    self.log.logging(
+        ["Thermostats"], "Debug",
+        f"thermostat_unoccupied_heat_setpoint - for {nwkid} with value {unoccupied_heating_setpoint}",
+        nwkid=nwkid
+    )
+
+    EPout = next((ep for ep, attrs in self.ListOfDevices[nwkid]["Ep"].items() if THERMOSTAT_CLUSTER in attrs), "01")
+
+    cluster_id = THERMOSTAT_CLUSTER
+    Hattribute = UNOCCUPIED_HEATING_SETPOINT
+    manuf_id, manuf_spec, data_type = "0000", "00", "29"  # Int16
+
+    unoccupied_heating_setpoint = round(unoccupied_heating_setpoint * 2) / 2  # Ensure rounding to 0.5 degrees
+    Hdata = f"{int(unoccupied_heating_setpoint):04x}"  # Format as a 4-char hex string
+
+    self.log.logging(
+        ["Thermostats"], "Debug",
+        f"thermostat_unoccupied_heat_setpoint - for {nwkid} with value 0x{Hdata} / "
+        f"cluster: {cluster_id}, attribute: {Hattribute}, type: {data_type}",
+        nwkid=nwkid
+    )
+
+    write_attribute(self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+    ReadAttributeRequest_thermostat_unoccupied_heat_setpoint(self, nwkid)
+
+
+def thermostat_cool_setpoint(self, nwkid, cool_setpoint):
+    self.log.logging(
+        ["Thermostats"], "Debug",
+        f"thermostat_cool_setpoint - for {nwkid} with value {cool_setpoint}",
+        nwkid=nwkid
+    )
+
+    cluster_id = THERMOSTAT_CLUSTER
+    Hattribute = OCCUPIED_COOLING_SETPOINT
+    manuf_id, manuf_spec, data_type = "0000", "00", "29"  # Int16
+
+    cool_setpoint = round(cool_setpoint * 2) / 2  # Round to nearest 0.5 degrees
+    Hdata = f"{int(cool_setpoint):04x}"  # Ensure a 4-character hex format
+
+    # Find the appropriate endpoint dynamically
+    EPout = next(
+        (ep for ep, attrs in self.ListOfDevices[nwkid]["Ep"].items() if THERMOSTAT_CLUSTER in attrs),
+        "01"
+    )
+
+    self.log.logging(
+        ["Thermostats"], "Debug",
+        f"thermostat_cool_setpoint - for {nwkid} with value 0x{Hdata} / "
+        f"cluster: {cluster_id}, attribute: {Hattribute}, type: {data_type}",
+        nwkid=nwkid
+    )
+
+    write_attribute(self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+    ReadAttributeRequest_thermostat_cool_setpoint(self, nwkid)
 
 
 def thermostat_Setpoint(self, NwkId, setpoint):
@@ -116,12 +181,12 @@ def thermostat_Setpoint(self, NwkId, setpoint):
 
     EPout = "01"
     for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
-        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
+        if THERMOSTAT_CLUSTER in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
             EPout = tmpEp
 
     # Heat setpoint by default
-    cluster_id = "%04x" % 0x0201
-    Hattribute = "%04x" % 0x0012
+    cluster_id = THERMOSTAT_CLUSTER
+    Hattribute = OCCUPIED_HEATING_SETPOINT
 
     if (
         cluster_id in self.ListOfDevices[NwkId]["Ep"][EPout]
@@ -129,7 +194,7 @@ def thermostat_Setpoint(self, NwkId, setpoint):
         and self.ListOfDevices[NwkId]["Ep"][EPout][cluster_id]["001c"] == 0x03
     ):
         # Cool Setpoint
-        Hattribute = "%04x" % 0x0011
+        Hattribute = OCCUPIED_COOLING_SETPOINT
 
     manuf_id = "0000"
     manuf_spec = "00"
@@ -148,7 +213,7 @@ def thermostat_Setpoint(self, NwkId, setpoint):
         self.log.logging(["Thermostats","Schneider"], "Debug", "Patch Hdata  %s" % Hdata)
 
     EPout = "01"
-    self.log.logging( ["Thermostats","Schneider"], "Deug", "thermostat_Setpoint - for %s with value 0x%s / cluster: %s, attribute: %s type: %s" % (
+    self.log.logging( ["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - for %s with value 0x%s / cluster: %s, attribute: %s type: %s" % (
         NwkId, Hdata, cluster_id, Hattribute, data_type), nwkid=NwkId, )
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
@@ -177,7 +242,7 @@ def thermostat_eurotronic_hostflag(self, NwkId, action):
     data = "%06x" % HOSTFLAG_ACTION[action]
     EPout = "01"
     for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
-        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
+        if THERMOSTAT_CLUSTER in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
             EPout = tmpEp
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
     self.log.logging(
@@ -236,7 +301,7 @@ def thermostat_Calibration(self, NwkId, calibration=None):
     data = "%02x" % calibration
     EPout = "01"
     for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
-        if "0201" in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
+        if THERMOSTAT_CLUSTER in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
             EPout = tmpEp
 
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
@@ -276,7 +341,7 @@ def thermostat_Mode(self, NwkId, mode):
     manuf_spec = "00"
 
     # Find the Ep we should send the request
-    ep_out = next( ( ep for ep in self.ListOfDevices[NwkId]["Ep"] if "0201" in self.ListOfDevices[NwkId]["Ep"][ep] ), "01", )
+    ep_out = next( ( ep for ep in self.ListOfDevices[NwkId]["Ep"] if THERMOSTAT_CLUSTER in self.ListOfDevices[NwkId]["Ep"][ep] ), "01", )
     cluster_id = "%04x" % 0x0201
     attribute = "%04x" % 0x001C
     data_type = "30"  # Enum8

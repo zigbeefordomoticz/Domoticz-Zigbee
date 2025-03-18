@@ -857,6 +857,8 @@ def ReadAttributeRequest_0102_0008(self, key):
         ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0102", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
+
+
 def ReadAttributeRequest_0201(self, key):
     # Thermostat
 
@@ -922,19 +924,62 @@ def ReadAttributeRequest_0201(self, key):
         read_manufacturer_specific_attributes(self, key, ep_out, "0201")
 
 
+def ReadAttributeRequest_thermostat_cool_setpoint(self, nwkid):
+    """Request attribute 0x0011 (Occupied Cooling point)"""
 
-def ReadAttributeRequest_0201_0012(self, key):
+    self.log.logging(
+        "ReadAttributes", "Debug",
+        f"ReadAttributeRequest_thermostat_cool_setpoint / 0x0011 - Key: {nwkid}",
+        nwkid=nwkid
+    )
+
+    eps_list = getListOfEpForCluster(self, nwkid, "0201")
+
+    attributes_list = [0x0011]  # Define attributes list before looping
+
+    for EPout in eps_list:
+        cluster_0201 = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(EPout, {}).get("0201")
+        if cluster_0201:
+            ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "0201", attributes_list, ackIsDisabled=is_ack_tobe_disabled(self, nwkid))
+
+
+def ReadAttributeRequest_thermostat_unoccupied_heat_setpoint(self, nwkid):
+    """Request attribute 0x0013 (Unoccupied Setpoint)"""
+
+    self.log.logging(
+        "ReadAttributes", "Debug",
+        f"ReadAttributeRequest_thermostat_unoccupied_heat_setpoint / 0x0013 - Key: {nwkid}",
+        nwkid=nwkid
+    )
+
+    eps_list = getListOfEpForCluster(self, nwkid, "0201")
+
+    attributes_list = [0x0013]  # Define attributes list before looping
+
+    for EPout in eps_list:
+        cluster_0201 = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(EPout, {}).get("0201")
+        if cluster_0201:
+            ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "0201", attributes_list, ackIsDisabled=is_ack_tobe_disabled(self, nwkid))
+
+
+
+def ReadAttributeRequest_0201_0012(self, nwkid):
     """ Request attribute 0x0012 (Occupied Setpoint)"""
 
-    self.log.logging("ReadAttributes", "Debug", "ReadAttributeRequest_0201 / 0x0012 - Key: %s " % key, nwkid=key)
-    eps_list = getListOfEpForCluster(self, key, "0201")
+    self.log.logging(
+        "ReadAttributes", "Debug",
+        f"ReadAttributeRequest_0201_0012 / 0x0011 - Key: {nwkid}",
+        nwkid=nwkid
+    )
+
+    eps_list = getListOfEpForCluster(self, nwkid, "0201")
+
+    attributes_list = [0x0012]  # Define attributes list before looping
+
     for EPout in eps_list:
-
-        cluster_0201 = self.ListOfDevices.get(key, {}).get("Ep", {}).get(EPout, {}).get("0201")
+        cluster_0201 = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(EPout, {}).get("0201")
         if cluster_0201:
-            attributes_list = [0x0012,]
-
-        ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0201", attributes_list, ackIsDisabled=is_ack_tobe_disabled(self, key))
+            ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "0201", attributes_list, ackIsDisabled=is_ack_tobe_disabled(self, nwkid))
 
 
 def ReadAttributeRequest_0202(self, key):
