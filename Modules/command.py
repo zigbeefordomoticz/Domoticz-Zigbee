@@ -36,8 +36,8 @@ from Modules.fanControl import change_fan_mode
 from Modules.ikeaTradfri import ikea_air_purifier_mode
 from Modules.legrand_netatmo import cable_connected_mode, legrand_fc40
 from Modules.livolo import livolo_OnOff
-from Modules.occupancy_settings import (report_occupancy_sensing_occupied,
-                                        report_occupancy_sensing_unoccupied)
+from Modules.occupancySensing import (report_occupancy_sensing_occupied,
+                                      report_occupancy_sensing_unoccupied)
 from Modules.profalux import profalux_MoveToLiftAndTilt, profalux_stop
 from Modules.schneider_wiser import (schneider_EHZBRTS_thermoMode,
                                      schneider_hact_fip_mode,
