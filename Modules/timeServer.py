@@ -14,9 +14,8 @@
 import calendar
 import os
 from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError  # ZoneInfoNotFoundError exists in Python 3.9+
-
-
+from zoneinfo import (ZoneInfo,  # ZoneInfoNotFoundError exists in Python 3.9+
+                      ZoneInfoNotFoundError)
 
 from Modules.basicInputs import read_attribute_response
 from Modules.sendZigateCommand import raw_APS_request
@@ -62,7 +61,6 @@ def is_valid_timezone(self, tz_name):
             'Local_tz_name': tz_name,
         }
         self.log.logging(["TimeServer", "Input"], "Log", "TimeServer - calculate_dst_times - invalid time zone", context=_context)
-
         return False
 
     except Exception as e:  # Catch unexpected errors (optional)
@@ -71,7 +69,7 @@ def is_valid_timezone(self, tz_name):
             'Description': "Catch unexpected errors",
             'Local_tz_name': tz_name,
         }
-        self.log.logging(["TimeServer", "Input"], "Error", f"TimeServer - Unexpected error checking time zone '{tz_name}': {e}")
+        self.log.logging(["TimeServer", "Input"], "Debug", f"TimeServer - Unexpected error checking time zone '{tz_name}': {e}")
         return False
 
     return True
