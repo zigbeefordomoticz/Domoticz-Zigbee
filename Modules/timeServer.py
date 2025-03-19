@@ -223,17 +223,31 @@ def get_response_data_for_timer_attribute_request( self, nwkid, attribute):
     elif attribute == "0007":  # LocalTime
         self.log.logging(["TimeServer","Input"], "Debug", f"-->Local Time: {datetime.now()}")
 
+        # Get current time as aware datetime
+        now = datetime.now().astimezone()  # aware datetime based on local time
+
+        # Define epoch time (ensure it's aware or naive depending on your needs)
         epoch = TUYA_EPOCTime if self.ListOfDevices.get(nwkid, {}).get("Model") == "TS0601-thermostat" else ZIGBEE_EPOCH
+
+        # Check and log if using TUYA_EPOCTime
         if epoch == TUYA_EPOCTime:
             self.log.logging(
-                ["TimeServer","Input"],
+                ["TimeServer", "Input"],
                 "Debug",
                 "timeserver_read_attribute_request Response uses EPOCH from 1970-01-01 instead of 2000-01-01",
             )
 
-        tz_offset = datetime.now().astimezone().utcoffset() or timedelta(seconds=0)
+        # Get timezone offset (this will be a timedelta)
+        tz_offset = now.utcoffset() or timedelta(seconds=0)
+
+        # Make sure both 'now' and 'epoch' are aware before subtracting them.
+        # If epoch is naive, you might want to make it aware as well, like so:
+        if epoch.tzinfo is None:  # If the epoch is naive, make it aware
+            epoch = epoch.replace(tzinfo=now.tzinfo)
+
         local_time = int((now + tz_offset - epoch).total_seconds())
         value = f"{local_time:08x}"
+
         data_type = "23"  # uint32
         status = "00"
 
