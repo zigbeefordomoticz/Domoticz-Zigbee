@@ -322,6 +322,13 @@ def ts0601_switch(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0006", state)
 
 
+def ts0601_dimmer(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_dimmer - Dimmer %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Dimmer", value)
+    brightness = value / 10  # This give from 1 to 100
+    MajDomoDevice(self, Devices, nwkid, ep, "0008", "%02x" % brightness)
+
+
 def ts0601_level_percentage(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_level_percentage - Percentage%s %s %s" % (nwkid, ep, value), nwkid, )
     store_tuya_attribute(self, nwkid, "PercentLevel", value)
@@ -723,6 +730,7 @@ DP_SENSOR_FUNCTION = {
     "tamper": ts0601_tamper,
     "charging_mode": ts0601_charging_mode,
     "switch": ts0601_switch,
+    "dimmer": ts0601_dimmer,
     "door": ts0601_door,
     "lvl_percentage": ts0601_level_percentage,
     "co2": ts0601_co2ppm,
@@ -1035,10 +1043,31 @@ def ts0601_action_switch(self, NwkId, Ep, dp, value=None):
     self.log.logging("Tuya0601", "Debug", "ts0601_action_switch - %s Switch Action: dp:%s value: %s" % (
         NwkId, dp, value))
     device_value = value
-   
+
     action = "%02x01" % dp  # State
     data = "%02x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_action_dimmer(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_dimmer - Dimmer %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Dimmer", value)
+
+    dp = get_tuya_attribute(self, nwkid, 'Dimmer')
+    action = "%02x02" %dp
+    data = "%08x" % value * 10
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
+def ts0601_action_switch_type(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch_type - Type %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "SwitchType", value)
+
+    dp = get_tuya_attribute(self, nwkid, 'SwitchType')
+
+    action = "%02x04" % dp
+    data = "%02x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
 
 
 def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
@@ -1238,6 +1267,8 @@ TS0601_COMMANDS = {
     "ReclosingEnabled": (None, "01"),
     "RecloseRecover": (None, "02"),
     "PoweronDelay": (None, "02"),
+    "dimmer": ts0601_action_dimmer,
+    "SwitchType": ts0601_action_switch_type,
 }
 
 
