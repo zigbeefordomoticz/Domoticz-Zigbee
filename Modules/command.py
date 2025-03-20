@@ -478,7 +478,8 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         and not get_deviceconf_parameter_value(self, model_name, "StandardZigbeeCommand", return_default=False)
         and ts0601_extract_data_point_infos( self, model_name)
         ):
-        ts0601_actuator(self, Nwkid, "switch", 0)
+            self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Switch Off with Tuya dimmer.", Nwkid, )
+            ts0601_actuator(self, Nwkid, "switch", 0)
     else:
         # Remaining Slider widget
         _off_command_default(self, Nwkid, EPout, profalux, model_name)
@@ -679,7 +680,8 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         and not get_deviceconf_parameter_value(self, model_name, "StandardZigbeeCommand", return_default=False)
         and ts0601_extract_data_point_infos( self, model_name)
         ):
-        ts0601_actuator(self, Nwkid, "switch", 1)
+            self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Switch On with Tuya dimmer.", Nwkid, )
+            ts0601_actuator(self, Nwkid, "switch", 1)
 
     elif profalux:
             move_withonoff = bool( get_device_config_param(self, Nwkid, "MoveWithOnOff") or get_deviceconf_parameter_value(self, model_name, "MoveWithOnOff", return_default=False) )
@@ -1042,6 +1044,10 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
 
     elif model_name == "TS0601-curtain":
         tuya_curtain_lvl(self, Nwkid, (Level))
+
+    elif DeviceType == 'LvlControl' and ts0601_extract_data_point_infos( self, model_name):
+        self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Set Level {Level} with Tuya dimmer.", Nwkid, )
+        ts0601_actuator(self, Nwkid, "dimmer", Level)
 
     elif profalux:
         move_withonoff = bool( get_device_config_param(self, Nwkid, "MoveWithOnOff") or get_deviceconf_parameter_value(self, model_name, "MoveWithOnOff", return_default=False) )
