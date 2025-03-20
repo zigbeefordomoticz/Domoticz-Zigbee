@@ -818,6 +818,26 @@ def ts0601_tuya_action(self, NwkId, Ep, action, dp, dt, value):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
+def ts0601_settings( self, NwkId, dps_mapping, param, value):
+    """ Handle in a more generic way TS0601 settings, by extracting Data Type from the config """
+
+    self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {NwkId}")
+
+    for key, dps_value in dps_mapping.items():
+        self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {key}:{dps_value}")
+        if "action_type" in dps_value and dps_value["action_type"] == param:
+            dt = dps_value[ "data_type"] if "data_type" in dps_value else None
+            if dt:
+                dp = int( key, 16)
+                self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {param} {dp} {dt} {value}")
+                ts0601_tuya_action(self, NwkId, "01", param, dp, dt, value)
+                return
+
+    if param in TS0601_COMMANDS:
+        self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"sanity_check_of_param  {param} {value}")
+        ts0601_actuator(self, NwkId, param, value)
+
+
 def ts0601_action_setpoint(self, NwkId, Ep, dp, value):
     # The Setpoint is coming in centi-degre (default)
     if value is None:
@@ -868,26 +888,6 @@ def ts0601_antifrost(self, NwkId, Ep, dp, value=None):
     action = "%02x01" % dp
     data = "%02x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
-
-
-def ts0601_settings( self, NwkId, dps_mapping, param, value):
-    """ Handle in a more generic way TS0601 settings, by extracting Data Type from the config """
-    
-    self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {NwkId}")
-    
-    for key, dps_value in dps_mapping.items():
-        self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {key}:{dps_value}")
-        if "action_type" in dps_value and dps_value["action_type"] == param:
-            dt = dps_value[ "data_type"] if "data_type" in dps_value else None
-            if dt:
-                dp = int( key, 16)
-                self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {param} {dp} {dt} {value}")
-                ts0601_tuya_action(self, NwkId, "01", param, dp, dt, value)
-                return
-            
-    if param in TS0601_COMMANDS:
-        self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"sanity_check_of_param  {param} {value}")
-        ts0601_actuator(self, NwkId, param, value)
 
 
 def ts0601_action_calibration_legacy(self, NwkId, Ep, dp, calibration=None):
@@ -988,6 +988,35 @@ WIDGET_BAB_1413Pro_E_COMMAND = {
     5: 0x01
     }
 
+
+
+def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
+    # 0 Capacity ( Litter )
+    # 1 Duration ( Seconds)
+
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_irrigation_mode - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, value))
+    device_value = value
+
+    action = "%02x01" % dp  # Mode
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+SAFETY_MIN_SECS = 10
+DURATION = 1
+
+
+def check_irrigation_valve_target_value(value, mode):
+    if value > 0 and value < SAFETY_MIN_SECS and mode == DURATION:
+        return SAFETY_MIN_SECS
+    else:
+        return value
+
+
 def ts0601_action_trv8_system_mode(self, NwkId, Ep, dp, value=None):
     # Manual: 0x02
     # Programming: 0x00
@@ -1049,62 +1078,6 @@ def ts0601_action_switch(self, NwkId, Ep, dp, value=None):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
-def ts0601_action_dimmer(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Debug", "ts0601_action_dimmer - Dimmer %s %s %s" % (nwkid, ep, value), nwkid)
-    store_tuya_attribute(self, nwkid, "Dimmer", value)
-
-    dp = get_tuya_attribute(self, nwkid, 'Dimmer')
-    action = "%02x02" %dp
-    data = "%08x" % value * 10
-    ts0601_tuya_cmd(self, nwkid, ep, action, data)
-
-
-def ts0601_action_switch_type(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch_type - Type %s %s %s" % (nwkid, ep, value), nwkid)
-    store_tuya_attribute(self, nwkid, "SwitchType", value)
-
-    dp = get_tuya_attribute(self, nwkid, 'SwitchType')
-
-    action = "%02x04" % dp
-    data = "%02x" % value
-    ts0601_tuya_cmd(self, nwkid, ep, action, data)
-
-def ts0601_action_vibration_sensitivity(self, Devices, nwkid, ep, value):
-    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch_type - Sensitivity %s %s %s" % (nwkid, ep, value), nwkid)
-    store_tuya_attribute(self, nwkid, "VibrationSensitivity", value)
-
-    dp = get_tuya_attribute(self, nwkid, 'VibrationSensitivity')
-
-    action = "%02x04" % dp
-    data = "%02x" % value
-    ts0601_tuya_cmd(self, nwkid, ep, action, data)
-
-
-def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
-    # 0 Capacity ( Litter )
-    # 1 Duration ( Seconds)
-
-    if value is None:
-        return
-
-    self.log.logging("Tuya0601", "Debug", "ts0601_irrigation_mode - %s Switch Action: dp:%s value: %s" % (
-        NwkId, dp, value))
-    device_value = value
-   
-    action = "%02x01" % dp  # Mode
-    data = "%02x" % (device_value)
-    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
-
-SAFETY_MIN_SECS = 10
-DURATION = 1
-   
-def check_irrigation_valve_target_value(value, mode):
-    if value > 0 and value < SAFETY_MIN_SECS and mode == DURATION:
-        return SAFETY_MIN_SECS
-    else:
-        return value
-
-
 def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
     if value is None:
         return
@@ -1120,6 +1093,7 @@ def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
     action = "%02x02" % dp  # Irrigation Target (Time or Litters)
     data = "%08x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
 
 def ts0601_solar_siren_alarm_melody( self, NwkId, Ep, dp, melody=None):
     if melody is None:
@@ -1237,6 +1211,42 @@ def ts0601_curtain_indicator_status(self, NwkId, Ep, dp, mode=None):
     action = "%02x04" % dp  # I
     data = "%02x" % (mode)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+def ts0601_action_dimmer(self, nwkid, ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_dimmer - Dimmer %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Dimmer", value)
+
+    action = "%02x02" %dp
+    data = "%08x" % value * 10
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
+def ts0601_action_switch_type(self, nwkid, ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch_type - Type %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "SwitchType", value)
+
+    action = "%02x04" % dp
+    data = "%02x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
+def ts0601_action_vibration_sensitivity(self, nwkid, ep, dp, value=None):
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch_type - Sensitivity %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "VibrationSensitivity", value)
+
+    action = "%02x04" % dp
+    data = "%02x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
 
 
 TS0601_COMMANDS = {
