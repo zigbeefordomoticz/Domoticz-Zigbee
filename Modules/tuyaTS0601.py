@@ -1069,6 +1069,16 @@ def ts0601_action_switch_type(self, Devices, nwkid, ep, value):
     data = "%02x" % value
     ts0601_tuya_cmd(self, nwkid, ep, action, data)
 
+def ts0601_action_vibration_sensitivity(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch_type - Sensitivity %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "VibrationSensitivity", value)
+
+    dp = get_tuya_attribute(self, nwkid, 'VibrationSensitivity')
+
+    action = "%02x04" % dp
+    data = "%02x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
 
 def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
     # 0 Capacity ( Litter )
@@ -1110,7 +1120,6 @@ def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
     action = "%02x02" % dp  # Irrigation Target (Time or Litters)
     data = "%08x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
-
 
 def ts0601_solar_siren_alarm_melody( self, NwkId, Ep, dp, melody=None):
     if melody is None:
@@ -1269,6 +1278,7 @@ TS0601_COMMANDS = {
     "PoweronDelay": (None, "02"),
     "dimmer": ts0601_action_dimmer,
     "SwitchType": ts0601_action_switch_type,
+    "VibrationSensitity": ts0601_action_vibration_sensitivity
 }
 
 
