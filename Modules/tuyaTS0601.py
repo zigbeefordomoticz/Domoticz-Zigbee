@@ -1236,6 +1236,11 @@ def ts0601_action_dimmer(self, nwkid, ep, dp, value=None):
 
 
 def ts0601_action_switch_type(self, nwkid, ep, dp, value=None):
+    """ Tuya Switch Type :
+        toggle: 0
+        state: 1
+        momentary: 2
+    """
     if value is None:
         return
 
@@ -1248,10 +1253,11 @@ def ts0601_action_switch_type(self, nwkid, ep, dp, value=None):
 
 
 def ts0601_action_vibration_sensitivity(self, nwkid, ep, dp, value=None):
+
     if value is None:
         return
 
-    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch_type - Sensitivity %s %s %s" % (nwkid, ep, value), nwkid)
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_vibration_sensitivity - Sensitivity %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "VibrationSensitivity", value)
 
     action = "%02x04" % dp
