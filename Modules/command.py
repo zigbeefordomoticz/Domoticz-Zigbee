@@ -1047,6 +1047,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
 
     elif DeviceType == 'LvlControl' and ts0601_extract_data_point_infos( self, model_name):
         self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Set Level {Level} with Tuya dimmer.", Nwkid, )
+        # Level is a % value on a scale of 0 to 100
         ts0601_actuator(self, Nwkid, "dimmer", Level)
 
     elif profalux:
