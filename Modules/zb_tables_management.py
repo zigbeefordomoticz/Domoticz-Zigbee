@@ -340,12 +340,19 @@ def mgmt_routingtable_response( self, srcnwkid, MsgSourcePoint, MsgClusterID, ds
 
     if Status != "00":
         return
+
     if len(RoutingTableListRecord) % 10 != 0:
         return
+
     for idx in range(0, len(RoutingTableListRecord), 10):
         target_nwkid = RoutingTableListRecord[idx + 2 : idx + 4] + RoutingTableListRecord[idx : idx + 2]
+        
+        if target_nwkid == srcnwkid:
+            # skip a route to itself !
+            continue
         target_bitfields = RoutingTableListRecord[idx + 4 : idx + 6]
         next_hop = RoutingTableListRecord[idx + 8 : idx + 10] + RoutingTableListRecord[idx + 6 : idx + 8]
+
         device_status = int(target_bitfields, 16) & 0b00000111
         device_memory_constraint = (int(target_bitfields, 16) & 0b00001000) >> 3
         many_to_one = (int(target_bitfields, 16) & 0b00010000) >> 4
@@ -357,15 +364,19 @@ def mgmt_routingtable_response( self, srcnwkid, MsgSourcePoint, MsgClusterID, ds
             }
         }
         
-        if device_status not in ( 0x02, 0x03, 0x05, 0x06, 0x07):
-            routing_record[target_nwkid]["MemoryConstrained"] = device_memory_constraint
-            routing_record[target_nwkid]["ManyToOne"] = many_to_one
-            routing_record[target_nwkid]["RouteRecordRequired"] = route_record_required
-            routing_record[target_nwkid]["NextHopNwkId"] = next_hop
-            self.log.logging("NetworkMap", "Debug", "---- new entry: %s" %routing_record)
-            update_merge_new_device_to_last_entry(self, srcnwkid, "RoutingTable", routing_record )
-        else:
-            self.log.logging("NetworkMap", "Debug", "---- drop this entry due to status %s -> %s %s " %( srcnwkid, target_nwkid, device_status))
+        self.log.logging("NetworkMap", "Debug", "---- status %s -> %s [%s] - %s" %( srcnwkid, target_nwkid, device_status, STATUS_OF_ROUTE.get(device_status,"Unknown")))
+
+        if device_status in ( 0x02, 0x03, 0x05, 0x06, 0x07):
+            # Invalid route status
+            self.log.logging("NetworkMap", "Debug", "Route %s %s has route status %s (droping)" %( srcnwkid, target_nwkid, device_status))
+            continue
+
+        routing_record[target_nwkid]["MemoryConstrained"] = device_memory_constraint
+        routing_record[target_nwkid]["ManyToOne"] = many_to_one
+        routing_record[target_nwkid]["RouteRecordRequired"] = route_record_required
+        routing_record[target_nwkid]["NextHopNwkId"] = next_hop
+        self.log.logging("NetworkMap", "Debug", "---- new entry: %s" %routing_record)
+        update_merge_new_device_to_last_entry(self, srcnwkid, "RoutingTable", routing_record )
                 
     if int(RoutingTableIndex, 16) + int(RoutingTableListCount, 16) < int(RoutingTableSize, 16):
         self.log.logging("NetworkMap", "Debug", "mgmt_routingtable_response requesting Routing Table for %s Idx %s" %(
