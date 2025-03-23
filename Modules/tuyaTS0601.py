@@ -323,9 +323,14 @@ def ts0601_switch(self, Devices, nwkid, ep, value):
 
 
 def ts0601_dimmer(self, Devices, nwkid, ep, value):
+    """ Dimmer value on a Tuya scale from 0 to 1000 """
+
     self.log.logging("Tuya0601", "Debug", "ts0601_dimmer - Dimmer %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Dimmer", value)
-    brightness = value / 10  # This give from 1 to 100
+    # converter function maps Tuya's raw data (0–1000 scale) to the Zigbee level (0–255 scale) which is handled by domoMaj
+    brightness = (value * 255) // 1000
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_dimmer - Dimmer %s %s %s brightness: %s" % (nwkid, ep, value, brightness), nwkid)
     MajDomoDevice(self, Devices, nwkid, ep, "0008", "%02x" % brightness)
 
 
@@ -1214,14 +1219,19 @@ def ts0601_curtain_indicator_status(self, NwkId, Ep, dp, mode=None):
 
 
 def ts0601_action_dimmer(self, nwkid, ep, dp, value=None):
+    """ Call from command to set the dimmer value, it comes on a scale of 0 to 100 from domoticz """
+
     if value is None:
         return
 
     self.log.logging("Tuya0601", "Debug", "ts0601_action_dimmer - Dimmer %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Dimmer", value)
 
+    # Convert to a scale of 0 - 1000 for the Tuya device
+    brightness = int((value * 1000) / 100)
+
     action = "%02x02" %dp
-    data = "%08x" % value * 10
+    data = "%08x" % brightness
     ts0601_tuya_cmd(self, nwkid, ep, action, data)
 
 
