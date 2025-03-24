@@ -805,12 +805,14 @@ SIMPLE_WIDGET = {
         "Subtype": 6,
         "Switchtype": 0
     },
-
     "P1Meter": {
         "Type": 250,
         "Subtype": 1,
         "Switchtype": 1
     },
+    "P1Meter_1": { "Type": 250, "Subtype": 1, "Switchtype": 1 },
+    "P1Meter_2": { "Type": 250, "Subtype": 1, "Switchtype": 1 },
+    "P1Meter_3": { "Type": 250, "Subtype": 1, "Switchtype": 1 },
     "P1Meter_ZL": {
         "Type": 250,
         "Subtype": 1,
