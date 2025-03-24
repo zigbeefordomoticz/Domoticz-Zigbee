@@ -519,36 +519,49 @@ def _log_error_formula( self, e, _eval_formula, custom_variable):
     self.log.logging("ZclClusters", "Error", "   - variables: %s" % custom_variable)
 
 
-def store_value_in_specif_storage( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3):
-    
-    self.log.logging( "ZclClusters", "Debug", "store_value_in_specif_storage - %s/%s %s %s %s %s" %(
-        MsgSrcAddr, MsgSrcEp, _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3, value))
-    if _storage_specificlvl1 is None:
-        return
-    
-    if _storage_specificlvl1 not in self.ListOfDevices[ MsgSrcAddr ]:
-        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ] = {}
-    if _storage_specificlvl2 is None:
-        self.log.logging( "ZclClusters", "Debug", "     store_value_in_specif_storage  [%s] = %s" %(
-            _storage_specificlvl1, value))
-        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ] = value
-        return
-    
-    if _storage_specificlvl2 not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ]:
-        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ] = {}
-    if _storage_specificlvl3 is None:
-        self.log.logging( "ZclClusters", "Debug", "     store_value_in_specif_storage  [%s][%s] = %s" %( 
-            _storage_specificlvl1, _storage_specificlvl2, value))
-        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ] = value
-        return
-    
-    if _storage_specificlvl3 not in self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ]:
-        self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = {}
-    self.log.logging( "ZclClusters", "Debug", "     store_value_in_specif_storage  [%s][%s][%s] = %s" %( 
-        _storage_specificlvl1, _storage_specificlvl2, _storage_specificlvl3, value))
-    self.ListOfDevices[ MsgSrcAddr ][ _storage_specificlvl1 ][ _storage_specificlvl2 ][ _storage_specificlvl3 ] = value
+def store_value_in_specif_storage(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value,
+                                  _storage_specificlvl1, _storage_specificlvl2=None, _storage_specificlvl3=None):
+    """ Stores value in a hierarchical storage structure inside self.ListOfDevices """
 
- 
+    self.log.logging("ZclClusters", "Debug",
+                     f"store_value_in_specif_storage - {MsgSrcAddr}/{MsgSrcEp} {_storage_specificlvl1} "
+                     f"{_storage_specificlvl2} {_storage_specificlvl3} {value}")
+
+    if _storage_specificlvl1 is None:
+        return  # No valid storage level
+
+    device_data = self.ListOfDevices.setdefault(MsgSrcAddr, {})
+
+    # Ensure _storage_specificlvl1 is always a dictionary
+    if not isinstance(device_data.get(_storage_specificlvl1), dict):
+        device_data[_storage_specificlvl1] = {}
+
+    if _storage_specificlvl2 is None:
+        self.log.logging("ZclClusters", "Debug", f"     store_value_in_specif_storage [{_storage_specificlvl1}] = {value}")
+        device_data[_storage_specificlvl1] = value
+        return
+
+    level1_data = device_data[_storage_specificlvl1]
+
+    # Ensure _storage_specificlvl2 is always a dictionary
+    if not isinstance(level1_data.get(_storage_specificlvl2), dict):
+        level1_data[_storage_specificlvl2] = {}
+
+    if _storage_specificlvl3 is None:
+        self.log.logging("ZclClusters", "Debug", f"     store_value_in_specif_storage [{_storage_specificlvl1}][{_storage_specificlvl2}] = {value}")
+        level1_data[_storage_specificlvl2] = value
+        return
+
+    level2_data = level1_data[_storage_specificlvl2]
+
+    # Ensure _storage_specificlvl3 is always a dictionary
+    if not isinstance(level2_data.get(_storage_specificlvl3), dict):
+        level2_data[_storage_specificlvl3] = {}
+
+    self.log.logging("ZclClusters", "Debug", f"     store_value_in_specif_storage [{_storage_specificlvl1}][{_storage_specificlvl2}][{_storage_specificlvl3}] = {value}")
+    level2_data[_storage_specificlvl3] = value
+
+
 def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, device_model, attr_name, exp_dt, _ranges, _special_values, eval_formula, action_list, eval_inputs, force_value, value):
 
     if not self.pluginconf.pluginConf["trackZclClustersIn"]:
