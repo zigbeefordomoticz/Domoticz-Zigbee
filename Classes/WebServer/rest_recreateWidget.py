@@ -49,13 +49,13 @@ def rest_recreate_widgets(self, verb, data, parameters):
             domoticz_error_api("rest_recreate_widgets - Unknown device %s " % key)
             return _response
         nwkid = self.IEEE2NWK[key]
-        _response["Data"] = json.dumps({"Status": "Ok", "Status": "IEEE %s set to Provisioning Requested at %s" % (key, int(time()))})
+        _response["Data"] = json.dumps({"Status": "Ok", "Description": "IEEE %s set to Provisioning Requested at %s" % (key, int(time()))})
     else:
         nwkid = data["NWKID"]
         if nwkid not in self.ListOfDevices:
             domoticz_error_api("rest_recreate_widgets - Unknown device %s " % nwkid)
             return _response
-        _response["Data"] = json.dumps({"Status": "Ok", "Status": "NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))})
+        _response["Data"] = json.dumps({"Status": "Ok", "Description": "NwkId %s set to Provisioning Requested at %s" % (nwkid, int(time()))})
 
     over_write_type_from_deviceconf( self, self.Devices, nwkid)
     self.ListOfDevices[nwkid]["Status"] = "CreateDB"
