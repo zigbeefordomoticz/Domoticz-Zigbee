@@ -30,6 +30,7 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                remove_bad_cluster_type_entry,
                                update_domoticz_widget)
+from Modules.linky import linky_tarif_color
 from Modules.switchSelectorWidgets import (SWITCH_SELECTORS,
                                            get_force_update_value_mapping)
 from Modules.tools import (get_deviceconf_parameter_value, str_round,
@@ -144,7 +145,12 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 return
             nValue, sValue = get_notification_day_color( value )
             self.log.logging( "Widget", "Log", f"ZLinky Color of the Day {value} => {nValue},{sValue}", NwkId, )
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
+        if ClusterType == "Alarm" and WidgetType == "LinkyTarif" and Attribute_ == "0039":
+            nValue, sValue = linky_tarif_color( value )
+            
+            self.log.logging( "Widget", "Log", f"ZLiLinky nky Tarif Color {value} => {nValue}:{sValue}", NwkId, )
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if "Ampere" in ClusterType and WidgetType == "Ampere" and Attribute_ == "0508":
