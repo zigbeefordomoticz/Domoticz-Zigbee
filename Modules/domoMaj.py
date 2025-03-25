@@ -208,7 +208,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 self.log.logging(["Widget","Electric"], "Debug", "------>PowerNegative  : %s" % sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-            if WidgetType == "P1Meter_1" and Attribute_ == "0100":  # HC
+            if WidgetType == "P1Meter_HPHC" and Attribute_ == "0100":  # HC
                 self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NwkId)
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0")
@@ -218,7 +218,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter : " + sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-            if WidgetType == "P1Meter_1" and Attribute_ == "0102":  # HP
+            if WidgetType == "P1Meter_HPHC" and Attribute_ == "0102":  # HP
                 self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter : %s (%s)" % (value, type(value)), NwkId)
                 usage1 = usage2 = return1 = return2 = cons = prod = 0
                 cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0")
@@ -226,46 +226,6 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 usage2 = int(float(value))
                 sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
                 self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter : " + sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
-
-            if WidgetType == "P1Meter_2" and Attribute_ == "0104":  # HC
-                self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_2 : %s (%s)" % (value, type(value)), NwkId)
-                usage1 = usage2 = return1 = return2 = cons = prod = 0
-                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0")
-                cons = _retreive_instant_power(self, NwkId, Ep)
-                usage1 = int(float(value))
-                sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
-                self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_1 : " + sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
-
-            if WidgetType == "P1Meter_2" and Attribute_ == "0106":  # HP
-                self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_2 : %s (%s)" % (value, type(value)), NwkId)
-                usage1 = usage2 = return1 = return2 = cons = prod = 0
-                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0")
-                cons = _retreive_instant_power(self, NwkId, Ep)
-                usage2 = int(float(value))
-                sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
-                self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_2 : " + sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
-
-            if WidgetType == "P1Meter_3" and Attribute_ == "0108":  # HC
-                self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_3 : %s (%s)" % (value, type(value)), NwkId)
-                usage1 = usage2 = return1 = return2 = cons = prod = 0
-                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0")
-                cons = _retreive_instant_power(self, NwkId, Ep)
-                usage1 = int(float(value))
-                sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
-                self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_3 : " + sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
-
-            if WidgetType == "P1Meter_3" and Attribute_ == "010a":  # HP
-                self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_3 : %s (%s)" % (value, type(value)), NwkId)
-                usage1 = usage2 = return1 = return2 = cons = prod = 0
-                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0")
-                cons = _retreive_instant_power(self, NwkId, Ep)
-                usage2 = int(float(value))
-                sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, prod)
-                self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_3 : " + sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if WidgetType == "P1Meter" and Attribute_ == "0000":
