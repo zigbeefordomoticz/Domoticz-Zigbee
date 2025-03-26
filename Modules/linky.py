@@ -14,9 +14,9 @@
 LINKY_TARIF_MATRIX = {
     "BASE": (0, "All Hours"),
     "TH..": (0, "All Hours"),
+    
     "HC..": (1, "Off-peak Hours"),
     "HP..": (2, "Peak Hours"),
-
     "HEURES CREUSES": (1, "Off-peak Hours"),
     "HEURES PLEINES": (2, "Peak Hours"),
     
@@ -52,14 +52,14 @@ LINKY_MODE = {
 }
 
 
-def linky_tarif_color( value ):
+def linky_tarif_color( self, value ):
     """ Translate the Linky PTEC value to a tuple of nValues and sValues for Domoticz """
-
+    self.log.logging( "GammaTroniques", "Log", f"linky_tarif_color Tarif Color >{value}<")
     return LINKY_TARIF_MATRIX.get(value, (3, "Unknown Tarif"))
    
-def linky_mode_tic( value ):
+def linky_mode_tic( self, value ):
     """ Translate the Linky TIC Mode value to a dict of Mode and Config file to be used """
-
+    self.log.logging( "GammaTroniques", "Log", f"linky_mode_tic Mode >{value}<")
     return LINKY_MODE.get(value, { "Mode": ('unknown', 'unknown'), "Conf": "TICMeter-unknown" })
         
         
