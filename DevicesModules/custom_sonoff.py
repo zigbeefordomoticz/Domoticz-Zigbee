@@ -88,6 +88,7 @@ def auto_close_when_water_shortage(self, nwkid, value):
     water_close_valve_timeout = "%04x" % value
     write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", SONOFF_WATER_CLOSE_VALVE_TIMEOUT_ATTRIBUTE, "21", water_close_valve_timeout, ackIsDisabled=False)
 
+
 def zbmicro_radio_power_turbo_mode(self, nwkid, mode):
     """ Enable/disable Radio Power Turbo Mode """
     RADIO_POWER_MODE = {
