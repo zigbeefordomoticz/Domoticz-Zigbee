@@ -1234,6 +1234,13 @@ def ts0601_action_dimmer(self, nwkid, ep, dp, value=None):
     data = "%08x" % brightness
     ts0601_tuya_cmd(self, nwkid, ep, action, data)
 
+    # Make sure to Switch on the switch if not yet done
+    if value > 0:
+        # Assuming Switch DP is 1
+        ts0601_action_switch(self, nwkid, ep, 1, 1)
+    else:
+        ts0601_action_switch(self, nwkid, ep, 1, 0)
+
 
 def ts0601_action_switch_type(self, nwkid, ep, dp, value=None):
     """ Tuya Switch Type :
