@@ -147,10 +147,19 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging( "Widget", "Log", f"ZLinky Color of the Day {value} => {nValue},{sValue}", NwkId, )
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType == "Alarm" and WidgetType == "LinkyTarif" and Attribute_ == "0039":
-            nValue, sValue = linky_tarif_color( value )
-            
-            self.log.logging( "Widget", "Log", f"ZLiLinky nky Tarif Color {value} => {nValue}:{sValue}", NwkId, )
+        if ClusterType == "Alarm" and WidgetType == "LinkyCurrentTarif" and Attribute_ == "0039":
+            nValue, sValue = linky_tarif_color( self, value )
+            self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+        if ClusterType == "Alarm" and WidgetType == "LinkyNextDayColor" and Attribute_ == "0003":
+            nValue, sValue = linky_tarif_color( self, value )
+            self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+        if ClusterType == "Alarm" and WidgetType == "LinkyCurrentDayColor" and Attribute_ == "003a":
+            nValue, sValue = linky_tarif_color( self, value )
+            self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if "Ampere" in ClusterType and WidgetType == "Ampere" and Attribute_ == "0508":

@@ -607,12 +607,23 @@ SIMPLE_WIDGET = {
         "Subtype": 22,
         "Switchtype": 0
     },
-    # Période tarifaire en cours
-    "LinkyTarif": {
+    # Période tarifaire Linky
+    "LinkyCurrentTarif": {
         "Type": 243,
         "Subtype": 22,
         "Switchtype": 0
     },
+    "LinkyNextDayColor": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0
+    },
+    "LinkyCurrentDayColor": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0
+    },
+
     "Alarm_ZL": {
         "Type": 243,
         "Subtype": 22,
