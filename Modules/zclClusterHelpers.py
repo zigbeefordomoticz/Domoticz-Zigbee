@@ -485,9 +485,12 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
                      nwk_id)
 
     MULTIPLIER_DIVISOR_MAPPING = {
-        '0505': {'multiplier': '0600', 'divisor': '0601', 'custom': 'RMSVoltageDivisor'},  # RMS Voltage
-        '0508': {'multiplier': '0602', 'divisor': '0603', 'custom': 'RMSCurrentDivisor'},  # RMS Current
+        '0505': {'multiplier': '0600', 'divisor': '0601', 'custom': 'RMSVoltageDivisor'},   # RMS Voltage
+        '0508': {'multiplier': '0602', 'divisor': '0603', 'custom': 'RMSCurrentDivisor'},   # RMS Current
         '050b': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Active Power
+        "050f": {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée
+        "090b": {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 2
+        "050a": {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 3
     }
 
     if isinstance(raw_value, str):
