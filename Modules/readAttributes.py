@@ -82,7 +82,8 @@ ATTRIBUTES = {
     "fc40": [0x0000],   # Legrand
     "fc57": [ ],  # Ikea STARKVIND
     "fc7d": [ 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008],   # Ikea STARKVIND
-    "ff66": [0x0000, 0x0002, 0x0003],   # Zlinky
+    "ff66": [ 0x0000, 0x0002, 0x0003],   # Zlinky
+    "ff42": [ ],  # GammaTronique TIC Meter
 }
 
 
@@ -1444,8 +1445,8 @@ def ReadAttribute_ZLinkyIndex( self, nwkid ):
         nwkid, "0702", INDEX_ATTRIBUTES[ optarif ], optarif), nwkid=nwkid)
     if optarif in INDEX_ATTRIBUTES:
         ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, "0702", INDEX_ATTRIBUTES[ optarif ], ackIsDisabled=False)
-
-
+    
+    
 def ReadAttributeRequest_0702_PC321(self, key):
     
     # Cluster 0x0702 Metering / Specific 0x0000
@@ -1746,6 +1747,33 @@ def ReadAttributeRequest_fc7d(self, key):
     ReadAttributeReq(self, key, ZIGATE_EP, EPout, "fc7d", listAttributes, manufacturer_spec="01", manufacturer="117c", ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
+TIC_CLUSTERID = "ff42"
+
+def read_attributes_gammatroniques_tic_meter(self, nwkid):
+    EPout = "01"
+    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_gammatroniques_tic_meter: " + nwkid + " EPout = " + EPout + " Cluster = " + TIC_CLUSTERID, nwkid=nwkid)
+    listAttributes = retreive_ListOfAttributesByCluster(self, nwkid, EPout, TIC_CLUSTERID)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, TIC_CLUSTERID, listAttributes, ackIsDisabled=False)
+
+
+def read_attributes_ticmeter_tarif(self, nwkid):
+    """ Read attributes to TICMeter to collect all related attributes on tariff """
+    attributes = [ 0x000B, 0x0000, 0x0039, 0x0001, 0x003A, 0x0003 ]
+    ep_out = "01"
+    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_tarif: %s cluster %s attribute: %s" %( 
+        nwkid, TIC_CLUSTERID,attributes ), nwkid=nwkid)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, TIC_CLUSTERID, attributes, ackIsDisabled=False)
+
+
+def read_attributes_ticmeter_details(self, nwkid):
+    attributes = [ 0x0002, 0x002c, 0x002a, 0x002d ]
+    ep_out = "01"
+    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %( 
+        nwkid, TIC_CLUSTERID,attributes ), nwkid=nwkid)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, TIC_CLUSTERID, attributes, ackIsDisabled=False)
+
+
+
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
     "0000": (ReadAttributeRequest_0000, "polling0000"),
@@ -1784,4 +1812,5 @@ READ_ATTRIBUTES_REQUEST = {
     "fc40": (ReadAttributeRequest_fc40, "pollingfc40"),
     "fc7d": (ReadAttributeRequest_fc7d, "pollingfc7d"),
     "ff66": (ReadAttributeRequest_ff66, "pollingff66"),
+    "ff42": (read_attributes_gammatroniques_tic_meter, "pollingff42"),
 }
