@@ -31,7 +31,7 @@ def format_uptime(milliseconds):
     return f"{int(days)}d {int(hours):02}:{int(minutes):02}:{int(seconds):02}"
 
 
-def _retreive_ticmeter_nwkid(self):
+def _retreive_ticmeter_nwkids(self):
     """Returns a list of network IDs that contain a TICMeter."""
     return [nwid for nwid in self.ListOfDevices if GAMMATRONIQUES in self.ListOfDevices[nwid]]
 
@@ -39,12 +39,19 @@ def _retreive_ticmeter_nwkid(self):
 def _retreive_ticmode_human_readable(ticmeter_datas):
     
     tic_mode = ticmeter_datas.get('ModeTIC', 0)
-    linky_mode = LINKY_MODE.get(tic_mode, 'Unknown')
-    if linky_mode == 'Unknown':
-        return 'Unknown'
-    return f"{linky_mode['Mode'][0]} {linky_mode['Mode'][1]}"
-    
-    
+    linky_mode = LINKY_MODE.get(tic_mode)
+    return 'Unknown' if linky_mode is None else f"{linky_mode['Mode'][0]}"
+
+
+def _retreive_mode_elec_human_readable(mode_elec):
+
+    if mode_elec == 1:
+        return "Monophasé"
+    elif mode_elec == 0:
+        return "Triphasé"
+    return "Unknown"
+
+
 def rest_TICMeter(self, verb, data, parameters): 
 
     _response = prepResponseMessage(self, setupHeadersResponse())
@@ -53,7 +60,7 @@ def rest_TICMeter(self, verb, data, parameters):
     _ticmeter_response = []
     self.logging( "Log", "rest_TICMeter - for %s %s %s" % (verb, data, parameters))
     # find if we have a ZLinky
-    tic_meters_list = _retreive_ticmeter_nwkid(self)
+    tic_meters_list = _retreive_ticmeter_nwkids(self)
     self.logging( "Log", f"rest_TICMeter - identified {tic_meters_list}" )
     
     for ticmeter in tic_meters_list:
@@ -67,7 +74,9 @@ def rest_TICMeter(self, verb, data, parameters):
         device = {
             'Nwkid': ticmeter,
             'ZDeviceName': get_device_nickname( self, NwkId=ticmeter),
+            'Identifiant': f"{int( ticmeter_datas['Identifiant'])}" if "Identifiant" in ticmeter_datas else "Unknown",
             'TICMode': _retreive_ticmode_human_readable(ticmeter_datas),
+            'Mode Electrique': _retreive_mode_elec_human_readable( ticmeter_datas.get('ModeElec') ),
             'Type de contrat': ticmeter_datas.get('OPTARIF') or ticmeter_datas.get('NGTF', 'Unknown'),
             'Période tarifaire en cours': ticmeter_datas.get('PTEC') or ticmeter_datas.get('LTARF', 'Unknown'),
             'Puissance Max contrat': ticmeter_datas.get('pref') or ticmeter_datas.get('PREF', 'Unknown'),
