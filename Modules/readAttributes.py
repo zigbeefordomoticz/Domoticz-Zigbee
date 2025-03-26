@@ -1768,11 +1768,19 @@ def read_attributes_ticmeter_tarif(self, nwkid):
 def read_attributes_ticmeter_details(self, nwkid):
     attributes = [ 0x0002, 0x002c, 0x002a, 0x002d ]
     ep_out = "01"
-    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %( 
+    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
         nwkid, TIC_CLUSTERID,attributes ), nwkid=nwkid)
     ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, TIC_CLUSTERID, attributes, ackIsDisabled=False)
 
+    attributes = [ 0x0308, ]
+    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
+        nwkid, "0702", attributes ), nwkid=nwkid)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, "0702", attributes, ackIsDisabled=False)
 
+    attributes = [ 0x000e, ]
+    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
+        nwkid, "0b01", attributes ), nwkid=nwkid)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, "0b01", attributes, ackIsDisabled=False)
 
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
