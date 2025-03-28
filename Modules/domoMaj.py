@@ -1169,6 +1169,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 # Helpers
 
 def process_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
+    self.log.logging(["Widget", "Electric"], "Log", f"------> process_instant_power : {WidgetType} {Attribute_} {value} ({type(value)})", NwkId)
 
     check_set_meter_widget(self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)
 
@@ -1192,14 +1193,14 @@ def process_instant_power(self, WidgetType, Attribute_, value, Devices, device_i
 
     instant = round(float(value), 2)
     sValue = "%s;%s" % (instant, summation)
-    self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}", NwkId)
+    self.log.logging(["Widget","Electric"], "Log", f"- {device_id_ieee} {device_unit} Instant Power received {value} converted to {instant} and {summation} resulting in {sValue}", NwkId)
 
     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
 
 def process_p1meter_hphc(self, widget_type, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
     """Handles P1Meter_HPHC processing based on the Attribute type."""
-    self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meter_hphc : {widget_type} {Attribute_} {value} ({type(value)})", NwkId)
+    self.log.logging(["Widget", "Electric"], "Log", f"------> process_p1meter_hphc : {widget_type} {Attribute_} {value} ({type(value)})", NwkId)
 
     if widget_type not in ("Meter", "P1Meter"):
         self.log.logging(["Widget", "Electric"], "Error", f"Unsupported widget type: {widget_type}", NwkId)
@@ -1211,6 +1212,7 @@ def process_p1meter_hphc(self, widget_type, Attribute_, value, Devices, device_i
 
     # Retrieve instant power consumption
     instant_power = _retreive_instant_power(self, NwkId, Ep)
+    self.log.logging(["Widget", "Electric"], "Log", f"------> retreived instant power: {instant_power}", NwkId)
 
     # Convert value safely
     try:
@@ -1232,7 +1234,7 @@ def process_p1meter_hphc(self, widget_type, Attribute_, value, Devices, device_i
     elif Attribute_ == "0102" and widget_type == "P1Meter":
         sValue = f"{cur_usage1};{parsed_value};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
-    self.log.logging(["Widget", "Electric"], "Debug", f"------------> {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
+    self.log.logging(["Widget", "Electric"], "Log", f"------------> {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
 
     # Update Domoticz widget
     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
@@ -1722,11 +1724,14 @@ def temp_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
 
 
 def _retreive_instant_power(self, NwkId, Ep):
-    """ retreive Instant Power in 0x0702/0x0400 or 0x0b04/0x050b"""
+    """ retreive Instant Power in 0x0702/0x0400 or 0x0b04/0x050f or 0x0b04/0x050b"""
 
     ep_data = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(Ep, {})
     if "0702" in ep_data and "0400" in ep_data["0702"]:
         return round(float(ep_data["0702"]["0400"]), 2)
+
+    if "0b04" in ep_data and "050f" in ep_data["0b04"]:
+        return round(float(ep_data["0b04"]["050f"]), 2)
 
     if "0b04" in ep_data and "050b" in ep_data["0b04"]:
         return round(float(ep_data["0b04"]["050b"]), 2)
