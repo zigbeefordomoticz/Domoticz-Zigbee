@@ -42,7 +42,7 @@ LINKY_TARIF_MATRIX = {
 }
 
 
-LINKY_MODE = {
+LINKY_MODEL_NAME = {
     0: { "Mode": ('historique', 'mono'), "Conf": "TICMeter-mono" },
     1: { "Mode": ('standard', 'mono'), "Conf": "TICMeter-mono" },
     2: { "Mode": ('historique', 'tri'), "Conf": "TICMeter-tri" },
@@ -51,6 +51,16 @@ LINKY_MODE = {
     7: { "Mode": ('standard', 'tri prod'), "Conf": "TICMeter-tri-prod" },
 }
 
+TIC_MODE = {
+    0: "standard",
+    1: "historique",
+}
+
+LINKY_GRID = {
+    0: "Any",
+    1: "Monophase",
+    2: "Triphasé",
+}
 
 def linky_tarif_color( self, value ):
     """ Translate the Linky PTEC value to a tuple of nValues and sValues for Domoticz """
@@ -60,7 +70,7 @@ def linky_tarif_color( self, value ):
 def linky_mode_tic( self, value ):
     """ Translate the Linky TIC Mode value to a dict of Mode and Config file to be used """
     self.log.logging( "GammaTroniques", "Log", f"linky_mode_tic Mode >{value}<")
-    return LINKY_MODE.get(value, { "Mode": ('unknown', 'unknown'), "Conf": "TICMeter-unknown" })
+    return LINKY_MODEL_NAME.get(value, { "Mode": ('unknown', 'unknown'), "Conf": "TICMeter-unknown" })
         
 def decode_registre_status( registre_status):
     """ Decoding of Registre status Linky frame and return a dictionnary of values """
