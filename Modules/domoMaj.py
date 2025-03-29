@@ -218,7 +218,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
                 if WidgetType in ( "Meter", "P1Meter", "P1Meter_HPHC"):
                     self.log.logging(["Widget","Electric"], "Debug", "------> %s  : %s" % (WidgetType, value), NwkId)
-                    process_p1meters_meter_with_instant_power(self, "P1Meter", Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+                    process_p1meters_meter_with_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
 
             if WidgetType == "ProdPower" and Attribute_ == "":
                 if value > 0:
@@ -1209,16 +1209,15 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
     """Handles P1Meter_HPHC processing based on the Attribute type."""
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_summation : {widget_type} {Attribute_} {value} ({type(value)})", NwkId)
 
-    if widget_type not in ("Meter", "P1Meter"):
-        self.log.logging(["Widget", "Electric"], "Error", f"Unsupported widget type: {widget_type}", NwkId)
-        return
-
     # Retrieve previous data
-    if widget_type == "P1Meter":
+    if widget_type.startswith("P1Meter"):
         cur_usage1, cur_usage2, cur_return1, cur_return2, _, cur_prod = retrieve_data_from_current( self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0" )
 
     # Retrieve instant power consumption
     instant_power = _retreive_instant_power(self, NwkId, Ep)
+    if instant_power is None:
+        return
+
     self.log.logging(["Widget", "Electric"], "Debug", f"------> retreived instant power: {instant_power}", NwkId)
 
     # Convert value safely
@@ -1232,14 +1231,12 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
     if Attribute_ == "0000" and widget_type == "Meter":
         sValue = f"{instant_power}:{parsed_value}"
 
-    elif Attribute_ == "0000" and widget_type == "P1Meter":
-        sValue = f"{parsed_value};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
+    elif widget_type.startswith("P1Meter"):
+        if Attribute_ in ["0000", "0100"]:
+            sValue = f"{parsed_value};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
-    elif Attribute_ == "0100" and widget_type == "P1Meter":
-        sValue = f"{parsed_value};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
-
-    elif Attribute_ == "0102" and widget_type == "P1Meter":
-        sValue = f"{cur_usage1};{parsed_value};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
+        elif Attribute_ == "0102":
+            sValue = f"{cur_usage1};{parsed_value};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
     self.log.logging(["Widget", "Electric"], "Debug", f"------------> {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
 
@@ -1250,24 +1247,24 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
     """Handles P1Meter_HPHC processing based on the Attribute type."""
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_instant_power : {widget_type} {Attribute_} {value} ({type(value)})", NwkId)
 
-    if widget_type not in ("Meter", "P1Meter"):
-        self.log.logging(["Widget", "Electric"], "Error", f"Unsupported widget type: {widget_type}", NwkId)
-        return
-
     # Retrieve previous data
-    if widget_type == "P1Meter":
+    if widget_type.startswith("P1Meter"):
         cur_usage1, cur_usage2, cur_return1, cur_return2, _, cur_prod = retrieve_data_from_current( self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0" )
+        if cur_usage1 == '0':
+            cur_usage1 = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute="0100") or 0)
+        if cur_usage2 == '0':
+            cur_usage2 = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute="0102") or 0)
 
     elif widget_type == "Meter":
         _, currrent_usage= retrieve_data_from_current( self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0" )
-
-    # Retrieve instant power consumption
-    instant_power = _retreive_instant_power(self, NwkId, Ep)
-    if instant_power is None:
+        if currrent_usage == '0':
+            currrent_usage = '%s' %(_retreive_summation_power(self, NwkId, Ep, summation_attribute="0000") or 0)
+       
+    else:
+        self.log.logging(["Widget", "Electric"], "Error", f"Invalid WidgetType : {widget_type} {Attribute_} {value} ({type(value)})", NwkId)
         return
-    
-    self.log.logging(["Widget", "Electric"], "Debug", f"------> retreived instant power: {instant_power}", NwkId)
 
+        
     # Convert value safely
     try:
         instant_power = round(float(value), 2)  # Ensures proper conversion
@@ -1279,7 +1276,7 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
     if widget_type == "Meter":
         sValue = f"{instant_power}:{currrent_usage}"
 
-    elif widget_type == "P1Meter":
+    elif widget_type.startswith("P1Meter"):
         sValue = f"{cur_usage1};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
     self.log.logging(["Widget", "Electric"], "Debug", f"------------> {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
@@ -1787,13 +1784,16 @@ def _retreive_instant_power(self, NwkId, Ep):
     return None 
 
 
-def _retreive_summation_power(self, NwkId, Ep):
+def _retreive_summation_power(self, NwkId, Ep, summation_attribute="0000"):
+    self.log.logging(["Widget", "Electric"], "Debug", f"_retreive_summation for {NwkId} from {summation_attribute}", NwkId)
 
     ep_data = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(Ep, {})
 
-    if "0702" in ep_data and "0000" in ep_data["0702"]:
-        value_0000 = ep_data["0702"]["0000"]
-        if value_0000 not in ({}, "", "0"):
-            return int(float(value_0000))
+    if "0702" in ep_data and summation_attribute in ep_data["0702"]:
+        value = ep_data["0702"][summation_attribute]
+        self.log.logging(["Widget", "Electric"], "Debug", f"_retreive_summation for {NwkId} from {summation_attribute} and get {value}", NwkId)
+        
+        if value not in ({}, "", "0"):
+            return int(float(value))
 
     return None
