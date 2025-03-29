@@ -1241,7 +1241,7 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
     elif Attribute_ == "0102" and widget_type == "P1Meter":
         sValue = f"{cur_usage1};{parsed_value};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
-    self.log.logging(["Widget", "Electric"], "Log", f"------------> {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
+    self.log.logging(["Widget", "Electric"], "Debug", f"------------> {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
 
     # Update Domoticz widget
     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
