@@ -51,13 +51,13 @@ def rest_TICMeter(self, verb, data, parameters):
     _response["Data"] = None
 
     _ticmeter_response = []
-    self.logging( "Log", "rest_TICMeter - for %s %s %s" % (verb, data, parameters))
+    self.logging( "Debug", "rest_TICMeter - for %s %s %s" % (verb, data, parameters))
     # find if we have a ZLinky
     tic_meters_list = _retreive_ticmeter_nwkids(self)
-    self.logging( "Log", f"rest_TICMeter - identified {tic_meters_list}" )
+    self.logging( "Debug", f"rest_TICMeter - identified {tic_meters_list}" )
     
     for ticmeter in tic_meters_list:
-        self.logging( "Log", f"rest_TICMeter - processing {ticmeter}" )
+        self.logging( "Debug", f"rest_TICMeter - processing {ticmeter}" )
 
         ticmeter_datas = self.ListOfDevices[ ticmeter ].get(GAMMATRONIQUES)
         
