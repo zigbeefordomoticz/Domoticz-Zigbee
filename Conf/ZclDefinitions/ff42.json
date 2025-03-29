@@ -4,7 +4,7 @@
     "Version": "1",
     "Enabled": true,
     "Attributes": {
-        "0000": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "OPTARIF", "Name": "OPTARIF", "DataType": "41", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] },
+        "0000": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "OPTARIF", "Name": "OPTARIF", "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] },
         "002b": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "PREF", "Name": "PREF", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] }, 
         "0001": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "PEJP", "Name": "PEJP", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] }, 
         "0039": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "PTEC", "Name": "PTEC", "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] }, 
@@ -15,7 +15,7 @@
         "0006": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "ADIR2", "Name": "ADIR2", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] },
         "0007": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "ADIR3", "Name": "ADIR3", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] },
         "0008": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "PPOT", "Name": "PPOT", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] },
-        "0009": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "HHPHC", "Name": "HHPHC", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] },
+        "0009": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "HHPHC", "Name": "HHPHC", "DataType": "41", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] },
         "000a": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "MOTDETAT", "Name": "MOTDETAT", "DataType": "41", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] },
         "002a": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "ModeTIC", "Name": "ModeTIC", "DataType": "20", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device" ] },
         "002c": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "ModeElec", "Name": "ModeElec", "DataType": "20", "ActionList": [ "check_store_value", "store_specif_attribute", "upd_domo_device" ] },
