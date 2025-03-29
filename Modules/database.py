@@ -139,7 +139,8 @@ MANUFACTURER_ATTRIBUTES = (
     "CASA.IA", 
     "Tuya", 
     "ZLinky",
-    "Chameleon"
+    "Chameleon",
+    "GammaTroniques"
     )
 
 

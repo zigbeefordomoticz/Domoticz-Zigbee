@@ -417,8 +417,17 @@ def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id
     model_name = device_data.get("Model")
     cluster_data = device_data.get("Ep", {}).get(msg_src_ep, {}).get(msg_cluster_id, {})
 
+    # Checking if we have some setting to overwrite the "0300", "0301", "0302" attributes
+    unit_metering = get_deviceconf_parameter_value(self, model_name, "MeteringUnit")  # 0x0300
+    sum_multiplier = get_deviceconf_parameter_value(self, model_name, "SummationMeteringMultiplier")  # 0x0301
+    sum_divisor = get_deviceconf_parameter_value(self, model_name, "SummationMeteringDivisor")    # 0x0302
+
+    power_multiplier = get_deviceconf_parameter_value(self, model_name, "PowerMeteringMultiplier")    # 0x0301
+    power_divisor = get_deviceconf_parameter_value(self, model_name, "PowerMeteringDivisor")    # 0x0302
+
+
     # Determine unit of measurement, defaulting to "kW"
-    unit = get_deviceconf_parameter_value(self, model_name, "MeteringUnit") or cluster_data.get("0300", "kW")
+    unit = unit_metering or cluster_data.get("0300", "kW")
 
     conso = raw_value * CONVERSION_FACTORS.get(unit, 1000)  # Default to kW conversion
     if unit not in CONVERSION_FACTORS:
@@ -427,12 +436,13 @@ def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id
     # Check for device-specific multiplier/divisor overrides
     multiplier, divisor = None, None
     if model_name:
-        if msg_attr_id == "0400":
-            multiplier = get_deviceconf_parameter_value(self, model_name, "PowerMeteringMultiplier")
-            divisor = get_deviceconf_parameter_value(self, model_name, "PowerMeteringDivisor")
-        elif msg_attr_id == "0000":
-            multiplier = get_deviceconf_parameter_value(self, model_name, "SummationMeteringMultiplier")
-            divisor = get_deviceconf_parameter_value(self, model_name, "SummationMeteringDivisor")
+        if msg_attr_id == "0000":
+            multiplier = sum_multiplier
+            divisor = sum_divisor
+
+        elif msg_attr_id == "0400":
+            multiplier = power_multiplier
+            divisor = power_divisor
 
     # Retrieve default multiplier and divisor if not set
     multiplier = int(cluster_data.get("0301", 1)) if multiplier is None else multiplier
@@ -445,8 +455,11 @@ def compute_metering_conso(self, nwk_id, msg_src_ep, msg_cluster_id, msg_attr_id
                      f"compute_metering_conso - {nwk_id}/{msg_src_ep} Unit: {unit}, "
                      f"Multiplier: {multiplier}, Divisor: {divisor}, raw: {raw_value}, result: {conso}", nwk_id)
 
-    # Request missing attributes if they are not present
-    if any(key not in cluster_data for key in ["0300", "0301", "0302"]):
+    if (
+        cluster_data.get("0300") is None and unit_metering is None
+        or cluster_data.get("0301") is None and (power_multiplier is None or sum_multiplier is None)
+        or cluster_data.get("0302") is None and (power_divisor is None or sum_divisor is None)
+    ):
         ReadAttributeRequest_0702_multiplier_divisor(self, nwk_id)
 
     return conso
@@ -472,9 +485,12 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
                      nwk_id)
 
     MULTIPLIER_DIVISOR_MAPPING = {
-        '0505': {'multiplier': '0600', 'divisor': '0601', 'custom': 'RMSVoltageDivisor'},  # RMS Voltage
-        '0508': {'multiplier': '0602', 'divisor': '0603', 'custom': 'RMSCurrentDivisor'},  # RMS Current
+        '0505': {'multiplier': '0600', 'divisor': '0601', 'custom': 'RMSVoltageDivisor'},   # RMS Voltage
+        '0508': {'multiplier': '0602', 'divisor': '0603', 'custom': 'RMSCurrentDivisor'},   # RMS Current
         '050b': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Active Power
+        "050f": {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée
+        "090b": {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 2
+        "050a": {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 3
     }
 
     if isinstance(raw_value, str):

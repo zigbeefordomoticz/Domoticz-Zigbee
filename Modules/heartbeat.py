@@ -32,9 +32,7 @@ from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
                                     processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
-from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
-                                    ReadAttribute_ZLinkyIndex,
-                                    ReadAttributeReq,
+from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeReq_Scheduled_linky_mode,
                                     ReadAttributeReq_Scheduled_ZLinky,
                                     ReadAttributeReq_ZLinky,
@@ -53,7 +51,10 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST,
                                     ReadAttributeRequest_0702_ZLinky_TIC,
                                     ReadAttributeRequest_ff66,
                                     ping_device_with_read_attribute,
-                                    ping_devices_via_group, ping_tuya_device)
+                                    ping_devices_via_group, ping_tuya_device,
+                                    read_attributes_gammatroniques_tic_meter,
+                                    read_attributes_ticmeter_details,
+                                    read_attributes_ticmeter_tarif)
 from Modules.schneider_wiser import schneiderRenforceent
 from Modules.switchSelectorWidgets import SWITCH_SELECTORS
 from Modules.tools import (ReArrangeMacCapaBasedOnModel, deviceconf_device,
@@ -289,6 +290,9 @@ def pollingManufSpecificDevices(self, NwkId, HB):
         "ZLinkyPollingGlobal": ReadAttributeReq_ZLinky,             # All ZLinky Clusters/Attributes
         "PollingCusterff66": ReadAttributeRequest_ff66,             # All Manufacturer Specific ZLinky attributes
         "InletTempPolling": ReadAttributeRequest_0702_0017,      # Retreive Inlet Temperature
+        "TICMeter_Tarif_Polling": read_attributes_ticmeter_tarif,        # Retreive Tarif
+        "TICMeter_tic_specific": read_attributes_ticmeter_details,       # Retreive TICMeter details
+        "TICMeter_force_refresh": read_attributes_gammatroniques_tic_meter,       # Retreive TICMeter details
     }
 
     def _scheduled_zlinky_read(self, NwkId, parameter, device_parameters, heartbeat_counter):
@@ -327,7 +331,6 @@ def pollingManufSpecificDevices(self, NwkId, HB):
             # Prevent multiple executions within the same time unit
             self.ListOfDevices[NwkId].pop("ScheduledZLinkyRead", None)
 
-
     device_parameters = self.ListOfDevices[NwkId].get("Param")
     if device_parameters is None:
         return False
@@ -360,8 +363,6 @@ def pollingManufSpecificDevices(self, NwkId, HB):
             func(self, NwkId)
 
     return False
-
-
 
 
 def pollingDeviceStatus(self, NwkId):
@@ -587,6 +588,7 @@ def submitPing(self, NwkId):
     self.log.logging("Heartbeat", "Debug", "------------> call readAttributeRequest %s" % NwkId, NwkId)
     self.ListOfDevices[NwkId]["Stamp"]["LastPing"] = int(time.time())
     ping_device_with_read_attribute(self, NwkId)
+
 
 def hr_process_device(self, Devices, NwkId):
     # Begin

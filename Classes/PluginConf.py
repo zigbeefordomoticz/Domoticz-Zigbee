@@ -238,6 +238,7 @@ SETTINGS = {
             "ConfigureReporting": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "DZDB": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Danfoss": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "GammaTroniques": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Database": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "DeviceAnnoucement": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "DeviceParameter": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
@@ -462,6 +463,7 @@ SETTINGS = {
             "polling0b01": {"type": "int","default": 86400,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "polling0b04": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingff66": {"type": "int","default": 3661,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "pollingff42": {"type": "int","default": 3600,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "polling0b05": {"type": "int","default": 86400,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "polling000f": {"type": "int","default": 900,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "pollingfc00": {"type": "int","default": 300,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
@@ -522,14 +524,12 @@ class PluginConf:
 
 
     def write_Settings(self):
-        # serialize json format the pluginConf "
-        # Only the arameters which are different than default "
+        """ Serialize json format the pluginConf """
 
-        #self.pluginConf["filename"] = self.pluginConf["pluginConfig"] + "PluginConf-%02d.json" % self.hardwareid
         _pluginConf = Path(self.pluginConf["pluginConfig"] )
         pluginConfFile = _pluginConf / ("PluginConf-%02d.json" % self.hardwareid)
         self.pluginConf["filename"] = str(pluginConfFile)
-    
+
         write_pluginConf = {}
         for theme in SETTINGS:
             for param in SETTINGS[theme]["param"]:
@@ -545,21 +545,20 @@ class PluginConf:
         with open(pluginConfFile, "wt") as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
 
-
         if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
             setConfigItem(Key="PluginConf", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
 
 
 def _load_Settings(self):
-    # deserialize json format of pluginConf"
-    # load parameters "
+    """ Load PluginConf from json file """
 
     dz_timestamp = 0
     if is_domoticz_db_available(self):
         _domoticz_pluginConf = getConfigItem(Key="PluginConf")
-        if "TimeStamp" in _domoticz_pluginConf:
-            dz_timestamp = _domoticz_pluginConf.get("TimeStamp",0)
-            _domoticz_pluginConf = _domoticz_pluginConf.get("b64Settings",{})
+        dz_timestamp = _domoticz_pluginConf.get("TimeStamp",0)
+        _domoticz_pluginConf = _domoticz_pluginConf.get("b64Settings",{})
+
+        if dz_timestamp != 0:
             Domoticz.Log(
                 "Plugin data loaded where saved on %s"
                 % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)))

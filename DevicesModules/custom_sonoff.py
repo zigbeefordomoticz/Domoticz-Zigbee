@@ -33,6 +33,9 @@ SONOFF_DAILY_IRRIGATION_VOLUME = "500F"
 SONOFF_VALVE_WORK_STATE = "5010"
 SONOFF_WATER_CLOSE_VALVE_TIMEOUT_ATTRIBUTE = "5011"
 
+# Sonoff InchingController - ZBMicro model
+SONOFF_RADIO_POWER_TURBO_MODE = "0012"
+
 def is_sonoff_device(self, nwkid):
     return self.ListOfDevices[nwkid]["Manufacturer"] == SONOFF_MANUFACTURER_ID or self.ListOfDevices[nwkid]["Manufacturer Name"] == SONOFF_MAUFACTURER_NAME
 
@@ -86,6 +89,15 @@ def auto_close_when_water_shortage(self, nwkid, value):
     write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", SONOFF_WATER_CLOSE_VALVE_TIMEOUT_ATTRIBUTE, "21", water_close_valve_timeout, ackIsDisabled=False)
 
 
+def zbmicro_radio_power_turbo_mode(self, nwkid, mode):
+    """ Enable/disable Radio Power Turbo Mode """
+    RADIO_POWER_MODE = {
+        "Normal": 0x09,
+        "Turbo": 0x14
+    }
+    self.log.logging("Sonoff", "Debug", "zbmicro_radio_power_turbo_mode - Nwkid: %s value: %s" % (nwkid, mode))
+    write_attribute(self, nwkid, ZIGATE_EP, "01", SONOFF_CLUSTER_ID, SONOFF_MANUFACTURER_ID, "01", SONOFF_RADIO_POWER_TURBO_MODE, "29", "%08x" %RADIO_POWER_MODE.get( mode, 0x09), ackIsDisabled=False)
+ 
 SONOFF_DEVICE_PARAMETERS = {
     "SonOffTRVChildLock": sonoff_child_lock,
     "SonOffTRVWindowDectection": sonoff_open_window_detection,
@@ -96,5 +108,6 @@ SONOFF_DEVICE_PARAMETERS = {
     "SONOFF_REALTIME_IRRIGATION_DURATION": sonoff_realtime_irrigation_duration,
     "SONOFF_REALTIME_IRRIGATION_VOLUME": sonoff_realtime_irrigation_volume,
     "SONOFF_DAILY_IRRIGATION_VOLUME": sonoff_realtime_irrigation_daily_volume,
-    "SONOFF_SWV_WATER_CLOSE_VALVE_TIMEOUT": auto_close_when_water_shortage
+    "SONOFF_SWV_WATER_CLOSE_VALVE_TIMEOUT": auto_close_when_water_shortage,
+    "SONOFF_ZBMICRO_RADIO_POWER_TURBO_MODE": zbmicro_radio_power_turbo_mode
 }

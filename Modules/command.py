@@ -489,7 +489,8 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         and not get_deviceconf_parameter_value(self, model_name, "StandardZigbeeCommand", return_default=False)
         and ts0601_extract_data_point_infos( self, model_name)
         ):
-        ts0601_actuator(self, Nwkid, "switch", 0)
+            self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Switch Off with Tuya dimmer.", Nwkid, )
+            ts0601_actuator(self, Nwkid, "switch", 0)
     else:
         # Remaining Slider widget
         _off_command_default(self, Nwkid, EPout, profalux, model_name)
@@ -694,7 +695,8 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         and not get_deviceconf_parameter_value(self, model_name, "StandardZigbeeCommand", return_default=False)
         and ts0601_extract_data_point_infos( self, model_name)
         ):
-        ts0601_actuator(self, Nwkid, "switch", 1)
+            self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Switch On with Tuya dimmer.", Nwkid, )
+            ts0601_actuator(self, Nwkid, "switch", 1)
 
     elif profalux:
             move_withonoff = bool( get_device_config_param(self, Nwkid, "MoveWithOnOff") or get_deviceconf_parameter_value(self, model_name, "MoveWithOnOff", return_default=False) )
@@ -1066,6 +1068,11 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     elif model_name == "TS0601-curtain":
         tuya_curtain_lvl(self, Nwkid, (Level))
 
+    elif DeviceType == 'LvlControl' and ts0601_extract_data_point_infos( self, model_name):
+        self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Set Level {Level} with Tuya dimmer.", Nwkid, )
+        # Level is a % value on a scale of 0 to 100
+        ts0601_actuator(self, Nwkid, "dimmer", Level)
+
     elif profalux:
         move_withonoff = bool( get_device_config_param(self, Nwkid, "MoveWithOnOff") or get_deviceconf_parameter_value(self, model_name, "MoveWithOnOff", return_default=False) )
         self.log.logging( "Command", "Log", f"Profalux {Nwkid}/{EPout} Set Level {Level} with MoveWithOnOff set to {move_withonoff}", Nwkid, )
@@ -1083,6 +1090,9 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
 
         Level = max(min_dim_percent, Level)
         actuator_setlevel(self, Nwkid, EPout, Level, "Light", transitionMoveLevel, withOnOff=move_withonoff)
+        if get_deviceconf_parameter_value(self, model_name, "ForceSwitchOnWithLevel", return_default=False) or (model_name == "GL-SD-003P" and not move_withonoff):
+            # Request by Erwan, we switch on, so it behave in a standard way
+            actuator_on(self, Nwkid, EPout, "Light")
 
     # Domoticz widget update
     dimmable_blind = is_dimmable_blind(self, Devices, DeviceID, Unit)

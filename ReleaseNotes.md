@@ -18,6 +18,10 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## March 2025 - stable7.1.022 (2025.4)
+
+- [Hardware] - Enable a SwitchOn on SetLevel for "GL-SD-003P" model
+
 ## March 2025 - stable7.1.021 (2025.3) 
 
 - [Technical] - Open OTA for Xiaomi 

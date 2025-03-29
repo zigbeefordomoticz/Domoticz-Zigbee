@@ -607,6 +607,28 @@ SIMPLE_WIDGET = {
         "Subtype": 22,
         "Switchtype": 0
     },
+    # Période tarifaire Linky
+    "LinkyCurrentTarif": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0,
+        "sValue": "undefined",
+        "nValue": 0
+    },
+    "LinkyNextDayColor": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0,
+        "sValue": "undefined",
+        "nValue": 0
+    },
+    "LinkyCurrentDayColor": {
+        "Type": 243,
+        "Subtype": 22,
+        "Switchtype": 0,
+        "sValue": "undefined",
+        "nValue": 0
+    },
     "Alarm_ZL": {
         "Type": 243,
         "Subtype": 22,
@@ -805,12 +827,15 @@ SIMPLE_WIDGET = {
         "Subtype": 6,
         "Switchtype": 0
     },
-
     "P1Meter": {
         "Type": 250,
         "Subtype": 1,
-        "Switchtype": 1
+        "Switchtype": 1,
+        "sValue": "0;0;0;0;0;0",
+        "nValue": 0
+
     },
+    "P1Meter_HPHC": { "Type": 250, "Subtype": 1, "Switchtype": 1,"sValue": "0;0;0;0;0;0", "nValue": 0 },
     "P1Meter_ZL": {
         "Type": 250,
         "Subtype": 1,

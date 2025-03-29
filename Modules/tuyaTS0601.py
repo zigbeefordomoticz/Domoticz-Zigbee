@@ -322,6 +322,18 @@ def ts0601_switch(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "0006", state)
 
 
+def ts0601_dimmer(self, Devices, nwkid, ep, value):
+    """ Dimmer value on a Tuya scale from 0 to 1000 """
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_dimmer - Dimmer %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Dimmer", value)
+    # converter function maps Tuya's raw data (0–1000 scale) to the Zigbee level (0–255 scale) which is handled by domoMaj
+    brightness = (value * 255) // 1000
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_dimmer - Dimmer %s %s %s brightness: %s" % (nwkid, ep, value, brightness), nwkid)
+    MajDomoDevice(self, Devices, nwkid, ep, "0008", "%02x" % brightness)
+
+
 def ts0601_level_percentage(self, Devices, nwkid, ep, value):
     self.log.logging( "Tuya0601", "Debug", "ts0601_level_percentage - Percentage%s %s %s" % (nwkid, ep, value), nwkid, )
     store_tuya_attribute(self, nwkid, "PercentLevel", value)
@@ -723,6 +735,7 @@ DP_SENSOR_FUNCTION = {
     "tamper": ts0601_tamper,
     "charging_mode": ts0601_charging_mode,
     "switch": ts0601_switch,
+    "dimmer": ts0601_dimmer,
     "door": ts0601_door,
     "lvl_percentage": ts0601_level_percentage,
     "co2": ts0601_co2ppm,
@@ -810,6 +823,26 @@ def ts0601_tuya_action(self, NwkId, Ep, action, dp, dt, value):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
+def ts0601_settings( self, NwkId, dps_mapping, param, value):
+    """ Handle in a more generic way TS0601 settings, by extracting Data Type from the config """
+
+    self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {NwkId}")
+
+    for key, dps_value in dps_mapping.items():
+        self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {key}:{dps_value}")
+        if "action_type" in dps_value and dps_value["action_type"] == param:
+            dt = dps_value[ "data_type"] if "data_type" in dps_value else None
+            if dt:
+                dp = int( key, 16)
+                self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {param} {dp} {dt} {value}")
+                ts0601_tuya_action(self, NwkId, "01", param, dp, dt, value)
+                return
+
+    if param in TS0601_COMMANDS:
+        self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"sanity_check_of_param  {param} {value}")
+        ts0601_actuator(self, NwkId, param, value)
+
+
 def ts0601_action_setpoint(self, NwkId, Ep, dp, value):
     # The Setpoint is coming in centi-degre (default)
     if value is None:
@@ -860,26 +893,6 @@ def ts0601_antifrost(self, NwkId, Ep, dp, value=None):
     action = "%02x01" % dp
     data = "%02x" % value
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
-
-
-def ts0601_settings( self, NwkId, dps_mapping, param, value):
-    """ Handle in a more generic way TS0601 settings, by extracting Data Type from the config """
-    
-    self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {NwkId}")
-    
-    for key, dps_value in dps_mapping.items():
-        self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {key}:{dps_value}")
-        if "action_type" in dps_value and dps_value["action_type"] == param:
-            dt = dps_value[ "data_type"] if "data_type" in dps_value else None
-            if dt:
-                dp = int( key, 16)
-                self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"ts0601_settings  {param} {dp} {dt} {value}")
-                ts0601_tuya_action(self, NwkId, "01", param, dp, dt, value)
-                return
-            
-    if param in TS0601_COMMANDS:
-        self.log.logging(["Tuya0601", "DeviceParameter"], "Debug", f"sanity_check_of_param  {param} {value}")
-        ts0601_actuator(self, NwkId, param, value)
 
 
 def ts0601_action_calibration_legacy(self, NwkId, Ep, dp, calibration=None):
@@ -980,6 +993,35 @@ WIDGET_BAB_1413Pro_E_COMMAND = {
     5: 0x01
     }
 
+
+
+def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
+    # 0 Capacity ( Litter )
+    # 1 Duration ( Seconds)
+
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_irrigation_mode - %s Switch Action: dp:%s value: %s" % (
+        NwkId, dp, value))
+    device_value = value
+
+    action = "%02x01" % dp  # Mode
+    data = "%02x" % (device_value)
+    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
+
+
+SAFETY_MIN_SECS = 10
+DURATION = 1
+
+
+def check_irrigation_valve_target_value(value, mode):
+    if value > 0 and value < SAFETY_MIN_SECS and mode == DURATION:
+        return SAFETY_MIN_SECS
+    else:
+        return value
+
+
 def ts0601_action_trv8_system_mode(self, NwkId, Ep, dp, value=None):
     # Manual: 0x02
     # Programming: 0x00
@@ -1035,35 +1077,10 @@ def ts0601_action_switch(self, NwkId, Ep, dp, value=None):
     self.log.logging("Tuya0601", "Debug", "ts0601_action_switch - %s Switch Action: dp:%s value: %s" % (
         NwkId, dp, value))
     device_value = value
-   
+
     action = "%02x01" % dp  # State
     data = "%02x" % (device_value)
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
-
-
-def ts0601_irrigation_mode(self, NwkId, Ep, dp, value=None):
-    # 0 Capacity ( Litter )
-    # 1 Duration ( Seconds)
-
-    if value is None:
-        return
-
-    self.log.logging("Tuya0601", "Debug", "ts0601_irrigation_mode - %s Switch Action: dp:%s value: %s" % (
-        NwkId, dp, value))
-    device_value = value
-   
-    action = "%02x01" % dp  # Mode
-    data = "%02x" % (device_value)
-    ts0601_tuya_cmd(self, NwkId, Ep, action, data)
-
-SAFETY_MIN_SECS = 10
-DURATION = 1
-   
-def check_irrigation_valve_target_value(value, mode):
-    if value > 0 and value < SAFETY_MIN_SECS and mode == DURATION:
-        return SAFETY_MIN_SECS
-    else:
-        return value
 
 
 def ts0601_irrigation_valve_target( self, NwkId, Ep, dp, value=None):
@@ -1201,6 +1218,60 @@ def ts0601_curtain_indicator_status(self, NwkId, Ep, dp, mode=None):
     ts0601_tuya_cmd(self, NwkId, Ep, action, data)
 
 
+def ts0601_action_dimmer(self, nwkid, ep, dp, value=None):
+    """ Call from command to set the dimmer value, it comes on a scale of 0 to 100 from domoticz """
+
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_dimmer - Dimmer %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Dimmer", value)
+
+    # Convert to a scale of 0 - 1000 for the Tuya device
+    brightness = int((value * 1000) / 100)
+
+    action = "%02x02" %dp
+    data = "%08x" % brightness
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+    # Make sure to Switch on the switch if not yet done
+    if value > 0:
+        # Assuming Switch DP is 1
+        ts0601_action_switch(self, nwkid, ep, 1, 1)
+    else:
+        ts0601_action_switch(self, nwkid, ep, 1, 0)
+
+
+def ts0601_action_switch_type(self, nwkid, ep, dp, value=None):
+    """ Tuya Switch Type :
+        toggle: 0
+        state: 1
+        momentary: 2
+    """
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_switch_type - Type %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "SwitchType", value)
+
+    action = "%02x04" % dp
+    data = "%02x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
+def ts0601_action_vibration_sensitivity(self, nwkid, ep, dp, value=None):
+
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_vibration_sensitivity - Sensitivity %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "VibrationSensitivity", value)
+
+    action = "%02x04" % dp
+    data = "%02x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
 TS0601_COMMANDS = {
     "IndicatorStatus": ts0601_curtain_indicator_status,
     "CurtainState": ts0601_curtain_state_cmd,
@@ -1238,6 +1309,9 @@ TS0601_COMMANDS = {
     "ReclosingEnabled": (None, "01"),
     "RecloseRecover": (None, "02"),
     "PoweronDelay": (None, "02"),
+    "dimmer": ts0601_action_dimmer,
+    "SwitchType": ts0601_action_switch_type,
+    "VibrationSensitity": ts0601_action_vibration_sensitivity
 }
 
 
