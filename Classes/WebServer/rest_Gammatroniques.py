@@ -59,31 +59,39 @@ def rest_TICMeter(self, verb, data, parameters):
     for ticmeter in tic_meters_list:
         self.logging( "Debug", f"rest_TICMeter - processing {ticmeter}" )
 
-        ticmeter_datas = self.ListOfDevices[ ticmeter ].get(GAMMATRONIQUES)
+        ticmeter_infos = self.ListOfDevices[ ticmeter ]
+        ticmeter_gamma = ticmeter_infos.get(GAMMATRONIQUES)
+        ticmeter_ep = ticmeter_infos.get("Ep",{}).get("01")
+        ticmeter_0000 = ticmeter_ep.get("0000",{})
+        #ticmeter_0702 = ticmeter_ep.get("0702")
+        #ticmeter_0b04 = ticmeter_ep.get("0b04")
+        #ticmeter_0b01 = ticmeter_ep.get("0b01")
         
-        if ticmeter_datas is None:
+        if ticmeter_gamma is None:
             continue
 
         device = {
             'Nwkid': ticmeter,
             'ZDeviceName': get_device_nickname( self, NwkId=ticmeter),
-            'Identifiant': f"{int( ticmeter_datas['Identifiant'])}" if "Identifiant" in ticmeter_datas else "Unknown",
-            'TICMode': _retreive_ticmode_human_readable(ticmeter_datas.get('ModeTIC')),
-            'Mode Electrique': _retreive_mode_elec_human_readable( ticmeter_datas.get('ModeElec') ),
-            'Type de contrat': ticmeter_datas.get('OPTARIF') or ticmeter_datas.get('NGTF', 'Unknown'),
-            'Période tarifaire en cours': ticmeter_datas.get('PTEC') or ticmeter_datas.get('LTARF', 'Unknown'),
-            'Puissance Max contrat': ticmeter_datas.get('pref') or ticmeter_datas.get('PREF', 'Unknown'),
-            'UpTime': format_uptime(ticmeter_datas.get('UpTime', 0)),
+            'Identifiant': f"{int( ticmeter_gamma['Identifiant'])}" if "Identifiant" in ticmeter_gamma else "Unknown",
+            'TICMode': _retreive_ticmode_human_readable(ticmeter_gamma.get('ModeTIC')),
+            'Mode Electrique': _retreive_mode_elec_human_readable( ticmeter_gamma.get('ModeElec') ),
+            'Type de contrat': ticmeter_gamma.get('OPTARIF') or ticmeter_gamma.get('NGTF', 'Unknown'),
+            'Période tarifaire en cours': ticmeter_gamma.get('PTEC') or ticmeter_gamma.get('LTARF', 'Unknown'),
+            'Puissance Max contrat': ticmeter_gamma.get('pref') or ticmeter_gamma.get('PREF', 'Unknown'),
+            'UpTime': format_uptime(ticmeter_gamma.get('UpTime', 0)),
             'Parameters': []
         }
 
-        for ticmeter_param in ticmeter_datas:
-            if ticmeter_param == 'MOTDETAT' and ticmeter_datas[ ticmeter_param ]:
-                attr_value = decode_registre_status( ticmeter_datas[ ticmeter_param ])
+        device["Parameters"].append( { "Code date": ticmeter_0000.get("0006") })
+        
+        for ticmeter_param in ticmeter_gamma:
+            if ticmeter_param == 'MOTDETAT' and ticmeter_gamma[ ticmeter_param ]:
+                attr_value = decode_registre_status( ticmeter_gamma[ ticmeter_param ])
             elif ticmeter_param == 'UpTime':
-                attr_value = format_uptime(ticmeter_datas.get('UpTime', 0)),
+                attr_value = format_uptime(ticmeter_gamma.get('UpTime', 0)),
             else:
-                attr_value = ticmeter_datas[ ticmeter_param ]
+                attr_value = ticmeter_gamma[ ticmeter_param ]
             device["Parameters"].append( { ticmeter_param: attr_value } )
 
         _ticmeter_response.append( device )
