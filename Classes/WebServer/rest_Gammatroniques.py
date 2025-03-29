@@ -68,7 +68,7 @@ def rest_TICMeter(self, verb, data, parameters):
             'Nwkid': ticmeter,
             'ZDeviceName': get_device_nickname( self, NwkId=ticmeter),
             'Identifiant': f"{int( ticmeter_datas['Identifiant'])}" if "Identifiant" in ticmeter_datas else "Unknown",
-            'Mode TIC': _retreive_ticmode_human_readable(ticmeter_datas.get('ModeTIC')),
+            'TICMode': _retreive_ticmode_human_readable(ticmeter_datas.get('ModeTIC')),
             'Mode Electrique': _retreive_mode_elec_human_readable( ticmeter_datas.get('ModeElec') ),
             'Type de contrat': ticmeter_datas.get('OPTARIF') or ticmeter_datas.get('NGTF', 'Unknown'),
             'Période tarifaire en cours': ticmeter_datas.get('PTEC') or ticmeter_datas.get('LTARF', 'Unknown'),
@@ -78,8 +78,10 @@ def rest_TICMeter(self, verb, data, parameters):
         }
 
         for ticmeter_param in ticmeter_datas:
-            if ticmeter_param == 'MOTDETAT':
+            if ticmeter_param == 'MOTDETAT' and ticmeter_datas[ ticmeter_param ]:
                 attr_value = decode_registre_status( ticmeter_datas[ ticmeter_param ])
+            elif ticmeter_param == 'UpTime':
+                attr_value = format_uptime(ticmeter_datas.get('UpTime', 0)),
             else:
                 attr_value = ticmeter_datas[ ticmeter_param ]
             device["Parameters"].append( { ticmeter_param: attr_value } )
