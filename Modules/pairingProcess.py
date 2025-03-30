@@ -38,7 +38,9 @@ from Modules.readAttributes import (READ_ATTRIBUTES_REQUEST, ReadAttributeReq,
                                     ReadAttributeRequest_0000,
                                     ReadAttributeRequest_0000_for_tuya,
                                     ReadAttributeRequest_0300,
-                                    read_attributes_ticmeter_details)
+                                    read_attributes_gammatroniques_tic_meter,
+                                    read_attributes_ticmeter_details,
+                                    read_attributes_ticmeter_tarif)
 from Modules.schneider_wiser import (WISER_LEGACY_MODEL_NAME_PREFIX,
                                      schneider_wiser_registration,
                                      wiser_home_lockout_thermostat,
@@ -720,6 +722,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
     if device_model == "TICMeter":
         # Retreive as much attribuutes
         self.log.logging("Pairing", "Status", "Reading TICMeter and collecting all data")
+        read_attributes_gammatroniques_tic_meter(self, NWKID)
+        read_attributes_ticmeter_tarif(self, NWKID)
         read_attributes_ticmeter_details(self, NWKID)
 
 def scan_device_for_group_memebership(self, NWKID):
