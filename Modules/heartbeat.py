@@ -28,6 +28,7 @@ from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
 from Modules.domoTools import (RetreiveWidgetTypeList,
                                reset_device_ieee_unit_if_needed,
                                timedOutDevice)
+from Modules.linky import collect_ticmeter_linky
 from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
                                     processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
@@ -89,6 +90,7 @@ ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 7)
 CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 PING_DEVICE_VIA_GROUPID = 3567 // HEARTBEAT    # Secondes ( 59minutes et 45 secondes )
 FIRST_PING_VIA_GROUP = 127 // HEARTBEAT
+CHECKING_TICMETER_KEY_ATTRIBUTES = (30 // HEARTBEAT)  # 30 Sec
 
 
 
@@ -649,10 +651,13 @@ def hr_process_device(self, Devices, NwkId):
     # Some battery based end device with ZigBee 30 use polling and can receive commands.
     # We should authporized them for Polling After Action, in order to get confirmation.
     
+    if model == "TICMeter" and (device_hearbeat % CHECKING_TICMETER_KEY_ATTRIBUTES == 0):
+        collect_ticmeter_linky(self, NwkId)
+
     if _mainPowered or enabledEndDevicePolling:
         process_main_powered_or_force_devices( self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model)
 
-    
+
 def process_main_powered_or_force_devices(self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model):
     self.log.logging("Heartbeat", "Debug",f"Calling process_main_powered_or_force_devices with arguments: NwkId={NwkId}, device_hearbeat={device_hearbeat}, _mainPowered={_mainPowered}, enabledEndDevicePolling={enabledEndDevicePolling}, model={model}", NwkId)
 
