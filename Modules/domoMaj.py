@@ -176,13 +176,13 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 ampere2 = '0.0'
                 ampere3 = '0.0'
             ampere = round(float(value), 2)
-            if Attribute_ == "0508":
+            if Attribute_ == "0508" and ampere:
                 # Line 1
                 sValue = "%s;%s;%s" % (ampere, ampere2, ampere3)
-            elif Attribute_ == "0908":
+            elif Attribute_ == "0908" and ampere:
                 # Line 2
                 sValue = "%s;%s;%s" % (ampere1, ampere, ampere3)
-            elif Attribute_ == "0a08":
+            elif Attribute_ == "0a08" and ampere:
                 # Line 3
                 sValue = "%s;%s;%s" % (ampere1, ampere2, ampere)
 
