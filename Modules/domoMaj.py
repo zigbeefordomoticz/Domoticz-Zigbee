@@ -1276,7 +1276,7 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
         return
 
     if widget_type == "Meter":
-        sValue = f"{instant_power}:{currrent_usage}"
+        sValue = f"{instant_power};{currrent_usage}"
 
     elif widget_type.startswith("P1Meter"):
         sValue = f"{cur_usage1};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
