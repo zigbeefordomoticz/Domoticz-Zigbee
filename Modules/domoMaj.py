@@ -1233,9 +1233,11 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
 
     elif widget_type.startswith("P1Meter"):
         if Attribute_ in ["0000", "0100"]:
+            # Usage1 / HC
             sValue = f"{parsed_value};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
         elif Attribute_ == "0102":
+            # Usage 2 / HP
             sValue = f"{cur_usage1};{parsed_value};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
     self.log.logging(["Widget", "Electric"], "Debug", f"------------> {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
@@ -1771,16 +1773,29 @@ def temp_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
 def _retreive_instant_power(self, NwkId, Ep):
     """ retreive Instant Power in 0x0702/0x0400 or 0x0b04/0x050f or 0x0b04/0x050b"""
 
+    model_name = self.ListOfDevices.get(NwkId, {}).get("Model")
     ep_data = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(Ep, {})
+    
+    instant_power_cluster = get_deviceconf_parameter_value(self, model_name, "InstantPowerCluster")
+    instant_power_attribute = get_deviceconf_parameter_value(self, model_name, "InstantPowerAttribute")
+    
+    self.log.logging("Widget", "Debug", f"_retreive_instant_power {NwkId} {model_name} {instant_power_cluster}/{instant_power_attribute}")
+    if instant_power_cluster and instant_power_attribute:
+        return ep_data.get( instant_power_cluster, {}).get( instant_power_attribute)
+    
+    # Based on legacy.
     if "0702" in ep_data and "0400" in ep_data["0702"]:
+        self.log.logging(["Widget", "Electric"], "Debug", f"_retreive_instant_power {NwkId} returning based on 0702/0400")
         return round(float(ep_data["0702"]["0400"]), 2)
 
     if "0b04" not in ep_data:
         return 0
     
     if "050b" in ep_data["0b04"]:
+        self.log.logging(["Widget", "Electric"], "Debug", f"_retreive_instant_power {NwkId} returning based on 0b04/050b")
         return round(float(ep_data["0b04"]["050b"]), 2)
 
+    self.log.logging("Widget", "Debug", f"_retreive_instant_power {NwkId} {model_name} not found !!!! returning None")
     return None 
 
 
