@@ -1215,10 +1215,9 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
 
     # Retrieve instant power consumption
     instant_power = _retreive_instant_power(self, NwkId, Ep)
+    self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_summation - retreived instant power: {instant_power} ({type(instant_power)})", NwkId)
     if instant_power is None:
         return
-
-    self.log.logging(["Widget", "Electric"], "Debug", f"------> retreived instant power: {instant_power}", NwkId)
 
     # Convert value safely
     try:
@@ -1228,8 +1227,9 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
         self.log.logging(["Widget", "Electric"], "Error", f"Invalid value received: {value}", NwkId)
         return
 
-    if Attribute_ == "0000" and widget_type == "Meter":
-        sValue = f"{instant_power}:{parsed_value}"
+    if widget_type == "Meter":
+        # It is assumed that we come with Attribute 0x0000
+        sValue = f"{instant_power};{parsed_value}"
 
     elif widget_type.startswith("P1Meter"):
         if Attribute_ in ["0000", "0100"]:
@@ -1240,7 +1240,7 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
             # Usage 2 / HP
             sValue = f"{cur_usage1};{parsed_value};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
-    self.log.logging(["Widget", "Electric"], "Debug", f"------------> {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
+    self.log.logging(["Widget", "Electric"], "Debug", f"------------> process_p1meters_meter_with_summation - {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
 
     # Update Domoticz widget
     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
