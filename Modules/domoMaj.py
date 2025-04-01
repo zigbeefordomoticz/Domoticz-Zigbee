@@ -740,7 +740,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
         if Attribute_ == "0001" and WidgetType == "OutDoorTemperature" and "OutDoorTemperature" in ClusterType:
             nValue = value
-            sValue = "%s" %(10 * value,)
+            sValue = "%s" %(value,)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if Attribute_ == "0014" and WidgetType == "UnoccupiedHeatingSetpoint" and "UnoccupiedHeatingSetpoint" in ClusterType:
