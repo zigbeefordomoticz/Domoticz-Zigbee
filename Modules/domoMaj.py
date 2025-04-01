@@ -1174,6 +1174,42 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         CheckUpdateGroup(self, NwkId, Ep, ClusterId)
 
 # Helpers
+def get_meter_mode_from_widget(self, Devices, NwkId, DeviceId, Unit ):
+    # Mode = 0 - From device (default)
+    # Mode = 1 - Computed
+
+    _device_options = domo_read_Options( self, Devices, DeviceId, Unit,)
+    self.log.logging( "Widget", "Debug", "get_meter_mode_from_widget Options: %s" %_device_options, NwkId)
+    
+    if _device_options is None:
+        return None
+    return _device_options.get('EnergyMeterMode')
+ 
+
+def check_set_meter_widget( self, Devices, NwkId, DeviceId, Unit, oldnValue, oldsValue, mode):
+    # Mode = 0 - From device (default)
+    # Mode = 1 - Computed
+
+    do_not_over_write_option = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "DoNotOverWriteOptions")
+    if do_not_over_write_option:
+        return
+
+    Options = {'EnergyMeterMode': '0'}
+    
+    _device_options = domo_read_Options( self, Devices, DeviceId, Unit,)
+    self.log.logging( "Widget", "Debug", "check_set_meter_widget Options: %s" %_device_options, NwkId)
+    
+    # Do we have the Energy Mode calculation already set ?
+    if "EnergyMeterMode" in _device_options:
+        # Yes, let's retreive it
+        Options = _device_options
+
+    sMode = "%s" %mode
+    if Options["EnergyMeterMode"] != sMode:
+
+        Options = { "EnergyMeterMode": sMode }
+        domo_update_api(self, Devices, DeviceId, Unit, oldnValue, oldsValue, Options=Options ,)
+
 
 def process_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_instant_power : {WidgetType} {Attribute_} {value} ({type(value)})", NwkId)
@@ -1245,6 +1281,7 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
     # Update Domoticz widget
     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
+
 def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
     """Handles P1Meter_HPHC processing based on the Attribute type."""
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_instant_power : {widget_type} {Attribute_} {value} ({type(value)})", NwkId)
@@ -1276,6 +1313,9 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
         return
 
     if widget_type == "Meter":
+        meter_mode = get_meter_mode_from_widget(self, Devices, NwkId, device_id_ieee, device_unit )
+        if meter_mode == 1 and currrent_usage == 0:
+            sValue = f"{instant_power};"
         sValue = f"{instant_power};{currrent_usage}"
 
     elif widget_type.startswith("P1Meter"):
@@ -1640,31 +1680,6 @@ def _log_erratic_value_error(self, NwkId, value_type, value, expected_min, expec
 
 def _log_erratic_value_debug(self, NwkId, value_type, value, expected_min, expected_max, consecutive_erratic_value):
     self.log.logging("Widget", "Debug", f"Aberrant {value_type}: {value} (below {expected_min} or above {expected_max}) for device: {NwkId} [{consecutive_erratic_value}]", NwkId)
-
-
-def check_set_meter_widget( self, Devices, NwkId, DeviceId, Unit, oldnValue, oldsValue, mode):
-    # Mode = 0 - From device (default)
-    # Mode = 1 - Computed
-
-    do_not_over_write_option = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "DoNotOverWriteOptions")
-    if do_not_over_write_option:
-        return
-
-    Options = {'EnergyMeterMode': '0'}
-    
-    _device_options = domo_read_Options( self, Devices, DeviceId, Unit,)
-    self.log.logging( "Widget", "Debug", "check_set_meter_widget Options: %s" %_device_options, NwkId)
-    
-    # Do we have the Energy Mode calculation already set ?
-    if "EnergyMeterMode" in _device_options:
-        # Yes, let's retreive it
-        Options = _device_options
-
-    sMode = "%s" %mode
-    if Options["EnergyMeterMode"] != sMode:
-
-        Options = { "EnergyMeterMode": sMode }
-        domo_update_api(self, Devices, DeviceId, Unit, oldnValue, oldsValue, Options=Options ,)
 
 
 def retrieve_data_from_current(self, Devices, DeviceID, Unit, current_nValue, current_svalue, _format):
