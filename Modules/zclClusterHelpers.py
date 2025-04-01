@@ -481,7 +481,7 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
     """
 
     self.log.logging(["ZclClusters", "Electric"], "Debug",
-                     f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} {cluster_id} {attr_id} {raw_value} {type(raw_value)}",
+                     f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} cluster_id: {cluster_id} attr_id: {attr_id} {raw_value} {type(raw_value)}",
                      nwk_id)
 
     MULTIPLIER_DIVISOR_MAPPING = {
@@ -503,6 +503,7 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
     conso = raw_value
     mapping = MULTIPLIER_DIVISOR_MAPPING[attr_id]
     custom_divisor_key = mapping['custom']
+    self.log.logging(["ZclClusters", "Electric"], "Debug", f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} conso: {conso} mapping: {mapping} custom_div: {custom_divisor_key}", nwk_id)
 
     # Retrieve device data
     device_data = self.ListOfDevices.get(nwk_id, {})
@@ -511,6 +512,8 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
 
     # Check for a custom divisor in the device configuration
     custom_divisor = get_deviceconf_parameter_value(self, model_name, custom_divisor_key)
+    self.log.logging(["ZclClusters", "Electric"], "Debug", f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} model_name: {model_name} custom_divisor: {custom_divisor}", nwk_id)
+     
     if custom_divisor is not None and int(custom_divisor) != 0:
         custom_divisor = int(custom_divisor)
         self.log.logging(["ZclClusters", "Electric"], "Debug",
