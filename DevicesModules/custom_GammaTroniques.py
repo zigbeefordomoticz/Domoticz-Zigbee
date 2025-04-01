@@ -208,10 +208,11 @@ TICMETER_LABELS = {
 } 
 
 TICMETER_CLUSTER = "ff42"
+TICMETER_REFRESH_TIME_ATTRIBUTE = "0002"
 
 def gmms_ticmeter_set_refresh_time(self, nwkid, refresh_rate):
     self.log.logging("GammaTroniques", "Debug", "gmms_ticmeter_set_refresh_time - Nwkid: %s Refresh: %s seconds" % (nwkid, refresh_rate))
-    write_attribute(self, nwkid, ZIGATE_EP, "01", TICMETER_CLUSTER, "0000", "00", "0000", "21", "%04x" %refresh_rate, ackIsDisabled=False)
+    write_attribute(self, nwkid, ZIGATE_EP, "01", TICMETER_CLUSTER, "0000", "00", TICMETER_REFRESH_TIME_ATTRIBUTE, "21", "%04x" %refresh_rate, ackIsDisabled=False)
 
 
 GMMS_TIC_METER_DEVICE_PARAMETERS = {
