@@ -49,6 +49,7 @@ def setup_list_rest_commands( self ):
         {"Name": "ota-firmware-device-list", "Verbs": {"GET"}, "function": self.rest_ota_devices_for_manufcode },
         {"Name": "ota-firmware-list", "Verbs": {"GET"}, "function": self.rest_ota_firmware_list},
         {"Name": "ota-firmware-update", "Verbs": {"PUT"}, "function": self.rest_ota_firmware_update },
+        {"Name": "ota-firmware-available", "Verbs": {"GET"}, "function": self.rest_ota_firmware_available },
         {"Name": "permit-to-join", "Verbs": {"GET", "PUT"}, "function": self.rest_PermitToJoin},
         {"Name": "plugin-ping", "Verbs": {"GET"}, "function": self.rest_plugin_ping},
         {"Name": "plugin-health", "Verbs": {"GET"}, "function": self.rest_plugin_health},

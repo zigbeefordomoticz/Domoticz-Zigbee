@@ -470,3 +470,58 @@ def rest_ota_firmware_update(self, verb, data, parameter):
     action = {"Name": "OTA requested.", "TimeStamp": int(time())}
     _response["Data"] = json.dumps(action, sort_keys=True)
     return _response
+
+
+def rest_ota_firmware_available(self, verb, data, parameters):
+    
+    _response = prepResponseMessage(self, setupHeadersResponse())
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+    if verb == "GET":
+        _fwAvail = []
+        # Iterate over devices
+        for device_key, device_data in self.ListOfDevices.items():
+            # Skip processing for device with key "0000"
+            if device_key == "0000":
+                continue
+
+            ota_update = device_data.get("OTAUpdate")
+            if ota_update is None:
+                continue
+
+            # Retrieve device-level information
+            zdevice_name = device_data.get("ZDeviceName")
+            model = device_data.get("Model", "Unknown")
+            manufacturer_name = device_data.get("Manufacturer Name", "Unknown")
+            manufacturer_id = device_data.get("Manufacturer", "Unknown")
+            ieee = device_data.get("IEEE", "Unknown")
+
+            # Process firmware updates
+            for fwtype, update_info in ota_update.items():
+                current_version = update_info.get("currentversion", "N/A")
+                newest_version = update_info.get("newestversion", "N/A")
+                url = update_info.get("url", "N/A")
+
+                device = {
+                    'nwkid': device_key,
+                    'zdevicename': zdevice_name,
+                    'model': model,
+                    'manufacturername': manufacturer_name,
+                    'manufacturerid': manufacturer_id,
+                    'ieee': ieee,
+                    'fwtype': fwtype,
+                    'currentversion': current_version,
+                    'newestversion': newest_version,
+                    'url': url,
+                }
+
+                self.logging("Status", f"Processing OTA update for {zdevice_name}: {device}")
+                _fwAvail.append(device)
+
+        # Log collected firmware availability information
+        self.logging("Status", f"Collected OTA firmware availability: {_fwAvail}")
+
+        # Include firmware data in the response
+        _response["Data"] = json.dumps(_fwAvail, sort_keys=True)
+
+    return _response
