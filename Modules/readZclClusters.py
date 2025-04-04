@@ -580,7 +580,7 @@ def debug_logging(self, nwkid, ep, cluster, attribute, dtype, attsize, raw_data,
     cluster_description = self.readZclClusters.get(cluster, {}).get("Description", "Unknown cluster")
     attribute_description = self.readZclClusters.get(cluster, {}).get("Attributes", {}).get(attribute, {}).get("Name", "Unknown attribute")
 
-    self.log.logging( "ZclClusters", "Log", f"readZclCluster - 0x{cluster} {cluster_description} - attribute: 0x{attribute} {attribute_description} raw_data: {raw_data} value: {value}")
+    self.log.logging( "ZclClusters", "Log", f"readZclCluster - Ox{nwkid}/{ep} 0x{cluster} {cluster_description} - attribute: 0x{attribute} {attribute_description} raw_data: {raw_data} value: {value}")
 
 
 def is_cluster_debug_mode(self, cluster):
