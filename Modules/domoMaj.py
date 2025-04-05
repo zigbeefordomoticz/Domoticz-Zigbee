@@ -709,7 +709,6 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
-
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
             nValue = 0
             sValue = "%s %% used" %( value, )
@@ -744,9 +743,9 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if Attribute_ == "0014" and WidgetType == "UnoccupiedHeatingSetpoint" and "UnoccupiedHeatingSetpoint" in ClusterType:
-            nValue = value
-            sValue = "%s" %(10 * value,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+            sValue = str_round(float(value), 2)
+            self.log.logging("Widget", "Debug", "------>  Thermostat UnOccupiedSetpoint: %s %s" % (0, sValue), NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
         if Attribute_ == "0011" and WidgetType == "OccupiedCollingSetpoint" and "OccupiedCollingSetpoint" in ClusterType:
             nValue = value

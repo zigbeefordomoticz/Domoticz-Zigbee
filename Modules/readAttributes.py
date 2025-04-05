@@ -955,7 +955,7 @@ def ReadAttributeRequest_thermostat_unoccupied_heat_setpoint(self, nwkid):
 
     eps_list = getListOfEpForCluster(self, nwkid, "0201")
 
-    attributes_list = [0x0013]  # Define attributes list before looping
+    attributes_list = [0x0014]  # Define attributes list before looping
 
     for EPout in eps_list:
         cluster_0201 = self.ListOfDevices.get(nwkid, {}).get("Ep", {}).get(EPout, {}).get("0201")

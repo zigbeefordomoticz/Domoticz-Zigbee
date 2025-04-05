@@ -24,9 +24,11 @@ from Modules.tuyaTRV import tuya_setpoint
 from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
 
 THERMOSTAT_CLUSTER = "0201"
-OCCUPIED_HEATING_SETPOINT = "0012"
-UNOCCUPIED_HEATING_SETPOINT = "0013"
 OCCUPIED_COOLING_SETPOINT = "0011"
+OCCUPIED_HEATING_SETPOINT = "0012"
+UNOCCUPIED_COOLING_SETPOINT = "0013"
+UNOCCUPIED_HEATING_SETPOINT = "0014"
+
 
 
 def thermostat_Setpoint_SPZB(self, NwkId, setpoint):

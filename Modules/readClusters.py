@@ -1086,9 +1086,10 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
 
     elif MsgAttrID == "0014":  # Unoccupied Heating
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Unoccupied Heating:  %s" % value, MsgSrcAddr)
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID)
+        ValueTemp = round(int(value) / 100, 2)
+        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Unoccupied Heating:  %s ==> %s" % (value, ValueTemp), MsgSrcAddr)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0015":  # MIN_HEAT_SETPOINT_LIMIT
         ValueTemp = round(int(value) / 100, 1)
