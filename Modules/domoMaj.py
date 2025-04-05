@@ -169,20 +169,20 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
         if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ("0508", "0908", "0a08"):
             # Retreive the previous values
-            sValue = "%s;%s;%s" % (0, 0, 0)
+
             ampere1, ampere2, ampere3 = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0")
             if ampere2 == ampere3 == '65535.0':
                 self.log.logging(["Widget", "Electric"], "Debug", "------>  Something going wrong ..... ampere %s %s %s" %(ampere1, ampere2, ampere3))
                 ampere2 = '0.0'
                 ampere3 = '0.0'
             ampere = round(float(value), 2)
-            if Attribute_ == "0508" and ampere:
+            if Attribute_ == "0508":
                 # Line 1
                 sValue = "%s;%s;%s" % (ampere, ampere2, ampere3)
-            elif Attribute_ == "0908" and ampere:
+            elif Attribute_ == "0908":
                 # Line 2
                 sValue = "%s;%s;%s" % (ampere1, ampere, ampere3)
-            elif Attribute_ == "0a08" and ampere:
+            elif Attribute_ == "0a08":
                 # Line 3
                 sValue = "%s;%s;%s" % (ampere1, ampere2, ampere)
 
@@ -372,7 +372,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
         if "Voltage" in ClusterType and (WidgetType == "Voltage" and Attribute_ == ""):
             nValue = round(float(value), 2)
-            sValue = "%s;%s" % (nValue, nValue)
+            sValue = "%s" % nValue
             self.log.logging(["Widget", "Electric"], "Debug", "------>  : " + sValue, NwkId)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
