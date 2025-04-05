@@ -1,2 +1,16 @@
 [tool.black]
-line-length = 120
+line-length = 160
+
+
+[flake8]
+max-line-length = 160
+builtins = Devices,Parameters,Connection
+ignore =
+        E501,
+        E302,
+        E201, E202, E231, E503, E265, E225, E123, E271, E303, E125, E117, E305, E203,
+        F401, F841,
+        W292, W293, W503, W291
+
+per-file-ignores =
+    DevicesModules/custom_GammaTroniques.py: E221
