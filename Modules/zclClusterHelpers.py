@@ -486,11 +486,17 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
 
     MULTIPLIER_DIVISOR_MAPPING = {
         '0505': {'multiplier': '0600', 'divisor': '0601', 'custom': 'RMSVoltageDivisor'},   # RMS Voltage
+        '0905': {'multiplier': '0600', 'divisor': '0601', 'custom': 'RMSVoltageDivisor'},   # RMS Voltage Phase 2
+        '0a05': {'multiplier': '0600', 'divisor': '0601', 'custom': 'RMSVoltageDivisor'},   # RMS Voltage Phase 3
+
         '0508': {'multiplier': '0602', 'divisor': '0603', 'custom': 'RMSCurrentDivisor'},   # RMS Current
+        '0908': {'multiplier': '0602', 'divisor': '0603', 'custom': 'RMSCurrentDivisor'},   # RMS Current Phase 2
+        '0a08': {'multiplier': '0602', 'divisor': '0603', 'custom': 'RMSCurrentDivisor'},   # RMS Current Phase 3
+
         '050b': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Active Power
-        "050f": {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée
-        "090b": {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 2
-        "050a": {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 3
+        '050f': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée
+        '090f': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 2
+        '0a0f': {'multiplier': '0604', 'divisor': '0605', 'custom': 'ActivePowerDivisor'},  # Puissance soutirée Phase 3
     }
 
     if isinstance(raw_value, str):
@@ -498,6 +504,7 @@ def compute_electrical_measurement_conso(self, nwk_id, src_ep, cluster_id, attr_
 
     # Return early if attr_id is not in the mapping
     if attr_id not in MULTIPLIER_DIVISOR_MAPPING:
+        self.log.logging(["ZclClusters", "Electric"], "Debug", f"compute_electrical_measurement_conso - {nwk_id}/{src_ep} attr_id: '{attr_id}' not found in Multiplier table", nwk_id)
         return None
 
     conso = raw_value
