@@ -13,4 +13,4 @@ ignore =
         W292, W293, W503, W291
 
 per-file-ignores =
-    DevicesModules/custom_GammaTroniques.py: E221
+    DevicesModules/custom_GammaTroniques.py: E221,E241
