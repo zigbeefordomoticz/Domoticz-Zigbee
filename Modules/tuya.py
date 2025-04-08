@@ -1078,6 +1078,24 @@ def tuya_window_cover_calibration(self, nwkid, duration):
     write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
 
 
+def tuya_window_cover_calibration_01(self, nwkid, duration):
+    # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
+    self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration Ep 01 - Nwkid: %s Calibration %s" % (
+        nwkid, duration), nwkid, )
+
+    self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - Ep 01 duration %s" % ( duration), nwkid, )
+    write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
+
+
+def tuya_window_cover_calibration_02(self, nwkid, duration):
+    # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
+    self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration Ep 02 - Nwkid: %s Calibration %s" % (
+        nwkid, duration), nwkid, )
+
+    self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - Ep 02 duration %s" % ( duration), nwkid, )
+    write_attribute(self, nwkid, ZIGATE_EP, "02", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
+
+
 def tuya_window_cover_motor_reversal(self, nwkid, mode):
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off / Default
     # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
@@ -1878,6 +1896,8 @@ TUYA_DEVICE_PARAMETERS = {
     "TuyaBackLight": tuya_backlight_command,
     "TuyaCurtainMode": tuya_curtain_mode,
     "TuyaCalibrationTime": tuya_window_cover_calibration,
+    "TuyaCalibrationTime_Ep_01": tuya_window_cover_calibration_01,
+    "TuyaCalibrationTime_Ep_02": tuya_window_cover_calibration_02,
     "TS004FMode": tuya_cmd_ts004F,
     "moesCalibrationTime": tuya_window_cover_calibration,
     "TuyaGarageOpenerRunTime": tuya_garage_run_time,
