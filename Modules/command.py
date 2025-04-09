@@ -251,12 +251,14 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
 
     model_name = self.ListOfDevices[Nwkid].get("Model", "")
     profalux = self.ListOfDevices[Nwkid].get("Manufacturer") == "1110" and self.ListOfDevices[Nwkid].get("ZDeviceID") in ("0200", "0202")
+    is_tst0601_data_points_defined = ts0601_extract_data_point_infos( self, model_name)
+    
     
     if DeviceType not in ( "CurtainInverted", "Curtain"):
         # Refresh will be done via the Report Attribute
         request_read_device_status(self, Nwkid)
 
-    self.log.logging("Command", "Debug", f"handle_command_off : Off for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} modelName: {model_name}", Nwkid)
+    self.log.logging("Command", "Debug", f"handle_command_off : Off for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} modelName: {model_name} TS0601_DP: {is_tst0601_data_points_defined}", Nwkid)
 
     if model_name in ( "TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", ):
         self.log.logging("Command", "Debug", "handle_command_off : Off for Tuya Switches Gang/EPout: %s" % EPout)
@@ -288,7 +290,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         ts0601_curtain_accurate_calibration_cmd( self, Nwkid, EPout, 0x03, mode=1)
         return
 
-    if DeviceType == "KeypadLockout" and ts0601_extract_data_point_infos( self, model_name):
+    if DeviceType == "KeypadLockout" and is_tst0601_data_points_defined:
         # Switch ChildLock
         self.log.logging("Command", "Status", "mgtCommand : Switch Off KeypadLockout on %s/%s" % (Nwkid,EPout))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -305,12 +307,12 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
 
-    if DeviceType == "SwitchAlarm" and model_name == "TS0601-Solar-Siren" and ts0601_extract_data_point_infos( self, model_name):
+    if DeviceType == "SwitchAlarm" and model_name == "TS0601-Solar-Siren" and is_tst0601_data_points_defined:
         ts0601_actuator(self, Nwkid, "TuyaAlarmSwitch", 0)
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
         
-    if DeviceType == "TamperSwitch" and ts0601_extract_data_point_infos( self, model_name):
+    if DeviceType == "TamperSwitch" and is_tst0601_data_points_defined:
         ts0601_actuator(self, Nwkid, "TuyaTamperSwitch", 0)
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
@@ -355,7 +357,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
     if DeviceType in ("ThermoMode_2", ):
         self.log.logging("Command", "Debug", f"handle_command_off : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
         
-        if ts0601_extract_data_point_infos( self, model_name):
+        if is_tst0601_data_points_defined:
             ts0601_actuator(self, Nwkid, "TRV7SystemMode", 0)
             return
 
@@ -372,7 +374,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
     if DeviceType in ("ThermoMode_4", "ThermoMode_5", "ThermoMode_6", "ThermoMode_7"):
         self.log.logging("Command", "Debug", f"handle_command_off : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid)
         
-        if DeviceType == "ThermoMode_7" and ts0601_extract_data_point_infos( self, model_name):
+        if DeviceType == "ThermoMode_7" and is_tst0601_data_points_defined:
             ts0601_actuator(self, Nwkid, "TRV6SystemMode", 0)
             return
 
@@ -440,7 +442,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         if model_name in ( "PR412", "CPR412", "CPR412-E"):
             actuator_off(self, Nwkid, EPout, "Light")
 
-        elif DeviceType in ( "Curtain", ) and ts0601_extract_data_point_infos( self, model_name):
+        elif DeviceType in ( "Curtain", ) and is_tst0601_data_points_defined:
             ts0601_actuator(self, Nwkid, "CurtainState", 2)
             update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
@@ -474,9 +476,9 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         tuya_window_cover_calibration(self, Nwkid, "01")
 
     elif (
-        DeviceType == "Switch"
+        DeviceType in ( "Switch", "LvlControl")
         and not get_deviceconf_parameter_value(self, model_name, "StandardZigbeeCommand", return_default=False)
-        and ts0601_extract_data_point_infos( self, model_name)
+        and is_tst0601_data_points_defined
         ):
             self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Switch Off with Tuya dimmer.", Nwkid, )
             ts0601_actuator(self, Nwkid, "switch", 0)
@@ -528,10 +530,11 @@ def _off_command_default(self, Nwkid, EPout, profalux, model_name):
 def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceType, BatteryLevel, SignalLevel, forceUpdateDev):
     model_name = self.ListOfDevices[Nwkid].get("Model", "")
     profalux = self.ListOfDevices[Nwkid].get("Manufacturer") == "1110" and self.ListOfDevices[Nwkid].get("ZDeviceID") in ("0200", "0202")
-
+    is_tst0601_data_points_defined = ts0601_extract_data_point_infos( self, model_name)
+    
     request_read_device_status(self, Nwkid)
 
-    self.log.logging( "Command", "Debug", f"mgtCommand : On for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} ModelName: {model_name}", Nwkid, )
+    self.log.logging( "Command", "Debug", f"mgtCommand : On for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} ModelName: {model_name} TS0601_DP: {is_tst0601_data_points_defined}", Nwkid, )
 
     if model_name in ( "TS0601-switch", "TS0601-2Gangs-switch", "TS0601-2Gangs-switch", ):
         self.log.logging("Command", "Debug", "mgtCommand : On for Tuya Switches Gang/EPout: %s" % EPout)
@@ -546,7 +549,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         ts0601_curtain_accurate_calibration_cmd( self, Nwkid, EPout, 0x03, mode=0)
         return
 
-    if DeviceType == "KeypadLockout" and ts0601_extract_data_point_infos( self, model_name):
+    if DeviceType == "KeypadLockout" and is_tst0601_data_points_defined:
         # Switch ChildLock
         self.log.logging("Command", "Status", "mgtCommand : Switch On ChildLock  %s/%s" % (Nwkid,EPout))
         update_domoticz_widget(self, Devices, DeviceID, Unit, 0, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -563,12 +566,12 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         self.iaszonemgt.iaswd_develco_warning(Nwkid, EPout, "01")
         return
     
-    if DeviceType == "SwitchAlarm" and model_name == "TS0601-Solar-Siren" and ts0601_extract_data_point_infos( self, model_name):
+    if DeviceType == "SwitchAlarm" and model_name == "TS0601-Solar-Siren" and is_tst0601_data_points_defined:
         ts0601_actuator(self, Nwkid, "TuyaAlarmSwitch", 1)
         update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
 
-    if DeviceType == "TamperSwitch" and model_name == "TS0601-Solar-Siren" and ts0601_extract_data_point_infos( self, model_name):
+    if DeviceType == "TamperSwitch" and model_name == "TS0601-Solar-Siren" and is_tst0601_data_points_defined:
         ts0601_actuator(self, Nwkid, "TuyaTamperSwitch", 1)
         update_domoticz_widget(self, Devices, DeviceID, Unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
         return
@@ -676,9 +679,9 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         tuya_window_cover_calibration(self, Nwkid, "00")
 
     elif (
-        DeviceType == "Switch"
+        DeviceType in ( "Switch", "LvlControl")
         and not get_deviceconf_parameter_value(self, model_name, "StandardZigbeeCommand", return_default=False)
-        and ts0601_extract_data_point_infos( self, model_name)
+        and is_tst0601_data_points_defined
         ):
             self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Switch On with Tuya dimmer.", Nwkid, )
             ts0601_actuator(self, Nwkid, "switch", 1)
@@ -729,8 +732,9 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     
     model_name = self.ListOfDevices[Nwkid].get("Model", "")
     profalux = self.ListOfDevices[Nwkid].get("Manufacturer") == "1110" and self.ListOfDevices[Nwkid].get("ZDeviceID") in ("0200", "0202")
-     
-    self.log.logging( "Command", "Debug", f"handle_command_setlevel : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level}", Nwkid, )
+    is_tst0601_data_points_defined = ts0601_extract_data_point_infos( self, model_name)
+
+    self.log.logging( "Command", "Debug", f"handle_command_setlevel : Set Level for Device: {Nwkid} EPout: {EPout} Unit: {Unit} DeviceType: {DeviceType} Level: {Level} TS0601_DP: {is_tst0601_data_points_defined}", Nwkid, )
 
     if DeviceType == "ThermoSetpoint":
         _set_level_setpoint(self, Devices, DeviceID, Unit, Nwkid, EPout, model_name, Level, BatteryLevel, SignalLevel,DeviceType, forceUpdateDev )
@@ -906,7 +910,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
         self.log.logging( "Command", "Debug", "handle_command_setlevel : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" % (
             Nwkid, EPout, Unit, DeviceType, Level), Nwkid, )
         self.log.logging("Command", "Debug", "ThermoMode_2 - requested Level: %s" % Level, Nwkid)
-        if ts0601_extract_data_point_infos( self, model_name):
+        if is_tst0601_data_points_defined:
             ts0601_actuator(self, Nwkid, "TRV7SystemMode", int(Level // 10))
             return
 
@@ -936,11 +940,11 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             update_domoticz_widget(self, Devices, DeviceID, Unit, int(Level / 10), Level, BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
-    if DeviceType == "ThermoMode_7" and ts0601_extract_data_point_infos( self, model_name):
+    if DeviceType == "ThermoMode_7" and is_tst0601_data_points_defined:
         ts0601_actuator(self, Nwkid, "TRV6SystemMode", int(Level // 10))
         return
 
-    if DeviceType == "ThermoMode_8" and ts0601_extract_data_point_infos( self, model_name):
+    if DeviceType == "ThermoMode_8" and is_tst0601_data_points_defined:
         ts0601_actuator(self, Nwkid, "TRV8SystemMode", int(Level // 10))
         return
 
@@ -1010,7 +1014,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             profalux_MoveToLiftAndTilt(self, Nwkid, tilt=Tilt)
 
     elif DeviceType in ( "WindowCovering", "Venetian", "Vanne", "Curtain", "VenetianInverted", "VanneInverted", "CurtainInverted"):
-        if ts0601_extract_data_point_infos( self, model_name):
+        if is_tst0601_data_points_defined:
             self.log.logging( "Command", "Debug", f"handle_command_setlevel : Tuya TS0601: {Nwkid} Level: {Level}", Nwkid, )
             ts0601_actuator(self, Nwkid, "CurtainLevel", Level)
             update_domoticz_widget(self, Devices, DeviceID, Unit, 2, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
@@ -1045,7 +1049,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
     elif model_name == "TS0601-curtain":
         tuya_curtain_lvl(self, Nwkid, (Level))
 
-    elif DeviceType == 'LvlControl' and ts0601_extract_data_point_infos( self, model_name):
+    elif DeviceType == 'LvlControl' and is_tst0601_data_points_defined:
         self.log.logging( "Command", "Log", f"{Nwkid}/{EPout} Set Level {Level} with Tuya dimmer.", Nwkid, )
         # Level is a % value on a scale of 0 to 100
         ts0601_actuator(self, Nwkid, "dimmer", Level)
