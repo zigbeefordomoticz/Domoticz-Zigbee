@@ -1241,12 +1241,45 @@ def ts0601_action_dimmer(self, nwkid, ep, dp, value=None):
     else:
         ts0601_action_switch(self, nwkid, ep, 1, 0)
 
+def ts0601_action_min_brightness(self, nwkid, ep, dp, value=None):
+    """ Call from command to set the min brightness value, it comes on a scale of 0 to 100 from domoticz """
+
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_min_brightness - Min Brightness %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "MinBrightness", value)
+
+    # Convert to a scale of 0 - 1000 for the Tuya device
+    brightness = int((value * 1000) / 100)
+
+    action = "%02x02" %dp
+    data = "%08x" % brightness
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
+def ts0601_action_max_brightness(self, nwkid, ep, dp, value=None):
+    """ Call from command to set the max brightness value, it comes on a scale of 0 to 100 from domoticz """
+
+    if value is None:
+        return
+
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_max_brightness - Max Brightness %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "MaxBrightness", value)
+
+    # Convert to a scale of 0 - 1000 for the Tuya device
+    brightness = int((value * 1000) / 100)
+
+    action = "%02x02" %dp
+    data = "%08x" % brightness
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
 
 def ts0601_action_switch_type(self, nwkid, ep, dp, value=None):
     """ Tuya Switch Type :
-        toggle: 0
-        state: 1
-        momentary: 2
+        toggle: 0    Seesaw Toogle Switch
+        state: 1     Seesaw Sync Switch
+        momentary: 2 Kick Back Switch
     """
     if value is None:
         return
@@ -1309,8 +1342,11 @@ TS0601_COMMANDS = {
     "ReclosingEnabled": (None, "01"),
     "RecloseRecover": (None, "02"),
     "PoweronDelay": (None, "02"),
+    "switch": ts0601_action_switch,
     "dimmer": ts0601_action_dimmer,
     "SwitchType": ts0601_action_switch_type,
+    "MinBrightness": ts0601_action_min_brightness,
+    "MaxBrightness": ts0601_action_max_brightness,
     "VibrationSensitity": ts0601_action_vibration_sensitivity
 }
 
