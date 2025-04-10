@@ -70,7 +70,7 @@ from Modules.zigateConsts import (THERMOSTAT_LEVEL_2_MODE,
 # Matrix between Domoticz Type, Subtype, SwitchType and Plugin DeviceType
 # Type, Subtype, Switchtype
 DEVICE_SWITCH_MATRIX = {
-    (242, 1, ): ("ThermoSetpoint", "TempSetCurrent"),
+    (242, 1, ): ("ThermoSetpoint", "TempSetCurrent", "UnoccupiedHeatingSetpoint", "OccupiedCoolingSetpoint"),
     (241, 2, 7): ("ColorControlRGB",),
     (241, 4, 7): ("ColorControlRGBWW",),
     (241, 7, 7): ("ColorControlFull",),
