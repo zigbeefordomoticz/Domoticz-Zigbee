@@ -230,6 +230,11 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 self.log.logging(["Widget","Electric"], "Debug", "------>PowerNegative  : %s" % sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
+            if WidgetType == "ProdPower" and Attribute_ == "0016":
+                sValue = value
+                self.log.logging(["Widget","Electric"], "Debug", "------> Puissance injectée  : %s" % sValue, NwkId)
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
+
             if (
                 WidgetType == "P1Meter_ZL" 
                 and "Model" in self.ListOfDevices[NwkId] 
@@ -307,7 +312,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             elif WidgetType == "ProdMeter" and Attribute_ == "0001":
                 # Produced Energy injected
                 sValue = "%s" %int(value)
-                self.log.logging(["Widget", "Electric"], "Debug", "------>ProdMeter  : %s" % sValue, NwkId)
+                self.log.logging(["Widget", "Electric"], "Debug", "------>Energie injectée totale  : %s" % sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType in ( "Meter", "P1Meter") and Attribute_ == "0000":
