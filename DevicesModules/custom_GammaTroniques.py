@@ -10,8 +10,7 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-from Modules.basicOutputs import write_attribute
-from Modules.tools import get_device_config_param
+from Modules.basicOutputs import read_attribute, write_attribute
 from Modules.zigateConsts import ZIGATE_EP
 
 STRING = "String"
@@ -214,6 +213,8 @@ def gmms_ticmeter_set_refresh_time(self, nwkid, refresh_rate):
     self.log.logging("GammaTroniques", "Debug", "gmms_ticmeter_set_refresh_time - Nwkid: %s Refresh: %s seconds" % (nwkid, refresh_rate))
     write_attribute(self, nwkid, ZIGATE_EP, "01", TICMETER_CLUSTER, "0000", "00", TICMETER_REFRESH_TIME_ATTRIBUTE, "21", "%04x" %refresh_rate, ackIsDisabled=False)
 
+    self.log.logging("GammaTroniques", "Debug", "gmms_ticmeter_set_refresh_time - Nwkid: %s trigger a read attribute to check the new value" % (nwkid))
+    read_attribute( self, nwkid, ZIGATE_EP, "01", TICMETER_CLUSTER, "00", "00", "0000", 0x01, TICMETER_REFRESH_TIME_ATTRIBUTE, ackIsDisabled=False)
 
 GMMS_TIC_METER_DEVICE_PARAMETERS = {
     "TICMeterRefresh": gmms_ticmeter_set_refresh_time,
