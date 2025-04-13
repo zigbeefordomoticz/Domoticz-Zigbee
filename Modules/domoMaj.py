@@ -714,7 +714,6 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             svalue = str(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
 
-
         if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
             nValue = 0
             sValue = "%s %% used" %( value, )
@@ -1132,6 +1131,17 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 else:
                     self.log.logging("Widget", "Debug", f"------> Auto Update requested for NwkId: {NwkId} {ClusterType} {WidgetType} {value} not found in SWITCH_SELECTORS")
 
+        if "WindowCovering" in ClusterType and WidgetType == "ShutterCalibration" and Attribute_ == "f001":
+            # Shutter Calibration
+            self.log.logging("Widget", "Debug", "------>  %s/%s ShutterCalibration : %s" % (NwkId, Ep, value), NwkId)
+            nValue = int( value, 16) if isinstance(value, str) else value
+            if nValue == 0:
+                sValue = "Off"
+            elif nValue == 1:
+                sValue = "On"
+            else:
+                sValue = "%s" % value
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if "WindowCovering" in ClusterType and WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind"):
             self.log.logging(["Widget", "Electric"], "Debug", "------>  WindowCovering : %s" % value, NwkId)
