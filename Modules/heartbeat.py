@@ -168,7 +168,7 @@ def device_handle_custom_polling_if_defined(self, NwkId, HB):
     last_poll = device_info.get("LastCustomPolling")
     model_name = device_info.get("Model")
 
-    # Get polling config from device or fallback to device conf
+    # Get polling config from device parameters or fallback to device conf
     custom_polling = (
         device_info.get("Param", {}).get("CustomPolling")
         or self.DeviceConf.get(model_name, {}).get("CustomPolling")
@@ -179,42 +179,39 @@ def device_handle_custom_polling_if_defined(self, NwkId, HB):
 
     self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - {NwkId} {last_poll} {HB}", NwkId)
     if last_poll == HB:
-        return False
-
-
-    if not custom_polling:
+        # This prevent multiple polling in the same cycle
         return False
 
     self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - {NwkId} {custom_polling}", NwkId)
 
-    ep_in = custom_polling.get("EPin", "01")
-    ep_out = custom_polling.get("EPout", "01")
     frequency = custom_polling.get("Frequency")
-    cluster_map = custom_polling.get("ClusterAttributesList")
-
-    if not frequency or not cluster_map:
+    if not frequency:
         return False
-
     freq_heartbeat = int(frequency) // HEARTBEAT
     if freq_heartbeat == 0 or (HB % freq_heartbeat) != 0:
         return False
 
-    self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - Frequency: {NwkId} {freq_heartbeat} / {HB}", NwkId)
-
-    self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - Poll attributes: {NwkId}", NwkId)
+    cluster_map = custom_polling.get("ClusterAttributesList")
+    if not cluster_map:
+        return False
 
     self.ListOfDevices[NwkId]["LastCustomPolling"] = HB
-    self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - Ready to poll {NwkId} {HB}", NwkId)
+    
+    self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - {NwkId} Ready to poll Frequency: {freq_heartbeat} / {HB}", NwkId)
 
-    manuf_specif = "01" if "ManufCode" in custom_polling else "00"
     manuf_code = custom_polling.get("ManufCode", "0000")
+    manuf_specif = "01" if manuf_code != "0000" else "00"
+
+    ep_in = custom_polling.get("EPin", "01")
+    ep_out = custom_polling.get("EPout", "01")
+
 
     for cluster, attributes in cluster_map.items():
         attr_ids = [int(attr, 16) for attr in attributes]
         self.log.logging(
             [ "Heartbeat", "CustomDevicePolling"],
             "Debug",
-            f"++ device_handle_custom_polling_if_defined - {NwkId} Cluster: {cluster} Attributes: {attributes} Manuf: {manuf_specif}/{manuf_code}",
+            f"++ device_handle_custom_polling_if_defined - {NwkId} trigger ReadAttributeRequest Cluster: {cluster} Attributes: {attributes} Manuf: {manuf_specif}/{manuf_code}",
             NwkId,
         )
         ReadAttributeReq(self, NwkId, ep_in, ep_out, cluster, attr_ids, manufacturer_spec=manuf_specif, manufacturer=manuf_code)
