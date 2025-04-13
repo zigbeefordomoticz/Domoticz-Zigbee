@@ -51,7 +51,7 @@ from Modules.tuya import (tuya_curtain_lvl, tuya_curtain_openclose,
                           tuya_energy_onoff, tuya_garage_door_action,
                           tuya_polling_control, tuya_switch_command,
                           tuya_watertimer_command,
-                          tuya_window_cover_calibration)
+                          tuya_window_cover_calibration_mode)
 from Modules.tuyaSiren import (tuya_siren2_trigger, tuya_siren_alarm,
                                tuya_siren_humi_alarm, tuya_siren_temp_alarm)
 from Modules.tuyaTRV import (tuya_coil_fan_thermostat, tuya_fan_speed,
@@ -473,7 +473,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
 
     elif DeviceType == "ShutterCalibration":
         self.log.logging("Command", "Debug", "handle_command_off : Disable Window Cover Calibration")
-        tuya_window_cover_calibration(self, Nwkid, "01")
+        tuya_window_cover_calibration_mode(self, Nwkid, EPout, "00")
 
     elif (
         DeviceType in ( "Switch", "LvlControl")
@@ -676,7 +676,7 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
 
     elif DeviceType == "ShutterCalibration":
         self.log.logging("Command", "Debug", "mgtCommand : Enable Window Cover Calibration")
-        tuya_window_cover_calibration(self, Nwkid, "00")
+        tuya_window_cover_calibration_mode(self, Nwkid, EPout, "01")
 
     elif (
         DeviceType in ( "Switch", "LvlControl")
