@@ -131,18 +131,20 @@ def device_handle_custom_polling_if_defined(self, NwkId, HB):
     """
     Poll a device based on a custom polling structure.
 
-    Expected structure for "CustomPolling":
-        {
-            "EPin": "01",                     # Input endpoint
-            "EPout": "01",                    # Output endpoint
-            "Frequency": 60,                  # Frequency in seconds
-            "ManufCode": "1234",              # Optional manufacturer code (hex string)
-            "ClusterAttributesList": {        # Cluster-to-attributes map
-                "0702": ["0000", "0100", "0102", "0104", "0106", "0108", "010a", "0400"],
-                "0b01": ["000a", "000c", "000d", "000e"],
-                "0b04": ["0508", "0505"]
+    Expected structure in device parameters:
+
+        'CustomPolling':
+            {
+                'EPin": '01',                     # Input endpoint
+                'EPout': '01',                    # Output endpoint
+                'Frequency': 60,                  # Frequency in seconds
+                'ManufCode': '1234',              # Optional manufacturer code (hex string)
+                'ClusterAttributesList': {        # Cluster-to-attributes map
+                    '0702': ['0000', '0100', '0102', '0104', '0106', '0108', '010a', '0400'],
+                    '0b01': ['000a', '000c', '000d', '000e'],
+                    '0b04': ['0508', '0505']
+                }
             }
-        }
 
     Note:
         - Frequency will be divided by HEARTBEAT value to determine polling interval.
@@ -166,15 +168,19 @@ def device_handle_custom_polling_if_defined(self, NwkId, HB):
     last_poll = device_info.get("LastCustomPolling")
     model_name = device_info.get("Model")
 
-    self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - {NwkId} {last_poll} {HB}", NwkId)
-    if last_poll == HB:
-        return False
-
     # Get polling config from device or fallback to device conf
     custom_polling = (
         device_info.get("Param", {}).get("CustomPolling")
         or self.DeviceConf.get(model_name, {}).get("CustomPolling")
     )
+
+    if custom_polling is None:
+        return False
+
+    self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - {NwkId} {last_poll} {HB}", NwkId)
+    if last_poll == HB:
+        return False
+
 
     if not custom_polling:
         return False
