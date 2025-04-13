@@ -22,13 +22,13 @@ import struct
 import time
 from datetime import datetime, timedelta, timezone
 
-from Modules.basicOutputs import raw_APS_request, write_attribute
+from Modules.basicOutputs import (raw_APS_request, read_attribute,
+                                  write_attribute)
 from Modules.bindings import bindDevice
 from Modules.domoMaj import MajDomoDevice
 from Modules.domoTools import Update_Battery_Device
 from Modules.tools import (build_fcf, checkAndStoreAttributeValue,
-                           get_and_inc_ZCL_SQN,
-                           get_device_config_param,
+                           get_and_inc_ZCL_SQN, get_device_config_param,
                            get_deviceconf_parameter_value,
                            is_ack_tobe_disabled, updSQN)
 from Modules.tuyaConst import (TUYA_MANUF_CODE, TUYA_SMART_DOOR_LOCK_MODEL,
@@ -39,9 +39,9 @@ from Modules.tuyaTools import (get_next_tuya_transactionId, get_tuya_attribute,
 from Modules.tuyaTRV import tuya_eTRV_response
 from Modules.tuyaTS011F import tuya_read_cluster_e001
 from Modules.tuyaTS0601 import ts0601_response
-from Modules.zigateConsts import ZIGATE_EP
+from Modules.zigateConsts import (ONOFF_CLUSTER, WINDOWS_COVERING_CLUSTER,
+                                  ZIGATE_EP)
 from Zigbee.zclDecoders import zcl_raw_default_response
-
 
 # Tuya TRV Commands
 # https://medium.com/@dzegarra/zigbee2mqtt-how-to-add-support-for-a-new-tuya-based-device-part-2-5492707e882d
@@ -1069,45 +1069,71 @@ def tuya_dimmer_dimmer(self, NwkId, srcEp, percent):
 
 
 # Tuya Smart Cover Switch
+def tuya_window_cover_calibration_mode(self, nwkid, ep, mode):
+    """ Switch the calibration mode of the window covering device"""
+    self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration_mode - Nwkid: %s/%s Mode %s" % (
+        nwkid, ep, mode), nwkid, )
+
+    if int(mode) in {0, 1}:
+        write_attribute(self, nwkid, ZIGATE_EP, ep, WINDOWS_COVERING_CLUSTER, "0000", "00", "f001", "30", "%02x" % int(mode), ackIsDisabled=False)
+
+    read_attribute( self, nwkid, ZIGATE_EP, ep, WINDOWS_COVERING_CLUSTER, "00", "00", "0000", 0x01, "f001", ackIsDisabled=False)
+
+
+def tuya_window_cover_motor_reversal(self, nwkid, mode):
+    """ Switch the motor reversal of the window covering device"""
+    # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off / Default
+    # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
+    if int(mode) in {0, 1}:
+        write_attribute( self, nwkid, ZIGATE_EP, "01", WINDOWS_COVERING_CLUSTER, "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False )
+
+
 def tuya_window_cover_calibration(self, nwkid, duration):
+    """ Set the calibration duration of the window covering device"""
     # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - Nwkid: %s Calibration %s" % (
         nwkid, duration), nwkid, )
 
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - duration %s" % ( duration), nwkid, )
-    write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
+    write_attribute(self, nwkid, ZIGATE_EP, "01", WINDOWS_COVERING_CLUSTER, "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
 
 
 def tuya_window_cover_calibration_01(self, nwkid, duration):
+    """ Set the calibration duration of the window covering device on EP 01"""
     # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration Ep 01 - Nwkid: %s Calibration %s" % (
         nwkid, duration), nwkid, )
 
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - Ep 01 duration %s" % ( duration), nwkid, )
-    write_attribute(self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
+    write_attribute(self, nwkid, ZIGATE_EP, "01", WINDOWS_COVERING_CLUSTER, "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
+    read_attribute( self, nwkid, ZIGATE_EP, "01", WINDOWS_COVERING_CLUSTER, "00", "00", "0000", 0x01, "f003", ackIsDisabled=False)
 
 
 def tuya_window_cover_calibration_02(self, nwkid, duration):
+    """ Set the calibration duration of the window covering device on EP 02"""
     # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration Ep 02 - Nwkid: %s Calibration %s" % (
         nwkid, duration), nwkid, )
 
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - Ep 02 duration %s" % ( duration), nwkid, )
-    write_attribute(self, nwkid, ZIGATE_EP, "02", "0102", "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
+    write_attribute(self, nwkid, ZIGATE_EP, "02", WINDOWS_COVERING_CLUSTER, "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
+    read_attribute( self, nwkid, ZIGATE_EP, "02", WINDOWS_COVERING_CLUSTER, "00", "00", "0000", 0x01, "f003", ackIsDisabled=False)
 
 
-def tuya_window_cover_motor_reversal(self, nwkid, mode):
-    # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 0 (0x00) | Off / Default
-    # (0x0102) | Write Attributes (0x02) | 0xf002 | 8-Bit (0x30) | 1 (0x01) | On
+def tuya_motor_mode(self, nwkid, mode):
+    self.log.logging( "tuyaSettings", "Debug", "tuya_motor_mode - Nwkid: %s Motor Mode %s" % (
+        nwkid, mode), nwkid, )
+
     if int(mode) in {0, 1}:
-        write_attribute( self, nwkid, ZIGATE_EP, "01", "0102", "0000", "00", "f002", "30", "%02x" % int(mode), ackIsDisabled=False )
+        write_attribute( self, nwkid, ZIGATE_EP, "01", WINDOWS_COVERING_CLUSTER, "0000", "00", "8000", "30", "%02x" % int(mode), ackIsDisabled=False )
+    read_attribute( self, nwkid, ZIGATE_EP, "01", WINDOWS_COVERING_CLUSTER, "00", "00", "0000", 0x01, "8000", ackIsDisabled=False)
 
 
 def tuya_curtain_mode(self, nwkid, mode):
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 0 (0x00) | Kick Back
     # (0x0006) | Write Attributes (0x02) | 0x8001 | 8-Bit (0x30) | 1 (0x01) | Seesaw
     if int(mode) in {0, 1}:
-        write_attribute( self, nwkid, ZIGATE_EP, "01", "0006", "0000", "00", "8001", "30", "%02x" % int(mode), ackIsDisabled=False )
+        write_attribute( self, nwkid, ZIGATE_EP, "01", ONOFF_CLUSTER, "0000", "00", "8001", "30", "%02x" % int(mode), ackIsDisabled=False )
 
 
 def tuya_backlight_command(self, nwkid, mode):
@@ -1895,6 +1921,7 @@ TUYA_DEVICE_PARAMETERS = {
     "TuyaMotoReversal": tuya_window_cover_motor_reversal,
     "TuyaBackLight": tuya_backlight_command,
     "TuyaCurtainMode": tuya_curtain_mode,
+    "TuyaMotorMode": tuya_motor_mode,
     "TuyaCalibrationTime": tuya_window_cover_calibration,
     "TuyaCalibrationTime_Ep_01": tuya_window_cover_calibration_01,
     "TuyaCalibrationTime_Ep_02": tuya_window_cover_calibration_02,
