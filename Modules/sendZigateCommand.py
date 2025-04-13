@@ -24,23 +24,24 @@ from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_COMMANDS, ZIGATE_EP
 
 
 def add_Last_Cmds(self, isqn, address_mode, nwkid, cmd, datas):
-
+    # Ensure the device exists
     if nwkid not in self.ListOfDevices:
         return
 
-    if "Last Cmds" not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid]["Last Cmds"] = []
-
-    if isinstance(self.ListOfDevices[nwkid]["Last Cmds"], dict):
-        self.ListOfDevices[nwkid]["Last Cmds"] = []
-
-    if len(self.ListOfDevices[nwkid]["Last Cmds"]) >= 10:
-        # Remove the First element in the list.
-        self.ListOfDevices[nwkid]["Last Cmds"].pop(0)
-
+    # Default value for isqn
     if isqn is None:
         isqn = "None"
+
+    # Initialize Last Cmds as a list if it doesn't exist or is not a list
+    if not isinstance(self.ListOfDevices[nwkid].get("Last Cmds"), list):
+        self.ListOfDevices[nwkid]["Last Cmds"] = []
+
+    # Add new command
     self.ListOfDevices[nwkid]["Last Cmds"].append((isqn, address_mode, nwkid, cmd, datas))
+
+    # Keep only the last 10 commands
+    self.ListOfDevices[nwkid]["Last Cmds"] = self.ListOfDevices[nwkid]["Last Cmds"][-10:]
+
 
 
 def send_zigatecmd_zcl_ack(self, address, cmd, datas):

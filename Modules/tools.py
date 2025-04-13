@@ -31,6 +31,9 @@ from Modules.zigateConsts import HEARTBEAT
 HEX_DIGIT = "0123456789abcdefABCDEF"
 INT_DIGIT = "0123456789"
 
+MAX_ROLLING_LQI_LENGTH = 10
+
+
 def to_little_endian(value: str) -> str:
     length = len(value)
 
@@ -507,28 +510,27 @@ def updSQN(self, key, newSQN):
 
 
 def updLQI(self, key, LQI):
-
+    # Ensure the device exists
     if key not in self.ListOfDevices:
         return
 
-    if "LQI" not in self.ListOfDevices[key]:
-        self.ListOfDevices[key]["LQI"] = {}
-
-    if LQI == "00":
+    if ( LQI == "00" or not is_hex(LQI) ):
         return
 
-    if is_hex(LQI):  # Check if the LQI is Correct
+    # Convert LQI from hex to integer
+    lqi_value = int(LQI, 16)
 
-        self.ListOfDevices[key]["LQI"] = int(LQI, 16)
+    # Update LQI value directly
+    self.ListOfDevices[key]["LQI"] = lqi_value
 
-        if "RollingLQI" not in self.ListOfDevices[key]:
-            self.ListOfDevices[key]["RollingLQI"] = []
+    # Initialize RollingLQI list if it doesn't exist
+    self.ListOfDevices[key].setdefault("RollingLQI", [])
 
-        if len(self.ListOfDevices[key]["RollingLQI"]) > 10:
-            del self.ListOfDevices[key]["RollingLQI"][0]
-        self.ListOfDevices[key]["RollingLQI"].append(int(LQI, 16))
+    # Add LQI to RollingLQI list
+    self.ListOfDevices[key]["RollingLQI"].append(lqi_value)
 
-    return
+    # Keep RollingLQI list size at most 10 elements
+    self.ListOfDevices[key]["RollingLQI"] = self.ListOfDevices[key]["RollingLQI"][-10:]
 
 
 def upd_RSSI(self, nwkid, rssi_value):
