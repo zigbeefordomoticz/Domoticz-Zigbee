@@ -1094,6 +1094,8 @@ def tuya_window_cover_calibration(self, nwkid, duration):
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - Nwkid: %s Calibration %s" % (
         nwkid, duration), nwkid, )
 
+    if duration == 0:
+        return
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - duration %s" % ( duration), nwkid, )
     write_attribute(self, nwkid, ZIGATE_EP, "01", WINDOWS_COVERING_CLUSTER, "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
 
@@ -1103,6 +1105,8 @@ def tuya_window_cover_calibration_01(self, nwkid, duration):
     # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration Ep 01 - Nwkid: %s Calibration %s" % (
         nwkid, duration), nwkid, )
+    if duration == 0:
+        return
 
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - Ep 01 duration %s" % ( duration), nwkid, )
     write_attribute(self, nwkid, ZIGATE_EP, "01", WINDOWS_COVERING_CLUSTER, "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
@@ -1114,6 +1118,8 @@ def tuya_window_cover_calibration_02(self, nwkid, duration):
     # (0x0102) | Write Attributes (0x02) | 0xf003 | 0x21 16-Bit Unsigned Int | 600 0x0258) | 68 s
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration Ep 02 - Nwkid: %s Calibration %s" % (
         nwkid, duration), nwkid, )
+    if duration == 0:
+        return
 
     self.log.logging( "tuyaSettings", "Debug", "tuya_window_cover_calibration - Ep 02 duration %s" % ( duration), nwkid, )
     write_attribute(self, nwkid, ZIGATE_EP, "02", WINDOWS_COVERING_CLUSTER, "0000", "00", "f003", "21", "%04x" %duration, ackIsDisabled=False)
