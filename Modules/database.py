@@ -436,8 +436,12 @@ def import_local_device_conf(self):
     from os import listdir
     from os.path import isfile, join
 
+
+
     # Read DeviceConf for backward compatibility
     importDeviceConf(self)
+    legacy_config_loaded = len(self.DeviceConf)
+
     _pluginConfig = Path( self.pluginconf.pluginConf["pluginConfig"] )
     model_directory = _pluginConfig / "Local-Devices"
 
@@ -488,7 +492,7 @@ def import_local_device_conf(self):
 
     self.log.logging("Database", "Debug", "--> Config loaded: %s" % self.DeviceConf.keys())
     self.log.logging("Database", "Debug", "Local-Device ModelManufMapping loaded - %s" %self.ModelManufMapping.keys())
-    self.log.logging("Database", "Status", "Z4D loads %s configuration from the local certified Db." %len(self.DeviceConf))
+    self.log.logging("Database", "Status", "Z4D loads %s configuration from the local certified Db." %( len(self.DeviceConf) - legacy_config_loaded))
 
 
 def checkDevices2LOD(self, Devices):
