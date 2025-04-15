@@ -88,9 +88,10 @@ def populate_custom_dimmensions(self):
         _custom_dimensions[ "dimension8"] = clean_custom_dimension_value( _archi)
 
     # Uptime
-    _uptime = get_uptime_category(self.statistics._start)
-    if _uptime:
-        _custom_dimensions[ "dimension9"] = clean_custom_dimension_value( _uptime)
+    if self.statistics:
+        _uptime = get_uptime_category(self.statistics._start)
+        if _uptime:
+            _custom_dimensions[ "dimension9"] = clean_custom_dimension_value( _uptime)
 
     # Ronelab model
     ronelab_model = get_ronelabs_model_custom_definition()
@@ -159,9 +160,11 @@ def send_matomo_request(self, action_name, custom_variable=None, custom_dimensio
     """
     
     client_id = get_clientid(self)
-    self.log.logging( "Matomo", "Debug", f"send_matomo_request - Clien_id {client_id}")
+    if self.log:
+        self.log.logging( "Matomo", "Debug", f"send_matomo_request - Clien_id {client_id}")
     if client_id is None:
-        self.log.logging( "Matomo", "Error", "Nothing reported as MacAddress is None!")
+        if self.log:
+            self.log.logging( "Matomo", "Error", "Nothing reported as MacAddress is None!")
         return
 
     # Construct the payload
@@ -178,7 +181,8 @@ def send_matomo_request(self, action_name, custom_variable=None, custom_dimensio
         try:
             payload["cvar"] = json.dumps(custom_variable)
         except TypeError as e:
-            self.log.logging("Matomo", "Error", f"Failed to serialize custom_variable: {e}")
+            if self.log:
+                self.log.logging("Matomo", "Error", f"Failed to serialize custom_variable: {e}")
             return
 
     # Add custom dimensions if provided
@@ -192,7 +196,8 @@ def send_matomo_request(self, action_name, custom_variable=None, custom_dimensio
         if event_name:
             payload["e_n"] = event_name  # Event name (optional)
 
-    self.log.logging( "Matomo", "Debug", f"send_matomo_request - payload {payload}")
+    if self.log:
+        self.log.logging( "Matomo", "Debug", f"send_matomo_request - payload {payload}")
     # Send the request
     response = fetch_data_with_timeout(self, MATOMO_URL, payload)
 

@@ -822,45 +822,127 @@ async def transport_request(self, Function, destination, Profile, Cluster, sEp, 
         await _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid, sEp, dEp, sequence, payload, use_ieee, _ieee,ack_is_disable, extended_timeout, delayAfterSent )
 
 
-async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid, sEp, dEp, sequence, payload, use_ieee, _ieee, ack_is_disable, extended_timeout, delayAfterSent):
+#async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid, sEp, dEp, sequence, payload, use_ieee, _ieee, ack_is_disable, extended_timeout, delayAfterSent):
+#
+#    max_retry = MAX_ATTEMPS_REQUEST if self.pluginconf.pluginConf["PluginRetrys"] else 1
+#    delay_after_command_sent = max( delayAfterSent, self.pluginconf.pluginConf.get("DelayAfterCommandSent", 0))
+#    self.log.logging("TransportZigpy", "Debug", f"transport_request: delay_after_command_sent for {delay_after_command_sent} seconds")
+#  
+#    for attempt in range(1, (max_retry + 1)):
+#        try:
+#            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {_ieee} {Profile:X} {Cluster:X} - AckIsDisable: {ack_is_disable} extended_timeout: {extended_timeout} Attempts: {attempt}/{max_retry}")
+#            result, _ = await zigpy_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout)
+#
+#        except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError, AttributeError, DeliveryError) as e:
+#            error_log_message = f"Warning while submitting - {Function} {_ieee}/0x{_nwkid} 0x{Profile:X} 0x{Cluster:X} payload: {payload} AckIsDisable: {ack_is_disable} Retry: {attempt}/{max_retry} with exception: '{e}' ({type(e)}))"
+#            self.log.logging("TransportZigpy", "Log", error_log_message)
+#            if await _retry_or_not(self, attempt, max_retry, Function, sequence, ack_is_disable, _ieee, _nwkid, destination, e):
+#                self.statistics._reTx += 1
+#                if isinstance(e, asyncio.exceptions.TimeoutError):
+#                    self.statistics._TOdata += 1
+#                continue
+#            else:
+#                self.statistics._ackKO += 1
+#                result = 0xB6
+#                break
+#
+#        except Exception as error:
+#            # Any other exception 
+#            error_log_message = f"_send_and_retry - Unexpected Exception - {Function} {_ieee}/0x{_nwkid} 0x{Profile:X} 0x{Cluster:X} payload: {payload} AckIsDisable: {ack_is_disable} RETRY: {attempt}/{max_retry} ({error})"
+#            self.log.logging("TransportZigpy", "Error", error_log_message)
+#            result = 0xB6
+#
+#        else:
+#            # Success
+#            if delay_after_command_sent:
+#                self.log.logging("TransportZigpy", "Debug", f"sleeping {delay_after_command_sent} as per configured!!")
+#                await asyncio.sleep( delay_after_command_sent )
+#
+#            handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
+#            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: result: {result}")
+#            break
 
+async def _send_and_retry(
+    self, function, destination, profile, cluster,
+    nwkid, source_ep, dest_ep, sequence, payload,
+    use_ieee, ieee, ack_is_disable, extended_timeout, delay_after_sent
+):
+    """
+    Send a Zigbee command and retry on failure, up to a maximum number of attempts.
+
+    This method handles sending a Zigbee request through the zigpy transport layer, 
+    optionally retrying in case of transmission issues like timeouts or delivery errors.
+    It also logs detailed debug and error information, tracks transmission statistics,
+    and respects configured delays and retry limits.
+
+    Args:
+        function (str): The name of the logical function or command being sent.
+        destination (zigpy.device.Device): Target Zigbee device.
+        profile (int): Zigbee profile ID (e.g., 0x0104 for HA).
+        cluster (int): Cluster ID for the command.
+        nwkid (int): Network short ID of the destination device.
+        source_ep (int): Source endpoint.
+        dest_ep (int): Destination endpoint.
+        sequence (int): Sequence number for tracking the request.
+        payload (list): Command payload to send.
+        use_ieee (bool): Whether to use IEEE addressing instead of NWK.
+        ieee (str): IEEE address of the destination device.
+        ack_is_disable (bool): Whether to disable default acknowledgment behavior.
+        extended_timeout (bool): Whether to request an extended timeout from the device.
+        delay_after_sent (float): Optional delay (in seconds) after sending a command.
+
+    Returns:
+        int: Result code from the Zigbee request or 0xB6 if all attempts failed.
+    """
     max_retry = MAX_ATTEMPS_REQUEST if self.pluginconf.pluginConf["PluginRetrys"] else 1
-    delay_after_command_sent = max( delayAfterSent, self.pluginconf.pluginConf.get("DelayAfterCommandSent", 0))
-    self.log.logging("TransportZigpy", "Debug", f"transport_request: delay_after_command_sent for {delay_after_command_sent} seconds")
-  
-    for attempt in range(1, (max_retry + 1)):
-        try:
-            self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: {_ieee} {Profile:X} {Cluster:X} - AckIsDisable: {ack_is_disable} extended_timeout: {extended_timeout} Attempts: {attempt}/{max_retry}")
-            result, _ = await zigpy_request(self, destination, Profile, Cluster, sEp, dEp, sequence, payload, ack_is_disable=ack_is_disable, use_ieee=use_ieee, extended_timeout=extended_timeout)
+    delay_after_cmd = max(delay_after_sent, self.pluginconf.pluginConf.get("DelayAfterCommandSent", 0))
 
-        except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError, AttributeError, DeliveryError) as e:
-            error_log_message = f"Warning while submitting - {Function} {_ieee}/0x{_nwkid} 0x{Profile:X} 0x{Cluster:X} payload: {payload} AckIsDisable: {ack_is_disable} Retry: {attempt}/{max_retry} with exception: '{e}' ({type(e)}))"
-            self.log.logging("TransportZigpy", "Log", error_log_message)
-            if await _retry_or_not(self, attempt, max_retry, Function, sequence, ack_is_disable, _ieee, _nwkid, destination, e):
+    self.log.logging("TransportZigpy", "Debug", f"transport_request: delay_after_command_sent for {delay_after_cmd} seconds")
+
+    common_log_info = f"{ieee}/0x{nwkid} 0x{profile:X} 0x{cluster:X} payload: {payload} AckIsDisable: {ack_is_disable}"
+
+    for attempt in range(1, max_retry + 1):
+        self.log.logging("TransportZigpy", "Debug",
+                         f"_send_and_retry: {ieee} {profile:X} {cluster:X} - AckIsDisable: {ack_is_disable} "
+                         f"extended_timeout: {extended_timeout} Attempts: {attempt}/{max_retry}")
+
+        try:
+            result, _ = await zigpy_request(
+                self, destination, profile, cluster,
+                source_ep, dest_ep, sequence, payload,
+                ack_is_disable=ack_is_disable,
+                use_ieee=use_ieee,
+                extended_timeout=extended_timeout
+            )
+
+        except (asyncio.TimeoutError, asyncio.CancelledError, AttributeError, DeliveryError) as e:
+            msg = f"Warning while submitting - {function} {common_log_info} Retry: {attempt}/{max_retry} with exception: '{e}' ({type(e).__name__})"
+            self.log.logging("TransportZigpy", "Log", msg)
+
+            if await _retry_or_not(self, attempt, max_retry, function, sequence, ack_is_disable, ieee, nwkid, destination, e):
                 self.statistics._reTx += 1
-                if isinstance(e, asyncio.exceptions.TimeoutError):
+                if isinstance(e, asyncio.TimeoutError):
                     self.statistics._TOdata += 1
                 continue
             else:
                 self.statistics._ackKO += 1
-                result = 0xB6
-                break
+                return 0xB6
 
         except Exception as error:
-            # Any other exception 
-            error_log_message = f"_send_and_retry - Unexpected Exception - {Function} {_ieee}/0x{_nwkid} 0x{Profile:X} 0x{Cluster:X} payload: {payload} AckIsDisable: {ack_is_disable} RETRY: {attempt}/{max_retry} ({error})"
-            self.log.logging("TransportZigpy", "Error", error_log_message)
-            result = 0xB6
+            msg = f"_send_and_retry - Unexpected Exception - {function} {common_log_info} RETRY: {attempt}/{max_retry} ({error})"
+            self.log.logging("TransportZigpy", "Error", msg)
+            return 0xB6
 
         else:
-            # Success
-            if delay_after_command_sent:
-                self.log.logging("TransportZigpy", "Debug", f"sleeping {delay_after_command_sent} as per configured!!")
-                await asyncio.sleep( delay_after_command_sent )
+            if delay_after_cmd:
+                self.log.logging("TransportZigpy", "Debug", f"sleeping {delay_after_cmd} as per configured!!")
+                await asyncio.sleep(delay_after_cmd)
 
-            handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
+            handle_transport_result(self, function, sequence, result, ack_is_disable, ieee, nwkid, destination.lqi)
             self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: result: {result}")
-            break
+            return result
+
+    return 0xB6  # If all retries fail
 
 
 async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t, cluster: t.uint16_t, src_ep: t.uint8_t, dst_ep: t.uint8_t, sequence: t.uint8_t, data: bytes, *, ack_is_disable: bool = True, use_ieee: bool = False, extended_timeout: bool = False, ) -> tuple[zigpy.zcl.foundation.Status, str]:
@@ -891,6 +973,8 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
     if not ack_is_disable:
         tx_options |= t.TransmitOptions.ACK
 
+    priority = t.PacketPriority.NORMAL
+
     await self.app.send_packet(
         t.ZigbeePacket(
             src=src,
@@ -904,6 +988,7 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
             extended_timeout=extended_timeout,
             source_route=source_route,
             tx_options=tx_options,
+            priority=priority,
         )
     )
 
@@ -912,6 +997,7 @@ async def zigpy_request( self, device: zigpy.device.Device, profile: t.uint16_t,
 
 async def zigpy_mrequest( self, group_id: t.uint16_t, profile: t.uint8_t, cluster: t.uint16_t, src_ep: t.uint8_t, sequence: t.uint8_t, data: bytes, *, hops: int = 0, non_member_radius: int = 3,):
     """Submit and send data out as a multicast transmission."""
+
 
     await self.app.send_packet(
         t.ZigbeePacket(
