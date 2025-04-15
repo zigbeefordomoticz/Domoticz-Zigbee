@@ -467,12 +467,16 @@ def import_local_device_conf(self):
                 if device_model_name not in self.DeviceConf:
                     self.log.logging( "Database", "Debug", "--> Config for %s" % ( str(device_model_name)) )
                     self.DeviceConf[device_model_name] = dict(model_definition)
+                    
+                    self.log.logging( "Database", "Status", f"++ Overwrite standard configuration model {device_model_name} with {filename}" )
 
                     if "Identifier" in model_definition:
                         self.log.logging( "Database", "Debug", "--> Identifier found %s" % (str(model_definition["Identifier"])) )
                         for x in model_definition["Identifier"]:
                             self.log.logging( "Database", "Debug", "-->     %s" %x)
                             self.ModelManufMapping[ (x[0], x[1] )] = device_model_name
+                            self.log.logging( "Database", "Status", f"++   Manufacturer mapping [ {x[0]}, {x[1]}" )
+                        self.log.logging( "Database", "Status", "" )
                 else:
                     self.log.logging(
                         "Database",
