@@ -71,7 +71,7 @@ SETTINGS = {
             "autoRestore": {"type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True,},
             "ZigpyTopologyReport": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
             "ZigpyTopologyReportAutoBackup": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True, },
-            "PluginRetrys": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
+            "PluginRetrys": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "CaptureRxFrames": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "CaptureTxFrames": {"type": "bool","default": 0,"current": None,"restart": 1,"hidden": False,"Advanced": True,},
             "enableZclDuplicatecheck": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
