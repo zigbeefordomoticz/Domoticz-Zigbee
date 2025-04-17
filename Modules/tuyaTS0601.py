@@ -17,6 +17,7 @@
 
 """
 
+import math
 import struct
 
 from Modules.domoMaj import MajDomoDevice
@@ -236,8 +237,21 @@ def ts0601_motion(self, Devices, nwkid, ep, value):
     # Occupancy
     self.log.logging("Tuya0601", "Debug", "ts0601_motion - Occupancy %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Occupancy", value)
+
     MajDomoDevice(self, Devices, nwkid, ep, "0406", value )
     checkAndStoreAttributeValue(self, nwkid, "01", "0406", "0000", value)
+
+
+def ts0601_vibration(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_vibration - vibration %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Vibration", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0006", int(value), Attribute_= "Vibration" )
+
+
+def ts0601_tilt(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_tilt - Tilt %s %s %s" % (nwkid, ep, value), nwkid)
+    store_tuya_attribute(self, nwkid, "Tilt", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "0006", int(value), Attribute_= "Tilt" )
 
 
 def ts0601_tuya_presence_state(self, Devices, nwkid, ep, value):
@@ -718,6 +732,74 @@ def ts0601_rain_intensity(self, Devices, nwkid, ep, value):
     MajDomoDevice(self, Devices, nwkid, ep, "RainIntensity", value)
 
 
+def ts0601_vibration_tilt_x(self, Devices, nwkid, ep, coord_x):
+    store_tuya_attribute(self, nwkid, "coord_x", coord_x)
+
+    coord_y = get_tuya_attribute(self, nwkid, 'coord_y')
+    coord_z = get_tuya_attribute(self, nwkid, 'coord_z')
+    _ts0601_vibration_tilt(self, Devices, nwkid, ep, coord_x, coord_y, coord_z)
+
+
+def ts0601_vibration_tilt_y(self, Devices, nwkid, ep, coord_y):
+    store_tuya_attribute(self, nwkid, "coord_y", coord_y)
+
+    coord_x = get_tuya_attribute(self, nwkid, 'coord_x')
+    coord_z = get_tuya_attribute(self, nwkid, 'coord_z')
+    _ts0601_vibration_tilt(self, Devices, nwkid, ep, coord_x, coord_y, coord_z)
+
+
+def ts0601_vibration_tilt_z(self, Devices, nwkid, ep, coord_z):
+    store_tuya_attribute(self, nwkid, "coord_z", coord_z)
+
+    coord_x = get_tuya_attribute(self, nwkid, 'coord_x')
+    coord_y = get_tuya_attribute(self, nwkid, 'coord_y')
+    _ts0601_vibration_tilt(self, Devices, nwkid, ep, coord_x, coord_y, coord_z)
+
+
+def _ts0601_vibration_tilt(self, Devices, nwkid, ep, coord_x, coord_y, coord_z):
+    """
+    Handle tilt calculation for a Tuya TS0601 vibration sensor.
+
+    This function assumes it is called when the latest Z-axis (coord_z) value is received.
+    It fetches previously stored X and Y-axis values and calculates the tilt (magnitude of 3D vector)
+    using Euclidean norm. The computed tilt is stored and used to update the associated Domoticz device.
+
+    Args:
+        self: The class instance containing `log`, and expected interface for attribute storage/retrieval.
+        Devices: The Domoticz device dictionary.
+        nwkid (str): The Zigbee network ID of the sensor.
+        ep (str): The endpoint from which the data is received.
+        value (float or int): The Z-axis (coord_z) acceleration or tilt value from the sensor.
+    """
+    self.log.logging("Tuya0601", "Debug", f"ts0601_vibration_tilt - Nwkid: {nwkid}/{ep} : {coord_x} {coord_y} {coord_z}")
+
+    tilt = 0.0
+    magnitude = 0.0
+
+    if coord_x is None or coord_y is None or coord_z is None:
+        self.log.logging("Tuya0601", "Debug", f"ts0601_vibration_tilt - Missing X or Y or Z for Nwkid: {nwkid}/{ep}")
+        return
+
+    coord_x = int(coord_x, 16) if isinstance(coord_x, str) else coord_x
+    coord_y = int(coord_y, 16) if isinstance(coord_y, str) else coord_y
+    coord_z = int(coord_z, 16) if isinstance(coord_z, str) else coord_z
+
+    magnitude = math.sqrt(coord_x**2 + coord_y**2 + coord_z**2)
+    if magnitude > 0:
+        cosine = max(-1.0, min(1.0, coord_z / magnitude))  # Clamp for safety
+        tilt = round(math.degrees(math.acos(cosine)), 0)
+        magnitude = round(magnitude, 0)
+
+    self.log.logging(
+        "Tuya0601", "Debug",
+        f"ts0601_vibration_tilt - Nwkid: {nwkid}/{ep} X: {coord_x} Y: {coord_y} Z: {coord_z} Tilt: {tilt} Magnitude: {magnitude}"
+    )
+
+    store_tuya_attribute(self, nwkid, "VibrationTilt", tilt)
+    store_tuya_attribute(self, nwkid, "VibrationMagnitude", magnitude)
+    MajDomoDevice(self, Devices, nwkid, ep, "Orientation", f"X: {coord_x} Y: {coord_y} Z: {coord_z}, Tilt: {tilt} Magnitude: {magnitude}", Attribute_="0508")
+
+
 DP_SENSOR_FUNCTION = {
     "curtain_state": ts0601_curtain_state,
     "curtain_level": ts0601_curtain_level,
@@ -733,6 +815,8 @@ DP_SENSOR_FUNCTION = {
     "battery": ts0601_battery,
     "batteryState": ts0601_battery_state,
     "tamper": ts0601_tamper,
+    "vibration": ts0601_vibration,
+    "tilt": ts0601_tilt,
     "charging_mode": ts0601_charging_mode,
     "switch": ts0601_switch,
     "dimmer": ts0601_dimmer,
@@ -778,6 +862,9 @@ DP_SENSOR_FUNCTION = {
     "orpCalibration": ts0601_orpCalibration,
     "cleaning_reminder": ts0601_cleaning_reminder,
     "rain_intensity": ts0601_rain_intensity,
+    "vibration_tilt_x": ts0601_vibration_tilt_x,
+    "vibration_tilt_y": ts0601_vibration_tilt_y,
+    "vibration_tilt_z": ts0601_vibration_tilt_z,
 }
 
 
@@ -1297,7 +1384,7 @@ def ts0601_action_vibration_sensitivity(self, nwkid, ep, dp, value=None):
     if value is None:
         return
 
-    self.log.logging("Tuya0601", "Debug", "ts0601_action_vibration_sensitivity - Sensitivity %s %s %s" % (nwkid, ep, value), nwkid)
+    self.log.logging("Tuya0601", "Log", "ts0601_action_vibration_sensitivity - Sensitivity %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "VibrationSensitivity", value)
 
     action = "%02x04" % dp
@@ -1347,7 +1434,7 @@ TS0601_COMMANDS = {
     "SwitchType": ts0601_action_switch_type,
     "MinBrightness": ts0601_action_min_brightness,
     "MaxBrightness": ts0601_action_max_brightness,
-    "VibrationSensitity": ts0601_action_vibration_sensitivity
+    "VibrationSensitivity": ts0601_action_vibration_sensitivity
 }
 
 
