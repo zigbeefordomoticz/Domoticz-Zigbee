@@ -11,7 +11,6 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 import asyncio
-import asyncio.events
 import contextlib
 import json
 import queue
@@ -21,7 +20,6 @@ import time
 import traceback
 from pathlib import Path
 from threading import Thread
-from typing import Any, Optional
 
 import zigpy.config
 import zigpy.device
@@ -48,12 +46,10 @@ from Classes.ZigpyTransport.plugin_encoders import (
 from Classes.ZigpyTransport.tools import handle_thread_error
 from Modules.macPrefix import DELAY_FOR_VERY_KEY
 
-MAX_ATTEMPS_REQUEST = 3
-REQUEST_TIMEOUT = 3.5   # This is a given time for the request to be sent
+REQUEST_TIMEOUT = 3   # This is a given time for the request to be sent
 WAITING_TIME_BETWEEN_REQUESTS = 0.0
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6
-
 
 
 def stop_zigpy_thread(self):
@@ -870,7 +866,7 @@ async def _send_and_retry(
 
         except Exception as e:
             msg = f"Warning while submitting - {function} {common_log_info} Attempt: {attempt} Exception: '{e}' ({type(e).__name__})"
-            self.log.logging("TransportZigpy", "Error", msg)
+            self.log.logging("TransportZigpy", "Log", msg)
             self.statistics._ackKO += 1
             return 0xB6
 
@@ -897,7 +893,7 @@ async def _send_and_retry(
         elapsed = time.monotonic() - start_time
 
         if elapsed >= REQUEST_TIMEOUT:
-            self.log.logging("TransportZigpy", "Error", f"_send_and_retry: TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt - 1} attempts.")
+            self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {common_log_info} TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt - 1} attempts. ")
             self.statistics._ackKO += 1
             return 0xB6
 
