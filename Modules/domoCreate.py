@@ -916,6 +916,12 @@ SIMPLE_WIDGET = {
         "Subtype": 73,
         "Switchtype": 0
     },
+    "Tilt": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+
     "SwitchAlarm": {
         "Type": 244,
         "Subtype": 73,
@@ -950,11 +956,6 @@ SIMPLE_WIDGET = {
     "TamperSwitch": {
         "Type": 244,
         "Subtype": 73,
-        "Switchtype": 0
-    },
-    "Tilt": {
-        "Type": 243,
-        "Subtype": 22,
         "Switchtype": 0
     },
     "Temp": {
