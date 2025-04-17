@@ -886,6 +886,17 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=False)
             return
 
+        if ClusterType == "Switch" and WidgetType == "Tilt" and Attribute_ == "Tilt":
+            nValue = value
+            sValue = "%02x" %nValue
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+            return
+
+        if ClusterType == "Switch" and WidgetType == "Vibration" and Attribute_ == "Vibration":
+            nValue = value
+            sValue = "%02x" %nValue
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+            return
         if (
             WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff", "Motionac01") 
             and ( 
