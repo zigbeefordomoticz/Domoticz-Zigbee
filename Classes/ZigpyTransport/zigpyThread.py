@@ -862,12 +862,17 @@ async def _send_and_retry(
             self.log.logging("TransportZigpy", "Debug", msg)
             self.statistics._reTx += 1
             self.statistics._TOdata += 1
-            return 0xB6
+
+            # Let's retry and so return None
+            return None
 
         except Exception as e:
             msg = f"Warning while submitting - {function} {common_log_info} Attempt: {attempt} Exception: '{e}' ({type(e).__name__})"
             self.log.logging("TransportZigpy", "Log", msg)
             self.statistics._ackKO += 1
+
+            # No retry, return 0xB6
+            handle_transport_result(self, function, sequence, 0xB6, ack_is_disable, ieee, nwkid, destination.lqi)
             return 0xB6
 
         else:
@@ -876,6 +881,7 @@ async def _send_and_retry(
                 self.log.logging("TransportZigpy", "Debug", f"sleeping {delay_after_cmd} as per configured!!")
                 await asyncio.sleep(delay_after_cmd)
 
+            # Successful transmission
             handle_transport_result(self, function, sequence, result, ack_is_disable, ieee, nwkid, destination.lqi)
             self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: result: {result}")
             return result
@@ -895,12 +901,15 @@ async def _send_and_retry(
         if elapsed >= REQUEST_TIMEOUT:
             self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {common_log_info} TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt - 1} attempts. ")
             self.statistics._ackKO += 1
+            handle_transport_result(self, function, sequence, 0xB6, ack_is_disable, ieee, nwkid, destination.lqi)
             return 0xB6
 
         self.log.logging("TransportZigpy", "Debug",
                          f"_send_and_retry: {function} {common_log_info} "
                          f"extended_timeout: {extended_timeout} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
         result = await __try_send(attempt)
+        
+        # if result is None it means we need to retry
         if result is not None:
             return result
 
@@ -996,18 +1005,6 @@ async def zigpy_broadcast( self, profile: t.uint16_t, cluster: t.uint16_t, src_e
     )
 
     return (zigpy.zcl.foundation.Status.SUCCESS, "")
-      
-    
-async def _retry_or_not(self, attempt, max_retry, Function, sequence,ack_is_disable, _ieee, _nwkid, destination , e):
-    if attempt < max_retry:
-        return True
-
-    # Stop here as we have exceed the max retrys
-    self.log.logging("TransportZigpy", "Log", f"_retry_or_not: result: {e}")
-    result = min(int(e.status) if hasattr(e, 'status') else 0xB6, 0xB6)
-
-    handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
-    return False
 
 
 def handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):
