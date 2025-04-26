@@ -837,7 +837,7 @@ async def _send_and_retry(
     common_log_info = f"{ieee}/0x{nwkid} 0x{profile:X} 0x{cluster:X} payload: {payload} AckIsDisable: {ack_is_disable}"
     packet_priority = t.PacketPriority.NORMAL
 
-    async def try_send(attempt):
+    async def __try_send(attempt):
         """
         Sends a Zigbee request and handles exceptions.
 
@@ -862,7 +862,7 @@ async def _send_and_retry(
             self.log.logging("TransportZigpy", "Debug", msg)
             self.statistics._reTx += 1
             self.statistics._TOdata += 1
-            return None
+            return 0xB6
 
         except Exception as e:
             msg = f"Warning while submitting - {function} {common_log_info} Attempt: {attempt} Exception: '{e}' ({type(e).__name__})"
@@ -882,7 +882,7 @@ async def _send_and_retry(
 
     if ack_is_disable:
         # Single send, no retry
-        return await try_send(attempt=1)
+        return await __try_send(attempt=1)
 
     # Retry mode for ack_is_disable == False
     start_time = time.monotonic()
@@ -900,7 +900,7 @@ async def _send_and_retry(
         self.log.logging("TransportZigpy", "Debug",
                          f"_send_and_retry: {function} {common_log_info} "
                          f"extended_timeout: {extended_timeout} Attempt: {attempt} Elapsed: {elapsed:.2f}s")
-        result = await try_send(attempt)
+        result = await __try_send(attempt)
         if result is not None:
             return result
 
