@@ -505,8 +505,33 @@ def get_and_increment_generic_SQN(self, nwkid, sqn_type):
 
 
 def updSQN(self, key, newSQN):
-    if key in self.ListOfDevices and newSQN:
-        self.ListOfDevices[key]["SQN"] = newSQN
+    """Update the sequence number (SQN) for the given device key in the ListOfDevices."""
+
+    # Log function entry with important details
+    self.log.logging('Input', 'Debug', f'Entering updSQN with key={key} newSQN={newSQN}')
+
+    # Safely retrieve the device entry using .get() and update the SQN if the key exists and newSQN is valid
+    device = self.ListOfDevices.get(key)
+    if device and newSQN:
+        # Log the updated sequence number for traceability
+        self.log.logging('Input', 'Debug', f'Updated SQN for device {key} from {device.get("SQN", "")} to {newSQN}')
+        device["SQN"] = newSQN
+
+
+def is_duplicate_sqn(self, MsgDataShAddr, MsgDataSQN):
+    """Check if the message sequence number (SQN) is a duplicate."""
+
+    # Log function entry with key information
+    self.log.logging('Input', 'Debug', f'Checking duplicate SQN for device {MsgDataShAddr} with SQN {MsgDataSQN}')
+
+    # Safely retrieve the device from ListOfDevices
+    device = self.ListOfDevices.get(MsgDataShAddr)
+
+    # If device exists and has an SQN, check if it's a duplicate
+    if device and 'SQN' in device and MsgDataSQN == device['SQN']:
+        self.log.logging('Input', 'Debug', f'SQN {MsgDataSQN} is a duplicate for device {MsgDataShAddr}')
+        return True
+    return False
 
 
 def updLQI(self, key, LQI):
@@ -562,6 +587,7 @@ def is_fake_ep( self, nwkid, ep):
         and ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["FakeEp"]
     )
 
+
 def is_bind_ep( self, nwkid, ep):
     return (
         "Model" not in self.ListOfDevices[nwkid]
@@ -569,7 +595,8 @@ def is_bind_ep( self, nwkid, ep):
         or "bindEp" not in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]
         or ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["bindEp"]
     )
-    
+
+  
 def deviceconf_device(self, nwkid):
     
     if (
@@ -579,7 +606,8 @@ def deviceconf_device(self, nwkid):
         return self.DeviceConf[ self.ListOfDevices[nwkid]["Model"] ]
     else:
         return {}
-    
+
+
 def getTypebyCluster(self, Cluster):
     clustersType = {
         "0405": "Humi",

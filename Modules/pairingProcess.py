@@ -157,13 +157,13 @@ def do_we_have_key_clusters( self, NWKID ):
 def interview_state_004d(self, NWKID, RIA=None, status=None):
     self.log.logging( "Pairing", "Debug", "interview_state_004d - NWKID: %s, Status: %s, RIA: %s," % ( 
         NWKID, status, RIA, ), )
-    self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: %s %s" % (RIA, NWKID, status))
+    MsgIEEE = self.ListOfDevices[NWKID].get("IEEE", None)
+    self.log.logging("Pairing", "Status", "[%s] NEW OBJECT: Nwkid: 0x%s IEEE: 0x%s Status: %s" % (RIA, NWKID, MsgIEEE, status))
 
     if RIA:
         self.ListOfDevices[NWKID]["RIA"] = str(RIA + 1)
     self.ListOfDevices[NWKID]["Heartbeat"] = "0"
     self.ListOfDevices[NWKID]["Status"] = "0045"
-    MsgIEEE = self.ListOfDevices[NWKID].get("IEEE", None)
 
     if ( MsgIEEE and ( MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE ) ):
         ReadAttributeRequest_0000(self, NWKID, fullScope=False)  # In order to request Model Name
