@@ -148,28 +148,8 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         or ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Leave") )
     ):
         self.log.logging("DeviceAnnoucement", "Debug", "--> Device reset, removing key Attributes", NwkId)
+        force_reset_and_remove_attributes(self, NwkId)
         reseted_device = True
-        if "Bind" in self.ListOfDevices[NwkId]:
-            del self.ListOfDevices[NwkId]["Bind"]
-        if STORE_CONFIGURE_REPORTING in self.ListOfDevices[NwkId]:
-            del self.ListOfDevices[NwkId][STORE_CONFIGURE_REPORTING]
-        if "ReadAttributes" in self.ListOfDevices[NwkId]:
-            del self.ListOfDevices[NwkId]["ReadAttributes"]
-        if "Neighbours" in self.ListOfDevices[NwkId]:
-            del self.ListOfDevices[NwkId]["Neighbours"]
-        if "IAS" in self.ListOfDevices[NwkId]:
-            del self.ListOfDevices[NwkId]["IAS"]
-            for x in self.ListOfDevices[NwkId]["Ep"]:
-                if "0500" in self.ListOfDevices[NwkId]["Ep"][ x ]:
-                    del self.ListOfDevices[NwkId]["Ep"][ x ]["0500"]
-                    self.ListOfDevices[NwkId]["Ep"][ x ]["0500"] = {}
-                if "0502" in self.ListOfDevices[NwkId]["Ep"][ x ]:
-                    del self.ListOfDevices[NwkId]["Ep"][ x ]["0502"]
-                    self.ListOfDevices[NwkId]["Ep"][ x ]["0502"] = {}
-
-        if "WriteAttributes" in self.ListOfDevices[NwkId]:
-            del self.ListOfDevices[NwkId]["WriteAttributes"]
-
         self.ListOfDevices[NwkId]["Status"] = "inDB"
 
     if "ZDeviceName" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["ZDeviceName"] not in ("", {}):
@@ -276,6 +256,40 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
     if "Announced" in self.ListOfDevices[NwkId]:
         del self.ListOfDevices[NwkId]["Announced"]
+
+
+def force_reset_and_remove_attributes(self, NwkId):
+    """Reset device and remove specific attributes to clear its state."""
+    self.log.logging("DeviceAnnouncement", "Debug", f"--> Device reset, removing key Attributes for NwkId: {NwkId}")
+
+    # Helper function to remove keys safely
+    def __remove_key(device, key):
+        if key in device:
+            del device[key]
+
+    device = self.ListOfDevices.get(NwkId)
+    if not device:
+        self.log.logging("DeviceAnnouncement", "Error", f"Device with NwkId {NwkId} not found.")
+        return
+
+    # Remove specific keys from the device
+    __remove_key(device, "Bind")
+    __remove_key(device, STORE_CONFIGURE_REPORTING)
+    __remove_key(device, "ReadAttributes")
+    __remove_key(device, "Neighbours")
+    __remove_key(device, "IAS")
+    __remove_key(device, "WriteAttributes")
+
+    # Special handling for "IAS" and its "Ep" attributes
+    if "IAS" in device:
+        for ep_key, ep_data in device.get("Ep", {}).items():
+            for attr in ["0500", "0502"]:
+                if attr in ep_data:
+                    del ep_data[attr]
+                    ep_data[attr] = {}
+                    self.log.logging("DeviceAnnouncement", "Debug", f"Reset {attr} for Ep: {ep_key} of Device: {NwkId}")
+
+    self.log.logging("DeviceAnnouncement", "Debug", f"Device {NwkId} reset and attributes removed.")
 
 
 def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgLQI, now):
