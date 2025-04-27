@@ -911,6 +911,17 @@ SIMPLE_WIDGET = {
         "Subtype": 73,
         "Switchtype": 0
     },
+    "Vibration": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "Tilt": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+
     "SwitchAlarm": {
         "Type": 244,
         "Subtype": 73,
