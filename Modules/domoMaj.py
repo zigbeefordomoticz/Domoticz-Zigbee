@@ -384,7 +384,6 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         if "ThermoSetpoint" in ClusterType and (WidgetType == "ThermoSetpoint" and Attribute_ in ("4003", "0012")):
             setpoint = round(float(value), 2)
             # Normalize SetPoint value with 2 digits
-            nValue = 0
             sValue = str_round(float(setpoint), 2)  # 2 decimals
             self.log.logging("Widget", "Debug", "------>  Thermostat Setpoint: %s %s" % (0, setpoint), NwkId)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
@@ -740,6 +739,21 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         if Attribute_ == "0007" and ClusterType == "FanControl" and WidgetType == "FanSpeed":
             nValue = round(value, 1)
             sValue = str(nValue)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+        if Attribute_ == "0001" and WidgetType == "OutDoorTemperature" and "OutDoorTemperature" in ClusterType:
+            nValue = value
+            sValue = "%s" %(value,)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+        if Attribute_ == "0014" and WidgetType == "UnoccupiedHeatingSetpoint" and "UnoccupiedHeatingSetpoint" in ClusterType:
+            sValue = str_round(float(value), 2)
+            self.log.logging("Widget", "Debug", "------>  Thermostat UnOccupiedSetpoint: %s %s" % (0, sValue), NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
+        if Attribute_ == "0011" and WidgetType == "OccupiedCollingSetpoint" and "OccupiedCollingSetpoint" in ClusterType:
+            nValue = value
+            sValue = "%s" %(10 * value,)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":

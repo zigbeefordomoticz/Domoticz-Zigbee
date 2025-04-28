@@ -973,7 +973,9 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "0001":  # Outdoor Temperature
         self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Outdoor Temp: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
+        ValueTemp = round(int(value) / 100, 2)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", ValueTemp, Attribute_="0001")
 
     elif MsgAttrID == "0002":  # Occupancy
         self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Occupancy: %s" % (
@@ -1045,12 +1047,13 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Cooling Setpoint: %s" % ValueTemp, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
 
-        if model_name in ("AC211", "AC221", "CAC221"):
-            # We do report if AC211 and AC in Cool mode
-            if MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
-                if "001c" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-                    if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["001c"] in (0x03, 0x01):
-                        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_="0012")
+        if model_name in ("AC211", "AC221", "CAC221") and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
+            if "001c" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
+                if self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["001c"] in (0x03, 0x01):
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_="0012")
+        else:
+            ValueTemp = round(int(value) / 100, 2)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_="0011")
 
     elif MsgAttrID == "0012":  # Heat Setpoint (Zinte16)
         ValueTemp = round(int(value) / 100, 2)
@@ -1059,7 +1062,6 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         if model_name == "AC201A":
             # We do not report this, as AC201 rely on 0xffad cluster
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
-            pass
 
         elif model_name in ("AC211", "AC221", "CAC221"):
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
@@ -1073,19 +1075,21 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             # In case of Schneider Wiser Valve, 
             receiving_heatingpoint_attribute( self, Devices, MsgSrcAddr, MsgSrcEp, ValueTemp, value, MsgClusterId, MsgAttrID)
 
-        elif model_name != "SPZB0001":
+        elif model_name == "SPZB0001":
+            pass
+
+        else:
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
             # In case it is not a Eurotronic, let's Update heatPoint
             # As Eurotronics will rely on 0x4003 attributes
             self.log.logging( "Cluster", "Debug", "ReadCluster - 0201 - Request update on Domoticz %s not a Schneider, not a Eurotronics" % MsgSrcAddr, MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
 
-        else:
-            checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
-
     elif MsgAttrID == "0014":  # Unoccupied Heating
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Unoccupied Heating:  %s" % value, MsgSrcAddr)
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
+        ValueTemp = round(int(value) / 100, 2)
+        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Unoccupied Heating:  %s ==> %s" % (value, ValueTemp), MsgSrcAddr)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0015":  # MIN_HEAT_SETPOINT_LIMIT
         ValueTemp = round(int(value) / 100, 1)

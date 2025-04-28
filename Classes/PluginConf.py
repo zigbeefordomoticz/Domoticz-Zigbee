@@ -267,6 +267,7 @@ SETTINGS = {
             "NXPExtendedErrorCode": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "NetworkEnergy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "NetworkMap": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
+            "Namron": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Occupancy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "OTA": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Orvibo": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },

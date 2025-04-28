@@ -894,19 +894,22 @@ SIMPLE_WIDGET = {
         "widgetType": "Custom",
         "Options": "1;ppm"
     },
-    
     "phMeter": { "widgetType": "Custom", "Options": "1;pH" },
     "ec": { "widgetType": "Custom", "Options": "1;µS/cm" },
     "orp": { "widgetType": "Custom", "Options": "1;mV" },
     "freeChlorine": { "widgetType": "Custom", "Options": "1;mg/L" },
     "salinity": { "widgetType": "Custom", "Options": "1;ppm" },
     "tds": { "widgetType": "Custom", "Options": "1;ppm" },
-
     "Strength": {
         "Type": 243,
         "Subtype": 31
     },
     "Switch": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "OccupancySensing": {
         "Type": 244,
         "Subtype": 73,
         "Switchtype": 0
@@ -921,7 +924,6 @@ SIMPLE_WIDGET = {
         "Subtype": 73,
         "Switchtype": 0
     },
-
     "SwitchAlarm": {
         "Type": 244,
         "Subtype": 73,
@@ -961,6 +963,10 @@ SIMPLE_WIDGET = {
     "Temp": {
         "widgetType": "Temperature"
     },
+    "OutDoorTemperature": {
+        "widgetType": "Temperature"
+    },
+
     "Temp+Hum": {
         "widgetType": "Temp+Hum"
     },
@@ -978,6 +984,14 @@ SIMPLE_WIDGET = {
         "Image": 15
     },
     "ThermoSetpoint": {
+        "Type": 242,
+        "Subtype": 1
+    },
+    "UnoccupiedHeatingSetpoint": {
+        "Type": 242,
+        "Subtype": 1
+    },
+    "OccupiedCollingSetpoint": {
         "Type": 242,
         "Subtype": 1
     },
