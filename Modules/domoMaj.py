@@ -169,7 +169,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
         if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ("0508", "0908", "0a08"):
             # Retreive the previous values
-            sValue = "%s;%s;%s" % (0, 0, 0)
+
             ampere1, ampere2, ampere3 = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0")
             if ampere2 == ampere3 == '65535.0':
                 self.log.logging(["Widget", "Electric"], "Debug", "------>  Something going wrong ..... ampere %s %s %s" %(ampere1, ampere2, ampere3))
@@ -228,6 +228,11 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
                 sValue = abs(value)
                 self.log.logging(["Widget","Electric"], "Debug", "------>PowerNegative  : %s" % sValue, NwkId)
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
+
+            if WidgetType == "ProdPower" and Attribute_ == "0016":
+                sValue = value
+                self.log.logging(["Widget","Electric"], "Debug", "------> Puissance injectée  : %s" % sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if (
@@ -307,7 +312,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             elif WidgetType == "ProdMeter" and Attribute_ == "0001":
                 # Produced Energy injected
                 sValue = "%s" %int(value)
-                self.log.logging(["Widget", "Electric"], "Debug", "------>ProdMeter  : %s" % sValue, NwkId)
+                self.log.logging(["Widget", "Electric"], "Debug", "------>Energie injectée totale  : %s" % sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
             elif WidgetType in ( "Meter", "P1Meter") and Attribute_ == "0000":
@@ -372,7 +377,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
         if "Voltage" in ClusterType and (WidgetType == "Voltage" and Attribute_ == ""):
             nValue = round(float(value), 2)
-            sValue = "%s;%s" % (nValue, nValue)
+            sValue = "%s" % nValue
             self.log.logging(["Widget", "Electric"], "Debug", "------>  : " + sValue, NwkId)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
@@ -895,6 +900,17 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=False)
             return
 
+        if ClusterType == "Switch" and WidgetType == "Tilt" and Attribute_ == "Tilt":
+            nValue = value
+            sValue = "%02x" %nValue
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+            return
+
+        if ClusterType == "Switch" and WidgetType == "Vibration" and Attribute_ == "Vibration":
+            nValue = value
+            sValue = "%02x" %nValue
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+            return
         if (
             WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff", "Motionac01") 
             and ( 
@@ -1140,8 +1156,19 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 else:
                     self.log.logging("Widget", "Debug", f"------> Auto Update requested for NwkId: {NwkId} {ClusterType} {WidgetType} {value} not found in SWITCH_SELECTORS")
 
+        if "WindowCovering" in ClusterType and WidgetType == "ShutterCalibration" and Attribute_ == "f001":
+            # Shutter Calibration
+            self.log.logging("Widget", "Debug", "------>  %s/%s ShutterCalibration : %s" % (NwkId, Ep, value), NwkId)
+            nValue = int( value, 16) if isinstance(value, str) else value
+            if nValue == 0:
+                sValue = "Off"
+            elif nValue == 1:
+                sValue = "On"
+            else:
+                sValue = "%s" % value
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if "WindowCovering" in ClusterType and WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind"):
+        if "WindowCovering" in ClusterType and WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind") and Attribute_ != "f001":
             self.log.logging(["Widget", "Electric"], "Debug", "------>  WindowCovering : %s" % value, NwkId)
             nValue, sValue = _domo_convert_windows_covering( self, value, Devices, device_id_ieee, device_unit, NwkId, WidgetType )
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
@@ -1187,6 +1214,42 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         CheckUpdateGroup(self, NwkId, Ep, ClusterId)
 
 # Helpers
+def get_meter_mode_from_widget(self, Devices, NwkId, DeviceId, Unit ):
+    # Mode = 0 - From device (default)
+    # Mode = 1 - Computed
+
+    _device_options = domo_read_Options( self, Devices, DeviceId, Unit,)
+    self.log.logging( "Widget", "Debug", "get_meter_mode_from_widget Options: %s" %_device_options, NwkId)
+    
+    if _device_options is None:
+        return None
+    return _device_options.get('EnergyMeterMode')
+ 
+
+def check_set_meter_widget( self, Devices, NwkId, DeviceId, Unit, oldnValue, oldsValue, mode):
+    # Mode = 0 - From device (default)
+    # Mode = 1 - Computed
+
+    do_not_over_write_option = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "DoNotOverWriteOptions")
+    if do_not_over_write_option:
+        return
+
+    Options = {'EnergyMeterMode': '0'}
+    
+    _device_options = domo_read_Options( self, Devices, DeviceId, Unit,)
+    self.log.logging( "Widget", "Debug", "check_set_meter_widget Options: %s" %_device_options, NwkId)
+    
+    # Do we have the Energy Mode calculation already set ?
+    if "EnergyMeterMode" in _device_options:
+        # Yes, let's retreive it
+        Options = _device_options
+
+    sMode = "%s" %mode
+    if Options["EnergyMeterMode"] != sMode:
+
+        Options = { "EnergyMeterMode": sMode }
+        domo_update_api(self, Devices, DeviceId, Unit, oldnValue, oldsValue, Options=Options ,)
+
 
 def process_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_instant_power : {WidgetType} {Attribute_} {value} ({type(value)})", NwkId)
@@ -1228,10 +1291,9 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
 
     # Retrieve instant power consumption
     instant_power = _retreive_instant_power(self, NwkId, Ep)
+    self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_summation - retreived instant power: {instant_power} ({type(instant_power)})", NwkId)
     if instant_power is None:
         return
-
-    self.log.logging(["Widget", "Electric"], "Debug", f"------> retreived instant power: {instant_power}", NwkId)
 
     # Convert value safely
     try:
@@ -1241,20 +1303,24 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
         self.log.logging(["Widget", "Electric"], "Error", f"Invalid value received: {value}", NwkId)
         return
 
-    if Attribute_ == "0000" and widget_type == "Meter":
-        sValue = f"{instant_power}:{parsed_value}"
+    if widget_type == "Meter":
+        # It is assumed that we come with Attribute 0x0000
+        sValue = f"{instant_power};{parsed_value}"
 
     elif widget_type.startswith("P1Meter"):
         if Attribute_ in ["0000", "0100"]:
+            # Usage1 / HC
             sValue = f"{parsed_value};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
         elif Attribute_ == "0102":
+            # Usage 2 / HP
             sValue = f"{cur_usage1};{parsed_value};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
 
-    self.log.logging(["Widget", "Electric"], "Debug", f"------------> {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
+    self.log.logging(["Widget", "Electric"], "Debug", f"------------> process_p1meters_meter_with_summation - {device_id_ieee} {device_unit} {widget_type} {sValue}", NwkId)
 
     # Update Domoticz widget
     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
 
 def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
     """Handles P1Meter_HPHC processing based on the Attribute type."""
@@ -1287,7 +1353,10 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
         return
 
     if widget_type == "Meter":
-        sValue = f"{instant_power}:{currrent_usage}"
+        meter_mode = get_meter_mode_from_widget(self, Devices, NwkId, device_id_ieee, device_unit )
+        if meter_mode == 1 and currrent_usage == 0:
+            sValue = f"{instant_power};"
+        sValue = f"{instant_power};{currrent_usage}"
 
     elif widget_type.startswith("P1Meter"):
         sValue = f"{cur_usage1};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
@@ -1653,31 +1722,6 @@ def _log_erratic_value_debug(self, NwkId, value_type, value, expected_min, expec
     self.log.logging("Widget", "Debug", f"Aberrant {value_type}: {value} (below {expected_min} or above {expected_max}) for device: {NwkId} [{consecutive_erratic_value}]", NwkId)
 
 
-def check_set_meter_widget( self, Devices, NwkId, DeviceId, Unit, oldnValue, oldsValue, mode):
-    # Mode = 0 - From device (default)
-    # Mode = 1 - Computed
-
-    do_not_over_write_option = get_deviceconf_parameter_value(self, self.ListOfDevices[NwkId]["Model"], "DoNotOverWriteOptions")
-    if do_not_over_write_option:
-        return
-
-    Options = {'EnergyMeterMode': '0'}
-    
-    _device_options = domo_read_Options( self, Devices, DeviceId, Unit,)
-    self.log.logging( "Widget", "Debug", "check_set_meter_widget Options: %s" %_device_options, NwkId)
-    
-    # Do we have the Energy Mode calculation already set ?
-    if "EnergyMeterMode" in _device_options:
-        # Yes, let's retreive it
-        Options = _device_options
-
-    sMode = "%s" %mode
-    if Options["EnergyMeterMode"] != sMode:
-
-        Options = { "EnergyMeterMode": sMode }
-        domo_update_api(self, Devices, DeviceId, Unit, oldnValue, oldsValue, Options=Options ,)
-
-
 def retrieve_data_from_current(self, Devices, DeviceID, Unit, current_nValue, current_svalue, _format):
     """
     Retrieve data from current.
@@ -1784,16 +1828,29 @@ def temp_adjustement_value(self, Devices, NwkId, DeviceId, Device_Unit):
 def _retreive_instant_power(self, NwkId, Ep):
     """ retreive Instant Power in 0x0702/0x0400 or 0x0b04/0x050f or 0x0b04/0x050b"""
 
+    model_name = self.ListOfDevices.get(NwkId, {}).get("Model")
     ep_data = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(Ep, {})
+    
+    instant_power_cluster = get_deviceconf_parameter_value(self, model_name, "InstantPowerCluster")
+    instant_power_attribute = get_deviceconf_parameter_value(self, model_name, "InstantPowerAttribute")
+    
+    self.log.logging("Widget", "Debug", f"_retreive_instant_power {NwkId} {model_name} {instant_power_cluster}/{instant_power_attribute}")
+    if instant_power_cluster and instant_power_attribute:
+        return ep_data.get( instant_power_cluster, {}).get( instant_power_attribute)
+    
+    # Based on legacy.
     if "0702" in ep_data and "0400" in ep_data["0702"]:
+        self.log.logging(["Widget", "Electric"], "Debug", f"_retreive_instant_power {NwkId} returning based on 0702/0400")
         return round(float(ep_data["0702"]["0400"]), 2)
 
     if "0b04" not in ep_data:
         return 0
     
     if "050b" in ep_data["0b04"]:
+        self.log.logging(["Widget", "Electric"], "Debug", f"_retreive_instant_power {NwkId} returning based on 0b04/050b")
         return round(float(ep_data["0b04"]["050b"]), 2)
 
+    self.log.logging("Widget", "Debug", f"_retreive_instant_power {NwkId} {model_name} not found !!!! returning None")
     return None 
 
 

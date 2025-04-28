@@ -392,26 +392,37 @@ ZONE_TYPE = {
     0xFFFF: "invalid",
 }
 
+BASIC_CLUSTER = "0000"
+POWER_CONFIGURATION_CLUSTER = "0001"
+IDENTIFY_CLUSTER = "0003"
+GROUPS_CLUSTER = "0004"
+SCENES_CLUSTER = "0005"
+ONOFF_CLUSTER = "0006"
+LEVEL_CONTROL_CLUSTER = "0008"
+ALARM_CLUSTER = "0009"
+
+WINDOWS_COVERING_CLUSTER = "0102"
+TERMOSTAT_CLUSTER = "0201"
 
 ZCL_CLUSTERS_ACT = {
-    "0006": "On/Off",
-    "0008": "Level Control",
-    "0102": "Windows Covering",
-    "0201": "Thermostat",
+    ONOFF_CLUSTER: "On/Off",
+    LEVEL_CONTROL_CLUSTER: "Level Control",
+    WINDOWS_COVERING_CLUSTER: "Windows Covering",
+    TERMOSTAT_CLUSTER: "Thermostat",
     "0300": "Colour Control",
     "0402": "Temperature Measurement",
 }
 
 ZCL_CLUSTERS_LIST = {
-    "0000": "Basic",
-    "0001": "Power Configuration",
+    BASIC_CLUSTER: "Basic",
+    POWER_CONFIGURATION_CLUSTER: "Power Configuration",
     "0003": "Identify",
     "0004": "Groups",
     "0005": "Scenes",
-    "0006": "On/Off",
+    ONOFF_CLUSTER: "On/Off",
     "0007": "On/Off Switch Configuration",
-    "0008": "Level Control",
-    "0009": "Alarms",
+    LEVEL_CONTROL_CLUSTER: "Level Control",
+    ALARM_CLUSTER: "Alarms",
     "000a": "Time",
     "000c": "Analog Input (basic)",
     "000d": "Analog Output (basic)",
@@ -427,8 +438,8 @@ ZCL_CLUSTERS_LIST = {
     "0020": "Poll Control",
     "0100": "Shade Configuration",
     "0101": "Door Lock",
-    "0102": "Window Covering",
-    "0201": "Thermostat",
+    WINDOWS_COVERING_CLUSTER: "Window Covering",
+    TERMOSTAT_CLUSTER: "Thermostat",
     "0202": "Fan Control",
     "0204": "Thermostat User Interface Configuration",
     "0300": "Colour Control",
@@ -442,6 +453,7 @@ ZCL_CLUSTERS_LIST = {
     "0500": "IAS Zone",
     "0501": "IAS ACE (Ancillary Control Equipment)",
     "0502": "IAS WD (Warning Device)",
+    "0702": "Metering (Smart Energy)",
     "0b04": "Electrical Measurement",
     "0b05": "Diagnostics",
     "1000": "Touchlink",
@@ -1784,7 +1796,7 @@ CLUSTERS_LIST = [
     "0009",  # Alarm
     "000f",  # Binary Input (Basic)
     "0100",  # Shade Configuration
-    "0102",  # Windows Covering / SHutter
+    WINDOWS_COVERING_CLUSTER,  # Windows Covering / SHutter
     "0403",  # Measurement: Pression atmospherique
     "0404",  # Measurement: Flow
     "0405",  # Relative Humidity Measurement
@@ -1846,7 +1858,7 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
     # Level Control Cluster
     "0008": {"Attributes": {"0000": {"DataType": "20", "MinInterval": "0005", "MaxInterval": "012C", "TimeOut": "0000", "Change": "05"}}},
     # Windows Covering
-    "0102": {
+    WINDOWS_COVERING_CLUSTER: {
         "Attributes": {
             "0003": {
                 "DataType": "21",

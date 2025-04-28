@@ -108,9 +108,9 @@ def get_max_read_attribute_value( self, nwkid=None):
     return read_configuration_report_chunk or self.pluginconf.pluginConf["ReadAttributeChunk"]
 
 
-def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, forceLen=False):
+def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec="00", manufacturer="0000", ackIsDisabled=True, checkTime=True, forceLen=False, maxReadAttributesByRequest=None):
 
-    maxReadAttributesByRequest = get_max_read_attribute_value( self, addr )    
+    maxReadAttributesByRequest = maxReadAttributesByRequest or get_max_read_attribute_value( self, addr )
 
     if forceLen:
         normalizedReadAttributeReq(self, addr, EpIn, EpOut, Cluster, ListOfAttributes, manufacturer_spec, manufacturer, ackIsDisabled, force=True) 
@@ -1795,37 +1795,148 @@ def ReadAttributeRequest_fc7d(self, key):
 TIC_CLUSTERID = "ff42"
 
 def read_attributes_gammatroniques_tic_meter(self, nwkid):
-    EPout = "01"
-    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_gammatroniques_tic_meter: " + nwkid + " EPout = " + EPout + " Cluster = " + TIC_CLUSTERID, nwkid=nwkid)
-    listAttributes = retreive_ListOfAttributesByCluster(self, nwkid, EPout, TIC_CLUSTERID)
-    ReadAttributeReq(self, nwkid, ZIGATE_EP, EPout, TIC_CLUSTERID, listAttributes, ackIsDisabled=False)
+    """ Reading all RO attributes from TIC Meter"""
+    mode_tic = self.ListOfDevices.get( nwkid, {}).get("GammaTroniques",{}).get('ModeTIC')
+    read_ticmeter_manufacturer(self, nwkid, mode_tic, request='all')
 
 
 def read_attributes_ticmeter_tarif(self, nwkid):
     """ Read attributes to TICMeter to collect all related attributes on tariff """
-    attributes = [ 0x000B, 0x0000, 0x0039, 0x0001, 0x003A, 0x0003 ]
-    ep_out = "01"
-    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_tarif: %s cluster %s attribute: %s" %( 
-        nwkid, TIC_CLUSTERID,attributes ), nwkid=nwkid)
-    ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, TIC_CLUSTERID, attributes, ackIsDisabled=False)
+    mode_tic = self.ListOfDevices.get( nwkid, {}).get("GammaTroniques",{}).get('ModeTIC')
+    read_ticmeter_manufacturer(self, nwkid, mode_tic, request='tariff')
 
 
 def read_attributes_ticmeter_details(self, nwkid):
-    attributes = [ 0x0002, 0x002c, 0x002a, 0x002d ]
-    ep_out = "01"
-    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
-        nwkid, TIC_CLUSTERID,attributes ), nwkid=nwkid)
-    ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, TIC_CLUSTERID, attributes, ackIsDisabled=False)
 
-    attributes = [ 0x0308, ]
+    mode_tic = self.ListOfDevices.get( nwkid, {}).get("GammaTroniques",{}).get('ModeTIC')
+    read_ticmeter_manufacturer(self, nwkid, mode_tic, request='uptime')
+
+    attributes = [
+        0x0308,  # Identifiant
+        0x0307,  # Point de Référence Mesure [Standard]
+    ]
     self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
         nwkid, "0702", attributes ), nwkid=nwkid)
-    ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, "0702", attributes, ackIsDisabled=False)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, "01", "0702", attributes, ackIsDisabled=False)
 
-    attributes = [ 0x000e, ]
+    attributes_histo = [
+        0x050A,	 # Intensité maximale,
+        0x050D,	 # Puissance max soutirée Auj.,
+        0x0911,	 # Tension moyenne Phase 2,
+        0x0A0A,	 # Intensité maximale Phase 3,
+    ]
+
+    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
+        nwkid, "0b04", attributes ), nwkid=nwkid)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, "01", "0b04", attributes_histo, ackIsDisabled=False)
+
+    if mode_tic is None or mode_tic == 1:
+        attributes_standard = [
+            0x050A,	 # Intensité maximale,
+            0x050B,	 # Point n courbe soutirée, [Standard]
+            0x0511,	 # Tension moyenne Phase 1, [Standard]
+            0x090A,	 # Intensité maximale Phase 2, [Standard]
+            0x090B,	 # Point n-1 courbe soutirée, [Standard]
+            0x090D,	 # Puissance max soutirée Auj. 2, [Standard]
+            0x0A0D,	 # Puissance max soutirée Auj. 3, [Standard]
+            0x0A11,	 # Tension moyenne Phase 3, [Standard]
+        ]
+        self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
+            nwkid, "0b04", attributes ), nwkid=nwkid)
+        ReadAttributeReq(self, nwkid, ZIGATE_EP, "01", "0b04", attributes_standard, ackIsDisabled=False)
+
+    attributes = [
+        0x000e,  # Puissance app de coupure
+    ]
     self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
         nwkid, "0b01", attributes ), nwkid=nwkid)
-    ReadAttributeReq(self, nwkid, ZIGATE_EP, ep_out, "0b01", attributes, ackIsDisabled=False)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, "01", "0b01", attributes, ackIsDisabled=False)
+
+
+TICMETER_FF42_HISTORIC = [
+    0x0000,	 # Type de contrat,
+    0x0002,  # Temps d'actualisation
+    0x0004,
+    0x0005,
+    0x0006,
+    0x0007,
+    0x0008,	 # Présence des potentiels,
+    0x0009,  # Horaire Heures Creuses,
+    0x000A,	 # Registre de Statuts,
+    0x002a,	 # Mode Electrique,
+    0x002b,	 # Puissance Max contrat,
+    0x002c,	 # Mode TIC,
+    0x002d,	 # Temps de fonctionnement,
+]
+
+TICMETTER_FF42_STANDARD = [
+    0x000B,	 # Date et heure Compteur, [Standard]
+    0x0012,	 # Puissance max soutirée Hier, [Standard]
+    0x0013,	 # Puissance max soutirée Hier 1, [Standard]
+    0x0014,	 # Puissance max soutirée Hier 2, [Standard]
+    0x0015,	 # Puissance max soutirée Hier 3, [Standard]
+    0x0017,	 # Puissance max injectée Auj., [Standard]
+    0x0018,	 # Puissance max injectée Hier, [Standard]
+    0x0019,	 # Point n courbe injectée, [Standard]
+    0x001a,	 # Point n-1 courbe injectée, [Standard]
+    0x001c,	 # Début Pointe Mobile 1, [Standard]
+    0x001d,	 # Fin Pointe Mobile 1, [Standard]
+    0x001e,	 # Début Pointe Mobile 2, [Standard]
+    0x001f,	 # Fin Pointe Mobile 2, [Standard]
+    0x0020,	 # Début Pointe Mobile 3, [Standard]
+    0x0021,	 # Fin Pointe Mobile 3, [Standard]
+    0x0022,	 # Message court, [Standard]
+    0x0023,	 # Message Ultra court, [Standard]
+    0x0024,	 # Relais, [Standard]
+    0x0025,	 # Index tarifaire en cours, [Standard]
+    0x0026,	 # N° jours en cours fournisseur, [Standard]
+    0x0027,	 # N° prochain jour fournisseur, [Standard]
+    0x0028,	 # Profil du prochain jour, [Standard]
+    0x0029,	 # Profil du prochain jour pointe, [Standard]
+    0x002e,	 # Version de la TIC, [Standard]
+    0x002F,	 # Heure Puissance max soutirée Auj, [Standard]
+    0x0030,	 # Heure Puissance max soutirée Auj. 1,"smaxsn1_time" [Standard]
+    0x0031,	 # Heure Puissance max soutirée Auj. 2,"smaxsn2_time" [Standard]
+    0x0032,	 # Heure Puissance max soutirée Auj. 3,"smaxsn3_time" [Standard]
+    0x0033,	 # Heure Puissance max soutirée Hier, [Standard]
+    0x0034,	 # Heure Puissance max soutirée Hier 1,"maxs1-1_time",UINT64, [Standard]
+    0x0035,	 # Heure Puissance max soutirée Hier 2,"maxs2-1_time" [Standard]
+    0x0036,	 # Heure Puissance max soutirée Hier 3,"maxs3-1_time" [Standard]
+    0x0037,	 # Heure Puissance max injectée Auj., [Standard]
+    0x0038,	 # Heure Puissance max injectée Hier, [Standard]
+]
+
+TICMETER_UPTIME = [
+    0x002c,  # Mode Tic
+    0x002a,  # Mode Elec
+    0x002d   # Up time
+
+]
+
+TICMETER_TARIFF = [
+    0x000B,  # Date et heure compteur
+    0x0000,  # Type de Contrat (OPTARIF)
+    0x0039,  # Periode Tarifaire en cours
+    0x0001,  # Preavis EJP
+    0x003A,  # Couleur aujourd'hui
+    0x0003   # Demain
+]
+
+
+def read_ticmeter_manufacturer(self, nwkid, tic_mode, request=None):
+    self.log.logging( ["ReadAttributes", "GammaTroniques"], "Log", f"read_ticmeter_manufacturer: Nwkid: {nwkid} Tic_Mode: {tic_mode} Request: {request}")
+    if request == 'all':
+        attributes_to_read = TICMETER_FF42_HISTORIC + TICMETTER_FF42_STANDARD if tic_mode is None or tic_mode == 1 else TICMETER_FF42_HISTORIC
+    elif request == 'uptime':
+        attributes_to_read = TICMETER_UPTIME
+    elif request == 'tariff':
+        attributes_to_read = TICMETER_TARIFF
+    else:
+        return
+
+    self.log.logging( ["ReadAttributes", "GammaTroniques"], "Log", f"read_ticmeter_manufacturer: {nwkid} Cluster = {TIC_CLUSTERID} attributes={attributes_to_read}", nwkid=nwkid)
+    ReadAttributeReq(self, nwkid, ZIGATE_EP, "01", TIC_CLUSTERID, attributes_to_read, ackIsDisabled=False, maxReadAttributesByRequest=1)
+
 
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )

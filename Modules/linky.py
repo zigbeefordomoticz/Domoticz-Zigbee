@@ -10,6 +10,7 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import Modules.readAttributes
 
 LINKY_TARIF_MATRIX = {
     "BASE": (0, "All Hours"),
@@ -52,14 +53,13 @@ LINKY_MODEL_NAME = {
 }
 
 TIC_MODE = {
-    0: "standard",
-    1: "historique",
+    0: "historique",
+    1: "standard",
 }
 
 LINKY_GRID = {
-    0: "Any",
-    1: "Monophase",
-    2: "Triphasé",
+    0: "mono",
+    1: "Triphasé",
 }
 
 def linky_tarif_color( self, value ):
@@ -163,3 +163,25 @@ def decode_registre_status( registre_status):
         result[attr] = MAPPINGS.get(attr, {}).get(value, value)
 
     return result
+
+
+def collect_ticmeter_linky(self, nwkid):
+
+    health = self.ListOfDevices[nwkid].get("Health")
+    if health != 'Live':
+        return
+
+    ticmeter_gamma = self.ListOfDevices[ nwkid ].get("GammaTroniques")
+    if ticmeter_gamma is not None:
+        tic_mode = ticmeter_gamma.get('ModeTIC')
+        elec_mode = ticmeter_gamma.get('ModeElec')
+        tarif = ticmeter_gamma.get('OPTARIF') or ticmeter_gamma.get('NGTF')
+        ptec = ticmeter_gamma.get('PTEC') or ticmeter_gamma.get('LTARF')
+        pref = ticmeter_gamma.get('pref') or ticmeter_gamma.get('PREF')
+        uptime = ticmeter_gamma.get('UpTime')
+
+    if ticmeter_gamma is None or None in { tic_mode, elec_mode, tarif, ptec, pref, uptime}:
+        self.log.logging("Pairing", "Status", "Reading TICMeter and collecting all data, as key data are missing")
+        Modules.readAttributes.read_attributes_gammatroniques_tic_meter(self, nwkid)
+        Modules.readAttributes.read_attributes_ticmeter_tarif(self, nwkid)
+        Modules.readAttributes.read_attributes_ticmeter_details(self, nwkid)

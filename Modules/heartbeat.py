@@ -28,6 +28,7 @@ from Modules.domoticzAbstractLayer import (find_widget_unit_from_WidgetID,
 from Modules.domoTools import (RetreiveWidgetTypeList,
                                reset_device_ieee_unit_if_needed,
                                timedOutDevice)
+from Modules.linky import collect_ticmeter_linky
 from Modules.pairingProcess import (binding_needed_clusters_with_zigate,
                                     processNotinDBDevices)
 from Modules.paramDevice import sanity_check_of_param
@@ -89,6 +90,7 @@ ATTRIBUTE_DISCOVERY_REFRESH = (( 3600 // HEARTBEAT ) + 7)
 CHECKING_DELAY_READATTRIBUTE = (( 60 // HEARTBEAT ) + 7)
 PING_DEVICE_VIA_GROUPID = 3567 // HEARTBEAT    # Secondes ( 59minutes et 45 secondes )
 FIRST_PING_VIA_GROUP = 127 // HEARTBEAT
+CHECKING_TICMETER_KEY_ATTRIBUTES = (30 // HEARTBEAT)  # 30 Sec
 
 
 
@@ -125,76 +127,94 @@ def attributeDiscovery(self, NwkId):
     return False
 
 
-def DeviceCustomPolling(self, NwkId, HB):
-    # "CustomPolling": {
-    #     "EPin": "01",
-    #     "EPout": "01",
-    #     "Frequency": 60,
-    #     "ManufCode": "1234"
-    #     "ClusterAttributesList": {
-    #         "0702": [ "0000","0100","0102","0104","0106","0108","010a","0400" ],
-    #         "0b01": [ "000a", "000c", "000d", "000e" ],
-    #         "0b04": [ "0508", "0505" ],
-    #     }
-    # },
-    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  %s " % (NwkId,), NwkId, )
+def device_handle_custom_polling_if_defined(self, NwkId, HB):
+    """
+    Poll a device based on a custom polling structure.
 
+    Expected structure in device parameters:
+
+        'CustomPolling':
+            {
+                'EPin": '01',                     # Input endpoint
+                'EPout': '01',                    # Output endpoint
+                'Frequency': 60,                  # Frequency in seconds
+                'ManufCode': '1234',              # Optional manufacturer code (hex string)
+                'ClusterAttributesList': {        # Cluster-to-attributes map
+                    '0702': ['0000', '0100', '0102', '0104', '0106', '0108', '010a', '0400'],
+                    '0b01': ['000a', '000c', '000d', '000e'],
+                    '0b04': ['0508', '0505']
+                }
+            }
+
+    Note:
+        - Frequency will be divided by HEARTBEAT value to determine polling interval.
+        - If the current heartbeat modulo frequency is not zero, polling is skipped.
+        - ManufCode is optional; if present, manufacturer-specific polling will be applied.
+        - by default we take EPin and EPout as 01
+        - if frequency or ClusterAttributesList is not defined, polling is skipped.
+        - if frequency is 0, polling is disabled.
+
+    Implemented for:
+        - Chameleon TIC
+    """
+
+    self.log.logging([ "Heartbeat", "CustomDevicePolling"] , "Debug", f"++ device_handle_custom_polling_if_defined - {NwkId}", NwkId)
+
+    # Check if device is busy or if the load is too high
     if self.busy or self.ControllerLink.loadTransmit() > MAX_LOAD_ZIGATE:
         return True
 
-    last_custom_polling = self.ListOfDevices[ NwkId ][ "LastCustomPolling"] if "LastCustomPolling" in self.ListOfDevices[ NwkId ] else None
-    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  %s %s %s" % (NwkId, last_custom_polling, HB), NwkId, )
-    if last_custom_polling == HB:
+    device_info = self.ListOfDevices.get(NwkId, {})
+    last_poll = device_info.get("LastCustomPolling")
+    model_name = device_info.get("Model")
+
+    # Get polling config from device parameters or fallback to device conf
+    custom_polling = (
+        device_info.get("Param", {}).get("CustomPolling")
+        or self.DeviceConf.get(model_name, {}).get("CustomPolling")
+    )
+
+    if custom_polling is None:
         return False
-    model_name = self.ListOfDevices[ NwkId ]["Model"] if "Model" in self.ListOfDevices[ NwkId ] else None
+
+    self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - {NwkId} {last_poll} {HB}", NwkId)
+    if last_poll == HB:
+        # This prevent multiple polling in the same cycle
+        return False
+
+    self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - {NwkId} {custom_polling}", NwkId)
+
+    frequency = custom_polling.get("Frequency")
+    if not frequency:
+        return False
+    freq_heartbeat = int(frequency) // HEARTBEAT
+    if freq_heartbeat == 0 or (HB % freq_heartbeat) != 0:
+        return False
+
+    cluster_map = custom_polling.get("ClusterAttributesList")
+    if not cluster_map:
+        return False
+
+    self.ListOfDevices[NwkId]["LastCustomPolling"] = HB
     
-    if "Param" in self.ListOfDevices[ NwkId ] and "CustomPolling" in self.ListOfDevices[ NwkId ][ "Param" ]:
-        custom_polling = self.ListOfDevices[ NwkId ][ "Param" ][ "CustomPolling" ]
-        
-    elif model_name and model_name in self.DeviceConf and "CustomPolling" in self.DeviceConf[model_name ]:
-        custom_polling = self.DeviceConf[model_name ][ "CustomPolling" ]
-        
-    else:
-        return False
+    self.log.logging([ "Heartbeat", "CustomDevicePolling"], "Debug", f"++ device_handle_custom_polling_if_defined - {NwkId} Ready to poll Frequency: {freq_heartbeat} / {HB}", NwkId)
 
-    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  %s  %s" % (NwkId,custom_polling), NwkId, )
+    manuf_code = custom_polling.get("ManufCode", "0000")
+    manuf_specif = "01" if manuf_code != "0000" else "00"
 
-    EpIn = custom_polling[ "EPin"] if "EPin" in custom_polling else "01"
-    EpOut = custom_polling[ "EPout"] if "EPout" in custom_polling else "01"
-    
-    if "Frequency" not in custom_polling:
-        return False
-    if "ClusterAttributesList" not in custom_polling:
-        return False
-    
-    frequency = int( custom_polling[ "Frequency" ]) // HEARTBEAT
-    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  Frequency: %s %s / %s" % (
-        NwkId, frequency , HB ), NwkId, )
+    ep_in = custom_polling.get("EPin", "01")
+    ep_out = custom_polling.get("EPout", "01")
 
-    if frequency == 0:  # Disable
-        return False
-    if (HB % frequency) != 0:
-        return False
 
-    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  Poll attributes: %s " % (
-        NwkId,), NwkId, )
-
-    self.ListOfDevices[ NwkId ]["LastCustomPolling"] = HB
-    self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  Ready to poll %s %s" % (
-        NwkId, self.ListOfDevices[ NwkId ]["LastCustomPolling"]), NwkId, )
-
-    manuf_specif = "00"
-    manuf_code = "0000"
-    if "ManufCode" in custom_polling:
-        manuf_specif = "01"
-        manuf_code = custom_polling[ "ManufCode"]
-
-    for cluster in custom_polling["ClusterAttributesList"]:
-        str_attribute_lst = custom_polling["ClusterAttributesList"][ cluster ]
-        ListOfAttributes = [int( x, 16) for x in str_attribute_lst]
-        self.log.logging( "Heartbeat", "Debug", "++ DeviceCustomPolling -  %s Cluster: %s Attributes: %s Manuf: %s/%s " % (
-            NwkId, cluster, str_attribute_lst, manuf_specif, manuf_code ), NwkId, )
-        ReadAttributeReq( self, NwkId, EpIn, EpOut, cluster, ListOfAttributes, manufacturer_spec=manuf_specif, manufacturer=manuf_code)
+    for cluster, attributes in cluster_map.items():
+        attr_ids = [int(attr, 16) for attr in attributes]
+        self.log.logging(
+            [ "Heartbeat", "CustomDevicePolling"],
+            "Debug",
+            f"++ device_handle_custom_polling_if_defined - {NwkId} trigger ReadAttributeRequest Cluster: {cluster} Attributes: {attributes} Manuf: {manuf_specif}/{manuf_code}",
+            NwkId,
+        )
+        ReadAttributeReq(self, NwkId, ep_in, ep_out, cluster, attr_ids, manufacturer_spec=manuf_specif, manufacturer=manuf_code)
 
     return False
 
@@ -649,10 +669,13 @@ def hr_process_device(self, Devices, NwkId):
     # Some battery based end device with ZigBee 30 use polling and can receive commands.
     # We should authporized them for Polling After Action, in order to get confirmation.
     
+    if model == "TICMeter" and (device_hearbeat % CHECKING_TICMETER_KEY_ATTRIBUTES == 0):
+        collect_ticmeter_linky(self, NwkId)
+
     if _mainPowered or enabledEndDevicePolling:
         process_main_powered_or_force_devices( self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model)
 
-    
+
 def process_main_powered_or_force_devices(self, NwkId, device_hearbeat, _mainPowered, enabledEndDevicePolling, model):
     self.log.logging("Heartbeat", "Debug",f"Calling process_main_powered_or_force_devices with arguments: NwkId={NwkId}, device_hearbeat={device_hearbeat}, _mainPowered={_mainPowered}, enabledEndDevicePolling={enabledEndDevicePolling}, model={model}", NwkId)
 
@@ -665,7 +688,7 @@ def process_main_powered_or_force_devices(self, NwkId, device_hearbeat, _mainPow
 
     rescheduleAction = ( rescheduleAction or tuya_polling(self, NwkId) )
 
-    rescheduleAction = ( rescheduleAction or DeviceCustomPolling(self, NwkId, device_hearbeat) )
+    rescheduleAction = ( rescheduleAction or device_handle_custom_polling_if_defined(self, NwkId, device_hearbeat) )
 
     rescheduleAction = ( rescheduleAction or pollingManufSpecificDevices(self, NwkId, device_hearbeat) )
 

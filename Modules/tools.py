@@ -31,6 +31,9 @@ from Modules.zigateConsts import HEARTBEAT
 HEX_DIGIT = "0123456789abcdefABCDEF"
 INT_DIGIT = "0123456789"
 
+MAX_ROLLING_LQI_LENGTH = 10
+
+
 def to_little_endian(value: str) -> str:
     length = len(value)
 
@@ -502,33 +505,57 @@ def get_and_increment_generic_SQN(self, nwkid, sqn_type):
 
 
 def updSQN(self, key, newSQN):
-    if key in self.ListOfDevices and newSQN:
-        self.ListOfDevices[key]["SQN"] = newSQN
+    """Update the sequence number (SQN) for the given device key in the ListOfDevices."""
+
+    # Log function entry with important details
+    self.log.logging('Input', 'Debug', f'Entering updSQN with key={key} newSQN={newSQN}')
+
+    # Safely retrieve the device entry using .get() and update the SQN if the key exists and newSQN is valid
+    device = self.ListOfDevices.get(key)
+    if device and newSQN:
+        # Log the updated sequence number for traceability
+        self.log.logging('Input', 'Debug', f'Updated SQN for device {key} from {device.get("SQN", "")} to {newSQN}')
+        device["SQN"] = newSQN
+
+
+def is_duplicate_sqn(self, MsgDataShAddr, MsgDataSQN):
+    """Check if the message sequence number (SQN) is a duplicate."""
+
+    # Log function entry with key information
+    self.log.logging('Input', 'Debug', f'Checking duplicate SQN for device {MsgDataShAddr} with SQN {MsgDataSQN}')
+
+    # Safely retrieve the device from ListOfDevices
+    device = self.ListOfDevices.get(MsgDataShAddr)
+
+    # If device exists and has an SQN, check if it's a duplicate
+    if device and 'SQN' in device and MsgDataSQN == device['SQN']:
+        self.log.logging('Input', 'Debug', f'SQN {MsgDataSQN} is a duplicate for device {MsgDataShAddr}')
+        return True
+    return False
 
 
 def updLQI(self, key, LQI):
-
+    # Ensure the device exists
     if key not in self.ListOfDevices:
         return
 
-    if "LQI" not in self.ListOfDevices[key]:
-        self.ListOfDevices[key]["LQI"] = {}
-
-    if LQI == "00":
+    if ( LQI == "00" or not is_hex(LQI) ):
         return
 
-    if is_hex(LQI):  # Check if the LQI is Correct
+    # Convert LQI from hex to integer
+    lqi_value = int(LQI, 16)
 
-        self.ListOfDevices[key]["LQI"] = int(LQI, 16)
+    # Update LQI value directly
+    self.ListOfDevices[key]["LQI"] = lqi_value
 
-        if "RollingLQI" not in self.ListOfDevices[key]:
-            self.ListOfDevices[key]["RollingLQI"] = []
+    # Initialize RollingLQI list if it doesn't exist
+    self.ListOfDevices[key].setdefault("RollingLQI", [])
 
-        if len(self.ListOfDevices[key]["RollingLQI"]) > 10:
-            del self.ListOfDevices[key]["RollingLQI"][0]
-        self.ListOfDevices[key]["RollingLQI"].append(int(LQI, 16))
+    # Add LQI to RollingLQI list
+    self.ListOfDevices[key]["RollingLQI"].append(lqi_value)
 
-    return
+    # Keep RollingLQI list size at most 10 elements
+    self.ListOfDevices[key]["RollingLQI"] = self.ListOfDevices[key]["RollingLQI"][-10:]
 
 
 def upd_RSSI(self, nwkid, rssi_value):
@@ -560,6 +587,7 @@ def is_fake_ep( self, nwkid, ep):
         and ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["FakeEp"]
     )
 
+
 def is_bind_ep( self, nwkid, ep):
     return (
         "Model" not in self.ListOfDevices[nwkid]
@@ -567,7 +595,8 @@ def is_bind_ep( self, nwkid, ep):
         or "bindEp" not in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]
         or ep in self.DeviceConf[self.ListOfDevices[nwkid]["Model"]]["bindEp"]
     )
-    
+
+  
 def deviceconf_device(self, nwkid):
     
     if (
@@ -577,7 +606,8 @@ def deviceconf_device(self, nwkid):
         return self.DeviceConf[ self.ListOfDevices[nwkid]["Model"] ]
     else:
         return {}
-    
+
+
 def getTypebyCluster(self, Cluster):
     clustersType = {
         "0405": "Humi",

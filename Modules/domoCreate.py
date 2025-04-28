@@ -894,14 +894,12 @@ SIMPLE_WIDGET = {
         "widgetType": "Custom",
         "Options": "1;ppm"
     },
-    
     "phMeter": { "widgetType": "Custom", "Options": "1;pH" },
     "ec": { "widgetType": "Custom", "Options": "1;µS/cm" },
     "orp": { "widgetType": "Custom", "Options": "1;mV" },
     "freeChlorine": { "widgetType": "Custom", "Options": "1;mg/L" },
     "salinity": { "widgetType": "Custom", "Options": "1;ppm" },
     "tds": { "widgetType": "Custom", "Options": "1;ppm" },
-
     "Strength": {
         "Type": 243,
         "Subtype": 31
@@ -912,6 +910,16 @@ SIMPLE_WIDGET = {
         "Switchtype": 0
     },
     "OccupancySensing": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "Vibration": {
+        "Type": 244,
+        "Subtype": 73,
+        "Switchtype": 0
+    },
+    "Tilt": {
         "Type": 244,
         "Subtype": 73,
         "Switchtype": 0

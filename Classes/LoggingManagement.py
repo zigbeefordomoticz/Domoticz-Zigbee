@@ -283,6 +283,7 @@ class LoggingManagement:
             for module_instance in module:
                 if _is_to_be_logged(self, logType, module_instance):
                     enqueue_logging( self, thread_id, module_instance, logType, message, nwkid, context )
+                    break  # Log only once
 
 
 def _is_to_be_logged(self, logType, module):

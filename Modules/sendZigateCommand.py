@@ -23,24 +23,24 @@ import time
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_COMMANDS, ZIGATE_EP
 
 
-def add_Last_Cmds(self, isqn, address_mode, nwkid, cmd, datas):
-
+def add_Last_Cmds(self, isqn="", address_mode="", nwkid="", cmd="", datas=""):
+    # Ensure the device exists
     if nwkid not in self.ListOfDevices:
         return
 
-    if "Last Cmds" not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid]["Last Cmds"] = []
-
-    if isinstance(self.ListOfDevices[nwkid]["Last Cmds"], dict):
-        self.ListOfDevices[nwkid]["Last Cmds"] = []
-
-    if len(self.ListOfDevices[nwkid]["Last Cmds"]) >= 10:
-        # Remove the First element in the list.
-        self.ListOfDevices[nwkid]["Last Cmds"].pop(0)
-
+    # Default value for isqn
     if isqn is None:
         isqn = "None"
+
+    # Initialize Last Cmds as a list if it doesn't exist or is not a list
+    if not isinstance(self.ListOfDevices[nwkid].get("Last Cmds"), list):
+        self.ListOfDevices[nwkid]["Last Cmds"] = []
+
+    # Add new command
     self.ListOfDevices[nwkid]["Last Cmds"].append((isqn, address_mode, nwkid, cmd, datas))
+
+    # Keep only the last 10 commands
+    self.ListOfDevices[nwkid]["Last Cmds"] = self.ListOfDevices[nwkid]["Last Cmds"][-10:]
 
 
 def send_zigatecmd_zcl_ack(self, address, cmd, datas):
@@ -210,6 +210,8 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
         % (self.zigbee_communication, profileId, cluster, targetaddr, dest_ep, zigate_ep, payload, zigpyzqn, groupaddrmode, ackIsDisabled),
     )
 
+    add_Last_Cmds(self, isqn=f"{zigpyzqn}", address_mode="", nwkid=f"{targetaddr}", cmd=f"{profileId} - {cluster}", datas=f"{payload}")
+
     if self.zigbee_communication == "zigpy":
         # If pairing mode, we might delay each commands to avoid overloading the network
         pairing_mode = self.pairing_in_progress
@@ -221,6 +223,7 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
         return zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, zigpyzqn, groupaddrmode, highpriority, ackIsDisabled, delayAfterSent)
     
     return zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep, groupaddrmode, highpriority, ackIsDisabled)
+
 
 def zigate_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP, groupaddrmode=False, highpriority=False, ackIsDisabled=False):
             
@@ -313,6 +316,7 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
     )
 
     return self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(targetaddr,16), sqn=int(zigpyzqn,16), ackIsDisabled=ackIsDisabled )
+
 
 def device_listening_on_iddle(self, nwkid):
     
