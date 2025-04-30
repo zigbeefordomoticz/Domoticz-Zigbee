@@ -692,7 +692,7 @@ def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, seque
         return self.app.get_device(nwk=t.NWK(int(NwkId, 16))), "Unicast"    
 
 
-def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
+def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
     # Looks like Zigate return an int, while ZNP returns a status.type
     self.log.logging("TransportZigpy", "Debug", f"push_APS_ACK_NACK to_plugin - {nwkid} - Result: {result} LQI: {lqi}")
     if nwkid == "0000":
@@ -709,7 +709,7 @@ def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
         self.statistics._APSAck += 1
 
     # Send Ack/Nack to Plugin
-    self.forwarder_queue.put(build_plugin_8011_frame_content(self, nwkid, result, lqi))
+    self.forwarder_queue.put(build_plugin_8011_frame_content(self, nwkid, Cluster, sequence, result, lqi))
 
 
 def properyly_display_data(Datas):
@@ -836,7 +836,7 @@ async def _send_and_retry(self, Function, destination, Profile, Cluster, _nwkid,
         except (asyncio.exceptions.TimeoutError, asyncio.exceptions.CancelledError, AttributeError, DeliveryError) as e:
             error_log_message = f"Warning while submitting - {Function} {_ieee}/0x{_nwkid} 0x{Profile:X} 0x{Cluster:X} payload: {payload} AckIsDisable: {ack_is_disable} Retry: {attempt}/{max_retry} with exception: '{e}' ({type(e)}))"
             self.log.logging("TransportZigpy", "Log", error_log_message)
-            if await _retry_or_not(self, attempt, max_retry, Function, sequence, ack_is_disable, _ieee, _nwkid, destination, e):
+            if await _retry_or_not(self, attempt, max_retry, Function, Cluster, sequence, ack_is_disable, _ieee, _nwkid, destination, e):
                 self.statistics._reTx += 1
                 if isinstance(e, asyncio.exceptions.TimeoutError):
                     self.statistics._TOdata += 1
@@ -952,7 +952,7 @@ async def zigpy_broadcast( self, profile: t.uint16_t, cluster: t.uint16_t, src_e
     return (zigpy.zcl.foundation.Status.SUCCESS, "")
       
     
-async def _retry_or_not(self, attempt, max_retry, Function, sequence,ack_is_disable, _ieee, _nwkid, destination , e):
+async def _retry_or_not(self, attempt, max_retry, Function, Cluster, sequence,ack_is_disable, _ieee, _nwkid, destination , e):
     if attempt < max_retry:
         # Slow down the throughput when too many commands. Try not to overload the coordinators
         multi = 1.5 if self._currently_waiting_requests_list[_ieee] else 1
@@ -963,17 +963,17 @@ async def _retry_or_not(self, attempt, max_retry, Function, sequence,ack_is_disa
     self.log.logging("TransportZigpy", "Log", f"_retry_or_not: result: {e} ({(type(e))})")
     result = min(int(e.status) if hasattr(e, 'status') else 0xB6, 0xB6)
 
-    handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
+    handle_transport_result(self, Function, Cluster, sequence, result, ack_is_disable, _ieee, _nwkid, destination.lqi)
     return False
 
 
-def handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):
+def handle_transport_result(self, Function, Cluster, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):
     if ack_is_disable:
         # As Ack is disable, we cannot conclude that the target device is in trouble.
         # this could be the coordinator itself, or the next hop.
         return
   
-    push_APS_ACK_NACKto_plugin(self, _nwkid, result, lqi)
+    push_APS_ACK_NACKto_plugin(self, _nwkid, Cluster, sequence, result, lqi)
 
     if result == 0x00 and _ieee in self._currently_not_reachable:
         self._currently_not_reachable.remove(_ieee)
