@@ -135,6 +135,33 @@ update_git_config() {
     fi
 }
 
+uninstall_modules_from_constraints() {
+    echo " "
+    echo "(2b) uninstalling modules listed in constraints.txt"
+    echo ""
+
+    if [ ! -f constraints.txt ]; then
+        echo "No constraints.txt file found. Skipping uninstallation."
+        return
+    fi
+
+    MODULES_TO_REMOVE=$(grep -oE '^[a-zA-Z0-9_.-]+' constraints.txt | tr '\n' ' ')
+    if [ -z "$MODULES_TO_REMOVE" ]; then
+        echo "No modules found to uninstall in constraints.txt."
+        return
+    fi
+
+    if [ "$VENV_ACTIVATED" = true ]; then
+        $VENV_PATH/bin/python3 -m pip uninstall -y $MODULES_TO_REMOVE
+    else
+        if [ "$(whoami)" == "root" ]; then
+            $PYTHON_VERSION -m pip uninstall -y $MODULES_TO_REMOVE
+        else
+            sudo $PYTHON_VERSION -m pip uninstall -y $MODULES_TO_REMOVE
+        fi
+    fi
+}
+
 # Function to update python modules
 update_python_modules() {
     echo " "
@@ -186,6 +213,7 @@ set_pip_options
 check_and_activate_venv
 print_version_info
 update_git_config
+uninstall_modules_from_constraints
 update_python_modules
 
 echo " "
