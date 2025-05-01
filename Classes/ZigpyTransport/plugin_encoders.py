@@ -113,14 +113,30 @@ def build_plugin_8010_frame_content(Branch, Major, Version, full_version):
     return encapsulate_plugin_frame("8010", Branch + Major + Version + full_version, "00")
 
 
-def build_plugin_8011_frame_content(self, nwkid, status, lqi):
-    # MsgStatus = MsgData[0:2]
-    # MsgSrcAddr = MsgData[2:6]
-    # MsgSEQ = MsgData[12:14] if MsgLen > 12 else None
-    
+def build_plugin_8011_frame_content(self, nwkid, cluster, sequence, status, lqi):
+
     lqi = lqi or 0x00
-    frame_payload = "%02x" % status + nwkid
-    return encapsulate_plugin_frame("8011", frame_payload, "%02x" % lqi)
+
+    # Format components
+    cluster_str = f"{cluster:04x}" if isinstance(cluster, int) else str(cluster)
+    sequence_str = f"{sequence:02x}" if isinstance(sequence, int) else str(sequence)
+    status_str = f"{status:02x}"
+    lqi_hex = f"{lqi:02x}"
+    padding = "00"
+
+    # Construct payload with explicit padding
+    frame_payload = f"{status_str}{nwkid}{padding}{cluster_str}{sequence_str}"
+    
+    self.log.logging(
+        "TransportPluginEncoder",
+        "Debug",
+        "build_plugin_8011_frame_content Nwkid: %s Cluster: %s Sequence: %s Status: %02x LQI: %02x => : %s" % (
+            nwkid, cluster_str, sequence_str, status, lqi, frame_payload
+        )
+    )
+
+    return encapsulate_plugin_frame("8011", frame_payload, lqi_hex)
+
 
 def build_plugin_8014_frame_content(self, nwkid, payload):
     # Return status = 0x00 if not in pairing mode

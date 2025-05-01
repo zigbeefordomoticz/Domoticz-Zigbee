@@ -671,7 +671,7 @@ def _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, seque
         return self.app.get_device(nwk=t.NWK(int(NwkId, 16))), "Unicast"    
 
 
-def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
+def push_APS_ACK_NACKto_plugin(self, nwkid, Cluster, sequence, result, lqi):
     # Looks like Zigate return an int, while ZNP returns a status.type
     self.log.logging("TransportZigpy", "Debug", f"push_APS_ACK_NACK to_plugin - {nwkid} - Result: {result} LQI: {lqi}")
     if nwkid == "0000":
@@ -688,7 +688,7 @@ def push_APS_ACK_NACKto_plugin(self, nwkid, result, lqi):
         self.statistics._APSAck += 1
 
     # Send Ack/Nack to Plugin
-    self.forwarder_queue.put(build_plugin_8011_frame_content(self, nwkid, result, lqi))
+    self.forwarder_queue.put(build_plugin_8011_frame_content(self, nwkid, Cluster, sequence, result, lqi))
 
 
 def properyly_display_data(Datas):
@@ -857,6 +857,7 @@ async def _send_and_retry(
                 extended_timeout=extended_timeout,
                 priority=packet_priority
             )
+
         except asyncio.TimeoutError:
             msg = f"Timeout while submitting - {function} {common_log_info} Attempt: {attempt}"
             self.log.logging("TransportZigpy", "Debug", msg)
@@ -885,7 +886,7 @@ async def _send_and_retry(
             handle_transport_result(self, function, sequence, result, ack_is_disable, ieee, nwkid, destination.lqi)
             self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: result: {result}")
             return result
-
+   
     if ack_is_disable:
         # Single send, no retry
         return await __try_send(attempt=1)
@@ -1007,13 +1008,13 @@ async def zigpy_broadcast( self, profile: t.uint16_t, cluster: t.uint16_t, src_e
     return (zigpy.zcl.foundation.Status.SUCCESS, "")
 
 
-def handle_transport_result(self, Function, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):
+def handle_transport_result(self, Function, Cluster, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):
     if ack_is_disable:
         # As Ack is disable, we cannot conclude that the target device is in trouble.
         # this could be the coordinator itself, or the next hop.
         return
   
-    push_APS_ACK_NACKto_plugin(self, _nwkid, result, lqi)
+    push_APS_ACK_NACKto_plugin(self, _nwkid, Cluster, sequence, result, lqi)
 
     if result == 0x00 and _ieee in self._currently_not_reachable:
         self._currently_not_reachable.remove(_ieee)

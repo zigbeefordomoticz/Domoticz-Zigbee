@@ -30,7 +30,7 @@ from Modules.tuyaSiren import TUYA_SIREN_DEVICE_PARAMETERS
 from Modules.tuyaTRV import TUYA_TRV_DEVICE_PARAMETERS
 from Modules.tuyaTS011F import TUYA_TS011F_DEVICE_PARAMETERS
 from Modules.tuyaTS0601 import ts0601_extract_data_point_infos, ts0601_settings
-
+from DevicesModules.custom_namron import NAMRON_DEVICE_PARAMETERS
 
 def initialize_device_settings(self):
     """Initializes device settings by loading general and manufacturer-specific parameters."""

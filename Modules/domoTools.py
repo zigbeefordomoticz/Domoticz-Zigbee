@@ -466,7 +466,7 @@ CLUSTER_TO_TYPE = {
     "000c": "Analog", 
     "0101": "DoorLock", 
     "0102": "WindowCovering", 
-    "0201": "Temp/ThermoSetpoint/ThermoMode/Valve", 
+    "0201": "Temp/ThermoSetpoint/ThermoMode/Valve/OutDoorTemperature/UnoccupiedHeatingSetpoint/OccupiedCollingSetpoint", 
     "0202": "FanControl", 
     "0204": "ThermostatUI",
     "0300": "ColorControl", 

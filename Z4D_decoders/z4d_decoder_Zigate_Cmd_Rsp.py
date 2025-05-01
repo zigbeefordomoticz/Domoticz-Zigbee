@@ -75,7 +75,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     MsgSEQ = MsgData[12:14] if MsgLen > 12 else None
     i_sqn = sqn_get_internal_sqn_from_aps_sqn(self.ControllerLink, MsgSEQ)
 
-    self.log.logging('Input', 'Debug', f"Decode8011 - {MsgSrcAddr} {MsgStatus}")
+    self.log.logging('Input', 'Debug', f"Decode8011 - Nwkid: {MsgSrcAddr} Status: {MsgStatus} MsgSEQ: {MsgSEQ}")
 
     if self.pluginconf.pluginConf['coordinatorCmd']:
         if MsgSEQ:
@@ -84,6 +84,7 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             self.log.logging('Input', 'Log', 'Decod8011 Received [%s] for Nwkid: %s with status: %s' % (i_sqn, MsgSrcAddr, MsgStatus), MsgSrcAddr)
 
     if MsgStatus == '00':
+        # We have an ACK, update various things
         updLQI(self, MsgSrcAddr, MsgLQI)
         timeStamped(self, MsgSrcAddr, 32785)
         lastSeenUpdate(self, Devices, NwkId=MsgSrcAddr)
@@ -92,17 +93,16 @@ def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
             self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
         return
 
+    # We have a NACK
+    clusterId = MsgData[8:12]
     _powered = mainPoweredDevice(self, MsgSrcAddr)
-    self.log.logging('Input', 'Debug', f"Decode8011 - {MsgSrcAddr} MainPowered: {_powered}")
-
+    self.log.logging('Input', 'Debug', f"Decode8011 - Nwkid: {MsgSrcAddr} Cluster: {clusterId} TimedOut with Status: {MsgStatus}, MainPowered: {_powered}")
+    
     if not _powered:
         return
     
-    self.log.logging('Input', 'Debug', f"Decode8011 - Timedout {MsgSrcAddr}")
-
     timedOutDevice(self, Devices, NwkId=MsgSrcAddr)
-
-    set_health_state(self, MsgSrcAddr, MsgData[8:12], MsgStatus)
+    set_health_state(self, MsgSrcAddr, clusterId, MsgStatus)
     
     
 def Decode8012(self, Devices, MsgData, MsgLQI):
