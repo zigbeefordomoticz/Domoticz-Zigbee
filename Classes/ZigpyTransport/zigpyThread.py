@@ -873,7 +873,7 @@ async def _send_and_retry(
             self.statistics._ackKO += 1
 
             # No retry, return 0xB6
-            handle_transport_result(self, function, sequence, 0xB6, ack_is_disable, ieee, nwkid, destination.lqi)
+            handle_transport_result(self, function, cluster, sequence, result, ack_is_disable, ieee, nwkid, destination.lqi)
             return 0xB6
 
         else:
@@ -883,7 +883,7 @@ async def _send_and_retry(
                 await asyncio.sleep(delay_after_cmd)
 
             # Successful transmission
-            handle_transport_result(self, function, sequence, result, ack_is_disable, ieee, nwkid, destination.lqi)
+            handle_transport_result(self, function, cluster, sequence, result, ack_is_disable, ieee, nwkid, destination.lqi)
             self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: result: {result}")
             return result
    
@@ -902,7 +902,7 @@ async def _send_and_retry(
         if elapsed >= REQUEST_TIMEOUT:
             self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {common_log_info} TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt - 1} attempts. ")
             self.statistics._ackKO += 1
-            handle_transport_result(self, function, sequence, 0xB6, ack_is_disable, ieee, nwkid, destination.lqi)
+            handle_transport_result(self, function, cluster, sequence, 0xB6, ack_is_disable, ieee, nwkid, destination.lqi)
             return 0xB6
 
         self.log.logging("TransportZigpy", "Debug",
