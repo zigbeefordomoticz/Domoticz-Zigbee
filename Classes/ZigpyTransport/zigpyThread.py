@@ -873,7 +873,7 @@ async def _send_and_retry(
             self.statistics._ackKO += 1
 
             # No retry, return 0xB6
-            handle_transport_result(self, function, cluster, sequence, result, ack_is_disable, ieee, nwkid, destination.lqi)
+            handle_transport_result(self, function, cluster, sequence, 0xB6, ack_is_disable, ieee, nwkid, destination.lqi)
             return 0xB6
 
         else:
