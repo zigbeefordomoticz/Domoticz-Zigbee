@@ -259,8 +259,7 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
     model_name = self.ListOfDevices[Nwkid].get("Model", "")
     profalux = self.ListOfDevices[Nwkid].get("Manufacturer") == "1110" and self.ListOfDevices[Nwkid].get("ZDeviceID") in ("0200", "0202")
     is_tst0601_data_points_defined = ts0601_extract_data_point_infos( self, model_name)
-    
-    
+
     if DeviceType not in ( "CurtainInverted", "Curtain"):
         # Refresh will be done via the Report Attribute
         request_read_device_status(self, Nwkid)
@@ -436,8 +435,11 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         tuya_siren_temp_alarm(self, Nwkid, 0x00)
 
     elif DeviceType == "WindowCovering":
-        actuator_off(self, Nwkid, EPout, "WindowCovering")
-
+        if get_deviceconf_parameter_value(self, model_name, "WindowsCoverringInverted"):
+            actuator_on(self, Nwkid, EPout, "WindowCovering")
+        else:
+            actuator_off(self, Nwkid, EPout, "WindowCovering")
+            
     elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
         if model_name in ("PR412", "CPR412", "CPR412-E"):
             actuator_on(self, Nwkid, EPout, "Light")
@@ -647,7 +649,10 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         profalux_MoveToLiftAndTilt(self, Nwkid, level=255)
 
     elif DeviceType == "WindowCovering":
-        actuator_on(self, Nwkid, EPout, "WindowCovering")
+        if get_deviceconf_parameter_value(self, model_name, "WindowsCoverringInverted"):
+            actuator_off(self, Nwkid, EPout, "WindowCovering")
+        else:
+            actuator_on(self, Nwkid, EPout, "WindowCovering")
 
     elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
         if model_name in ("PR412", "CPR412", "CPR412-E"):
@@ -1043,7 +1048,7 @@ def handle_command_setlevel(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, D
             update_domoticz_widget(self, Devices, DeviceID, Unit, 2, str(Level), BatteryLevel, SignalLevel, ForceUpdate_=forceUpdateDev)
             return
 
-        _set_level_windows_covering(self, DeviceType, Nwkid, EPout, Level)
+        _set_level_windows_covering(self, model_name, DeviceType, Nwkid, EPout, Level)
 
     elif DeviceType == "AlarmWD":
         handle_alarm_command(self, Nwkid, EPout, Level)
@@ -1306,7 +1311,11 @@ def _set_level_acmode_2(self, Nwkid, EPout, Level):
         casaia_system_mode(self, Nwkid, mode)
 
 
-def _set_level_windows_covering(self, DeviceType, Nwkid, EPout, Level):
+def _set_level_windows_covering(self, model_name, DeviceType, Nwkid, EPout, Level):
+
+    if get_deviceconf_parameter_value(self, model_name, "WindowsCoverringInverted"):
+        Level = 0 if Level > 100 else 100 - Level
+
     if DeviceType in ("WindowCovering", "Venetian", "Vanne", "Curtain"):
         Level = min(max(Level, 1), 99)
     elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
