@@ -435,7 +435,10 @@ def handle_command_off(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, Device
         tuya_siren_temp_alarm(self, Nwkid, 0x00)
 
     elif DeviceType == "WindowCovering":
-        actuator_off(self, Nwkid, EPout, "WindowCovering")
+        if get_deviceconf_parameter_value(self, model_name, "WindowsCoverringOnOffInverted"):
+            actuator_on(self, Nwkid, EPout, "WindowCovering")
+        else:
+            actuator_off(self, Nwkid, EPout, "WindowCovering")
             
     elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
         if model_name in ("PR412", "CPR412", "CPR412-E"):
@@ -646,7 +649,10 @@ def handle_command_on(self,Devices, DeviceID, Unit, Level, Nwkid, EPout, DeviceT
         profalux_MoveToLiftAndTilt(self, Nwkid, level=255)
 
     elif DeviceType == "WindowCovering":
-        actuator_on(self, Nwkid, EPout, "WindowCovering")
+        if get_deviceconf_parameter_value(self, model_name, "WindowsCoverringOnOffInverted"):
+            actuator_off(self, Nwkid, EPout, "WindowCovering")
+        else:
+            actuator_on(self, Nwkid, EPout, "WindowCovering")
 
     elif DeviceType in ("VenetianInverted", "VanneInverted", "CurtainInverted"):
         if model_name in ("PR412", "CPR412", "CPR412-E"):
