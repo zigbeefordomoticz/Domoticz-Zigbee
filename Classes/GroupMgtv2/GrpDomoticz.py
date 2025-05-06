@@ -638,7 +638,7 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             sValue = str(Level)
             update_device_list_attribute(self, GrpId, "0102", Level)
             self.logging( "Debug", "processGroupCommand - requesting level: %s for Group: %s" % (Level, GrpId), )
-            zcl_group_window_covering_level(self, GrpId, ZIGATE_EP, EPout, percentage="%02x" %Level)
+            zcl_group_window_covering_level(self, GrpId, ZIGATE_EP, EPout, level="%02x" %Level)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
         resetDevicesHearttBeat(self, GrpId)

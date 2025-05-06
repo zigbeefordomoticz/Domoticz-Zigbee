@@ -571,7 +571,7 @@ def zcl_group_window_covering_level(self, nwkid, epin, EPout, level):
     zcl_command_formated_logging( self, "Group_level", nwkid, EPout, "0102", level)
     
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
-        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftPercentage", level=level, groupaddrmode=True, ackIsDisabled=DEFAULT_ACK_MODE)
+        return zcl_raw_window_covering(self, nwkid, ZIGATE_EP, EPout, "GoToLiftPercentage", percentage=level, groupaddrmode=True, ackIsDisabled=DEFAULT_ACK_MODE)
     data = "%02d" % ADDRESS_MODE["group"] + nwkid + epin + EPout + "04" + level
     return send_zigatecmd_raw(self, "00FA", data)
 
