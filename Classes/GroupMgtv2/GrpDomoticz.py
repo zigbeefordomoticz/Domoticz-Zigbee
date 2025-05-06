@@ -20,7 +20,8 @@ from Modules.domoticzAbstractLayer import (
     domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
     domo_update_api, domo_update_name, domo_update_SwitchType_SubType_Type,
     find_first_unit_widget_from_deviceID)
-from Modules.tools import Hex_Format, is_domoticz_latest_typename, is_hex
+from Modules.tools import (Hex_Format, get_deviceconf_parameter_value,
+                           is_domoticz_latest_typename, is_hex)
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
 from Zigbee.zclCommands import (zcl_group_level_move_to_level,
                                 zcl_group_move_to_level_stop,
@@ -632,8 +633,10 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
         if Command == "Set Level":
             nValue = 2
             sValue = str(Level)
-            Level = max(0, min(Level, 100))
-            OnOff = "01"
+            if is_device_inverted(self, GrpId):
+                Level = 0 if Level > 100 else 100 - Level
+            Level = min(max(Level, 1), 99)
+
             update_device_list_attribute(self, GrpId, "0102", Level)
             zcl_group_window_covering_level(self, GrpId, ZIGATE_EP, EPout, "%02x" %Level)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
@@ -788,6 +791,22 @@ def resetDevicesHearttBeat(self, GrpId):
             # Reset Health status of corresponding device if any in Not Reachable
             if "Health" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Health"] == "Not Reachable":
                 self.ListOfDevices[NwkId]["Health"] = ""
+
+
+def is_device_inverted(self, GroupId):
+    """
+    Check if at least one device in the group has the parameter WindowsCoverringLevelInverted
+    set to True
+    """
+    if GroupId not in self.ListOfGroups:
+        return False
+    
+    for NwkId, Ep, Ieee in self.ListOfGroups[GroupId]["Devices"]:
+        model_name = self.ListOfDevices.get(NwkId, {}).get("Model")
+        if model_name and model_name not in ( "", {}) and get_deviceconf_parameter_value(self, model_name, "WindowsCoverringLevelInverted"):
+            return True
+    return False
+
 
 def get_group_latest_typename(self, GroupId):
     
