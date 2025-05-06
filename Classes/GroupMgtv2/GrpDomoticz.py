@@ -631,13 +631,13 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
         if Command == "Set Level":
-            nValue = 2
-            sValue = str(Level)
             if is_device_inverted(self, GrpId):
                 Level = 0 if Level > 100 else 100 - Level
             Level = min(max(Level, 1), 99)
-
+            nValue = 2
+            sValue = str(Level)
             update_device_list_attribute(self, GrpId, "0102", Level)
+            self.logging( "Debug", "processGroupCommand - requesting level: %s for Group: %s" % (Level, GrpId), )
             zcl_group_window_covering_level(self, GrpId, ZIGATE_EP, EPout, "%02x" %Level)
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
@@ -801,10 +801,16 @@ def is_device_inverted(self, GroupId):
     if GroupId not in self.ListOfGroups:
         return False
     
-    for NwkId, Ep, Ieee in self.ListOfGroups[GroupId]["Devices"]:
+    for NwkId, _, Ieee in self.ListOfGroups[GroupId]["Devices"]:
         model_name = self.ListOfDevices.get(NwkId, {}).get("Model")
-        if model_name and model_name not in ( "", {}) and get_deviceconf_parameter_value(self, model_name, "WindowsCoverringLevelInverted"):
+        if model_name is None:
+            continue
+        self.logging( "Debug", "is_device_inverted - Looking for WindowsCoverringLevelInverted in  NwkId: %s Ieee %s Model: %s" % (NwkId, Ieee, model_name) )
+        
+        if get_deviceconf_parameter_value(self, model_name, "WindowsCoverringLevelInverted"):
+            self.logging( "Debug", "is_device_inverted - Found WindowsCoverringLevelInverted for NwkId: %s Ieee %s" % (NwkId, Ieee) )
             return True
+
     return False
 
 
