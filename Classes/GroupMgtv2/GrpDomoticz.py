@@ -28,6 +28,7 @@ from Zigbee.zclCommands import (zcl_group_level_move_to_level,
                                 zcl_group_onoff_off_noeffect,
                                 zcl_group_onoff_off_witheffect,
                                 zcl_group_onoff_on,
+                                zcl_group_window_covering_level,
                                 zcl_group_window_covering_off,
                                 zcl_group_window_covering_on,
                                 zcl_group_window_covering_stop)
@@ -609,23 +610,34 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
     if self.ListOfGroups.get(GrpId, {}).get("Cluster") == "0102":
         if Command in ( "Off", "Close", ):
             nValue = 0
-            sValue = "Off"
+            sValue = "0"
             update_device_list_attribute(self, GrpId, "0102", 0)
             zcl_group_window_covering_on(self, GrpId, ZIGATE_EP, EPout)
+            domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
         if Command in ( "On", "Open",):
             nValue = 1
-            sValue = "Off"
+            sValue = "100"
             zcl_group_window_covering_off(self, GrpId, ZIGATE_EP, EPout)
             update_device_list_attribute(self, GrpId, "0102", 100)
+            domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
         if Command == "Stop":
-            nValue = 2
-            sValue = "50"
+            nValue = 17
+            sValue = "0"
             zcl_group_window_covering_stop(self, GrpId, ZIGATE_EP, EPout)
             update_device_list_attribute(self, GrpId, "0102", 50)
+            domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
-        domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
+        if Command == "Set Level":
+            nValue = 2
+            sValue = str(Level)
+            Level = max(0, min(Level, 100))
+            OnOff = "01"
+            update_device_list_attribute(self, GrpId, "0102", Level)
+            zcl_group_window_covering_level(self, GrpId, ZIGATE_EP, EPout, "%02x" %Level)
+            domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
+
         resetDevicesHearttBeat(self, GrpId)
         return
 
