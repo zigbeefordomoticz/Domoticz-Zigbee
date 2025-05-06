@@ -631,11 +631,11 @@ def processCommand(self, unit, GrpId, Command, Level, Color_):
             domo_update_api(self, self.Devices, GrpId, unit, nValue, sValue)
 
         if Command == "Set Level":
+            nValue = 2
+            sValue = str(Level)
             if is_device_inverted(self, GrpId):
                 Level = 0 if Level > 100 else 100 - Level
             Level = min(max(Level, 1), 99)
-            nValue = 2
-            sValue = str(Level)
             update_device_list_attribute(self, GrpId, "0102", Level)
             self.logging( "Debug", "processGroupCommand - requesting level: %s for Group: %s" % (Level, GrpId), )
             zcl_group_window_covering_level(self, GrpId, ZIGATE_EP, EPout, level="%02x" %Level)
