@@ -75,7 +75,7 @@ OTA_CODES = {
     "Schneider": {"Folder": "SCHNEIDER-WISER", "ManufCode": 0x105E, "ManufName": "Schneider Electric", "Enabled": True},
     "SonOff": {"Folder": "SONOFF", "ManufCode": 0x1286, "ManufName": "Sonoff", "Enabled": True},
     "Xiaomi": {"Folder": "XIAOMI", "ManufCode": 0x115f, "ManufName": "Xiaomi", "Enabled": True},
-    "Lumi": {"Folder": "XIAOMI", "ManufCode": 0x1037, "ManufName": "Lumi", "Enabled": True},
+    "Lumi": {"Folder": "LUMI", "ManufCode": 0x1037, "ManufName": "Lumi", "Enabled": True},
     "devbis": {"Folder": "XIAOMI", "ManufCode": 0xdb15, "ManufName": "Lumi", "Enabled": True},
     "z03mmc": {"Folder": "XIAOMI", "ManufCode": 0x0084, "ManufName": "Lumi", "Enabled": True},
     "Namron": {"Folder": "NAMRON", "ManufCode": 0x11224, "ManufName": "Namron", "Enabled": True},
