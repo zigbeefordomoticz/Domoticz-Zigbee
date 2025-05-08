@@ -57,7 +57,7 @@ ACTIONS_TO_FUNCTIONS = {
 def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, Source, ):
     
     self.log.logging("ZclClusters", "Debug", "Foundation Cluster - Nwkid: %s Ep: %s Cluster: %s Attribute: %s Type: %s Data: %s Source: %s" %(
-        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgClusterData, Source))
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgClusterData, Source), nwkid=MsgSrcAddr)
 
     device_model = _get_model_name( self, MsgSrcAddr)
     raw_value = decoding_attribute_data( MsgAttType, MsgClusterData)
@@ -69,7 +69,7 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     if _manuf_specific_cluster is None and _datatype and _datatype != MsgAttType:
         # When ManufSpecificCluster, do not check DataType as we don't have the info
         self.log.logging("ZclClusters", "Log", "process_cluster_attribute_response - %s/%s %s - %s DataType: %s miss-match with expected %s" %( 
-            MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ))
+            MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, _datatype ), nwkid=MsgSrcAddr)
     
     
     # Do we have to use a manufacturer specific function, and then skip everything else
@@ -136,15 +136,15 @@ def process_cluster_attribute_response( self, Devices, MsgSQN, MsgSrcAddr, MsgSr
     debug_logging(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value)
     
     if value is None:
-        self.log.logging("ZclClusters", "Debug", "---> Value is None")
+        self.log.logging("ZclClusters", "Debug", "---> Value is None", nwkid=MsgSrcAddr)
         return
     
     if _action_list is None:
-        self.log.logging("ZclClusters", "Debug", "---> No Action")
+        self.log.logging("ZclClusters", "Debug", "---> No Action", nwkid=MsgSrcAddr)
         return
     
     for data_action in _action_list:
-        self.log.logging("ZclClusters", "Debug", "---> Data Action: %s" %data_action)
+        self.log.logging("ZclClusters", "Debug", "---> Data Action: %s" %data_action, nwkid=MsgSrcAddr)
         
         if data_action == CHECK_AND_STORE_RAW:
             # This is particularly true for Battery Voltage, where the UpdateBatteryAttribute() relys on deci-volts
@@ -231,14 +231,14 @@ def _cluster_manufacturer_function(self, ep, cluster, attribute, model):
     return None
  
     
-def _cluster_zcl_attribute_retrieval( self, cluster, attribute, parameter ):
+def _cluster_zcl_attribute_retrieval( self, cluster, attribute, parameter, MsgSrcAddr=None ):
 
     #self.log.logging("ZclClusters", "Debug", " . _cluster_zcl_attribute_retrieval %s %s %s" %(
-        # cluster, attribute, parameter))
+        # cluster, attribute, parameter), nwkid = MsgSrcAddr)
 
     if cluster not in self.readZclClusters:
         self.log.logging("ZclClusters", "Error", " . _cluster_zcl_attribute_retrieval %s not found in %s" %(
-            cluster, str(self.readZclClusters)))
+            cluster, str(self.readZclClusters)), nwkid = MsgSrcAddr)
         return None
     
     if (
@@ -246,15 +246,15 @@ def _cluster_zcl_attribute_retrieval( self, cluster, attribute, parameter ):
         and parameter in self.readZclClusters[ cluster ]["Attributes"][ attribute ]
     ):
         #self.log.logging("ZclClusters", "Debug", " . %s %s %s --> %s" %(
-            # cluster, attribute, parameter, self.readZclClusters[ cluster ]["Attributes"][ attribute ][ parameter ])) 
+            # cluster, attribute, parameter, self.readZclClusters[ cluster ]["Attributes"][ attribute ][ parameter ]), nwkid = MsgSrcAddr) 
         return self.readZclClusters[ cluster ]["Attributes"][ attribute ][ parameter ]
     return None
 
 
-def _cluster_specific_attribute_retrieval( self, model, ep, cluster, attribute, parameter ):
+def _cluster_specific_attribute_retrieval( self, model, ep, cluster, attribute, parameter, MsgSrcAddr=None ):
 
     #self.log.logging("ZclClusters", "Debug", " . _cluster_specific_attribute_retrieval %s %s %s %s %s" %(
-        # model, ep, cluster, attribute, parameter))
+        # model, ep, cluster, attribute, parameter), nwkid = MsgSrcAddr)
 
     if (
         ep in self.DeviceConf[ model ]['Ep']
@@ -397,10 +397,10 @@ def is_generic_zcl_cluster( self, cluster, attribute=None):
     return True
 
 
-def cluster_attribute_retrieval(self, ep, cluster, attribute, parameter, model=None):
+def cluster_attribute_retrieval(self, ep, cluster, attribute, parameter, model=None, MsgSrcAddr=None):
     if model and is_cluster_specific_config(self, model, ep, cluster, attribute=attribute):
-        return _cluster_specific_attribute_retrieval( self, model, ep, cluster, attribute, parameter )
-    return _cluster_zcl_attribute_retrieval( self, cluster, attribute, parameter )
+        return _cluster_specific_attribute_retrieval( self, model, ep, cluster, attribute, parameter, MsgSrcAddr )
+    return _cluster_zcl_attribute_retrieval( self, cluster, attribute, parameter, MsgSrcAddr )
 
   
 def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ):
@@ -415,28 +415,28 @@ def action_majdomodevice( self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, Msg
     }
 
     self.log.logging( "ZclClusters", "Debug", "action_majdomodevice - %s/%s %s %s %s %s" %(
-        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ))
+        MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, device_model, value ), nwkid=MsgSrcAddr)
 
     _majdomo_formater = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "DomoDeviceFormat", model=device_model)
-    self.log.logging( "ZclClusters", "Debug", "     _majdomo_formater: %s" %_majdomo_formater)
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_formater: %s" %_majdomo_formater, nwkid=MsgSrcAddr)
 
     if get_device_config_param( self, MsgSrcAddr, "disableBinaryInputCluster") and MsgClusterId == "000f":
         return
 
     majValue = DOMO_DEVICE_FORMATER[ _majdomo_formater ](value) if (_majdomo_formater and _majdomo_formater in DOMO_DEVICE_FORMATER) else value
-    self.log.logging( "ZclClusters", "Debug", "     _majdomo_formater: %s %s -> %s" %(_majdomo_formater, value, majValue))
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_formater: %s %s -> %s" %(_majdomo_formater, value, majValue), nwkid=MsgSrcAddr)
 
     _majdomo_cluster = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithCluster", model=device_model)
     majCluster = _majdomo_cluster if _majdomo_cluster is not None else MsgClusterId
-    self.log.logging( "ZclClusters", "Debug", "     _majdomo_cluster: %s" %_majdomo_cluster)
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_cluster: %s" %_majdomo_cluster, nwkid=MsgSrcAddr)
 
     _majdomo_attribute = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithAttribute", model=device_model)
     majAttribute = _majdomo_attribute if _majdomo_attribute is not None else ""
-    self.log.logging( "ZclClusters", "Debug", "     _majdomo_attribute: %s -> %s" %(_majdomo_attribute, majAttribute))
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_attribute: %s -> %s" %(_majdomo_attribute, majAttribute), nwkid=MsgSrcAddr)
 
     _majdomo_endpoint = cluster_attribute_retrieval( self, MsgSrcEp, MsgClusterId, MsgAttrID, "UpdDomoDeviceWithEp", model=device_model)
     target_ep = _majdomo_endpoint if _majdomo_endpoint is not None else MsgSrcEp
-    self.log.logging( "ZclClusters", "Debug", "     _majdomo_ep: %s -> %s" %(_majdomo_endpoint, target_ep))
+    self.log.logging( "ZclClusters", "Debug", "     _majdomo_ep: %s -> %s" %(_majdomo_endpoint, target_ep), nwkid=MsgSrcAddr)
 
     MajDomoDevice(self, Devices, MsgSrcAddr, target_ep, majCluster, majValue, Attribute_=majAttribute)
 
@@ -464,7 +464,7 @@ def check_special_values( self, value, data_type, _special_values ):
   
 def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_inputs, _eval_formula, _function):
 
-    self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ))
+    self.log.logging("ZclClusters", "Debug", "compute_attribute_value - _function: %s FUNCTION_MODULE: %s" %( _function, str(FUNCTION_MODULE) ), nwkid)
 
     if _function and _function in FUNCTION_MODULE:
         func = FUNCTION_MODULE[ _function ]
@@ -480,22 +480,22 @@ def compute_attribute_value( self, nwkid, ep, cluster, attribut, value, _eval_in
                 attribute = _eval_inputs[x][ "AttributeId" ]
                 custom_value = getAttributeValue(self, nwkid, ep, cluster, attribute)
 
-                self.log.logging("ZclClusters", "Debug", " EvalExpCustomVariables . %s/%s = %s" %( cluster, attribute, custom_value ))
+                self.log.logging("ZclClusters", "Debug", " EvalExpCustomVariables . %s/%s = %s" %( cluster, attribute, custom_value ), nwkid)
                 if custom_value is None:
                     self.log.logging("ZclClusters", "Error", "process_cluster_attribute_response - unable to found Input variable: %s Cluster: %s Attribute: %s" %(
-                        x, cluster, attribute))
+                        x, cluster, attribute), nwkid)
                     continue
                 custom_variable[ idx ] = custom_value
                 _eval_formula = _update_eval_formula( self, _eval_formula, x, "custom_variable[ %s ]" % idx)
-                self.log.logging("ZclClusters", "Debug", " . Updated formula: %s" %_eval_formula)
+                self.log.logging("ZclClusters", "Debug", " . Updated formula: %s" %_eval_formula, nwkid)
 
         for x in custom_variable:
-            self.log.logging("ZclClusters", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]))
+            self.log.logging("ZclClusters", "Debug", " . custom_variable[ %s ] = %s" %( idx, custom_variable[ idx ]), nwkid)
         
     if _eval_formula is not None and _eval_formula != "":
         try:
             evaluation_result = eval( _eval_formula )
-            self.log.logging("ZclClusters", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result))
+            self.log.logging("ZclClusters", "Debug", " . after evaluation value: %s -> %s" %( value, evaluation_result), nwkid)
             return evaluation_result
 
         except NameError as e:
@@ -570,7 +570,7 @@ def formated_logging( self, nwkid, ep, cluster, attribute, dt, dz, d, Source, de
     lqi = self.ListOfDevices[nwkid]["LQI"] if "LQI" in self.ListOfDevices[nwkid] else 0
     cluster_description = self.readZclClusters[ cluster ]["Description"] if self.readZclClusters and cluster in self.readZclClusters else "Unknown cluster"
     self.log.logging( "ZclClusters", "Log", "Attribute Report | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s " %(
-        nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, d, value, lqi ))        
+        nwkid, ep, cluster, cluster_description, attribute, attr_name, dt, dz, device_model, eval_formula, eval_inputs, action_list, force_value, d, value, lqi ), nwkid)
 
 def debug_logging(self, nwkid, ep, cluster, attribute, dtype, attsize, raw_data, value):
     
@@ -580,7 +580,7 @@ def debug_logging(self, nwkid, ep, cluster, attribute, dtype, attsize, raw_data,
     cluster_description = self.readZclClusters.get(cluster, {}).get("Description", "Unknown cluster")
     attribute_description = self.readZclClusters.get(cluster, {}).get("Attributes", {}).get(attribute, {}).get("Name", "Unknown attribute")
 
-    self.log.logging( "ZclClusters", "Log", f"readZclCluster - Ox{nwkid}/{ep} 0x{cluster} {cluster_description} - attribute: 0x{attribute} {attribute_description} raw_data: {raw_data} value: {value}")
+    self.log.logging( "ZclClusters", "Log", f"readZclCluster - Ox{nwkid}/{ep} 0x{cluster} {cluster_description} - attribute: 0x{attribute} {attribute_description} raw_data: {raw_data} value: {value}", nwkid)
 
 
 def is_cluster_debug_mode(self, cluster):
