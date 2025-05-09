@@ -315,57 +315,57 @@ def enqueue_logging( self, thread_id, module, logType, message, nwkid, context )
         domoticz_log_api("%s" % message)
 
 
-def _loggingStatus(self, thread_name, message):
+def _loggingStatus(self, thread_name, message, module, nwkid):
     if self.pluginconf.pluginConf["logThreadName"]:
-        message = "[%17s] " %thread_name + message
+        message = "[%17s] " %thread_name + "[%17s] " %module + "[%s]" %nwkid + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info(message.encode('utf-8'))
     domoticz_status_api(message)
 
 
-def _loggingLog(self, thread_name, message):
+def _loggingLog(self, thread_name, message, module, nwkid):
     if self.pluginconf.pluginConf["logThreadName"]:
-        message = "[%17s] " %thread_name + message
+        message = "[%17s] " %thread_name + "[%17s] " %module + "[%s]" %nwkid + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info( message.encode('utf-8'))
     else:
         domoticz_log_api(message)
 
 
-def _loggingDebug(self, thread_name, message):
+def _loggingDebug(self, thread_name, message, module, nwkid):
     if self.pluginconf.pluginConf["logThreadName"]:
-        message = "[%17s] " %thread_name + message
+        message = "[%17s] " %thread_name  + "[%17s] " %module + "[%s]" %nwkid + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info(message.encode('utf-8'))
     else:
         domoticz_log_api(message)
 
 
-def _logginfilter(self, thread_name, message, nwkid):
+def _logginfilter(self, thread_name, message, module, nwkid):
 
     if nwkid is None:
-        _loggingDebug(self, thread_name, message)
+        _loggingDebug(self, thread_name, message, module, nwkid)
     elif nwkid:
         nwkid = nwkid.lower()
         _debugMatchId = self.pluginconf.pluginConf["MatchingNwkId"].lower().strip().split(",")
         if ("ffff" in _debugMatchId) or (nwkid in _debugMatchId) or (nwkid == "ffff"):
-            _loggingDebug(self, thread_name, message)
+            _loggingDebug(self, thread_name, message, module, nwkid)
 
 
-def loggingDirector(self, thread_name, logType, message):
+def loggingDirector(self, thread_name, logType, message, module, nwkid):
     if logType == "Log":
-        _loggingLog(self, thread_name, message)
+        _loggingLog(self, thread_name, message, module, nwkid)
     elif logType == "Status":
-        _loggingStatus(self, thread_name, message)
+        _loggingStatus(self, thread_name, message, module, nwkid)
 
 
-def loggingError(self, thread_name, module, message, nwkid, context):
+def loggingError(self, thread_name, message, module, nwkid, context):
     domoticz_error_api(message)
     self._newError = True
 
     # Log to file
     if self.pluginconf.pluginConf["enablePluginLogging"]:
-        logging.error(" [%17s] " % thread_name + message)
+        logging.error(" [%17s] " % thread_name + "[%17s] " %module + message)
 
     # Log empty
     if not self.LogErrorHistory or "LastLog" not in self.LogErrorHistory:
@@ -518,15 +518,15 @@ def process_logging_event( self, logging_tuple):
 
     if logType == "Error":
         thread_name=thread_name + " " + thread_id
-        loggingError(self, thread_name, module, message, nwkid, context)
+        loggingError(self, thread_name, message, module, nwkid, context)
 
     elif logType == "Debug" and _should_log_debug(self, thread_name) and _is_to_be_logged(self, logType, module):
         thread_name=thread_name + " " + thread_id
-        _logginfilter(self, thread_name, message, nwkid)
+        _logginfilter(self, thread_name, message, module, nwkid)
 
     else:
         thread_name=thread_name + " " + thread_id
-        loggingDirector(self, thread_name, logType, message)
+        loggingDirector(self, thread_name, logType, message, module, nwkid)
 
 def _should_log_debug(self, thread_name):
     thread_filter = [x for x in self.threadLogConfig if self.pluginconf.pluginConf[f"Thread{self.threadLogConfig[x]}"] == 1]
