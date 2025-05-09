@@ -58,9 +58,9 @@ OTA_CLUSTER_ID = "0019"
 MAX_FRAME_DATA = 64
 
 OTA_CODES = {
-    
     "Danfoss": {"Folder": "DANFOSS", "ManufCode": 0x1246, "ManufName": "Danfoss", "Enabled": True},
     "Develco": {"Folder": "DEVELCO", "ManufCode": 0x1015, "ManufName": "Develco", "Enabled": True},
+    "EcoDim": {"Folder": "ECO-DIM", "ManufCode": 0x126a, "ManufName": "EcoDim", "Enabled": True},
     "Eurotronics": {"Folder": "EUROTRONICS", "ManufCode": 0x1037, "ManufName": "Eurotronic", "Enabled": True},
     "Frient": {"Folder": "DEVELCO", "ManufCode": 0x1015, "ManufName": "frient A/S", "Enabled": True},
     "Ikea": {"Folder": "IKEA-TRADFRI", "ManufCode": 0x117C, "ManufName": "IKEA of Sweden", "Enabled": True},
