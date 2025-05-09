@@ -334,7 +334,7 @@ def _loggingLog(self, thread_name, message, module, nwkid):
 
 def _loggingDebug(self, thread_name, message, module, nwkid):
     if self.pluginconf.pluginConf["logThreadName"]:
-        message = "[%17s] " %thread_name  + "[%17s] " %module + "[%s]" %nwkid + message
+        message = "[%17s] " %thread_name + "[%17s] " %module + "[%s]" %nwkid + message
     if self.pluginconf.pluginConf["enablePluginLogging"]:
         logging.info(message.encode('utf-8'))
     else:
