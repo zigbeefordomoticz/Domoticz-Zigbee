@@ -780,6 +780,12 @@ SIMPLE_WIDGET = {
     "Humi": {
         "widgetType": "Humidity"
     },
+    "LiquidLevel": {
+        "Type": 243,
+        "Subtype": 6,
+        "Switchtype": 0
+    },
+
     "LivoloSWL": {
         "Type": 244,
         "Subtype": 73,

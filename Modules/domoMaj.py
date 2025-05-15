@@ -79,1139 +79,1144 @@ def MajDomoDevice(self, Devices, NwkId, Ep, ClusterId, value, Attribute_="", Col
     
 def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, model_name, ClusterType, ClusterTypeList, ClusterId, value, Attribute_, Color_, WidgetEp, Widget_Idx, WidgetType ):
 
-        # device_unit is the Device unit
-        # WidgetEp is the Endpoint to which the widget is linked to
-        # Widget_Idx is the Device ID
-        # WidgetType is the Widget Type at creation
-        # ClusterType is the Type based on clusters
-        # ClusterType: This the Cluster action extracted for the particular Endpoint based on Clusters.
-        # WidgetType : This is the Type of Widget defined at Widget Creation
-        # value      : this is value comming mostelikely from readCluster. Be carreful depending on the cluster, the value is String or Int
-        # Attribute_ : If used This is the Attribute from readCluster. Will help to route to the right action
-        # Color_     : If used This is the color value to be set
+    # device_unit is the Device unit
+    # WidgetEp is the Endpoint to which the widget is linked to
+    # Widget_Idx is the Device ID
+    # WidgetType is the Widget Type at creation
+    # ClusterType is the Type based on clusters
+    # ClusterType: This the Cluster action extracted for the particular Endpoint based on Clusters.
+    # WidgetType : This is the Type of Widget defined at Widget Creation
+    # value      : this is value comming mostelikely from readCluster. Be carreful depending on the cluster, the value is String or Int
+    # Attribute_ : If used This is the Attribute from readCluster. Will help to route to the right action
+    # Color_     : If used This is the color value to be set
 
-        self.log.logging( "Widget", "Debug", f"_domo_maj_one_cluster_type_entry NwkId: {NwkId}, Ep: {Ep}, device_id_ieee: {device_id_ieee}, model_name: {model_name}, ClusterType: {ClusterType}, ClusterTypeList: {ClusterTypeList}, ClusterId: {ClusterId}, value: {value}, Attribute_: {Attribute_}, Color_: {Color_}, WidgetEp: {WidgetEp}, Widget_Idx: {Widget_Idx}, WidgetType: {WidgetType}", NwkId, )
+    self.log.logging( "Widget", "Debug", f"_domo_maj_one_cluster_type_entry NwkId: {NwkId}, Ep: {Ep}, device_id_ieee: {device_id_ieee}, model_name: {model_name}, ClusterType: {ClusterType}, ClusterTypeList: {ClusterTypeList}, ClusterId: {ClusterId}, value: {value}, Attribute_: {Attribute_}, Color_: {Color_}, WidgetEp: {WidgetEp}, Widget_Idx: {Widget_Idx}, WidgetType: {WidgetType}", NwkId, )
+    
+    if WidgetEp == "00":
+        # Old fashion / keep it for backward compatibility
+        WidgetEp = "01"  # Force to 01
+
+    if WidgetType not in WIDGET_TO_BYPASS_EP_MATCH and WidgetEp != Ep:
+        # We need to make sure that we are on the right Endpoint
+        self.log.logging( "Widget", "Debug", "------> skiping this WidgetEp as do not match Ep : %s %s" % (WidgetEp, Ep), NwkId,)
+        return
+
+    device_unit = retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, Widget_Idx )
+    if device_unit is None:
+        return
+    
+    prev_nValue, prev_sValue = domo_read_nValue_sValue(self, Devices, device_id_ieee, device_unit)
+    switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, Devices, device_id_ieee, device_unit)
+
+    self.log.logging( "Widget", "Debug", f"------> device_unit: {device_unit}, prev_nValue: {prev_nValue}, prev_sValue: {prev_sValue} switchType: {switchType}, Subtype: {Subtype}", NwkId,)
+    
+    SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, NwkId)
+    self.log.logging("Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NwkId)
+
+    if WidgetType == "LiquidLevel" and ClusterType == "LiquidLevel" and Attribute_ == "":
+        # LiquidLevel
+        self.log.logging("Widget", "Debug", "------> LiquidLevel : %s" % value, NwkId)
+        sValue = "%s" % value
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)    
+
+    if ClusterType == "Alarm" and WidgetType == "Alarm_ZL" and Attribute_ == "0005":
+        # This is Alarm3 for ZLinky Intensity alert
+        value, text = value.split("|")
+        nValue = int(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, text, BatteryLevel, SignalLevel)
+
+    if ClusterType == "Alarm" and WidgetType == "Alarm_ZL2" and Attribute_ == "0001":
+        # Notification Next Day Color and Peak
         
-        if WidgetEp == "00":
-            # Old fashion / keep it for backward compatibility
-            WidgetEp = "01"  # Force to 01
-
-        if WidgetType not in WIDGET_TO_BYPASS_EP_MATCH and WidgetEp != Ep:
-            # We need to make sure that we are on the right Endpoint
-            self.log.logging( "Widget", "Debug", "------> skiping this WidgetEp as do not match Ep : %s %s" % (WidgetEp, Ep), NwkId,)
+        tuple_value = value.split("|")
+        if len(tuple_value) != 2:
+            self.log.logging(
+                "Widget",
+                "Error",
+                "------> Expecting 2 values got %s in Value = %s for NwkId: %s Attribute: %s" % (
+                    len(tuple_value), value, NwkId, Attribute_),
+                NwkId,
+            )
             return
 
-        device_unit = retreive_device_unit( self, Devices, NwkId, Ep, device_id_ieee, ClusterId, Widget_Idx )
-        if device_unit is None:
+        nValue, text = int(tuple_value[0]), tuple_value[1]
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, text, BatteryLevel, SignalLevel)
+
+    if WidgetType == "BatteryPercentage" and ClusterType == "Voltage" and Attribute_ == "0021":
+        sValue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "Alarm" and WidgetType == "Alarm_ZL3" and Attribute_ == "0020":
+        if value is None or len(value) == 0:
             return
-        
-        prev_nValue, prev_sValue = domo_read_nValue_sValue(self, Devices, device_id_ieee, device_unit)
-        switchType, Subtype, _ = domo_read_SwitchType_SubType_Type(self, Devices, device_id_ieee, device_unit)
+        nValue, sValue = get_notification_day_color( value )
+        self.log.logging( "Widget", "Log", f"ZLinky Color of the Day {value} => {nValue},{sValue}", NwkId, )
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        self.log.logging( "Widget", "Debug", f"------> device_unit: {device_unit}, prev_nValue: {prev_nValue}, prev_sValue: {prev_sValue} switchType: {switchType}, Subtype: {Subtype}", NwkId,)
-        
-        SignalLevel, BatteryLevel = RetreiveSignalLvlBattery(self, NwkId)
-        self.log.logging("Widget", "Debug", "------> SignalLevel: %s , BatteryLevel: %s" % (SignalLevel, BatteryLevel), NwkId)
+    if ClusterType == "Alarm" and WidgetType == "LinkyCurrentTarif" and Attribute_ == "0039":
+        nValue, sValue = linky_tarif_color( self, value )
+        self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType == "Alarm" and WidgetType == "Alarm_ZL" and Attribute_ == "0005":
-            # This is Alarm3 for ZLinky Intensity alert
-            value, text = value.split("|")
-            nValue = int(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, text, BatteryLevel, SignalLevel)
+    if ClusterType == "Alarm" and WidgetType == "LinkyNextDayColor" and Attribute_ == "0003":
+        nValue, sValue = linky_tarif_color( self, value )
+        self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType == "Alarm" and WidgetType == "Alarm_ZL2" and Attribute_ == "0001":
-            # Notification Next Day Color and Peak
-            
-            tuple_value = value.split("|")
-            if len(tuple_value) != 2:
-                self.log.logging(
-                    "Widget",
-                    "Error",
-                    "------> Expecting 2 values got %s in Value = %s for NwkId: %s Attribute: %s" % (
-                        len(tuple_value), value, NwkId, Attribute_),
-                    NwkId,
-                )
+    if ClusterType == "Alarm" and WidgetType == "LinkyCurrentDayColor" and Attribute_ == "003a":
+        nValue, sValue = linky_tarif_color( self, value )
+        self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+    if "Ampere" in ClusterType and WidgetType == "Ampere" and Attribute_ == "0508":
+        sValue = "%s" % (round(float(value), 2))
+        self.log.logging(["Widget", "Electric"], "Debug", "------>  Ampere : %s" % sValue, NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
+
+    if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ("0508", "0908", "0a08"):
+        # Retreive the previous values
+
+        ampere1, ampere2, ampere3 = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0")
+        if ampere2 == ampere3 == '65535.0':
+            self.log.logging(["Widget", "Electric"], "Debug", "------>  Something going wrong ..... ampere %s %s %s" %(ampere1, ampere2, ampere3))
+            ampere2 = '0.0'
+            ampere3 = '0.0'
+        ampere = round(float(value), 2)
+        if Attribute_ == "0508":
+            # Line 1
+            sValue = "%s;%s;%s" % (ampere, ampere2, ampere3)
+        elif Attribute_ == "0908":
+            # Line 2
+            sValue = "%s;%s;%s" % (ampere1, ampere, ampere3)
+        elif Attribute_ == "0a08":
+            # Line 3
+            sValue = "%s;%s;%s" % (ampere1, ampere2, ampere)
+
+        self.log.logging(["Widget", "Electric"], "Debug", "------>  Ampere3 : %s from Attribute: %s" % (sValue, Attribute_), NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
+
+    if "PWFactor" == ClusterType and WidgetType == "PowerFactor":
+        self.log.logging(["Widget", "Electric"], "Debug", "PowerFactor %s WidgetType: %s Value: %s (%s)" % (
+            NwkId, WidgetType, value, type(value)), NwkId)
+
+        nValue = round(value, 1)
+        sValue = str(nValue)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+    if "Power" in ClusterType:  # Instant Power/Watts
+        # Power and Meter usage are triggered only with the Instant Power usage.
+        # it is assumed that if there is also summation provided by the device, that
+        # such information is stored on the data structuture and here we will retreive it.
+        # value is expected as String
+
+        if (Attribute_ in ("", "050f") or ClusterId == "000c") and WidgetType in ( "Power", "Meter", "P1Meter", "P1Meter_HPHC"):  # kWh
+            self.log.logging(["Widget","Electric"], "Debug", "------> %s Processing Instant Power  : %s for %s" % (NwkId, value, WidgetType), NwkId)
+
+            if (( isinstance( value, (int, float)) and value < 0) or (float(value) < 0) ) and is_PowerNegative_widget( ClusterTypeList):
+                self.log.logging(["Widget","Electric"], "Debug", "------>There is a PowerNegative widget and the value is negative. Skiping here", NwkId)
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
                 return
 
-            nValue, text = int(tuple_value[0]), tuple_value[1]
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, text, BatteryLevel, SignalLevel)
-
-        if WidgetType == "BatteryPercentage" and ClusterType == "Voltage" and Attribute_ == "0021":
-            sValue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Alarm" and WidgetType == "Alarm_ZL3" and Attribute_ == "0020":
-            if value is None or len(value) == 0:
-                return
-            nValue, sValue = get_notification_day_color( value )
-            self.log.logging( "Widget", "Log", f"ZLinky Color of the Day {value} => {nValue},{sValue}", NwkId, )
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Alarm" and WidgetType == "LinkyCurrentTarif" and Attribute_ == "0039":
-            nValue, sValue = linky_tarif_color( self, value )
-            self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Alarm" and WidgetType == "LinkyNextDayColor" and Attribute_ == "0003":
-            nValue, sValue = linky_tarif_color( self, value )
-            self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Alarm" and WidgetType == "LinkyCurrentDayColor" and Attribute_ == "003a":
-            nValue, sValue = linky_tarif_color( self, value )
-            self.log.logging( "Widget", "Log", f"LinkyTarif Tarif Color {value} => {nValue}:{sValue}", NwkId, )
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if "Ampere" in ClusterType and WidgetType == "Ampere" and Attribute_ == "0508":
-            sValue = "%s" % (round(float(value), 2))
-            self.log.logging(["Widget", "Electric"], "Debug", "------>  Ampere : %s" % sValue, NwkId)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
-
-        if "Ampere" in ClusterType and WidgetType == "Ampere3" and Attribute_ in ("0508", "0908", "0a08"):
-            # Retreive the previous values
-
-            ampere1, ampere2, ampere3 = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0")
-            if ampere2 == ampere3 == '65535.0':
-                self.log.logging(["Widget", "Electric"], "Debug", "------>  Something going wrong ..... ampere %s %s %s" %(ampere1, ampere2, ampere3))
-                ampere2 = '0.0'
-                ampere3 = '0.0'
-            ampere = round(float(value), 2)
-            if Attribute_ == "0508":
-                # Line 1
-                sValue = "%s;%s;%s" % (ampere, ampere2, ampere3)
-            elif Attribute_ == "0908":
-                # Line 2
-                sValue = "%s;%s;%s" % (ampere1, ampere, ampere3)
-            elif Attribute_ == "0a08":
-                # Line 3
-                sValue = "%s;%s;%s" % (ampere1, ampere2, ampere)
-
-            self.log.logging(["Widget", "Electric"], "Debug", "------>  Ampere3 : %s from Attribute: %s" % (sValue, Attribute_), NwkId)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
-
-        if "PWFactor" == ClusterType and WidgetType == "PowerFactor":
-            self.log.logging(["Widget", "Electric"], "Debug", "PowerFactor %s WidgetType: %s Value: %s (%s)" % (
-                NwkId, WidgetType, value, type(value)), NwkId)
-
-            nValue = round(value, 1)
-            sValue = str(nValue)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if "Power" in ClusterType:  # Instant Power/Watts
-            # Power and Meter usage are triggered only with the Instant Power usage.
-            # it is assumed that if there is also summation provided by the device, that
-            # such information is stored on the data structuture and here we will retreive it.
-            # value is expected as String
-
-            if (Attribute_ in ("", "050f") or ClusterId == "000c") and WidgetType in ( "Power", "Meter", "P1Meter", "P1Meter_HPHC"):  # kWh
-                self.log.logging(["Widget","Electric"], "Debug", "------> %s Processing Instant Power  : %s for %s" % (NwkId, value, WidgetType), NwkId)
-
-                if (( isinstance( value, (int, float)) and value < 0) or (float(value) < 0) ) and is_PowerNegative_widget( ClusterTypeList):
-                    self.log.logging(["Widget","Electric"], "Debug", "------>There is a PowerNegative widget and the value is negative. Skiping here", NwkId)
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
-                    return
-
-                if WidgetType == "Power":
-                    self.log.logging(["Widget","Electric"], "Debug", "------> Power  : %s" % value, NwkId)
-                    sValue = value
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
-
-                if WidgetType in ( "Meter", "P1Meter", "P1Meter_HPHC"):
-                    self.log.logging(["Widget","Electric"], "Debug", "------> %s  : %s" % (WidgetType, value), NwkId)
-                    process_p1meters_meter_with_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
-
-            if WidgetType == "ProdPower" and Attribute_ == "":
-                if value > 0:
-                    self.log.logging(["Widget","Electric"], "Debug", "------>the value is Positive. Skiping here", NwkId)
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
-                    return
-
-                sValue = abs(value)
-                self.log.logging(["Widget","Electric"], "Debug", "------>PowerNegative  : %s" % sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
-
-            if WidgetType == "ProdPower" and Attribute_ == "0016":
+            if WidgetType == "Power":
+                self.log.logging(["Widget","Electric"], "Debug", "------> Power  : %s" % value, NwkId)
                 sValue = value
-                self.log.logging(["Widget","Electric"], "Debug", "------> Puissance injectée  : %s" % sValue, NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-            if (
-                WidgetType == "P1Meter_ZL" 
-                and "Model" in self.ListOfDevices[NwkId] 
-                and self.ListOfDevices[NwkId]["Model"] in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a")
-                ):
- 
-                if Attribute_ != "050f" and Ep == "01" and Attribute_ not in ("0100", "0102"):
-                    # Ep = 01, so we store Base, or HP,HC, or BBRHCJB, BBRHPJB
-                    return
-                if Attribute_ != "050f" and Ep == "f2" and Attribute_ not in ("0104", "0106"):
-                    # Ep = f2, so we store BBRHCJW, BBRHPJW
-                    return
-                if Attribute_ != "050f" and Ep == "f3" and Attribute_ not in ("0108", "010a"):
-                    # Ep == f3, so we store BBRHCJR, BBRHPJR
-                    return
-                
-                tarif_color = get_tarif_color( self, NwkId )
+            if WidgetType in ( "Meter", "P1Meter", "P1Meter_HPHC"):
+                self.log.logging(["Widget","Electric"], "Debug", "------> %s  : %s" % (WidgetType, value), NwkId)
+                process_p1meters_meter_with_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
 
-                self.log.logging(["ZLinky","Electric"], "Debug", "------>  P1Meter_ZL : %s Attribute: %s  Color: %s (%s)" % (
-                    value, Attribute_, tarif_color, type(value)), NwkId)
-                
-                # P1Meter report Instant and Cummulative Power.
-                # We need to retreive the Cummulative Power.
-                cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0")
-                usage1 = usage2 = return1 = return2 = cons = prod = 0
-                self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): retreive value: %s;%s;%s;%s;%s;%s" % (Ep, cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod), NwkId)
+        if WidgetType == "ProdPower" and Attribute_ == "":
+            if value > 0:
+                self.log.logging(["Widget","Electric"], "Debug", "------>the value is Positive. Skiping here", NwkId)
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
+                return
 
-                # We are so receiving a usage update
-                self.log.logging( ["ZLinky","Electric"], "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NwkId, )
-                cons = get_instant_power(self, NwkId)
-                if Attribute_ in ("0000", "0100", "0104", "0108"):
-                    # Usage 1
-                    usage1 = int(round(float(value), 0))
-                    usage2 = cur_usage2
-                    return1 = cur_return1
-                    return2 = cur_return2
-                    if usage1 == cur_usage1:
-                        # Skip update as there is no consumption
-                        return
+            sValue = abs(value)
+            self.log.logging(["Widget","Electric"], "Debug", "------>PowerNegative  : %s" % sValue, NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-                elif Attribute_ in ("0102", "0106", "010a"):
-                    # Usage 2
-                    usage1 = cur_usage1
-                    usage2 = int(round(float(value), 0))
-                    return1 = cur_return1
-                    return2 = cur_return2
-                    if usage2 == cur_usage2:
-                        # Skip update as there is no consumption
-                        return
+        if WidgetType == "ProdPower" and Attribute_ == "0016":
+            sValue = value
+            self.log.logging(["Widget","Electric"], "Debug", "------> Puissance injectée  : %s" % sValue, NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-                if tarif_color == "Blue" and Ep != "01" or tarif_color == "White" and Ep != "f2" or tarif_color == "Red" and Ep != "f3":
-                    cons = 0.0
+        if (
+            WidgetType == "P1Meter_ZL" 
+            and "Model" in self.ListOfDevices[NwkId] 
+            and self.ListOfDevices[NwkId]["Model"] in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a")
+            ):
 
-                sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, cur_prod)
-                self.log.logging(["ZLinky","Electric"], "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
-
-        if "Meter" in ClusterType:  # Meter Usage.
+            if Attribute_ != "050f" and Ep == "01" and Attribute_ not in ("0100", "0102"):
+                # Ep = 01, so we store Base, or HP,HC, or BBRHCJB, BBRHPJB
+                return
+            if Attribute_ != "050f" and Ep == "f2" and Attribute_ not in ("0104", "0106"):
+                # Ep = f2, so we store BBRHCJW, BBRHPJW
+                return
+            if Attribute_ != "050f" and Ep == "f3" and Attribute_ not in ("0108", "010a"):
+                # Ep == f3, so we store BBRHCJR, BBRHPJR
+                return
             
-            if WidgetType == "GazMeter" and Attribute_ == "0000":
-                # Gaz Meter 
-                sValue = "%s" %value
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
-                
-            elif WidgetType == "Counter" and Attribute_ == "0000":
-                sValue = "%s" %int(value)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+            tarif_color = get_tarif_color( self, NwkId )
 
-            elif WidgetType == "ConsoMeter" and Attribute_ == "0000":
-                # Consummed Energy
-                sValue = "%s" %int(value)
-                self.log.logging(["Widget", "Electric"], "Debug", "------>ConsoMeter  : %s" % sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+            self.log.logging(["ZLinky","Electric"], "Debug", "------>  P1Meter_ZL : %s Attribute: %s  Color: %s (%s)" % (
+                value, Attribute_, tarif_color, type(value)), NwkId)
+            
+            # P1Meter report Instant and Cummulative Power.
+            # We need to retreive the Cummulative Power.
+            cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0")
+            usage1 = usage2 = return1 = return2 = cons = prod = 0
+            self.log.logging("ZLinky", "Debug", "------>  P1Meter_ZL (%s): retreive value: %s;%s;%s;%s;%s;%s" % (Ep, cur_usage1, cur_usage2, cur_return1, cur_return2, cur_cons, cur_prod), NwkId)
 
-            elif WidgetType == "ProdMeter" and Attribute_ == "0001":
-                # Produced Energy injected
-                sValue = "%s" %int(value)
-                self.log.logging(["Widget", "Electric"], "Debug", "------>Energie injectée totale  : %s" % sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+            # We are so receiving a usage update
+            self.log.logging( ["ZLinky","Electric"], "Debug", "------>  P1Meter_ZL : Trigger by Index Update %s Ep: %s" % (Attribute_, Ep), NwkId, )
+            cons = get_instant_power(self, NwkId)
+            if Attribute_ in ("0000", "0100", "0104", "0108"):
+                # Usage 1
+                usage1 = int(round(float(value), 0))
+                usage2 = cur_usage2
+                return1 = cur_return1
+                return2 = cur_return2
+                if usage1 == cur_usage1:
+                    # Skip update as there is no consumption
+                    return
 
-            elif WidgetType in ( "Meter", "P1Meter") and Attribute_ == "0000":
-                # Only Usage 1 ( Total Index)
-                self.log.logging(["Widget","Electric"], "Debug", "------>  %s : %s (%s)" % (WidgetType, value, type(value)), NwkId)
-                process_p1meters_meter_with_summation(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+            elif Attribute_ in ("0102", "0106", "010a"):
+                # Usage 2
+                usage1 = cur_usage1
+                usage2 = int(round(float(value), 0))
+                return1 = cur_return1
+                return2 = cur_return2
+                if usage2 == cur_usage2:
+                    # Skip update as there is no consumption
+                    return
 
-            elif WidgetType == "P1Meter_HPHC" and Attribute_ == "0100":  # HC
-                # Value represent Index (Summation) for Usage1
-                self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_HPHC - HC : %s (%s)" % (value, type(value)), NwkId)
-                process_p1meters_meter_with_summation(self, "P1Meter", Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+            if tarif_color == "Blue" and Ep != "01" or tarif_color == "White" and Ep != "f2" or tarif_color == "Red" and Ep != "f3":
+                cons = 0.0
 
-            elif WidgetType == "P1Meter_HPHC" and Attribute_ == "0102":  # HP
-                # Value represent Index (Summation) for Usage2
-                self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_HPHC - HP : %s (%s)" % (value, type(value)), NwkId)
-                process_p1meters_meter_with_summation(self, "P1Meter", Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+            sValue = "%s;%s;%s;%s;%s;%s" % (usage1, usage2, return1, return2, cons, cur_prod)
+            self.log.logging(["ZLinky","Electric"], "Debug", "------>  P1Meter_ZL (%s): %s" % (Ep, sValue), NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-            # value is string an represent the Instant Usage
-            elif (
-                "Model" in self.ListOfDevices[ NwkId ] 
-                and self.ListOfDevices[ NwkId ]["Model"] in ZLINK_CONF_MODEL
-                and WidgetType == "Meter" 
-                and ( 
-                    Attribute_ == "0000" 
-                    or ( Attribute_ in ("0100", "0102") and Ep == "01") 
-                    or ( Attribute_ in ("0104", "0106") and Ep == "f2")
-                    or ( Attribute_ in ("0108", "010a") and Ep == "f3")
-                    )
-                ):
-                check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)    
-                instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
-                summation = round(float(zlinky_sum_all_indexes( self, NwkId )), 2)
-                self.log.logging(["ZLinky","Electric"], "Debug", "------> Summation for Meter : %s" %summation, NwkId)
-                
-                sValue = "%s;%s" % (instant, summation)
-                self.log.logging(["ZLinky","Electric"], "Debug", "------>  : " + sValue, NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
-                
-            elif WidgetType == "Meter" and Attribute_ == "050f":
-                # We receive Instant Power
-                process_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
-
-            elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and ClusterId == "000c"):  # kWh
-                # We receive Instant
-                self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: '{Attribute_}' received {value}")
-                process_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
-
-        if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
-            # /json.htm?type=command&param=udevice&idx=IDX&nvalue=0&svalue=INCREMENT
-            # INCREMENT = Integer of the increment of the counter. 
-            # For Counters the standard counter dividers apply (menu setup - settings - tab counters)
-            # will increment the counter value by 1. 
-            # To reset an incremental counter, set the svalue to a negative integer equal to the current total of the counter. 
+    if "Meter" in ClusterType:  # Meter Usage.
+        
+        if WidgetType == "GazMeter" and Attribute_ == "0000":
+            # Gaz Meter 
             sValue = "%s" %value
-            self.log.logging("Widget", "Debug", "WaterCounter ------>  : %s" %sValue, NwkId)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-        if ClusterType == "Flow" and WidgetType == "Flow":
-            sValue = "%s" %value
-            self.log.logging("Widget", "Debug", "Waterflow measurement ------>  : %s" %sValue, NwkId)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-        if "Voltage" in ClusterType and (WidgetType == "Voltage" and Attribute_ == ""):
-            nValue = round(float(value), 2)
-            sValue = "%s" % nValue
-            self.log.logging(["Widget", "Electric"], "Debug", "------>  : " + sValue, NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+            
+        elif WidgetType == "Counter" and Attribute_ == "0000":
+            sValue = "%s" %int(value)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
-        if "ThermoSetpoint" in ClusterType and (WidgetType == "ThermoSetpoint" and Attribute_ in ("4003", "0012")):
-            setpoint = round(float(value), 2)
-            # Normalize SetPoint value with 2 digits
-            sValue = str_round(float(setpoint), 2)  # 2 decimals
-            self.log.logging("Widget", "Debug", "------>  Thermostat Setpoint: %s %s" % (0, setpoint), NwkId)
+        elif WidgetType == "ConsoMeter" and Attribute_ == "0000":
+            # Consummed Energy
+            sValue = "%s" %int(value)
+            self.log.logging(["Widget", "Electric"], "Debug", "------>ConsoMeter  : %s" % sValue, NwkId)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
-        if "Analog" in ClusterType:
-            if WidgetType == "Voc" and Attribute_ == "":
-                sValue = str( value )
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+        elif WidgetType == "ProdMeter" and Attribute_ == "0001":
+            # Produced Energy injected
+            sValue = "%s" %int(value)
+            self.log.logging(["Widget", "Electric"], "Debug", "------>Energie injectée totale  : %s" % sValue, NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "Motionac01" and Ep == "01":  # Motionac01
-                if value <= 7:
-                    nValue= value + 1
-                    sValue = str(nValue * 10)
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-            
-            elif WidgetType == "Analog":
-                # Analog Value from Analog Input cluster
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, value, BatteryLevel, SignalLevel)
+        elif WidgetType in ( "Meter", "P1Meter") and Attribute_ == "0000":
+            # Only Usage 1 ( Total Index)
+            self.log.logging(["Widget","Electric"], "Debug", "------>  %s : %s (%s)" % (WidgetType, value, type(value)), NwkId)
+            process_p1meters_meter_with_summation(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
 
-        if ("XCube" in ClusterType) or ("Analog" in ClusterType and model_name in ("lumi.sensor_cube.aqgl01", "lumi.sensor_cube")):  # XCube Aqara or Xcube
-            if WidgetType == "Aqara" :
-                self.log.logging(
-                    "Widget",
-                    "Debug",
-                    "-------->  XCube Aqara Ep: %s Attribute_: %s Value: %s = " % (Ep, Attribute_, value),
-                    NwkId,
+        elif WidgetType == "P1Meter_HPHC" and Attribute_ == "0100":  # HC
+            # Value represent Index (Summation) for Usage1
+            self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_HPHC - HC : %s (%s)" % (value, type(value)), NwkId)
+            process_p1meters_meter_with_summation(self, "P1Meter", Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+
+        elif WidgetType == "P1Meter_HPHC" and Attribute_ == "0102":  # HP
+            # Value represent Index (Summation) for Usage2
+            self.log.logging(["Widget","Electric"], "Debug", "------>  P1Meter_HPHC - HP : %s (%s)" % (value, type(value)), NwkId)
+            process_p1meters_meter_with_summation(self, "P1Meter", Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+
+        # value is string an represent the Instant Usage
+        elif (
+            "Model" in self.ListOfDevices[ NwkId ] 
+            and self.ListOfDevices[ NwkId ]["Model"] in ZLINK_CONF_MODEL
+            and WidgetType == "Meter" 
+            and ( 
+                Attribute_ == "0000" 
+                or ( Attribute_ in ("0100", "0102") and Ep == "01") 
+                or ( Attribute_ in ("0104", "0106") and Ep == "f2")
+                or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                 )
-                if Ep == "02" and Attribute_ == "":  # Magic Cube Aqara
-                    self.log.logging("Widget", "Debug", "---------->  XCube update device with data = " + str(value), NwkId)
+            ):
+            check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)    
+            instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
+            summation = round(float(zlinky_sum_all_indexes( self, NwkId )), 2)
+            self.log.logging(["ZLinky","Electric"], "Debug", "------> Summation for Meter : %s" %summation, NwkId)
+            
+            sValue = "%s;%s" % (instant, summation)
+            self.log.logging(["ZLinky","Electric"], "Debug", "------>  : " + sValue, NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+            
+        elif WidgetType == "Meter" and Attribute_ == "050f":
+            # We receive Instant Power
+            process_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+
+        elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and ClusterId == "000c"):  # kWh
+            # We receive Instant
+            self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: '{Attribute_}' received {value}")
+            process_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+
+    if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
+        # /json.htm?type=command&param=udevice&idx=IDX&nvalue=0&svalue=INCREMENT
+        # INCREMENT = Integer of the increment of the counter. 
+        # For Counters the standard counter dividers apply (menu setup - settings - tab counters)
+        # will increment the counter value by 1. 
+        # To reset an incremental counter, set the svalue to a negative integer equal to the current total of the counter. 
+        sValue = "%s" %value
+        self.log.logging("Widget", "Debug", "WaterCounter ------>  : %s" %sValue, NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+    if ClusterType == "Flow" and WidgetType == "Flow":
+        sValue = "%s" %value
+        self.log.logging("Widget", "Debug", "Waterflow measurement ------>  : %s" %sValue, NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+    if "Voltage" in ClusterType and (WidgetType == "Voltage" and Attribute_ == ""):
+        nValue = round(float(value), 2)
+        sValue = "%s" % nValue
+        self.log.logging(["Widget", "Electric"], "Debug", "------>  : " + sValue, NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
+    if "ThermoSetpoint" in ClusterType and (WidgetType == "ThermoSetpoint" and Attribute_ in ("4003", "0012")):
+        setpoint = round(float(value), 2)
+        # Normalize SetPoint value with 2 digits
+        sValue = str_round(float(setpoint), 2)  # 2 decimals
+        self.log.logging("Widget", "Debug", "------>  Thermostat Setpoint: %s %s" % (0, setpoint), NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
+    if "Analog" in ClusterType:
+        if WidgetType == "Voc" and Attribute_ == "":
+            sValue = str( value )
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
+        elif WidgetType == "Motionac01" and Ep == "01":  # Motionac01
+            if value <= 7:
+                nValue= value + 1
+                sValue = str(nValue * 10)
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        
+        elif WidgetType == "Analog":
+            # Analog Value from Analog Input cluster
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, value, BatteryLevel, SignalLevel)
+
+    if ("XCube" in ClusterType) or ("Analog" in ClusterType and model_name in ("lumi.sensor_cube.aqgl01", "lumi.sensor_cube")):  # XCube Aqara or Xcube
+        if WidgetType == "Aqara" :
+            self.log.logging(
+                "Widget",
+                "Debug",
+                "-------->  XCube Aqara Ep: %s Attribute_: %s Value: %s = " % (Ep, Attribute_, value),
+                NwkId,
+            )
+            if Ep == "02" and Attribute_ == "":  # Magic Cube Aqara
+                self.log.logging("Widget", "Debug", "---------->  XCube update device with data = " + str(value), NwkId)
+                nValue = int(value)
+                sValue = value
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+            elif Ep == "03":  # Magic Cube Aqara Rotation
+                if Attribute_ == "0055":  # Rotation Angle
+                    self.log.logging(
+                        "Widget",
+                        "Debug",
+                        "---------->  XCube update Rotaion Angle with data = " + str(value),
+                        NwkId,
+                    )
+                    # Update Text widget ( unit + 1 )
+                    nValue = 0
+                    sValue = value
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit + 1, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                else:
+                    self.log.logging("Widget", "Debug", "---------->  XCube update  with data = " + str(value), NwkId)
                     nValue = int(value)
                     sValue = value
+                    if nValue == 80:
+                        nValue = 8
+
+                    elif nValue == 90:
+                        nValue = 9
+
+                    self.log.logging(
+                        "Widget",
+                        "Debug",
+                        "-------->  XCube update device with data = %s , nValue: %s sValue: %s" % (value, nValue, sValue),
+                        NwkId,
+                    )
                     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-                elif Ep == "03":  # Magic Cube Aqara Rotation
-                    if Attribute_ == "0055":  # Rotation Angle
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "---------->  XCube update Rotaion Angle with data = " + str(value),
-                            NwkId,
-                        )
-                        # Update Text widget ( unit + 1 )
-                        nValue = 0
-                        sValue = value
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit + 1, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        elif WidgetType == "XCube" and Ep == "02":  # cube xiaomi
+            if value == "0000":  # shake
+                state = "10"
+                data = "01"
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-                    else:
-                        self.log.logging("Widget", "Debug", "---------->  XCube update  with data = " + str(value), NwkId)
-                        nValue = int(value)
-                        sValue = value
-                        if nValue == 80:
-                            nValue = 8
+            elif value in ("0204", "0200", "0203", "0201", "0202", "0205"):
+                state = "50"
+                data = "05"
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-                        elif nValue == 90:
-                            nValue = 9
+            elif value in ("0103", "0100", "0104", "0101", "0102", "0105"):  # Slide/M%ove
+                state = "20"
+                data = "02"
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-                        self.log.logging(
-                            "Widget",
-                            "Debug",
-                            "-------->  XCube update device with data = %s , nValue: %s sValue: %s" % (value, nValue, sValue),
-                            NwkId,
-                        )
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+            elif value == "0003":  # Free Fall
+                state = "70"
+                data = "07"
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-            elif WidgetType == "XCube" and Ep == "02":  # cube xiaomi
-                if value == "0000":  # shake
-                    state = "10"
-                    data = "01"
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+            elif "0004" <= value <= "0059":  # 90°
+                state = "30"
+                data = "03"
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-                elif value in ("0204", "0200", "0203", "0201", "0202", "0205"):
-                    state = "50"
-                    data = "05"
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+            elif value >= "0060":  # 180°
+                state = "90"
+                data = "09"
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-                elif value in ("0103", "0100", "0104", "0101", "0102", "0105"):  # Slide/M%ove
-                    state = "20"
-                    data = "02"
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+    if "Valve" in ClusterType and (WidgetType == "Valve" and Attribute_ in ("026d", "4001", "0008")):
+        self.log.logging("Widget", "Debug", "Valve (Pi Demand) %s WidgetType: %s Value: %s (%s) Attribute_: %s" % (
+            NwkId, WidgetType, value, type(value), Attribute_), NwkId)
+        sValue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
-                elif value == "0003":  # Free Fall
-                    state = "70"
-                    data = "07"
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+    if "ThermoMode" in ClusterType:  # Thermostat Mode
+        self.log.logging("Widget", "Debug", "ThermoMode %s WidgetType: %s Value: %s (%s) Attribute_: %s" % ( 
+            NwkId, WidgetType, value, type(value), Attribute_), NwkId)
 
-                elif "0004" <= value <= "0059":  # 90°
-                    state = "30"
-                    data = "03"
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                elif value >= "0060":  # 180°
-                    state = "90"
-                    data = "09"
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-        if "Valve" in ClusterType and (WidgetType == "Valve" and Attribute_ in ("026d", "4001", "0008")):
-            self.log.logging("Widget", "Debug", "Valve (Pi Demand) %s WidgetType: %s Value: %s (%s) Attribute_: %s" % (
-                NwkId, WidgetType, value, type(value), Attribute_), NwkId)
-            sValue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
-
-        if "ThermoMode" in ClusterType:  # Thermostat Mode
-            self.log.logging("Widget", "Debug", "ThermoMode %s WidgetType: %s Value: %s (%s) Attribute_: %s" % ( 
-                NwkId, WidgetType, value, type(value), Attribute_), NwkId)
-
-            if WidgetType == "ThermoModeEHZBRTS" and Attribute_ == "e010":  # Thermostat Wiser
-                # value is str
-                self.log.logging("Widget", "Debug", "------>  EHZBRTS Schneider Thermostat Mode %s" % value, NwkId)
-                THERMOSTAT_MODE = {
-                    0: "00",  # Mode Off
-                    1: "10",  # Manual
-                    2: "20",  # Schedule
-                    3: "30",  # Energy Saver
-                    4: "40",  # Schedule Energy Saver
-                    5: "50",  # Holiday Off
-                    6: "60",  # Holiday Frost Protection
-                }
-                _mode = int(value, 16)
-                if _mode in THERMOSTAT_MODE:
-                    nValue = _mode
-                    sValue = THERMOSTAT_MODE[_mode]
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "HeatingSwitch" and Attribute_ == "001c":
-                self.log.logging("Widget", "Debug", "------>  HeatingSwitch %s" % value, NwkId)
-                if value == 0:
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Off", BatteryLevel, SignalLevel)
-                elif value == 4:
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "On", BatteryLevel, SignalLevel)
-
-            elif WidgetType == "HeatingStatus" and Attribute_ == "0124":
-                self.log.logging("Widget", "Debug", "------>  HeatingStatus %s" % value, NwkId)
-                if value == 0:
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Not Heating", BatteryLevel, SignalLevel)
-                elif value == 1:
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "Heating", BatteryLevel, SignalLevel)
-
-            elif WidgetType == "ThermoOnOff" and Attribute_ == "6501":
-                self.log.logging("Widget", "Debug", "------>  Thermo On/Off %s" % value, NwkId)
-                if value == 0:
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Off", BatteryLevel, SignalLevel)
-                elif value == 1:
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "On", BatteryLevel, SignalLevel)
-
-            elif WidgetType == "HACTMODE" and Attribute_ == "e011":   # Wiser specific Fil Pilote
-                # value is str
-                self.log.logging("Widget", "Debug", "------>  ThermoMode HACTMODE: %s" % (value), NwkId)
-                THERMOSTAT_MODE = {0: "10", 1: "20"}  # Conventional heater  # fip enabled heater
-                _mode = ((int(value, 16) - 0x80) >> 1) & 1
-
-                if _mode in THERMOSTAT_MODE:
-                    sValue = THERMOSTAT_MODE[_mode]
-                    nValue = _mode + 1
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "LegranCableMode" and ClusterId == "fc01":    # Legrand
-                # value is str
-                self.log.logging("Widget", "Debug", "------>  Legrand Mode: %s" % (value), NwkId)
-                THERMOSTAT_MODE = {0x0100: "10", 0x0200: "20"}    # Conventional heater  # fip enabled heater
-                _mode = int(value, 16)
-
-                if _mode not in THERMOSTAT_MODE:
-                    return
-
+        if WidgetType == "ThermoModeEHZBRTS" and Attribute_ == "e010":  # Thermostat Wiser
+            # value is str
+            self.log.logging("Widget", "Debug", "------>  EHZBRTS Schneider Thermostat Mode %s" % value, NwkId)
+            THERMOSTAT_MODE = {
+                0: "00",  # Mode Off
+                1: "10",  # Manual
+                2: "20",  # Schedule
+                3: "30",  # Energy Saver
+                4: "40",  # Schedule Energy Saver
+                5: "50",  # Holiday Off
+                6: "60",  # Holiday Frost Protection
+            }
+            _mode = int(value, 16)
+            if _mode in THERMOSTAT_MODE:
+                nValue = _mode
                 sValue = THERMOSTAT_MODE[_mode]
-                nValue = int(sValue) // 10
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "FIP" and Attribute_ in ("0000", "e020"):     # Wiser specific Fil Pilote
-                # value is str
-                self.log.logging("Widget", "Debug", "------>  ThermoMode FIP: %s" % (value), NwkId)
-                FIL_PILOT_MODE = {
-                    0: "10",
-                    1: "20",  # confort -1
-                    2: "30",  # confort -2
-                    3: "40",  # eco
-                    4: "50",  # frost protection
-                    5: "60",
-                }
-                _mode = int(value, 16)
-                if _mode not in FIL_PILOT_MODE:
-                    return
+        elif WidgetType == "HeatingSwitch" and Attribute_ == "001c":
+            self.log.logging("Widget", "Debug", "------>  HeatingSwitch %s" % value, NwkId)
+            if value == 0:
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Off", BatteryLevel, SignalLevel)
+            elif value == 4:
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "On", BatteryLevel, SignalLevel)
+
+        elif WidgetType == "HeatingStatus" and Attribute_ == "0124":
+            self.log.logging("Widget", "Debug", "------>  HeatingStatus %s" % value, NwkId)
+            if value == 0:
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Not Heating", BatteryLevel, SignalLevel)
+            elif value == 1:
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "Heating", BatteryLevel, SignalLevel)
+
+        elif WidgetType == "ThermoOnOff" and Attribute_ == "6501":
+            self.log.logging("Widget", "Debug", "------>  Thermo On/Off %s" % value, NwkId)
+            if value == 0:
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Off", BatteryLevel, SignalLevel)
+            elif value == 1:
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "On", BatteryLevel, SignalLevel)
+
+        elif WidgetType == "HACTMODE" and Attribute_ == "e011":   # Wiser specific Fil Pilote
+            # value is str
+            self.log.logging("Widget", "Debug", "------>  ThermoMode HACTMODE: %s" % (value), NwkId)
+            THERMOSTAT_MODE = {0: "10", 1: "20"}  # Conventional heater  # fip enabled heater
+            _mode = ((int(value, 16) - 0x80) >> 1) & 1
+
+            if _mode in THERMOSTAT_MODE:
+                sValue = THERMOSTAT_MODE[_mode]
                 nValue = _mode + 1
-                sValue = FIL_PILOT_MODE[_mode]
-
-                if Attribute_ == "e020":      # Wiser specific Fil Pilote
-                    if "0201" in self.ListOfDevices[NwkId]["Ep"][Ep]:
-                        if "e011" in self.ListOfDevices[NwkId]["Ep"][Ep]["0201"]:
-                            if self.ListOfDevices[NwkId]["Ep"][Ep]["0201"]["e011"] != {} and self.ListOfDevices[NwkId]["Ep"][Ep]["0201"]["e011"] != "":
-                                _value_mode_hact = self.ListOfDevices[NwkId]["Ep"][Ep]["0201"]["e011"]
-                                _mode_hact = ((int(_value_mode_hact, 16) - 0x80)) & 1
-                                if _mode_hact == 0:
-                                    self.log.logging("Widget", "Debug", "------>  Disable FIP widget: %s" % (value), NwkId)
-                                    nValue = 0
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-                elif ClusterId == "fc40":  # Legrand FIP
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "ThermoMode_3" and Attribute_ == "001c":
-                #   0x00: Off
-                #   0x01: Confort
-                #   0x03: No-Freeze
-                if "ThermoMode_3" not in SWITCH_SELECTORS:
-                    return
-                if int(value) == 0x00:
-                    # Off # 00
-                    nValue = 0
-                    sValue = "Off"
-                elif int(value) == 0x01:
-                    # Confort # 10
-                    nValue = 1
-                    sValue = "10"
-                elif int(value) == 0x03:
-                    # No-Freeze # 20
-                    nValue = 2
-                    sValue = "20"
-                else:
-                    # Unknow
-                    self.log.logging("Widget", "Error", "MajDomoDevice - Unknown value for %s/%s, ClusterId: %s, value: %s, Attribute_=%s," % (NwkId, Ep, ClusterId, value, Attribute_), NwkId)
-                    return
-                self.log.logging("Widget", "Debug", "------>  Thermostat Mode 3 %s %s:%s" % (value, nValue, sValue), NwkId)
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "ThermoMode_2" and Attribute_ == "001c":
-                # Use by Tuya TRV
-                if "ThermoMode_2" not in SWITCH_SELECTORS:
-                    return
-                if value not in SWITCH_SELECTORS["ThermoMode_2"]:
-                    self.log.logging("Widget", "Error", "Unknown TermoMode2 value: %s" % value)
-                    return
-                nValue = SWITCH_SELECTORS["ThermoMode_2"][value][0]
-                sValue = SWITCH_SELECTORS["ThermoMode_2"][value][1]
-                self.log.logging("Widget", "Debug", "------>  Thermostat Mode 2 %s %s:%s" % (value, nValue, sValue), NwkId)
+        elif WidgetType == "LegranCableMode" and ClusterId == "fc01":    # Legrand
+            # value is str
+            self.log.logging("Widget", "Debug", "------>  Legrand Mode: %s" % (value), NwkId)
+            THERMOSTAT_MODE = {0x0100: "10", 0x0200: "20"}    # Conventional heater  # fip enabled heater
+            _mode = int(value, 16)
+
+            if _mode not in THERMOSTAT_MODE:
+                return
+
+            sValue = THERMOSTAT_MODE[_mode]
+            nValue = int(sValue) // 10
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+        elif WidgetType == "FIP" and Attribute_ in ("0000", "e020"):     # Wiser specific Fil Pilote
+            # value is str
+            self.log.logging("Widget", "Debug", "------>  ThermoMode FIP: %s" % (value), NwkId)
+            FIL_PILOT_MODE = {
+                0: "10",
+                1: "20",  # confort -1
+                2: "30",  # confort -2
+                3: "40",  # eco
+                4: "50",  # frost protection
+                5: "60",
+            }
+            _mode = int(value, 16)
+            if _mode not in FIL_PILOT_MODE:
+                return
+            nValue = _mode + 1
+            sValue = FIL_PILOT_MODE[_mode]
+
+            if Attribute_ == "e020":      # Wiser specific Fil Pilote
+                if "0201" in self.ListOfDevices[NwkId]["Ep"][Ep]:
+                    if "e011" in self.ListOfDevices[NwkId]["Ep"][Ep]["0201"]:
+                        if self.ListOfDevices[NwkId]["Ep"][Ep]["0201"]["e011"] != {} and self.ListOfDevices[NwkId]["Ep"][Ep]["0201"]["e011"] != "":
+                            _value_mode_hact = self.ListOfDevices[NwkId]["Ep"][Ep]["0201"]["e011"]
+                            _mode_hact = ((int(_value_mode_hact, 16) - 0x80)) & 1
+                            if _mode_hact == 0:
+                                self.log.logging("Widget", "Debug", "------>  Disable FIP widget: %s" % (value), NwkId)
+                                nValue = 0
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "ThermoMode_4" and Attribute_ == "001c":
-                # Use by Tuya TRV
-                nValue = value
-                sValue = '%02d' %( nValue * 10)
-                self.log.logging("Widget", "Debug", "------>  Thermostat Mode 4 %s %s:%s" % (value, nValue, sValue), NwkId)
+            elif ClusterId == "fc40":  # Legrand FIP
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType in ("ThermoMode_5", "ThermoMode_6") and Attribute_ == "001c":
-                # Use by Tuya TRV
-                nValue = value
-                sValue = '%02d' %( nValue * 10)
-                self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, nValue, sValue), NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-                
-            elif model_name == "TS0601-eTRV5" and WidgetType in ("ThermoMode_5",) and Attribute_ == "6501":   
-                if value == 0:
-                    self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, 0, '00'), NwkId)
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, '00', BatteryLevel, SignalLevel)
-                            
-            elif WidgetType in ("ThermoMode", "ACMode", ) and Attribute_ == "001c":
-                # value seems to come as int or str. To be fixed
-                self.log.logging("Widget", "Debug", "------>  Thermostat Mode %s type: %s" % (value, type(value)), NwkId)
-                if value in THERMOSTAT_MODE_2_LEVEL:
-                    if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "00", BatteryLevel, SignalLevel)
-                    elif THERMOSTAT_MODE_2_LEVEL[value] == "20":  # Cool
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "10", BatteryLevel, SignalLevel)
-                    elif THERMOSTAT_MODE_2_LEVEL[value] == "30":  # Heat
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 2, "20", BatteryLevel, SignalLevel)
-                    elif THERMOSTAT_MODE_2_LEVEL[value] == "40":  # Dry
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 3, "30", BatteryLevel, SignalLevel)
-                    elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 4, "40", BatteryLevel, SignalLevel)
-                        
-            elif WidgetType in ("CAC221ACMode", ) and Attribute_ == "001c":
-                self.log.logging("Widget", "Debug", "------>  Thermostat CAC221ACMode %s type: %s" % (value, type(value)), NwkId)
-                if value in THERMOSTAT_MODE_2_LEVEL:
-                    if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "00", BatteryLevel, SignalLevel)
-                    elif THERMOSTAT_MODE_2_LEVEL[value] == "10":  # Auto
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "10", BatteryLevel, SignalLevel)
-                    elif THERMOSTAT_MODE_2_LEVEL[value] == "20":  # Cool
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 2, "20", BatteryLevel, SignalLevel)
-                    elif THERMOSTAT_MODE_2_LEVEL[value] == "30":  # Heat
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 3, "30", BatteryLevel, SignalLevel)
-                    elif THERMOSTAT_MODE_2_LEVEL[value] == "40":  # Dry
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 4, "40", BatteryLevel, SignalLevel)
-                    elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 5, "50", BatteryLevel, SignalLevel)
-
-        if ClusterType == "PM25" and WidgetType == "PM25":
-            svalue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "PM25" and WidgetType == "SmokePPM":
-            svalue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-         
-        if ClusterType == "phMeter" and WidgetType == "phMeter":
-            self.log.logging("Widget", "Debug", "------>  pH: %s" % (value,), NwkId)
-            svalue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "ec" and WidgetType == "ec":
-            self.log.logging("Widget", "Debug", "------>  EC: %s" % (value,), NwkId)
-            svalue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "orp" and WidgetType == "orp":
-            self.log.logging("Widget", "Debug", "------>  ORP: %s" % (value,), NwkId)
-            svalue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "freeChlorine" and WidgetType == "freeChlorine":
-            self.log.logging("Widget", "Debug", "------>  FreeChlorine: %s" % (value,), NwkId)
-            svalue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "salinity" and WidgetType == "salinity":
-            self.log.logging("Widget", "Debug", "------>  Salinity: %s" % (value,), NwkId)
-            svalue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "tds" and WidgetType == "tds":
-            self.log.logging("Widget", "Debug", "------>  TDS: %s" % (value,), NwkId)
-            svalue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "RainIntensity" and WidgetType == "RainIntensity":
-            self.log.logging("Widget", "Debug", "------>  RainIntensity: %s" % (value,), NwkId)
-            svalue = str(value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
-            nValue = 0
-            sValue = "%s %% used" %( value, )
-            # This is Alarm for Air Purifier
-            if value >= 100:
-                # Red
-                nValue = 4
-            elif value >= 90:
-                # Orange
-                nValue = 3
-            elif value >= 70:
-                # Yellow
-                nValue = 2
-            else:
-                # Green
+        elif WidgetType == "ThermoMode_3" and Attribute_ == "001c":
+            #   0x00: Off
+            #   0x01: Confort
+            #   0x03: No-Freeze
+            if "ThermoMode_3" not in SWITCH_SELECTORS:
+                return
+            if int(value) == 0x00:
+                # Off # 00
+                nValue = 0
+                sValue = "Off"
+            elif int(value) == 0x01:
+                # Confort # 10
                 nValue = 1
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-            
-        if Attribute_ == "0006" and ClusterType == "FanControl" and WidgetType == "AirPurifierMode":
-            nValue = value
-            sValue = "%s" %(10 * value,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-    
-        if Attribute_ == "0007" and ClusterType == "FanControl" and WidgetType == "FanSpeed":
-            nValue = round(value, 1)
-            sValue = str(nValue)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if Attribute_ == "0001" and WidgetType == "OutDoorTemperature" and "OutDoorTemperature" in ClusterType:
-            nValue = value
-            sValue = "%s" %(value,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if Attribute_ == "0014" and WidgetType == "UnoccupiedHeatingSetpoint" and "UnoccupiedHeatingSetpoint" in ClusterType:
-            sValue = str_round(float(value), 2)
-            self.log.logging("Widget", "Debug", "------>  Thermostat UnOccupiedSetpoint: %s %s" % (0, sValue), NwkId)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
-
-        if Attribute_ == "0011" and WidgetType == "OccupiedCollingSetpoint" and "OccupiedCollingSetpoint" in ClusterType:
-            nValue = value
-            sValue = "%s" %(10 * value,)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
-            # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
-            nvalue = round(value, 0)
-            svalue = "%s" % (nvalue)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Temp" and WidgetType == "Voc" and Attribute_ == "0003":
-            # voc for VOC_Sensor from Nexturn is provided via Temp cluster
-            svalue = "%s" % (round(value, 1))
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Temp" and WidgetType == "CH2O" and Attribute_ == "0004":
-            # ch2o for Tuya Smart Air fis provided via Temp cluster
-            svalue = "%s" % (round(value, 2))
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Temp" and WidgetType == "CarbonDioxyde" and Attribute_ == "0005":
-            # CarbonDioxyde for Tuya Smart Air provided via Temp cluster
-            svalue = "%s" % (round(value, 1))
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Temp" and WidgetType in ("Temp", "Temp+Hum", "Temp+Hum+Baro") and Attribute_ == "":  # temperature
-            
-            if check_erratic_value(self, NwkId, "Temp", value, -50, 100):
-                # We got an erratic value, no update to Domoticz
-                self.log.logging(["Widget", "Temperature"], "Debug", "%s Receive an erratic Temp: %s, WidgetType: >%s<" % (
-                    NwkId, value, WidgetType), NwkId)
+                sValue = "10"
+            elif int(value) == 0x03:
+                # No-Freeze # 20
+                nValue = 2
+                sValue = "20"
+            else:
+                # Unknow
+                self.log.logging("Widget", "Error", "MajDomoDevice - Unknown value for %s/%s, ClusterId: %s, value: %s, Attribute_=%s," % (NwkId, Ep, ClusterId, value, Attribute_), NwkId)
                 return
-
-            self.log.logging(["Widget", "Temperature"], "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
-            adjvalue = temp_adjustement_value(self, Devices, NwkId, device_id_ieee, device_unit)
-
-            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0")
-
-            if WidgetType == "Temp":
-                NewSvalue = str(round(value + adjvalue, 1))
-                self.log.logging(["Widget", "Temperature"], "Debug", "------>  Temp update: %s" % (NewSvalue))
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "Temp+Hum":
-                NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat}"
-                self.log.logging(["Widget", "Temperature", "Humidity"], "Debug", "------>  Temp+Hum update:  %s" % (NewSvalue))
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "Temp+Hum+Baro":
-                NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat};{current_baro};{current_baro_forecast}"
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):  # humidite
-            self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
-            # Humidity Status
-            humi_status = calculate_humidity_status(value)
-            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0")
-
-            if WidgetType == "Humi":
-                NewSvalue = "%s" % humi_status
-                self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi update: %s - %s" % (value, NewSvalue))
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, value, NewSvalue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "Temp+Hum":
-                NewSvalue = f"{current_temp};{value};{humi_status}"
-                self.log.logging(["Widget", "Temperature", "Humidity"], "Debug", "------>  Temp+Hum update: %s" % (NewSvalue))
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "Temp+Hum+Baro":
-                NewSvalue = f"{current_temp};{value};{humi_status};{current_baro};{current_baro_forecast}"
-                self.log.logging(["Widget", "Temperature", "Humidity", "Barometer"], "Debug", "------>  Temp+Hum+Baro update: %s" % (NewSvalue))
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
-
-        if ClusterType == "Baro" and WidgetType in ("Baro", "Temp+Hum+Baro"):
-            self.log.logging(["Widget","Barometer"], "Debug", "------>  Baro: %s, WidgetType: %s" % (value, WidgetType), NwkId)
-            
-            adjvalue = baro_adjustement_value(self, Devices, NwkId, device_id_ieee, device_unit)
-
-            baroValue = round((value + adjvalue), 1)
-            self.log.logging(["Widget","Barometer"], "Debug", "------> Adj Value : %s from: %s to %s " % (adjvalue, value, baroValue), NwkId)
-            
-            Bar_forecast = calculate_baro_forecast(baroValue)
-            current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0")
-
-            if WidgetType == "Baro":
-                NewSvalue = f"{baroValue};{Bar_forecast}"
-                self.log.logging(["Widget","Barometer"], "Debug", "------>  Baro: %s, WidgetType: %s" % (NewSvalue, WidgetType), NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "Temp+Hum+Baro":
-                NewSvalue = f"{current_temp};{current_humi};{current_hum_stat};{baroValue};{Bar_forecast}"
-                self.log.logging(["Widget", "Temperature", "Humidity", "Barometer"], "Debug", "------>  Temp+Hum+Baro update: %s" % (NewSvalue))
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
-
-        if "BSO-Orientation" in ClusterType and WidgetType == "BSO-Orientation":
-            nValue = 1 + (round(int(value, 16) / 10))
-            if nValue > 10:
-                nValue = 10
-            sValue = str(nValue * 10)
-            self.log.logging("Widget", "Debug", " BSO-Orientation Angle: 0x%s/%s Converted into nValue: %s sValue: %s" % (value, int(value, 16), nValue, sValue))
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-            return
-
-        if ClusterType == "Switch" and WidgetType == "SwitchAlarm":
-            if isinstance(value, str):
-                nValue = int(value, 16)
-            else:
-                self.log.logging("Widget", "Error", "Looks like this value is not provided in str for %s/%s %s %s %s %s %s" %(
-                    NwkId, Ep, model_name, ClusterId, ClusterType, WidgetType, value))
-                nValue = value
-            sValue = "%02x" %nValue
+            self.log.logging("Widget", "Debug", "------>  Thermostat Mode 3 %s %s:%s" % (value, nValue, sValue), NwkId)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType == "ThermostatUI" and WidgetType =="KeypadLockout" and Attribute_ == "0001":
-            # Switch ChildLock
-            self.log.logging("Command", "Status", "mgtCommand : Switch %s ChildLock %s" % (bool(value), NwkId), NwkId)
-            nValue = value
-            sValue = "Off" if value == 0 else "On"
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-            return
-
-        if ClusterType == "TamperSwitch" and WidgetType == "SwitchAlarm":
-            nValue = value
-            sValue = "%02x" %nValue
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if "Notification" in ClusterType and WidgetType == "Notification":
-            # Notification
-            # value is a str containing all Orientation information to be updated on Text Widget
-            nValue = 0
-            sValue = value
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-                     
-        if ClusterType in ( "Motion", "Door",) and WidgetType == "Motion":
-            self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NwkId)
-            if isinstance(value, str):
-                nValue = int(value, 16)
-            else:
-                self.log.logging("Widget", "Error", "Looks like this value is not provided in str for %s/%s %s %s %s %s %s" %(
-                    NwkId, Ep, model_name, ClusterId, ClusterType, WidgetType, value))
-                nValue = value
-                
-            if nValue == 1:
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=True)
-            else:
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=False)
-            return
-
-        if ClusterType == "Switch" and WidgetType == "Tilt" and Attribute_ == "Tilt":
-            nValue = value
-            sValue = "%02x" %nValue
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-            return
-
-        if ClusterType == "Switch" and WidgetType == "Vibration" and Attribute_ == "Vibration":
-            nValue = value
-            sValue = "%02x" %nValue
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-            return
-        if (
-            WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff", "Motionac01") 
-            and ( 
-                ClusterType in ( "IAS_ACE", "Door", "Switch", "SwitchButton", "AqaraOppleMiddle", "Ikea_Round_5b", "Ikea_Round_OnOff", "Vibration", "OrviboRemoteSquare", "Button_3", "LumiLock", )
-                or (ClusterType == WidgetType == "DoorLock")
-                or (ClusterType == WidgetType == "Alarm")
-                or (ClusterType == "Alarm" and WidgetType == "Tamper")
-                or (ClusterType == "DoorLock" and WidgetType == "Vibration")
-                or (ClusterType == "FanControl" and WidgetType == "FanControl")
-                or ("ThermoMode" in ClusterType and WidgetType == "ACMode_2")
-                or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00")
-                or ("ThermoMode" in ClusterType and WidgetType == "ThermoMode_7" and Attribute_ == "001c")
-                or ("ThermoMode" in ClusterType and WidgetType == "ThermoMode_8" and Attribute_ == "001c")
-                or (WidgetType == "KF204Switch" and ClusterType in ("Switch", "Door"))
-                or (WidgetType == "Valve" and Attribute_ == "0014")
-                or ("ThermoMode" in ClusterType and WidgetType == "ThermoOnOff")
-                or ("Heiman" in ClusterType and WidgetType == "HeimanSceneSwitch")
-            )
-        ):
-
-            # Plug, Door, Switch, Button ...
-            # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
-            # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
-            self.log.logging( "Widget", "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" % (
-                NwkId, ClusterType, WidgetType, value), NwkId, )
-
-            if WidgetType == "Tamper" and ClusterType != "Alarm":
-                self.log.logging( "Widget", "Debug", "------> Generic Widget - %s rejecting WidgetType: %s and ClusterType: %s" %(
-                    NwkId, ClusterType, WidgetType), NwkId)
+        elif WidgetType == "ThermoMode_2" and Attribute_ == "001c":
+            # Use by Tuya TRV
+            if "ThermoMode_2" not in SWITCH_SELECTORS:
                 return
-
-            elif WidgetType == "LvlControl" and ClusterType == "Switch":
-                self.log.logging("Widget", "Debug", f"------> ClusterId: 0x0006 but we have to update a Dimmer value: {value}", NwkId)
-
-                nValue = int(value, 16)
-                sValue = prev_sValue
-
-                if is_dimmable_blind(self, Devices, device_id_ieee, device_unit):
-                    # Handle dimmable blinds with percentage display
-                    if value == "00":
-                        nValue, sValue = 0, "0"
-                    elif value == "01" and prev_sValue == "100":
-                        nValue, sValue = 1, "100"
-                    else:
-                        nValue = 2
-
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-            elif ClusterType == "Switch" and WidgetType == "Alarm":
-                pass
-            
-            elif ClusterType == "Door" and WidgetType in ( "Smoke", "DoorSensor"):
-                nValue = int(value)
-                if nValue == 0:
-                    sValue = "Off"
-                else:
-                    sValue = "On"
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-            elif WidgetType == "DSwitch":
-                # double switch avec EP different
-                _value = int(value)
-                if _value == 1 or _value == 0:
-                    if Ep == "01":
-                        nValue = 1
-                        sValue = "10"
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-                    elif Ep == "02":
-                        nValue = 2
-                        sValue = "20"
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-                    elif Ep == "03":
-                        nValue = 3
-                        sValue = "30"
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-            elif (WidgetType == "TuyaSirenHumi" and Attribute_ != "0172") or (WidgetType == "TuyaSirenTemp" and Attribute_ != "0171") or (WidgetType == "TuyaSiren" and Attribute_ != "0168"):
+            if value not in SWITCH_SELECTORS["ThermoMode_2"]:
+                self.log.logging("Widget", "Error", "Unknown TermoMode2 value: %s" % value)
                 return
+            nValue = SWITCH_SELECTORS["ThermoMode_2"][value][0]
+            sValue = SWITCH_SELECTORS["ThermoMode_2"][value][1]
+            self.log.logging("Widget", "Debug", "------>  Thermostat Mode 2 %s %s:%s" % (value, nValue, sValue), NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif WidgetType == "ThermoOnOff" and Attribute_ != "6501":
-                nValue = value
-                if nValue == 0:
-                    sValue = "Off"
+        elif WidgetType == "ThermoMode_4" and Attribute_ == "001c":
+            # Use by Tuya TRV
+            nValue = value
+            sValue = '%02d' %( nValue * 10)
+            self.log.logging("Widget", "Debug", "------>  Thermostat Mode 4 %s %s:%s" % (value, nValue, sValue), NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+        elif WidgetType in ("ThermoMode_5", "ThermoMode_6") and Attribute_ == "001c":
+            # Use by Tuya TRV
+            nValue = value
+            sValue = '%02d' %( nValue * 10)
+            self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, nValue, sValue), NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+            
+        elif model_name == "TS0601-eTRV5" and WidgetType in ("ThermoMode_5",) and Attribute_ == "6501":   
+            if value == 0:
+                self.log.logging("Widget", "Debug", "------>  Thermostat Mode 5 %s %s:%s" % (value, 0, '00'), NwkId)
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, '00', BatteryLevel, SignalLevel)
+                        
+        elif WidgetType in ("ThermoMode", "ACMode", ) and Attribute_ == "001c":
+            # value seems to come as int or str. To be fixed
+            self.log.logging("Widget", "Debug", "------>  Thermostat Mode %s type: %s" % (value, type(value)), NwkId)
+            if value in THERMOSTAT_MODE_2_LEVEL:
+                if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "00", BatteryLevel, SignalLevel)
+                elif THERMOSTAT_MODE_2_LEVEL[value] == "20":  # Cool
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "10", BatteryLevel, SignalLevel)
+                elif THERMOSTAT_MODE_2_LEVEL[value] == "30":  # Heat
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 2, "20", BatteryLevel, SignalLevel)
+                elif THERMOSTAT_MODE_2_LEVEL[value] == "40":  # Dry
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 3, "30", BatteryLevel, SignalLevel)
+                elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 4, "40", BatteryLevel, SignalLevel)
+                    
+        elif WidgetType in ("CAC221ACMode", ) and Attribute_ == "001c":
+            self.log.logging("Widget", "Debug", "------>  Thermostat CAC221ACMode %s type: %s" % (value, type(value)), NwkId)
+            if value in THERMOSTAT_MODE_2_LEVEL:
+                if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "00", BatteryLevel, SignalLevel)
+                elif THERMOSTAT_MODE_2_LEVEL[value] == "10":  # Auto
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "10", BatteryLevel, SignalLevel)
+                elif THERMOSTAT_MODE_2_LEVEL[value] == "20":  # Cool
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 2, "20", BatteryLevel, SignalLevel)
+                elif THERMOSTAT_MODE_2_LEVEL[value] == "30":  # Heat
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 3, "30", BatteryLevel, SignalLevel)
+                elif THERMOSTAT_MODE_2_LEVEL[value] == "40":  # Dry
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 4, "40", BatteryLevel, SignalLevel)
+                elif THERMOSTAT_MODE_2_LEVEL[value] == "50":  # Fan
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 5, "50", BatteryLevel, SignalLevel)
+
+    if ClusterType == "PM25" and WidgetType == "PM25":
+        svalue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "PM25" and WidgetType == "SmokePPM":
+        svalue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+        
+    if ClusterType == "phMeter" and WidgetType == "phMeter":
+        self.log.logging("Widget", "Debug", "------>  pH: %s" % (value,), NwkId)
+        svalue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "ec" and WidgetType == "ec":
+        self.log.logging("Widget", "Debug", "------>  EC: %s" % (value,), NwkId)
+        svalue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "orp" and WidgetType == "orp":
+        self.log.logging("Widget", "Debug", "------>  ORP: %s" % (value,), NwkId)
+        svalue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "freeChlorine" and WidgetType == "freeChlorine":
+        self.log.logging("Widget", "Debug", "------>  FreeChlorine: %s" % (value,), NwkId)
+        svalue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "salinity" and WidgetType == "salinity":
+        self.log.logging("Widget", "Debug", "------>  Salinity: %s" % (value,), NwkId)
+        svalue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "tds" and WidgetType == "tds":
+        self.log.logging("Widget", "Debug", "------>  TDS: %s" % (value,), NwkId)
+        svalue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "RainIntensity" and WidgetType == "RainIntensity":
+        self.log.logging("Widget", "Debug", "------>  RainIntensity: %s" % (value,), NwkId)
+        svalue = str(value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "Alarm" and WidgetType == "AirPurifierAlarm":
+        nValue = 0
+        sValue = "%s %% used" %( value, )
+        # This is Alarm for Air Purifier
+        if value >= 100:
+            # Red
+            nValue = 4
+        elif value >= 90:
+            # Orange
+            nValue = 3
+        elif value >= 70:
+            # Yellow
+            nValue = 2
+        else:
+            # Green
+            nValue = 1
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+        
+    if Attribute_ == "0006" and ClusterType == "FanControl" and WidgetType == "AirPurifierMode":
+        nValue = value
+        sValue = "%s" %(10 * value,)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+    if Attribute_ == "0007" and ClusterType == "FanControl" and WidgetType == "FanSpeed":
+        nValue = round(value, 1)
+        sValue = str(nValue)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+    if Attribute_ == "0001" and WidgetType == "OutDoorTemperature" and "OutDoorTemperature" in ClusterType:
+        nValue = value
+        sValue = "%s" %(value,)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+    if Attribute_ == "0014" and WidgetType == "UnoccupiedHeatingSetpoint" and "UnoccupiedHeatingSetpoint" in ClusterType:
+        sValue = str_round(float(value), 2)
+        self.log.logging("Widget", "Debug", "------>  Thermostat UnOccupiedSetpoint: %s %s" % (0, sValue), NwkId)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
+
+    if Attribute_ == "0011" and WidgetType == "OccupiedCollingSetpoint" and "OccupiedCollingSetpoint" in ClusterType:
+        nValue = value
+        sValue = "%s" %(10 * value,)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "Temp" and WidgetType == "AirQuality" and Attribute_ == "0002":
+        # eco2 for VOC_Sensor from Nexturn is provided via Temp cluster
+        nvalue = round(value, 0)
+        svalue = "%s" % (nvalue)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nvalue, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "Temp" and WidgetType == "Voc" and Attribute_ == "0003":
+        # voc for VOC_Sensor from Nexturn is provided via Temp cluster
+        svalue = "%s" % (round(value, 1))
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "Temp" and WidgetType == "CH2O" and Attribute_ == "0004":
+        # ch2o for Tuya Smart Air fis provided via Temp cluster
+        svalue = "%s" % (round(value, 2))
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "Temp" and WidgetType == "CarbonDioxyde" and Attribute_ == "0005":
+        # CarbonDioxyde for Tuya Smart Air provided via Temp cluster
+        svalue = "%s" % (round(value, 1))
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, svalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "Temp" and WidgetType in ("Temp", "Temp+Hum", "Temp+Hum+Baro") and Attribute_ == "":  # temperature
+        
+        if check_erratic_value(self, NwkId, "Temp", value, -50, 100):
+            # We got an erratic value, no update to Domoticz
+            self.log.logging(["Widget", "Temperature"], "Debug", "%s Receive an erratic Temp: %s, WidgetType: >%s<" % (
+                NwkId, value, WidgetType), NwkId)
+            return
+
+        self.log.logging(["Widget", "Temperature"], "Debug", "------>  Temp: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
+        adjvalue = temp_adjustement_value(self, Devices, NwkId, device_id_ieee, device_unit)
+
+        current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0")
+
+        if WidgetType == "Temp":
+            NewSvalue = str(round(value + adjvalue, 1))
+            self.log.logging(["Widget", "Temperature"], "Debug", "------>  Temp update: %s" % (NewSvalue))
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
+
+        elif WidgetType == "Temp+Hum":
+            NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat}"
+            self.log.logging(["Widget", "Temperature", "Humidity"], "Debug", "------>  Temp+Hum update:  %s" % (NewSvalue))
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
+
+        elif WidgetType == "Temp+Hum+Baro":
+            NewSvalue = f"{round(value + adjvalue, 1)};{current_humi};{current_hum_stat};{current_baro};{current_baro_forecast}"
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "Humi" and WidgetType in ("Humi", "Temp+Hum", "Temp+Hum+Baro"):  # humidite
+        self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi: %s, WidgetType: >%s<" % (value, WidgetType), NwkId)
+        # Humidity Status
+        humi_status = calculate_humidity_status(value)
+        current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0")
+
+        if WidgetType == "Humi":
+            NewSvalue = "%s" % humi_status
+            self.log.logging(["Widget", "Humidity"], "Debug", "------>  Humi update: %s - %s" % (value, NewSvalue))
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, value, NewSvalue, BatteryLevel, SignalLevel)
+
+        elif WidgetType == "Temp+Hum":
+            NewSvalue = f"{current_temp};{value};{humi_status}"
+            self.log.logging(["Widget", "Temperature", "Humidity"], "Debug", "------>  Temp+Hum update: %s" % (NewSvalue))
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
+
+        elif WidgetType == "Temp+Hum+Baro":
+            NewSvalue = f"{current_temp};{value};{humi_status};{current_baro};{current_baro_forecast}"
+            self.log.logging(["Widget", "Temperature", "Humidity", "Barometer"], "Debug", "------>  Temp+Hum+Baro update: %s" % (NewSvalue))
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "Baro" and WidgetType in ("Baro", "Temp+Hum+Baro"):
+        self.log.logging(["Widget","Barometer"], "Debug", "------>  Baro: %s, WidgetType: %s" % (value, WidgetType), NwkId)
+        
+        adjvalue = baro_adjustement_value(self, Devices, NwkId, device_id_ieee, device_unit)
+
+        baroValue = round((value + adjvalue), 1)
+        self.log.logging(["Widget","Barometer"], "Debug", "------> Adj Value : %s from: %s to %s " % (adjvalue, value, baroValue), NwkId)
+        
+        Bar_forecast = calculate_baro_forecast(baroValue)
+        current_temp, current_humi, current_hum_stat, current_baro, current_baro_forecast = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0")
+
+        if WidgetType == "Baro":
+            NewSvalue = f"{baroValue};{Bar_forecast}"
+            self.log.logging(["Widget","Barometer"], "Debug", "------>  Baro: %s, WidgetType: %s" % (NewSvalue, WidgetType), NwkId)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
+
+        elif WidgetType == "Temp+Hum+Baro":
+            NewSvalue = f"{current_temp};{current_humi};{current_hum_stat};{baroValue};{Bar_forecast}"
+            self.log.logging(["Widget", "Temperature", "Humidity", "Barometer"], "Debug", "------>  Temp+Hum+Baro update: %s" % (NewSvalue))
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, NewSvalue, BatteryLevel, SignalLevel)
+
+    if "BSO-Orientation" in ClusterType and WidgetType == "BSO-Orientation":
+        nValue = 1 + (round(int(value, 16) / 10))
+        nValue = min(nValue, 10)
+        sValue = str(nValue * 10)
+        self.log.logging("Widget", "Debug", " BSO-Orientation Angle: 0x%s/%s Converted into nValue: %s sValue: %s" % (value, int(value, 16), nValue, sValue))
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+        return
+
+    if ClusterType == "Switch" and WidgetType == "SwitchAlarm":
+        if isinstance(value, str):
+            nValue = int(value, 16)
+        else:
+            self.log.logging("Widget", "Error", "Looks like this value is not provided in str for %s/%s %s %s %s %s %s" %(
+                NwkId, Ep, model_name, ClusterId, ClusterType, WidgetType, value))
+            nValue = value
+        sValue = "%02x" %nValue
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+    if ClusterType == "ThermostatUI" and WidgetType =="KeypadLockout" and Attribute_ == "0001":
+        # Switch ChildLock
+        self.log.logging("Command", "Status", "mgtCommand : Switch %s ChildLock %s" % (bool(value), NwkId), NwkId)
+        nValue = value
+        sValue = "Off" if value == 0 else "On"
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+        return
+
+    if ClusterType == "TamperSwitch" and WidgetType == "SwitchAlarm":
+        nValue = value
+        sValue = "%02x" %nValue
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+    if "Notification" in ClusterType and WidgetType == "Notification":
+        # Notification
+        # value is a str containing all Orientation information to be updated on Text Widget
+        nValue = 0
+        sValue = value
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                    
+    if ClusterType in ( "Motion", "Door",) and WidgetType == "Motion":
+        self.log.logging("Widget", "Debug", "------> Motion %s" % (value), NwkId)
+        if isinstance(value, str):
+            nValue = int(value, 16)
+        else:
+            self.log.logging("Widget", "Error", "Looks like this value is not provided in str for %s/%s %s %s %s %s %s" %(
+                NwkId, Ep, model_name, ClusterId, ClusterType, WidgetType, value))
+            nValue = value
+            
+        if nValue == 1:
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "On", BatteryLevel, SignalLevel, ForceUpdate_=True)
+        else:
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Off", BatteryLevel, SignalLevel, ForceUpdate_=False)
+        return
+
+    if ClusterType == "Switch" and WidgetType == "Tilt" and Attribute_ == "Tilt":
+        nValue = value
+        sValue = "%02x" %nValue
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        return
+
+    if ClusterType == "Switch" and WidgetType == "Vibration" and Attribute_ == "Vibration":
+        nValue = value
+        sValue = "%02x" %nValue
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        return
+    if (
+        WidgetType not in ("ThermoModeEHZBRTS", "HeatingSwitch", "HeatingStatus", "ThermoMode_2", "ThermoMode_3", "ThermoSetpoint", "ThermoOnOff", "Motionac01") 
+        and ( 
+            ClusterType in ( "IAS_ACE", "Door", "Switch", "SwitchButton", "AqaraOppleMiddle", "Ikea_Round_5b", "Ikea_Round_OnOff", "Vibration", "OrviboRemoteSquare", "Button_3", "LumiLock", )
+            or (ClusterType == WidgetType == "DoorLock")
+            or (ClusterType == WidgetType == "Alarm")
+            or (ClusterType == "Alarm" and WidgetType == "Tamper")
+            or (ClusterType == "DoorLock" and WidgetType == "Vibration")
+            or (ClusterType == "FanControl" and WidgetType == "FanControl")
+            or ("ThermoMode" in ClusterType and WidgetType == "ACMode_2")
+            or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00")
+            or ("ThermoMode" in ClusterType and WidgetType == "ThermoMode_7" and Attribute_ == "001c")
+            or ("ThermoMode" in ClusterType and WidgetType == "ThermoMode_8" and Attribute_ == "001c")
+            or (WidgetType == "KF204Switch" and ClusterType in ("Switch", "Door"))
+            or (WidgetType == "Valve" and Attribute_ == "0014")
+            or ("ThermoMode" in ClusterType and WidgetType == "ThermoOnOff")
+            or ("Heiman" in ClusterType and WidgetType == "HeimanSceneSwitch")
+        )
+    ):
+
+        # Plug, Door, Switch, Button ...
+        # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
+        # So we might also have to manage case where we receive a On or Off for a LvlControl WidgetType like a dimming Bulb.
+        self.log.logging( "Widget", "Debug", "------> Generic Widget for %s ClusterType: %s WidgetType: %s Value: %s" % (
+            NwkId, ClusterType, WidgetType, value), NwkId, )
+
+        if WidgetType == "Tamper" and ClusterType != "Alarm":
+            self.log.logging( "Widget", "Debug", "------> Generic Widget - %s rejecting WidgetType: %s and ClusterType: %s" %(
+                NwkId, ClusterType, WidgetType), NwkId)
+            return
+
+        elif WidgetType == "LvlControl" and ClusterType == "Switch":
+            self.log.logging("Widget", "Debug", f"------> ClusterId: 0x0006 but we have to update a Dimmer value: {value}", NwkId)
+
+            nValue = int(value, 16)
+            sValue = prev_sValue
+
+            if is_dimmable_blind(self, Devices, device_id_ieee, device_unit):
+                # Handle dimmable blinds with percentage display
+                if value == "00":
+                    nValue, sValue = 0, "0"
+                elif value == "01" and prev_sValue == "100":
+                    nValue, sValue = 1, "100"
                 else:
-                    sValue = "On"
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
+                    nValue = 2
 
-            elif WidgetType == "DButton":
-                # double bouttons avec EP different lumi.sensor_86sw2
-                _value = int(value)
-                if _value == 1:
-                    if Ep == "01":
-                        nValue = 1
-                        sValue = "10"
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-                    elif Ep == "02":
-                        nValue = 2
-                        sValue = "20"
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                    elif Ep == "03":
-                        nValue = 3
-                        sValue = "30"
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-            elif WidgetType == "DButton_3":
-                # double bouttons avec EP different lumi.sensor_86sw2
-                _value = int(value)
-                data = "00"
-                state = "00"
-                if Ep == "01":
-                    if _value == 1:
-                        state = "10"
-                        data = "01"
-
-                    elif _value == 2:
-                        state = "20"
-                        data = "02"
-
-                    elif _value == 3:
-                        state = "30"
-                        data = "03"
-
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                elif Ep == "02":
-                    if _value == 1:
-                        state = "40"
-                        data = "04"
-
-                    elif _value == 2:
-                        state = "50"
-                        data = "05"
-
-                    elif _value == 3:
-                        state = "60"
-                        data = "06"
-
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-                elif Ep == "03":
-                    if _value == 1:
-                        state = "70"
-                        data = "07"
-
-                    elif _value == 2:
-                        state = "80"
-                        data = "08"
-
-                    elif _value == 3:
-                        state = "90"
-                        data = "09"
-
-                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-            elif WidgetType == "LvlControl" or WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
-                if switchType in (13, 14, 15, 16):
-                    # Required Numeric value
-                    if value == "00":
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
-
-                    else:
-                        # We are in the case of a Shutter/Blind inverse. If we receieve a Read Attribute telling it is On, great
-                        # We only update if the shutter was off before, otherwise we will keep its Level.
-                        if prev_nValue == 0 and prev_sValue == "Off":
-                            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "100", BatteryLevel, SignalLevel)
-                else:
-                    # Required Off and On
-                    if value == "00":
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Off", BatteryLevel, SignalLevel)
-
-                    else:
-                        if prev_sValue == "Off":
-                            # We do update only if this is a On/off
-                            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "On", BatteryLevel, SignalLevel)
-
-            elif WidgetType == "VenetianInverted" and model_name in ( "PR412", "CPR412", "CPR412-E") and ClusterId == "0006":
-                self.log.logging( "Widget", "Debug", "--++->  %s/%s ClusterType: %s Updating %s Value: %s" % (NwkId, Ep, ClusterType, WidgetType, value), NwkId, )
-                # nValue will depends if we are on % or not
-                if value == '01':
-                    nValue = 0
-                    sValue = "0"
-
-                elif value == '00':
-                    nValue = 1
-                    sValue = "100"
-
-                elif value == 'f0':
-                    nValue = 17
-                    sValue = "0"
-
-                self.log.logging("Widget", "Debug", "------>  %s %s/%s Value: %s:%s" % (WidgetType, NwkId, Ep, nValue, sValue), NwkId)
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
-
-            elif WidgetType in ("VenetianInverted", "Venetian", "WindowCovering", "VanneInverted", "Vanne", "Curtain", "CurtainInverted"):
-                _value = int(value, 16) if isinstance(value, str) else value
-                self.log.logging( "Widget", "Debug", "------>  Generic Widget for %s/%s ClusterType: %s Updating %s Value: %s" % (NwkId, Ep, ClusterType, WidgetType, _value), NwkId, )
-                if WidgetType in ("VenetianInverted", "VanneInverted"):
-                    _value = 100 - _value
-                    self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NwkId, Ep, _value), NwkId)
-                # nValue will depends if we are on % or not
-                if _value == 0:
-                    nValue = 0
-                elif _value == 100:
-                    nValue = 1
-                else:
-                    if switchType in (4, 15):
-                        nValue = 17
-                    else:
-                        nValue = 2
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, str(_value), BatteryLevel, SignalLevel)
-
-            elif (
-                ((ClusterType == "FanControl" and WidgetType == "FanControl") or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00"))
-                and model_name in ("AC211", "AC221", "CAC221")
-                and "Ep" in self.ListOfDevices[NwkId]
-                and WidgetEp in self.ListOfDevices[NwkId]["Ep"]
-                and "0201" in self.ListOfDevices[NwkId]["Ep"][WidgetEp]
-                and "001c" in self.ListOfDevices[NwkId]["Ep"][WidgetEp]["0201"]
-                and self.ListOfDevices[NwkId]["Ep"][WidgetEp]["0201"]["001c"] == 0x00
-            ):
-                # Thermo mode is Off, let's switch off Wing and Fan
-                self.log.logging("Widget", "Debug", "------> Switch off as System Mode is Off")
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "00", BatteryLevel, SignalLevel)
-
-            else:
-                if WidgetType in SWITCH_SELECTORS and value in SWITCH_SELECTORS[WidgetType]:
-                    self.log.logging("Widget", "Debug", "------> Auto Update %s" % str(SWITCH_SELECTORS[WidgetType][value]))
-
-                    selector_values = SWITCH_SELECTORS[WidgetType][value]
-
-                    if len(selector_values) == 2:
-                        nValue, sValue = selector_values
-                        _ForceUpdate = SWITCH_SELECTORS[WidgetType]["ForceUpdate"]
-
-                        self.log.logging("Widget", "Debug", f"------> Switch update WidgetType: {WidgetType} with {str(SWITCH_SELECTORS[WidgetType])}", NwkId)
-                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=_ForceUpdate)
-                    else:
-                        self.log.logging("Widget", "Error", f"------> len(SWITCH_SELECTORS[{WidgetType}][{value}]) == {len(selector_values)}", NwkId)
-                else:
-                    self.log.logging("Widget", "Debug", f"------> Auto Update requested for NwkId: {NwkId} {ClusterType} {WidgetType} {value} not found in SWITCH_SELECTORS")
-
-        if "WindowCovering" in ClusterType and WidgetType == "ShutterCalibration" and Attribute_ == "f001":
-            # Shutter Calibration
-            self.log.logging("Widget", "Debug", "------>  %s/%s ShutterCalibration : %s" % (NwkId, Ep, value), NwkId)
-            nValue = int( value, 16) if isinstance(value, str) else value
+        elif ClusterType == "Switch" and WidgetType == "Alarm":
+            pass
+        
+        elif ClusterType == "Door" and WidgetType in ( "Smoke", "DoorSensor"):
+            nValue = int(value)
             if nValue == 0:
                 sValue = "Off"
-            elif nValue == 1:
-                sValue = "On"
             else:
-                sValue = "%s" % value
+                sValue = "On"
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if "WindowCovering" in ClusterType and WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind") and Attribute_ != "f001":
-            self.log.logging(["Widget", "Electric"], "Debug", "------>  WindowCovering : %s" % value, NwkId)
-            nValue, sValue = _domo_convert_windows_covering( self, value, Devices, device_id_ieee, device_unit, NwkId, WidgetType )
+        elif WidgetType == "DSwitch":
+            # double switch avec EP different
+            _value = int(value)
+            if _value == 1 or _value == 0:
+                if Ep == "01":
+                    nValue = 1
+                    sValue = "10"
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+                elif Ep == "02":
+                    nValue = 2
+                    sValue = "20"
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+                elif Ep == "03":
+                    nValue = 3
+                    sValue = "30"
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+        elif (WidgetType == "TuyaSirenHumi" and Attribute_ != "0172") or (WidgetType == "TuyaSirenTemp" and Attribute_ != "0171") or (WidgetType == "TuyaSiren" and Attribute_ != "0168"):
+            return
+
+        elif WidgetType == "ThermoOnOff" and Attribute_ != "6501":
+            nValue = value
+            if nValue == 0:
+                sValue = "Off"
+            else:
+                sValue = "On"
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
+
+        elif WidgetType == "DButton":
+            # double bouttons avec EP different lumi.sensor_86sw2
+            _value = int(value)
+            if _value == 1:
+                if Ep == "01":
+                    nValue = 1
+                    sValue = "10"
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif Ep == "02":
+                    nValue = 2
+                    sValue = "20"
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif Ep == "03":
+                    nValue = 3
+                    sValue = "30"
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+        elif WidgetType == "DButton_3":
+            # double bouttons avec EP different lumi.sensor_86sw2
+            _value = int(value)
+            data = "00"
+            state = "00"
+            if Ep == "01":
+                if _value == 1:
+                    state = "10"
+                    data = "01"
+
+                elif _value == 2:
+                    state = "20"
+                    data = "02"
+
+                elif _value == 3:
+                    state = "30"
+                    data = "03"
+
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+            elif Ep == "02":
+                if _value == 1:
+                    state = "40"
+                    data = "04"
+
+                elif _value == 2:
+                    state = "50"
+                    data = "05"
+
+                elif _value == 3:
+                    state = "60"
+                    data = "06"
+
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+            elif Ep == "03":
+                if _value == 1:
+                    state = "70"
+                    data = "07"
+
+                elif _value == 2:
+                    state = "80"
+                    data = "08"
+
+                elif _value == 3:
+                    state = "90"
+                    data = "09"
+
+                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+        elif WidgetType == "LvlControl" or WidgetType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ):
+            if switchType in (13, 14, 15, 16):
+                # Required Numeric value
+                if value == "00":
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "0", BatteryLevel, SignalLevel)
+
+                else:
+                    # We are in the case of a Shutter/Blind inverse. If we receieve a Read Attribute telling it is On, great
+                    # We only update if the shutter was off before, otherwise we will keep its Level.
+                    if prev_nValue == 0 and prev_sValue == "Off":
+                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "100", BatteryLevel, SignalLevel)
+            else:
+                # Required Off and On
+                if value == "00":
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "Off", BatteryLevel, SignalLevel)
+
+                else:
+                    if prev_sValue == "Off":
+                        # We do update only if this is a On/off
+                        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 1, "On", BatteryLevel, SignalLevel)
+
+        elif WidgetType == "VenetianInverted" and model_name in ( "PR412", "CPR412", "CPR412-E") and ClusterId == "0006":
+            self.log.logging( "Widget", "Debug", "--++->  %s/%s ClusterType: %s Updating %s Value: %s" % (NwkId, Ep, ClusterType, WidgetType, value), NwkId, )
+            # nValue will depends if we are on % or not
+            if value == '01':
+                nValue = 0
+                sValue = "0"
+
+            elif value == '00':
+                nValue = 1
+                sValue = "100"
+
+            elif value == 'f0':
+                nValue = 17
+                sValue = "0"
+
+            self.log.logging("Widget", "Debug", "------>  %s %s/%s Value: %s:%s" % (WidgetType, NwkId, Ep, nValue, sValue), NwkId)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if "LvlControl" in ClusterType:  # LvlControl ( 0x0008)
-            self.log.logging("Widget", "Debug", "------>  LvlControl : %s" % value, NwkId)
-            tuple_value = _domo_convert_level_control( self, Devices, device_id_ieee, device_unit, value, NwkId, switchType, WidgetType, prev_nValue, prev_sValue)
-            if tuple_value :
-                update_domoticz_widget(self, Devices, device_id_ieee, device_unit, tuple_value[0], tuple_value[1], BatteryLevel, SignalLevel, ForceUpdate_=tuple_value[2])
+        elif WidgetType in ("VenetianInverted", "Venetian", "WindowCovering", "VanneInverted", "Vanne", "Curtain", "CurtainInverted"):
+            _value = int(value, 16) if isinstance(value, str) else value
+            self.log.logging( "Widget", "Debug", "------>  Generic Widget for %s/%s ClusterType: %s Updating %s Value: %s" % (NwkId, Ep, ClusterType, WidgetType, _value), NwkId, )
+            if WidgetType in ("VenetianInverted", "VanneInverted"):
+                _value = 100 - _value
+                self.log.logging("Widget", "Debug", "------>  Patching %s/%s Value: %s" % (NwkId, Ep, _value), NwkId)
+            # nValue will depends if we are on % or not
+            if _value == 0:
+                nValue = 0
+            elif _value == 100:
+                nValue = 1
+            else:
+                if switchType in (4, 15):
+                    nValue = 17
+                else:
+                    nValue = 2
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, str(_value), BatteryLevel, SignalLevel)
 
-        if ClusterType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ) and ClusterType == WidgetType:
-            self.log.logging(["Widget", "Electric"], "Debug", "------>  ColorControl %s : %s" % (ClusterType, value), NwkId)
-            
-            # We just manage the update of the Dimmer (Control Level)
-            nValue, sValue = _domo_convert_colorcontrol( self, value )
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
+        elif (
+            ((ClusterType == "FanControl" and WidgetType == "FanControl") or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00"))
+            and model_name in ("AC211", "AC221", "CAC221")
+            and "Ep" in self.ListOfDevices[NwkId]
+            and WidgetEp in self.ListOfDevices[NwkId]["Ep"]
+            and "0201" in self.ListOfDevices[NwkId]["Ep"][WidgetEp]
+            and "001c" in self.ListOfDevices[NwkId]["Ep"][WidgetEp]["0201"]
+            and self.ListOfDevices[NwkId]["Ep"][WidgetEp]["0201"]["001c"] == 0x00
+        ):
+            # Thermo mode is Off, let's switch off Wing and Fan
+            self.log.logging("Widget", "Debug", "------> Switch off as System Mode is Off")
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "00", BatteryLevel, SignalLevel)
 
-        if "Orientation" in ClusterType and WidgetType == "Orientation":
-            # Xiaomi Vibration
-            # value is a str containing all Orientation information to be updated on Text Widget
-            nValue, sValue = _domo_convert_orientation( value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+        else:
+            if WidgetType in SWITCH_SELECTORS and value in SWITCH_SELECTORS[WidgetType]:
+                self.log.logging("Widget", "Debug", "------> Auto Update %s" % str(SWITCH_SELECTORS[WidgetType][value]))
 
-        if "Strenght" in ClusterType and WidgetType == "Strenght":
-            # value is a str containing all Orientation information to be updated on Text Widget
-            nValue, sValue = _domo_convert_strenght( value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                selector_values = SWITCH_SELECTORS[WidgetType][value]
 
-        if "Distance" in ClusterType and WidgetType == "Distance":
-            # value is a str containing all Distance information in cm
-            nValue, sValue = _domo_convert_distance( value )
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+                if len(selector_values) == 2:
+                    nValue, sValue = selector_values
+                    _ForceUpdate = SWITCH_SELECTORS[WidgetType]["ForceUpdate"]
 
-        if "Lux" in ClusterType and WidgetType == "Lux":
-            nValue, sValue = _domo_convert_lux( value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
+                    self.log.logging("Widget", "Debug", f"------> Switch update WidgetType: {WidgetType} with {str(SWITCH_SELECTORS[WidgetType])}", NwkId)
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=_ForceUpdate)
+                else:
+                    self.log.logging("Widget", "Error", f"------> len(SWITCH_SELECTORS[{WidgetType}][{value}]) == {len(selector_values)}", NwkId)
+            else:
+                self.log.logging("Widget", "Debug", f"------> Auto Update requested for NwkId: {NwkId} {ClusterType} {WidgetType} {value} not found in SWITCH_SELECTORS")
 
-        if "Lux" in ClusterType and WidgetType == "Lux20MinAverage" and Attribute_ == "ff00":
-            nValue, sValue = _domo_convert_lux( value)
-            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
+    if "WindowCovering" in ClusterType and WidgetType == "ShutterCalibration" and Attribute_ == "f001":
+        # Shutter Calibration
+        self.log.logging("Widget", "Debug", "------>  %s/%s ShutterCalibration : %s" % (NwkId, Ep, value), NwkId)
+        nValue = int( value, 16) if isinstance(value, str) else value
+        if nValue == 0:
+            sValue = "Off"
+        elif nValue == 1:
+            sValue = "On"
+        else:
+            sValue = "%s" % value
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        # Check if this Device belongs to a Group. In that case update group
-        CheckUpdateGroup(self, NwkId, Ep, ClusterId)
+    if "WindowCovering" in ClusterType and WidgetType in ("VenetianInverted", "Venetian", "Vanne", "VanneInverted", "WindowCovering", "Curtain", "CurtainInverted", "Blind") and Attribute_ != "f001":
+        self.log.logging(["Widget", "Electric"], "Debug", "------>  WindowCovering : %s" % value, NwkId)
+        nValue, sValue = _domo_convert_windows_covering( self, value, Devices, device_id_ieee, device_unit, NwkId, WidgetType )
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+
+    if "LvlControl" in ClusterType:  # LvlControl ( 0x0008)
+        self.log.logging("Widget", "Debug", "------>  LvlControl : %s" % value, NwkId)
+        tuple_value = _domo_convert_level_control( self, Devices, device_id_ieee, device_unit, value, NwkId, switchType, WidgetType, prev_nValue, prev_sValue)
+        if tuple_value :
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, tuple_value[0], tuple_value[1], BatteryLevel, SignalLevel, ForceUpdate_=tuple_value[2])
+
+    if ClusterType in ( "ColorControlRGB", "ColorControlWW", "ColorControlRGBWW", "ColorControlFull", "ColorControl", ) and ClusterType == WidgetType:
+        self.log.logging(["Widget", "Electric"], "Debug", "------>  ColorControl %s : %s" % (ClusterType, value), NwkId)
+        
+        # We just manage the update of the Dimmer (Control Level)
+        nValue, sValue = _domo_convert_colorcontrol( self, value )
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
+
+    if "Orientation" in ClusterType and WidgetType == "Orientation":
+        # Xiaomi Vibration
+        # value is a str containing all Orientation information to be updated on Text Widget
+        nValue, sValue = _domo_convert_orientation( value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+    if "Strenght" in ClusterType and WidgetType == "Strenght":
+        # value is a str containing all Orientation information to be updated on Text Widget
+        nValue, sValue = _domo_convert_strenght( value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+    if "Distance" in ClusterType and WidgetType == "Distance":
+        # value is a str containing all Distance information in cm
+        nValue, sValue = _domo_convert_distance( value )
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+    if "Lux" in ClusterType and WidgetType == "Lux":
+        nValue, sValue = _domo_convert_lux( value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
+
+    if "Lux" in ClusterType and WidgetType == "Lux20MinAverage" and Attribute_ == "ff00":
+        nValue, sValue = _domo_convert_lux( value)
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=False)
+
+    # Check if this Device belongs to a Group. In that case update group
+    CheckUpdateGroup(self, NwkId, Ep, ClusterId)
 
 # Helpers
 def get_meter_mode_from_widget(self, Devices, NwkId, DeviceId, Unit ):

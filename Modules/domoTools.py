@@ -241,7 +241,7 @@ def reset_switch_selector_PushButton(self, Devices, NwkId, WidgetType, DeviceId_
 
     options = domo_read_Options(self, Devices, DeviceId_, Unit_)
     if "LevelOffHidden" in options and options["LevelOffHidden"] == "false":
-            sValue = "00"
+        sValue = "00"
 
     domo_update_api(self, Devices, DeviceId_, Unit_, nValue=0, sValue=sValue)
     self.log.logging("WidgetReset", "Debug", "reset_switch_selector_PushButton - Last update of the device %s WidgetType: %s was %s ago" % (Unit_, WidgetType, (now - lastupdate)), NwkId)
@@ -484,6 +484,7 @@ CLUSTER_TO_TYPE = {
     "fc00": "LvlControl", 
     "fc21": "BSO-Orientation", 
     "rmt1": "Ikea_Round_5b", 
+    "LiquidLevel": "LiquidLevel",
     "LumiLock": "LumiLock", 
     "Strenght": "Strenght",
     "Orientation": "Orientation", 

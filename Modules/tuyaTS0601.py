@@ -99,8 +99,8 @@ def sensor_type( self, Devices, NwkId, Ep, value, dp, datatype, data, dps_mappin
     
     self.log.logging("Tuya0601", "Debug", "                - after sensor_type() value: %s divisor: %s rounding: %s" % (value, divisor, rounding), NwkId)
    
-    sensor_type = dps_mapping_item[ "sensor_type"]
-    return process_sensor_data(self, sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep)
+    _sensor_type = dps_mapping_item[ "sensor_type"]
+    return process_sensor_data(self, _sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep)
 
 
 def ts0601_actuator( self, NwkId, command, value=None):
@@ -172,10 +172,10 @@ def ts0601_actuator( self, NwkId, command, value=None):
 
 
 # Helpers
-def process_sensor_data(self, sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep):
-    if sensor_type in DP_SENSOR_FUNCTION:
+def process_sensor_data(self, _sensor_type, dps_mapping_item, value, Devices, NwkId, domo_ep):
+    if _sensor_type in DP_SENSOR_FUNCTION:
         formatted_value = check_domo_format_req(self, dps_mapping_item, value)
-        sensor_function = DP_SENSOR_FUNCTION[sensor_type]
+        sensor_function = DP_SENSOR_FUNCTION[_sensor_type]
         sensor_function(self, Devices, NwkId, domo_ep, formatted_value)
         return True
     return False
@@ -245,13 +245,13 @@ def ts0601_motion(self, Devices, nwkid, ep, value):
 def ts0601_vibration(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_vibration - vibration %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Vibration", value)
-    MajDomoDevice(self, Devices, nwkid, ep, "0006", int(value), Attribute_= "Vibration" )
+    MajDomoDevice(self, Devices, nwkid, ep, "0006", int(value), Attribute_="Vibration" )
 
 
 def ts0601_tilt(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_tilt - Tilt %s %s %s" % (nwkid, ep, value), nwkid)
     store_tuya_attribute(self, nwkid, "Tilt", value)
-    MajDomoDevice(self, Devices, nwkid, ep, "0006", int(value), Attribute_= "Tilt" )
+    MajDomoDevice(self, Devices, nwkid, ep, "0006", int(value), Attribute_="Tilt" )
 
 
 def ts0601_tuya_presence_state(self, Devices, nwkid, ep, value):
@@ -829,7 +829,81 @@ def _ts0601_vibration_tilt(self, Devices, nwkid, ep, coord_x, coord_y, coord_z):
         Attribute_="0508"
     )
 
+
+def ts0601_liquid_state(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_liquid_state - Nwkid: %s/%s State: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "liquid_state", value)
+
+
+def ts0601_liquid_depth(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_liquid_depth - Nwkid: %s/%s Depth: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "liquid_depth", value)
+
+
+def ts0601_param_liquid_max_set(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_param_liquid_max_set - Nwkid: %s/%s liquid_max_set: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "liquid_max_set", value)
+    _update_device_parameter(self, Devices, nwkid, "liquid_max_set", value)
+
+
+def ts0601_param_liquid_mini_set(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_pparam_liquid_mini_set - Nwkid: %s/%s liquid_mini_set: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "liquid_mini_set", value)
+    _update_device_parameter(self, Devices, nwkid, "liquid_mini_set", value)
+
+
+def ts0601_liquid_installation_height(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_liquid_installation_height - Nwkid: %s/%s installation_height: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "liquid_installation_height", value)
+    _update_device_parameter(self, Devices, nwkid, "liquid_installation_height", value)
+
+
+def ts0601_liquid_depth_max(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_liquid_depth_max - Nwkid: %s/%s liquid_depth_max: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "liquid_depth_max", value)
+    _update_device_parameter(self, Devices, nwkid, "liquid_depth_max", value)
+
+
+def ts0601_liquid_level_percent(self, Devices, nwkid, ep, value):
+    self.log.logging("Tuya0601", "Debug", "ts0601_liquid_level_percent - Nwkid: %s/%s liquid_level_percent: %s" % (nwkid, ep, value))
+    store_tuya_attribute(self, nwkid, "liquid_level_percent", value)
+    _update_device_parameter(self, Devices, nwkid, "liquid_level_percent", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "LiquidLevel", value)
+
+
+def _update_device_parameter(self, Devices, nwkid, parameter, value):
+    self.log.logging("Tuya0601", "Debug", "_update_device_parameter - Nwkid: %s/%s value: %s" % (nwkid, type(value), value))
+
+    device = self.ListOfDevices.get(nwkid)
+    if not device:
+        self.log.logging("Tuya0601", "Debug", f"_update_device_parameter - Unknown nwkid: {nwkid}")
+        return
+
+    param = device.get("Param")
+    if not isinstance(param, dict):
+        self.log.logging("Tuya0601", "Debug", f"_update_device_parameter - 'Param' missing or invalid for nwkid: {nwkid}")
+        return
+
+    # Optional: validate value, e.g. if it must be a float:
+    if not isinstance(value, (int, float)):
+        self.log.logging("Tuya0601", "Debug", f"_update_device_parameter - Invalid value type for nwkid: {nwkid}: {value}")
+        return
+
+    # Update the parameter in the device's parameters
+    prev_value = param.get(parameter)
+    self.log.logging("Tuya0601", "Debug", f"_update_device_parameter - nwkid: {nwkid}: from: {prev_value} to {value}")
+    param[ parameter ] = value
+
+
 DP_SENSOR_FUNCTION = {
+    
+    "liquid_state": ts0601_liquid_state,
+    "liquid_depth": ts0601_liquid_depth,
+    "param_liquid_max_set": ts0601_param_liquid_max_set,
+    "param_liquid_mini_set": ts0601_param_liquid_mini_set,
+    "liquid_installation_height": ts0601_liquid_installation_height,
+    "liquid_depth_max": ts0601_liquid_depth_max,
+    "liquid_level_percent": ts0601_liquid_level_percent,
     "curtain_state": ts0601_curtain_state,
     "curtain_level": ts0601_curtain_level,
     "curtain_calibration": ts0601_curtain_calibration,
@@ -1421,7 +1495,58 @@ def ts0601_action_vibration_sensitivity(self, nwkid, ep, dp, value=None):
     ts0601_tuya_cmd(self, nwkid, ep, action, data)
 
 
+def ts0601_action_param_liquid_max_set(self, nwkid, ep, dp, value=None):
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_param_liquid_max_set - Nwkid: %s/%s liquid_max_set: %s" % (nwkid, ep, value))
+    if value == -1 or value is None:
+        return
+    action = "%02x02" %dp
+    data = "%08x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
+def ts0601_action_param_liquid_mini_set(self, nwkid, ep, dp, value=None):
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_param_liquid_mini_set - Nwkid: %s/%s liquid_mini_set: %s" % (nwkid, ep, value))
+    if value == -1 or value is None:
+        return
+    action = "%02x02" %dp
+    data = "%08x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
+def ts0601_action_liquid_installation_height(self, nwkid, ep, dp, value=None):
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_liquid_installation_height - Nwkid: %s/%s installation_height: %s" % (nwkid, ep, value))
+    if value == -1 or value is None:
+        return
+    action = "%02x02" %dp
+    data = "%08x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
+def ts0601_action_liquid_depth_max(self, nwkid, ep, dp, value=None):
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_liquid_depth_max - Nwkid: %s/%s liquid_depth_max: %s" % (nwkid, ep, value))
+    if value == -1 or value is None:
+        return
+    action = "%02x02" %dp
+    data = "%08x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
+def ts0601_action_liquid_level_percent(self, nwkid, ep, dp, value=None):
+    self.log.logging("Tuya0601", "Debug", "ts0601_action_liquid_level_percent - Nwkid: %s/%s liquid_level_percent: %s" % (nwkid, ep, value))
+    if value == -1 or value is None:
+        return
+    action = "%02x02" %dp
+    data = "%08x" % value
+    ts0601_tuya_cmd(self, nwkid, ep, action, data)
+
+
 TS0601_COMMANDS = {
+    "liquid_max_set": ts0601_action_param_liquid_max_set,
+    "liquid_mini_set": ts0601_action_param_liquid_mini_set,
+    "liquid_installation_height": ts0601_action_liquid_installation_height,
+    "liquid_depth_max": ts0601_action_liquid_depth_max,
+    "liquid_level_percent": ts0601_action_liquid_level_percent,
+    
     "IndicatorStatus": ts0601_curtain_indicator_status,
     "CurtainState": ts0601_curtain_state_cmd,
     "CurtainLevel": ts0601_curtain_level_cmd,
