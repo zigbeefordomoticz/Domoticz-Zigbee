@@ -188,6 +188,8 @@ def LoadDeviceList(self):
         remove_legacy_topology_datas(self)
         
     for addr in self.ListOfDevices:
+        model_name = self.ListOfDevices[addr].get("Model", "")
+        
         # Fixing mistake done in the code.
         fixing_consumption_lumi(self, addr)
         fixing_iSQN_None(self, addr)
@@ -198,11 +200,15 @@ def LoadDeviceList(self):
         # Fixing TS0601 which has been removed.
         hack_ts0601(self, addr)
         
+        # Fixing GammaTroniques
+        if model_name in ("TICMeter",):
+            update_gamma_troniques_attributes_at_startup(self, addr)
+        
         # Check if 566 fixs are needed
         if (
             self.pluginconf.pluginConf["Bug566"] 
-            and "Model" in self.ListOfDevices[addr] 
-            and self.ListOfDevices[addr]["Model"] == "TRADFRI control outlet"
+            and model_name 
+            and model_name == "TRADFRI control outlet"
         ):
             fixing_Issue566(self, addr)
 
@@ -228,7 +234,7 @@ def LoadDeviceList(self):
         ):
             self.ListOfDevices[addr]["Health"] = "Disabled"
             
-        if "Model" in self.ListOfDevices[ addr ] and self.ListOfDevices[ addr ]["Model"] == "ZLinky_TIC":
+        if model_name and model_name == "ZLinky_TIC":
             # We need to adjust the Model to the right mode
             update_zlinky_device_model_if_needed(self, addr)
 
@@ -907,8 +913,8 @@ def cleanup_table_entries( self):
                         one_more_time = True
                         break
                     idx += 1
- 
-                    
+
+          
 def profalux_fix_remote_device_model(self):
     
     for x in self.ListOfDevices:
@@ -950,15 +956,15 @@ def hack_ts0601(self, nwkid):
         hack_ts0601_rename_model( self, nwkid, model_name, manuf_name)
         return
     hack_ts0601_error(self, nwkid, model_name, manufacturer=manuf_name)
-    
-        
+
+
 def hack_ts0601_error(self, nwkid, model, manufacturer=None):
     # Looks like we have a TS0601 and something wrong !!!
     self.log.logging("Tuya", "Error", "This device is not correctly configured, please contact us with the here after information")
     self.log.logging("Tuya", "Error", "    - Device        %s" %nwkid )
     self.log.logging("Tuya", "Error", "    - Model         %s" %model )
     self.log.logging("Tuya", "Error", "    - Manufacturer  %s" %manufacturer )
-            
+     
 
 def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
 
@@ -967,7 +973,8 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
     if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
         self.log.logging("Tuya", "Status", "Z4D adjusts Model name from %s to %s" %( modelName, suggested_model))
         self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model
-        
+
+
 def cleanup_ota(self, nwkid):
     
     if "OTAUpgrade" not in self.ListOfDevices[ nwkid ]:
@@ -991,3 +998,25 @@ def cleanup_ota(self, nwkid):
     if clean_ota:
         del self.ListOfDevices[ nwkid ]["OTAUpgrade"]
         self.ListOfDevices[ nwkid ]["OTAUpgrade"] = dict(clean_ota)
+
+
+def update_gamma_troniques_attributes_at_startup(self, nwkid):
+    """Update the GammaTroniques attributes at startup based on the Ep values."""
+    self.log.logging("GammaTroniques", "Debug", f"update_gamma_troniques_attributes_at_startup - Nwkid: {nwkid}")
+
+    device = self.ListOfDevices.get(nwkid)
+    ep01 = device.get('Ep', {}).get('01') if device else None
+
+    if not ep01:
+        self.log.logging("GammaTroniques", "Debug", f"update_gamma_troniques_attributes_at_startup - Nwkid: {nwkid} No infos found")
+        return
+
+    ff42_infos = ep01.get("ff42", {})
+    mode_tic = ff42_infos.get("002c")
+    mode_elect = ff42_infos.get("002a")
+
+    gamma = self.ListOfDevices[nwkid].setdefault("GammaTroniques", {})
+    if mode_tic is not None:
+        gamma["ModeTIC"] = mode_tic
+    if mode_elect is not None:
+        gamma["ModeElect"] = mode_elect
