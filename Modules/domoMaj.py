@@ -223,8 +223,12 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
             if WidgetType in ( "Meter", "P1Meter", "P1Meter_HPHC"):
-                self.log.logging(["Widget","Electric"], "Debug", "------> %s  : %s" % (WidgetType, value), NwkId)
-                process_p1meters_meter_with_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+                if WidgetType == "Meter" and model_name not in ZLINK_CONF_MODEL:
+                    # Will be updated when looking after Meter
+                    pass
+                else:
+                    self.log.logging(["Widget","Electric"], "Debug", "------> %s  : %s" % (WidgetType, value), NwkId)
+                    process_p1meters_meter_with_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
 
         if WidgetType == "ProdPower" and Attribute_ == "":
             if value > 0:
@@ -241,11 +245,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging(["Widget","Electric"], "Debug", "------> Puissance injectée  : %s" % sValue, NwkId)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
 
-        if (
-            WidgetType == "P1Meter_ZL" 
-            and "Model" in self.ListOfDevices[NwkId] 
-            and self.ListOfDevices[NwkId]["Model"] in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a")
-            ):
+        if (WidgetType == "P1Meter_ZL" and model_name in ZLINK_CONF_MODEL and Attribute_ in ( "0100", "0102", "0104", "0106", "0108", "010a")):
 
             if Attribute_ != "050f" and Ep == "01" and Attribute_ not in ("0100", "0102"):
                 # Ep = 01, so we store Base, or HP,HC, or BBRHCJB, BBRHPJB
@@ -321,7 +321,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             self.log.logging(["Widget", "Electric"], "Debug", "------>Energie injectée totale  : %s" % sValue, NwkId)
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
-        elif WidgetType in ( "Meter", "P1Meter") and Attribute_ == "0000":
+        elif WidgetType in ( "Meter", "P1Meter") and Attribute_ == "0000" and model_name not in ZLINK_CONF_MODEL:
             # Only Usage 1 ( Total Index)
             self.log.logging(["Widget","Electric"], "Debug", "------>  %s : %s (%s)" % (WidgetType, value, type(value)), NwkId)
             process_p1meters_meter_with_summation(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
@@ -338,8 +338,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
         # value is string an represent the Instant Usage
         elif (
-            "Model" in self.ListOfDevices[ NwkId ] 
-            and self.ListOfDevices[ NwkId ]["Model"] in ZLINK_CONF_MODEL
+            model_name in ZLINK_CONF_MODEL
             and WidgetType == "Meter" 
             and ( 
                 Attribute_ == "0000" 
@@ -348,6 +347,8 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                 or ( Attribute_ in ("0108", "010a") and Ep == "f3")
                 )
             ):
+            
+            # This is the case where we have to update Meter for ZLinky. We must use the Total Index for summation
             check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)    
             instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
             instant = int(float(instant))  # Force to int
