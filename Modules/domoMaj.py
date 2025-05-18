@@ -23,16 +23,13 @@ from Modules.domoticzAbstractLayer import (domo_check_unit,
                                            domo_read_SwitchType_SubType_Type,
                                            domo_update_api,
                                            find_widget_unit_from_WidgetID,
-                                           is_dimmable_blind,
-                                           is_dimmable_light,
-                                           is_dimmable_switch)
+                                           is_dimmable_blind)
 from Modules.domoTools import (RetreiveSignalLvlBattery,
                                RetreiveWidgetTypeList, TypeFromCluster,
                                remove_bad_cluster_type_entry,
                                update_domoticz_widget)
 from Modules.linky import linky_tarif_color
-from Modules.switchSelectorWidgets import (SWITCH_SELECTORS,
-                                           get_force_update_value_mapping)
+from Modules.switchSelectorWidgets import (SWITCH_SELECTORS)
 from Modules.tools import (get_deviceconf_parameter_value, str_round,
                            zigpy_plugin_sanity_check)
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
@@ -353,7 +350,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             ):
             check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)    
             instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
-            summation = round(float(zlinky_sum_all_indexes( self, NwkId )), 2)
+            summation = int(round(float(zlinky_sum_all_indexes( self, NwkId )), 2))
             self.log.logging(["ZLinky","Electric"], "Debug", "------> Summation for Meter : %s" %summation, NwkId)
             
             sValue = "%s;%s" % (instant, summation)
@@ -981,7 +978,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         elif WidgetType == "DSwitch":
             # double switch avec EP different
             _value = int(value)
-            if _value == 1 or _value == 0:
+            if _value in ( 1 , 0):
                 if Ep == "01":
                     nValue = 1
                     sValue = "10"
