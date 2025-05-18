@@ -10,11 +10,9 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-import time
 
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
-from Modules.tools import getAttributeValue
 
 ATTR_ZLINKY = "ZLinky"
 ATTR_PROTO_LINKY = "PROTOCOL Linky"
@@ -539,11 +537,15 @@ def zlinky_totalisateur(self, nwkid, attribute, value):
     zlinky_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault(ATTR_ZLINKY, {})
     index_mid_info = zlinky_info.setdefault("INDEX_MID", {"CompteurTotalisateur": 0})
 
+    zliny_index_cluster = self.ListOfDevices[nwkid].get("Ep", {}).get("01", {}).get("0702")
+    if zliny_index_cluster is None:
+        self.log.logging("ZLinky", "Error", f"zlinky_totalisateur: {nwkid} no 0702 cluster")
+        return
+
     total = 0
     for linky_index in ZLINKY_INDEX:
-        _index = getAttributeValue(self, nwkid, "01", "0702", linky_index)
-        if _index is not None:
-            total += _index
+        _index = zliny_index_cluster.get(linky_index,0)
+        total += _index
     
     prev_total = index_mid_info["CompteurTotalisateur"]
     index_mid_info["CompteurTotalisateur"] = total
