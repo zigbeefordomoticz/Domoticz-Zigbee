@@ -350,6 +350,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             ):
             check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)    
             instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
+            instant = int(instant)  # Force to int
             summation = int(round(float(zlinky_sum_all_indexes( self, NwkId )), 2))
             self.log.logging(["ZLinky","Electric"], "Debug", "------> Summation for Meter : %s" %summation, NwkId)
             
@@ -1295,7 +1296,7 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
         cur_usage1, cur_usage2, cur_return1, cur_return2, _, cur_prod = retrieve_data_from_current( self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0" )
 
     # Retrieve instant power consumption
-    instant_power = _retreive_instant_power(self, NwkId, Ep)
+    instant_power = int(_retreive_instant_power(self, NwkId, Ep))
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_summation - retreived instant power: {instant_power} ({type(instant_power)})", NwkId)
     if instant_power is None:
         return
@@ -1351,7 +1352,7 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
         
     # Convert value safely
     try:
-        instant_power = round(float(value), 2)  # Ensures proper conversion
+        instant_power = int(float(value), 2)  # Ensures proper conversion
 
     except ValueError:
         self.log.logging(["Widget", "Electric"], "Error", f"Invalid value received: {value}", NwkId)
@@ -1359,9 +1360,7 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
 
     if widget_type == "Meter":
         meter_mode = get_meter_mode_from_widget(self, Devices, NwkId, device_id_ieee, device_unit )
-        if meter_mode == 1 and currrent_usage == 0:
-            sValue = f"{instant_power};"
-        sValue = f"{instant_power};{currrent_usage}"
+        sValue = f"{instant_power};" if meter_mode == 1 and currrent_usage == 0 else f"{instant_power};{currrent_usage}"
 
     elif widget_type.startswith("P1Meter"):
         sValue = f"{cur_usage1};{cur_usage2};{cur_return1};{cur_return2};{instant_power};{cur_prod}"
