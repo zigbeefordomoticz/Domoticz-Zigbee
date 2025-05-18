@@ -1352,7 +1352,7 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
         
     # Convert value safely
     try:
-        instant_power = int(float(value), 2)  # Ensures proper conversion
+        instant_power = int(float(value))  # Ensures proper conversion
 
     except ValueError:
         self.log.logging(["Widget", "Electric"], "Error", f"Invalid value received: {value}", NwkId)
