@@ -351,7 +351,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             # This is the case where we have to update Meter for ZLinky. We must use the Total Index for summation
             check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)    
             instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
-            instant = float(instant, 2)
+            instant = round(float(instant), 2)
             summation = int(round(float(zlinky_sum_all_indexes( self, NwkId )), 2))
             self.log.logging(["ZLinky","Electric"], "Debug", "------> Summation for Meter : %s" %summation, NwkId)
             
@@ -1357,7 +1357,7 @@ def process_p1meters_meter_with_instant_power(self, widget_type, Attribute_, val
         
     # Convert value safely
     try:
-        instant_power = int(float(value))  # Ensures proper conversion
+        instant_power = round(float(value),2)
 
     except ValueError:
         self.log.logging(["Widget", "Electric"], "Error", f"Invalid value received: {value}", NwkId)
