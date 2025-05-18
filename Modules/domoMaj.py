@@ -350,7 +350,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             ):
             check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)    
             instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
-            instant = int(instant)  # Force to int
+            instant = int(float(instant))  # Force to int
             summation = int(round(float(zlinky_sum_all_indexes( self, NwkId )), 2))
             self.log.logging(["ZLinky","Electric"], "Debug", "------> Summation for Meter : %s" %summation, NwkId)
             

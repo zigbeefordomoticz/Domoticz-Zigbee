@@ -531,23 +531,41 @@ def zlinky_sum_all_indexes(self, nwkid):
 
 
 def zlinky_totalisateur(self, nwkid, attribute, value):
-    
-    ZLINKY_INDEX = { "0100", "0102", "0104", "0106", "0108", "010a"}
+    """
+    Updates the total energy consumption index ('CompteurTotalisateur') for a ZLinky device.
 
+    This method computes the sum of specific measurement indexes from the ZLinky 0702 cluster
+    and updates the stored total under the device's `INDEX_MID` dictionary.
+
+    Parameters:
+        nwkid (str): The network ID of the device.
+        attribute (str): The attribute name triggering the update (unused in this function).
+        value (Any): The new value received (unused in this function).
+
+    Notes:
+        - If the required 0702 cluster is not found under endpoint "01", an error is logged and the method exits.
+        - Only specific attribute keys are summed, as defined in `ZLINKY_INDEX_KEYS`.
+    """
+    ZLINKY_INDEX_KEYS = {"0100", "0102", "0104", "0106", "0108", "010a"}
+    ENDPOINT = "01"
+    CLUSTER_ID = "0702"
+
+    # Get device info or initialize structure
     zlinky_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault(ATTR_ZLINKY, {})
     index_mid_info = zlinky_info.setdefault("INDEX_MID", {"CompteurTotalisateur": 0})
 
-    zliny_index_cluster = self.ListOfDevices[nwkid].get("Ep", {}).get("01", {}).get("0702")
-    if zliny_index_cluster is None:
-        self.log.logging("ZLinky", "Error", f"zlinky_totalisateur: {nwkid} no 0702 cluster")
+    # Access the cluster
+    ep = self.ListOfDevices[nwkid].get("Ep", {})
+    cluster = ep.get(ENDPOINT, {}).get(CLUSTER_ID)
+
+    if cluster is None:
+        self.log.logging("ZLinky", "Error", f"zlinky_totalisateur: {nwkid} has no cluster {CLUSTER_ID}")
         return
 
-    total = 0
-    for linky_index in ZLINKY_INDEX:
-        _index = zliny_index_cluster.get(linky_index,0)
-        total += _index
-    
+    # Compute the total
+    total = sum(cluster.get(key, 0) for key in ZLINKY_INDEX_KEYS)
+
+    # Update and log
     prev_total = index_mid_info["CompteurTotalisateur"]
     index_mid_info["CompteurTotalisateur"] = total
-    self.log.logging("ZLinky", "Debug", f"zlinky_totalisateur from {prev_total} to {total} ")
-    
+    self.log.logging("ZLinky", "Debug", f"zlinky_totalisateur updated: {prev_total} → {total}")
