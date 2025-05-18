@@ -14,6 +14,7 @@ import time
 
 from Modules.pluginDbAttributes import (STORE_CONFIGURE_REPORTING,
                                         STORE_READ_CONFIGURE_REPORTING)
+from Modules.tools import getAttributeValue
 
 ATTR_ZLINKY = "ZLinky"
 ATTR_PROTO_LINKY = "PROTOCOL Linky"
@@ -532,11 +533,19 @@ def zlinky_sum_all_indexes(self, nwkid):
 
 
 def zlinky_totalisateur(self, nwkid, attribute, value):
+    
+    ZLINKY_INDEX = { "0100", "0102", "0104", "0106", "0108", "010a"}
+
     zlinky_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault(ATTR_ZLINKY, {})
     index_mid_info = zlinky_info.setdefault("INDEX_MID", {"CompteurTotalisateur": 0})
 
-    previous_index = index_mid_info.get(attribute, {}).get("Compteur", 0)
-    increment = value - previous_index
-
-    index_mid_info["CompteurTotalisateur"] += increment
-    index_mid_info[attribute] = {"TimeStamp": time.time(), "Compteur": value}
+    total = 0
+    for linky_index in ZLINKY_INDEX:
+        _index = getAttributeValue(self, nwkid, "01", "0702", linky_index)
+        if _index is not None:
+            total += _index
+    
+    prev_total = index_mid_info["CompteurTotalisateur"]
+    index_mid_info["CompteurTotalisateur"] = total
+    self.log.logging("ZLinky", "Debug", f"zlinky_totalisateur from {prev_total} to {total} ")
+    
