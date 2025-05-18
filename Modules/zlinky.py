@@ -525,9 +525,8 @@ def decode_STEG(stge):
 
 def zlinky_sum_all_indexes(self, nwkid):
     zlinky_info = self.ListOfDevices.get(nwkid, {}).get(ATTR_ZLINKY, {})
-    index_mid_info = zlinky_info.get("INDEX_MID", {})
+    return zlinky_info.get("INDEX_MID", {}).get("CompteurTotalisateur", 0)
 
-    return index_mid_info.get("CompteurTotalisateur", 0)
 
 
 def zlinky_totalisateur(self, nwkid, attribute, value):
@@ -553,7 +552,8 @@ def zlinky_totalisateur(self, nwkid, attribute, value):
     # Get device info or initialize structure
     zlinky_info = self.ListOfDevices.setdefault(nwkid, {}).setdefault(ATTR_ZLINKY, {})
     index_mid_info = zlinky_info.setdefault("INDEX_MID", {"CompteurTotalisateur": 0})
-
+    prev_total = index_mid_info["CompteurTotalisateur"]
+    
     # Access the cluster
     ep = self.ListOfDevices[nwkid].get("Ep", {})
     cluster = ep.get(ENDPOINT, {}).get(CLUSTER_ID)
@@ -566,6 +566,6 @@ def zlinky_totalisateur(self, nwkid, attribute, value):
     total = sum(cluster.get(key, 0) for key in ZLINKY_INDEX_KEYS)
 
     # Update and log
-    prev_total = index_mid_info["CompteurTotalisateur"]
+    
     index_mid_info["CompteurTotalisateur"] = total
-    self.log.logging("ZLinky", "Debug", f"zlinky_totalisateur updated: {prev_total} → {total}")
+    self.log.logging("ZLinky", "Debug", f"zlinky_totalisateur from: {prev_total} to {total}")

@@ -351,7 +351,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             # This is the case where we have to update Meter for ZLinky. We must use the Total Index for summation
             check_set_meter_widget( self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)    
             instant, _summation = retrieve_data_from_current(self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0")
-            instant = int(float(instant))  # Force to int
+            instant = float(instant, 2)
             summation = int(round(float(zlinky_sum_all_indexes( self, NwkId )), 2))
             self.log.logging(["ZLinky","Electric"], "Debug", "------> Summation for Meter : %s" %summation, NwkId)
             
@@ -361,12 +361,12 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             
         elif WidgetType == "Meter" and Attribute_ == "050f":
             # We receive Instant Power
-            process_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+            process_instant_power(self, model_name, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
 
         elif (WidgetType == "Meter" and Attribute_ == "") or (WidgetType == "Power" and ClusterId == "000c"):  # kWh
             # We receive Instant
             self.log.logging(["Widget","Electric"], "Debug", f"- {device_id_ieee} {device_unit} Instant Power via Attribute: '{Attribute_}' received {value}")
-            process_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
+            process_instant_power(self, model_name, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel)
 
     if "WaterCounter" in ClusterType and WidgetType == "WaterCounter":
         # /json.htm?type=command&param=udevice&idx=IDX&nvalue=0&svalue=INCREMENT
@@ -1258,14 +1258,18 @@ def check_set_meter_widget( self, Devices, NwkId, DeviceId, Unit, oldnValue, old
         domo_update_api(self, Devices, DeviceId, Unit, oldnValue, oldsValue, Options=Options ,)
 
 
-def process_instant_power(self, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
+def process_instant_power(self, model_name, WidgetType, Attribute_, value, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, NwkId, Ep, BatteryLevel, SignalLevel):
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_instant_power : {WidgetType} {Attribute_} {value} ({type(value)})", NwkId)
 
     check_set_meter_widget(self, Devices, NwkId, device_id_ieee, device_unit, prev_nValue, prev_sValue, 0)
 
     instant = round(float(value), 2)
 
-    summation = _retreive_summation_power(self, NwkId, Ep)  # Retrieve summation power from 0x0702/0x0000
+    if model_name in ZLINK_CONF_MODEL:
+        summation = int(round(float(zlinky_sum_all_indexes( self, NwkId )), 2))
+    else:
+        summation = _retreive_summation_power(self, NwkId, Ep)  # Retrieve summation power from 0x0702/0x0000
+        
     # Did we get Summation from Data Structure
     if summation is not None and summation != 0:
         summation = int(float(summation))
