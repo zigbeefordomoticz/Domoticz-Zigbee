@@ -191,6 +191,9 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         elif Attribute_ == "0a08":
             # Line 3
             sValue = "%s;%s;%s" % (ampere1, ampere2, ampere)
+        else:
+            sValue = "%s;%s;%s" % (ampere, 0, 0)
+            self.log.logging(["Widget", "Electric"], "Error", f"Unexpected case for ClusterType: {ClusterType} WidgetType: {WidgetType} Attribute_: {Attribute_} ampere: {ampere} ampere1: {ampere1}, ampere2: {ampere2}, ampere3: {ampere3} ", NwkId)
 
         self.log.logging(["Widget", "Electric"], "Debug", "------>  Ampere3 : %s from Attribute: %s" % (sValue, Attribute_), NwkId)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, str(sValue), BatteryLevel, SignalLevel)
