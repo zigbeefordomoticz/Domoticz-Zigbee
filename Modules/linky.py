@@ -20,7 +20,10 @@ LINKY_TARIF_MATRIX = {
     "HP..": (2, "Peak Hours"),
     "HEURES CREUSES": (1, "Off-peak Hours"),
     "HEURES PLEINES": (2, "Peak Hours"),
-    
+
+    "00": (1, "Off-peak Hours"),
+    "01": (2, "Peak Hours"),
+
     "HN..": (1, "Normal Hours"),
     "EJPHN": (1, "Normal Hours"),
     "PM..": (4, "Mobile Peak Hours"),
@@ -185,3 +188,5 @@ def collect_ticmeter_linky(self, nwkid):
         Modules.readAttributes.read_attributes_gammatroniques_tic_meter(self, nwkid)
         Modules.readAttributes.read_attributes_ticmeter_tarif(self, nwkid)
         Modules.readAttributes.read_attributes_ticmeter_details(self, nwkid)
+
+
