@@ -566,6 +566,10 @@ def zlinky_totalisateur(self, nwkid, attribute, value):
     total = sum(cluster.get(key, 0) for key in ZLINKY_INDEX_KEYS)
 
     # Update and log
-    
+    if total < prev_total:
+        # Indexes are going backward, log an error
+        self.log.logging("ZLinky", "Error", f"zlinky_totalisateur: {nwkid} new total {total} < previous {prev_total} backward")
+        return
+
     index_mid_info["CompteurTotalisateur"] = total
     self.log.logging("ZLinky", "Debug", f"zlinky_totalisateur from: {prev_total} to {total}")
