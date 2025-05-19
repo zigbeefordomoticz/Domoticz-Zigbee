@@ -294,12 +294,12 @@ def zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut
         if update_color:
             zlinky_set_color_based_on_counter(self, domoticz_devices, nwkid, ep, cluster, attribut, value)
 
-        if totalize:
-            zlinky_totalisateur(self, nwkid, attribut, value)
-
         if store_keys:
             for key in store_keys:
                 store_ZLinky_infos(self, nwkid, key, value)
+        
+        if totalize:
+            zlinky_totalisateur(self, nwkid, attribut, value)
 
         checkAndStoreAttributeValue(self, nwkid, ep, cluster, attribut, value)
 
@@ -320,10 +320,10 @@ def zlinky_cluster_metering(self, domoticz_devices, nwkid, ep, cluster, attribut
         "0106": lambda: _handle_attribut_value("0106", ["EASF04", "BBRHPJW"], update_color=True, totalize=True, maj_ep="f2"),
         "0108": lambda: _handle_attribut_value("0108", ["EASF05", "BBRHCJR"], update_color=True, totalize=True, maj_ep="f3"),
         "010a": lambda: _handle_attribut_value("010a", ["EASF06", "BBRHPJR"], update_color=True, totalize=True, maj_ep="f3"),
-        "010c": lambda: _handle_attribut_value("010c", ["EASF07"]),
-        "010e": lambda: _handle_attribut_value("010e", ["EASF08"]),
-        "0110": lambda: _handle_attribut_value("0110", ["EASF09"]),
-        "0112": lambda: _handle_attribut_value("0112", ["EASF10"]),
+        "010c": lambda: _handle_attribut_value("010c", ["EASF07"], totalize=True),
+        "010e": lambda: _handle_attribut_value("010e", ["EASF08"], totalize=True),
+        "0110": lambda: _handle_attribut_value("0110", ["EASF09"], totalize=True),
+        "0112": lambda: _handle_attribut_value("0112", ["EASF10"], totalize=True),
         "0307": lambda: store_ZLinky_infos(self, nwkid, "PRM", value),
         "0308": lambda: _handle_attribut_value("0308", ["ADC0", "ADSC"]),
     }
@@ -339,7 +339,6 @@ def zlinky_cluster_electrical_measurement(self, domoticz_devices, nwkid, ep, clu
     
     self.log.logging( "ZLinky", "Debug", "zlinky_cluster_electrical_measurement - %s - %s/%s attribut: %s value: %s" % (
         cluster, nwkid, ep, attribut, value), nwkid, )
-
 
     if attribut == "0305":
             store_ZLinky_infos( self, nwkid, 'ERQ1', value)
