@@ -18,13 +18,25 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## May 2025 - Stable7.1.023 ( 2025.5)
+
+- [Hardware] - Full integration of GammaTroniques TICMeter
+- [Hardware] - Improvement of ZLinky integration
+- [Hardware] - Improvement for various Hardware (Gledopto - GL-SD-003P), Tuya Smart Vibration Sensor,
+               Wiser2 Thermostat, Sonoff Radio Power Turbo mode function,
+- [Hardware] - Tuya Water Level sensor
+- [Hardware] - Ready for Chameleon/Somfy Linky sensor
+
+- [Technical] - Upgrade upstream libs (zigpy eco-system)
+- [Technical] - Manage Shutter Calibration per End Point
+
 ## March 2025 - stable7.1.022 (2025.4)
 
 - [Hardware] - Enable a SwitchOn on SetLevel for "GL-SD-003P" model
 
-## March 2025 - stable7.1.021 (2025.3) 
+## March 2025 - stable7.1.021 (2025.3)
 
-- [Technical] - Open OTA for Xiaomi 
+- [Technical] - Open OTA for Xiaomi
 - [Technical] - Improve docker script
 - [Technical] - More resilient to zigpy failure
 - [Technical] - Improve plugin resiliance when connection with coordintaor is lost.
@@ -46,14 +58,12 @@ Release Numbering
 
 - [Issue] - fix issue which was preventing upgrading from 018 to later version
 
-
 ## Jan. 2025 - stable7.1.019 (2025.1)
 
 - [Hardware] - Improve ZLinky integration with a better management of Color changes.
 - [Technical] - Fix issue on Battery, which was preventing to report to WebUI
 - [Technical] - Decouple the handling of Hue with saturation to ease Lidl LED integration
 - [Technical] - Enable polling of Inlet device temperature
-
 
 ## Dec. 2024 - stable7.1.018 (2024.10)
 
@@ -63,11 +73,9 @@ Release Numbering
 - [Technical] - Handle PYTHONPATH during the plugin automatic upgrade
 - [Technical] - Better error management when reading plugin database from domoticz. (could allow downgrade from futur version storing database in domoticz)
 
-
 ## Dec. 2024 - stable7.1.017 (2024.09)
 
 - [Issue] - Fix an issue with EZSP chipset ( KeyError: <XncpCommandId.undefined_0x03e8: 1000>)
-
 
 ## Dec. 2024 - stable7.1.016 (2024.08)
 
