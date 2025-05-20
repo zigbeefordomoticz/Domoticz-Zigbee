@@ -10,6 +10,8 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import time
+
 import Modules.readAttributes
 
 LINKY_TARIF_MATRIX = {
@@ -169,24 +171,51 @@ def decode_registre_status( registre_status):
 
 
 def collect_ticmeter_linky(self, nwkid):
+    """
+    Collects TIC meter data for a given device if essential fields are missing.
 
-    health = self.ListOfDevices[nwkid].get("Health")
-    if health != 'Live':
+    This method checks the current health and status of the TIC meter associated
+    with the given network ID (`nwkid`). If the device is live but key data
+    (such as TIC mode, tariff, power status, etc.) is missing, it triggers a
+    read of all relevant attributes using appropriate modules.
+
+    To avoid excessive polling, a throttle of 5 minutes is applied between
+    read attempts using the "GlobalReadInProgress" timestamp.
+
+    Parameters:
+        nwkid (str): The network ID of the device to be checked and updated.
+
+    Returns:
+        None
+    """
+    device = self.ListOfDevices.get(nwkid)
+    if not device:
         return
 
-    ticmeter_gamma = self.ListOfDevices[ nwkid ].get("GammaTroniques")
-    if ticmeter_gamma is not None:
-        tic_mode = ticmeter_gamma.get('ModeTIC')
-        elec_mode = ticmeter_gamma.get('ModeElec')
-        tarif = ticmeter_gamma.get('OPTARIF') or ticmeter_gamma.get('NGTF')
-        ptec = ticmeter_gamma.get('PTEC') or ticmeter_gamma.get('LTARF')
-        pref = ticmeter_gamma.get('pref') or ticmeter_gamma.get('PREF')
-        uptime = ticmeter_gamma.get('UpTime')
+    if device.get("Health") != "Live":
+        return
 
-    if ticmeter_gamma is None or None in { tic_mode, elec_mode, tarif, ptec, pref, uptime}:
+    ticmeter_data = device.setdefault("GammaTroniques", {})
+
+    tic_mode = ticmeter_data.get("ModeTIC")
+    elec_mode = ticmeter_data.get("ModeElec")
+    tarif = ticmeter_data.get("OPTARIF") or ticmeter_data.get("NGTF")
+    ptec = ticmeter_data.get("PTEC") or ticmeter_data.get("LTARF")
+    pref = ticmeter_data.get("pref") or ticmeter_data.get("PREF")
+    uptime = ticmeter_data.get("UpTime")
+
+    if any(x is None for x in (tic_mode, elec_mode, tarif, ptec, pref, uptime)):
+        last_read_time = ticmeter_data.get("GlobalReadInProgress")
+        now = time.time()
+
+        if last_read_time is not None and last_read_time > now - 300:
+            # Avoid repeated reads within 5 minutes
+            return
+
         self.log.logging("Pairing", "Status", "Reading TICMeter and collecting all data, as key data are missing")
+
         Modules.readAttributes.read_attributes_gammatroniques_tic_meter(self, nwkid)
         Modules.readAttributes.read_attributes_ticmeter_tarif(self, nwkid)
         Modules.readAttributes.read_attributes_ticmeter_details(self, nwkid)
 
-
+        ticmeter_data["GlobalReadInProgress"] = now
