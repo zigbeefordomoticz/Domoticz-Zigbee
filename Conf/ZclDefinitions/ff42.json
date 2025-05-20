@@ -4,7 +4,7 @@
     "Version": "1",
     "Enabled": true,
     "Attributes": {
-        "0000": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "OPTARIF", "Name": "OPTARIF", "DataType": "41", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] },
+        "0000": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "OPTARIF", "Name": "OPTARIF", "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] },
         "002b": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "PREF", "Name": "PREF", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] }, 
         "0001": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "PEJP", "Name": "PEJP", "DataType": "21", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] }, 
         "0039": { "Enabled": true, "SpecifStoragelvl1": "GammaTroniques", "SpecifStoragelvl2": "PTEC", "Name": "PTEC", "DataType": "42", "Acc": "R", "Mandatory": false, "ActionList": [ "check_store_value" , "store_specif_attribute" ] }, 
