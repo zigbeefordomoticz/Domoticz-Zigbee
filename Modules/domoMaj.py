@@ -1301,10 +1301,11 @@ def process_p1meters_meter_with_summation(self, widget_type, Attribute_, value, 
         cur_usage1, cur_usage2, cur_return1, cur_return2, _, cur_prod = retrieve_data_from_current( self, Devices, device_id_ieee, device_unit, prev_nValue, prev_sValue, "0;0;0;0;0;0" )
 
     # Retrieve instant power consumption
-    instant_power = int(_retreive_instant_power(self, NwkId, Ep))
+    instant_power = _retreive_instant_power(self, NwkId, Ep)
     self.log.logging(["Widget", "Electric"], "Debug", f"------> process_p1meters_meter_with_summation - retreived instant power: {instant_power} ({type(instant_power)})", NwkId)
     if instant_power is None:
         return
+    instant_power = int(instant_power)
 
     # Convert value safely
     try:
