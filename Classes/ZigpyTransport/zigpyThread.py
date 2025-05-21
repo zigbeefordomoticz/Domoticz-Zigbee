@@ -46,7 +46,7 @@ from Classes.ZigpyTransport.plugin_encoders import (
 from Classes.ZigpyTransport.tools import handle_thread_error
 from Modules.macPrefix import DELAY_FOR_VERY_KEY
 
-REQUEST_TIMEOUT = 3   # This is a given time for the request to be sent
+REQUEST_TIMEOUT = 8   # This is a given time for the request to be sent
 WAITING_TIME_BETWEEN_REQUESTS = 0.0
 MAX_CONCURRENT_REQUESTS_PER_DEVICE = 1
 VERIFY_KEY_DELAY = 6
@@ -238,8 +238,8 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
             self.log.logging( "TransportZigpy", "Error", "Wrong radiomode: %s" % (radiomodule), )
 
     except Exception as e:
-            self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
-            self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())       
+        self.log.logging("TransportZigpy", "Error", "Error while starting Radio: %s on port %s with %s" %( radiomodule, serialPort, e))
+        self.log.logging("TransportZigpy", "Error", "%s" %traceback.format_exc())       
 
     optional_configuration_setup(self, config, radio_specific_conf, set_extendedPanId, set_channel)
 
@@ -252,8 +252,8 @@ async def radio_start(self, statistics, pluginconf, use_of_zigpy_persistent_db, 
             return
 
     except Exception as e:
-            self.log.logging( "TransportZigpy", "Error", "Error while starting radio %s on port: %s - Error: %s" %( radiomodule, serialPort, e) )
-            return
+        self.log.logging( "TransportZigpy", "Error", "Error while starting radio %s on port: %s - Error: %s" %( radiomodule, serialPort, e) )
+        return
 
     if self.pluginParameters["Mode3"] == "True":
         self.log.logging( "TransportZigpy", "Status", "++ Coordinator initialisation requested Channel %s(0x%02x) ExtendedPanId: 0x%016x" % (
@@ -577,15 +577,11 @@ async def process_raw_command(self, data, AckIsDisable=False, Sqn=None, delayAft
     payload = bytes.fromhex(data["payload"])
     sequence = Sqn or self.app.get_sequence()
     addressmode = data["AddressMode"]
+    extended_timeout = False if AckIsDisable else data.get("RxOnIdle", False)
     delayAfterSent= delayAfterSent
-
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: delayAfterSent {delayAfterSent}")
-
-    extended_timeout = not data.get("RxOnIdle", False) and not self.pluginconf.pluginConf["PluginRetrys"]
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: extended_timeout {extended_timeout}")
-
     delay = data.get("Delay", None)
-    self.log.logging("TransportZigpy", "Debug", f"process_raw_command: process_raw_command ready to request Function: {Function} NwkId: {NwkId}/{dEp} Cluster: {Cluster} Seq: {sequence} Payload: {payload.hex()} AddrMode: {addressmode} AckIsDisable: {AckIsDisable} EnableAck: {not AckIsDisable}, Sqn: {Sqn}, Delay: {delay}, Extended_TO: {extended_timeout}")
+
+    self.log.logging("TransportZigpy", "Log", f"process_raw_command: process_raw_command ready to request Function: {Function} NwkId: {NwkId}/{dEp} Cluster: {Cluster} Seq: {sequence} Payload: {payload.hex()} AddrMode: {addressmode} AckIsDisable: {AckIsDisable} Sqn: {Sqn}, Delay: {delay}, delayAfterSent {delayAfterSent}, Extended_TO: {extended_timeout}")
 
     destination, transport_needs = _get_destination(self, NwkId, addressmode, Profile, Cluster, sEp, dEp, sequence, payload)
 

@@ -20,6 +20,7 @@
 import sys
 import time
 
+from Modules.tools import get_deviceconf_parameter_value, device_listening_on_iddle
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_COMMANDS, ZIGATE_EP
 
 
@@ -318,15 +319,4 @@ def zigpy_raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payloa
     return self.ControllerLink.sendData( "RAW-COMMAND", data, NwkId=int(targetaddr,16), sqn=int(zigpyzqn,16), ackIsDisabled=ackIsDisabled )
 
 
-def device_listening_on_iddle(self, nwkid):
     
-    if nwkid not in self.ListOfDevices:
-        return True
-    
-    if "Capability" in self.ListOfDevices[nwkid]:
-        if "Reduced-Function Device" in self.ListOfDevices[nwkid]["Capability"]:
-            return False
-        if "Full-Function Device" in self.ListOfDevices[nwkid]["Capability"]:
-            return True
-
-    return False

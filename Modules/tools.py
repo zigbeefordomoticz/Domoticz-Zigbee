@@ -1466,16 +1466,57 @@ def clean_old_datastruct(self, DeviceAttribute, key, endpoint, clusterId, Attrib
         del self.ListOfDevices[key][DeviceAttribute]["TimeStamp"]
 
 
-def is_ack_tobe_disabled(self, key):
-    # ackDisableOrEnable
-    # If Pairing in progress keep Ack
-    # If Battery device keep Ack
+def device_listening_on_iddle(self, nwkid):
+    
+    if nwkid not in self.ListOfDevices:
+        return True
+    
+    # Zigpy is considering end devices as reduced function devices and that are Receiving on idle
+    received_when_idle = bool( get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid].get("ModelName", ""), "ReceiveOnIdle") )
+    reduced_function_device = received_when_idle or "Reduced-Function Device" in self.ListOfDevices[nwkid].get("Capability", [])
+    
+    self.log.logging( "outRawAPS", "Debug", "Device %s is reduced function device: %s" % (nwkid, reduced_function_device), nwkid)
+    
+    return reduced_function_device
 
-    return (
-        ("PairingInProgress" not in self.ListOfDevices[key] or not self.ListOfDevices[key]["PairingInProgress"])
-        and ("PowerSource" not in self.ListOfDevices[key] or self.ListOfDevices[key]["PowerSource"] != "Battery")
-        and ("MacCapa" not in self.ListOfDevices[key] or self.ListOfDevices[key]["MacCapa"] != "80")
-    )
+def full_function_device(self, nwkid):
+    
+    if nwkid not in self.ListOfDevices:
+        return True
+    
+    # Zigpy is considering end devices as reduced function devices and that are Receiving on idle
+    main_powered_device = bool( get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid].get("ModelName", ""), "MainPowered") )
+    full_function_device = main_powered_device or "Full-Function Device" in self.ListOfDevices[nwkid].get("Capability", [])
+    
+    self.log.logging( "outRawAPS", "Debug", "Device %s is reduced function device: %s" % (nwkid, full_function_device), nwkid)
+    
+    return full_function_device
+
+
+def is_ack_tobe_disabled(self, nwkid):
+    """Determine if ACK should be disabled for the given device."""
+    
+    device = self.ListOfDevices.get(nwkid)
+    
+    if not device:
+        return False
+
+    # or if it's not listening while idle.
+    if device_listening_on_iddle(self, nwkid):
+        return False
+
+    # Keep ACK if pairing is in progress, 
+    if device.get("PairingInProgress"):
+        return False
+    
+    if full_function_device(self, nwkid):
+        return True
+
+    # if it's a battery-powered device,
+    if device.get("PowerSource") == "Battery" or device.get("MacCapa") == "80":
+        return False
+
+    return False
 
 
 def is_domoticz_db_available(self):
