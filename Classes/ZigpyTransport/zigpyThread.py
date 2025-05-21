@@ -830,7 +830,7 @@ async def _send_and_retry(
     Returns:
         int: The Zigbee result code (e.g., 0x00 for success, 0xB6 for timeout or fatal error).
     """
-    common_log_info = f"{ieee}/0x{nwkid} 0x{profile:X} 0x{cluster:X} payload: {payload} AckIsDisable: {ack_is_disable}"
+    common_log_info = f"{ieee}/0x{nwkid} 0x{profile:X} 0x{cluster:X} payload: {payload} AckIsDisable: {ack_is_disable} extended_timeout: {extended_timeout}"
     packet_priority = t.PacketPriority.NORMAL
 
     async def __try_send(attempt):
@@ -869,7 +869,7 @@ async def _send_and_retry(
             self.statistics._ackKO += 1
 
             # No retry, return 0xB6
-            handle_transport_result(self, function, cluster, sequence, 0xB6, ack_is_disable, ieee, nwkid, destination.lqi)
+            handle_transport_result(self, function, cluster, sequence, 0xB6, ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
             return 0xB6
 
         else:
@@ -879,7 +879,7 @@ async def _send_and_retry(
                 await asyncio.sleep(delay_after_cmd)
 
             # Successful transmission
-            handle_transport_result(self, function, cluster, sequence, result, ack_is_disable, ieee, nwkid, destination.lqi)
+            handle_transport_result(self, function, cluster, sequence, result, ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
             self.log.logging("TransportZigpy", "Debug", f"_send_and_retry: result: {result}")
             return result
    
@@ -898,7 +898,7 @@ async def _send_and_retry(
         if elapsed >= REQUEST_TIMEOUT:
             self.log.logging("TransportZigpy", "Log", f"_send_and_retry: {common_log_info} TIMEOUT of {REQUEST_TIMEOUT}s reached after {attempt - 1} attempts. ")
             self.statistics._ackKO += 1
-            handle_transport_result(self, function, cluster, sequence, 0xB6, ack_is_disable, ieee, nwkid, destination.lqi)
+            handle_transport_result(self, function, cluster, sequence, 0xB6, ack_is_disable, extended_timeout, ieee, nwkid, destination.lqi)
             return 0xB6
 
         self.log.logging("TransportZigpy", "Debug",
@@ -1004,7 +1004,7 @@ async def zigpy_broadcast( self, profile: t.uint16_t, cluster: t.uint16_t, src_e
     return (zigpy.zcl.foundation.Status.SUCCESS, "")
 
 
-def handle_transport_result(self, Function, Cluster, sequence, result, ack_is_disable, _ieee, _nwkid, lqi):
+def handle_transport_result(self, Function, Cluster, sequence, result, ack_is_disable, extended_timeout, _ieee, _nwkid, lqi):
     if ack_is_disable:
         # As Ack is disable, we cannot conclude that the target device is in trouble.
         # this could be the coordinator itself, or the next hop.
