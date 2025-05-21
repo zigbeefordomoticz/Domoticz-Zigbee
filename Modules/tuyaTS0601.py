@@ -897,10 +897,10 @@ def _update_device_parameter(self, Devices, nwkid, parameter, value):
 
 DP_SENSOR_FUNCTION = {
     
-    "liquid_state": ts0601_liquid_state,
-    "liquid_depth": ts0601_liquid_depth,
-    "param_liquid_max_set": ts0601_param_liquid_max_set,
-    "param_liquid_mini_set": ts0601_param_liquid_mini_set,
+    #"liquid_state": ts0601_liquid_state,
+    #"liquid_depth": ts0601_liquid_depth,
+    #"param_liquid_max_set": ts0601_param_liquid_max_set,
+    #"param_liquid_mini_set": ts0601_param_liquid_mini_set,
     "liquid_installation_height": ts0601_liquid_installation_height,
     "liquid_depth_max": ts0601_liquid_depth_max,
     "liquid_level_percent": ts0601_liquid_level_percent,
@@ -1206,10 +1206,10 @@ DURATION = 1
 
 
 def check_irrigation_valve_target_value(value, mode):
-    if value > 0 and value < SAFETY_MIN_SECS and mode == DURATION:
+    """Ensure a minimum duration is respected for irrigation in DURATION mode."""
+    if 0 < value < SAFETY_MIN_SECS and mode == DURATION:
         return SAFETY_MIN_SECS
-    else:
-        return value
+    return value
 
 
 def ts0601_action_trv8_system_mode(self, NwkId, Ep, dp, value=None):
