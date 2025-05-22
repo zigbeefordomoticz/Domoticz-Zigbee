@@ -1402,7 +1402,7 @@ def ReadAttributeRequest_0702_multiplier_divisor(self, key):
     ListOfEp = getListOfEpForCluster(self, key, "0702")
     for EPout in ListOfEp:
         listAttributes = [0x0300, 0x0302, 0x0301]
-        self.log.logging("ReadAttributes", "Log", "Request ReadAttributeRequest_0702 requesting Multiplier/Divisor" + key + " EPout = " + EPout, nwkid=key)
+        self.log.logging("ReadAttributes", "Debug", "Request ReadAttributeRequest_0702 requesting Multiplier/Divisor" + key + " EPout = " + EPout, nwkid=key)
         ReadAttributeReq(self, key, ZIGATE_EP, EPout, "0702", listAttributes, ackIsDisabled=is_ack_tobe_disabled(self, key))
 
 
@@ -1815,7 +1815,7 @@ def read_attributes_ticmeter_details(self, nwkid):
         0x0308,  # Identifiant
         0x0307,  # Point de Référence Mesure [Standard]
     ]
-    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
+    self.log.logging(["ReadAttributes", "GammaTroniques"], "Debug", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
         nwkid, "0702", attributes ), nwkid=nwkid)
     ReadAttributeReq(self, nwkid, ZIGATE_EP, "01", "0702", attributes, ackIsDisabled=False)
 
@@ -1826,7 +1826,7 @@ def read_attributes_ticmeter_details(self, nwkid):
         0x0A0A,	 # Intensité maximale Phase 3,
     ]
 
-    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
+    self.log.logging(["ReadAttributes", "GammaTroniques"], "Debug", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
         nwkid, "0b04", attributes ), nwkid=nwkid)
     ReadAttributeReq(self, nwkid, ZIGATE_EP, "01", "0b04", attributes_histo, ackIsDisabled=False)
 
@@ -1841,14 +1841,14 @@ def read_attributes_ticmeter_details(self, nwkid):
             0x0A0D,	 # Puissance max soutirée Auj. 3, [Standard]
             0x0A11,	 # Tension moyenne Phase 3, [Standard]
         ]
-        self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
+        self.log.logging(["ReadAttributes", "GammaTroniques"], "Debug", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
             nwkid, "0b04", attributes ), nwkid=nwkid)
         ReadAttributeReq(self, nwkid, ZIGATE_EP, "01", "0b04", attributes_standard, ackIsDisabled=False)
 
     attributes = [
         0x000e,  # Puissance app de coupure
     ]
-    self.log.logging(["ReadAttributes", "GammaTroniques"], "Log", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
+    self.log.logging(["ReadAttributes", "GammaTroniques"], "Debug", "read_attributes_ticmeter_details: %s cluster %s attribute: %s" %(
         nwkid, "0b01", attributes ), nwkid=nwkid)
     ReadAttributeReq(self, nwkid, ZIGATE_EP, "01", "0b01", attributes, ackIsDisabled=False)
 
