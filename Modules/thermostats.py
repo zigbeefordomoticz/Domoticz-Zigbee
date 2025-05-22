@@ -24,11 +24,12 @@ from Modules.tuyaTRV import tuya_setpoint
 from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
 
 THERMOSTAT_CLUSTER = "0201"
+SYSTEM_MODE_ATTRIBUTE = "001c"
+THERMOSTAT_CALIBRATION = "0010"
 OCCUPIED_COOLING_SETPOINT = "0011"
 OCCUPIED_HEATING_SETPOINT = "0012"
 UNOCCUPIED_COOLING_SETPOINT = "0013"
 UNOCCUPIED_HEATING_SETPOINT = "0014"
-
 
 
 def thermostat_Setpoint_SPZB(self, NwkId, setpoint):
@@ -181,44 +182,61 @@ def thermostat_Setpoint(self, NwkId, setpoint):
 
     self.log.logging(["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - standard for %s with value %s" % (NwkId, setpoint), nwkid=NwkId)
 
-    EPout = "01"
-    for tmpEp in self.ListOfDevices[NwkId]["Ep"]:
-        if THERMOSTAT_CLUSTER in self.ListOfDevices[NwkId]["Ep"][tmpEp]:
-            EPout = tmpEp
+    eps = self.ListOfDevices.get(NwkId, {}).get("Ep", {})
+    EPout = next((ep for ep, clusters in eps.items() if THERMOSTAT_CLUSTER in clusters), "01")
+    ep = self.ListOfDevices.get(NwkId, {}).get("Ep", {}).get(EPout, {})
+    thermostat_cluster = ep.get(THERMOSTAT_CLUSTER, {})
 
-    # Heat setpoint by default
+    if model_name == "Aidoo Zigbee":
+        # Airzone - Aidoo Zigbee thermostat
+        self.log.logging(["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - Aidoo Zigbee for %s with value %s on Heating and Cooling" % (NwkId, setpoint), nwkid=NwkId)
+        write_thermostat_setpoint(self, NwkId, EPout, setpoint, OCCUPIED_HEATING_SETPOINT)
+        write_thermostat_setpoint(self, NwkId, EPout, setpoint, OCCUPIED_COOLING_SETPOINT)
+        return
+
+    if thermostat_cluster.get(SYSTEM_MODE_ATTRIBUTE) == 0x03:
+        # If the thermostat cluster has the attribute 001c set to 0x03, it means it's a cooling thermostat
+        # and we should use the cooling setpoint instead of the heating setpoint.
+        self.log.logging(["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - Cool Setpoint for %s with value %s" % (NwkId, setpoint), nwkid=NwkId)
+        write_thermostat_setpoint(self, NwkId, EPout, setpoint, OCCUPIED_COOLING_SETPOINT)
+        return
+
+    # For other thermostats, we will use the heating setpoint by default.
+    self.log.logging(["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - Heating Setpoint for %s with value %s" % (NwkId, setpoint), nwkid=NwkId)
+    write_thermostat_setpoint(self, NwkId, EPout, setpoint, OCCUPIED_HEATING_SETPOINT)
+    return
+
+
+def write_thermostat_setpoint(self, NwkId, EPout, setpoint, Hattribute):
+    """Write a thermostat setpoint value to a Zigbee device."""
+
     cluster_id = THERMOSTAT_CLUSTER
-    Hattribute = OCCUPIED_HEATING_SETPOINT
-
-    if (
-        cluster_id in self.ListOfDevices[NwkId]["Ep"][EPout]
-        and "001c" in self.ListOfDevices[NwkId]["Ep"][EPout][cluster_id]
-        and self.ListOfDevices[NwkId]["Ep"][EPout][cluster_id]["001c"] == 0x03
-    ):
-        # Cool Setpoint
-        Hattribute = OCCUPIED_COOLING_SETPOINT
-
     manuf_id = "0000"
     manuf_spec = "00"
-
     data_type = "29"  # Int16
-    self.log.logging(["Thermostats","Schneider"], "Debug", "setpoint: %s" % setpoint, nwkid=NwkId)
-    setpoint = int((setpoint * 2) / 2)  # Round to 0.5 degrees
-    self.log.logging(["Thermostats","Schneider"], "Debug", "setpoint: %s" % setpoint, nwkid=NwkId)
 
-    Hdata = "%04x" % setpoint
+    # Round to nearest 0.5°C step
+    rounded_setpoint = round(setpoint * 2) / 2
+    self.log.logging(["Thermostats", "Schneider"], "Debug", f"setpoint (original): {setpoint}, (rounded): {rounded_setpoint}", nwkid=NwkId)
 
+    # Format as 16-bit signed integer (in deci-degrees, so multiply by 10)
+    raw_value = int(rounded_setpoint * 10)
+    Hdata = f"{raw_value:04x}"
+
+    # Patch for ZiGate V2 firmware < 0x0320
     if self.zigbee_communication == "native" and self.ZiGateModel == 2 and int(self.FirmwareVersion, 16) < 0x0320:
-        # Bug on ZiGate V2 - firmware 0x320 fix it
-        self.log.logging(["Thermostats","Schneider"], "Debug", "---Zigate Model: %s  Version: %s" % (self.ZiGateModel, self.FirmwareVersion))
-        Hdata = Hdata[2:4] + Hdata[:2]
-        self.log.logging(["Thermostats","Schneider"], "Debug", "Patch Hdata  %s" % Hdata)
+        self.log.logging(["Thermostats", "Schneider"], "Debug", f"--- ZiGate Model: {self.ZiGateModel}  Version: {self.FirmwareVersion}")
+        Hdata = Hdata[2:] + Hdata[:2]
+        self.log.logging(["Thermostats", "Schneider"], "Debug", f"Patched Hdata: {Hdata}")
 
-    EPout = "01"
-    self.log.logging( ["Thermostats","Schneider"], "Debug", "thermostat_Setpoint - for %s with value 0x%s / cluster: %s, attribute: %s type: %s" % (
-        NwkId, Hdata, cluster_id, Hattribute, data_type), nwkid=NwkId, )
+    self.log.logging(["Thermostats", "Schneider"], "Debug",
+                     f"thermostat_Setpoint - for {NwkId} with value 0x{Hdata} / cluster: {cluster_id}, "
+                     f"attribute: {Hattribute}, type: {data_type}", nwkid=NwkId)
+
+    # Write attribute to Zigbee device
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
+    # Trigger read back to confirm write
     ReadAttributeRequest_0201(self, NwkId)
 
 
@@ -257,23 +275,24 @@ def thermostat_eurotronic_hostflag(self, NwkId, action):
 
 
 def thermostat_Calibration(self, NwkId, calibration=None):
-    # Calibration is an int8 representing a temperature offset (in the range -2.5°C to 2.5°C)
-    # from 0xE7 ( -2.5 ) to 0x19 ( +2.5 )
-    # that can be added to or subtracted from the displayed temperature
+    """
+    Set the thermostat calibration offset.
+    The offset is in deci-degrees (-25 to 25), which maps to -2.5°C to 2.5°C.
+    The Zigbee payload expects an int8 value in two’s complement if negative.
+    """
 
-    if (
-        "Param" in self.ListOfDevices[NwkId]
-        and "Calibration" in self.ListOfDevices[NwkId]["Param"]
-        and isinstance(self.ListOfDevices[NwkId]["Param"]["Calibration"], (float, int))
-    ):
-        calibration = int(10 * self.ListOfDevices[NwkId]["Param"]["Calibration"])
-
+    # Fetch calibration from device Param if not explicitly passed
     if calibration is None:
-        calibration = 0
-
-    if calibration < -25 or calibration > 25:
-        self.log.logging( "Thermostats", "Error", "thermostat_Calibration - Wrong Calibration offset on %s off %s" % (
-            NwkId, calibration), )
+        calibration_value = self.ListOfDevices.get(NwkId, {}).get("Param", {}).get("Calibration")
+        if isinstance(calibration_value, (int, float)):
+            calibration = int(calibration_value * 10)
+        else:
+            calibration = 0
+ 
+    # Sanity check: must be between -25 and 25 deci-degrees
+    if not -25 <= calibration <= 25:
+        self.log.logging("Thermostats", "Error",
+                         f"thermostat_Calibration - Invalid offset for {NwkId}: {calibration}")
         calibration = 0
 
     if calibration < 0:
@@ -282,16 +301,17 @@ def thermostat_Calibration(self, NwkId, calibration=None):
         self.log.logging( "Thermostats", "Debug", "thermostat_Calibration - 2 complement form of Calibration offset on %s off %s" % (
             NwkId, calibration), )
 
-    if "Thermostat" not in self.ListOfDevices[NwkId]:
-        self.ListOfDevices[NwkId]["Thermostat"] = {}
+    # Initialize nested dict if needed
+    device = self.ListOfDevices.setdefault(NwkId, {})
+    thermostat = device.setdefault("Thermostat", {})
 
-    if (
-        "Calibration" in self.ListOfDevices[NwkId]["Thermostat"]
-        and calibration == 10 * self.ListOfDevices[NwkId]["Thermostat"]["Calibration"]
-    ):
-        return
+    # Avoid unnecessary update if value hasn't changed
+    existing_cal = thermostat.get("Calibration")
+    if existing_cal is not None and calibration == int(existing_cal * 10):
+        return  # No update needed
 
-    self.log.logging("Thermostats", "Debug", "thermostat_Calibration - Set Thermostat offset on %s off %s" % (NwkId, calibration))
+    self.log.logging("Thermostats", "Debug",
+                     f"thermostat_Calibration - Setting new offset for {NwkId}: {calibration}")
 
     self.ListOfDevices[NwkId]["Thermostat"]["Calibration"] = calibration
 
