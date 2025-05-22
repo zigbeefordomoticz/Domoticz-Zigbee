@@ -50,7 +50,7 @@ def Decode8045(self, Devices, MsgData, MsgLQI):
 
     # If the device is already in the database, do nothing
     if device['Status'] in ( 'inDB', 'erasePDM'):
-        self.log.logging('Pairing', 'Log', f'Decode8045 - already paired and discovered device {MsgDataShAddr}')
+        self.log.logging('Pairing', 'Debug', f'Decode8045 - already paired and discovered device {MsgDataShAddr}')
         return
 
     # Update device status and sequence number
