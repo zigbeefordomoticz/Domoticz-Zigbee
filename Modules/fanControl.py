@@ -27,30 +27,38 @@ FAN_MODE = {
 
 
 def change_fan_mode(self, NwkId, Ep, fan_mode):
+    """
+    Changes the fan mode for a device.
+    Supported modes: Off, Low, Medium, High, On, Auto, Smart
+    """
 
-    if fan_mode not in FAN_MODE:
+    mode_code = FAN_MODE.get(fan_mode)
+    if mode_code is None:
+        self.log.logging("FanControl", "Error", f"Invalid fan mode '{fan_mode}' for device {NwkId}")
         return
 
-    if "Model" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Model"] in ("AC211", "AC221", "CAC221"):
+    model = self.ListOfDevices.get(NwkId, {}).get("Model")
+    if model in ("AC211", "AC221", "CAC221"):
         casaia_check_irPairing(self, NwkId)
 
-    # Fan Mode Sequence
-    data = "%02x" % 0x02
+    ack = is_ack_tobe_disabled(self, NwkId)
+
+    # Step 1: Set Fan Mode Sequence to 0x02
     write_attribute(
         self,
         NwkId,
         ZIGATE_EP,
         Ep,
-        "0202",
-        "0000",
-        "00",
-        "0001",
-        "30",
-        data,
-        ackIsDisabled=is_ack_tobe_disabled(self, NwkId),
+        "0202",        # Fan Control Cluster
+        "0000",        # Manufacturer ID
+        "00",          # Manufacturer Specific
+        "0001",        # Fan Mode Sequence Attribute
+        "30",          # Data type: 0x30 = enum8
+        "02",          # Value: 0x02
+        ackIsDisabled=ack,
     )
 
-    data = "%02x" % FAN_MODE[fan_mode]
+    # Step 2: Set Fan Mode
     write_attribute(
         self,
         NwkId,
@@ -59,8 +67,8 @@ def change_fan_mode(self, NwkId, Ep, fan_mode):
         "0202",
         "0000",
         "00",
-        "0000",
+        "0000",        # Fan Mode Attribute
         "30",
-        data,
-        ackIsDisabled=is_ack_tobe_disabled(self, NwkId),
+        f"{mode_code:02x}",
+        ackIsDisabled=ack,
     )
