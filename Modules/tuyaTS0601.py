@@ -906,6 +906,7 @@ DP_SENSOR_FUNCTION = {
     "liquid_depth_max": ts0601_liquid_depth_max,
     "liquid_level_percent": ts0601_liquid_level_percent,
     "liquid_depth": ts0601_liquid_depth,
+    "liquid_state": ts0601_liquid_state,
     
     "curtain_state": ts0601_curtain_state,
     "curtain_level": ts0601_curtain_level,
