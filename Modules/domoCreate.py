@@ -785,6 +785,11 @@ SIMPLE_WIDGET = {
         "Subtype": 6,
         "Switchtype": 0
     },
+    "LiquidDepth": {
+        "Type": 243,
+        "Subtype": 27,
+        "Switchtype": 0
+    },
 
     "LivoloSWL": {
         "Type": 244,

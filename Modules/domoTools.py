@@ -485,6 +485,7 @@ CLUSTER_TO_TYPE = {
     "fc21": "BSO-Orientation", 
     "rmt1": "Ikea_Round_5b", 
     "LiquidLevel": "LiquidLevel",
+    "LiquidDepth": "LiquidDepth",
     "LumiLock": "LumiLock", 
     "Strenght": "Strenght",
     "Orientation": "Orientation", 

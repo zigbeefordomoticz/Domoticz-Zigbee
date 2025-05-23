@@ -116,6 +116,11 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         sValue = "%s" % value
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)    
 
+    if "LiquidDepth" in ClusterType and WidgetType == "LiquidDepth" and Attribute_ == "":
+        # value is a str containing all Distance information in cm
+        nValue, sValue = _domo_convert_distance( value )
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True)
+
     if ClusterType == "Alarm" and WidgetType == "Alarm_ZL" and Attribute_ == "0005":
         # This is Alarm3 for ZLinky Intensity alert
         value, text = value.split("|")

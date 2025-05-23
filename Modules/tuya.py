@@ -65,7 +65,7 @@ def is_tuya_switch_relay(self, nwkid):
 
 def tuya_registration(self, nwkid, ty_data_request=False, parkside=False, tuya_registration_value=None):
     if "Model" not in self.ListOfDevices[nwkid]:
-            return
+        return
     _ModelName = self.ListOfDevices[nwkid]["Model"]
 
     self.log.logging("Tuya", "Debug", "tuya_registration - Nwkid: %s Model: %s" % (nwkid, _ModelName))
@@ -174,6 +174,7 @@ def tuya_polling_control(self, Nwkid, WidgetType, Level):
 def tuya_polling_values(self, nwkid, device_model, tuya_device_info):
     # This is based on command 0x03, which query ALL datapoint
     tuya_data_query = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST", return_default=0)
+
     # Retrieve the polling interval configuration for TUYA_DATA_REQUEST_POLLING which query only the data point which have changed
     tuya_data_request_polling = get_deviceconf_parameter_value(self, device_model, "TUYA_DATA_REQUEST_POLLING", return_default=0)
 

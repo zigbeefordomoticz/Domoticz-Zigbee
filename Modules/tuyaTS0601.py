@@ -838,6 +838,7 @@ def ts0601_liquid_state(self, Devices, nwkid, ep, value):
 def ts0601_liquid_depth(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_liquid_depth - Nwkid: %s/%s Depth: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "liquid_depth", value)
+    MajDomoDevice(self, Devices, nwkid, ep, "LiquidDepth", value)
 
 
 def ts0601_param_liquid_max_set(self, Devices, nwkid, ep, value):
