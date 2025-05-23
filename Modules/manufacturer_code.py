@@ -78,6 +78,7 @@ PREFIX_MACADDR_TUYA = (
     "847127",
     "84fd27",
     "a4c138",
+    "4c97a1",  # Found on a Tuya device _TZE200_lvkk0hdg @nico21311
     "b4e3f9",
     "bc33ac",
     )
