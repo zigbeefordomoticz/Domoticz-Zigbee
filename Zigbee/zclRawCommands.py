@@ -157,10 +157,14 @@ def zcl_raw_default_response(self, nwkid, EPin, EPout, cluster, response_to_comm
     if response_to_command == "0b":
         return  # Never return a default response to a default response
 
-    frame_control_field = (
-        build_fcf("0", "1" if manufcode and manufcode != "0000" else "0", "%02x" % (not fcf_direction(orig_fcf)), "1")
-        if orig_fcf is not None else "%02x" % 0b00000000
-    )
+    if orig_fcf is None:
+        orig_fcf = 0b00000000
+    else:
+        frame_type = "0"
+        manufacturer_specific_bit = "1" if manufcode and manufcode != "0000" else "0"
+        direction_bit = "1" if orig_fcf is not None and fcf_direction(orig_fcf) else "0"
+        disable_default_response_bit = "0"
+        frame_control_field = build_fcf( frame_type, manufacturer_specific_bit, direction_bit, disable_default_response_bit)
 
     payload = frame_control_field
     if manufcode and manufcode != "0000":
