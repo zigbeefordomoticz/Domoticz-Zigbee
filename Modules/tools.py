@@ -1197,7 +1197,7 @@ def frame_type(fcf):
 def is_manufspecific_8002_payload(fcf):
     return ((int(fcf, 16) & 0b00000100) >> 2) == 1
 
-def build_fcf(frame_type, manuf_spec, direction, disabled_default):
+def build_fcf(frame_type, manuf_spec, direction, disabled_default="0"):
     fcf = 0b00000000 | int(frame_type, 16)
     if int(manuf_spec, 16):
         fcf |= 0b100
