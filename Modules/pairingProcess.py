@@ -29,7 +29,7 @@ from Modules.domoTools import CLUSTER_TO_TYPE
 from Modules.livolo import livolo_bind
 from Modules.lumi import enable_click_mode_aqara, enableOppleSwitch
 from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_OPPLE,
-                                       PREFIX_MACADDR_TUYA,
+                                       is_tuya_magic_packet_required,
                                        PREFIX_MACADDR_WIZER_LEGACY,
                                        PREFIX_MACADDR_XIAOMI)
 from Modules.orvibo import OrviboRegistration
@@ -632,11 +632,8 @@ def handle_device_specific_needs(self, Devices, NWKID):
     MsgIEEE = self.ListOfDevices[NWKID]["IEEE"]
 
     # Do the Magic Read Attributes
-    if request_tuya_magic_read and ( MsgIEEE and MsgIEEE[: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA):
-        # we have Tuya range Mac Address
-        tuya_magic_read = get_deviceconf_parameter_value(self, device_model, "TUYA_MAGIC_READ_ATTRIBUTES", return_default=None)
-        if tuya_magic_read is not False:
-            ReadAttributeRequest_0000_for_tuya( self, NWKID)
+    if is_tuya_magic_packet_required(self, device_model, MsgIEEE):
+        ReadAttributeRequest_0000_for_tuya( self, NWKID)
 
     if device_model in ("Wiser2-Thermostat", "CCTFR6700"):
         wiser_home_lockout_thermostat(self, NWKID, 0)
