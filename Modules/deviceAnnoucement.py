@@ -24,20 +24,20 @@ from Modules.casaia import restart_plugin_reset_ModuleIRCode
 from Modules.domoTools import lastSeenUpdate
 from Modules.legrand_netatmo import legrand_refresh_battery_remote
 from Modules.livolo import livolo_bind
-from Modules.manufacturer_code import (PREFIX_MAC_LEN,
-                                       PREFIX_MACADDR_LIVOLO)
+from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_LIVOLO,
+                                       PREFIX_MACADDR_TUYA)
 from Modules.pairingProcess import (handle_device_specific_needs,
                                     interview_state_004d,
                                     zigbee_provision_device)
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
-
 from Modules.tools import (DeviceExist, IEEEExist, decodeMacCapa,
-                           initDeviceInList, mainPoweredDevice, timeStamped)
+                           get_deviceconf_parameter_value, initDeviceInList,
+                           mainPoweredDevice, timeStamped)
 from Modules.tuyaConst import TUYA_eTRV_MODEL
 from Modules.tuyaSiren import tuya_sirene_registration
 from Modules.tuyaTRV import tuya_eTRV_registration
 from Zigbee.zdpCommands import zdp_node_descriptor_request
-
+from Modules.readAttributes import ReadAttributeRequest_0000_for_tuya
 
 DELAY_BETWEEN_2_DEVICEANNOUCEMENT = 20
 
@@ -165,6 +165,15 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     if mainPoweredDevice(self, NwkId) or self.ListOfDevices[NwkId]["Status"] != "inDB":
         self.log.logging("DeviceAnnoucement", "Status", message, NwkId)
         self.adminWidgets.updateNotificationWidget(Devices, message)
+
+    # Do the Magic Read Attributes
+    request_tuya_magic_read = self.pluginconf.pluginConf["TuyaMagicRead"]
+    if request_tuya_magic_read and ( Ieee and Ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA):
+        # we have Tuya range Mac Address
+        device_model = self.ListOfDevices[NwkId]["Model"]
+        tuya_magic_read = get_deviceconf_parameter_value(self, device_model, "TUYA_MAGIC_READ_ATTRIBUTES", return_default=None)
+        if tuya_magic_read is not False:
+            ReadAttributeRequest_0000_for_tuya( self, NwkId)
 
     # We are receiving the Real Device Annoucement. what to do
     if "Announced" not in self.ListOfDevices[NwkId]:
