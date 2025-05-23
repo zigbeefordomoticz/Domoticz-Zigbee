@@ -868,7 +868,6 @@ def ts0601_liquid_depth_max(self, Devices, nwkid, ep, value):
 def ts0601_liquid_level_percent(self, Devices, nwkid, ep, value):
     self.log.logging("Tuya0601", "Debug", "ts0601_liquid_level_percent - Nwkid: %s/%s liquid_level_percent: %s" % (nwkid, ep, value))
     store_tuya_attribute(self, nwkid, "liquid_level_percent", value)
-    _update_device_parameter(self, Devices, nwkid, "liquid_level_percent", value)
     MajDomoDevice(self, Devices, nwkid, ep, "LiquidLevel", value)
 
 
@@ -1549,7 +1548,6 @@ TS0601_COMMANDS = {
     "liquid_mini_set": ts0601_action_param_liquid_mini_set,
     "liquid_installation_height": ts0601_action_liquid_installation_height,
     "liquid_depth_max": ts0601_action_liquid_depth_max,
-    "liquid_level_percent": ts0601_action_liquid_level_percent,
     
     "IndicatorStatus": ts0601_curtain_indicator_status,
     "CurtainState": ts0601_curtain_state_cmd,
