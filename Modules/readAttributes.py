@@ -21,7 +21,6 @@
 
 import time
 
-
 from Modules.basicOutputs import (identifySend, read_attribute,
                                   send_zigatecmd_zcl_ack,
                                   send_zigatecmd_zcl_noack)
@@ -30,7 +29,8 @@ from Modules.manufacturer_code import (PREFIX_MAC_LEN, PREFIX_MACADDR_CASAIA,
                                        PREFIX_MACADDR_IKEA_TRADFRI,
                                        PREFIX_MACADDR_OPPLE,
                                        PREFIX_MACADDR_TUYA,
-                                       PREFIX_MACADDR_XIAOMI, TUYA_MANUF_CODE)
+                                       PREFIX_MACADDR_XIAOMI, TUYA_MANUF_CODE,
+                                       is_tuya_magic_packet_required)
 from Modules.tools import (check_datastruct, get_device_config_param,
                            get_deviceconf_parameter_value,
                            getListOfEpForCluster, is_ack_tobe_disabled,
@@ -388,6 +388,10 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     self.log.logging("ReadAttributes", "Debug", "--> Not full scope", nwkid=key)
     self.log.logging("ReadAttributes", "Debug", "--> Build list of Attributes", nwkid=key)
 
+    device_model = self.ListOfDevices[key].get("Model","")
+    device_manufacturer = self.ListOfDevices[key].get("Manufacturer","")
+    device_ieee = self.ListOfDevices[key].get("IEEE","")
+
     listAttributes = []
     ListOfEp = getListOfEpForCluster(self, key, "0000")
     self.log.logging("ReadAttributes", "Debug", "--> ListOfEp with 0x0000: %s" %str(ListOfEp), nwkid=key)
@@ -398,13 +402,13 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     self.log.logging("ReadAttributes", "Debug", "--> Build list Eps for Cluster Basic %s" %str(ListOfEp), nwkid=key)
 
     # Do we Have Manufacturer
-    if ListOfEp and self.ListOfDevices[key]["Manufacturer Name"] in [ {}, ""]:
+    if ListOfEp and device_manufacturer in [ {}, ""]:
         self.log.logging("ReadAttributes", "Debug", "Request Basic  Manufacturer via Read Attribute request: %s" % "0004", nwkid=key)
         if 0x0004 not in listAttributes:
             listAttributes.append(0x0004)
 
     # Do We have Model Name
-    if ( ListOfEp and self.ListOfDevices[key]["Model"] in [ {}, ""] ):
+    if ( ListOfEp and device_model in [ {}, ""] ):
         self.log.logging("ReadAttributes", "Debug", "Request Basic  Model Name via Read Attribute request: %s" % "0005", nwkid=key)
         if 0x0005 not in listAttributes:
             listAttributes.append(0x0005)
@@ -420,28 +424,26 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
             listAttributes.append(0x4000)
         if 0xF000 not in listAttributes:
             listAttributes.append(0xF000)
-            
-    #elif self.ListOfDevices[key]['IEEE'][:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:
-    #    self.log.logging("ReadAttributes", "Debug", "----> Tuya Hardware: %s" % "fffe", nwkid=key)
-    #    listAttributes = [ 0x0004, 0x0000, 0x0001, 0x0005, 0x0007, 0xfffe] 
+    
+    if is_tuya_magic_packet_required(self, device_model, device_ieee):
+        ReadAttributeRequest_0000_for_tuya(self, key)
 
     listAttributes = add_attributes_from_device_certified_conf(self, key, "0000", listAttributes)
     self.log.logging("ReadAttributes", "Log", "EP: %s Attributes: %s" % (self.ListOfDevices[key]["Ep"], str(listAttributes)))
 
-    ieee = self.ListOfDevices[ key ]['IEEE']
     if len(ListOfEp) == 0:
         # We don't have yet any Endpoint information , we will then try several known Endpoint, and luckly we will get some answers
         self.log.logging( "ReadAttributes", "Debug", "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
 
-        if ( ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
+        if ( device_ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_XIAOMI or device_ieee[: PREFIX_MAC_LEN] in PREFIX_MACADDR_OPPLE):
             self.log.logging( "ReadAttributes", "Debug", "Request Basic  Opple : " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
-        elif ( ieee[: len(DEVELCO_PREFIX)] in DEVELCO_PREFIX):
+        elif ( device_ieee[: len(DEVELCO_PREFIX)] in DEVELCO_PREFIX):
             self.log.logging( "ReadAttributes", "Debug", "Request Basic  Develco : " + key + " EPout = " + "01, 02, 03, 06, 09, 0b", nwkid=key, )
             ReadAttributeReq(self, key, ZIGATE_EP, "02", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
             
-        elif ieee[:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:  
+        elif device_ieee[:PREFIX_MAC_LEN] in PREFIX_MACADDR_TUYA:  
             self.log.logging( "ReadAttributes", "Debug", "Request Basic  Tuya : " + key + " EPout = " + "01", nwkid=key, )
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
             ReadAttributeReq(self, key, ZIGATE_EP, "01", "0000", listAttributes, ackIsDisabled=False, checkTime=False)
@@ -457,14 +459,16 @@ def ReadAttributeRequest_0000_for_pairing(self, key):
     else:
         for epout in ListOfEp:
             self.log.logging( "ReadAttributes", "Debug", "Request Basic via Read Attribute request: " + key + " EPout = " + epout + " Attributes: " + str(listAttributes), nwkid=key, )
-            if epout == "01" and ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX:
+            if epout == "01" and device_ieee[: len(DEVELCO_PREFIX)] == DEVELCO_PREFIX:
                 self.log.logging( "ReadAttributes", "Debug", "skip ReadAttribute( 0000 ) because DEVELCO_PREFIX")
                 # prevent doing a read attribute on Ep 0x01 for Develco
                 continue
-            if if_casaia_cms323( ListOfEp, ieee) and epout != "01":
+
+            if if_casaia_cms323( ListOfEp, device_ieee) and epout != "01":
                 self.log.logging( "ReadAttributes", "Debug", "skip ReadAttribute( 0000 ) because CMS323")
                 # Do only Ep 01
                 continue
+
             ReadAttributeReq(self, key, ZIGATE_EP, epout, "0000", listAttributes, ackIsDisabled=False, checkTime=False)
 
 def if_casaia_cms323( ListOfEp, ieee):
