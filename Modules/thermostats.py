@@ -220,7 +220,7 @@ def write_thermostat_setpoint(self, NwkId, EPout, setpoint, Hattribute):
     self.log.logging(["Thermostats", "Schneider"], "Debug", f"setpoint (original): {setpoint}, (rounded): {rounded_setpoint}", nwkid=NwkId)
 
     # Format as 16-bit signed integer (in deci-degrees
-    Hdata = "%04x" % rounded_setpoint
+    Hdata = f"{int(rounded_setpoint):04x}"  # Ensure a 4-character hex format
 
     # Patch for ZiGate V2 firmware < 0x0320
     if self.zigbee_communication == "native" and self.ZiGateModel == 2 and int(self.FirmwareVersion, 16) < 0x0320:
