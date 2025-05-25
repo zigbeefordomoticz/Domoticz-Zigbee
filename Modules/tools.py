@@ -19,38 +19,51 @@
 
 import datetime
 import os.path
+import shutil
+import string
 import struct
 import time
-from pathlib import Path
+from typing import Optional
 
 from Modules.database import WriteDeviceList
 from Modules.domoticzAbstractLayer import domo_read_Device_Idx, domo_read_Name
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.zigateConsts import HEARTBEAT
 
-HEX_DIGIT = "0123456789abcdefABCDEF"
-INT_DIGIT = "0123456789"
+HEX_DIGIT = string.hexdigits  # '0123456789abcdefABCDEF'
+INT_DIGIT = string.digits     # '0123456789'
 
 MAX_ROLLING_LQI_LENGTH = 10
 
 
 def to_little_endian(value: str) -> str:
+    """
+    Converts a hexadecimal string to little endian format, depending on its length.
+    
+    Args:
+        value (str): A hex string (e.g., "1234", "123456", "12345678", "1234567890abcdef").
+    
+    Returns:
+        str: The hex string in little endian byte order.
+    """
+
+    value = value.lower()
     length = len(value)
 
     if length == 4:  # 16-bit (2 bytes)
         return struct.pack("<H", int(value, 16)).hex()
 
-    elif length == 6:  # 24-bit (3 bytes)
+    if length == 6:  # 24-bit (3 bytes)
         return bytes.fromhex(value)[::-1].hex()  # Reverse byte order manually
 
-    elif length == 8:  # 32-bit (4 bytes)
+    if length == 8:  # 32-bit (4 bytes)
         return struct.pack("<I", int(value, 16)).hex()
 
-    elif length == 16:  # 64-bit (8 bytes)
+    if length == 16:  # 64-bit (8 bytes)
         return struct.pack("<Q", int(value, 16)).hex()
 
-    else:  # Treat as raw bytes (possibly 8-bit)
-        return value  # Assuming `value` is already hex
+    # Treat as raw bytes (possibly 8-bit)
+    return value  # Assuming `value` is already hex
 
 
 def twos_complement(value: int, bits: int) -> int:
@@ -67,17 +80,27 @@ def twos_complement(value: int, bits: int) -> int:
 
 
 def is_hex(s):
-    return all(char in HEX_DIGIT for char in s)
+    """Checks if a string contains only hexadecimal characters."""
+    return isinstance(s, str) and all(char in HEX_DIGIT for char in s)
+
 
 def is_int(s):
-    return all(char in INT_DIGIT for char in s)
+    """Checks if a string contains only decimal digits."""
+    return isinstance(s, str) and all(char in INT_DIGIT for char in s)
+
 
 def returnlen(taille, value):
+    """Pads the string `value` with leading zeroes until it reaches `taille` length."""
     while len(value) < taille:
         value = "0" + value
     return str(value)
 
+
 def Hex_Format(taille, value):
+    """
+    Converts an integer to a hex string padded to `taille` length.
+    If the result exceeds `taille`, returns a string of 'f' * `taille`.
+    """
     value = hex(int(value))[2:]
     if len(value) > taille:
         return "f" * taille
@@ -85,39 +108,65 @@ def Hex_Format(taille, value):
         value = "0" + value
     return str(value)
 
+
 def str_round(value, n):
+    """Rounds a float to `n` decimal places and returns it as a string."""
     return "{:.{n}f}".format(value, n=int(n))
 
+
 def voltage2batteryP(voltage, volt_max, volt_min):
-    if isinstance( voltage, str):
+    """
+    Converts a voltage reading to a battery percentage.
+    
+    Args:
+        voltage (int or str): The measured voltage (e.g., 2900).
+        volt_max (int): The voltage considered 100% battery (e.g., 3000).
+        volt_min (int): The voltage considered 0% battery (e.g., 2100).
+    
+    Returns:
+        int: Battery percentage in the range [0, 100].
+    """
+    try:
         voltage = int(voltage)
+    except (ValueError, TypeError):
+        return 0
 
-    if voltage > volt_max:
-        ValueBattery = 100
+    if volt_max <= volt_min:
+        raise ValueError("volt_max must be greater than volt_min")
 
-    elif voltage < volt_min:
-        ValueBattery = 0
+    if voltage >= volt_max:
+        return 100
 
-    else:
-        ValueBattery = 100 - round(((volt_max - (voltage)) / (volt_max - volt_min)) * 100)
+    if voltage <= volt_min:
+        return 0
 
-    return round(ValueBattery)
+    percent = 100 * (voltage - volt_min) / (volt_max - volt_min)
+    return round(percent)
 
-def IEEEExist(self, IEEE):
-    # check in ListOfDevices for an existing IEEE
-    return IEEE != "" and IEEE in self.IEEE2NWK
 
-def NwkIdExist(self, Nwkid):
-    return Nwkid in self.ListOfDevices
+def IEEEExist(self, ieee):
+    """Check if the given IEEE address exists in the IEEE2NWK mapping."""
+    return bool(ieee) and ieee in self.IEEE2NWK
 
-def getSaddrfromIEEE(self, IEEE):
-    # Return Short Address if IEEE found.
 
-    if IEEE != "":
-        for sAddr in list(self.ListOfDevices.keys()):
-            if self.ListOfDevices[sAddr]["IEEE"] == IEEE:
-                return sAddr
-    return ""
+def NwkIdExist(self, nwk_id):
+    """Check if the given NwkId exists in ListOfDevices."""
+    return nwk_id in self.ListOfDevices
+
+
+def getSaddrfromIEEE(self, ieee):
+    """Return the short address (sAddr) for a given IEEE, if found."""
+    if not ieee:
+        return ""
+
+    return next(
+        (
+            saddr
+            for saddr, device in self.ListOfDevices.items()
+            if device.get("IEEE") == ieee
+        ),
+        "",
+    )
 
 
 def getListOfEpForCluster(self, NwkId, SearchCluster):
@@ -178,16 +227,6 @@ def getEPforClusterType(self, NWKID, ClusterType):
 def getClusterListforEP(self, NWKID, Ep):
 
     ClusterList = []
-    #ClusterList = [
-    #    cluster
-    #    for cluster in ["fc00", "0500", "0502", "0406", "0400", "0402", "0001"]
-    #    if cluster in self.ListOfDevices[NWKID]["Ep"][Ep]
-    #]
-    #if self.ListOfDevices[NWKID]["Ep"][Ep]:
-    #    for cluster in list(self.ListOfDevices[NWKID]["Ep"][Ep].keys()):
-    #        if cluster not in ("ClusterType", "Type", "ColorMode") and cluster not in ClusterList:
-    #            ClusterList.append(cluster)
-
     device = self.ListOfDevices.get(NWKID, {}).get("Ep", {}).get(Ep, {})
     ClusterList.extend( [cluster for cluster in device if cluster not in {"ClusterType", "Type", "ColorMode"} and cluster not in ClusterList] )
     return ClusterList
@@ -195,9 +234,18 @@ def getClusterListforEP(self, NWKID, Ep):
 
 def getEpForCluster(self, nwkid, ClusterId, strict=False):
     """
-    Return the Ep or a list of Ep associated to the ClusterId
-    If not found return Ep: 01
-    If strict is True, then None will return if there is no Cluster found
+    Retrieve a list of Endpoints (Ep) associated with a given ClusterId for a specific device.
+
+    Args:
+        nwkid (str): Network ID of the device.
+        ClusterId (str or int): The cluster ID to search for.
+        strict (bool): If True, returns None when no matching endpoint is found.
+                       If False (default), returns an empty list.
+
+    Returns:
+        list[str] or None:
+            - A list of endpoint strings (e.g., ['01', '02']) that include the ClusterId.
+            - None if strict is True and no endpoint is found.
     """
 
     EPlist = []
@@ -424,10 +472,22 @@ def removeDeviceInList(self, Devices, IEEE, Unit):
 
 
 def initDeviceInList(self, Nwkid):
-    if Nwkid in self.ListOfDevices or Nwkid == "":
+    """
+    Initialize a new entry in the ListOfDevices for the given Nwkid.
+
+    This sets up a default structure for a Zigbee device if it does not
+    already exist in the device list and the Nwkid is valid (non-empty).
+
+    Parameters:
+        Nwkid (str): The network ID (short address) of the device.
+
+    Returns:
+        None
+    """
+    if Nwkid in self.ListOfDevices or not Nwkid:
         return
 
-    self.ListOfDevices[Nwkid] = {
+    default_device = {
         "Version": "3",
         "ZDeviceName": "",
         "Status": "004d",
@@ -462,46 +522,83 @@ def initDeviceInList(self, Nwkid):
         "Health": "",
     }
 
+    self.ListOfDevices[Nwkid] = default_device.copy()
+
 
 def timeStamped(self, key, Type):
+    """
+    Update the timestamp information for a given device in ListOfDevices.
+
+    Ensures the 'Stamp' dictionary exists for the device, then updates:
+    - 'time': current Unix timestamp (float)
+    - 'Time': human-readable timestamp (YYYY-MM-DD HH:MM:SS)
+    - 'MsgType': message type formatted as a 4-digit hex string
+
+    Parameters:
+        key (str): The device key (e.g., NwkId) in ListOfDevices.
+        Type (int): Numeric message type to store (formatted as hex).
+
+    Returns:
+        None
+    """
     if key not in self.ListOfDevices:
         return
-    if "Stamp" not in self.ListOfDevices[key]:
-        self.ListOfDevices[key]["Stamp"] = {"LasteSeen": {}, "Time": {}, "MsgType": {}}
-    self.ListOfDevices[key]["Stamp"]["time"] = time.time()
-    self.ListOfDevices[key]["Stamp"]["Time"] = datetime.datetime.fromtimestamp(time.time()).strftime(
-        "%Y-%m-%d %H:%M:%S"
+
+    stamps = self.ListOfDevices[key].setdefault(
+        "Stamp", {"LasteSeen": {}, "Time": {}, "MsgType": {}}
     )
-    self.ListOfDevices[key]["Stamp"]["MsgType"] = "%4x" % (Type)
+
+    now = time.time()
+    stamps["time"] = now
+    stamps["Time"] = datetime.datetime.fromtimestamp(now).strftime("%Y-%m-%d %H:%M:%S")
+    stamps["MsgType"] = f"{Type:04x}"
 
 
 # Used by zcl/zdpRawCommands
 def get_and_inc_ZDP_SQN(self, key):
+    """Get and increment ZDP sequence number for the device identified by key."""
     return get_and_increment_generic_SQN(self, key, "ZDPSQN")
 
 
 def get_and_inc_ZCL_SQN(self, key):
+    """Get and increment ZCL sequence number for the device identified by key."""
     return get_and_increment_generic_SQN(self, key, "ZCLSQN")
 
 
 def get_and_inc_TUYA_POLLING_SQN(self, key):
+    """Get and increment TUYA polling sequence number for the device identified by key."""
     return get_and_increment_generic_SQN(self, key, "TUYA_POLLING_SQN")
 
 
 def get_and_increment_generic_SQN(self, nwkid, sqn_type):
+    """
+    Retrieve and increment a sequence number (SQN) of given type for a device.
+
+    SQNs are stored as zero-padded 2-digit hex strings and wrap at 0xFF.
+
+    Args:
+        nwkid (str): Network ID of the device.
+        sqn_type (str): The sequence number type/key.
+
+    Returns:
+        str: The incremented SQN as a zero-padded 2-digit hex string.
+    """
     if nwkid not in self.ListOfDevices: 
         return "%02x" %0x00
 
-    if sqn_type not in self.ListOfDevices[nwkid]:
-        self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %0x00
-        return self.ListOfDevices[nwkid][ sqn_type ]
+    current_sqn = self.ListOfDevices[nwkid].get(sqn_type, "00")
+    if not current_sqn or current_sqn == {}:
+        current_sqn = "00"
 
-    if self.ListOfDevices[nwkid][ sqn_type ] in ( '', {}):
-        self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %0x00
-        return self.ListOfDevices[nwkid][ sqn_type ]
+    try:
+        next_sqn = (int(current_sqn, 16) + 1) % 256
+    except ValueError:
+        next_sqn = 0  # Reset if malformed
 
-    self.ListOfDevices[nwkid][ sqn_type ] = "%02x" %( ( int(self.ListOfDevices[nwkid][ sqn_type ],16) + 1) % 256)
-    return self.ListOfDevices[nwkid][ sqn_type ]
+    sqn_str = f"{next_sqn:02x}"
+    self.ListOfDevices[nwkid][sqn_type] = sqn_str
+
+    return sqn_str
 
 
 def updSQN(self, key, newSQN):
@@ -598,38 +695,20 @@ def is_bind_ep( self, nwkid, ep):
 
   
 def deviceconf_device(self, nwkid):
-    
-    if (
-        "Model" in self.ListOfDevices[nwkid ]
-        and self.ListOfDevices[nwkid]["Model"] in self.DeviceConf
-    ):
-        return self.DeviceConf[ self.ListOfDevices[nwkid]["Model"] ]
-    else:
-        return {}
+    """
+    Retrieve the DeviceConf entry for a given device based on its model.
 
+    Args:
+        nwkid (str): The network ID of the device.
 
-def getTypebyCluster(self, Cluster):
-    clustersType = {
-        "0405": "Humi",
-        "0406": "Motion",
-        "0400": "Lux",
-        "0403": "Baro",
-        "0402": "Temp",
-        "0006": "Switch",
-        "0500": "Door",
-        "0012": "XCube",
-        "000c": "XCube",
-        "0008": "LvlControl",
-        "0300": "ColorControl",
-    }
+    Returns:
+        dict: The corresponding configuration from DeviceConf if found,
+              otherwise an empty dictionary.
+    """
+    device = self.ListOfDevices.get(nwkid, {})
+    model = device.get("Model")
 
-    if Cluster == "" or Cluster is None:
-        return ""
-
-    if Cluster in clustersType:
-        return clustersType[Cluster]
-
-    return ""
+    return self.DeviceConf[model] if model and model in self.DeviceConf else {}
 
 
 def getListofClusterbyModel(self, Model, InOut):
@@ -662,40 +741,18 @@ def getListofOutClusterbyModel(self, Model):
     return getListofClusterbyModel(self, Model, "Epout")
 
 
-def getListofTypebyModel(self, Model):
+def getListofType(self, widget_type):
     """
-    Provide a list of Tuple ( Ep, Type ) for a given Model name if found. Else return an empty list
-        Type is provided as a list of Type already.
-    """
-    EpType = []
-    if Model in self.DeviceConf:
-        for ep in list(self.DeviceConf[Model]["Epin"].keys()):
-            if "Type" in self.DeviceConf[Model]["Epin"][ep]:
-                EpinType = (ep, getListofType(self, self.DeviceConf[Model]["Epin"][ep]["Type"]))
-                EpType.append(EpinType)
-    return EpType
+    Splits a slash-separated device widget_type string into a list of individual widget_type.
 
+    Args:
+        Type (str): A slash-separated string like "Plug/Power/Meters".
 
-def getModelbyZDeviceIDProfileID(self, ZDeviceID, ProfileID):
+    Returns:
+        list[str]: A list of widget_type, e.g., ['Plug', 'Power', 'Meters'].
+                   Returns an empty list if input is empty or None.
     """
-    Provide a Model for a given ZdeviceID, ProfileID
-    """
-    for model in list(self.DeviceConf.keys()):
-        if self.DeviceConf[model]["ProfileID"] == ProfileID and self.DeviceConf[model]["ZDeviceID"] == ZDeviceID:
-            return model
-    return ""
-
-
-def getListofType(self, Type):
-    """
-    For a given DeviceConf Type "Plug/Power/Meters" return a list of Type [ 'Plug', 'Power', 'Meters' ]
-    """
-
-    if Type == "" or Type is None:
-        return ""
-    retList = []
-    retList = Type.split("/")
-    return retList
+    return widget_type.split('/') if widget_type else []
 
 
 def hex_to_rgb(value):
@@ -934,6 +991,7 @@ def loggingMessages(self, msgtype, sAddr=None, ieee=None, LQI=None, SQN=None):
     self.log.logging("PluginTools", "Log", "Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" % (
         msgtype, zdevname, sAddr, ieee, int(LQI, 16), SQN) )
 
+
 def try_to_reconnect_via_neighbours(self, old_nwkid):
     
     # We receive a message from a known NwkId but got a NACK. 
@@ -966,6 +1024,7 @@ def try_to_reconnect_via_neighbours(self, old_nwkid):
                         self.log.logging("PluginTools", "Log", "try_to_reconnect_via_neighbours found %s as replacement of %s" % (new_nwkid, old_nwkid))
                     return new_nwkid
 
+
 def chk_and_update_IEEE_NWKID(self, nwkid, ieee):
     if ieee in self.IEEE2NWK and nwkid in self.ListOfDevices:
         return
@@ -981,7 +1040,8 @@ def chk_and_update_IEEE_NWKID(self, nwkid, ieee):
     old_nwkid = self.IEEE2NWK[ ieee ]
     self.log.logging("PluginTools", "Log", "chk_and_update_IEEE_NWKID - update %s %s -> %s" %(ieee, old_nwkid, nwkid))
     reconnectNWkDevice(self, nwkid, ieee, old_nwkid)
-        
+
+    
 def lookupForIEEE(self, nwkid, reconnect=False):
     # """
     # Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
@@ -1019,6 +1079,7 @@ def lookupForIEEE(self, nwkid, reconnect=False):
             return ieee
     return None
 
+
 def zigpy_plugin_sanity_check(self, nwkid):
     if self.zigbee_communication and self.zigbee_communication != "zigpy":
         return False
@@ -1037,6 +1098,7 @@ def zigpy_plugin_sanity_check(self, nwkid):
         return True
     # we have a disconnect as IEEE is not pointing to the right nwkid
     return reconnectNWkDevice(self, nwkid, ieee, self.IEEE2NWK[ ieee ])
+
 
 def lookupForParentDevice(self, nwkid=None, ieee=None):
 
@@ -1087,22 +1149,41 @@ def lookupForParentDevice(self, nwkid=None, ieee=None):
 
 
 def checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
+    """
+    Ensure nested dictionaries exist for the given device address, endpoint, cluster ID, and attribute ID.
 
-    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Ep"]:
-        self.ListOfDevices[MsgSrcAddr]["Ep"][ MsgSrcEp ] = {}
-    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId] = {}
+    Creates empty dicts as needed to guarantee the path:
+    ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID]
 
-    if not isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId], dict):
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId] = {}
+    Args:
+        MsgSrcAddr: Device network address
+        MsgSrcEp: Endpoint identifier
+        MsgClusterId: Cluster identifier
+        MsgAttrID: Attribute identifier
+    """
+    device = self.ListOfDevices.setdefault(MsgSrcAddr, {})
+    ep = device.setdefault("Ep", {})
+    cluster = ep.setdefault(MsgSrcEp, {}).setdefault(MsgClusterId, {})
 
-    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-        self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
+    # Ensure the attribute ID is set
+    if MsgAttrID not in cluster or not isinstance(cluster[MsgAttrID], dict):
+        cluster[MsgAttrID] = {}
 
 
 def checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, Value):
+    """
+    Ensure the attribute structure exists and store the given value.
+
+    Args:
+        MsgSrcAddr: Device network address
+        MsgSrcEp: Endpoint identifier
+        MsgClusterId: Cluster identifier
+        MsgAttrID: Attribute identifier
+        Value: Value to store for the attribute
+    """
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
+
 
 
 def store_battery_percentage_time_stamp( self, MsgSrcAddr):
@@ -1118,24 +1199,40 @@ def checkValidValue(self, MsgSrcAddr, AttType, Data ):
         return False
     return self.ListOfDevices[MsgSrcAddr][ "Model" ] != "lumi.airmonitor.acn01" or Data not in ["8000", "0000"]
 
-def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
 
-    if MsgSrcAddr not in self.ListOfDevices:
-        self.log.logging("PluginTools", "Debug", "getAttributeValue - Unknown %s" % (MsgSrcAddr))
+def getAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
+    """
+    Retrieve the value of a specific attribute from the device list.
+
+    Args:
+        MsgSrcAddr: Network address of the device.
+        MsgSrcEp: Endpoint of the device.
+        MsgClusterId: Cluster ID.
+        MsgAttrID: Attribute ID.
+
+    Returns:
+        The attribute value if found, otherwise None.
+    """
+    device = self.ListOfDevices.get(MsgSrcAddr)
+    if device is None:
+        self.log.logging("PluginTools", "Debug", f"getAttributeValue - Unknown {MsgSrcAddr}")
         return None
-    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]["Ep"]:
-        self.log.logging("PluginTools", "Debug", "getAttributeValue - Unknown %s/%s" % (MsgSrcAddr, MsgSrcEp))
+
+    ep = device.get("Ep", {}).get(MsgSrcEp)
+    if ep is None:
+        self.log.logging("PluginTools", "Debug", f"getAttributeValue - Unknown {MsgSrcAddr}/{MsgSrcEp}")
         return None
-    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
-        self.log.logging("PluginTools", "Debug", "getAttributeValue - Unknown %s/%s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId))
+
+    cluster = ep.get(MsgClusterId)
+    if not isinstance(cluster, dict):
+        self.log.logging("PluginTools", "Debug", f"getAttributeValue - Not dict {MsgSrcAddr}/{MsgSrcEp} {MsgClusterId}")
         return None
-    if not isinstance(self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId], dict):
-        self.log.logging("PluginTools", "Debug", "getAttributeValue - Not dict %s/%s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId))
+
+    if MsgAttrID not in cluster:
+        self.log.logging("PluginTools", "Debug", f"getAttributeValue - Unknown {MsgSrcAddr}/{MsgSrcEp} {MsgClusterId} {MsgAttrID}")
         return None
-    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
-        self.log.logging("PluginTools", "Debug", "getAttributeValue - Unknown %s/%s %s %s" % (MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID))
-        return None
-    return self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID]
+
+    return cluster[MsgAttrID]
 
 
 # Function to manage 0x8002 payloads
@@ -1171,34 +1268,93 @@ def retreive_cmd_payload_from_8002(Payload):
 
     return (zbee_zcl_ddr, GlobalCommand, Sqn, ManufacturerCode, Command, Data)
 
-def fcf_direction(fcf):
-    # If direction = 1 Server to Client
-    # If direction = 0 Client to Server
 
+def fcf_direction(fcf: str) -> Optional[int]:
+    """
+    Extract the direction bit from the Frame Control Field (FCF).
+
+    Direction bit:
+      - 0: Client to Server
+      - 1: Server to Client
+
+    Args:
+        fcf (str): A 2-character hex string representing the FCF byte.
+
+    Returns:
+        int: 0 or 1 depending on direction.
+        None: If input is invalid.
+    """
     if not is_hex(fcf) or len(fcf) != 2:
         return None
     return (int(fcf, 16) & 0x08) >> 3
 
+
 def disable_default_response(fcf):
+    """
+    Returns the 'Disable Default Response' bit from the FCF.
+
+    Args:
+        fcf (str): 2-char hex string representing the FCF byte.
+
+    Returns:
+        int: 0 or 1 (bit value)
+        None: if input invalid
+    """
     return (int(fcf,16) & 0x10) >> 4
+
 
 def is_direction_to_client(fcf):
     return fcf_direction(fcf) == 0x1
 
+
 def is_direction_to_server(fcf):
     return fcf_direction(fcf) == 0x0
 
+
 def is_globalcommand(fcf):
+    """
+    Returns True if frame type is Global Command (bits 0-1 == 0).
+
+    Args:
+        fcf (str): 2-char hex string representing the FCF byte.
+
+    Returns:
+        bool: True if frame type is Global Command, False otherwise
+        None: if input invalid
+    """
     return None if not is_hex(fcf) or len(fcf) != 2 else (int(fcf, 16) & 0b00000011) == 0
 
+
 def frame_type(fcf):
+    """
+    Returns the frame type bits (bits 0-1) of the FCF.
+
+    Args:
+        fcf (str): 2-char hex string representing the FCF byte.
+
+    Returns:
+        int: frame type (0-3)
+        None: if input invalid
+    """
     return (int(fcf, 16) & 0b00000011)
-    
+
+
 def is_manufspecific_8002_payload(fcf):
+    """
+    Returns True if the manufacturer specific bit (bit 2) is set.
+
+    Args:
+        fcf (str): 2-char hex string representing the FCF byte.
+
+    Returns:
+        bool: True if manufacturer specific bit is 1, False otherwise
+        None: if input invalid
+    """
     return ((int(fcf, 16) & 0b00000100) >> 2) == 1
 
-def build_fcf(frame_type, manuf_spec, direction, disabled_default="0"):
-    fcf = 0b00000000 | int(frame_type, 16)
+
+def build_fcf(frame_type_in, manuf_spec, direction, disabled_default="0"):
+    fcf = 0b00000000 | int(frame_type_in, 16)
     if int(manuf_spec, 16):
         fcf |= 0b100
     if int(direction, 16):
@@ -1207,7 +1363,20 @@ def build_fcf(frame_type, manuf_spec, direction, disabled_default="0"):
         fcf |= 0b10000
     return "%02x" % fcf
 
+
 def get_cluster_attribute_value( self, key, endpoint, clusterId, AttributeId):
+    """
+    Retrieve the value of a specific attribute within a cluster at a given endpoint for a device.
+
+    Args:
+        key: Device identifier (e.g., network ID)
+        endpoint: Endpoint identifier within the device
+        clusterId: Cluster ID within the endpoint
+        AttributeId: Attribute ID within the cluster
+
+    Returns:
+        The attribute value if found, else None.
+    """
     if (
         key not in self.ListOfDevices
         or "Ep" not in self.ListOfDevices[key]
@@ -1221,27 +1390,35 @@ def get_cluster_attribute_value( self, key, endpoint, clusterId, AttributeId):
 
 # Functions to manage Device Attributes infos ( ConfigureReporting)
 def check_datastruct(self, DeviceAttribute, key, endpoint, clusterId):
-    # Make sure all tree exists
+    """
+    Ensure the nested data structure exists within ListOfDevices for a given device,
+    device attribute, endpoint, and clusterId. Initialize missing nodes as empty dicts or default values.
+
+    Args:
+        DeviceAttribute (str): The attribute category under the device (e.g., "Ep").
+        key: Device identifier (e.g., network ID).
+        endpoint: Endpoint identifier within the device.
+        clusterId: Cluster identifier within the endpoint.
+
+    Returns:
+        True if structure ensured, None if device key not found.
+    """
     if key not in self.ListOfDevices:
         return None
-    if DeviceAttribute not in self.ListOfDevices[key]:
-        self.ListOfDevices[key][DeviceAttribute] = {}
-    if "Ep" not in self.ListOfDevices[key][DeviceAttribute]:
-        self.ListOfDevices[key][DeviceAttribute]["Ep"] = {}
-    if endpoint not in self.ListOfDevices[key][DeviceAttribute]["Ep"]:
-        self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint] = {}
-    if clusterId not in self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint]:
-        self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId] = {}
-    if not isinstance(self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId], dict):
-        self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId] = {}
-    if "TimeStamp" not in self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]:
-        self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["TimeStamp"] = 0
-    if "iSQN" not in self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]:
-        self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["iSQN"] = {}
-    if "Attributes" not in self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]:
-        self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["Attributes"] = {}
-    if "ZigateRequest" not in self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]:
-        self.ListOfDevices[key][DeviceAttribute]["Ep"][endpoint][clusterId]["ZigateRequest"] = {}
+
+    device_attr = self.ListOfDevices[key].setdefault(DeviceAttribute, {})
+    ep = device_attr.setdefault("Ep", {})
+    endpoint_dict = ep.setdefault(endpoint, {})
+    cluster_dict = endpoint_dict.setdefault(clusterId, {})
+
+    if not isinstance(cluster_dict, dict):
+        endpoint_dict[clusterId] = cluster_dict = {}
+
+    cluster_dict.setdefault("TimeStamp", 0)
+    cluster_dict.setdefault("iSQN", {})
+    cluster_dict.setdefault("Attributes", {})
+    cluster_dict.setdefault("ZigateRequest", {})
+
     return True
 
 
@@ -1486,11 +1663,11 @@ def full_function_device(self, nwkid):
     
     # Zigpy is considering end devices as reduced function devices and that are Receiving on idle
     main_powered_device = bool( get_deviceconf_parameter_value(self, self.ListOfDevices[nwkid].get("ModelName", ""), "MainPowered") )
-    full_function_device = main_powered_device or "Full-Function Device" in self.ListOfDevices[nwkid].get("Capability", [])
+    is_full_function_device = main_powered_device or "Full-Function Device" in self.ListOfDevices[nwkid].get("Capability", [])
     
-    self.log.logging( "outRawAPS", "Debug", "Device %s is reduced function device: %s" % (nwkid, full_function_device), nwkid)
+    self.log.logging( "outRawAPS", "Debug", "Device %s is reduced function device: %s" % (nwkid, is_full_function_device), nwkid)
     
-    return full_function_device
+    return is_full_function_device
 
 
 def is_ack_tobe_disabled(self, nwkid):
@@ -1614,41 +1791,72 @@ def print_stack( self ):
         self.log.logging( "PluginTools", "Error", "[{:40}| {}:{}".format(x.function, x.filename, x.lineno))
 
 
-
 def helper_copyfile(source, dest, move=True):
+    """
+    Copy or move a file from source to destination.
 
+    If `move` is True, the source file is moved. Otherwise, it is copied.
+    If the shutil operation fails (e.g., for non-binary-safe files), it falls back to line-by-line copying in text mode.
+
+    Args:
+        source (str): Path to the source file.
+        dest (str): Destination file path.
+        move (bool): Whether to move (True) or copy (False) the file.
+
+    Returns:
+        None
+    """
     try:
-        import shutil
-
         if move:
             shutil.move(source, dest)
         else:
             shutil.copy(source, dest)
-    except Exception:
-        with open(source, "r") as src, open(dest, "wt") as dst:
-            for line in src:
-                dst.write(line)
+
+    except Exception as e:
+        # Fallback in case shutil fails (e.g., special file types or permissions)
+        try:
+            with open(source, "r", encoding="utf-8") as src, open(dest, "wt", encoding="utf-8") as dst:
+                for line in src:
+                    dst.write(line)
+        except Exception as fallback_error:
+            raise RuntimeError(f"Failed to copy {source} to {dest}: {fallback_error}") from e
 
 
 def helper_versionFile(source, nbversion):
+    """
+    Maintain a versioned backup of a file.
 
+    This function creates versioned copies of the given file, like `file-01`, `file-02`, ..., up to `file-nbversion`.
+    Each call shifts the previous versions up by one (e.g., `file-02` becomes `file-03`, etc.).
+    The most recent copy is always `file-01`.
+
+    Args:
+        source (str): The path of the file to version.
+        nbversion (int): Number of versions to keep. If 0, does nothing.
+
+    Returns:
+        None
+    """
     source = str(source)
+
     if nbversion == 0:
         return
 
     if nbversion == 1:
-        helper_copyfile(source, source + "-%02d" % 1)
+        helper_copyfile(source, f"{source}-01")
     else:
+        # Shift existing versions up by 1
         for version in range(nbversion - 1, 0, -1):
-            _fileversion_n = source + "-%02d" % version
-            if not os.path.isfile(_fileversion_n):
+            file_old = f"{source}-{version:02d}"
+            if not os.path.isfile(file_old):
                 continue
 
-            _fileversion_n1 = source + "-%02d" % (version + 1)
-            helper_copyfile(_fileversion_n, _fileversion_n1)
+            file_new = f"{source}-{version + 1:02d}"
+            helper_copyfile(file_old, file_new)
 
-        # Last one
-        helper_copyfile(source, source + "-%02d" % 1, move=False)
+        # Create or update version 01
+        helper_copyfile(source, f"{source}-01", move=False)
+
 
 def build_list_of_device_model(self, force=False):
     
@@ -1715,101 +1923,127 @@ def unknown_device_model(self, NwkId, Model, ManufCode, ManufName ):
     
     self.ListOfDevices[ NwkId ]['Log_UnknowDeviceFlag'] = time.time()
 
-def is_domoticz_bellow_2020(self):
+
+def is_domoticz_below_2020(self) -> bool:
+    """Return True if Domoticz version is below year 2020."""
     return self.DomoticzMajor < 2020
 
-def is_domoticz_bellow_2021(self):
+
+def is_domoticz_below_2021(self) -> bool:
+    """Return True if Domoticz version is below year 2021."""
     return self.DomoticzMajor < 2021
 
-def is_domoticz_below_2022(self):
+
+def is_domoticz_below_2022(self) -> bool:
+    """Return True if Domoticz version is below year 2022."""
     return self.DomoticzMajor < 2022
 
-def is_domoticz_below_2023(self):
+def is_domoticz_below_2023(self) -> bool:
+    """Return True if Domoticz version is below year 2023."""
     return self.DomoticzMajor < 2023
 
-def is_domoticz_above_2022(self):
+
+def is_domoticz_above_2022(self) -> bool:
+    """Return True if Domoticz version is above year 2022."""
     return self.DomoticzMajor > 2022
 
-def is_domoticz_above_2022_2(self):
+
+def is_domoticz_above_2022_2(self) -> bool:
+    """
+    Return True if Domoticz version is above 2022.2,
+    meaning major version > 2022 or exactly 2022 with minor >= 2.
+    """
     if self.DomoticzMajor > 2022:
         return True
     return self.DomoticzMajor == 2022 and self.DomoticzMinor >= 2
 
-def is_domoticz_2023(self):
-    if self.DomoticzMajor == 2023:
-        return True
-    
-def is_domoticz_above_2023(self):
+
+def is_domoticz_2023(self) -> bool:
+    """Return True if Domoticz version is exactly 2023."""
+    return self.DomoticzMajor == 2023
+
+
+def is_domoticz_above_2023(self) -> bool:
+    """Return True if Domoticz version is above year 2023."""
     return self.DomoticzMajor > 2023
 
 
-def is_domoticz_bellow_2024(self):
+def is_domoticz_below_2024(self) -> bool:
+    """Return True if Domoticz version is below year 2024."""
     return self.DomoticzMajor < 2024
 
 
-def is_domoticz_2024(self):
+def is_domoticz_2024(self) -> bool:
+    """Return True if Domoticz version is exactly 2024."""
     return self.DomoticzMajor == 2024
 
 
-def is_domoticz_above_2024(self):
+def is_domoticz_above_2024(self) -> bool:
+    """Return True if Domoticz version is exactly 2024."""
     return self.DomoticzMajor > 2024
 
-def is_domoticz_new_API(self):
+def is_domoticz_new_API(self) -> bool:
+    """
+        Check if Domoticz version supports the new API.
 
-    'is_domoticz_new_API() False True 1 15356'
+        - Versions below 2023 do not support new API.
+        - For 2023, minor > 1 or (minor == 1 and build >= 15326) supports new API.
+        - Versions 2024 and above support new API.
+    """
     self.log.logging("PluginTools", "Debug", "is_domoticz_new_API() %s %s %s %s" %(
         is_domoticz_below_2023(self), is_domoticz_2023(self), self.DomoticzMinor, self.DomoticzBuild))
-    
     if is_domoticz_below_2023(self):
         return False
-    
     if is_domoticz_2023(self):
         return ( self.DomoticzMinor > 1 or ( self.DomoticzMinor == 1 and self.DomoticzBuild >= 15326 ))
-        
-    # Domoticz 2024 !
     return True
 
-def is_domoticz_latest_typename(self):
-    """Checks if the Domoticz binary includes the latest typename."""
 
-    # If Domoticz version is below 2024, it's not the latest typename.
-    if is_domoticz_bellow_2024(self):
+def is_domoticz_latest_typename(self) -> bool:
+    """
+        Checks if Domoticz includes the latest typename.
+
+        Returns True if:
+          - version is 2024 or above, AND
+          - minor version > 4 OR build number >= 15956
+    """
+    if is_domoticz_below_2024(self):
         return False
-
-    # If DomoticzMinor is greater than 4 or DomoticzBuild is 15956 or higher, it's the latest typename.
-    if self.DomoticzMinor > 4 or self.DomoticzBuild >= 15956:
-        return True
-
-    # Otherwise, it's not the latest typename.
-    return False
+    return self.DomoticzMinor > 4 or self.DomoticzBuild >= 15956
 
 
-def is_domoticz_new_blind(self):
+def is_domoticz_new_blind(self) -> bool:
+    """ Check if Domoticz version supports the new blind control API. """
     return is_domoticz_above_2022_2(self)
 
 
-def is_domoticz_update_SuppressTriggers( self ):
+def is_domoticz_update_SuppressTriggers( self ) -> bool:
+    """
+        Check if Domoticz version uses updated suppress triggers flag.
+        
+        - Versions above 2022 always True.
+        - Versions below 2021 always False.
+        - Special case for 2021.1 build < 13374 returns False.
+        - Default True otherwise.
+    """
     
-    if is_domoticz_above_2022:
+    if is_domoticz_above_2022(self):
         return True
-    
-    if is_domoticz_bellow_2021:
+    if is_domoticz_below_2021(self):
         return False
-
-    if self.DomoticzMajor == 2021 and self.DomoticzMinor == 1 and self.DomoticzBuild < 13374:
-        return False
-    
-    return True
+    return ( self.DomoticzMajor != 2021 or self.DomoticzMinor != 1 or self.DomoticzBuild >= 13374 )
 
 
-def is_domoticz_touch(self):
-    """Checks if the Domoticz version supports touch."""
+def is_domoticz_touch(self) -> bool:
+    """
+    Check if Domoticz version supports touch features.
 
-    # If VersionNewFashion flag is set or DomoticzMajor is 2022 or higher, it supports touch.
+    - Returns True if VersionNewFashion is set or major version >= 2022.
+    - Also True if major == 4 and minor >= 10547 (legacy condition?).
+    """
     if self.VersionNewFashion or self.DomoticzMajor >= 2022:
         return True
 
-    # If DomoticzMajor is 4 and DomoticzMinor is 10547 or higher, it supports touch.
     return self.DomoticzMajor == 4 and self.DomoticzMinor >= 10547
 
 
