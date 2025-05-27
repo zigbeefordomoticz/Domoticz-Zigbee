@@ -33,61 +33,101 @@ ZIGATE_DNS_RECORDS = {
 
 
 def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_model):
+    """
+    Checks the plugin and (if native communication) firmware versions against expected versions
+    retrieved via DNS TXT records.
+
+    Args:
+        zigbee_communication (str): 'native' or 'zigpy'
+        branch (str): The plugin branch name (e.g., 'stable', 'beta')
+        zigate_model (str): The Zigate hardware model (used when communication is 'native')
+
+    Returns:
+        tuple: (plugin_version, firmware_major, firmware_minor)
+               If not available, returns (0, 0, 0)
+    """
     self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {zigbee_communication} {branch} {zigate_model}")
 
-    plugin_version = None
-    plugin_version = _get_dns_txt_record(self, PLUGIN_TXT_RECORD)
-    self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {plugin_version}")
-
-    if plugin_version is None:
-        # Something weird happened
-        self.log.logging("Plugin", "Error", "Unable to get access to plugin expected version. Is Internet access available ?")
+    plugin_version_txt = _get_dns_txt_record(self, PLUGIN_TXT_RECORD)
+    if plugin_version_txt is None:
+        self.log.logging("Plugin", "Error", "Unable to get access to plugin expected version. Is Internet access available?")
         return (0, 0, 0)
 
-    plugin_version_dict = _parse_dns_txt_record( plugin_version)
-    self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {plugin_version} {plugin_version_dict}")
+    plugin_version_dict = _parse_dns_txt_record(plugin_version_txt)
+    self.log.logging("Plugin", "Debug", f"Plugin version DNS TXT: {plugin_version_dict}")
 
-    # If native communication (zigate) let's find the zigate firmware
-    firmware_version = None
+    firmware_version_dict = {}
     if zigbee_communication == "native":
         zigate_plugin_record = ZIGATE_DNS_RECORDS.get(zigate_model)
-        firmware_version = _get_dns_txt_record(self, zigate_plugin_record)
-        firmware_version_dict = _parse_dns_txt_record(firmware_version)
-        self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {firmware_version} {firmware_version_dict}")
+        firmware_version_txt = _get_dns_txt_record(self, zigate_plugin_record)
+        firmware_version_dict = _parse_dns_txt_record(firmware_version_txt)
+        self.log.logging("Plugin", "Debug", f"Firmware version DNS TXT: {firmware_version_dict}")
 
-    self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {plugin_version} {plugin_version_dict}")
+    if zigbee_communication == "native":
+        if (
+            branch in plugin_version_dict and
+            "firmMajor" in firmware_version_dict and
+            "firmMinor" in firmware_version_dict
+        ):
+            return (
+                plugin_version_dict[branch],
+                int(firmware_version_dict["firmMajor"]),
+                int(firmware_version_dict["firmMinor"])
+            )
+    elif zigbee_communication == "zigpy":
+        if branch in plugin_version_dict:
+            return (plugin_version_dict[branch], 0, 0)
 
-    if zigbee_communication == "native" and branch in plugin_version_dict and "firmMajor" in firmware_version_dict and "firmMinor" in firmware_version_dict:
-        return (plugin_version_dict[branch], firmware_version_dict["firmMajor"], firmware_version_dict["firmMinor"])
-
-    if zigbee_communication == "zigpy" and branch in plugin_version_dict:
-        return (plugin_version_dict[branch], 0, 0)
-
-    self.log.logging("Plugin", "Error", f"You are running {branch}-{plugin_version}, a NOT SUPPORTED version. ")
+    self.log.logging("Plugin", "Error", f"You are running {branch}-{plugin_version_txt}, a NOT SUPPORTED version.")
     return (0, 0, 0)
 
 
 def _get_dns_txt_record(self, record, timeout=DNS_REQ_TIMEOUT):
+    """
+    Resolves a DNS TXT record and returns its content as a string.
+    
+    Tries UDP first, falls back to TCP on failure.
+    Handles common DNS resolution errors and logs appropriately.
+    
+    Args:
+        record (str): The DNS record name.
+        timeout (int): Timeout in seconds for the DNS query.
+    
+    Returns:
+        str or None: The concatenated TXT record contents, or None on failure.
+    """
     if not self.internet_available:
         return None
 
     try:
-        result = dns.resolver.resolve(record, "TXT", tcp=True, lifetime=timeout).response.answer[0]
-        return str(result[0]).strip('"')
+        resolver = dns.resolver.Resolver()
+        #resolver.lifetime = timeout  # Apply timeout globally to all attempts
+
+        try:
+            answers = resolver.resolve(record, "TXT", tcp=False)
+            self.log.logging("Plugin", "Debug", f"_get_dns_txt_record: {record} via UDP: {answers}")
+        except dns.exception.DNSException:
+            answers = resolver.resolve(record, "TXT", tcp=True)
+            self.log.logging("Plugin", "Debug", f"_get_dns_txt_record: {record} via TCP: {answers}")
+
+        # Extract actual strings from TXT response
+        txt_records = []
+        txt_records.extend(rdata.to_text().strip('"') for rdata in answers)
+        return ";".join(txt_records) if txt_records else None
 
     except dns.resolver.Timeout:
-        error_message = f"DNS resolution timed out for {record} after {timeout} second"
+        error_message = f"DNS resolution timed out for {record} after {timeout} seconds"
         self.internet_available = False
 
     except dns.resolver.NoAnswer:
-        error_message = f"DNS TXT record not found for {record}"
+        error_message = f"No DNS TXT answer found for {record}"
 
     except dns.resolver.NoNameservers:
-        error_message = f"No nameservers found for {record}"
+        error_message = f"No nameservers found while resolving {record}"
         self.internet_available = False
 
     except Exception as e:
-        error_message = f"An unexpected error occurred while resolving DNS TXT record for {record}: {e}"
+        error_message = f"Unexpected error while resolving {record}: {e}"
 
     self.log.logging("Plugin", "Error", error_message)
     return None
