@@ -66,7 +66,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     newDeviceForPlugin = not IEEEExist(self, Ieee)
 
     self.log.logging(
-        [ "DeviceAnnouncement", "Pairing"],
+        [ "DeviceAnnoucement", "Pairing"],
         "Debug",
         "Decode004D V2 - Device Annoucement: NwkId: %s Ieee: %s MacCap: %s ReJoin: %s LQI: %s NewDevice: %s" % (NwkId, Ieee, MacCapa, RejoinFlag, MsgLQI, newDeviceForPlugin),
         NwkId,
@@ -76,7 +76,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     if newDeviceForPlugin:
         if RejoinFlag and self.pluginconf.pluginConf["DropBadAnnoucement"]:
             self.log.logging(
-                [ "DeviceAnnouncement", "Pairing"],
+                [ "DeviceAnnoucement", "Pairing"],
                 "Debug",
                 "------------ > Adding Device Droping rejoin flag! %s %s %s)" % (NwkId, Ieee, RejoinFlag),
                 NwkId,
@@ -89,7 +89,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             if "Announced" in self.ListOfDevices[NwkId]:
                 del self.ListOfDevices[NwkId]["Announced"]
             self.log.logging(
-                [ "DeviceAnnouncement", "Pairing"],
+                [ "DeviceAnnoucement", "Pairing"],
                 "Debug",
                 "------------ > Adding a new device %s %s )" % (NwkId, Ieee),
                 NwkId,
@@ -99,7 +99,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     # Existing Device
     if Ieee in self.IEEE2NWK:
         self.log.logging(  
-            [ "DeviceAnnouncement", "Pairing"], 
+            [ "DeviceAnnoucement", "Pairing"], 
             "Debug", 
             "------------ > Existing device ShortId New: %s ShortId Old: %s" % (
                 NwkId, self.IEEE2NWK[Ieee]), 
@@ -111,7 +111,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         # Looks like on 31c with Xiaomi, we got only that one , and not the True DeviceAnnoucement!
         store_annoucement(self, self.IEEE2NWK[Ieee], RejoinFlag, now)
         self.log.logging(
-            [ "DeviceAnnouncement", "Pairing"],
+            [ "DeviceAnnoucement", "Pairing"],
             "Debug",
             "------------ > Store device Rejoin Flag: %s droping" % RejoinFlag,
             NwkId,
@@ -123,7 +123,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         # Something wrong happen , most-likely the ShortId changed during the provisioning and we cannot handle that.
         # All Data structutre have been cleaned during the DeviceExist call.
         self.log.logging(
-            [ "DeviceAnnouncement", "Pairing"],
+            [ "DeviceAnnoucement", "Pairing"],
             "Error",
             "Something wrong on Device %s %s pairing process. (aborting)" % (NwkId, Ieee),
             NwkId,
@@ -133,7 +133,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
     # When reaching that point Nwkid should have been created
     if NwkId not in self.ListOfDevices:
         self.log.logging(
-            [ "DeviceAnnouncement", "Pairing"],
+            [ "DeviceAnnoucement", "Pairing"],
             "Error",
             "Device Annoucement: NwkId: %s Ieee: %s MacCap: %s - Error has device seems not to be created !!!" % (NwkId, Ieee, MacCapa),
             NwkId,
@@ -141,12 +141,12 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         return
 
     reseted_device = False
-    self.log.logging([ "DeviceAnnouncement", "Pairing"], "Debug", "device_annoucementv2 - Nwkid: %s Status: %s" %(NwkId,self.ListOfDevices[NwkId]["Status"] ), NwkId)
+    self.log.logging([ "DeviceAnnoucement", "Pairing"], "Debug", "device_annoucementv2 - Nwkid: %s Status: %s" %(NwkId,self.ListOfDevices[NwkId]["Status"] ), NwkId)
     if (
         ( "Status" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["Status"] in ("Removed", "erasePDM", "provREQ", "Leave") ) 
         or ( "PreviousStatus" in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]["PreviousStatus"] in ("Removed", "erasePDM", "provREQ", "Leave") )
     ):
-        self.log.logging([ "DeviceAnnouncement", "Pairing"], "Debug", "--> Device reset, removing key Attributes", NwkId)
+        self.log.logging([ "DeviceAnnoucement", "Pairing"], "Debug", "--> Device reset, removing key Attributes", NwkId)
         force_reset_and_remove_attributes(self, NwkId)
         reseted_device = True
         self.ListOfDevices[NwkId]["Status"] = "inDB"
@@ -162,7 +162,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         message = "Device Annoucement: NwkId: %s Ieee: %s MacCap: %s" % (NwkId, Ieee, MacCapa)
 
     if mainPoweredDevice(self, NwkId) or self.ListOfDevices[NwkId]["Status"] != "inDB":
-        self.log.logging([ "DeviceAnnouncement", "Pairing"], "Status", message, NwkId)
+        self.log.logging([ "DeviceAnnoucement", "Pairing"], "Status", message, NwkId)
         self.adminWidgets.updateNotificationWidget(Devices, message)
 
     # Do the Magic Read Attributes
@@ -175,7 +175,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         # No Re Join flag.
         # This is a known device
         # Do nothing, except for legrand we request battery level (as it is never repored)
-        self.log.logging([ "DeviceAnnouncement", "Pairing"], "Debug", "------------ > No Rejoin Flag seen, droping", NwkId)
+        self.log.logging([ "DeviceAnnoucement", "Pairing"], "Debug", "------------ > No Rejoin Flag seen, droping", NwkId)
         timeStamped(self, NwkId, 0x004D)
         lastSeenUpdate(self, Devices, NwkId=NwkId)
 
@@ -189,7 +189,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
             zdp_node_descriptor_request(self, NwkId)
 
         if reseted_device:
-            self.log.logging([ "DeviceAnnouncement", "Pairing"], "Debug", "--> Device reset, redoing provisioning", NwkId)
+            self.log.logging([ "DeviceAnnoucement", "Pairing"], "Debug", "--> Device reset, redoing provisioning", NwkId)
             # IAS Enrollment if required
             self.iaszonemgt.IAS_device_enrollment(NwkId)
             zigbee_provision_device(self, Devices, NwkId, 0, "inDB")
@@ -200,7 +200,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
         # If the TimeStamp is > DELAY_BETWEEN_2_DEVICEANNOUCEMENT, the Data are invalid and we will do process this.
         if "Rejoin" in self.ListOfDevices[NwkId]["Announced"] and self.ListOfDevices[NwkId]["Announced"]["Rejoin"] in ("01", "02") and self.ListOfDevices[NwkId]["Status"] != "Leave":
             self.log.logging(
-                [ "DeviceAnnouncement", "Pairing"],
+                [ "DeviceAnnoucement", "Pairing"],
                 "Debug",
                 "------------ > Rejoin Flag was set to 0x01 or 0x02, droping",
                 NwkId,
@@ -247,7 +247,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
     # This should be the first one, let's take the information and drop it
     self.log.logging(
-        [ "DeviceAnnouncement", "Pairing"],
+        [ "DeviceAnnoucement", "Pairing"],
         "Debug",
         "------------ > Finally do the existing device and rebind if needed",
     )
@@ -263,7 +263,7 @@ def device_annoucementv2(self, Devices, MsgData, MsgLQI):
 
 def force_reset_and_remove_attributes(self, NwkId):
     """Reset device and remove specific attributes to clear its state."""
-    self.log.logging("DeviceAnnouncement", "Debug", f"--> Device reset, removing key Attributes for NwkId: {NwkId}")
+    self.log.logging("DeviceAnnoucement", "Debug", f"--> Device reset, removing key Attributes for NwkId: {NwkId}")
 
     # Helper function to remove keys safely
     def __remove_key(device, key):
@@ -272,7 +272,7 @@ def force_reset_and_remove_attributes(self, NwkId):
 
     device = self.ListOfDevices.get(NwkId)
     if not device:
-        self.log.logging("DeviceAnnouncement", "Error", f"Device with NwkId {NwkId} not found.")
+        self.log.logging("DeviceAnnoucement", "Error", f"Device with NwkId {NwkId} not found.")
         return
 
     # Remove specific keys from the device
@@ -290,9 +290,9 @@ def force_reset_and_remove_attributes(self, NwkId):
                 if attr in ep_data:
                     del ep_data[attr]
                     ep_data[attr] = {}
-                    self.log.logging("DeviceAnnouncement", "Debug", f"Reset {attr} for Ep: {ep_key} of Device: {NwkId}")
+                    self.log.logging("DeviceAnnoucement", "Debug", f"Reset {attr} for Ep: {ep_key} of Device: {NwkId}")
 
-    self.log.logging("DeviceAnnouncement", "Debug", f"Device {NwkId} reset and attributes removed.")
+    self.log.logging("DeviceAnnoucement", "Debug", f"Device {NwkId} reset and attributes removed.")
 
 
 def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgLQI, now):
@@ -304,7 +304,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
     # deviceMacCapa = list(decodeMacCapa(ReArrangeMacCapaBasedOnModel(self, NwkId, MsgMacCapa)))
 
     self.log.logging(
-        [ "DeviceAnnouncement", "Pairing"],
+        [ "DeviceAnnoucement", "Pairing"],
         "Debug",
         "Decode004D - Already known device %s infos: %s, " % (NwkId, self.ListOfDevices[NwkId]),
         NwkId,
@@ -313,7 +313,7 @@ def decode004d_existing_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgL
     # If this is a rejoin after a leave, let's update the Status
 
     if self.ListOfDevices[NwkId]["Status"] == "Leave":
-        self.log.logging([ "DeviceAnnouncement", "Pairing"], "Debug", "Decode004D -  %s Status from Left to inDB" % (NwkId), NwkId)
+        self.log.logging([ "DeviceAnnoucement", "Pairing"], "Debug", "Decode004D -  %s Status from Left to inDB" % (NwkId), NwkId)
         self.ListOfDevices[NwkId]["Status"] = "inDB"
 
     timeStamped(self, NwkId, 0x004D)
@@ -344,13 +344,13 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
         livolo_bind(self, NwkId, "06")
 
     # New device comming. The IEEE is not known
-    self.log.logging([ "DeviceAnnouncement", "Pairing"], "Debug", "Decode004D - New Device %s %s" % (NwkId, MsgIEEE), NwkId)
+    self.log.logging([ "DeviceAnnoucement", "Pairing"], "Debug", "Decode004D - New Device %s %s" % (NwkId, MsgIEEE), NwkId)
 
     # I wonder if this code makes sense ? ( PP 02/05/2020 ), This should not happen!
     if MsgIEEE in self.IEEE2NWK:
-        self.log.logging([ "DeviceAnnouncement", "Pairing"], "Error", "Decode004d - New Device %s %s already exist in IEEE2NWK" % (NwkId, MsgIEEE))
+        self.log.logging([ "DeviceAnnoucement", "Pairing"], "Error", "Decode004d - New Device %s %s already exist in IEEE2NWK" % (NwkId, MsgIEEE))
         self.log.logging(
-            [ "DeviceAnnouncement", "Pairing"],
+            [ "DeviceAnnoucement", "Pairing"],
             "Debug",
             "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s"
             % (
@@ -360,7 +360,7 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
         )
         if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]["Status"] != "inDB":
             self.log.logging(
-                [ "DeviceAnnouncement", "Pairing"],
+                [ "DeviceAnnoucement", "Pairing"],
                 "Debug",
                 "Decode004d - receiving a new Device Announced for a device in processing, drop it",
                 NwkId,
@@ -374,13 +374,13 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
     if IEEEExist(self, MsgIEEE) and not DeviceExist(
         self, Devices, NwkId, MsgIEEE
     ):
-        self.log.logging( [ "DeviceAnnouncement", "Pairing"], "Error", "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " % (
+        self.log.logging( [ "DeviceAnnoucement", "Pairing"], "Error", "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " % (
             NwkId, MsgIEEE, str(self.ListOfDevices[NwkId])), )
         return
 
     # 2- Create the Data Structutre
     initDeviceInList(self, NwkId)
-    self.log.logging([ "DeviceAnnouncement", "Pairing"], "Debug", "Decode004d - Looks like it is a new device sent by Zigate")
+    self.log.logging([ "DeviceAnnoucement", "Pairing"], "Debug", "Decode004d - Looks like it is a new device sent by Zigate")
     self.pairing_in_progress = True
     self.ListOfDevices[NwkId]["MacCapa"] = MsgMacCapa
     self.ListOfDevices[NwkId]["Capability"] = deviceMacCapa
@@ -398,12 +398,12 @@ def decode004d_new_devicev2(self, Devices, NwkId, MsgIEEE, MsgMacCapa, MsgData, 
         self.ListOfDevices[NwkId]["LogicalType"] = "End Device"
         self.ListOfDevices[NwkId]["DeviceType"] = "RFD"
 
-    self.log.logging([ "DeviceAnnouncement", "Pairing"], "Log", "--> Adding device %s in self.DevicesInPairingMode" % NwkId)
+    self.log.logging([ "DeviceAnnoucement", "Pairing"], "Log", "--> Adding device %s in self.DevicesInPairingMode" % NwkId)
     if self.webserver:
         self.webserver.add_element_to_devices_in_pairing_mode( NwkId)
-        self.log.logging([ "DeviceAnnouncement", "Pairing"], "Log", "--> %s" % str(self.webserver.DevicesInPairingMode))
+        self.log.logging([ "DeviceAnnoucement", "Pairing"], "Log", "--> %s" % str(self.webserver.DevicesInPairingMode))
 
-    self.log.logging( [ "DeviceAnnouncement", "Pairing"], "Debug", "Decode004D - %s Infos: %s" % (
+    self.log.logging( [ "DeviceAnnoucement", "Pairing"], "Debug", "Decode004D - %s Infos: %s" % (
         NwkId, self.ListOfDevices[NwkId]), NwkId, )
     
 
@@ -419,7 +419,7 @@ def store_annoucement(self, NwkId, MsgRejoinFlag, now):
 
     # ['Announced']['TimeStamp'] = When it has been provided
     if NwkId not in self.ListOfDevices:
-        self.log.logging([ "DeviceAnnouncement", "Pairing"], "Error", "store_annoucement - Unknown NwkId %s in Db: %s" % (NwkId, self.ListOfDevices.keys()))
+        self.log.logging([ "DeviceAnnoucement", "Pairing"], "Error", "store_annoucement - Unknown NwkId %s in Db: %s" % (NwkId, self.ListOfDevices.keys()))
         return
 
     if "Announced" not in self.ListOfDevices[NwkId]:
@@ -439,10 +439,10 @@ def read_attributes_if_needed( self, NwkId):
     if not mainPoweredDevice(self, NwkId):
         return
     # Will be forcing Read Attribute (if forcePollingAfterAction is enabled -default-)
-    self.log.logging( [ "DeviceAnnouncement", "Pairing"], "Debug", "read_attributes_if_needed %s" %NwkId)
+    self.log.logging( [ "DeviceAnnoucement", "Pairing"], "Debug", "read_attributes_if_needed %s" %NwkId)
     self.ListOfDevices[NwkId]["Heartbeat"] = "0"
 
 def enforce_configure_reporting( self, NwkId):
-    self.log.logging([ "DeviceAnnouncement", "Pairing"], "Log", "Forcing a check of configure reporting after Device Annoucement on Main Powered device %s" %NwkId)
+    self.log.logging([ "DeviceAnnoucement", "Pairing"], "Log", "Forcing a check of configure reporting after Device Annoucement on Main Powered device %s" %NwkId)
     if self.configureReporting:
         self.configureReporting.check_configuration_reporting_for_device( NwkId, force=True)
