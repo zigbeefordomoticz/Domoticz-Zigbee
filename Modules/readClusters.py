@@ -1130,7 +1130,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
     elif MsgAttrID == "001b":  # Control Sequence Operation
         self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster %s - %s/%s Control Sequence Operation: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
-        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+        checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "001c":  # System Mode
         self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
