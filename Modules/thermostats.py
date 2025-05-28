@@ -364,7 +364,7 @@ def thermostat_Mode(self, NwkId, mode):
     # Find the Ep we should send the request
     ep_out = next( ( ep for ep in self.ListOfDevices[NwkId]["Ep"] if THERMOSTAT_CLUSTER in self.ListOfDevices[NwkId]["Ep"][ep] ), "01", )
     cluster_id = "%04x" % 0x0201
-    attribute = "%04x" % 0x001C
+    attribute = SYSTEM_MODE_ATTRIBUTE
     data_type = "30"  # Enum8
     data = "%02x" % SYSTEM_MODE[mode]
 
