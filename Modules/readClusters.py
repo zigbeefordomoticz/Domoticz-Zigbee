@@ -936,11 +936,13 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     # Thermostat cluster
     self.log.logging(
-        "Cluster",
+        ["Cluster", "Thermostats"],
         "Debug",
         "ReadCluster - 0201 - %s/%s AttrId: %s AttrType: %s AttSize: %s Data: %s" % (MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),
         MsgSrcAddr,
     )
+
+    checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     model_name = self.ListOfDevices[MsgSrcAddr].get("Model","")
     manufacturer_code = self.ListOfDevices[MsgSrcAddr].get("Manufacturer","")
@@ -968,47 +970,47 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, "0402", "0000", ValueTemp)
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Local Temp: %s" % ValueTemp, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Local Temp: %s" % ValueTemp, MsgSrcAddr)
 
     elif MsgAttrID == "0001":  # Outdoor Temperature
-        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Outdoor Temp: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - %s - %s/%s Outdoor Temp: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         ValueTemp = round(int(value) / 100, 2)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", ValueTemp, Attribute_="0001")
 
     elif MsgAttrID == "0002":  # Occupancy
-        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Occupancy: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - %s - %s/%s Occupancy: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif MsgAttrID == "0003":  # Min Heat Setpoint Limit
-        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Min Heat Setpoint Limit: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - %s - %s/%s Min Heat Setpoint Limit: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif MsgAttrID == "0004":  # Max Heat Setpoint Limit
-        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Max Heat Setpoint Limit: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - %s - %s/%s Max Heat Setpoint Limit: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif MsgAttrID == "0005":  # Min Cool Setpoint Limit
-        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Min Cool Setpoint Limit: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - %s - %s/%s Min Cool Setpoint Limit: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif MsgAttrID == "0006":  # Max Cool Setpoint Limit
-        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Max Cool Setpoint Limit: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - %s - %s/%s Max Cool Setpoint Limit: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif MsgAttrID == "0007":  # Pi Cooling Demand  (valve position %)
-        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Pi Cooling Demand: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - %s - %s/%s Pi Cooling Demand: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif MsgAttrID == "0008":  # Pi Heating Demand  (valve position %)
-        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Pi Heating Demand: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - %s - %s/%s Pi Heating Demand: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         if model_name in ("EH-ZB-VACT", 'iTRV', 'CCTFR6700'):
             receiving_heatingdemand_attribute( self, Devices, MsgSrcAddr, MsgSrcEp, value, MsgClusterId, MsgAttrID)
@@ -1020,17 +1022,17 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", value, Attribute_="0008")
 
     elif MsgAttrID == "0009":  # HVAC System Type Config
-        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s HVAC System Type Config: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - %s - %s/%s HVAC System Type Config: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif MsgAttrID == "0010":  # Calibration / Adjustement
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Calibration: %s" % value, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Calibration: %s" % value, MsgSrcAddr)
         if value not in range(0x00, 0x19):
             # We are in Negative value. 0xE7 = -25 0xff = -01 )
             value = -(0xFF + 1 - value)
         value = round(value / 10, 2)
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Calibration: %s" % value, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Calibration: %s" % value, MsgSrcAddr)
 
         if model_name == "EH-ZB-VACT":
             if "Schneider" not in self.ListOfDevices[MsgSrcAddr]:
@@ -1044,7 +1046,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "0011":  # Cooling Setpoint (Zinte16)
         ValueTemp = round(int(value) / 100, 1)
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Cooling Setpoint: %s" % ValueTemp, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Cooling Setpoint: %s" % ValueTemp, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
 
         if model_name in ("AC211", "AC221", "CAC221") and MsgClusterId in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp]:
@@ -1057,7 +1059,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     elif MsgAttrID == "0012":  # Heat Setpoint (Zinte16)
         ValueTemp = round(int(value) / 100, 2)
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Heating Setpoint: %s ==> %s" % (value, ValueTemp), MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Heating Setpoint: %s ==> %s" % (value, ValueTemp), MsgSrcAddr)
 
         if model_name == "AC201A":
             # We do not report this, as AC201 rely on 0xffad cluster
@@ -1082,33 +1084,33 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, int(value))
             # In case it is not a Eurotronic, let's Update heatPoint
             # As Eurotronics will rely on 0x4003 attributes
-            self.log.logging( "Cluster", "Debug", "ReadCluster - 0201 - Request update on Domoticz %s not a Schneider, not a Eurotronics" % MsgSrcAddr, MsgSrcAddr, )
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Request update on Domoticz %s not a Schneider, not a Eurotronics" % MsgSrcAddr, MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0014":  # Unoccupied Heating
         ValueTemp = round(int(value) / 100, 2)
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Unoccupied Heating:  %s ==> %s" % (value, ValueTemp), MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Unoccupied Heating:  %s ==> %s" % (value, ValueTemp), MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, ValueTemp, Attribute_=MsgAttrID)
 
     elif MsgAttrID == "0015":  # MIN_HEAT_SETPOINT_LIMIT
         ValueTemp = round(int(value) / 100, 1)
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Min SetPoint: %s" % ValueTemp, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Min SetPoint: %s" % ValueTemp, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
 
     elif MsgAttrID == "0016":  # MAX_HEAT_SETPOINT_LIMIT
         ValueTemp = round(int(value) / 100, 1)
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Max SetPoint: %s" % ValueTemp, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Max SetPoint: %s" % ValueTemp, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, ValueTemp)
 
     elif MsgAttrID == "001a":  # Remote Sensing
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
-        self.log.logging( "Cluster", "Debug", "ReadCluster - %s - %s/%s Remote Sensing: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - %s - %s/%s Remote Sensing: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
 
     elif MsgAttrID == "0025":  # Scheduler state
         # Bit #0 => disable/enable Scheduler
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Scheduler state:  %s" % value, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Scheduler state:  %s" % value, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0029":  # Heating operation state
@@ -1118,20 +1120,20 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
         value = 1 if int(value) else 0
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", value, Attribute_="0124")
 
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Heating operation state:  %s" % value, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Heating operation state:  %s" % value, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0045":  # ACLouverPosition
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - ACLouverPosition:  %s" % value, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - ACLouverPosition:  %s" % value, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "001b":  # Control Sequence Operation
-        self.log.logging( "Cluster", "Debug", "ReadCluster %s - %s/%s Control Sequence Operation: %s" % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster %s - %s/%s Control Sequence Operation: %s" % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif MsgAttrID == "001c":  # System Mode
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - System Mode: %s" % (value), MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)     
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID)
 
@@ -1142,47 +1144,47 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02x" % 0x0, Attribute_="fd00")
 
     elif MsgAttrID == "001d":
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Alarm Mask: %s" % value, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Alarm Mask: %s" % value, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0403":
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Attribute 403: %s" % value, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Attribute 403: %s" % value, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0405":
-        self.log.logging( "Cluster", "Debug", "ReadCluster - 0201 - Attribute 405 ( thermostat mode ?=regulator mode For Elko) : %s" % value, MsgSrcAddr, )
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Attribute 405 ( thermostat mode ?=regulator mode For Elko) : %s" % value, MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0406":
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Attribute 406 : %s" % value, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Attribute 406 : %s" % value, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0408":
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        self.log.logging( "Cluster", "Debug", "ReadCluster - 0201 - Attribute 408 ( Elko power consumption in last 10 minutes): %s" % value, MsgSrcAddr, )
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Attribute 408 ( Elko power consumption in last 10 minutes): %s" % value, MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID == "0409":
         value = int(decodeAttribute(self, MsgAttType, MsgClusterData))
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Attribute 409: %s" % value, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Attribute 409: %s" % value, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
     elif MsgAttrID in ("4000", "4001", "4002", "4003", "4008") and eurotronics:
 
         # Eurotronic SPZB Specifics
         if MsgAttrID == "4000":  # TRV Mode for EUROTRONICS
-            self.log.logging( "Cluster", "Debug", "ReadCluster - 0201 - %s/%s TRV Mode: %s" % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - %s/%s TRV Mode: %s" % (
                 MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr, )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
         elif MsgAttrID == "4001":  # Valve position for EUROTRONICS
-            self.log.logging( "Cluster", "Debug", "ReadCluster - 0201 - %s/%s Valve position: %s" % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - %s/%s Valve position: %s" % (
                 MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr, )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", int(value, 16), Attribute_="4001")
 
         elif MsgAttrID == "4002":  # Erreors for EUROTRONICS
-            self.log.logging( "Cluster", "Debug", "ReadCluster - 0201 - %s/%s Status: %s" % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - %s/%s Status: %s" % (
                 MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr, )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
@@ -1191,7 +1193,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             if "0012" in self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]:
                 setPoint = self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId]["0012"]
 
-            self.log.logging( "Cluster", "Debug", "ReadCluster - 0201 - %s/%s Current Temp Set point: %s versus %s " % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - %s/%s Current Temp Set point: %s versus %s " % (
                 MsgSrcAddr, MsgSrcEp, ValueTemp, setPoint), MsgSrcAddr, )
 
             if ValueTemp != float(setPoint):
@@ -1216,7 +1218,7 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             #     0x000080: "child lock",
             # }
 
-            self.log.logging( "Cluster", "Debug", "ReadCluster - 0201 - %s/%s Host Flags: %s" % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - %s/%s Host Flags: %s" % (
                 MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr, )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
 
@@ -1254,14 +1256,14 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
             if MsgClusterData in THERMOSTAT_MODE:
                 self.log.logging(
-                    "Cluster",
+                    ["Cluster", "Thermostats"],
                     "Debug",
                     "readCluster - %s - %s/%s Schneider Thermostat Mode %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, THERMOSTAT_MODE[MsgClusterData]),
                     MsgSrcAddr,
                 )
             else:
                 self.log.logging(
-                    "Cluster",
+                    ["Cluster", "Thermostats"],
                     "Debug",
                     "readCluster - %s - %s/%s Schneider Thermostat Mode 0xe010 %s " % (MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData),
                     MsgSrcAddr,
@@ -1271,52 +1273,52 @@ def Cluster0201(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
         elif MsgAttrID == "e011":  # hact mode : fip or conventional and heating mode : fip or setpoint
-            self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_HACT_CONFIG  %s " % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_HACT_CONFIG  %s " % (
                 MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", MsgClusterData, Attribute_=MsgAttrID)
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
         elif MsgAttrID == "e012":  # 57362, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS
-            self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS  %s " % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS  %s " % (
                 MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500", MsgClusterData)
 
         elif MsgAttrID == "e013":  # 57363, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD
-            self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD  %s " % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD  %s " % (
                 MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
         elif MsgAttrID == "e014":  # 57364, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL
-            self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL  %s " % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL  %s " % (
                 MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
         elif MsgAttrID == "e020":  # fip mode
-            self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Schneider FIP mode  %s " % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "readCluster - %s - %s/%s Schneider FIP mode  %s " % (
                 MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", MsgClusterData, Attribute_=MsgAttrID)
 
         elif MsgAttrID == "e030":
-            self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Schneider Valve Position  %s " % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "readCluster - %s - %s/%s Schneider Valve Position  %s " % (
                 MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0201", value, Attribute_="0008")
 
         elif MsgAttrID == "e031":
-            self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s Schneider Valve Calibration Status %s " % (
+            self.log.logging( ["Cluster", "Thermostats"], "Debug", "readCluster - %s - %s/%s Schneider Valve Calibration Status %s " % (
                 MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr, )
             checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
     elif MsgAttrID == "fd00":
         # Casia.IA / Wing On/off
-        self.log.logging("Cluster", "Debug", "ReadCluster - 0201 - Attribute fd00 (Wing): %s" % value, MsgSrcAddr)
+        self.log.logging(["Cluster", "Thermostats"], "Debug", "ReadCluster - 0201 - Attribute fd00 (Wing): %s" % value, MsgSrcAddr)
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID)
 
     else:
-        self.log.logging( "Cluster", "Debug", "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (
+        self.log.logging( ["Cluster", "Thermostats"], "Debug", "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " % (
             MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr, )
         checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
