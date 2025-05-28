@@ -501,17 +501,16 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
     if ClusterType == "FanControl" and WidgetType == "FanControl" and model_name in ( "Aidoo Zigbee", ):
         self.log.logging([ "Widget" "Thermostats"], "Debug", f"FanControl Value: {value} ({type(value)})")
         FAN_MODE = {
-            "00": (0, "00"),  # Off
-            "05": (1, "10"),  # Auto
-            "10": (2, "20"),  # Low
-            "20": (3, "30"),  # Medium
-            "30": (4, "40"),  # High
+            0: (0, "00"),  # Off
+            1: (2, "20"),  # Low
+            2: (3, "30"),  # Medium
+            3: (4, "40"),  # High
+            5: (1, "10"),  # Auto
         }
-        nValue = value
-        sValue = int( 10 * value )  # Convert to 10
-        self.log.logging([ "Widget" "Thermostats"], "Debug", f"FanControl Value: {value} -> {nValue}:{sValue}")
-
-        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+        if value in FAN_MODE:
+            nValue, sValue = FAN_MODE[value]
+            self.log.logging([ "Widget" "Thermostats"], "Debug", f"FanControl Value: {value} -> {nValue}:{sValue}")
+            update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
         return
 
     if "ThermoMode" in ClusterType:  # Thermostat Mode
@@ -947,7 +946,7 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
             or (ClusterType == WidgetType == "Alarm")
             or (ClusterType == "Alarm" and WidgetType == "Tamper")
             or (ClusterType == "DoorLock" and WidgetType == "Vibration")
-            or (ClusterType == "FanControl" and WidgetType == "FanControl")
+            or (ClusterType == "FanControl" and WidgetType == "FanControl" and model_name not in ( "Aidoo Zigbee", ))
             or ("ThermoMode" in ClusterType and WidgetType == "ACMode_2")
             or ("ThermoMode" in ClusterType and WidgetType == "ACSwing" and Attribute_ == "fd00")
             or ("ThermoMode" in ClusterType and WidgetType == "ThermoMode_7" and Attribute_ == "001c")
