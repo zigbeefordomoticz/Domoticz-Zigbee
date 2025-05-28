@@ -498,6 +498,22 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
         sValue = str(value)
         update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, sValue, BatteryLevel, SignalLevel)
 
+    if ClusterType == "FanControl" and WidgetType == "FanControl" and model_name in ( "Aidoo Zigbee", ):
+        self.log.logging([ "Widget" "Thermostats"], "Debug", f"FanControl Value: {value} ({type(value)})")
+        FAN_MODE = {
+            "00": (0, "00"),  # Off
+            "05": (1, "10"),  # Auto
+            "10": (2, "20"),  # Low
+            "20": (3, "30"),  # Medium
+            "30": (4, "40"),  # High
+        }
+        nValue = value
+        sValue = int( 10 * value )  # Convert to 10
+        self.log.logging([ "Widget" "Thermostats"], "Debug", f"FanControl Value: {value} -> {nValue}:{sValue}")
+
+        update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+        return
+
     if "ThermoMode" in ClusterType:  # Thermostat Mode
         self.log.logging("Widget", "Debug", "ThermoMode %s WidgetType: %s Value: %s (%s) Attribute_: %s" % ( 
             NwkId, WidgetType, value, type(value), Attribute_), NwkId)
