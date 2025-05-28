@@ -217,7 +217,7 @@ def write_thermostat_setpoint(self, NwkId, EPout, setpoint, Hattribute):
 
     # Round to nearest 0.5°C step
     rounded_setpoint = round(setpoint * 2) / 2
-    self.log.logging(["Thermostats", "Schneider"], "Debug", f"setpoint (original): {setpoint}, (rounded): {rounded_setpoint}", nwkid=NwkId)
+    self.log.logging(["Thermostats", "Schneider"], "Debug", f"setpoint {Hattribute} (original): {setpoint}, (rounded): {rounded_setpoint}", nwkid=NwkId)
 
     # Format as 16-bit signed integer (in deci-degrees
     Hdata = f"{int(rounded_setpoint):04x}"  # Ensure a 4-character hex format
