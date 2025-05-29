@@ -669,8 +669,24 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
                         
         elif WidgetType in ("ThermoMode", "ACMode", ) and Attribute_ == "001c":
             # value seems to come as int or str. To be fixed
-            self.log.logging("Widget", "Debug", "------>  Thermostat Mode %s type: %s" % (value, type(value)), NwkId)
-            if value in THERMOSTAT_MODE_2_LEVEL:
+            if model_name in ("Aidoo Zigbee",):
+                VALUE_MAPPING = {
+                    "00": (0, "00"),  # Off
+                    "10": (1, "10"),  # Auto
+                    "20": (2, "20"),  # Cool
+                    "30": (3, "30"),  # Heat
+                    "50": (5, "50"),  # Fan
+                    "40": (4, "40"),  # Dry
+                }
+
+                self.log.logging("Widget", "Debug", "------> Aidoo Zigbee Thermostat Mode %s type: %s" % (value, type(value)), NwkId)
+                if value in VALUE_MAPPING:
+                    nValue, sValue = VALUE_MAPPING[value]
+                    self.log.logging("Widget", "Debug", "------>  Thermostat Mode %s %s:%s" % (value, nValue, sValue), NwkId)
+                    update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
+                return
+            
+            if value in THERMOSTAT_MODE_2_LEVEL:   # TO-DO / BUGGY on mapping !!!!!
                 if THERMOSTAT_MODE_2_LEVEL[value] == "00":  # Off
                     update_domoticz_widget(self, Devices, device_id_ieee, device_unit, 0, "00", BatteryLevel, SignalLevel)
                 elif THERMOSTAT_MODE_2_LEVEL[value] == "20":  # Cool
