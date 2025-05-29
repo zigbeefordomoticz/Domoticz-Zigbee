@@ -18,7 +18,7 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
-## May 2025 - Stable7.1.023 ( 2025.5)
+## May 2025 - Stable7.1.022 ( 2025.5)
 
 - [Hardware] - Full integration of GammaTroniques TICMeter
 - [Hardware] - Improvement of ZLinky integration
@@ -30,7 +30,7 @@ Release Numbering
 - [Technical] - Upgrade upstream libs (zigpy eco-system)
 - [Technical] - Manage Shutter Calibration per End Point
 
-## March 2025 - stable7.1.022 (2025.4)
+## March 2025 - stable7.1.021b (2025.4)
 
 - [Hardware] - Enable a SwitchOn on SetLevel for "GL-SD-003P" model
 
