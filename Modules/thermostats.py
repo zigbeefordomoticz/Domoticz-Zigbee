@@ -24,7 +24,9 @@ from Modules.tuyaTRV import tuya_setpoint
 from Modules.tuyaTS0601 import ts0601_actuator, ts0601_extract_data_point_infos
 
 THERMOSTAT_CLUSTER = "0201"
+CONTROL_SEQUENCE_OF_OPERATION_ATTRIBUTE = "001b"  # Enum8
 SYSTEM_MODE_ATTRIBUTE = "001c"
+
 THERMOSTAT_CALIBRATION = "0010"
 OCCUPIED_COOLING_SETPOINT = "0011"
 OCCUPIED_HEATING_SETPOINT = "0012"
@@ -363,12 +365,12 @@ def thermostat_Mode(self, NwkId, mode):
 
     # Find the Ep we should send the request
     ep_out = next( ( ep for ep in self.ListOfDevices[NwkId]["Ep"] if THERMOSTAT_CLUSTER in self.ListOfDevices[NwkId]["Ep"][ep] ), "01", )
-    cluster_id = "%04x" % 0x0201
+    cluster_id = THERMOSTAT_CLUSTER
     attribute = SYSTEM_MODE_ATTRIBUTE
     data_type = "30"  # Enum8
     data = "%02x" % SYSTEM_MODE[mode]
 
-    # Set the Mode
+    # Set the System Mode attribute
     write_attribute(self, NwkId, "01", ep_out, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
     self.log.logging( "Thermostats", "Debug", "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s" % (
         NwkId, data, cluster_id, attribute, data_type), nwkid=NwkId, )
@@ -382,13 +384,24 @@ def thermostat_Mode(self, NwkId, mode):
             nwkid=NwkId,
         )
 
+    # Set Control Sequence Of Operation for specific models
+    #   if model_name in ("Aidoo Zigbee",):
+    #       if mode == "Heat":
+    #           # Set the Control Sequence Of operation to Heating
+    #           self.log.logging( "Thermostats", "Log", f"thermostat_Mode - for {NwkId} ControlSequenceOfOperation set to Heating", nwkid=NwkId, )
+    #           write_attribute(self, NwkId, "01", ep_out, THERMOSTAT_CLUSTER, "0000", "00", CONTROL_SEQUENCE_OF_OPERATION_ATTRIBUTE, "30", "%02x" % 0x02 )
+    #           
+    #       elif mode == "Cool":
+    #           # Set the Control Sequence Of operation to Cooling
+    #           self.log.logging( "Thermostats", "Log", f"thermostat_Mode - for {NwkId} ControlSequenceOfOperation set to Cool", nwkid=NwkId, )
+    #           write_attribute(self, NwkId, "01", ep_out, THERMOSTAT_CLUSTER, "0000", "00", CONTROL_SEQUENCE_OF_OPERATION_ATTRIBUTE, "30", "%02x" % 0x00)
+            
     if model_name in ( "CCRFR6700", ) and mode == "Heat":
         # Set the Control Sequence Of operation to Heating
-        cluster_id = "%04x" % 0x0201
-        attribute = "%04x" % 0x001B  # Control Sequence Of operation
+        cluster_id = THERMOSTAT_CLUSTER
+        attribute = CONTROL_SEQUENCE_OF_OPERATION_ATTRIBUTE  # Control Sequence Of operation
         data_type = "30"  # Enum8
         data = "%02x" % 0x02   # Heating Only
-
         write_attribute(self, NwkId, "01", ep_out, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 
@@ -420,6 +433,4 @@ def Thermostat_LockMode(self, NwkId, lockmode):
         nwkid=NwkId,
     )
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
-
-
     write_attribute(self, NwkId, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
