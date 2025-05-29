@@ -1002,12 +1002,10 @@ def _domo_maj_one_cluster_type_entry( self, Devices, NwkId, Ep, device_id_ieee, 
 
             update_domoticz_widget(self, Devices, device_id_ieee, device_unit, nValue, sValue, BatteryLevel, SignalLevel)
 
-        elif ClusterType == "Switch" and WidgetType == "Alarm":
-            pass
+        elif ClusterType == "Switch" and WidgetType in ("Alarm", "FanControl", "ThermoMode"):
+            # do nothing
+            return
         
-        elif ClusterType == "Switch" and WidgetType == "FanControl":
-            pass
-
         elif ClusterType == "Door" and WidgetType in ( "Smoke", "DoorSensor"):
             nValue = int(value)
             if nValue == 0:
