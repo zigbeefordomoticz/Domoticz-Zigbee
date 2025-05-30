@@ -65,14 +65,14 @@ def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_
 
     if zigbee_communication == "native":
         if (
-            branch in plugin_version_dict and
-            "firmMajor" in firmware_version_dict and
-            "firmMinor" in firmware_version_dict
+            branch in plugin_version_dict
+            and "firmMajor" in firmware_version_dict
+            and "firmMinor" in firmware_version_dict
         ):
             return (
                 plugin_version_dict[branch],
-                int(firmware_version_dict["firmMajor"]),
-                int(firmware_version_dict["firmMinor"])
+                int(firmware_version_dict["firmMajor"],16),
+                int(firmware_version_dict["firmMinor"],16)
             )
     elif zigbee_communication == "zigpy":
         if branch in plugin_version_dict:
@@ -163,9 +163,10 @@ def is_plugin_update_available(self, currentVersion, availVersion):
 
 
 def is_zigate_firmware_available(self, currentMajorVersion, currentFirmwareVersion, availfirmMajor, availfirmMinor):
+    self.log.logging("Plugin", "Log", f"is_zigate_firmware_available {type(currentMajorVersion)}, {type(currentFirmwareVersion)}, {type(availfirmMajor)}, {type(availfirmMinor)}")
     if not (availfirmMinor and currentFirmwareVersion):
         return False
-    if int(availfirmMinor, 16) > int(currentFirmwareVersion, 16):
+    if availfirmMinor > int(currentFirmwareVersion, 16):
         self.log.logging("Plugin", "Debug", "Zigate Firmware update available")
         return True
     return False
