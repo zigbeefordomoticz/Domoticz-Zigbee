@@ -132,6 +132,8 @@ def zigpy_thread_function(self):
             self.log.logging("TransportZigpy", "Log", "Event loop closed successfully in zigpy_thread.")
         else:
             self.log.logging("TransportZigpy", "Log", "Event loop was already closed in zigpy_thread.")
+            
+        self.log.logging("TransportZigpy", "Log", "++ Zigpy thread stopped. [2/3]")
 
 
 async def start_zigpy_task(self, channel, extended_pan_id):
@@ -175,7 +177,7 @@ async def start_zigpy_task(self, channel, extended_pan_id):
 
     # We exit the worker_loop, shutdown time
     try:
-        self.log.logging("TransportZigpy", "Log", "Shutding down zigpy thread")
+        self.log.logging("TransportZigpy", "Log", "Shutting down zigpy thread...")
         await self.app.shutdown()
 
     except Exception as e:

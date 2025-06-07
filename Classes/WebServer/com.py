@@ -34,7 +34,7 @@ def startWebServer(self):
 
 
 def close_all_clients(self):
-    self.logging("Log", "Closing all client connections...")
+    self.logging("Log", "Closing all WebUI client connections...")
     for client_addr, client_socket in self.clients.items():
         self.logging("Log", f"  - Closing {client_addr}")
         client_socket.close()
@@ -382,7 +382,7 @@ def run_server(self, host='0.0.0.0', port=9440):   # nosec
 
         server_loop(self, )
 
-        self.logging( "Log", "++ WebUI - server stopped")
+        self.logging( "Log", "WebUI - server stopped")
 
     except Exception as error:
         self.logging( "Error", f"webui_thread - error in run_server {host} {port}")
@@ -447,6 +447,7 @@ def server_loop(self, ):
             except Exception as e:
                 self.logging("Error", f"server_loop - Unexpected error: {e}")
                 break
+
     finally:
         close_all_clients(self)
         self.server.close()
@@ -480,9 +481,12 @@ def cleanup_threads(self):
 
 def onStop(self):
 
+    self.logging("Log", "WebUI shutdown in process...")
     # Make sure that all remaining open connections are closed
     
     self.running = False
+    
+    time.sleep(1)  # Give some time for the server to stop accepting new connections
 
     if hasattr(self, "cleanup_thread") and self.cleanup_thread.is_alive():
         self.cleanup_thread.join()  # Wait for cleanup thread to exit
@@ -492,5 +496,5 @@ def onStop(self):
             t.join(timeout=2)  # Gracefully wait for client threads to finish
     
     self.server_thread.join()
-    self.logging("Status", "WebUI shutdown completed")
+    self.logging("Status", "++ WebUI shutdown completed [3/3]")
     
