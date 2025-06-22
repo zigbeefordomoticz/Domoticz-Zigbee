@@ -28,7 +28,7 @@ Functions:
 
 import json
 import os
-import subprocess
+import subprocess  # nosec, B603
 from urllib.parse import urlencode
 
 from Modules.domoticzAbstractLayer import domoticz_error_api, domoticz_log_api
@@ -70,7 +70,7 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_a
 
     # Get hardware list
     get_url = f"{url_base_api}/json.htm?type=command&param=gethardware"
-    result = subprocess.check_output([curl_command, "-s"] + auth_opts + [get_url])
+    result = subprocess.check_output([curl_command, "-s"] + auth_opts + [get_url])  # nosec, B603
     hw_list = json.loads(result)
 
     plugin = next((h for h in hw_list["result"] if h["Extra"] == ZIGBEE_PLUGIN_KEY), None)
