@@ -28,7 +28,7 @@ Functions:
 
 import json
 import os
-import subprocess  # B404
+import subprocess  # nosec, B404
 from urllib.parse import urlencode
 
 from Modules.domoticzAbstractLayer import domoticz_error_api, domoticz_log_api
