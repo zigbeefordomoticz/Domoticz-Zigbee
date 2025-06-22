@@ -116,7 +116,7 @@ def restartPluginViaDomoticzJsonApi(self, stop=False, erasePDM=False, url_base_a
 
     domoticz_log_api(f"Restarting plugin '{ZIGBEE_PLUGIN_KEY}'... {build_update_cmd(plugin, erasePDM, stop)}")
    
-    subprocess.Popen(build_update_cmd(plugin, erasePDM, stop), start_new_session=True, text=True)  # pylint: disable=consider-using-with
+    subprocess.Popen(build_update_cmd(plugin, erasePDM, stop), start_new_session=True, shell=False, text=True)  # nosec, B603
 
     domoticz_log_api("Plugin restart complete.")
     return True
