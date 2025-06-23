@@ -44,8 +44,6 @@ Der wiki ist auf [Deutsch](https://zigbeefordomoticz.github.io/wiki/nl-dut/) ver
   - Non-standard devices (e.g., GLEDOPTO) may act as poor routers or lack features like LQI reporting.
   - Partial support for devices like Wiser Thermostat (temperature reporting only).
 
-See the [Zigate Zigbee Compatibility](https://www.zigbee2mqtt.io/supported-devices/) website and [Wiki](https://zigbeefordomoticz.github.io/wiki) for a full list of tested devices.
-
 The community maintains a list of certified Zigbee Device Objects at [https://zigbee.blakadder.com](https://zigbee.blakadder.com/z4d.html). It's important to note that if a Zigbee Device object is not listed there, it does not necessarily mean that it won't work with the plugin. Zigbee devices may still function directly or partially, requiring some customization to achieve full compatibility. The community, including anyone interested, can contribute to updating and maintaining the list through Blackadder's Zigbee Device Compatibility Repository.
 
 In theory, any Zigbee devices that fully comply with the Zigbee 3.0, Zigbee Home Automation, and Zigbee Light Link specifications set by the Zigbee Alliance should be technically compatible with this project. However, it's worth noting that certain hardware manufacturers may not consistently adhere to all the specified requirements, resulting in partial or non-functional device behavior without custom integrations. Nevertheless, developers often find solutions or workarounds for non-standard features to address these issues.
