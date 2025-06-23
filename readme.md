@@ -68,7 +68,7 @@ In theory, any Zigbee devices that fully comply with the Zigbee 3.0, Zigbee Home
 - **Contributions**: We welcome device samples for testing, WebUI translations (English, French, German, Spanish), and code contributions. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
-This project is licensed under the [GNU General Public License v3.0](LICENSE).
+This project is licensed under the [GNU General Public License v3.0](LICENSE.txt).
 
 ## Acknowledgments
 - Built on the original Zigate plugin.
