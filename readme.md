@@ -31,9 +31,9 @@ Le wiki est disposnible en [Français](https://zigbeefordomoticz.github.io/wiki/
 Der wiki ist auf [Deutsch](https://zigbeefordomoticz.github.io/wiki/nl-dut/) verfügbar.
 
 ## Coordinator Compatibility
-- **Zigate**: Native support for Zigate coordinators (serial and WiFi).
-- **Texas Instruments**: CC2531, CC13x2, CC26x2 (via zigpy-znp). Note: CC253x adapters are obsolete and not recommended.
-- **Silicon Labs**: EFR32MGxx chipsets (via zigpy-bellows).
+- **Zigate**: Native support for Zigate coordinators (serial and WiFi). **NOT SUPPORTED anymore**, we advise any user to move to a TI, Silicon Labs, or deConz coordinaor
+- **Texas Instruments**: CC2531, CC13x2, CC26x2 (via zigpy-znp). Note: CC253x adapters are obsolete and not recommended [compatible hardware)(https://github.com/zigpy/zigpy-znp?tab=readme-ov-file#hardware-requirements)
+- **Silicon Labs**: EFR32MGxx chipsets (via zigpy-bellows) [compatible hardware](https://github.com/zigpy/bellows#hardware-requirement)
 - **deCONZ**: ConBee/RaspBee (via zigpy-deconz). ConBee III support is deprecated due to instability.
 
 ## Device Compatibility
